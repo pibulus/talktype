@@ -13,6 +13,6 @@ export default {
 
 	plugins: [typography, forms, containerQueries, daisyui],
 	daisyui: {
-		themes: ['light', 'dark']
+		themes: ['light', 'dark', 'coffee']
 	}
 };
