@@ -25,9 +25,9 @@
 		detectedDevice = 'Android';
 	} else if (isiPhone) {
 		// iPhone specific settings (you can adjust these based on testing)
-		scalingFactor = 25;
-		offset = 90;
-		exponent = 0.4;
+		scalingFactor = 40;
+		offset = 130;
+		exponent = 0.5;
 		detectedDevice = 'iPhone';
 	} else {
 		// Default settings for other platforms (based on your feedback: offset 100, scale 20)
