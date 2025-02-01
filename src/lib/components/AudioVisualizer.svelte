@@ -7,9 +7,35 @@
 	let recording = false; // Add recording state
 
 	// Tweakable variables within AudioVisualizer
-	let scalingFactor = 40; // default scaling factor - now in this component and tweakable
-	let offset = 120; // default offset - now in this component and tweakable
-	let exponent = 0.5; // default exponent for square root - now tweakable
+	let scalingFactor;
+	let offset;
+	let exponent;
+	let detectedDevice = 'Unknown'; // Variable to store detected device
+
+	// Platform detection for default settings
+	const userAgent = navigator.userAgent;
+	const isAndroid = /Android/i.test(userAgent);
+	const isiPhone = /iPhone/i.test(userAgent);
+
+	if (isAndroid) {
+		// Android specific settings (based on your feedback: offset 80, scale 40)
+		scalingFactor = 40;
+		offset = 80;
+		exponent = 0.5;
+		detectedDevice = 'Android';
+	} else if (isiPhone) {
+		// iPhone specific settings (you can adjust these based on testing)
+		scalingFactor = 25;
+		offset = 90;
+		exponent = 0.4;
+		detectedDevice = 'iPhone';
+	} else {
+		// Default settings for other platforms (based on your feedback: offset 100, scale 20)
+		scalingFactor = 20;
+		offset = 100;
+		exponent = 0.5;
+		detectedDevice = 'PC or Other';
+	}
 
 	$: {
 		// Reactively update recording state based on analyser
@@ -59,25 +85,21 @@
 </script>
 
 <div class="mb-2">
+	<p class="text-sm italic">Detected device: {detectedDevice}</p>
 	<label for="scalingFactor" class="label">
 		<span class="label-text">Scaling Factor:</span>
 	</label>
 	<input
 		id="scalingFactor"
 		type="number"
-		class="input input-bordered input-sm w-24"
+		class="input input-sm input-bordered w-24"
 		bind:value={scalingFactor}
 	/>
 
 	<label for="offset" class="label">
 		<span class="label-text">Offset:</span>
 	</label>
-	<input
-		id="offset"
-		type="number"
-		class="input input-bordered input-sm w-24"
-		bind:value={offset}
-	/>
+	<input id="offset" type="number" class="input input-sm input-bordered w-24" bind:value={offset} />
 
 	<label for="exponent" class="label">
 		<span class="label-text">Exponent:</span>
@@ -86,7 +108,7 @@
 		id="exponent"
 		type="number"
 		step="0.1"
-		class="input input-bordered input-sm w-24"
+		class="input input-sm input-bordered w-24"
 		bind:value={exponent}
 	/>
 </div>
