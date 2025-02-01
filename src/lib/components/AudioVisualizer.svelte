@@ -9,6 +9,7 @@
 	// Tweakable variables within AudioVisualizer
 	let scalingFactor = 40; // default scaling factor - now in this component and tweakable
 	let offset = 120; // default offset - now in this component and tweakable
+	let exponent = 0.5; // default exponent for square root - now tweakable
 
 	$: {
 		// Reactively update recording state based on analyser
@@ -30,10 +31,10 @@
 			sum += audioDataArray[i];
 		}
 		let linearLevel = Math.max(0, sum / bufferLength + offset); // Calculate linear level first
-		let nonLinearLevel = Math.cbrt(linearLevel); // Apply cubic root for non-linear scaling - changed to cbrt
+		let nonLinearLevel = Math.pow(linearLevel, exponent); // Apply power function for non-linear scaling
 		audioLevel = Math.max(
 			0,
-			Math.min(100, nonLinearLevel * (100 / Math.cbrt(scalingFactor))) // Rescale non-linear level - changed to cbrt
+			Math.min(100, nonLinearLevel * (100 / Math.pow(scalingFactor, exponent))) // Rescale non-linear level
 		);
 		animationFrameId = requestAnimationFrame(updateVisualizer);
 	}
@@ -76,6 +77,17 @@
 		type="number"
 		class="input input-bordered input-sm w-24"
 		bind:value={offset}
+	/>
+
+	<label for="exponent" class="label">
+		<span class="label-text">Exponent:</span>
+	</label>
+	<input
+		id="exponent"
+		type="number"
+		step="0.1"
+		class="input input-bordered input-sm w-24"
+		bind:value={exponent}
 	/>
 </div>
 
