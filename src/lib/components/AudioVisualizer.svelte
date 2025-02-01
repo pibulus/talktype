@@ -5,6 +5,8 @@
 	let animationFrameId;
 	let audioLevel = 0;
 	let recording = false; // Add recording state
+	let history = []; // Array to store audio level history
+	const historyLength = 30; // Number of bars to display in history
 
 	// Tweakable variables within AudioVisualizer
 	let scalingFactor;
@@ -62,11 +64,19 @@
 			0,
 			Math.min(100, nonLinearLevel * (100 / Math.pow(scalingFactor, exponent))) // Rescale non-linear level
 		);
+
+		// Update history - add new level to the start, remove oldest if history is too long
+		history = [audioLevel, ...history];
+		if (history.length > historyLength) {
+			history.pop();
+		}
+
 		animationFrameId = requestAnimationFrame(updateVisualizer);
 	}
 
 	function startVisualizer() {
 		if (recording && analyser) {
+			history = Array(historyLength).fill(0); // Initialize history with zeros when recording starts
 			updateVisualizer();
 		}
 	}
@@ -75,6 +85,7 @@
 		recording = false;
 		cancelAnimationFrame(animationFrameId);
 		audioLevel = 0;
+		history = []; // Clear history when recording stops
 	}
 
 	onDestroy(() => {
@@ -113,6 +124,35 @@
 	/>
 </div>
 
-<div class="h-4 overflow-hidden rounded-full bg-base-200">
-	<div class="h-full rounded-full bg-primary" style="width: {audioLevel}%" />
+<div class="history-wrapper bg-base-200 rounded-box p-2">
+	<div class="history-container">
+		{#each history as level, index (index)}
+			<div
+				class="history-bar bg-primary"
+				style="height: {level}%; width: {(100 / historyLength)}%; left: {(index * (100 / historyLength))}%"
+			></div>
+		{/each}
+	</div>
 </div>
+
+<style>
+	.history-wrapper {
+		overflow-x: hidden; /* Prevent horizontal scrollbar */
+	}
+	.history-container {
+		position: relative; /* Needed for absolute positioning of bars */
+		width: 100%;
+		height: 4rem; /* Adjust as needed */
+		display: flex; /* Use flexbox for horizontal bar layout */
+		flex-direction: row-reverse; /* Reverse direction so new bars appear on the left */
+		/* border: 1px solid red;  for debugging layout */
+	}
+	.history-bar {
+		position: absolute; /* Position bars absolutely within container */
+		bottom: 0; /* Align bars to the bottom */
+		/* width:  calc(100% / 30);  Width calculated based on historyLength */
+		/* margin-right: 1px;  Optional spacing between bars */
+		background-color: theme('colors.primary'); /* Use Tailwind primary color */
+		transition: height 0.1s ease-in-out; /* Smooth height transitions */
+	}
+</style>
