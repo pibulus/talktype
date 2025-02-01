@@ -27,7 +27,9 @@
 		for (let i = 0; i < bufferLength; i++) {
 			sum += audioDataArray[i];
 		}
-		audioLevel = Math.max(0, Math.min(100, (sum / bufferLength + offset) * (100 / scalingFactor)));
+		let linearLevel = Math.max(0, (sum / bufferLength + offset)); // Calculate linear level first
+		let nonLinearLevel = Math.sqrt(linearLevel); // Apply square root for non-linear scaling
+		audioLevel = Math.max(0, Math.min(100, nonLinearLevel * (100 / Math.sqrt(scalingFactor)))); // Rescale non-linear level
 		animationFrameId = requestAnimationFrame(updateVisualizer);
 	}
 
@@ -42,12 +44,6 @@
 		cancelAnimationFrame(animationFrameId);
 		audioLevel = 0;
 	}
-
-	// Optional: Initialize visualizer if analyser is immediately available
-	// on component mount (if needed in future scenarios)
-	// $: if (analyser && recording) {
-	//   startVisualizer();
-	// }
 
 	onDestroy(() => {
 		stopVisualizer();

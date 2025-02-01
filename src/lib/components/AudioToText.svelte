@@ -15,7 +15,7 @@
 	let audioContext;
 	let analyser;
 	let audioLevelScalingFactor = 40; // Default value, now controllable
-	let audioLevelOffset = 120; // Default value, now controllable
+	let audioLevelOffset = 100; // Default value, now controllable
 
 	async function startRecording() {
 		errorMessage = '';
