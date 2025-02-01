@@ -11,9 +11,6 @@
 	let transcribing = false;
 	let clipboardSuccess = false; // Track clipboard success
 
-	// Audio level visualization variables
-	let audioContext;
-	let analyser;
 
 	async function startRecording() {
 		errorMessage = '';
@@ -37,12 +34,6 @@
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 			mediaRecorder = new MediaRecorder(stream);
 
-			// Setup audio analysis for volume meter
-			audioContext = new (globalThis.window.AudioContext || globalThis.window.webkitAudioContext)();
-			analyser = audioContext.createAnalyser();
-			const source = audioContext.createMediaStreamSource(stream);
-			source.connect(analyser);
-			analyser.fftSize = 256;
 
 			mediaRecorder.ondataavailable = (event) => {
 				if (event.data.size > 0) {
@@ -54,11 +45,7 @@
 				clearInterval(intervalId); // Stop loading dots animation
 				loadingDots = ''; // Clear loading dots
 				transcribing = true;
-				if (audioContext) {
-					audioContext.close(); // Close audio context
-					audioContext = null;
-					analyser = null;
-				}
+
 
 				const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
 				try {
@@ -81,11 +68,7 @@
 			clearInterval(intervalId); // Stop loading dots animation in case of error
 			loadingDots = ''; // Clear loading dots
 			transcribing = false;
-			if (audioContext) {
-				audioContext.close(); // Close audio context in error case
-				audioContext = null;
-				analyser = null;
-			}
+
 			console.error('❌ Error accessing microphone:', err);
 			errorMessage = 'Error accessing microphone. Please check microphone permissions.';
 			recording = false;
@@ -97,7 +80,6 @@
 			mediaRecorder.stop();
 			console.log('🛑 Stop recording');
 		}
-		analyser = null; // Clear analyser when recording stops, which will stop visualizer
 	}
 
 	function toggleRecording() {
@@ -143,7 +125,7 @@
 		<!-- Audio Level Visualizer Component -->
 		{#if recording}
 			<div class="mt-2">
-				<AudioVisualizer analyser={analyser} />
+				<AudioVisualizer  />
 			</div>
 		{/if}
 

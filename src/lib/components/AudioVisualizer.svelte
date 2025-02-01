@@ -1,12 +1,14 @@
 <script>
-	export let analyser;
+	import { onMount, onDestroy } from 'svelte';
 
 	let audioDataArray;
 	let animationFrameId;
 	let audioLevel = 0;
-	let recording = false; // Add recording state
 	let history = []; // Array to store audio level history
 	const historyLength = 30; // Number of bars to display in history
+	let analyser;
+	let audioContext;
+	let recording = false; // Track recording state within the component
 
 	// Tweakable variables within AudioVisualizer
 	let scalingFactor;
@@ -39,15 +41,33 @@
 		detectedDevice = 'PC or Other';
 	}
 
-	$: {
-		// Reactively update recording state based on analyser
-		recording = !!analyser; // analyser is truthy when recording, falsy otherwise
-		if (recording) {
+	onMount(async () => {
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			audioContext = new (globalThis.window.AudioContext || globalThis.window.webkitAudioContext)();
+			analyser = audioContext.createAnalyser();
+			const source = audioContext.createMediaStreamSource(stream);
+			source.connect(analyser);
+			analyser.fftSize = 256;
+			recording = true; // Set recording to true when component mounts and stream is obtained
 			startVisualizer();
-		} else {
+		} catch (error) {
+			console.error('Error accessing microphone for visualizer:', error);
+			recording = false; // Set recording to false if stream fails
+			// Optionally handle error display in the component
+		}
+	});
+
+
+	$: {
+		// Reactively update recording state - might not be needed now as recording is managed internally
+		if (recording && analyser) {
+			startVisualizer();
+		} else if (!recording) {
 			stopVisualizer();
 		}
 	}
+
 
 	function updateVisualizer() {
 		if (!recording || !analyser) return;
@@ -86,13 +106,16 @@
 		cancelAnimationFrame(animationFrameId);
 		audioLevel = 0;
 		history = []; // Clear history when recording stops
+		if (audioContext) {
+			audioContext.close(); // Close audio context when visualizer stops
+			audioContext = null;
+			analyser = null;
+		}
 	}
 
 	onDestroy(() => {
 		stopVisualizer();
 	});
-
-	import { onDestroy } from 'svelte';
 </script>
 
 <div class="mb-2">
