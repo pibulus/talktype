@@ -28,8 +28,8 @@
 	} else if (isiPhone) {
 		// iPhone specific settings (you can adjust these based on testing)
 		scalingFactor = 40;
-		offset = 130;
-		exponent = 0.5;
+		offset = 80;
+		exponent = 0.2;
 		detectedDevice = 'iPhone';
 	} else {
 		// Default settings for other platforms (based on your feedback: offset 100, scale 20)
@@ -124,12 +124,13 @@
 	/>
 </div>
 
-<div class="history-wrapper bg-base-200 rounded-box p-2">
+<div class="history-wrapper rounded-box bg-base-200 p-2">
 	<div class="history-container">
 		{#each history as level, index (index)}
 			<div
 				class="history-bar bg-primary"
-				style="height: {level}%; width: {(100 / historyLength)}%; left: {(index * (100 / historyLength))}%"
+				style="height: {level}%; width: {100 / historyLength}%; left: {index *
+					(100 / historyLength)}%"
 			></div>
 		{/each}
 	</div>
