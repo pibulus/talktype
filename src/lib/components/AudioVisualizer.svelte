@@ -1,12 +1,14 @@
 <script>
 	export let analyser;
-	export let scalingFactor = 40; // default scaling factor
-	export let offset = 120; // default offset
 
 	let audioDataArray;
 	let animationFrameId;
 	let audioLevel = 0;
 	let recording = false; // Add recording state
+
+	// Tweakable variables within AudioVisualizer
+	let scalingFactor = 40; // default scaling factor - now in this component and tweakable
+	let offset = 120; // default offset - now in this component and tweakable
 
 	$: {
 		// Reactively update recording state based on analyser
@@ -27,9 +29,12 @@
 		for (let i = 0; i < bufferLength; i++) {
 			sum += audioDataArray[i];
 		}
-		let linearLevel = Math.max(0, (sum / bufferLength + offset)); // Calculate linear level first
-		let nonLinearLevel = Math.sqrt(linearLevel); // Apply square root for non-linear scaling
-		audioLevel = Math.max(0, Math.min(100, nonLinearLevel * (100 / Math.sqrt(scalingFactor)))); // Rescale non-linear level
+		let linearLevel = Math.max(0, sum / bufferLength + offset); // Calculate linear level first
+		let nonLinearLevel = Math.cbrt(linearLevel); // Apply cubic root for non-linear scaling - changed to cbrt
+		audioLevel = Math.max(
+			0,
+			Math.min(100, nonLinearLevel * (100 / Math.cbrt(scalingFactor))) // Rescale non-linear level - changed to cbrt
+		);
 		animationFrameId = requestAnimationFrame(updateVisualizer);
 	}
 
@@ -52,6 +57,28 @@
 	import { onDestroy } from 'svelte';
 </script>
 
+<div class="mb-2">
+	<label for="scalingFactor" class="label">
+		<span class="label-text">Scaling Factor:</span>
+	</label>
+	<input
+		id="scalingFactor"
+		type="number"
+		class="input input-bordered input-sm w-24"
+		bind:value={scalingFactor}
+	/>
+
+	<label for="offset" class="label">
+		<span class="label-text">Offset:</span>
+	</label>
+	<input
+		id="offset"
+		type="number"
+		class="input input-bordered input-sm w-24"
+		bind:value={offset}
+	/>
+</div>
+
 <div class="h-4 overflow-hidden rounded-full bg-base-200">
-	<div class="h-full rounded-full bg-primary" style="width: {audioLevel}%"></div>
+	<div class="h-full rounded-full bg-primary" style="width: {audioLevel}%" />
 </div>

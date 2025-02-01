@@ -14,8 +14,6 @@
 	// Audio level visualization variables
 	let audioContext;
 	let analyser;
-	let audioLevelScalingFactor = 40; // Default value, now controllable
-	let audioLevelOffset = 100; // Default value, now controllable
 
 	async function startRecording() {
 		errorMessage = '';
@@ -131,20 +129,6 @@
 	<div class="card-body">
 		<h2 class="card-title">Audio to Text Component</h2>
 
-		<!--
-		<div class="mb-2">
-			<label for="scalingFactor" class="label">
-				<span class="label-text">Scaling Factor:</span>
-			</label>
-			<input id="scalingFactor" type="number" class="w-24 input input-bordered input-sm" bind:value={audioLevelScalingFactor} />
-
-			<label for="offset" class="label">
-				<span class="label-text">Offset:</span>
-			</label>
-			<input id="offset" type="number" class="w-24 input input-bordered input-sm" bind:value={audioLevelOffset} />
-		</div>
-		-->
-
 		<button class="btn btn-primary" on:click={toggleRecording} disabled={transcribing}>
 			{#if recording}
 				Stop Recording
@@ -159,11 +143,7 @@
 		<!-- Audio Level Visualizer Component -->
 		{#if recording}
 			<div class="mt-2">
-				<AudioVisualizer
-					{analyser}
-					scalingFactor={audioLevelScalingFactor}
-					offset={audioLevelOffset}
-				/>
+				<AudioVisualizer analyser={analyser} />
 			</div>
 		{/if}
 
