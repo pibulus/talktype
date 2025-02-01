@@ -7,6 +7,8 @@
 	let transcript = '';
 	let errorMessage = '';
 	let loadingDots = ''; // For loading animation
+	let transcribing = false;
+	let clipboardSuccess = false; // Track clipboard success
 
 	async function startRecording() {
 		errorMessage = '';
@@ -14,6 +16,8 @@
 		recording = true;
 		audioChunks = [];
 		loadingDots = ''; // Reset loading dots
+		transcribing = false;
+		clipboardSuccess = false; // Reset clipboard success
 
 		// Start loading dots animation
 		const intervalId = setInterval(() => {
@@ -37,22 +41,19 @@
 			mediaRecorder.onstop = async () => {
 				clearInterval(intervalId); // Stop loading dots animation
 				loadingDots = ''; // Clear loading dots
+				transcribing = true;
 				const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
 				try {
 					console.log('🤖 Transcription started');
 					transcript = await geminiService.transcribeAudio(audioBlob);
-					navigator.clipboard.writeText(transcript).then(() => {
-						console.log('📋 Transcript copied to clipboard');
-					}, (err) => {
-						console.error('❌ Failed to copy transcript to clipboard: ', err);
-						errorMessage = 'Transcription copied to page, but could not copy to clipboard.';
-					});
+					await copyToClipboard(transcript); // Call clipboard function
 				} catch (error) {
 					console.error('❌ Transcription error:', error);
 					errorMessage = error.message;
 					transcript = '';
 				} finally {
 					recording = false;
+					transcribing = false;
 				}
 			};
 
@@ -61,6 +62,7 @@
 		} catch (err) {
 			clearInterval(intervalId); // Stop loading dots animation in case of error
 			loadingDots = ''; // Clear loading dots
+			transcribing = false;
 			console.error('❌ Error accessing microphone:', err);
 			errorMessage = 'Error accessing microphone. Please check microphone permissions.';
 			recording = false;
@@ -81,14 +83,33 @@
 			startRecording();
 		}
 	}
+
+	async function copyToClipboard(text) {
+		try {
+			await navigator.clipboard.writeText(text);
+			console.log('📋 Transcript copied to clipboard');
+			clipboardSuccess = true;
+		} catch (err) {
+			console.error('❌ Failed to copy transcript to clipboard: ', err);
+			clipboardSuccess = false;
+			errorMessage = 'Transcription copied to page, but could not copy to clipboard automatically.';
+		}
+	}
+
+	function manualCopyToClipboard() {
+		copyToClipboard(transcript);
+	}
 </script>
 
-<div class="card w-96 bg-base-100 shadow-xl">
+<div class="card bg-base-100 shadow-xl">
 	<div class="card-body">
 		<h2 class="card-title">Audio to Text Component</h2>
-		<button class="btn btn-primary" on:click={toggleRecording} disabled={recording && loadingDots.length > 0}>
+		<button class="btn btn-primary" on:click={toggleRecording}>
 			{#if recording}
-				Stop Recording{loadingDots}
+				Stop Recording
+				{#if transcribing}
+					<span class="loading loading-ring loading-sm"></span>
+				{/if}
 			{:else}
 				Start Recording
 			{/if}
@@ -102,7 +123,16 @@
 			<div class="mt-4 p-4 rounded-lg bg-base-200">
 				<h3 class="text-lg font-bold mb-2">Transcription:</h3>
 				<pre class="whitespace-pre-wrap font-mono bg-base-300 p-2 rounded-box overflow-x-auto">{transcript}</pre>
-				<p class="text-success mt-2">Transcription automatically copied to clipboard!</p>
+				<div class="flex justify-between items-center mt-2">
+					{#if clipboardSuccess}
+						<p class="text-success">Copied to clipboard!</p>
+					{:else if transcript && !clipboardSuccess && errorMessage === ''}
+						<p class="text-warning">Copy to clipboard failed automatically.</p>
+					{/if}
+					<button class="btn btn-sm btn-outline" on:click={manualCopyToClipboard}>
+						Copy
+					</button>
+				</div>
 			</div>
 		{/if}
 	</div>
