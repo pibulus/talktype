@@ -1,5 +1,6 @@
 <script>
 	import { geminiService } from '$lib/services/geminiService';
+	import AudioVisualizer from './AudioVisualizer.svelte'; // Import the new component
 
 	let recording = false;
 	let mediaRecorder;
@@ -13,9 +14,8 @@
 	// Audio level visualization variables
 	let audioContext;
 	let analyser;
-	let audioDataArray;
-	let animationFrameId;
-	let audioLevel = 0; // 0 to 100
+	let audioLevelScalingFactor = 40; // Default value, now controllable
+	let audioLevelOffset = 120; // Default value, now controllable
 
 	async function startRecording() {
 		errorMessage = '';
@@ -25,7 +25,6 @@
 		loadingDots = ''; // Reset loading dots
 		transcribing = false;
 		clipboardSuccess = false; // Reset clipboard success
-		audioLevel = 0; // Reset audio level
 
 		// Start loading dots animation
 		const intervalId = setInterval(() => {
@@ -46,22 +45,6 @@
 			const source = audioContext.createMediaStreamSource(stream);
 			source.connect(analyser);
 			analyser.fftSize = 256;
-			const bufferLength = analyser.frequencyBinCount;
-			audioDataArray = new Float32Array(bufferLength);
-
-			// Start visualizer update loop
-			function updateVisualizer() {
-				if (!recording) return; // Stop if not recording
-				analyser.getFloatFrequencyData(audioDataArray);
-				let sum = 0;
-				for (let i = 0; i < bufferLength; i++) {
-					sum += audioDataArray[i];
-				}
-				audioLevel = Math.max(0, Math.min(100, (sum / bufferLength + 140) * (100 / 140))); // Normalize and scale to 0-100
-				animationFrameId = requestAnimationFrame(updateVisualizer);
-			}
-			updateVisualizer();
-
 
 			mediaRecorder.ondataavailable = (event) => {
 				if (event.data.size > 0) {
@@ -73,14 +56,11 @@
 				clearInterval(intervalId); // Stop loading dots animation
 				loadingDots = ''; // Clear loading dots
 				transcribing = true;
-				cancelAnimationFrame(animationFrameId); // Stop visualizer update
-				audioLevel = 0; // Reset audio level when stopped
 				if (audioContext) {
 					audioContext.close(); // Close audio context
 					audioContext = null;
 					analyser = null;
 				}
-
 
 				const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
 				try {
@@ -103,8 +83,6 @@
 			clearInterval(intervalId); // Stop loading dots animation in case of error
 			loadingDots = ''; // Clear loading dots
 			transcribing = false;
-			cancelAnimationFrame(animationFrameId); // Stop visualizer update in error case
-			audioLevel = 0; // Reset audio level in error case
 			if (audioContext) {
 				audioContext.close(); // Close audio context in error case
 				audioContext = null;
@@ -121,6 +99,7 @@
 			mediaRecorder.stop();
 			console.log('🛑 Stop recording');
 		}
+		analyser = null; // Clear analyser when recording stops, which will stop visualizer
 	}
 
 	function toggleRecording() {
@@ -151,6 +130,21 @@
 <div class="card bg-base-100 shadow-xl">
 	<div class="card-body">
 		<h2 class="card-title">Audio to Text Component</h2>
+
+		<!--
+		<div class="mb-2">
+			<label for="scalingFactor" class="label">
+				<span class="label-text">Scaling Factor:</span>
+			</label>
+			<input id="scalingFactor" type="number" class="w-24 input input-bordered input-sm" bind:value={audioLevelScalingFactor} />
+
+			<label for="offset" class="label">
+				<span class="label-text">Offset:</span>
+			</label>
+			<input id="offset" type="number" class="w-24 input input-bordered input-sm" bind:value={audioLevelOffset} />
+		</div>
+		-->
+
 		<button class="btn btn-primary" on:click={toggleRecording} disabled={transcribing}>
 			{#if recording}
 				Stop Recording
@@ -162,31 +156,37 @@
 			{/if}
 		</button>
 
-		<!-- Audio Level Visualizer -->
+		<!-- Audio Level Visualizer Component -->
 		{#if recording}
-			<div class="mt-2 bg-base-200 rounded-full h-4 overflow-hidden">
-				<div
-					class="bg-primary h-full rounded-full"
-					style="width: {audioLevel}%"
-				></div>
+			<div class="mt-2">
+				<AudioVisualizer
+					{analyser}
+					scalingFactor={audioLevelScalingFactor}
+					offset={audioLevelOffset}
+				/>
 			</div>
 		{/if}
 
 		{#if errorMessage}
-			<p class="text-error mt-4">{errorMessage}</p>
+			<p class="mt-4 text-error">{errorMessage}</p>
 		{/if}
 
 		{#if transcript}
-			<div class="mt-4 p-4 rounded-lg bg-base-200">
-				<h3 class="text-lg font-bold mb-2">Transcription:</h3>
-				<pre class="whitespace-pre-wrap font-mono bg-base-300 p-2 rounded-box overflow-x-auto">{transcript}</pre>
-				<div class="flex justify-between items-center mt-2">
+			<div class="mt-4 rounded-lg bg-base-200 p-4">
+				<h3 class="mb-2 text-lg font-bold">Transcription:</h3>
+				<pre
+					class="overflow-x-auto whitespace-pre-wrap rounded-box bg-base-300 p-2 font-mono">{transcript}</pre>
+				<div class="mt-2 flex items-center justify-between">
 					{#if clipboardSuccess}
 						<p class="text-success">Copied to clipboard!</p>
 					{:else if transcript && !clipboardSuccess && errorMessage === ''}
 						<p class="text-warning">Copy to clipboard failed automatically.</p>
 					{/if}
-					<button class="btn btn-sm btn-outline" on:click={manualCopyToClipboard} disabled={transcribing}>
+					<button
+						class="btn btn-outline btn-sm"
+						on:click={manualCopyToClipboard}
+						disabled={transcribing}
+					>
 						Copy
 					</button>
 				</div>
