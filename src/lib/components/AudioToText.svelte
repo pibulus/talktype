@@ -128,7 +128,6 @@
 
     {#if transcript}
       <div class="p-4 mt-6 text-left rounded-lg bg-base-200">
-        <h3 class="mb-2 text-lg font-bold text-secondary">Transcription:</h3>
         <pre class="p-2 overflow-x-auto font-mono whitespace-pre-wrap rounded-md bg-base-300 text-secondary">
 {transcript}
         </pre>
