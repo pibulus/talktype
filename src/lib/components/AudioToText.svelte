@@ -125,7 +125,7 @@
 		<!-- Audio Level Visualizer Component -->
 		{#if recording}
 			<div class="mt-2">
-				<AudioVisualizer  />
+				<AudioVisualizer />
 			</div>
 		{/if}
 

@@ -120,7 +120,7 @@
 
 <div class="mb-2">
 	<p class="text-sm italic">Detected device: {detectedDevice}</p>
-	<label for="scalingFactor" class="label">
+	<!-- <label for="scalingFactor" class="label">
 		<span class="label-text">Scaling Factor:</span>
 	</label>
 	<input
@@ -144,7 +144,7 @@
 		step="0.1"
 		class="input input-sm input-bordered w-24"
 		bind:value={exponent}
-	/>
+	/> -->
 </div>
 
 <div class="history-wrapper rounded-box bg-base-200 p-2">
