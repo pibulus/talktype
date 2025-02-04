@@ -69,8 +69,20 @@
 	}
 
 
+	let frameSkipCounter = 0;
+	const frameSkipRate = 2; // Adjust this value to control the speed (higher value = slower animation)
+
 	function updateVisualizer() {
 		if (!recording || !analyser) return;
+
+		// Skip frames to slow down the animation
+		if (frameSkipCounter < frameSkipRate) {
+			frameSkipCounter++;
+			animationFrameId = requestAnimationFrame(updateVisualizer);
+			return;
+		}
+		frameSkipCounter = 0;
+
 		const bufferLength = analyser.frequencyBinCount;
 		audioDataArray = new Float32Array(bufferLength);
 		analyser.getFloatFrequencyData(audioDataArray);
@@ -126,14 +138,14 @@
 	<input
 		id="scalingFactor"
 		type="number"
-		class="input input-sm input-bordered w-24"
+		class="w-24 input input-sm input-bordered"
 		bind:value={scalingFactor}
 	/>
 
 	<label for="offset" class="label">
 		<span class="label-text">Offset:</span>
 	</label>
-	<input id="offset" type="number" class="input input-sm input-bordered w-24" bind:value={offset} />
+	<input id="offset" type="number" class="w-24 input input-sm input-bordered" bind:value={offset} />
 
 	<label for="exponent" class="label">
 		<span class="label-text">Exponent:</span>
@@ -142,12 +154,12 @@
 		id="exponent"
 		type="number"
 		step="0.1"
-		class="input input-sm input-bordered w-24"
+		class="w-24 input input-sm input-bordered"
 		bind:value={exponent}
 	/> -->
 </div>
 
-<div class="history-wrapper rounded-box bg-base-200 p-2">
+<div class="p-2 history-wrapper rounded-box bg-base-200">
 	<div class="history-container">
 		{#each history as level, index (index)}
 			<div
