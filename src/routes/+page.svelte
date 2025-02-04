@@ -4,7 +4,7 @@
 </script>
 
 <section class="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-r from-neutral to-base-100 animate-fadeIn">
-  <div class="max-w-2xl p-8 text-center rounded-lg shadow-lg bg-base-100 bg-opacity-80 backdrop-blur-md border border-primary border-opacity-50">
+  <div class="max-w-2xl p-8 text-center rounded-lg shadow-lg bg-base-100 bg-opacity-80 backdrop-blur-md border border-primary border-opacity-50" transition:fade>
     <h1 class="mb-6 text-6xl font-extrabold md:text-7xl text-primary">
       TalkType
     </h1>

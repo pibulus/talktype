@@ -98,7 +98,7 @@
 </script>
 
 <!-- AudioToText.svelte (HTML markup only) -->
-<div class="relative shadow-2xl card bg-base-100 bg-opacity-80 backdrop-blur-md animate-fadeIn">
+<div class="relative shadow-2xl card bg-base-100 bg-opacity-80 backdrop-blur-md animate-fadeIn border border-secondary border-opacity-30">
   {#if transcribing && !transcript}
     <!-- Floating loading indicator -->
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -106,9 +106,9 @@
     </div>
   {/if}
   
-  <div class="p-6 card-body">
+  <div class="p-6 card-body" transition:slide>
     <button
-      class="w-40 mx-auto transition-transform btn btn-primary hover:scale-105 focus:outline-none btn-wide"
+      class="w-full max-w-xs mx-auto transition-transform btn btn-primary hover:scale-105 focus:outline-none text-lg font-semibold"
       on:click={toggleRecording}
       disabled={transcribing}
       aria-label="Toggle Recording"
