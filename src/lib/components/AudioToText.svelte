@@ -97,14 +97,15 @@
 		: 'Start Recording';
 </script>
 
-<!-- Wrap the entire card in a relative container for the floating loader -->
-<div class="relative shadow-2xl card bg-background bg-opacity-80 backdrop-blur-md">
+<!-- AudioToText.svelte (HTML markup only) -->
+<div class="relative shadow-2xl card bg-background bg-opacity-80 backdrop-blur-md animate-fadeIn">
   {#if transcribing && !transcript}
     <!-- Floating loading indicator -->
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
       <span class="loading loading-dots loading-lg text-primary"></span>
     </div>
   {/if}
+  
   <div class="p-6 card-body">
     <button
       class="w-40 mx-auto transition-transform btn btn-primary hover:scale-105 focus:outline-none"
@@ -138,7 +139,7 @@
             <p class="text-warning">Copy to clipboard failed automatically.</p>
           {/if}
           <button
-            class="btn btn-outline btn-sm"
+            class="transition-all btn btn-outline btn-sm hover:scale-105 focus:outline-none"
             on:click={manualCopyToClipboard}
             disabled={transcribing}
           >
