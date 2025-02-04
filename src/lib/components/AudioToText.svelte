@@ -98,7 +98,7 @@
 </script>
 
 <!-- AudioToText.svelte (HTML markup only) -->
-<div class="relative shadow-2xl card bg-base-100 bg-opacity-80 backdrop-blur-md animate-fadeIn border border-secondary border-opacity-30">
+<div class="relative shadow-2xl card bg-base-300 bg-opacity-90 backdrop-blur-md animate-fadeIn border border-secondary border-opacity-30">
   {#if transcribing && !transcript}
     <!-- Floating loading indicator -->
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
