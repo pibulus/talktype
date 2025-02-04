@@ -20,6 +20,7 @@
 	const userAgent = navigator.userAgent;
 	const isAndroid = /Android/i.test(userAgent);
 	const isiPhone = /iPhone/i.test(userAgent);
+	const isMac = /Macintosh/i.test(userAgent);
 
 	if (isAndroid) {
 		// Android specific settings (based on your feedback: offset 80, scale 40)
@@ -33,12 +34,18 @@
 		offset = 80;
 		exponent = 0.2;
 		detectedDevice = 'iPhone';
-	} else {
-		// Default settings for other platforms (based on your feedback: offset 100, scale 20)
+	} else if (isMac) {
+		// macOS specific settings
 		scalingFactor = 20;
 		offset = 100;
 		exponent = 0.5;
-		detectedDevice = 'PC or Other';
+		detectedDevice = 'Mac';
+	} else {
+		// Default settings for other platforms
+		scalingFactor = 2000;
+		offset = 80;
+		exponent = 0.5;
+		detectedDevice = 'PC';
 	}
 
 	onMount(async () => {
