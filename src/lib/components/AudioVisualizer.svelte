@@ -119,7 +119,7 @@
 </script>
 
 <div class="mb-2">
-	<p class="text-sm italic">Detected device: {detectedDevice}</p>
+	<p class="text-sm italic text-secondary">Detected device: {detectedDevice}</p>
 	<!-- <label for="scalingFactor" class="label">
 		<span class="label-text">Scaling Factor:</span>
 	</label>
