@@ -107,51 +107,55 @@
 	}
 </script>
 
-<div class="card bg-base-100 shadow-xl">
-	<div class="card-body">
-		<h2 class="card-title">Audio to Text Component</h2>
+<div class="shadow-2xl card bg-background bg-opacity-80 backdrop-blur-md">
+  <div class="p-6 card-body">
+    <button
+      class="transition-transform btn btn-primary hover:scale-105 focus:outline-none"
+      on:click={toggleRecording}
+      disabled={transcribing}
+      aria-label="Toggle Recording"
+    >
+      {#if recording}
+        Stop Recording
+        {#if transcribing}
+          <span class="ml-2 loading loading-ring loading-sm"></span>
+        {/if}
+      {:else}
+        Start Recording
+      {/if}
+    </button>
 
-		<button class="btn btn-primary" on:click={toggleRecording} disabled={transcribing}>
-			{#if recording}
-				Stop Recording
-				{#if transcribing}
-					<span class="loading loading-ring loading-sm"></span>
-				{/if}
-			{:else}
-				Start Recording
-			{/if}
-		</button>
+    {#if recording}
+      <div class="mt-4">
+        <AudioVisualizer />
+      </div>
+    {/if}
 
-		{#if recording}
-			<div class="mt-2">
-				<AudioVisualizer />
-			</div>
-		{/if}
+    {#if errorMessage}
+      <p class="mt-4 text-error">{errorMessage}</p>
+    {/if}
 
-		{#if errorMessage}
-			<p class="mt-4 text-error">{errorMessage}</p>
-		{/if}
-
-		{#if transcript}
-			<div class="mt-4 rounded-lg bg-base-200 p-4">
-				<h3 class="mb-2 text-lg font-bold">Transcription:</h3>
-				<pre
-					class="overflow-x-auto whitespace-pre-wrap rounded-box bg-base-300 p-2 font-mono">{transcript}</pre>
-				<div class="mt-2 flex items-center justify-between">
-					{#if clipboardSuccess}
-						<p class="text-success">Copied to clipboard!</p>
-					{:else if transcript && !clipboardSuccess && errorMessage === ''}
-						<p class="text-warning">Copy to clipboard failed automatically.</p>
-					{/if}
-					<button
-						class="btn btn-outline btn-sm"
-						on:click={manualCopyToClipboard}
-						disabled={transcribing}
-					>
-						Copy
-					</button>
-				</div>
-			</div>
-		{/if}
-	</div>
+    {#if transcript}
+      <div class="p-4 mt-6 bg-gray-700 bg-opacity-50 rounded-lg">
+        <h3 class="mb-2 text-lg font-bold text-secondary">Transcription:</h3>
+        <pre class="p-2 overflow-x-auto font-mono whitespace-pre-wrap bg-gray-600 rounded-md text-secondary">
+          {transcript}
+        </pre>
+        <div class="flex items-center justify-between mt-2">
+          {#if clipboardSuccess}
+            <p class="text-success">Copied to clipboard!</p>
+          {:else if transcript && !clipboardSuccess && errorMessage === ''}
+            <p class="text-warning">Copy to clipboard failed automatically.</p>
+          {/if}
+          <button
+            class="btn btn-outline btn-sm"
+            on:click={manualCopyToClipboard}
+            disabled={transcribing}
+          >
+            Copy
+          </button>
+        </div>
+      </div>
+    {/if}
+  </div>
 </div>
