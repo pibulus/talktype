@@ -122,7 +122,6 @@
 			{/if}
 		</button>
 
-		<!-- Audio Level Visualizer Component -->
 		{#if recording}
 			<div class="mt-2">
 				<AudioVisualizer />
