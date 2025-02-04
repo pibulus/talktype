@@ -1,39 +1,30 @@
 <script>
 	import { geminiService } from '$lib/services/geminiService';
-	import AudioVisualizer from './AudioVisualizer.svelte'; // Import the new component
+	import AudioVisualizer from './AudioVisualizer.svelte';
 
 	let recording = false;
 	let mediaRecorder;
 	let audioChunks = [];
 	let transcript = '';
 	let errorMessage = '';
-	let loadingDots = ''; // For loading animation
+	let loadingDots = ''; // (No longer used in the visual, but you can remove it if desired)
 	let transcribing = false;
-	let clipboardSuccess = false; // Track clipboard success
-
+	let clipboardSuccess = false;
 
 	async function startRecording() {
 		errorMessage = '';
 		transcript = '';
 		recording = true;
 		audioChunks = [];
-		loadingDots = ''; // Reset loading dots
-		transcribing = false;
-		clipboardSuccess = false; // Reset clipboard success
+		clipboardSuccess = false;
 
-		// Start loading dots animation
-		const intervalId = setInterval(() => {
-			loadingDots += '.';
-			if (loadingDots.length > 3) {
-				loadingDots = '';
-			}
-		}, 500);
+		// Start a loading dots animation if needed (optional)
+		// Removed visual loadingDots in favor of a floating spinner
 
 		try {
 			console.log('🎤 Start recording');
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 			mediaRecorder = new MediaRecorder(stream);
-
 
 			mediaRecorder.ondataavailable = (event) => {
 				if (event.data.size > 0) {
@@ -42,16 +33,12 @@
 			};
 
 			mediaRecorder.onstop = async () => {
-				clearInterval(intervalId); // Stop loading dots animation
-				loadingDots = ''; // Clear loading dots
 				transcribing = true;
-
-
 				const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
 				try {
 					console.log('🤖 Transcription started');
 					transcript = await geminiService.transcribeAudio(audioBlob);
-					await copyToClipboard(transcript); // Call clipboard function
+					await copyToClipboard(transcript);
 				} catch (error) {
 					console.error('❌ Transcription error:', error);
 					errorMessage = error.message;
@@ -65,10 +52,6 @@
 			mediaRecorder.start();
 			console.log('✅ Recording started');
 		} catch (err) {
-			clearInterval(intervalId); // Stop loading dots animation in case of error
-			loadingDots = ''; // Clear loading dots
-			transcribing = false;
-
 			console.error('❌ Error accessing microphone:', err);
 			errorMessage = 'Error accessing microphone. Please check microphone permissions.';
 			recording = false;
@@ -105,24 +88,31 @@
 	function manualCopyToClipboard() {
 		copyToClipboard(transcript);
 	}
+
+	// Computed button label: if recording, show "Stop Recording"; else if transcript exists, show "New Recording"; otherwise, "Start Recording"
+	$: buttonLabel = recording
+		? 'Stop Recording'
+		: transcript
+		? 'New Recording'
+		: 'Start Recording';
 </script>
 
-<div class="shadow-2xl card bg-background bg-opacity-80 backdrop-blur-md">
+<!-- Wrap the entire card in a relative container for the floating loader -->
+<div class="relative shadow-2xl card bg-background bg-opacity-80 backdrop-blur-md">
+  {#if transcribing && !transcript}
+    <!-- Floating loading indicator -->
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <span class="loading loading-dots loading-lg text-primary"></span>
+    </div>
+  {/if}
   <div class="p-6 card-body">
     <button
-      class="transition-transform btn btn-primary hover:scale-105 focus:outline-none"
+      class="w-40 mx-auto transition-transform btn btn-primary hover:scale-105 focus:outline-none"
       on:click={toggleRecording}
       disabled={transcribing}
       aria-label="Toggle Recording"
     >
-      {#if recording}
-        Stop Recording
-        {#if transcribing}
-          <span class="ml-2 loading loading-ring loading-sm"></span>
-        {/if}
-      {:else}
-        Start Recording
-      {/if}
+      {buttonLabel}
     </button>
 
     {#if recording}
@@ -136,10 +126,10 @@
     {/if}
 
     {#if transcript}
-      <div class="p-4 mt-6 bg-gray-700 bg-opacity-50 rounded-lg">
+      <div class="p-4 mt-6 text-left bg-gray-700 bg-opacity-50 rounded-lg">
         <h3 class="mb-2 text-lg font-bold text-secondary">Transcription:</h3>
         <pre class="p-2 overflow-x-auto font-mono whitespace-pre-wrap bg-gray-600 rounded-md text-secondary">
-          {transcript}
+{transcript}
         </pre>
         <div class="flex items-center justify-between mt-2">
           {#if clipboardSuccess}

@@ -11,16 +11,6 @@
     <p class="mb-8 text-xl md:text-2xl text-secondary">
       Fast, accurate, and free voice-to-text transcription.
     </p>
-    <div class="mb-10">
-      <AudioToText />
-    </div>
-    <div class="flex flex-wrap justify-center gap-4">
-      <a href="#features" class="px-6 py-3 transition-colors border-2 rounded-full border-primary text-primary hover:bg-primary hover:text-background">
-        Features
-      </a>
-      <a href="#download" class="px-6 py-3 transition-colors rounded-full bg-primary text-background hover:bg-opacity-80">
-        Download
-      </a>
-    </div>
+    <AudioToText />
   </div>
 </section>
