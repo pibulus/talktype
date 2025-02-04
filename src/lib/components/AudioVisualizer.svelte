@@ -188,7 +188,11 @@
 		bottom: 0; /* Align bars to the bottom */
 		/* width:  calc(100% / 30);  Width calculated based on historyLength */
 		/* margin-right: 1px;  Optional spacing between bars */
-		background-color: theme('colors.primary'); /* Use Tailwind primary color */
+		background: linear-gradient(
+			to top,
+			#ff7e5f, /* Start color */
+			#feb47b /* End color */
+		);
 		transition: height 0.1s ease-in-out; /* Smooth height transitions */
 	}
 </style>
