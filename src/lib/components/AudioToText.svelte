@@ -1,39 +1,30 @@
 <script>
 	import { geminiService } from '$lib/services/geminiService';
-	import AudioVisualizer from './AudioVisualizer.svelte'; // Import the new component
+	import AudioVisualizer from './AudioVisualizer.svelte';
 
 	let recording = false;
 	let mediaRecorder;
 	let audioChunks = [];
 	let transcript = '';
 	let errorMessage = '';
-	let loadingDots = ''; // For loading animation
+	let loadingDots = ''; // (No longer used in the visual, but you can remove it if desired)
 	let transcribing = false;
-	let clipboardSuccess = false; // Track clipboard success
-
+	let clipboardSuccess = false;
 
 	async function startRecording() {
 		errorMessage = '';
 		transcript = '';
 		recording = true;
 		audioChunks = [];
-		loadingDots = ''; // Reset loading dots
-		transcribing = false;
-		clipboardSuccess = false; // Reset clipboard success
+		clipboardSuccess = false;
 
-		// Start loading dots animation
-		const intervalId = setInterval(() => {
-			loadingDots += '.';
-			if (loadingDots.length > 3) {
-				loadingDots = '';
-			}
-		}, 500);
+		// Start a loading dots animation if needed (optional)
+		// Removed visual loadingDots in favor of a floating spinner
 
 		try {
 			console.log('🎤 Start recording');
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 			mediaRecorder = new MediaRecorder(stream);
-
 
 			mediaRecorder.ondataavailable = (event) => {
 				if (event.data.size > 0) {
@@ -42,16 +33,12 @@
 			};
 
 			mediaRecorder.onstop = async () => {
-				clearInterval(intervalId); // Stop loading dots animation
-				loadingDots = ''; // Clear loading dots
 				transcribing = true;
-
-
 				const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
 				try {
 					console.log('🤖 Transcription started');
 					transcript = await geminiService.transcribeAudio(audioBlob);
-					await copyToClipboard(transcript); // Call clipboard function
+					await copyToClipboard(transcript);
 				} catch (error) {
 					console.error('❌ Transcription error:', error);
 					errorMessage = error.message;
@@ -65,10 +52,6 @@
 			mediaRecorder.start();
 			console.log('✅ Recording started');
 		} catch (err) {
-			clearInterval(intervalId); // Stop loading dots animation in case of error
-			loadingDots = ''; // Clear loading dots
-			transcribing = false;
-
 			console.error('❌ Error accessing microphone:', err);
 			errorMessage = 'Error accessing microphone. Please check microphone permissions.';
 			recording = false;
@@ -105,54 +88,64 @@
 	function manualCopyToClipboard() {
 		copyToClipboard(transcript);
 	}
+
+	// Computed button label: if recording, show "Stop Recording"; else if transcript exists, show "New Recording"; otherwise, "Start Recording"
+	$: buttonLabel = recording
+		? 'Stop Recording'
+		: transcript
+		? 'New Recording'
+		: 'Start Recording';
 </script>
 
-<div class="card bg-base-100 shadow-xl">
-	<div class="card-body">
-		<h2 class="card-title">Audio to Text Component</h2>
+<!-- AudioToText.svelte (HTML markup only) -->
+<div class="relative border shadow-lg card bg-base-300 bg-opacity-90 backdrop-blur-md animate-fadeIn border-secondary border-opacity-30">
+  {#if transcribing && !transcript}
+    <!-- Floating loading indicator -->
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <span class="loading loading-dots loading-lg text-primary"></span>
+    </div>
+  {/if}
+  
+  <div class="p-6 card-body" transition:slide>
+    <button
+      class="w-full max-w-xs mx-auto text-lg font-semibold transition-transform btn btn-primary hover:scale-105 focus:outline-none"
+      on:click={toggleRecording}
+      disabled={transcribing}
+      aria-label="Toggle Recording"
+    >
+      {buttonLabel}
+    </button>
 
-		<button class="btn btn-primary" on:click={toggleRecording} disabled={transcribing}>
-			{#if recording}
-				Stop Recording
-				{#if transcribing}
-					<span class="loading loading-ring loading-sm"></span>
-				{/if}
-			{:else}
-				Start Recording
-			{/if}
-		</button>
+    {#if recording}
+      <div class="mt-4">
+        <AudioVisualizer />
+      </div>
+    {/if}
 
-		<!-- Audio Level Visualizer Component -->
-		{#if recording}
-			<div class="mt-2">
-				<AudioVisualizer  />
-			</div>
-		{/if}
+    {#if errorMessage}
+      <p class="mt-4 text-error">{errorMessage}</p>
+    {/if}
 
-		{#if errorMessage}
-			<p class="mt-4 text-error">{errorMessage}</p>
-		{/if}
-
-		{#if transcript}
-			<div class="mt-4 rounded-lg bg-base-200 p-4">
-				<h3 class="mb-2 text-lg font-bold">Transcription:</h3>
-				<pre
-					class="overflow-x-auto whitespace-pre-wrap rounded-box bg-base-300 p-2 font-mono">{transcript}</pre>
-				<div class="mt-2 flex items-center justify-between">
-					{#if clipboardSuccess}
-						<p class="text-success">Copied to clipboard!</p>
-					{:else if transcript && !clipboardSuccess && errorMessage === ''}
-						<p class="text-warning">Copy to clipboard failed automatically.</p>
-					{/if}
-					<button
-						class="btn btn-outline btn-sm"
-						on:click={manualCopyToClipboard}
-						disabled={transcribing}
-					>
-						Copy
-					</button>
-				</div>
-			</div>
-		{/if}
-	</div>
+    {#if transcript}
+      <div class="p-4 mt-6 text-left rounded-lg bg-base-200">
+        <pre class="p-2 overflow-x-auto font-mono whitespace-pre-wrap rounded-md bg-base-300 text-secondary">
+{transcript}
+        </pre>
+        <div class="flex items-center justify-between mt-2">
+          {#if clipboardSuccess}
+            <p class="text-success">Copied to clipboard!</p>
+          {:else if transcript && !clipboardSuccess && errorMessage === ''}
+            <p class="text-warning">Copy to clipboard failed automatically.</p>
+          {/if}
+          <button
+            class="transition-all btn btn-outline btn-sm hover:scale-105 focus:outline-none"
+            on:click={manualCopyToClipboard}
+            disabled={transcribing}
+          >
+            Copy
+          </button>
+        </div>
+      </div>
+    {/if}
+  </div>
 </div>

@@ -20,6 +20,7 @@
 	const userAgent = navigator.userAgent;
 	const isAndroid = /Android/i.test(userAgent);
 	const isiPhone = /iPhone/i.test(userAgent);
+	const isMac = /Macintosh/i.test(userAgent);
 
 	if (isAndroid) {
 		// Android specific settings (based on your feedback: offset 80, scale 40)
@@ -33,12 +34,18 @@
 		offset = 80;
 		exponent = 0.2;
 		detectedDevice = 'iPhone';
-	} else {
-		// Default settings for other platforms (based on your feedback: offset 100, scale 20)
+	} else if (isMac) {
+		// macOS specific settings
 		scalingFactor = 20;
 		offset = 100;
 		exponent = 0.5;
-		detectedDevice = 'PC or Other';
+		detectedDevice = 'Mac';
+	} else {
+		// Default settings for other platforms
+		scalingFactor = 2000;
+		offset = 80;
+		exponent = 0.5;
+		detectedDevice = 'PC';
 	}
 
 	onMount(async () => {
@@ -69,8 +76,20 @@
 	}
 
 
+	let frameSkipCounter = 0;
+	const frameSkipRate = 2; // Adjust this value to control the speed (higher value = slower animation)
+
 	function updateVisualizer() {
 		if (!recording || !analyser) return;
+
+		// Skip frames to slow down the animation
+		if (frameSkipCounter < frameSkipRate) {
+			frameSkipCounter++;
+			animationFrameId = requestAnimationFrame(updateVisualizer);
+			return;
+		}
+		frameSkipCounter = 0;
+
 		const bufferLength = analyser.frequencyBinCount;
 		audioDataArray = new Float32Array(bufferLength);
 		analyser.getFloatFrequencyData(audioDataArray);
@@ -119,21 +138,21 @@
 </script>
 
 <div class="mb-2">
-	<p class="text-sm italic">Detected device: {detectedDevice}</p>
-	<label for="scalingFactor" class="label">
+	<p class="text-sm italic text-secondary">Detected device: {detectedDevice}</p>
+	<!-- <label for="scalingFactor" class="label">
 		<span class="label-text">Scaling Factor:</span>
 	</label>
 	<input
 		id="scalingFactor"
 		type="number"
-		class="input input-sm input-bordered w-24"
+		class="w-24 input input-sm input-bordered"
 		bind:value={scalingFactor}
 	/>
 
 	<label for="offset" class="label">
 		<span class="label-text">Offset:</span>
 	</label>
-	<input id="offset" type="number" class="input input-sm input-bordered w-24" bind:value={offset} />
+	<input id="offset" type="number" class="w-24 input input-sm input-bordered" bind:value={offset} />
 
 	<label for="exponent" class="label">
 		<span class="label-text">Exponent:</span>
@@ -142,12 +161,12 @@
 		id="exponent"
 		type="number"
 		step="0.1"
-		class="input input-sm input-bordered w-24"
+		class="w-24 input input-sm input-bordered"
 		bind:value={exponent}
-	/>
+	/> -->
 </div>
 
-<div class="history-wrapper rounded-box bg-base-200 p-2">
+<div class="p-2 history-wrapper rounded-box bg-base-200">
 	<div class="history-container">
 		{#each history as level, index (index)}
 			<div
@@ -176,7 +195,11 @@
 		bottom: 0; /* Align bars to the bottom */
 		/* width:  calc(100% / 30);  Width calculated based on historyLength */
 		/* margin-right: 1px;  Optional spacing between bars */
-		background-color: theme('colors.primary'); /* Use Tailwind primary color */
+		background: linear-gradient(
+			to top,
+			#ff7e5f, /* Start color */
+			#feb47b /* End color */
+		);
 		transition: height 0.1s ease-in-out; /* Smooth height transitions */
 	}
 </style>
