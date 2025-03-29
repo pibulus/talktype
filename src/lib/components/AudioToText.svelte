@@ -7,7 +7,6 @@
 	let audioChunks = [];
 	let transcript = '';
 	let errorMessage = '';
-	let loadingDots = ''; // (No longer used in the visual, but you can remove it if desired)
 	let transcribing = false;
 	let clipboardSuccess = false;
 
@@ -17,9 +16,6 @@
 		recording = true;
 		audioChunks = [];
 		clipboardSuccess = false;
-
-		// Start a loading dots animation if needed (optional)
-		// Removed visual loadingDots in favor of a floating spinner
 
 		try {
 			console.log('🎤 Start recording');
@@ -97,55 +93,55 @@
 		: 'Start Recording';
 </script>
 
-<!-- AudioToText.svelte (HTML markup only) -->
-<div class="relative border shadow-lg card bg-base-300 bg-opacity-90 backdrop-blur-md animate-fadeIn border-secondary border-opacity-30">
-  {#if transcribing && !transcript}
-    <!-- Floating loading indicator -->
-    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <span class="loading loading-dots loading-lg text-primary"></span>
+<div class="w-full max-w-sm mx-auto">
+  {#if recording}
+    <div class="bg-white/30 backdrop-blur-md rounded-2xl p-4 shadow-md w-full mx-auto mb-6">
+      <AudioVisualizer />
     </div>
   {/if}
   
-  <div class="p-6 card-body" transition:slide>
+  <button
+    class="bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-black font-bold py-5 px-10 text-xl rounded-full shadow-xl w-full transition-all duration-150 ease-in-out hover:scale-105 focus:outline-none"
+    on:click={toggleRecording}
+    disabled={transcribing}
+    aria-label="Toggle Recording"
+  >
+    {buttonLabel}
+  </button>
+  
+  {#if transcribing && !transcript}
+    <div class="flex justify-center mt-6">
+      <div class="w-8 h-8 border-5 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  {/if}
+  
+  {#if errorMessage}
+    <p class="mt-4 text-red-500 text-center font-medium">{errorMessage}</p>
+  {/if}
+  
+  {#if transcript}
+    <div class="bg-white rounded-3xl p-6 text-base font-mono leading-relaxed text-gray-800 shadow-lg w-full mx-auto mt-8 whitespace-pre-line border border-gray-100">
+      {transcript}
+    </div>
+    
     <button
-      class="w-full max-w-xs mx-auto text-lg font-semibold transition-transform btn btn-primary hover:scale-105 focus:outline-none"
+      class="bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-black font-bold py-5 px-10 rounded-full text-xl mt-6 shadow-xl w-full transition-all duration-150 ease-in-out hover:scale-105 focus:outline-none"
       on:click={toggleRecording}
-      disabled={transcribing}
-      aria-label="Toggle Recording"
     >
-      {buttonLabel}
+      New Recording
     </button>
-
-    {#if recording}
-      <div class="mt-4">
-        <AudioVisualizer />
+    
+    {#if clipboardSuccess}
+      <p class="text-center text-gray-500 text-base mt-3 font-medium">Copied to clipboard</p>
+    {:else}
+      <div class="flex justify-center mt-3">
+        <button
+          class="text-gray-500 text-base underline hover:text-gray-700 font-medium"
+          on:click={manualCopyToClipboard}
+        >
+          Copy to clipboard
+        </button>
       </div>
     {/if}
-
-    {#if errorMessage}
-      <p class="mt-4 text-error">{errorMessage}</p>
-    {/if}
-
-    {#if transcript}
-      <div class="p-4 mt-6 text-left rounded-lg bg-base-200">
-        <pre class="p-2 overflow-x-auto font-mono whitespace-pre-wrap rounded-md bg-base-300 text-secondary">
-{transcript}
-        </pre>
-        <div class="flex items-center justify-between mt-2">
-          {#if clipboardSuccess}
-            <p class="text-success">Copied to clipboard!</p>
-          {:else if transcript && !clipboardSuccess && errorMessage === ''}
-            <p class="text-warning">Copy to clipboard failed automatically.</p>
-          {/if}
-          <button
-            class="transition-all btn btn-outline btn-sm hover:scale-105 focus:outline-none"
-            on:click={manualCopyToClipboard}
-            disabled={transcribing}
-          >
-            Copy
-          </button>
-        </div>
-      </div>
-    {/if}
-  </div>
+  {/if}
 </div>

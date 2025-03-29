@@ -23,13 +23,13 @@
 	const isMac = /Macintosh/i.test(userAgent);
 
 	if (isAndroid) {
-		// Android specific settings (based on your feedback: offset 80, scale 40)
+		// Android specific settings
 		scalingFactor = 40;
 		offset = 80;
 		exponent = 0.5;
 		detectedDevice = 'Android';
 	} else if (isiPhone) {
-		// iPhone specific settings (you can adjust these based on testing)
+		// iPhone specific settings
 		scalingFactor = 40;
 		offset = 80;
 		exponent = 0.2;
@@ -137,69 +137,35 @@
 	});
 </script>
 
-<div class="mb-2">
-	<p class="text-sm italic text-secondary">Detected device: {detectedDevice}</p>
-	<!-- <label for="scalingFactor" class="label">
-		<span class="label-text">Scaling Factor:</span>
-	</label>
-	<input
-		id="scalingFactor"
-		type="number"
-		class="w-24 input input-sm input-bordered"
-		bind:value={scalingFactor}
-	/>
-
-	<label for="offset" class="label">
-		<span class="label-text">Offset:</span>
-	</label>
-	<input id="offset" type="number" class="w-24 input input-sm input-bordered" bind:value={offset} />
-
-	<label for="exponent" class="label">
-		<span class="label-text">Exponent:</span>
-	</label>
-	<input
-		id="exponent"
-		type="number"
-		step="0.1"
-		class="w-24 input input-sm input-bordered"
-		bind:value={exponent}
-	/> -->
-</div>
-
-<div class="p-2 history-wrapper rounded-box bg-base-200">
-	<div class="history-container">
-		{#each history as level, index (index)}
-			<div
-				class="history-bar bg-primary"
-				style="height: {level}%; width: {100 / historyLength}%; left: {index *
-					(100 / historyLength)}%"
-			></div>
-		{/each}
-	</div>
+<div class="history-container">
+	{#each history as level, index (index)}
+		<div
+			class="history-bar"
+			style="height: {level}%; width: {100 / historyLength}%; left: {index *
+				(100 / historyLength)}%"
+		></div>
+	{/each}
 </div>
 
 <style>
-	.history-wrapper {
-		overflow-x: hidden; /* Prevent horizontal scrollbar */
-	}
 	.history-container {
-		position: relative; /* Needed for absolute positioning of bars */
+		position: relative;
 		width: 100%;
-		height: 4rem; /* Adjust as needed */
-		display: flex; /* Use flexbox for horizontal bar layout */
-		flex-direction: row-reverse; /* Reverse direction so new bars appear on the left */
-		/* border: 1px solid red;  for debugging layout */
+		height: 5rem;
+		display: flex;
+		flex-direction: row-reverse;
+		border-radius: 1rem;
+		overflow: hidden;
 	}
 	.history-bar {
-		position: absolute; /* Position bars absolutely within container */
-		bottom: 0; /* Align bars to the bottom */
-		/* width:  calc(100% / 30);  Width calculated based on historyLength */
-		/* margin-right: 1px;  Optional spacing between bars */
+		position: absolute;
+		bottom: 0;
 		background: linear-gradient(
 			to top,
-			#ff7e5f, /* Start color */
-			#feb47b /* End color */
+			#ff7eb3, /* Pink - matches ghost icon gradient */
+			#7b68ee /* Purple - matches ghost icon gradient */
 		);
-		transition: height 0.1s ease-in-out; /* Smooth height transitions */
+		transition: height 0.15s ease-in-out;
+		border-radius: 3px 3px 0 0;
 	}
 </style>
