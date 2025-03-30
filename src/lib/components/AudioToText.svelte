@@ -10,9 +10,28 @@
 	let errorMessage = '';
 	let transcribing = false;
 	let clipboardSuccess = false;
+	let clipboardTimer;
 	let transcriptionProgress = 0;
 	let progressInterval;
 	let animationFrameId;
+
+	// Fun copy confirmation messages
+	const copyMessages = [
+		'Copied! ✨',
+		'Boom! Copied.',
+		'In your clipboard!',
+		'Text grabbed!',
+		'Copied to clipboard!',
+		'All yours!',
+		'Snagged it!',
+		'Text copied!',
+		'Saved to clipboard!',
+		'Done! ✓'
+	];
+
+	function getRandomCopyMessage() {
+		return copyMessages[Math.floor(Math.random() * copyMessages.length)];
+	}
 
 	// Export recording state and functions for external components
 	export { recording, stopRecording, startRecording };
@@ -149,6 +168,7 @@
 		return () => {
 			if (progressInterval) clearInterval(progressInterval);
 			if (animationFrameId) cancelAnimationFrame(animationFrameId);
+			if (clipboardTimer) clearTimeout(clipboardTimer);
 		};
 	});
 
@@ -171,6 +191,12 @@
 			await navigator.clipboard.writeText(text);
 			console.log('📋 Transcript copied to clipboard');
 			clipboardSuccess = true;
+
+			// Auto-hide the clipboard success message after 1.5 seconds
+			if (clipboardTimer) clearTimeout(clipboardTimer);
+			clipboardTimer = setTimeout(() => {
+				clipboardSuccess = false;
+			}, 1500);
 		} catch (err) {
 			console.error('❌ Failed to copy transcript to clipboard: ', err);
 			clipboardSuccess = false;
@@ -229,24 +255,31 @@
 
 		<!-- Transcript output -->
 		{#if transcript}
+			<!-- Speech bubble with transcript -->
 			<div
-				class="transcript-box absolute left-0 right-0 top-0 w-full animate-fadeIn whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 p-8 font-mono text-lg leading-relaxed text-gray-800 shadow-xl transition-all duration-500"
+				class="transcript-box absolute left-0 right-0 top-0 w-full animate-fadeIn whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 p-10 font-mono text-xl leading-relaxed text-gray-800 shadow-xl transition-all duration-500"
 			>
 				{transcript}
-
-				<div class="mt-5 flex justify-center">
-					{#if clipboardSuccess}
-						<p class="text-base font-medium text-gray-500">Copied to clipboard</p>
-					{:else}
-						<button
-							class="text-base font-medium text-gray-500 underline hover:text-gray-700"
-							on:click={manualCopyToClipboard}
-						>
-							Copy to clipboard
-						</button>
-					{/if}
-				</div>
 			</div>
+
+			<!-- Copy to clipboard button (below bubble) -->
+			<div class="absolute bottom-[-50px] left-0 right-0 flex justify-center">
+				{#if !clipboardSuccess}
+					<button
+						class="copy-button rounded-full bg-white/80 px-4 py-2 text-base font-medium text-gray-600 shadow-md transition-all duration-200 hover:bg-white hover:text-gray-800"
+						on:click={manualCopyToClipboard}
+					>
+						Copy to clipboard
+					</button>
+				{/if}
+			</div>
+
+			<!-- Floating success toast -->
+			{#if clipboardSuccess}
+				<div class="clipboard-toast">
+					{getRandomCopyMessage()}
+				</div>
+			{/if}
 		{/if}
 
 		<!-- Error message -->
@@ -308,8 +341,9 @@
 
 	.transcript-box {
 		box-shadow:
-			0 10px 25px -5px rgba(249, 168, 212, 0.25),
-			0 8px 10px -6px rgba(249, 168, 212, 0.1);
+			0 10px 25px -5px rgba(249, 168, 212, 0.3),
+			0 8px 10px -6px rgba(249, 168, 212, 0.2),
+			0 0 15px rgba(249, 168, 212, 0.15);
 		background-image: linear-gradient(
 			to bottom right,
 			rgba(255, 255, 255, 0.95),
@@ -332,6 +366,46 @@
 		border-right: 1.5px solid rgba(249, 168, 212, 0.4);
 		border-top-left-radius: 12px;
 		border-top-right-radius: 12px;
+	}
+
+	.clipboard-toast {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		background: rgba(255, 255, 255, 0.9);
+		color: rgb(79, 70, 229);
+		font-weight: 600;
+		padding: 0.75rem 1.5rem;
+		border-radius: 2rem;
+		box-shadow:
+			0 10px 15px -3px rgba(0, 0, 0, 0.1),
+			0 4px 6px -2px rgba(0, 0, 0, 0.05);
+		z-index: 50;
+		animation: toast-animation 1.5s ease-in-out forwards;
+	}
+
+	@keyframes toast-animation {
+		0% {
+			opacity: 0;
+			transform: translate(-50%, -40%);
+		}
+		15% {
+			opacity: 1;
+			transform: translate(-50%, -50%);
+		}
+		85% {
+			opacity: 1;
+			transform: translate(-50%, -50%);
+		}
+		100% {
+			opacity: 0;
+			transform: translate(-50%, -60%);
+		}
+	}
+
+	.copy-button {
+		backdrop-filter: blur(8px);
 	}
 
 	@keyframes ghost-blink {
