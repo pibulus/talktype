@@ -132,6 +132,14 @@
 		if (recording) {
 			stopRecording();
 		} else {
+			// Blink ghost icon when starting a new recording
+			const ghostIcon = document.querySelector('.icon-container');
+			if (ghostIcon) {
+				ghostIcon.classList.add('ghost-blink');
+				setTimeout(() => {
+					ghostIcon.classList.remove('ghost-blink');
+				}, 500);
+			}
 			startRecording();
 		}
 	}
@@ -205,7 +213,7 @@
 	</div>
 
 	<!-- Content area below button - animates between states -->
-	<div class="relative mt-6 min-h-[200px]">
+	<div class="relative mt-4 min-h-[200px]">
 		<!-- Audio visualizer when recording -->
 		<div
 			class="absolute left-0 right-0 top-0 w-full rounded-2xl bg-white/30 p-4 shadow-md backdrop-blur-md transition-all duration-500"
@@ -222,11 +230,11 @@
 		<!-- Transcript output -->
 		{#if transcript}
 			<div
-				class="absolute left-0 right-0 top-0 w-full animate-fadeIn whitespace-pre-line rounded-3xl border border-gray-100 bg-white p-6 font-mono text-base leading-relaxed text-gray-800 shadow-lg transition-all duration-500"
+				class="transcript-box absolute left-0 right-0 top-0 w-full animate-fadeIn whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 p-8 font-mono text-lg leading-relaxed text-gray-800 shadow-xl transition-all duration-500"
 			>
 				{transcript}
 
-				<div class="mt-3 flex justify-center">
+				<div class="mt-5 flex justify-center">
 					{#if clipboardSuccess}
 						<p class="text-base font-medium text-gray-500">Copied to clipboard</p>
 					{:else}
@@ -252,7 +260,7 @@
 
 <style>
 	.animate-fadeIn {
-		animation: localFadeIn 0.6s ease-out forwards;
+		animation: localFadeIn 0.8s ease-out forwards;
 	}
 
 	@keyframes localFadeIn {
@@ -296,5 +304,52 @@
 		100% {
 			box-shadow: 0 0 0px rgba(255, 120, 170, 0.1);
 		}
+	}
+
+	.transcript-box {
+		box-shadow:
+			0 10px 25px -5px rgba(249, 168, 212, 0.25),
+			0 8px 10px -6px rgba(249, 168, 212, 0.1);
+		background-image: linear-gradient(
+			to bottom right,
+			rgba(255, 255, 255, 0.95),
+			rgba(255, 251, 252, 0.98)
+		);
+		position: relative;
+	}
+
+	.transcript-box::after {
+		content: '';
+		position: absolute;
+		top: -12px;
+		left: 50%;
+		margin-left: -12px;
+		width: 24px;
+		height: 12px;
+		background-color: white;
+		border-left: 1.5px solid rgba(249, 168, 212, 0.4);
+		border-top: 1.5px solid rgba(249, 168, 212, 0.4);
+		border-right: 1.5px solid rgba(249, 168, 212, 0.4);
+		border-top-left-radius: 12px;
+		border-top-right-radius: 12px;
+	}
+
+	@keyframes ghost-blink {
+		0% {
+			opacity: 1;
+			transform: scale(1);
+		}
+		50% {
+			opacity: 0.7;
+			transform: scale(1.1);
+		}
+		100% {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+
+	:global(.ghost-blink) {
+		animation: ghost-blink 0.5s ease-in-out;
 	}
 </style>
