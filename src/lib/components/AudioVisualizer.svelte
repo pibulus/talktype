@@ -65,7 +65,6 @@
 		}
 	});
 
-
 	$: {
 		// Reactively update recording state - might not be needed now as recording is managed internally
 		if (recording && analyser) {
@@ -74,7 +73,6 @@
 			stopVisualizer();
 		}
 	}
-
 
 	let frameSkipCounter = 0;
 	const frameSkipRate = 2; // Adjust this value to control the speed (higher value = slower animation)
@@ -162,8 +160,8 @@
 		bottom: 0;
 		background: linear-gradient(
 			to top,
-			#ff7eb3, /* Pink - matches ghost icon gradient */
-			#7b68ee /* Purple - matches ghost icon gradient */
+			#ff7eb3,
+			/* Pink - matches ghost icon gradient */ #7b68ee /* Purple - matches ghost icon gradient */
 		);
 		transition: height 0.15s ease-in-out;
 		border-radius: 3px 3px 0 0;

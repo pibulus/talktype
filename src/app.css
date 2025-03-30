@@ -4,14 +4,18 @@
 
 /* Custom classes for Lukens-style UI */
 .text-gradient {
-  fill: url(#gradient-fill);
+	fill: url(#gradient-fill);
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.5s ease-in-out;
+	animation: fadeIn 0.5s ease-in-out;
 }
