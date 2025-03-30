@@ -119,7 +119,8 @@
 
 					// Short delay before showing the transcript for a smooth transition
 					await new Promise((resolve) => setTimeout(resolve, 1500));
-					await copyToClipboard(transcript);
+					// Don't automatically copy to clipboard - wait for manual copy
+					// await copyToClipboard(transcript);
 				} catch (error) {
 					console.error('❌ Transcription error:', error);
 					errorMessage = error.message;
@@ -257,29 +258,24 @@
 		{#if transcript}
 			<!-- Speech bubble with transcript -->
 			<div
-				class="transcript-box absolute left-0 right-0 top-0 w-full animate-fadeIn whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 p-10 font-mono text-xl leading-relaxed text-gray-800 shadow-xl transition-all duration-500"
+				class="transcript-box absolute left-0 right-0 top-0 w-full animate-fadeIn whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-8 py-10 font-mono text-base leading-relaxed text-gray-800 shadow-xl transition-all duration-500 md:text-base"
 			>
-				{transcript}
-			</div>
-
-			<!-- Copy to clipboard button (below bubble) -->
-			<div class="absolute bottom-[-50px] left-0 right-0 flex justify-center">
-				{#if !clipboardSuccess}
-					<button
-						class="copy-button rounded-full bg-white/80 px-4 py-2 text-base font-medium text-gray-600 shadow-md transition-all duration-200 hover:bg-white hover:text-gray-800"
-						on:click={manualCopyToClipboard}
-					>
-						Copy to clipboard
-					</button>
-				{/if}
-			</div>
-
-			<!-- Floating success toast -->
-			{#if clipboardSuccess}
-				<div class="clipboard-toast">
-					{getRandomCopyMessage()}
+				<div class="transcript-text animate-text-appear">
+					{transcript}
 				</div>
-			{/if}
+			</div>
+
+			<!-- Copy button positioned below the transcript box -->
+			<div class="mt-[270px] flex justify-center">
+				<button
+					class="copy-button relative z-20 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-gray-600 shadow-md transition-all duration-300 hover:bg-white hover:text-gray-800"
+					class:opacity-0={clipboardSuccess}
+					class:pointer-events-none={clipboardSuccess}
+					on:click={manualCopyToClipboard}
+				>
+					Copy to clipboard
+				</button>
+			</div>
 		{/if}
 
 		<!-- Error message -->
@@ -290,6 +286,13 @@
 		{/if}
 	</div>
 </div>
+
+<!-- Floating success toast - positioned fixed separately from other UI elements -->
+{#if clipboardSuccess}
+	<div class="clipboard-toast" aria-live="polite">
+		{getRandomCopyMessage()}
+	</div>
+{/if}
 
 <style>
 	.animate-fadeIn {
@@ -307,11 +310,24 @@
 		}
 	}
 
+	.animate-text-appear {
+		animation: textAppear 0.8s ease-out;
+	}
+
+	@keyframes textAppear {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
 	.progress-bar {
 		animation: pulse-glow 1.5s infinite ease-in-out;
 	}
 
-	.completion-pulse {
+	:global(.completion-pulse) {
 		animation: completion-glow 0.6s ease-in-out;
 	}
 
@@ -350,62 +366,71 @@
 			rgba(255, 251, 252, 0.98)
 		);
 		position: relative;
+		min-height: 100px;
+		height: auto;
+		max-height: 60vh;
+		overflow-y: auto;
+		padding-bottom: 24px; /* Add padding to avoid text being hidden behind copy button */
+	}
+
+	/* Make text smaller when content is long */
+	.transcript-text:not(:only-child) {
+		font-size: 0.875rem;
 	}
 
 	.transcript-box::after {
 		content: '';
 		position: absolute;
-		top: -12px;
-		left: 50%;
+		top: 20px;
+		left: 0;
 		margin-left: -12px;
-		width: 24px;
-		height: 12px;
+		width: 20px;
+		height: 20px;
 		background-color: white;
 		border-left: 1.5px solid rgba(249, 168, 212, 0.4);
-		border-top: 1.5px solid rgba(249, 168, 212, 0.4);
-		border-right: 1.5px solid rgba(249, 168, 212, 0.4);
-		border-top-left-radius: 12px;
-		border-top-right-radius: 12px;
+		border-bottom: 1.5px solid rgba(249, 168, 212, 0.4);
+		border-top-left-radius: 4px;
+		transform: rotate(45deg);
 	}
 
 	.clipboard-toast {
 		position: fixed;
-		top: 50%;
+		bottom: 8px; /* Match the button's bottom position */
 		left: 50%;
-		transform: translate(-50%, -50%);
-		background: rgba(255, 255, 255, 0.9);
+		transform: translateX(-50%);
+		background: rgba(255, 255, 255, 0.98);
 		color: rgb(79, 70, 229);
 		font-weight: 600;
 		padding: 0.75rem 1.5rem;
 		border-radius: 2rem;
-		box-shadow:
-			0 10px 15px -3px rgba(0, 0, 0, 0.1),
-			0 4px 6px -2px rgba(0, 0, 0, 0.05);
-		z-index: 50;
+		box-shadow: 0 4px 15px -2px rgba(0, 0, 0, 0.15);
+		z-index: 999; /* Ensure it's above everything */
 		animation: toast-animation 1.5s ease-in-out forwards;
+		pointer-events: none; /* Let clicks pass through */
 	}
 
 	@keyframes toast-animation {
 		0% {
 			opacity: 0;
-			transform: translate(-50%, -40%);
+			transform: translate(-50%, 0) scale(0.95);
 		}
 		15% {
 			opacity: 1;
-			transform: translate(-50%, -50%);
+			transform: translate(-50%, 0) scale(1);
 		}
 		85% {
 			opacity: 1;
-			transform: translate(-50%, -50%);
+			transform: translate(-50%, 0) scale(1);
 		}
 		100% {
 			opacity: 0;
-			transform: translate(-50%, -60%);
+			transform: translate(-50%, 0) scale(0.95);
 		}
 	}
 
 	.copy-button {
 		backdrop-filter: blur(8px);
+		transition: opacity 0.3s ease-in-out;
 	}
 
 	@keyframes ghost-blink {

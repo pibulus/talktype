@@ -30,7 +30,7 @@
 	>
 		<!-- Ghost Icon - Mobile: tight, Desktop: chunky -->
 		<div
-			class="icon-container mb-1 h-32 w-32 cursor-pointer sm:h-40 sm:w-40 md:mb-2 md:h-56 md:w-56 lg:h-64 lg:w-64"
+			class="icon-container mb-0 h-32 w-32 cursor-pointer sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64"
 			on:click|preventDefault|stopPropagation={startRecordingFromGhost}
 			role="button"
 			tabindex="0"
@@ -41,7 +41,7 @@
 
 		<!-- Typography - Tighter on mobile, more spacious on desktop -->
 		<h1
-			class="mb-1 text-center text-5xl font-black tracking-tight sm:mb-2 sm:text-6xl md:mb-3 md:text-7xl lg:text-8xl xl:text-9xl"
+			class="mb-1 text-center text-5xl font-black tracking-tight sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
 		>
 			TalkType
 		</h1>
@@ -50,7 +50,7 @@
 		>
 			Fast, accurate, and free voice-to-text transcription.
 		</p>
-		<p class="mb-6 text-center text-sm text-gray-500 sm:text-base md:mb-8 md:text-lg lg:mb-10">
+		<p class="mb-4 text-center text-sm text-gray-500 opacity-85 sm:text-base md:mb-6">
 			Brought to you by Dennis & Pabs <span class="text-red-500">❤️</span>
 		</p>
 
