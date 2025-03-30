@@ -1,5 +1,6 @@
 <script>
 	import { geminiService } from '$lib/services/geminiService';
+	import { onMount } from 'svelte';
 	import AudioVisualizer from './AudioVisualizer.svelte';
 
 	let recording = false;
@@ -9,13 +10,23 @@
 	let errorMessage = '';
 	let transcribing = false;
 	let clipboardSuccess = false;
+	let transcriptionProgress = 0;
+	let progressInterval;
+	let animationFrameId;
+
+	// Export recording state and functions for external components
+	export { recording, stopRecording, startRecording };
 
 	async function startRecording() {
+		// Don't start a new recording if already recording
+		if (recording) return;
+
 		errorMessage = '';
 		transcript = '';
 		recording = true;
 		audioChunks = [];
 		clipboardSuccess = false;
+		transcriptionProgress = 0;
 
 		try {
 			console.log('🎤 Start recording');
@@ -31,17 +42,73 @@
 			mediaRecorder.onstop = async () => {
 				transcribing = true;
 				const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+
+				// Reset progress
+				transcriptionProgress = 0;
+
+				// Create a smooth animation that completes in roughly the expected time
+				// This is purely for UI feedback and doesn't reflect actual progress
+				const animateDuration = 3000; // 3 seconds total animation
+				const startTime = Date.now();
+
+				const animate = () => {
+					const elapsedTime = Date.now() - startTime;
+					const progress = Math.min(95, (elapsedTime / animateDuration) * 100);
+
+					// Use smooth easing
+					transcriptionProgress = progress;
+
+					if (progress < 95) {
+						animationFrameId = requestAnimationFrame(animate);
+					}
+				};
+
+				animate();
+
 				try {
 					console.log('🤖 Transcription started');
 					transcript = await geminiService.transcribeAudio(audioBlob);
+
+					// Complete the progress bar smoothly
+					cancelAnimationFrame(animationFrameId);
+
+					// Animate to 100% smoothly
+					const completeProgress = () => {
+						if (transcriptionProgress < 100) {
+							transcriptionProgress += (100 - transcriptionProgress) * 0.2;
+							if (transcriptionProgress > 99.5) {
+								transcriptionProgress = 100;
+								// Add a slight delay for the completion glow effect
+								setTimeout(() => {
+									// Button will do a completion glow effect
+									document.querySelector('.progress-container')?.classList.add('completion-pulse');
+									setTimeout(() => {
+										document
+											.querySelector('.progress-container')
+											?.classList.remove('completion-pulse');
+										transcribing = false;
+										transcriptionProgress = 0;
+									}, 600);
+								}, 200);
+							} else {
+								animationFrameId = requestAnimationFrame(completeProgress);
+							}
+						}
+					};
+
+					completeProgress();
+
+					// Short delay before showing the transcript for a smooth transition
+					await new Promise((resolve) => setTimeout(resolve, 1500));
 					await copyToClipboard(transcript);
 				} catch (error) {
 					console.error('❌ Transcription error:', error);
 					errorMessage = error.message;
 					transcript = '';
+					cancelAnimationFrame(animationFrameId);
+					transcribing = false;
 				} finally {
 					recording = false;
-					transcribing = false;
 				}
 			};
 
@@ -69,6 +136,28 @@
 		}
 	}
 
+	// Cleanup
+	onMount(() => {
+		return () => {
+			if (progressInterval) clearInterval(progressInterval);
+			if (animationFrameId) cancelAnimationFrame(animationFrameId);
+		};
+	});
+
+	// Add/remove recording class on ghost icon when recording state changes
+	$: {
+		if (typeof window !== 'undefined') {
+			const ghostIcon = document.querySelector('.icon-container');
+			if (ghostIcon) {
+				if (recording) {
+					ghostIcon.classList.add('recording');
+				} else {
+					ghostIcon.classList.remove('recording');
+				}
+			}
+		}
+	}
+
 	async function copyToClipboard(text) {
 		try {
 			await navigator.clipboard.writeText(text);
@@ -90,58 +179,122 @@
 </script>
 
 <div class="mx-auto w-full max-w-sm">
-	{#if recording}
-		<div class="mx-auto mb-6 w-full rounded-2xl bg-white/30 p-4 shadow-md backdrop-blur-md">
-			<AudioVisualizer />
-		</div>
-	{/if}
-
-	<button
-		class="w-full rounded-full bg-amber-400 px-10 py-5 text-xl font-bold text-black shadow-xl transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:bg-amber-500"
-		on:click={toggleRecording}
-		disabled={transcribing}
-		aria-label="Toggle Recording"
-	>
-		{buttonLabel}
-	</button>
-
-	{#if transcribing && !transcript}
-		<div class="mt-6 flex justify-center">
+	<!-- Combined recording button and progress bar -->
+	<div class="relative w-full">
+		{#if transcribing}
+			<!-- Progress bar (transforms the button) -->
 			<div
-				class="border-5 h-8 w-8 animate-spin rounded-full border-amber-400 border-t-transparent"
-			></div>
-		</div>
-	{/if}
-
-	{#if errorMessage}
-		<p class="mt-4 text-center font-medium text-red-500">{errorMessage}</p>
-	{/if}
-
-	{#if transcript}
-		<div
-			class="mx-auto mt-8 w-full whitespace-pre-line rounded-3xl border border-gray-100 bg-white p-6 font-mono text-base leading-relaxed text-gray-800 shadow-lg"
-		>
-			{transcript}
-		</div>
-
-		<button
-			class="mt-6 w-full rounded-full bg-amber-400 px-10 py-5 text-xl font-bold text-black shadow-xl transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:bg-amber-500"
-			on:click={toggleRecording}
-		>
-			New Recording
-		</button>
-
-		{#if clipboardSuccess}
-			<p class="mt-3 text-center text-base font-medium text-gray-500">Copied to clipboard</p>
+				class="progress-container relative h-[66px] w-full overflow-hidden rounded-full bg-amber-200 shadow-xl"
+			>
+				<div
+					class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
+					style="width: {transcriptionProgress}%;"
+				></div>
+			</div>
 		{:else}
-			<div class="mt-3 flex justify-center">
-				<button
-					class="text-base font-medium text-gray-500 underline hover:text-gray-700"
-					on:click={manualCopyToClipboard}
-				>
-					Copy to clipboard
-				</button>
+			<!-- Recording button -->
+			<button
+				class="w-full rounded-full bg-amber-400 px-10 py-5 text-xl font-bold text-black shadow-xl transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:bg-amber-500"
+				on:click={toggleRecording}
+				disabled={transcribing}
+				aria-label="Toggle Recording"
+			>
+				{buttonLabel}
+			</button>
+		{/if}
+	</div>
+
+	<!-- Content area below button - animates between states -->
+	<div class="relative mt-6 min-h-[200px]">
+		<!-- Audio visualizer when recording -->
+		<div
+			class="absolute left-0 right-0 top-0 w-full rounded-2xl bg-white/30 p-4 shadow-md backdrop-blur-md transition-all duration-500"
+			class:opacity-100={recording}
+			class:opacity-0={!recording}
+			class:pointer-events-none={!recording}
+			style="transform: {recording ? 'translateY(0)' : 'translateY(-20px)'};"
+		>
+			{#if recording}
+				<AudioVisualizer />
+			{/if}
+		</div>
+
+		<!-- Transcript output -->
+		{#if transcript}
+			<div
+				class="absolute left-0 right-0 top-0 w-full animate-fadeIn whitespace-pre-line rounded-3xl border border-gray-100 bg-white p-6 font-mono text-base leading-relaxed text-gray-800 shadow-lg transition-all duration-500"
+			>
+				{transcript}
+
+				<div class="mt-3 flex justify-center">
+					{#if clipboardSuccess}
+						<p class="text-base font-medium text-gray-500">Copied to clipboard</p>
+					{:else}
+						<button
+							class="text-base font-medium text-gray-500 underline hover:text-gray-700"
+							on:click={manualCopyToClipboard}
+						>
+							Copy to clipboard
+						</button>
+					{/if}
+				</div>
 			</div>
 		{/if}
-	{/if}
+
+		<!-- Error message -->
+		{#if errorMessage}
+			<p class="absolute left-0 right-0 top-0 mt-4 text-center font-medium text-red-500">
+				{errorMessage}
+			</p>
+		{/if}
+	</div>
 </div>
+
+<style>
+	.animate-fadeIn {
+		animation: localFadeIn 0.6s ease-out forwards;
+	}
+
+	@keyframes localFadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.progress-bar {
+		animation: pulse-glow 1.5s infinite ease-in-out;
+	}
+
+	.completion-pulse {
+		animation: completion-glow 0.6s ease-in-out;
+	}
+
+	@keyframes pulse-glow {
+		0% {
+			box-shadow: inset 0 0 5px rgba(255, 190, 60, 0.5);
+		}
+		50% {
+			box-shadow: inset 0 0 15px rgba(255, 190, 60, 0.8);
+		}
+		100% {
+			box-shadow: inset 0 0 5px rgba(255, 190, 60, 0.5);
+		}
+	}
+
+	@keyframes completion-glow {
+		0% {
+			box-shadow: 0 0 0px rgba(255, 120, 170, 0.1);
+		}
+		50% {
+			box-shadow: 0 0 30px rgba(255, 120, 170, 0.8);
+		}
+		100% {
+			box-shadow: 0 0 0px rgba(255, 120, 170, 0.1);
+		}
+	}
+</style>

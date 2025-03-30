@@ -165,5 +165,6 @@
 		);
 		transition: height 0.15s ease-in-out;
 		border-radius: 3px 3px 0 0;
+		margin-right: 1px; /* Add slight margin to prevent white line gaps */
 	}
 </style>

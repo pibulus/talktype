@@ -10,12 +10,26 @@
 @keyframes fadeIn {
 	from {
 		opacity: 0;
+		transform: translateY(10px);
 	}
 	to {
 		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes pulse-glow {
+	0% {
+		box-shadow: 0 0 5px rgba(255, 190, 60, 0.5);
+	}
+	50% {
+		box-shadow: 0 0 15px rgba(255, 190, 60, 0.8);
+	}
+	100% {
+		box-shadow: 0 0 5px rgba(255, 190, 60, 0.5);
 	}
 }
 
 .animate-fadeIn {
-	animation: fadeIn 0.5s ease-in-out;
+	animation: fadeIn 0.5s ease-out forwards;
 }

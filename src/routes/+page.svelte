@@ -1,5 +1,25 @@
 <script>
 	import AudioToText from '$lib/components/AudioToText.svelte';
+	let audioToTextComponent;
+	function startRecordingFromGhost(event) {
+		// Stop event propagation to prevent bubbling
+		event.stopPropagation();
+		event.preventDefault();
+
+		console.log('Ghost clicked! Current recording state:', audioToTextComponent?.recording);
+
+		if (audioToTextComponent) {
+			if (audioToTextComponent.recording) {
+				// If already recording, stop recording
+				console.log('Stopping recording from ghost click');
+				audioToTextComponent.stopRecording();
+			} else {
+				// Otherwise start recording
+				console.log('Starting recording from ghost click');
+				audioToTextComponent.startRecording();
+			}
+		}
+	}
 </script>
 
 <section
@@ -10,7 +30,11 @@
 	>
 		<!-- Ghost Icon - Mobile: tight, Desktop: chunky -->
 		<div
-			class="icon-container mb-1 h-32 w-32 sm:h-40 sm:w-40 md:mb-2 md:h-56 md:w-56 lg:h-64 lg:w-64"
+			class="icon-container mb-1 h-32 w-32 cursor-pointer sm:h-40 sm:w-40 md:mb-2 md:h-56 md:w-56 lg:h-64 lg:w-64"
+			on:click|preventDefault|stopPropagation={startRecordingFromGhost}
+			role="button"
+			tabindex="0"
+			aria-label="Toggle Recording"
 		>
 			<img src="/talktype-icon.svg" alt="TalkType Ghost Icon" class="h-full w-full" />
 		</div>
@@ -32,7 +56,7 @@
 
 		<!-- Audio component - Full width but constrained -->
 		<div class="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl">
-			<AudioToText />
+			<AudioToText bind:this={audioToTextComponent} />
 		</div>
 	</div>
 </section>
@@ -43,10 +67,16 @@
 		transition: all 0.3s ease;
 	}
 
-	.icon-container:hover {
+	.icon-container:hover,
+	.icon-container:active {
 		filter: drop-shadow(0 0 12px rgba(255, 156, 243, 0.3));
 		transform: scale(1.03);
 		animation: gentle-pulse 3s infinite;
+	}
+
+	.icon-container.recording {
+		animation: recording-glow 1.5s infinite;
+		transform: scale(1.05);
 	}
 
 	@media (min-width: 768px) {
@@ -68,6 +98,19 @@
 		}
 		100% {
 			filter: drop-shadow(0 0 12px rgba(255, 156, 243, 0.3));
+		}
+	}
+
+	/* Glowing animation for active recording state */
+	@keyframes recording-glow {
+		0% {
+			filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5));
+		}
+		50% {
+			filter: drop-shadow(0 0 25px rgba(255, 100, 243, 0.8), 0 0 30px rgba(255, 120, 170, 0.3));
+		}
+		100% {
+			filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5));
 		}
 	}
 </style>
