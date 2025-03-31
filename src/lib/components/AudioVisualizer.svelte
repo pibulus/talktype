@@ -1,6 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 
+	// Audio visualization configuration
 	let audioDataArray;
 	let animationFrameId;
 	let audioLevel = 0;
@@ -10,6 +11,16 @@
 	let audioContext;
 	let recording = false; // Track recording state within the component
 
+	// Safari/iOS detection
+	const userAgent = navigator.userAgent;
+	const isAndroid = /Android/i.test(userAgent);
+	const isiPhone = /iPhone|iPad/i.test(userAgent);
+	const isMac = /Macintosh/i.test(userAgent);
+	const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+
+	// Flag for fallback mode - use for Safari or iOS
+	const useFallbackVisualizer = isiPhone || isSafari;
+
 	// Tweakable variables within AudioVisualizer
 	let scalingFactor;
 	let offset;
@@ -17,11 +28,6 @@
 	let detectedDevice = 'Unknown'; // Variable to store detected device
 
 	// Platform detection for default settings
-	const userAgent = navigator.userAgent;
-	const isAndroid = /Android/i.test(userAgent);
-	const isiPhone = /iPhone/i.test(userAgent);
-	const isMac = /Macintosh/i.test(userAgent);
-
 	if (isAndroid) {
 		// Android specific settings
 		scalingFactor = 40;
@@ -48,32 +54,151 @@
 		detectedDevice = 'PC';
 	}
 
-	onMount(async () => {
+	// ===== STANDARD AUDIO VISUALIZER =====
+	async function initStandardVisualizer() {
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-			audioContext = new (globalThis.window.AudioContext || globalThis.window.webkitAudioContext)();
+
+			// Explicitly handle user gesture for Safari
+			if (typeof window !== 'undefined' && window.document) {
+				window.document.addEventListener(
+					'click',
+					() => {
+						if (audioContext && audioContext.state === 'suspended') {
+							audioContext.resume();
+						}
+					},
+					{ once: true }
+				);
+			}
+
+			audioContext = new (window.AudioContext || window.webkitAudioContext)();
 			analyser = audioContext.createAnalyser();
 			const source = audioContext.createMediaStreamSource(stream);
 			source.connect(analyser);
 			analyser.fftSize = 256;
-			recording = true; // Set recording to true when component mounts and stream is obtained
+
+			recording = true;
 			startVisualizer();
 		} catch (error) {
 			console.error('Error accessing microphone for visualizer:', error);
-			recording = false; // Set recording to false if stream fails
-			// Optionally handle error display in the component
-		}
-	});
+			console.log('Falling back to simulated visualizer...');
+			recording = false;
 
-	$: {
-		// Reactively update recording state - might not be needed now as recording is managed internally
-		if (recording && analyser) {
-			startVisualizer();
-		} else if (!recording) {
-			stopVisualizer();
+			// Fallback to the simulated visualizer if standard fails
+			initFallbackVisualizer();
 		}
 	}
 
+	// ===== FALLBACK VISUALIZER FOR SAFARI/IOS =====
+	let fallbackAnimating = false;
+
+	// Persistent variables for more natural motion
+	let lastLevel = 20;
+	let trend = 0;
+	let peakCountdown = 0;
+	let silenceCountdown = 0;
+
+	function initFallbackVisualizer() {
+		console.log('Using fallback visualizer for Safari/iOS');
+		history = Array(historyLength).fill(0);
+		fallbackAnimating = true;
+		recording = true;
+		// Reset simulation variables
+		lastLevel = 20;
+		trend = 0;
+		peakCountdown = 0;
+		silenceCountdown = 0;
+		updateFallbackVisualizer();
+	}
+
+	function updateFallbackVisualizer() {
+		if (!fallbackAnimating) return;
+
+		// Only animate when recording is true
+		if (recording) {
+			// Create more dynamic, speech-like pattern with pronounced peaks
+
+			// Determine if we should create a new peak
+			if (peakCountdown <= 0) {
+				// Random chance to create a dramatic peak (simulating louder speech)
+				if (Math.random() < 0.1) {
+					// Create a big peak (60-90% height)
+					let peakHeight = 60 + Math.random() * 30;
+					lastLevel = peakHeight;
+					// Reset peak countdown - longer delay after big peaks
+					peakCountdown = 5 + Math.floor(Math.random() * 5);
+					// Reset silence countdown
+					silenceCountdown = 0;
+				} else if (Math.random() < 0.3) {
+					// Create a medium peak (40-65% height)
+					lastLevel = 40 + Math.random() * 25;
+					// Reset peak countdown - medium delay
+					peakCountdown = 3 + Math.floor(Math.random() * 3);
+					// Reset silence countdown
+					silenceCountdown = 0;
+				} else if (Math.random() < 0.4) {
+					// Occasional silence (speech pause)
+					lastLevel = 5 + Math.random() * 10;
+					silenceCountdown = 4 + Math.floor(Math.random() * 4);
+				} else {
+					// Regular level changes (20-45% height)
+					lastLevel = 20 + Math.random() * 25;
+					// Reset peak countdown - short delay
+					peakCountdown = 2 + Math.floor(Math.random() * 2);
+				}
+
+				// Change trend direction
+				trend = Math.random() < 0.5 ? -1 : 1;
+			}
+
+			// Handle silence periods
+			if (silenceCountdown > 0) {
+				lastLevel = Math.max(5, lastLevel * 0.8);
+				silenceCountdown--;
+			}
+
+			// Add some sinusoidal movement for natural "breathing" effect
+			let breathEffect = Math.sin(Date.now() / 400) * 5;
+
+			// Apply trend (gradual rise/fall between peaks)
+			lastLevel += trend * (Math.random() * 4 - 1);
+
+			// Ensure levels stay within reasonable range
+			lastLevel = Math.max(5, Math.min(90, lastLevel));
+
+			// Countdown to next peak decision
+			peakCountdown--;
+
+			// Apply breath effect and some minor randomness
+			let finalLevel = lastLevel + breathEffect + (Math.random() * 6 - 3);
+
+			// Clamp final value
+			finalLevel = Math.max(5, Math.min(90, finalLevel));
+
+			// Update history with new generated level
+			history = [finalLevel, ...history];
+			if (history.length > historyLength) {
+				history.pop();
+			}
+		} else {
+			// When not recording, quickly fade out and stop
+			history = history.map((level) => level * 0.8);
+
+			// Stop animation completely if levels are very low
+			let maxLevel = Math.max(...history);
+			if (maxLevel < 2) {
+				fallbackAnimating = false;
+				history = Array(historyLength).fill(0);
+				return; // Exit without scheduling next frame
+			}
+		}
+
+		// Schedule next update
+		animationFrameId = requestAnimationFrame(updateFallbackVisualizer);
+	}
+
+	// ===== STANDARD VISUALIZER UPDATE LOGIC =====
 	let frameSkipCounter = 0;
 	const frameSkipRate = 2; // Adjust this value to control the speed (higher value = slower animation)
 
@@ -111,26 +236,66 @@
 		animationFrameId = requestAnimationFrame(updateVisualizer);
 	}
 
+	// ===== COMMON CONTROL FUNCTIONS =====
 	function startVisualizer() {
-		if (recording && analyser) {
-			history = Array(historyLength).fill(0); // Initialize history with zeros when recording starts
+		if (useFallbackVisualizer) {
+			// Start fallback visualizer
+			if (!fallbackAnimating) {
+				fallbackAnimating = true;
+				updateFallbackVisualizer();
+			}
+		} else if (recording && analyser) {
+			// Start standard visualizer
+			history = Array(historyLength).fill(0);
 			updateVisualizer();
 		}
 	}
 
 	function stopVisualizer() {
 		recording = false;
-		cancelAnimationFrame(animationFrameId);
-		audioLevel = 0;
-		history = []; // Clear history when recording stops
-		if (audioContext) {
-			audioContext.close(); // Close audio context when visualizer stops
-			audioContext = null;
-			analyser = null;
+
+		if (useFallbackVisualizer) {
+			// Let the visualization fade out naturally
+			// The fadeout and stop is handled in updateFallbackVisualizer
+		} else {
+			// Standard cleanup
+			cancelAnimationFrame(animationFrameId);
+			audioLevel = 0;
+			history = [];
+			if (audioContext) {
+				audioContext.close();
+				audioContext = null;
+				analyser = null;
+			}
+		}
+	}
+
+	// ===== LIFECYCLE HOOKS =====
+	onMount(() => {
+		if (useFallbackVisualizer) {
+			initFallbackVisualizer();
+		} else {
+			initStandardVisualizer();
+		}
+	});
+
+	$: {
+		// Reactively update recording state
+		if (recording) {
+			if (useFallbackVisualizer) {
+				if (!fallbackAnimating) {
+					startVisualizer();
+				}
+			} else if (analyser) {
+				startVisualizer();
+			}
+		} else if (!recording) {
+			stopVisualizer();
 		}
 	}
 
 	onDestroy(() => {
+		fallbackAnimating = false;
 		stopVisualizer();
 	});
 </script>

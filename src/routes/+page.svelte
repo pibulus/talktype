@@ -23,7 +23,7 @@
 </script>
 
 <section
-	class="mt-[-5vh] flex min-h-screen flex-col items-center justify-center bg-[#fefaf4] px-4 py-8 pb-28 pt-[6vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-32"
+	class="bg-gradient-mesh mt-[-5vh] flex min-h-screen flex-col items-center justify-center px-4 py-8 pb-28 pt-[6vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-32"
 >
 	<div
 		class="mx-auto flex w-full max-w-md flex-col items-center sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
@@ -59,6 +59,19 @@
 </section>
 
 <style>
+	/* Final subtle cream background with soft vignette */
+	:global(.bg-gradient-mesh) {
+		background-color: #fefaf4; /* Original cream base */
+		background-image: radial-gradient(
+			circle at center,
+			#fefaf4 0%,
+			#fefaf4 50%,
+			#fdf7ef 85%,
+			#fcf5ea 100%
+		);
+		background-attachment: fixed;
+	}
+
 	.icon-container {
 		filter: drop-shadow(0 0 8px rgba(255, 156, 243, 0.15));
 		transition: all 0.3s ease;
