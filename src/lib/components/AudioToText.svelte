@@ -33,7 +33,13 @@
 		'Saved to clipboard! 🎊'
 	];
 
-	function getRandomCopyMessage() {
+	// Special message when document lost focus but was recovered
+	const focusRecoveryMessage = 'Click in window first, then copy again! 🔍';
+
+	function getRandomCopyMessage(useSpecialMessage = false) {
+		if (useSpecialMessage) {
+			return focusRecoveryMessage;
+		}
 		return copyMessages[Math.floor(Math.random() * copyMessages.length)];
 	}
 
@@ -132,23 +138,60 @@
 
 					completeProgress();
 
-					// Short delay before showing the transcript for a smooth transition
-					await new Promise((resolve) => setTimeout(resolve, 1500));
+					// Brief delay before showing the transcript - just enough for a smooth transition
+					await new Promise((resolve) => setTimeout(resolve, 650));
 
 					// Automatically copy to clipboard when transcription finishes
 					if (transcript) {
 						try {
-							await navigator.clipboard.writeText(transcript);
-							console.log('📋 Transcript copied to clipboard');
+							// Focus check - document must be focused for clipboard operations
+							const isDocumentFocused = document.hasFocus();
 
-							// Show toast notification right away
-							clipboardSuccess = true;
-							if (clipboardTimer) clearTimeout(clipboardTimer);
-							clipboardTimer = setTimeout(() => {
-								clipboardSuccess = false;
-							}, 3000); // Longer visibility for better UX
+							if (isDocumentFocused) {
+								await navigator.clipboard.writeText(transcript);
+								console.log('📋 Transcript copied to clipboard');
+
+								// Show toast notification right away
+								clipboardSuccess = true;
+								if (clipboardTimer) clearTimeout(clipboardTimer);
+								clipboardTimer = setTimeout(() => {
+									clipboardSuccess = false;
+								}, 3000); // Longer visibility for better UX
+							} else {
+								// Document not focused - try to bring focus back
+								console.log('📋 Document not focused - attempting to regain focus');
+
+								// Try to focus the window
+								window.focus();
+
+								// Wait a short time for focus to take effect
+								setTimeout(async () => {
+									if (document.hasFocus()) {
+										// We have focus now, try again
+										try {
+											await navigator.clipboard.writeText(transcript);
+											console.log('📋 Transcript copied to clipboard after focus recovery');
+											clipboardSuccess = true;
+
+											if (clipboardTimer) clearTimeout(clipboardTimer);
+											clipboardTimer = setTimeout(() => {
+												clipboardSuccess = false;
+											}, 3000);
+										} catch (focusError) {
+											console.error('❌ Still failed after focus attempt:', focusError);
+											// Silent fail - but user can use copy button
+										}
+									} else {
+										// Still no focus, silent fail - user can use copy button
+										console.log(
+											'📋 Document still not focused - silent fail, user can use copy button'
+										);
+									}
+								}, 100);
+							}
 						} catch (err) {
 							console.error('❌ Failed to copy transcript to clipboard: ', err);
+							// Silent fail - don't show error to user
 						}
 					}
 				} catch (error) {
@@ -178,20 +221,20 @@
 		}
 	}
 
-        // Handle button press animation with classes
-        function animateButtonPress() {
-            const recordButton = document.querySelector(".record-button");
-            if (recordButton) {
-                recordButton.classList.add("button-press");
-                setTimeout(() => {
-                    recordButton.classList.remove("button-press");
-                }, 300);
-            }
-        }
+	// Handle button press animation with classes
+	function animateButtonPress() {
+		const recordButton = document.querySelector('.record-button');
+		if (recordButton) {
+			recordButton.classList.add('button-press');
+			setTimeout(() => {
+				recordButton.classList.remove('button-press');
+			}, 300);
+		}
+	}
 	function toggleRecording() {
 		// Animate button press
 		animateButtonPress();
-		
+
 		if (recording) {
 			stopRecording();
 		} else {
@@ -239,26 +282,64 @@
 			// Get current text from editable div
 			const textToCopy = getEditedTranscript();
 
-			await navigator.clipboard.writeText(textToCopy);
-			console.log('📋 Transcript copied to clipboard');
-			clipboardSuccess = true;
+			// Focus check before attempting clipboard operation
+			if (document.hasFocus()) {
+				await navigator.clipboard.writeText(textToCopy);
+				console.log('📋 Transcript copied to clipboard');
+				clipboardSuccess = true;
 
-			// Auto-hide the clipboard success message after 3 seconds
-			if (clipboardTimer) clearTimeout(clipboardTimer);
-			clipboardTimer = setTimeout(() => {
-				clipboardSuccess = false;
-			}, 3000);
+				// Auto-hide the clipboard success message after 3 seconds
+				if (clipboardTimer) clearTimeout(clipboardTimer);
+				clipboardTimer = setTimeout(() => {
+					clipboardSuccess = false;
+				}, 3000);
+			} else {
+				// Document not focused - show friendly notification and try to recover
+				console.log('📋 Document not focused - trying to bring window to focus');
+
+				// Attempt to focus window first
+				window.focus();
+
+				// Wait a short time for focus to take effect
+				setTimeout(async () => {
+					if (document.hasFocus()) {
+						// Try again now that we have focus
+						try {
+							await navigator.clipboard.writeText(textToCopy);
+							console.log('📋 Transcript copied to clipboard after focus recovery');
+							clipboardSuccess = true;
+
+							if (clipboardTimer) clearTimeout(clipboardTimer);
+							clipboardTimer = setTimeout(() => {
+								clipboardSuccess = false;
+							}, 3000);
+						} catch (focusError) {
+							console.error('❌ Still failed after focus attempt:', focusError);
+							// Show more helpful message that doesn't look like an error
+							clipboardSuccess = true; // Show toast anyway with special message
+							if (clipboardTimer) clearTimeout(clipboardTimer);
+							clipboardTimer = setTimeout(() => {
+								clipboardSuccess = false;
+							}, 5000);
+						}
+					} else {
+						// Still no focus, show user-friendly message
+						console.log('📋 Document still not focused - clipboard operation not possible');
+						errorMessage = '';
+					}
+				}, 100);
+			}
 		} catch (err) {
 			console.error('❌ Failed to copy transcript to clipboard: ', err);
 			clipboardSuccess = false;
-			errorMessage = 'Transcription copied to page, but could not copy to clipboard automatically.';
+			errorMessage = '';
 		}
 	}
 
 	// Function to calculate responsive font size based on transcript length
 	function getResponsiveFontSize(text) {
 		if (!text) return 'text-lg'; // Default size
-		
+
 		const length = text.length;
 		if (length < 50) return 'text-xl md:text-2xl'; // Very short text
 		if (length < 150) return 'text-lg md:text-xl'; // Short text
@@ -266,7 +347,7 @@
 		if (length < 500) return 'text-base'; // Medium-long text
 		return 'text-sm md:text-base'; // Long text
 	}
-	
+
 	// Reactive font size based on transcript length
 	$: responsiveFontSize = getResponsiveFontSize(transcript);
 
@@ -277,7 +358,7 @@
 <!-- Main wrapper with fixed position to prevent pushing page layout -->
 <div class="main-wrapper mx-auto w-full">
 	<!-- Recording button/progress bar section - always in same position -->
-	<div class="button-section relative flex justify-center w-full">
+	<div class="button-section relative flex w-full justify-center">
 		<div class="button-container w-full max-w-[600px]">
 			{#if transcribing}
 				<!-- Progress bar (transforms the button) -->
@@ -292,7 +373,7 @@
 			{:else}
 				<!-- Recording button -->
 				<button
-					class="record-button w-full rounded-full bg-amber-400 px-10 py-5 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:bg-amber-500 active:scale-95 active:shadow-inner"
+					class="record-button w-full rounded-full bg-amber-400 px-10 py-5 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:scale-95 active:bg-amber-500 active:shadow-inner"
 					on:click={toggleRecording}
 					disabled={transcribing}
 					aria-label="Toggle Recording"
@@ -304,13 +385,13 @@
 	</div>
 
 	<!-- Dynamic content area that ensures spacing consistency without layout shifts -->
-	<div class="position-wrapper relative mt-6 mb-20 w-full">
+	<div class="position-wrapper relative mb-20 mt-6 w-full">
 		<!-- Fixed positioned content that won't affect document flow -->
 		<div class="content-container">
 			<!-- Audio visualizer - absolutely positioned to not push content up -->
 			{#if recording}
-				<div class="visualizer-container absolute top-0 left-0 w-full flex justify-center">
-					<div class="wrapper-container flex justify-center w-full">
+				<div class="visualizer-container absolute left-0 top-0 flex w-full justify-center">
+					<div class="wrapper-container flex w-full justify-center">
 						<div
 							class="visualizer-wrapper mx-auto w-full max-w-[600px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md"
 							style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
@@ -325,11 +406,11 @@
 			{#if transcript && !recording}
 				<div class="transcript-wrapper animate-fadeIn-from-top">
 					<!-- Speech bubble with transcript -->
-					<div class="wrapper-container flex justify-center w-full">
+					<div class="wrapper-container flex w-full justify-center">
 						<div class="transcript-box-wrapper mx-auto w-full max-w-[600px]">
 							<!-- Editable transcript box -->
 							<div
-								class="transcript-box relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-6 py-5 font-mono leading-relaxed text-gray-800 shadow-xl"
+								class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-6 py-5 font-mono leading-relaxed text-gray-800 shadow-xl"
 							>
 								<div
 									class={`transcript-text ${responsiveFontSize} animate-text-appear`}
@@ -358,15 +439,16 @@
 
 <!-- Floating success toast - positioned fixed and independently from content -->
 {#if clipboardSuccess}
-	<div class="toast-container flex justify-center w-full">
-		<div class="clipboard-toast" aria-live="polite">
+	<div class="toast-container flex w-full justify-center">
+		<div class="clipboard-toast {!document.hasFocus() ? 'focus-warning' : ''}" aria-live="polite">
 			<!-- Ghost icon to match app theme -->
 			<div class="toast-ghost">
 				<svg viewBox="0 0 24 24" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg">
-					<path d="M12,2 C7.6,2 4,5.6 4,10 L4,17 C4,18.1 4.9,19 6,19 L8,19 L8,21 C8,21.6 8.4,22 9,22 C9.3,22 9.5,21.9 9.7,21.7 L12.4,19 L18,19 C19.1,19 20,18.1 20,17 L20,10 C20,5.6 16.4,2 12,2 Z" 
-						fill="currentColor" 
+					<path
+						d="M12,2 C7.6,2 4,5.6 4,10 L4,17 C4,18.1 4.9,19 6,19 L8,19 L8,21 C8,21.6 8.4,22 9,22 C9.3,22 9.5,21.9 9.7,21.7 L12.4,19 L18,19 C19.1,19 20,18.1 20,17 L20,10 C20,5.6 16.4,2 12,2 Z"
+						fill="currentColor"
 						opacity="0.9"
-						transform="scale(0.95)" 
+						transform="scale(0.95)"
 					/>
 					<!-- Eyes for ghost -->
 					<circle cx="9" cy="10" r="1.2" fill="white" />
@@ -374,7 +456,7 @@
 				</svg>
 			</div>
 			<!-- Message with fun emojis -->
-			<span>{getRandomCopyMessage()}</span>
+			<span>{document.hasFocus() ? getRandomCopyMessage() : focusRecoveryMessage}</span>
 		</div>
 	</div>
 {/if}
@@ -423,7 +505,9 @@
 	}
 
 	.animate-fadeIn-from-top {
-		animation: fadeInFromTop 0.8s ease-out forwards;
+		animation: fadeInFromTop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+		transform-origin: center top;
+		will-change: transform, opacity;
 	}
 
 	@keyframes localFadeIn {
@@ -438,26 +522,45 @@
 	}
 
 	@keyframes fadeInFromTop {
-		from {
+		0% {
 			opacity: 0;
-			transform: translateY(-5px);
+			transform: translateY(-8px) scale(0.99);
 		}
-		to {
+		100% {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	.animate-text-appear {
+		animation: textAppear 0.5s cubic-bezier(0.1, 0.7, 0.2, 1);
+		will-change: opacity, transform;
+	}
+
+	@keyframes textAppear {
+		0% {
+			opacity: 0;
+			transform: translateY(3px);
+		}
+		100% {
 			opacity: 1;
 			transform: translateY(0);
 		}
 	}
 
-	.animate-text-appear {
-		animation: textAppear 0.8s ease-out;
+	.animate-shadow-appear {
+		animation: shadowAppear 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+		will-change: transform, opacity;
 	}
 
-	@keyframes textAppear {
-		from {
-			opacity: 0;
+	@keyframes shadowAppear {
+		0% {
+			opacity: 0.9;
+			transform: scale(0.995);
 		}
-		to {
+		100% {
 			opacity: 1;
+			transform: scale(1);
 		}
 	}
 
@@ -513,9 +616,13 @@
 		/* Custom scrollbar styling */
 		scrollbar-width: thin;
 		scrollbar-color: rgba(249, 168, 212, 0.3) transparent;
-		transition: all 0.3s ease;
+		transition: all 0.2s ease;
+		/* Performance optimization */
+		will-change: transform, opacity;
+		backface-visibility: hidden;
+		-webkit-font-smoothing: subpixel-antialiased;
 	}
-	
+
 	/* Subtle hover effect for transcript box */
 	.transcript-box:hover {
 		box-shadow:
@@ -550,11 +657,11 @@
 		outline: none;
 		transition: all 0.2s ease;
 	}
-	
+
 	.transcript-text:hover {
 		color: #333;
 	}
-	
+
 	.transcript-text:focus {
 		color: #000;
 	}
@@ -601,12 +708,14 @@
 		font-size: 0.875rem; /* text-sm */
 		padding: 0.75rem 1.5rem;
 		border-radius: 2.5rem;
-		box-shadow: 
+		box-shadow:
 			0 8px 15px -3px rgba(212, 180, 241, 0.25),
 			0 3px 8px -2px rgba(254, 205, 211, 0.15),
 			0 0 0 1px rgba(255, 232, 242, 0.6) inset;
 		backdrop-filter: blur(8px);
-		animation: toast-bounce 0.4s ease-[cubic-bezier(0.34,1.56,0.64,1)], toast-fade 3.5s ease-in-out forwards;
+		animation:
+			toast-bounce 0.4s ease-[cubic-bezier(0.34, 1.56, 0.64, 1)],
+			toast-fade 3.5s ease-in-out forwards;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -624,6 +733,21 @@
 		}
 	}
 
+	/* Special styling for focus warning message */
+	:global(.clipboard-toast.focus-warning) {
+		background: linear-gradient(to right, #fff8f0, #fff5f0);
+		background-color: #fffcf8;
+		color: #9c5e3b; /* amber-orange */
+		border: 1.5px solid rgba(251, 191, 36, 0.4);
+		box-shadow:
+			0 8px 15px -3px rgba(251, 211, 141, 0.3),
+			0 3px 8px -2px rgba(254, 215, 170, 0.2),
+			0 0 0 1px rgba(255, 237, 213, 0.7) inset;
+		animation:
+			toast-bounce 0.4s ease-[cubic-bezier(0.34, 1.56, 0.64, 1)],
+			toast-fade 4.5s ease-in-out forwards;
+	}
+
 	/* Ghost icon in toast */
 	.toast-ghost {
 		display: flex;
@@ -635,20 +759,42 @@
 	}
 
 	@keyframes ghost-float {
-		0%, 100% { transform: translateY(0) rotate(-2deg); }
-		50% { transform: translateY(-4px) rotate(2deg); }
+		0%,
+		100% {
+			transform: translateY(0) rotate(-2deg);
+		}
+		50% {
+			transform: translateY(-4px) rotate(2deg);
+		}
 	}
 
 	@keyframes toast-bounce {
-		0% { transform: scale(0.95); opacity: 0; }
-		60% { transform: scale(1.05); opacity: 1; }
-		100% { transform: scale(1); opacity: 1; }
+		0% {
+			transform: scale(0.95);
+			opacity: 0;
+		}
+		60% {
+			transform: scale(1.05);
+			opacity: 1;
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
 	}
 
 	@keyframes toast-fade {
-		0%, 5% { opacity: 0; }
-		15%, 85% { opacity: 1; }
-		100% { opacity: 0; }
+		0%,
+		5% {
+			opacity: 0;
+		}
+		15%,
+		85% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+		}
 	}
 
 	/* Ghost icon animations - defined globally */
@@ -669,44 +815,74 @@
 			filter: brightness(1);
 		}
 	}
-	
+
 	@keyframes ghost-wobble-left {
-		0% { transform: rotate(0deg); }
-		25% { transform: rotate(-5deg); }
-		50% { transform: rotate(3deg); }
-		75% { transform: rotate(-2deg); }
-		100% { transform: rotate(0deg); }
+		0% {
+			transform: rotate(0deg);
+		}
+		25% {
+			transform: rotate(-5deg);
+		}
+		50% {
+			transform: rotate(3deg);
+		}
+		75% {
+			transform: rotate(-2deg);
+		}
+		100% {
+			transform: rotate(0deg);
+		}
 	}
-	
+
 	@keyframes ghost-wobble-right {
-		0% { transform: rotate(0deg); }
-		25% { transform: rotate(5deg); }
-		50% { transform: rotate(-3deg); }
-		75% { transform: rotate(2deg); }
-		100% { transform: rotate(0deg); }
+		0% {
+			transform: rotate(0deg);
+		}
+		25% {
+			transform: rotate(5deg);
+		}
+		50% {
+			transform: rotate(-3deg);
+		}
+		75% {
+			transform: rotate(2deg);
+		}
+		100% {
+			transform: rotate(0deg);
+		}
 	}
 
 	:global(.ghost-pulse) {
 		animation: ghost-pulse 0.4s ease-in-out;
 	}
-	
+
 	:global(.ghost-wobble-left) {
 		animation: ghost-wobble-left 0.6s ease-in-out;
 	}
-	
+
 	:global(.ghost-wobble-right) {
 		animation: ghost-wobble-right 0.6s ease-in-out;
 	}
-	
+
 	/* Button press animation */
 	.button-press {
 		animation: button-press 0.3s ease-out;
 	}
-	
+
 	@keyframes button-press {
-		0% { transform: scale(1); background-color: #fbbf24; }
-		40% { transform: scale(0.95); background-color: #f59e0b; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1); }
-		100% { transform: scale(1); background-color: #fbbf24; }
+		0% {
+			transform: scale(1);
+			background-color: #fbbf24;
+		}
+		40% {
+			transform: scale(0.95);
+			background-color: #f59e0b;
+			box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+		}
+		100% {
+			transform: scale(1);
+			background-color: #fbbf24;
+		}
 	}
 
 	/* Visualizer wrapper styling to match transcript box */
@@ -735,8 +911,8 @@
 			height: 20px;
 			width: 20px;
 		}
-		
-		.button-container, 
+
+		.button-container,
 		.visualizer-wrapper,
 		.transcript-box-wrapper {
 			width: calc(100% - 20px);
@@ -749,7 +925,7 @@
 			font-size: 0.9rem;
 			padding: 0.75rem 1.1rem;
 		}
-		
+
 		.toast-ghost svg {
 			height: 18px;
 			width: 18px;

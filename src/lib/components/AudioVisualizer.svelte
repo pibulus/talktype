@@ -155,7 +155,7 @@
 		border-radius: 1rem;
 		overflow: hidden;
 		box-shadow: inset 0 0 15px rgba(249, 168, 212, 0.15);
-		background: linear-gradient(to bottom, rgba(255,255,255,0.5), rgba(255,242,248,0.2));
+		background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 242, 248, 0.2));
 	}
 	.history-bar {
 		position: absolute;

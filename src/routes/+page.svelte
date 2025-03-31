@@ -46,7 +46,7 @@
 			TalkType
 		</h1>
 		<p
-			class="mx-auto mb-4 max-w-sm text-center text-xl text-gray-700 sm:mb-4 sm:max-w-md sm:text-2xl md:max-w-lg md:text-3xl md:mb-6"
+			class="mx-auto mb-4 max-w-sm text-center text-xl text-gray-700 sm:mb-4 sm:max-w-md sm:text-2xl md:mb-6 md:max-w-lg md:text-3xl"
 		>
 			Fast, accurate, and free voice-to-text transcription.
 		</p>
@@ -66,7 +66,8 @@
 
 	.icon-container:hover,
 	.icon-container:active {
-		filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45)) drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
+		filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45))
+			drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
 		transform: scale(1.03);
 		animation: gentle-pulse 3s infinite;
 	}
@@ -78,36 +79,45 @@
 
 	@media (min-width: 768px) {
 		.icon-container {
-			filter: drop-shadow(0 0 12px rgba(249, 168, 212, 0.25)) drop-shadow(0 0 15px rgba(255, 156, 243, 0.15));
+			filter: drop-shadow(0 0 12px rgba(249, 168, 212, 0.25))
+				drop-shadow(0 0 15px rgba(255, 156, 243, 0.15));
 		}
 
 		.icon-container:hover {
-			filter: drop-shadow(0 0 25px rgba(249, 168, 212, 0.5)) drop-shadow(0 0 35px rgba(255, 156, 243, 0.4));
+			filter: drop-shadow(0 0 25px rgba(249, 168, 212, 0.5))
+				drop-shadow(0 0 35px rgba(255, 156, 243, 0.4));
 		}
 	}
 
 	@keyframes gentle-pulse {
 		0% {
-			filter: drop-shadow(0 0 15px rgba(249, 168, 212, 0.4)) drop-shadow(0 0 20px rgba(255, 156, 243, 0.25));
+			filter: drop-shadow(0 0 15px rgba(249, 168, 212, 0.4))
+				drop-shadow(0 0 20px rgba(255, 156, 243, 0.25));
 		}
 		50% {
-			filter: drop-shadow(0 0 25px rgba(249, 168, 212, 0.55)) drop-shadow(0 0 30px rgba(255, 156, 243, 0.35));
+			filter: drop-shadow(0 0 25px rgba(249, 168, 212, 0.55))
+				drop-shadow(0 0 30px rgba(255, 156, 243, 0.35));
 		}
 		100% {
-			filter: drop-shadow(0 0 15px rgba(249, 168, 212, 0.4)) drop-shadow(0 0 20px rgba(255, 156, 243, 0.25));
+			filter: drop-shadow(0 0 15px rgba(249, 168, 212, 0.4))
+				drop-shadow(0 0 20px rgba(255, 156, 243, 0.25));
 		}
 	}
 
 	/* Glowing animation for active recording state */
 	@keyframes recording-glow {
 		0% {
-			filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5)) drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
+			filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5))
+				drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
 		}
 		50% {
-			filter: drop-shadow(0 0 25px rgba(255, 100, 243, 0.8)) drop-shadow(0 0 35px rgba(255, 120, 170, 0.5)) drop-shadow(0 0 40px rgba(249, 168, 212, 0.4));
+			filter: drop-shadow(0 0 25px rgba(255, 100, 243, 0.8))
+				drop-shadow(0 0 35px rgba(255, 120, 170, 0.5))
+				drop-shadow(0 0 40px rgba(249, 168, 212, 0.4));
 		}
 		100% {
-			filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5)) drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
+			filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5))
+				drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
 		}
 	}
 </style>
