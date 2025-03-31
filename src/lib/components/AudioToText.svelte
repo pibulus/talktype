@@ -63,13 +63,15 @@
 			};
 
 			mediaRecorder.onstop = async () => {
-				// Add animation to ghost when recording stops
+				// Add wobble animation to ghost when recording stops
 				const ghostIcon = document.querySelector('.icon-container');
 				if (ghostIcon) {
-					ghostIcon.classList.add('ghost-blink');
+					// Add slight randomness to the wobble
+					const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
+					ghostIcon.classList.add(wobbleClass);
 					setTimeout(() => {
-						ghostIcon.classList.remove('ghost-blink');
-					}, 500);
+						ghostIcon.classList.remove(wobbleClass);
+					}, 600);
 				}
 
 				transcribing = true;
@@ -193,12 +195,12 @@
 		if (recording) {
 			stopRecording();
 		} else {
-			// Blink ghost icon when starting a new recording
+			// Subtle pulse ghost icon when starting a new recording
 			const ghostIcon = document.querySelector('.icon-container');
 			if (ghostIcon) {
-				ghostIcon.classList.add('ghost-blink');
+				ghostIcon.classList.add('ghost-pulse');
 				setTimeout(() => {
-					ghostIcon.classList.remove('ghost-blink');
+					ghostIcon.classList.remove('ghost-pulse');
 				}, 500);
 			}
 			startRecording();
@@ -650,23 +652,50 @@
 	}
 
 	/* Ghost icon animations - defined globally */
-	@keyframes ghost-blink {
+	@keyframes ghost-pulse {
 		0% {
 			opacity: 1;
 			transform: scale(1);
+			filter: brightness(1);
 		}
 		50% {
-			opacity: 0.7;
-			transform: scale(1.1);
+			opacity: 0.8;
+			transform: scale(1.03);
+			filter: brightness(1.1);
 		}
 		100% {
 			opacity: 1;
 			transform: scale(1);
+			filter: brightness(1);
 		}
 	}
+	
+	@keyframes ghost-wobble-left {
+		0% { transform: rotate(0deg); }
+		25% { transform: rotate(-5deg); }
+		50% { transform: rotate(3deg); }
+		75% { transform: rotate(-2deg); }
+		100% { transform: rotate(0deg); }
+	}
+	
+	@keyframes ghost-wobble-right {
+		0% { transform: rotate(0deg); }
+		25% { transform: rotate(5deg); }
+		50% { transform: rotate(-3deg); }
+		75% { transform: rotate(2deg); }
+		100% { transform: rotate(0deg); }
+	}
 
-	:global(.ghost-blink) {
-		animation: ghost-blink 0.5s ease-in-out;
+	:global(.ghost-pulse) {
+		animation: ghost-pulse 0.4s ease-in-out;
+	}
+	
+	:global(.ghost-wobble-left) {
+		animation: ghost-wobble-left 0.6s ease-in-out;
+	}
+	
+	:global(.ghost-wobble-right) {
+		animation: ghost-wobble-right 0.6s ease-in-out;
 	}
 	
 	/* Button press animation */
