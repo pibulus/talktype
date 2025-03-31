@@ -23,7 +23,7 @@
 </script>
 
 <section
-	class="mt-[-5vh] flex min-h-screen flex-col items-center justify-center bg-[#fefaf4] px-4 py-8 pb-20 pt-[6vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-24"
+	class="mt-[-5vh] flex min-h-screen flex-col items-center justify-center bg-[#fefaf4] px-4 py-8 pb-28 pt-[6vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-32"
 >
 	<div
 		class="mx-auto flex w-full max-w-md flex-col items-center sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
@@ -46,12 +46,9 @@
 			TalkType
 		</h1>
 		<p
-			class="mx-auto mb-1 max-w-sm text-center text-xl text-gray-700 sm:mb-2 sm:max-w-md sm:text-2xl md:max-w-lg md:text-3xl"
+			class="mx-auto mb-4 max-w-sm text-center text-xl text-gray-700 sm:mb-4 sm:max-w-md sm:text-2xl md:max-w-lg md:text-3xl md:mb-6"
 		>
 			Fast, accurate, and free voice-to-text transcription.
-		</p>
-		<p class="mb-4 text-center text-sm text-gray-500 opacity-85 sm:text-base md:mb-6">
-			Brought to you by Dennis & Pabs <span class="text-red-500">❤️</span>
 		</p>
 
 		<!-- Audio component - Wider container for better transcript layout -->

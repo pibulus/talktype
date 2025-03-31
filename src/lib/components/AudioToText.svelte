@@ -15,18 +15,22 @@
 	let animationFrameId;
 	let editableTranscript;
 
-	// Fun copy confirmation messages
+	// Fun copy confirmation messages with friendly emojis
 	const copyMessages = [
-		'Copied! ✨',
-		'Boom! Copied.',
-		'In your clipboard!',
-		'Text grabbed!',
-		'Copied to clipboard!',
-		'All yours!',
-		'Snagged it!',
-		'Text copied!',
-		'Saved to clipboard!',
-		'Done! ✓'
+		'Copied to clipboard! ✨',
+		'Boom! In your clipboard! 🎉',
+		'Text saved to clipboard! 👍',
+		'Snagged that for you! 🙌',
+		'All yours now! 💫',
+		'Copied and ready to paste! 📋',
+		'Captured in clipboard! ✅',
+		'Text copied successfully! 🌟',
+		'Got it! Ready to paste! 🚀',
+		'Your text is saved! 💖',
+		'Copied with magic! ✨',
+		'Text safely copied! 🔮',
+		'Copied and good to go! 🎯',
+		'Saved to clipboard! 🎊'
 	];
 
 	function getRandomCopyMessage() {
@@ -172,7 +176,20 @@
 		}
 	}
 
+        // Handle button press animation with classes
+        function animateButtonPress() {
+            const recordButton = document.querySelector(".record-button");
+            if (recordButton) {
+                recordButton.classList.add("button-press");
+                setTimeout(() => {
+                    recordButton.classList.remove("button-press");
+                }, 300);
+            }
+        }
 	function toggleRecording() {
+		// Animate button press
+		animateButtonPress();
+		
 		if (recording) {
 			stopRecording();
 		} else {
@@ -258,28 +275,30 @@
 <!-- Main wrapper with fixed position to prevent pushing page layout -->
 <div class="main-wrapper mx-auto w-full">
 	<!-- Recording button/progress bar section - always in same position -->
-	<div class="button-section relative w-full">
-		{#if transcribing}
-			<!-- Progress bar (transforms the button) -->
-			<div
-				class="progress-container relative h-[66px] w-full overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10"
-			>
+	<div class="button-section relative flex justify-center w-full">
+		<div class="button-container w-full max-w-[600px]">
+			{#if transcribing}
+				<!-- Progress bar (transforms the button) -->
 				<div
-					class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
-					style="width: {transcriptionProgress}%;"
-				></div>
-			</div>
-		{:else}
-			<!-- Recording button -->
-			<button
-				class="w-full rounded-full bg-amber-400 px-10 py-5 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:bg-amber-500"
-				on:click={toggleRecording}
-				disabled={transcribing}
-				aria-label="Toggle Recording"
-			>
-				{buttonLabel}
-			</button>
-		{/if}
+					class="progress-container relative h-[66px] w-full overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10"
+				>
+					<div
+						class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
+						style="width: {transcriptionProgress}%;"
+					></div>
+				</div>
+			{:else}
+				<!-- Recording button -->
+				<button
+					class="record-button w-full rounded-full bg-amber-400 px-10 py-5 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:bg-amber-500 active:scale-95 active:shadow-inner"
+					on:click={toggleRecording}
+					disabled={transcribing}
+					aria-label="Toggle Recording"
+				>
+					{buttonLabel}
+				</button>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Dynamic content area that ensures spacing consistency without layout shifts -->
@@ -288,14 +307,14 @@
 		<div class="content-container">
 			<!-- Audio visualizer - absolutely positioned to not push content up -->
 			{#if recording}
-				<div
-					class="visualizer-container absolute top-0 left-0 w-full flex justify-center"
-				>
-					<div
-						class="visualizer-wrapper mx-auto w-full max-w-[700px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md sm:w-[90%]"
-						style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
-					>
-						<AudioVisualizer />
+				<div class="visualizer-container absolute top-0 left-0 w-full flex justify-center">
+					<div class="wrapper-container flex justify-center w-full">
+						<div
+							class="visualizer-wrapper mx-auto w-full max-w-[600px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md"
+							style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
+						>
+							<AudioVisualizer />
+						</div>
 					</div>
 				</div>
 			{/if}
@@ -304,19 +323,21 @@
 			{#if transcript && !recording}
 				<div class="transcript-wrapper animate-fadeIn-from-top">
 					<!-- Speech bubble with transcript -->
-					<div class="transcript-box-wrapper mx-auto w-full max-w-[700px] sm:w-[90%]">
-						<!-- Editable transcript box -->
-						<div
-							class="transcript-box w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-6 py-5 font-mono leading-relaxed text-gray-800 shadow-xl"
-						>
+					<div class="wrapper-container flex justify-center w-full">
+						<div class="transcript-box-wrapper mx-auto w-full max-w-[600px]">
+							<!-- Editable transcript box -->
 							<div
-								class={`transcript-text ${responsiveFontSize} animate-text-appear`}
-								contenteditable="true"
-								role="textbox"
-								aria-label="Transcript editor"
-								bind:this={editableTranscript}
+								class="transcript-box relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-6 py-5 font-mono leading-relaxed text-gray-800 shadow-xl"
 							>
-								{transcript}
+								<div
+									class={`transcript-text ${responsiveFontSize} animate-text-appear`}
+									contenteditable="true"
+									role="textbox"
+									aria-label="Transcript editor"
+									bind:this={editableTranscript}
+								>
+									{transcript}
+								</div>
 							</div>
 						</div>
 					</div>
@@ -335,31 +356,26 @@
 
 <!-- Floating success toast - positioned fixed and independently from content -->
 {#if clipboardSuccess}
-	<div class="clipboard-toast" aria-live="polite">
-		<!-- Ghost icon to match app theme -->
-		<div class="toast-ghost">
-			<svg viewBox="0 0 24 24" class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg">
-				<path d="M12,2 C7.6,2 4,5.6 4,10 L4,17 C4,18.1 4.9,19 6,19 L8,19 L8,21 C8,21.6 8.4,22 9,22 C9.3,22 9.5,21.9 9.7,21.7 L12.4,19 L18,19 C19.1,19 20,18.1 20,17 L20,10 C20,5.6 16.4,2 12,2 Z" 
-					fill="currentColor" 
-					opacity="0.9"
-					transform="scale(0.95)" 
-				/>
-				<!-- Eyes for ghost -->
-				<circle cx="9" cy="10" r="1.2" fill="white" />
-				<circle cx="15" cy="10" r="1.2" fill="white" />
-			</svg>
+	<div class="toast-container flex justify-center w-full">
+		<div class="clipboard-toast" aria-live="polite">
+			<!-- Ghost icon to match app theme -->
+			<div class="toast-ghost">
+				<svg viewBox="0 0 24 24" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg">
+					<path d="M12,2 C7.6,2 4,5.6 4,10 L4,17 C4,18.1 4.9,19 6,19 L8,19 L8,21 C8,21.6 8.4,22 9,22 C9.3,22 9.5,21.9 9.7,21.7 L12.4,19 L18,19 C19.1,19 20,18.1 20,17 L20,10 C20,5.6 16.4,2 12,2 Z" 
+						fill="currentColor" 
+						opacity="0.9"
+						transform="scale(0.95)" 
+					/>
+					<!-- Eyes for ghost -->
+					<circle cx="9" cy="10" r="1.2" fill="white" />
+					<circle cx="15" cy="10" r="1.2" fill="white" />
+				</svg>
+			</div>
+			<!-- Message with fun emojis -->
+			<span>{getRandomCopyMessage()}</span>
 		</div>
-		<!-- Message with fun emojis -->
-		<span>{getRandomCopyMessage()}</span>
 	</div>
 {/if}
-
-<!-- Fixed footer - reference only, the actual footer is in the main layout -->
-<!-- <footer class="app-footer">
-	<div class="mx-auto flex w-full max-w-7xl items-center justify-center px-4 py-2">
-		<p class="text-sm font-medium text-amber-800/70">© 2025 TalkType • Transcribe with ease</p>
-	</div>
-</footer> -->
 
 <style>
 	/* Main wrapper to ensure fixed positioning */
@@ -372,10 +388,12 @@
 	/* Position wrapper to create a stable layout without shifts */
 	.position-wrapper {
 		min-height: 150px; /* Increased to accommodate visualizer without pushing content */
+		max-height: 600px; /* Cap the height to prevent excessive expansion */
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		position: relative; /* Ensure proper positioning context */
+		overflow-y: visible; /* Allow overflow without jumping */
 	}
 
 	/* Content container for transcripts and visualizers */
@@ -385,6 +403,11 @@
 		flex-direction: column;
 		align-items: center;
 		position: relative; /* For absolute positioned children */
+	}
+
+	/* Wrapper container for consistent max-width across components */
+	.wrapper-container {
+		width: 100%;
 	}
 
 	/* Visualizer container for absolute positioning */
@@ -483,7 +506,7 @@
 		position: relative;
 		min-height: 80px;
 		height: auto;
-		max-height: 60vh;
+		max-height: 400px; /* Fixed pixel height instead of vh to prevent layout shifts */
 		overflow-y: auto;
 		/* Custom scrollbar styling */
 		scrollbar-width: thin;
@@ -550,30 +573,53 @@
 		transform: rotate(45deg);
 	}
 
-	/* Toast notification - soft lush version */
-	.clipboard-toast {
+	/* Toast container for alignment with button */
+	.toast-container {
 		position: fixed;
-		bottom: 70px; /* Position above footer */
-		left: 50%;
-		transform: translateX(-50%);
-		background: linear-gradient(to right, rgba(249, 168, 212, 0.7), rgba(156, 125, 201, 0.7));
-		color: white;
-		font-weight: 500;
-		font-size: 1rem;
-		padding: 0.8rem 1.3rem;
-		border-radius: 2rem;
-		box-shadow: 0 8px 20px -8px rgba(249, 168, 212, 0.25), 0 3px 10px -3px rgba(156, 125, 201, 0.15);
+		bottom: 2rem; /* 8 in Tailwind units (bottom-8) */
+		left: 0;
+		right: 0;
+		z-index: 999;
+		pointer-events: none;
+	}
+
+	@media (min-width: 768px) {
+		.toast-container {
+			bottom: 3rem; /* 12 in Tailwind units (md:bottom-12) */
+		}
+	}
+
+	/* Toast notification - soft gradient background with subtle styling */
+	.clipboard-toast {
+		position: relative;
+		background: linear-gradient(to right, #fff8fa, #faf5ff);
+		background-color: #fffdfc;
+		color: #7e3b9c; /* text-purple-700 */
+		font-weight: 500; /* font-medium */
+		font-size: 0.875rem; /* text-sm */
+		padding: 0.75rem 1.5rem;
+		border-radius: 2.5rem;
+		box-shadow: 
+			0 8px 15px -3px rgba(212, 180, 241, 0.25),
+			0 3px 8px -2px rgba(254, 205, 211, 0.15),
+			0 0 0 1px rgba(255, 232, 242, 0.6) inset;
 		backdrop-filter: blur(8px);
-		z-index: 999; /* Ensure it's above everything */
-		animation: toast-bounce 0.5s ease-out, toast-fade 3s ease-in-out forwards;
-		pointer-events: none; /* Let clicks pass through */
+		animation: toast-bounce 0.4s ease-[cubic-bezier(0.34,1.56,0.64,1)], toast-fade 3.5s ease-in-out forwards;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		min-width: 180px;
-		max-width: 90vw;
-		/* Softer border */
-		border: 1.5px solid rgba(255, 255, 255, 0.25);
+		gap: 0.5rem; /* gap-2 */
+		width: 100%;
+		max-width: 600px; /* Match button width exactly */
+		letter-spacing: -0.01em; /* tracking-tight */
+		border: 1.5px solid rgba(249, 168, 212, 0.3);
+		text-align: center;
+	}
+
+	@media (min-width: 768px) {
+		.clipboard-toast {
+			font-size: 1rem; /* md:text-base */
+		}
 	}
 
 	/* Ghost icon in toast */
@@ -581,25 +627,25 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: white;
-		animation: ghost-float 2s ease-in-out infinite;
+		color: #9061c2; /* Softer purple */
+		filter: drop-shadow(0 1px 2px rgba(255, 156, 243, 0.2));
+		animation: ghost-float 2.5s ease-in-out infinite;
 	}
 
 	@keyframes ghost-float {
-		0%, 100% { transform: translateY(0); }
-		50% { transform: translateY(-4px); }
+		0%, 100% { transform: translateY(0) rotate(-2deg); }
+		50% { transform: translateY(-4px) rotate(2deg); }
 	}
 
 	@keyframes toast-bounce {
-		0% { transform: translate(-50%, 15px) scale(0.9); }
-		50% { transform: translate(-50%, -3px) scale(1.03); }
-		70% { transform: translate(-50%, 2px) scale(0.99); }
-		100% { transform: translate(-50%, 0) scale(1); }
+		0% { transform: scale(0.95); opacity: 0; }
+		60% { transform: scale(1.05); opacity: 1; }
+		100% { transform: scale(1); opacity: 1; }
 	}
 
 	@keyframes toast-fade {
-		0%, 10% { opacity: 0; }
-		20%, 80% { opacity: 1; }
+		0%, 5% { opacity: 0; }
+		15%, 85% { opacity: 1; }
 		100% { opacity: 0; }
 	}
 
@@ -622,6 +668,17 @@
 	:global(.ghost-blink) {
 		animation: ghost-blink 0.5s ease-in-out;
 	}
+	
+	/* Button press animation */
+	.button-press {
+		animation: button-press 0.3s ease-out;
+	}
+	
+	@keyframes button-press {
+		0% { transform: scale(1); background-color: #fbbf24; }
+		40% { transform: scale(0.95); background-color: #f59e0b; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1); }
+		100% { transform: scale(1); background-color: #fbbf24; }
+	}
 
 	/* Visualizer wrapper styling to match transcript box */
 	.visualizer-wrapper {
@@ -640,25 +697,33 @@
 		}
 
 		.clipboard-toast {
-			font-size: 0.95rem;
-			padding: 0.7rem 1.1rem;
-			bottom: 60px;
-			min-width: 160px;
+			font-size: 1rem;
+			padding: 0.9rem 1.3rem;
+			max-width: calc(100% - 40px);
 		}
 
 		.toast-ghost svg {
-			height: 16px;
-			width: 16px;
+			height: 20px;
+			width: 20px;
+		}
+		
+		.button-container, 
+		.visualizer-wrapper,
+		.transcript-box-wrapper {
+			width: calc(100% - 20px);
 		}
 	}
 
 	/* Even smaller screens */
 	@media (max-width: 380px) {
 		.clipboard-toast {
-			font-size: 0.85rem;
-			padding: 0.6rem 0.9rem;
-			bottom: 50px;
-			min-width: 140px;
+			font-size: 0.9rem;
+			padding: 0.75rem 1.1rem;
+		}
+		
+		.toast-ghost svg {
+			height: 18px;
+			width: 18px;
 		}
 	}
 </style>
