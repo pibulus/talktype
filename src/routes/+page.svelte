@@ -59,9 +59,9 @@
 </section>
 
 <style>
-	/* Final subtle cream background with soft vignette */
+	/* Subtle cream background with just enough texture/noise */
 	:global(.bg-gradient-mesh) {
-		background-color: #fefaf4; /* Original cream base */
+		background-color: #fefaf4; /* Base cream color */
 		background-image: radial-gradient(
 			circle at center,
 			#fefaf4 0%,
