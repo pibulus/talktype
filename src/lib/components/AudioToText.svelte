@@ -13,6 +13,7 @@
 	let clipboardTimer;
 	let transcriptionProgress = 0;
 	let animationFrameId;
+	let editableTranscript;
 
 	// Fun copy confirmation messages
 	const copyMessages = [
@@ -58,6 +59,15 @@
 			};
 
 			mediaRecorder.onstop = async () => {
+				// Add animation to ghost when recording stops
+				const ghostIcon = document.querySelector('.icon-container');
+				if (ghostIcon) {
+					ghostIcon.classList.add('ghost-blink');
+					setTimeout(() => {
+						ghostIcon.classList.remove('ghost-blink');
+					}, 500);
+				}
+
 				transcribing = true;
 				const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
 
@@ -118,9 +128,22 @@
 
 					// Short delay before showing the transcript for a smooth transition
 					await new Promise((resolve) => setTimeout(resolve, 1500));
+
 					// Automatically copy to clipboard when transcription finishes
 					if (transcript) {
-						await copyToClipboard(transcript);
+						try {
+							await navigator.clipboard.writeText(transcript);
+							console.log('📋 Transcript copied to clipboard');
+
+							// Show toast notification right away
+							clipboardSuccess = true;
+							if (clipboardTimer) clearTimeout(clipboardTimer);
+							clipboardTimer = setTimeout(() => {
+								clipboardSuccess = false;
+							}, 3000); // Longer visibility for better UX
+						} catch (err) {
+							console.error('❌ Failed to copy transcript to clipboard: ', err);
+						}
 					}
 				} catch (error) {
 					console.error('❌ Transcription error:', error);
@@ -187,17 +210,25 @@
 		}
 	}
 
-	async function copyToClipboard(text) {
+	// Get the latest content from the editable div
+	function getEditedTranscript() {
+		return editableTranscript ? editableTranscript.innerText : transcript;
+	}
+
+	async function copyToClipboard() {
 		try {
-			await navigator.clipboard.writeText(text);
+			// Get current text from editable div
+			const textToCopy = getEditedTranscript();
+
+			await navigator.clipboard.writeText(textToCopy);
 			console.log('📋 Transcript copied to clipboard');
 			clipboardSuccess = true;
 
-			// Auto-hide the clipboard success message after 1.5 seconds
+			// Auto-hide the clipboard success message after 3 seconds
 			if (clipboardTimer) clearTimeout(clipboardTimer);
 			clipboardTimer = setTimeout(() => {
 				clipboardSuccess = false;
-			}, 1500);
+			}, 3000);
 		} catch (err) {
 			console.error('❌ Failed to copy transcript to clipboard: ', err);
 			clipboardSuccess = false;
@@ -205,25 +236,27 @@
 		}
 	}
 
-	function manualCopyToClipboard() {
-		copyToClipboard(transcript);
-
-		// Add animation to the button when clicked
-		const copyButton = document.querySelector('.copy-button');
-		if (copyButton) {
-			copyButton.classList.add('copy-button-pop');
-			setTimeout(() => {
-				copyButton.classList.remove('copy-button-pop');
-			}, 300);
-		}
+	// Function to calculate responsive font size based on transcript length
+	function getResponsiveFontSize(text) {
+		if (!text) return 'text-lg'; // Default size
+		
+		const length = text.length;
+		if (length < 50) return 'text-xl md:text-2xl'; // Very short text
+		if (length < 150) return 'text-lg md:text-xl'; // Short text
+		if (length < 300) return 'text-base md:text-lg'; // Medium text
+		if (length < 500) return 'text-base'; // Medium-long text
+		return 'text-sm md:text-base'; // Long text
 	}
+	
+	// Reactive font size based on transcript length
+	$: responsiveFontSize = getResponsiveFontSize(transcript);
 
 	// Computed button label: if recording, show "Stop Recording"; else if transcript exists, show "New Recording"; otherwise, "Start Recording"
 	$: buttonLabel = recording ? 'Stop Recording' : transcript ? 'New Recording' : 'Start Recording';
 </script>
 
 <!-- Main wrapper with fixed position to prevent pushing page layout -->
-<div class="main-wrapper mx-auto w-full max-w-sm">
+<div class="main-wrapper mx-auto w-full">
 	<!-- Recording button/progress bar section - always in same position -->
 	<div class="button-section relative w-full">
 		{#if transcribing}
@@ -249,39 +282,43 @@
 		{/if}
 	</div>
 
-	<!-- Dynamic content area - fixed height with absolute positioning -->
-	<div class="dynamic-content mb-16 mt-4">
-		<!-- Fixed height container to prevent layout shifts -->
-		<div class="content-container relative" style="min-height: 200px;">
-			<!-- Audio visualizer - only visible when recording -->
+	<!-- Dynamic content area that ensures spacing consistency without layout shifts -->
+	<div class="position-wrapper relative mt-6 mb-20 w-full">
+		<!-- Fixed positioned content that won't affect document flow -->
+		<div class="content-container">
+			<!-- Audio visualizer - absolutely positioned to not push content up -->
 			{#if recording}
 				<div
-					class="visualizer-wrapper animate-fadeIn rounded-2xl bg-white/30 p-4 shadow-md shadow-black/10 backdrop-blur-md"
+					class="visualizer-container absolute top-0 left-0 w-full flex justify-center"
 				>
-					<AudioVisualizer />
+					<div
+						class="visualizer-wrapper mx-auto w-full max-w-[700px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md sm:w-[90%]"
+						style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
+					>
+						<AudioVisualizer />
+					</div>
 				</div>
 			{/if}
 
 			<!-- Transcript output - only visible when not recording and has transcript -->
 			{#if transcript && !recording}
-				<div class="transcript-wrapper animate-fadeIn">
+				<div class="transcript-wrapper animate-fadeIn-from-top">
 					<!-- Speech bubble with transcript -->
-					<div
-						class="transcript-box w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-8 py-10 font-mono text-base leading-relaxed text-gray-800 shadow-xl md:text-base"
-					>
-						<div class="transcript-text animate-text-appear">
-							{transcript}
-						</div>
-					</div>
-
-					<!-- Copy button positioned directly below transcript box -->
-					<div class="mt-4 w-full text-center">
-						<button
-							class="copy-button relative rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-gray-600 shadow-md shadow-black/10 transition-all duration-300 hover:bg-white hover:text-indigo-600"
-							on:click={manualCopyToClipboard}
+					<div class="transcript-box-wrapper mx-auto w-full max-w-[700px] sm:w-[90%]">
+						<!-- Editable transcript box -->
+						<div
+							class="transcript-box w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-6 py-5 font-mono leading-relaxed text-gray-800 shadow-xl"
 						>
-							Copy to clipboard
-						</button>
+							<div
+								class={`transcript-text ${responsiveFontSize} animate-text-appear`}
+								contenteditable="true"
+								role="textbox"
+								aria-label="Transcript editor"
+								bind:this={editableTranscript}
+							>
+								{transcript}
+							</div>
+						</div>
 					</div>
 				</div>
 			{/if}
@@ -299,28 +336,60 @@
 <!-- Floating success toast - positioned fixed and independently from content -->
 {#if clipboardSuccess}
 	<div class="clipboard-toast" aria-live="polite">
-		{getRandomCopyMessage()}
+		<!-- Ghost icon to match app theme -->
+		<div class="toast-ghost">
+			<svg viewBox="0 0 24 24" class="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg">
+				<path d="M12,2 C7.6,2 4,5.6 4,10 L4,17 C4,18.1 4.9,19 6,19 L8,19 L8,21 C8,21.6 8.4,22 9,22 C9.3,22 9.5,21.9 9.7,21.7 L12.4,19 L18,19 C19.1,19 20,18.1 20,17 L20,10 C20,5.6 16.4,2 12,2 Z" 
+					fill="currentColor" 
+					opacity="0.9"
+					transform="scale(0.95)" 
+				/>
+				<!-- Eyes for ghost -->
+				<circle cx="9" cy="10" r="1.2" fill="white" />
+				<circle cx="15" cy="10" r="1.2" fill="white" />
+			</svg>
+		</div>
+		<!-- Message with fun emojis -->
+		<span>{getRandomCopyMessage()}</span>
 	</div>
 {/if}
 
-<!-- Fixed footer -->
-<footer class="app-footer">
-	<div class="mx-auto max-w-7xl px-4">
-		<p>© 2025 TalkType • Transcribe with ease</p>
+<!-- Fixed footer - reference only, the actual footer is in the main layout -->
+<!-- <footer class="app-footer">
+	<div class="mx-auto flex w-full max-w-7xl items-center justify-center px-4 py-2">
+		<p class="text-sm font-medium text-amber-800/70">© 2025 TalkType • Transcribe with ease</p>
 	</div>
-</footer>
+</footer> -->
 
 <style>
 	/* Main wrapper to ensure fixed positioning */
 	.main-wrapper {
 		position: relative;
 		z-index: 1;
+		width: 100%;
 	}
 
-	/* Content container with controlled height */
+	/* Position wrapper to create a stable layout without shifts */
+	.position-wrapper {
+		min-height: 150px; /* Increased to accommodate visualizer without pushing content */
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		position: relative; /* Ensure proper positioning context */
+	}
+
+	/* Content container for transcripts and visualizers */
 	.content-container {
-		position: relative;
-		overflow: visible;
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		position: relative; /* For absolute positioned children */
+	}
+
+	/* Visualizer container for absolute positioning */
+	.visualizer-container {
+		z-index: 10;
 	}
 
 	/* Common animation for fading elements in */
@@ -328,10 +397,25 @@
 		animation: localFadeIn 0.8s ease-out forwards;
 	}
 
+	.animate-fadeIn-from-top {
+		animation: fadeInFromTop 0.8s ease-out forwards;
+	}
+
 	@keyframes localFadeIn {
 		from {
 			opacity: 0;
 			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes fadeInFromTop {
+		from {
+			opacity: 0;
+			transform: translateY(-5px);
 		}
 		to {
 			opacity: 1;
@@ -401,11 +485,24 @@
 		height: auto;
 		max-height: 60vh;
 		overflow-y: auto;
-		padding-bottom: 24px; /* Add padding to avoid text being hidden behind copy button */
-
 		/* Custom scrollbar styling */
 		scrollbar-width: thin;
 		scrollbar-color: rgba(249, 168, 212, 0.3) transparent;
+		transition: all 0.3s ease;
+	}
+	
+	/* Subtle hover effect for transcript box */
+	.transcript-box:hover {
+		box-shadow:
+			0 12px 30px -5px rgba(249, 168, 212, 0.35),
+			0 8px 12px -6px rgba(249, 168, 212, 0.25),
+			0 0 20px rgba(249, 168, 212, 0.2);
+		background-image: linear-gradient(
+			to bottom right,
+			rgba(255, 255, 255, 0.98),
+			rgba(255, 248, 252, 1)
+		);
+		border-color: rgba(249, 168, 212, 0.25);
 	}
 
 	/* Webkit scrollbar styling */
@@ -422,9 +519,19 @@
 		border-radius: 20px;
 	}
 
-	/* Make text smaller when content is long */
-	.transcript-text:not(:only-child) {
-		font-size: 0.875rem;
+	/* Make transcript editable with a cursor */
+	.transcript-text {
+		cursor: text;
+		outline: none;
+		transition: all 0.2s ease;
+	}
+	
+	.transcript-text:hover {
+		color: #333;
+	}
+	
+	.transcript-text:focus {
+		color: #000;
 	}
 
 	/* Speech bubble point */
@@ -443,90 +550,60 @@
 		transform: rotate(45deg);
 	}
 
-	/* Toast notification */
+	/* Toast notification - soft lush version */
 	.clipboard-toast {
 		position: fixed;
-		bottom: 24px;
+		bottom: 70px; /* Position above footer */
 		left: 50%;
 		transform: translateX(-50%);
-		background: rgba(255, 255, 255, 0.98);
-		color: rgb(79, 70, 229);
-		font-weight: 600;
-		padding: 0.75rem 1.5rem;
+		background: linear-gradient(to right, rgba(249, 168, 212, 0.7), rgba(156, 125, 201, 0.7));
+		color: white;
+		font-weight: 500;
+		font-size: 1rem;
+		padding: 0.8rem 1.3rem;
 		border-radius: 2rem;
-		box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 8px 20px -8px rgba(249, 168, 212, 0.25), 0 3px 10px -3px rgba(156, 125, 201, 0.15);
+		backdrop-filter: blur(8px);
 		z-index: 999; /* Ensure it's above everything */
-		animation: toast-animation 1.5s ease-in-out forwards;
+		animation: toast-bounce 0.5s ease-out, toast-fade 3s ease-in-out forwards;
 		pointer-events: none; /* Let clicks pass through */
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 180px;
+		max-width: 90vw;
+		/* Softer border */
+		border: 1.5px solid rgba(255, 255, 255, 0.25);
 	}
 
-	@keyframes toast-animation {
-		0% {
-			opacity: 0;
-			transform: translate(-50%, 10px) scale(0.95);
-		}
-		15% {
-			opacity: 1;
-			transform: translate(-50%, 0) scale(1);
-		}
-		85% {
-			opacity: 1;
-			transform: translate(-50%, 0) scale(1);
-		}
-		100% {
-			opacity: 0;
-			transform: translate(-50%, -10px) scale(0.95);
-		}
+	/* Ghost icon in toast */
+	.toast-ghost {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: white;
+		animation: ghost-float 2s ease-in-out infinite;
 	}
 
-	/* Copy button styling */
-	.copy-button {
-		backdrop-filter: blur(8px);
-		transition: all 0.3s ease-in-out;
+	@keyframes ghost-float {
+		0%, 100% { transform: translateY(0); }
+		50% { transform: translateY(-4px); }
 	}
 
-	.copy-button:hover {
-		box-shadow:
-			0 10px 15px -3px rgba(99, 102, 241, 0.1),
-			0 4px 6px -4px rgba(99, 102, 241, 0.05);
-		transform: translateY(-1px);
-		color: rgb(79, 70, 229);
+	@keyframes toast-bounce {
+		0% { transform: translate(-50%, 15px) scale(0.9); }
+		50% { transform: translate(-50%, -3px) scale(1.03); }
+		70% { transform: translate(-50%, 2px) scale(0.99); }
+		100% { transform: translate(-50%, 0) scale(1); }
 	}
 
-	/* Fixed footer */
-	.app-footer {
-		position: fixed;
-		bottom: 0;
-		left: 0;
-		width: 100%;
-		background-color: rgba(254, 250, 244, 0.8);
-		backdrop-filter: blur(8px);
-		border-top: 1px solid rgba(0, 0, 0, 0.05);
-		z-index: 10;
-		padding: 0.75rem 0;
-		font-size: 0.875rem;
-		color: #888;
-		text-align: center;
+	@keyframes toast-fade {
+		0%, 10% { opacity: 0; }
+		20%, 80% { opacity: 1; }
+		100% { opacity: 0; }
 	}
 
-	/* Button pop animation when clicked */
-	:global(.copy-button-pop) {
-		animation: button-pop 0.3s ease-in-out;
-	}
-
-	@keyframes button-pop {
-		0% {
-			transform: scale(1);
-		}
-		50% {
-			transform: scale(1.05);
-		}
-		100% {
-			transform: scale(1);
-		}
-	}
-
-	/* Ghost icon animations */
+	/* Ghost icon animations - defined globally */
 	@keyframes ghost-blink {
 		0% {
 			opacity: 1;
@@ -544,5 +621,44 @@
 
 	:global(.ghost-blink) {
 		animation: ghost-blink 0.5s ease-in-out;
+	}
+
+	/* Visualizer wrapper styling to match transcript box */
+	.visualizer-wrapper {
+		background-image: linear-gradient(
+			to bottom right,
+			rgba(255, 255, 255, 0.9),
+			rgba(255, 250, 253, 0.85)
+		);
+	}
+
+	/* Media queries for mobile responsiveness */
+	@media (max-width: 640px) {
+		.transcript-box {
+			padding: 1rem 1.25rem; /* Adjusted padding on mobile */
+			border-radius: 1.5rem;
+		}
+
+		.clipboard-toast {
+			font-size: 0.95rem;
+			padding: 0.7rem 1.1rem;
+			bottom: 60px;
+			min-width: 160px;
+		}
+
+		.toast-ghost svg {
+			height: 16px;
+			width: 16px;
+		}
+	}
+
+	/* Even smaller screens */
+	@media (max-width: 380px) {
+		.clipboard-toast {
+			font-size: 0.85rem;
+			padding: 0.6rem 0.9rem;
+			bottom: 50px;
+			min-width: 140px;
+		}
 	}
 </style>

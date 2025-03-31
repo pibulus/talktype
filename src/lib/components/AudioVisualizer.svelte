@@ -154,6 +154,8 @@
 		flex-direction: row-reverse;
 		border-radius: 1rem;
 		overflow: hidden;
+		box-shadow: inset 0 0 15px rgba(249, 168, 212, 0.15);
+		background: linear-gradient(to bottom, rgba(255,255,255,0.5), rgba(255,242,248,0.2));
 	}
 	.history-bar {
 		position: absolute;
@@ -166,5 +168,7 @@
 		transition: height 0.15s ease-in-out;
 		border-radius: 3px 3px 0 0;
 		margin-right: 1px; /* Add slight margin to prevent white line gaps */
+		box-shadow: 0 0 8px rgba(249, 168, 212, 0.2); /* Subtle glow on bars */
+		opacity: 0.95;
 	}
 </style>

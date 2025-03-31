@@ -23,7 +23,7 @@
 </script>
 
 <section
-	class="mt-[-5vh] flex min-h-screen flex-col items-center justify-center bg-[#fefaf4] px-4 py-8 pt-[6vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12"
+	class="mt-[-5vh] flex min-h-screen flex-col items-center justify-center bg-[#fefaf4] px-4 py-8 pb-20 pt-[6vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-24"
 >
 	<div
 		class="mx-auto flex w-full max-w-md flex-col items-center sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
@@ -54,8 +54,8 @@
 			Brought to you by Dennis & Pabs <span class="text-red-500">❤️</span>
 		</p>
 
-		<!-- Audio component - Full width but constrained -->
-		<div class="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl">
+		<!-- Audio component - Wider container for better transcript layout -->
+		<div class="w-full max-w-xl sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
 			<AudioToText bind:this={audioToTextComponent} />
 		</div>
 	</div>
