@@ -36,7 +36,13 @@
 			tabindex="0"
 			aria-label="Toggle Recording"
 		>
-			<img src="/talktype-icon.svg" alt="TalkType Ghost Icon" class="h-full w-full" />
+			<!-- Layered approach with gradient background -->
+			<div class="icon-layers">
+				<!-- Gradient background -->
+				<img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
+				<!-- Outline on top -->
+				<img src="/talktype-icon.svg" alt="TalkType Ghost Icon" class="icon-fg" />
+			</div>
 		</div>
 
 		<!-- Typography - Tighter on mobile, more spacious on desktop -->
@@ -75,6 +81,32 @@
 	.icon-container {
 		filter: drop-shadow(0 0 8px rgba(255, 156, 243, 0.15));
 		transition: all 0.3s ease;
+	}
+
+	/* Layered icon styling */
+	.icon-layers {
+		position: relative;
+		width: 100%;
+		height: 100%;
+	}
+
+	.icon-bg,
+	.icon-fg {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		transition: all 0.3s ease;
+	}
+
+	/* Make sure foreground is on top */
+	.icon-bg {
+		z-index: 1;
+	}
+
+	.icon-fg {
+		z-index: 2;
 	}
 
 	.icon-container:hover,
