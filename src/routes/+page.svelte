@@ -8,14 +8,18 @@
 
 		console.log('Ghost clicked! Current recording state:', audioToTextComponent?.recording);
 
+		const iconContainer = event.currentTarget;
+
 		if (audioToTextComponent) {
 			if (audioToTextComponent.recording) {
 				// If already recording, stop recording
 				console.log('Stopping recording from ghost click');
+				iconContainer.classList.remove('recording');
 				audioToTextComponent.stopRecording();
 			} else {
 				// Otherwise start recording
 				console.log('Starting recording from ghost click');
+				iconContainer.classList.add('recording');
 				audioToTextComponent.startRecording();
 			}
 		}
@@ -36,12 +40,14 @@
 			tabindex="0"
 			aria-label="Toggle Recording"
 		>
-			<!-- Layered approach with gradient background -->
+			<!-- Layered approach with gradient background and blinking eyes -->
 			<div class="icon-layers">
-				<!-- Gradient background -->
+				<!-- Gradient background (bottom layer) -->
 				<img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
-				<!-- Outline on top -->
-				<img src="/talktype-icon.svg" alt="TalkType Ghost Icon" class="icon-fg" />
+				<!-- Outline without eyes (middle layer) -->
+				<img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" aria-hidden="true" />
+				<!-- Just the eyes (top layer - for blinking) -->
+				<img src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
 			</div>
 		</div>
 
@@ -91,7 +97,8 @@
 	}
 
 	.icon-bg,
-	.icon-fg {
+	.icon-base,
+	.icon-eyes {
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -100,13 +107,48 @@
 		transition: all 0.3s ease;
 	}
 
-	/* Make sure foreground is on top */
+	/* Stack the layers correctly */
 	.icon-bg {
-		z-index: 1;
+		z-index: 1; /* Bottom layer */
 	}
 
-	.icon-fg {
-		z-index: 2;
+	.icon-base {
+		z-index: 2; /* Middle layer */
+	}
+
+	.icon-eyes {
+		z-index: 3; /* Top layer */
+		animation: blink 6s infinite; /* Idle blinking */
+	}
+
+	/* Blinking animation */
+	@keyframes blink {
+		0%,
+		45%,
+		55%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0; /* Eyes completely disappear at midpoint */
+		}
+	}
+
+	/* Faster blinking when recording is active */
+	.icon-container.recording .icon-eyes {
+		animation: blink-recording 4s infinite;
+	}
+
+	@keyframes blink-recording {
+		0%,
+		45%,
+		55%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0;
+		}
 	}
 
 	.icon-container:hover,
