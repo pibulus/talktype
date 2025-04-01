@@ -42,6 +42,50 @@
 		}
 		return copyMessages[Math.floor(Math.random() * copyMessages.length)];
 	}
+	
+	// Ghost expression functions - add personality through blinking
+	function ghostThinkingHard() {
+		const eyes = document.querySelector('.icon-eyes');
+		if (eyes) {
+			eyes.classList.add('blink-thinking-hard');
+		}
+	}
+	
+	function ghostStopThinking() {
+		const eyes = document.querySelector('.icon-eyes');
+		if (eyes) {
+			eyes.classList.remove('blink-thinking-hard');
+		}
+	}
+	
+	function ghostReactToTranscript(textLength = 0) {
+		const eyes = document.querySelector('.icon-eyes');
+		if (!eyes) return;
+		
+		if (textLength > 20) {
+			// For longer transcripts, do a "satisfied" double blink
+			setTimeout(() => {
+				eyes.classList.add('blink-once');
+				setTimeout(() => {
+					eyes.classList.remove('blink-once');
+					setTimeout(() => {
+						eyes.classList.add('blink-once');
+						setTimeout(() => {
+							eyes.classList.remove('blink-once');
+						}, 150);
+					}, 150);
+				}, 150);
+			}, 200);
+		} else if (textLength > 0) {
+			// For short transcripts, just do a single blink
+			setTimeout(() => {
+				eyes.classList.add('blink-once');
+				setTimeout(() => {
+					eyes.classList.remove('blink-once');
+				}, 200);
+			}, 200);
+		}
+	}
 
 	// Export recording state and functions for external components
 	export { recording, stopRecording, startRecording };
@@ -107,6 +151,8 @@
 
 				try {
 					console.log('🤖 Transcription started');
+						// Make the ghost look like it's thinking hard
+						ghostThinkingHard();
 					transcript = await geminiService.transcribeAudio(audioBlob);
 
 					// Complete the progress bar smoothly
