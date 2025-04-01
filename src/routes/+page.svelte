@@ -4,380 +4,153 @@
 		// Import at the top
 	import { onMount } from 'svelte';
 	
-	// Brian Eno-inspired ambient blinking system with robust DOM handling
+	// Simple state tracking
 	let blinkTimeouts = [];
 	let isRecording = false;
-	let eyesElement = null;
-	let domReady = false;
 	
-	// Blink class names for clean management
-	const BLINK_CLASSES = {
-		SINGLE: 'blink-single',
-		DOUBLE: 'blink-double',
-		TRIPLE: 'blink-triple',
-		THINKING: 'blink-thinking-hard'
-	};
-	
-	// Debug Helper
-	function debug(message) {
-		console.log(`[Ghost Eyes] ${message}`);
-	}
-	
-	// Get eyes element safely with retry mechanism
-	function getEyesElement() {
-		if (eyesElement) return eyesElement;
-		
-		eyesElement = document.querySelector('.icon-eyes');
-		if (!eyesElement) {
-			debug('Eyes element not found yet');
-			return null;
-		}
-		
-		debug('Eyes element found');
-		return eyesElement;
-	}
-	
-	// Simple function to safely add a class
-	function addClassToEyes(className) {
-		const eyes = getEyesElement();
-		if (!eyes) return false;
-		
-		eyes.classList.add(className);
-		return true;
-	}
-	
-	// Simple function to safely remove a class
-	function removeClassFromEyes(className) {
-		const eyes = getEyesElement();
-		if (!eyes) return false;
-		
-		eyes.classList.remove(className);
-		return true;
-	}
-	
-	// Single blink using CSS classes
-	function performSingleBlink() {
-		const eyes = getEyesElement();
-		if (!eyes) return;
-		
-		debug('Performing single blink');
-		
-		// Add class then remove it after animation completes
-		eyes.classList.add('blink-once');
-		
-		setTimeout(() => {
-			eyes.classList.remove('blink-once');
-		}, 400);
-	}
-	
-	// Double blink using CSS classes and timeouts
-	function performDoubleBlink() {
-		const eyes = getEyesElement();
-		if (!eyes) return;
-		
-		debug('Performing double blink');
-		
-		// First blink
-		eyes.classList.add('blink-once');
-		
-		setTimeout(() => {
-			eyes.classList.remove('blink-once');
-			
-			// Short pause between blinks
-			setTimeout(() => {
-				// Second blink
-				eyes.classList.add('blink-once');
-				
-				setTimeout(() => {
-					eyes.classList.remove('blink-once');
-				}, 300);
-			}, 180);
-		}, 300);
-	}
-	
-	// Triple blink pattern
-	function performTripleBlink() {
-		const eyes = getEyesElement();
-		if (!eyes) return;
-		
-		debug('Performing triple blink');
-		
-		// First blink
-		eyes.classList.add('blink-once');
-		
-		setTimeout(() => {
-			eyes.classList.remove('blink-once');
-			
-			// Short pause between blinks
-			setTimeout(() => {
-				// Second blink
-				eyes.classList.add('blink-once');
-				
-				setTimeout(() => {
-					eyes.classList.remove('blink-once');
-					
-					// Another short pause
-					setTimeout(() => {
-						// Third blink
-						eyes.classList.add('blink-once');
-						
-						setTimeout(() => {
-							eyes.classList.remove('blink-once');
-						}, 250);
-					}, 150);
-				}, 250);
-			}, 150);
-		}, 250);
-	}
-	
-	// Generative ambient blinking system - Brian Eno style
+	// Simple ambient blinking system restore
 	function startAmbientBlinking() {
-		if (!domReady) {
-			debug('DOM not ready, delaying ambient blinking');
-			setTimeout(startAmbientBlinking, 500);
-			return;
-		}
+		console.log("Restoring CSS ambient blinking");
 		
-		const eyes = getEyesElement();
+		const eyes = document.querySelector('.icon-eyes');
 		if (!eyes) {
-			debug('Eyes element not found, delaying ambient blinking');
-			setTimeout(startAmbientBlinking, 500);
+			console.log("Eyes element not found");
 			return;
 		}
 		
-		// Clear any existing timeouts to avoid conflicts
-		clearAllBlinkTimeouts();
-		
-		// Don't run ambient blinks if recording
+		// Check recording state
 		if (isRecording) {
-			debug('Recording active, skipping ambient blinks');
+			console.log("Recording active, skipping ambient blinks");
 			return;
 		}
 		
-		debug('Starting ambient blinking system');
-		
-		// Parameters for generative system - Brian Eno style
-		const minGap = 7000;  // Minimum time between blinks (7s)
-		const maxGap = 16000; // Maximum time between blinks (16s)
-		
-		// Blink type probabilities
-		const blinkTypes = [
-			{ type: 'single', probability: 0.6 },  // 60% 
-			{ type: 'double', probability: 0.3 },  // 30%
-			{ type: 'triple', probability: 0.1 }   // 10%
-		];
-		
-		// Schedule the next blink recursively
-		function scheduleNextBlink() {
-			// Random time interval with Brian Eno-like indeterminacy
-			const nextInterval = Math.floor(minGap + Math.random() * (maxGap - minGap));
-			
-			debug(`Next blink in ${nextInterval}ms`);
-			
-			const timeout = setTimeout(() => {
-				// Exit if we've switched to recording state
-				if (isRecording) {
-					debug('Recording active, skipping scheduled blink');
-					return;
-				}
-				
-				// Choose blink type based on probability distribution
-				const rand = Math.random();
-				let cumulativeProbability = 0;
-				let selectedType = 'single'; // Default
-				
-				for (const blink of blinkTypes) {
-					cumulativeProbability += blink.probability;
-					if (rand <= cumulativeProbability) {
-						selectedType = blink.type;
-						break;
-					}
-				}
-				
-				debug(`Selected ${selectedType} blink`);
-				
-				// Execute the selected blink pattern
-				if (selectedType === 'single') {
-					performSingleBlink();
-				} else if (selectedType === 'double') {
-					performDoubleBlink();
-				} else {
-					performTripleBlink();
-				}
-				
-				// Schedule the next blink
-				scheduleNextBlink();
-			}, nextInterval);
-			
-			blinkTimeouts.push(timeout);
-		}
-		
-		// Start with a slight delay
-		setTimeout(scheduleNextBlink, 1000);
+		// Reset animation to ambient blinking
+		eyes.style.animation = 'blink 10s infinite';
 	}
 	
 	// Helper function to clear all scheduled blinks
 	function clearAllBlinkTimeouts() {
-		debug(`Clearing ${blinkTimeouts.length} blink timeouts`);
+		debug('SYSTEM', `Clearing ${blinkTimeouts.length} blink timeouts`);
 		blinkTimeouts.forEach(timeout => clearTimeout(timeout));
 		blinkTimeouts = [];
 	}
 	
-	// Greeting blink on page load
+	// Simple greeting blink on page load
 	function greetingBlink() {
-		const eyes = getEyesElement();
+		const eyes = document.querySelector('.icon-eyes');
 		if (!eyes) {
 			// Retry if eyes not found yet
-			debug('Eyes not found for greeting, retrying');
+			console.log("Eyes not found for greeting, retrying");
 			setTimeout(greetingBlink, 300);
 			return;
 		}
 		
-		debug('Performing greeting blink');
+		console.log("Performing greeting blink");
 		
-		// Do a friendly double-blink when page loads
+		// Let default CSS animation run first, then do a special double-blink
 		setTimeout(() => {
-			performDoubleBlink();
+			// Reset animation
+			eyes.style.animation = 'none';
 			
-			// Start ambient blinking system after greeting
-			setTimeout(startAmbientBlinking, 1000);
-		}, 800);
-	}
-	
-	// Domain Ready and Observer setup
-	function setupDomObserver() {
-		debug('Setting up DOM observer');
-		
-		// Check if we can find the eyes immediately
-		eyesElement = document.querySelector('.icon-eyes');
-		if (eyesElement) {
-			debug('Eyes element found immediately');
-			domReady = true;
-			greetingBlink();
-			return;
-		}
-		
-		// If not found, set up observer to watch for it
-		const observer = new MutationObserver((mutations, obs) => {
-			const eyes = document.querySelector('.icon-eyes');
-			if (eyes) {
-				debug('Eyes element found via MutationObserver');
-				eyesElement = eyes;
-				domReady = true;
-				greetingBlink();
-				obs.disconnect(); // Stop observing once we've found it
-			}
-		});
-		
-		// Start observing
-		observer.observe(document.body, {
-			childList: true,
-			subtree: true
-		});
-		
-		// Fallback in case observer doesn't trigger
-		setTimeout(() => {
-			if (!domReady) {
-				debug('Fallback DOM ready check');
-				eyesElement = document.querySelector('.icon-eyes');
-				if (eyesElement) {
-					domReady = true;
-					greetingBlink();
-				}
-			}
+			// Force reflow
+			void eyes.offsetWidth;
+			
+			// Do a friendly double-blink
+			eyes.classList.add('blink-once');
+			setTimeout(() => {
+				eyes.classList.remove('blink-once');
+				setTimeout(() => {
+					eyes.classList.add('blink-once');
+					setTimeout(() => {
+						eyes.classList.remove('blink-once');
+						
+						// Restore normal ambient blinking
+						eyes.style.animation = 'blink 10s infinite';
+					}, 200);
+				}, 250);
+			}, 200);
 		}, 1000);
 	}
 	
 	// Component lifecycle
 	onMount(() => {
-		debug('Component mounted');
-		setupDomObserver();
+		console.log("Component mounted");
+		// Simple greeting with slight delay for DOM to be ready
+		setTimeout(greetingBlink, 500);
 		
 		return () => {
-			debug('Component unmounting, clearing timeouts');
-			clearAllBlinkTimeouts();
+			// Clean up any timers
+			blinkTimeouts.forEach(timeout => clearTimeout(timeout));
+			blinkTimeouts = [];
 		};
 	});
 	
+	// SIMPLE WORKING VERSION - with direct CSS animations
 	function startRecordingFromGhost(event) {
 		// Stop event propagation to prevent bubbling
 		event.stopPropagation();
 		event.preventDefault();
-
-		debug(`Ghost clicked! Recording state: ${audioToTextComponent?.recording}`);
-
-		const iconContainer = event.currentTarget;
-		const eyes = getEyesElement();
 		
-		if (!eyes) {
-			debug('Eyes element not found during click handler');
-			return;
-		}
+		// Debug current state
+		console.log("Ghost clicked!");
+		
+		// Get DOM elements
+		const iconContainer = event.currentTarget;
+		if (!iconContainer) return;
+		
+		const eyes = document.querySelector('.icon-eyes');
+		if (!eyes) return;
+		
+		if (!audioToTextComponent) return;
 
-		if (audioToTextComponent) {
-			if (audioToTextComponent.recording) {
-				// If already recording, stop recording
-				debug('Stopping recording');
+		// Use DOM class as source of truth
+		const hasRecordingClass = iconContainer.classList.contains('recording');
+		console.log(`Current state: ${hasRecordingClass ? 'RECORDING' : 'NOT RECORDING'}`);
+		
+		if (hasRecordingClass) {
+			// STOPPING RECORDING
+			console.log("Stopping recording...");
+			
+			// Update state
+			isRecording = false;
+			
+			// Remove recording class
+			iconContainer.classList.remove('recording');
+			
+			// Blink animation
+			eyes.classList.add('blink-once');
+			setTimeout(() => {
+				eyes.classList.remove('blink-once');
 				
-				// Update recording state
-				isRecording = false;
-				iconContainer.classList.remove('recording');
-				
-				// Ensure all CSS animations are stopped
-				eyes.style.animation = 'none';
-				
-				// Immediately perform a quick blink to acknowledge the stop
+				// Resume ambient blinking
+				eyes.style.animation = 'blink 10s infinite';
+			}, 300);
+			
+			// Stop recording
+			audioToTextComponent.stopRecording();
+			
+		} else {
+			// STARTING RECORDING
+			console.log("Starting recording...");
+			
+			// Update state
+			isRecording = true;
+			
+			// Pause ambient blinking
+			eyes.style.animation = 'none';
+			
+			// Do a quick blink
+			setTimeout(() => {
+				eyes.classList.add('blink-once');
 				setTimeout(() => {
-					performSingleBlink();
-					
-					// Resume ambient blinking after a pause
-					setTimeout(() => {
-						debug('Resuming ambient blinking');
-						startAmbientBlinking();
-					}, 1000);
-				}, 50);
-				
-				audioToTextComponent.stopRecording();
-				
-			} else {
-				// Otherwise start recording
-				debug('Starting recording');
-				
-				// Update recording state and stop ambient system
-				isRecording = true;
-				clearAllBlinkTimeouts();
-				
-				// Manually stop any existing animations
-				eyes.style.animation = 'none';
-				
-				// Give a tiny delay to ensure animation reset
-				setTimeout(() => {
-					// Random chance for different start behaviors (personality)
-					const startBehavior = Math.random();
-					
-					if (startBehavior < 0.7) {
-						// 70% chance: Standard quick blink
-						debug('Performing standard start blink');
-						performSingleBlink();
-					} else if (startBehavior < 0.9) {
-						// 20% chance: Double blink (excited)
-						debug('Performing excited double start blink');
-						performDoubleBlink();
-					} else {
-						// 10% chance: Triple blink (super attentive)
-						debug('Performing attentive triple start blink');
-						performTripleBlink();
-					}
-					
-					// Add recording class after the blink animation completes
-					setTimeout(() => {
-						debug('Adding recording class');
-						iconContainer.classList.add('recording');
-					}, 600);
-					
-					audioToTextComponent.startRecording();
-				}, 50);
-			}
+					eyes.classList.remove('blink-once');
+					// Add recording class after blink
+					iconContainer.classList.add('recording');
+				}, 200);
+			}, 50);
+			
+			// Start recording
+			audioToTextComponent.startRecording();
 		}
 	}
 </script>
@@ -474,32 +247,19 @@
 
 	.icon-eyes {
 		z-index: 3; /* Top layer */
-		animation: blink 10s infinite; /* CSS fallback - will be overridden by JS */
+		animation: blink 10s infinite; /* Occasional ambient blinking - quick and snappy */
 		transform-origin: center center; /* Squinch exactly in the middle */
 	}
 
-	/* Basic CSS fallback animation that will run if JS fails */
+	/* Simple quick snappy ambient blinking animation */
 	@keyframes blink {
-		0%, 97%, 100% { 
+		0%, 96.5%, 100% { 
 			transform: scaleY(1); 
 		}
-		98% { 
+		97.5% { 
 			transform: scaleY(0); /* Quick blink - just closed and open */
 		}
-		99% {
-			transform: scaleY(1); 
-		}
-	}
-	
-	/* Used for JS-controlled single blinks */
-	@keyframes blink-once-animation {
-		0%, 40%, 100% { 
-			transform: scaleY(1); 
-		}
-		50% { 
-			transform: scaleY(0); /* Quick blink - just closed and open */
-		}
-		60% {
+		98.5% {
 			transform: scaleY(1); 
 		}
 	}
@@ -510,16 +270,16 @@
 		transform-origin: center center; /* Squinch exactly in the middle */
 	}
 	
-	/* Quick blink animation for programmatic use */
+	/* Quick snappy blink animation for programmatic use */
 	.icon-eyes.blink-once {
-		animation: blink-once 0.4s forwards !important;
+		animation: blink-once 0.2s forwards !important;
 		transform-origin: center center;
 	}
 	
 	@keyframes blink-once {
 		0%, 30% { transform: scaleY(1); }
 		50% { transform: scaleY(0); } /* Closed eyes */
-		70%, 100% { transform: scaleY(1); } /* Back open */
+		65%, 100% { transform: scaleY(1); } /* Quick snappy open */
 	}
 	
 	/* Special animation for when the ghost is thinking hard (transcribing) */
@@ -542,40 +302,42 @@
 
 	@keyframes blink-thinking {
 		/* First quick blink */
-		0%, 20%, 100% { 
+		0%, 23%, 100% { 
 			transform: scaleY(1); 
 		}
 		3% { 
-			transform: scaleY(0); /* Quick blink */
+			transform: scaleY(0); /* Fast blink */
 		}
-		6% {
-			transform: scaleY(1);
+		4% {
+			transform: scaleY(1); /* Very snappy */
 		}
 		
-		/* Second blink - stays closed a bit longer for "thinking" */
+		/* Second blink - thinking pattern */
 		40% { 
 			transform: scaleY(1);
 		}
+		42% { 
+			transform: scaleY(0); /* First close */
+		}
 		43% { 
-			transform: scaleY(0); /* Closed */
+			transform: scaleY(0.2); /* Short peek */
 		}
-		/* Hold closed a little longer */
-		48% { 
-			transform: scaleY(0); /* Still closed */
+		46% { 
+			transform: scaleY(0); /* Second close (squinty thinking) */
 		}
-		50% {
-			transform: scaleY(1); /* Back open */
+		48% {
+			transform: scaleY(1); /* Open again */
 		}
 		
-		/* Third blink */
-		75% {
+		/* Third quick blink */
+		80% {
 			transform: scaleY(1);
 		}
-		78% {
-			transform: scaleY(0); /* Quick blink */
+		82% {
+			transform: scaleY(0); /* Fast blink */
 		}
-		81% {
-			transform: scaleY(1);
+		83% {
+			transform: scaleY(1); /* Snappy */
 		}
 	}
 
