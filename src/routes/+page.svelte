@@ -1,187 +1,187 @@
 <script>
 	import { onMount } from 'svelte';
 	import AudioToText from '$lib/components/AudioToText.svelte';
-	
+
 	let audioToTextComponent;
-	
+
 	// Brian Eno-inspired ambient blinking system with proper state tracking
 	let blinkTimeouts = [];
 	let isRecording = false;
 	let eyesElement = null;
 	let domReady = false;
-	
+
 	// Debug Helper that won't pollute console in production but helps during development
 	function debug(message) {
 		console.log(`[Ghost Eyes] ${message}`);
 	}
-	
+
 	// Animation state variables
 	let titleAnimationComplete = false;
 	let subtitleAnimationComplete = false;
-	
+
 	// Get eyes element safely with retry mechanism
 	function getEyesElement() {
 		if (eyesElement) return eyesElement;
-		
+
 		eyesElement = document.querySelector('.icon-eyes');
 		if (!eyesElement) {
 			debug('Eyes element not found yet');
 			return null;
 		}
-		
+
 		debug('Eyes element found');
 		return eyesElement;
 	}
-	
+
 	// Single blink using CSS classes
 	function performSingleBlink() {
 		const eyes = getEyesElement();
 		if (!eyes) return;
-		
+
 		debug('Performing single blink');
-		
+
 		// Add class then remove it after animation completes
 		eyes.classList.add('blink-once');
-		
+
 		const timeout = setTimeout(() => {
 			eyes.classList.remove('blink-once');
 		}, 400);
-		
+
 		blinkTimeouts.push(timeout);
 	}
-	
+
 	// Double blink using CSS classes and timeouts
 	function performDoubleBlink() {
 		const eyes = getEyesElement();
 		if (!eyes) return;
-		
+
 		debug('Performing double blink');
-		
+
 		// First blink
 		eyes.classList.add('blink-once');
-		
+
 		const timeout1 = setTimeout(() => {
 			eyes.classList.remove('blink-once');
-			
+
 			// Short pause between blinks
 			const timeout2 = setTimeout(() => {
 				// Second blink
 				eyes.classList.add('blink-once');
-				
+
 				const timeout3 = setTimeout(() => {
 					eyes.classList.remove('blink-once');
 				}, 300);
-				
+
 				blinkTimeouts.push(timeout3);
 			}, 180);
-			
+
 			blinkTimeouts.push(timeout2);
 		}, 300);
-		
+
 		blinkTimeouts.push(timeout1);
 	}
-	
+
 	// Triple blink pattern
 	function performTripleBlink() {
 		const eyes = getEyesElement();
 		if (!eyes) return;
-		
+
 		debug('Performing triple blink');
-		
+
 		// First blink
 		eyes.classList.add('blink-once');
-		
+
 		const timeout1 = setTimeout(() => {
 			eyes.classList.remove('blink-once');
-			
+
 			// Short pause between blinks
 			const timeout2 = setTimeout(() => {
 				// Second blink
 				eyes.classList.add('blink-once');
-				
+
 				const timeout3 = setTimeout(() => {
 					eyes.classList.remove('blink-once');
-					
+
 					// Another short pause
 					const timeout4 = setTimeout(() => {
 						// Third blink
 						eyes.classList.add('blink-once');
-						
+
 						const timeout5 = setTimeout(() => {
 							eyes.classList.remove('blink-once');
 						}, 250);
-						
+
 						blinkTimeouts.push(timeout5);
 					}, 150);
-					
+
 					blinkTimeouts.push(timeout4);
 				}, 250);
-				
+
 				blinkTimeouts.push(timeout3);
 			}, 150);
-			
+
 			blinkTimeouts.push(timeout2);
 		}, 250);
-		
+
 		blinkTimeouts.push(timeout1);
 	}
-	
+
 	// Generative ambient blinking system - Brian Eno style
 	function startAmbientBlinking() {
 		debug('Starting ambient blinking system');
-		
+
 		if (!domReady) {
 			debug('DOM not ready, delaying ambient blinking');
 			setTimeout(startAmbientBlinking, 500);
 			return;
 		}
-		
+
 		const eyes = getEyesElement();
 		if (!eyes) {
 			debug('Eyes element not found, delaying ambient blinking');
 			setTimeout(startAmbientBlinking, 500);
 			return;
 		}
-		
+
 		// Clear any existing timeouts to avoid conflicts
 		clearAllBlinkTimeouts();
-		
+
 		// Don't run ambient blinks if recording
 		if (isRecording) {
 			debug('Recording active, skipping ambient blinks');
 			return;
 		}
-		
+
 		// Parameters for generative system - Brian Eno style (more frequent now)
-		const minGap = 4000;  // Minimum time between blinks (4s - was 7s)
+		const minGap = 4000; // Minimum time between blinks (4s - was 7s)
 		const maxGap = 9000; // Maximum time between blinks (9s - was 16s)
-		
+
 		// Blink type probabilities
 		const blinkTypes = [
-			{ type: 'single', probability: 0.6 },  // 60% 
-			{ type: 'double', probability: 0.3 },  // 30%
-			{ type: 'triple', probability: 0.1 }   // 10%
+			{ type: 'single', probability: 0.6 }, // 60%
+			{ type: 'double', probability: 0.3 }, // 30%
+			{ type: 'triple', probability: 0.1 } // 10%
 		];
-		
+
 		// Schedule the next blink recursively
 		function scheduleNextBlink() {
 			// Random time interval with Brian Eno-like indeterminacy
 			const nextInterval = Math.floor(minGap + Math.random() * (maxGap - minGap));
-			
+
 			debug(`Next blink in ${nextInterval}ms`);
-			
+
 			const timeout = setTimeout(() => {
 				// Exit if we've switched to recording state
 				if (isRecording) {
 					debug('Recording active, skipping scheduled blink');
 					return;
 				}
-				
+
 				// Choose blink type based on probability distribution
 				const rand = Math.random();
 				let cumulativeProbability = 0;
 				let selectedType = 'single'; // Default
-				
+
 				for (const blink of blinkTypes) {
 					cumulativeProbability += blink.probability;
 					if (rand <= cumulativeProbability) {
@@ -189,9 +189,9 @@
 						break;
 					}
 				}
-				
+
 				debug(`Selected ${selectedType} blink`);
-				
+
 				// Execute the selected blink pattern
 				if (selectedType === 'single') {
 					performSingleBlink();
@@ -200,25 +200,25 @@
 				} else {
 					performTripleBlink();
 				}
-				
+
 				// Schedule the next blink
 				scheduleNextBlink();
 			}, nextInterval);
-			
+
 			blinkTimeouts.push(timeout);
 		}
-		
+
 		// Start with a slight delay
 		setTimeout(scheduleNextBlink, 1000);
 	}
-	
+
 	// Helper function to clear all scheduled blinks
 	function clearAllBlinkTimeouts() {
 		debug(`Clearing ${blinkTimeouts.length} blink timeouts`);
-		blinkTimeouts.forEach(timeout => clearTimeout(timeout));
+		blinkTimeouts.forEach((timeout) => clearTimeout(timeout));
 		blinkTimeouts = [];
 	}
-	
+
 	// Greeting blink on page load
 	function greetingBlink() {
 		const eyes = getEyesElement();
@@ -228,22 +228,40 @@
 			setTimeout(greetingBlink, 300);
 			return;
 		}
-		
+
 		debug('Performing greeting blink');
-		
+
+		// First apply a gentle wobble to the ghost icon
+		const iconContainer = document.querySelector('.icon-container');
+		if (iconContainer) {
+			// Add slight wobble animation to ghost
+			setTimeout(() => {
+				debug('Adding greeting wobble to ghost');
+
+				// Apply the wobble animation
+				const wobbleClass = 'ghost-wobble-greeting';
+				iconContainer.classList.add(wobbleClass);
+
+				// Remove class after animation completes
+				setTimeout(() => {
+					iconContainer.classList.remove(wobbleClass);
+				}, 1000);
+			}, 1000); // Start the wobble after the text starts animating
+		}
+
 		// Do a friendly double-blink after animations complete
 		setTimeout(() => {
 			performDoubleBlink();
-			
+
 			// Start ambient blinking system after greeting
 			setTimeout(startAmbientBlinking, 1000);
 		}, 2000); // Delay long enough for text animations
 	}
-	
+
 	// Domain Ready and Observer setup
 	function setupDomObserver() {
 		debug('Setting up DOM observer');
-		
+
 		// Check if we can find the eyes immediately
 		eyesElement = document.querySelector('.icon-eyes');
 		if (eyesElement) {
@@ -252,7 +270,7 @@
 			greetingBlink();
 			return;
 		}
-		
+
 		// If not found, set up observer to watch for it
 		const observer = new MutationObserver((mutations, obs) => {
 			const eyes = document.querySelector('.icon-eyes');
@@ -264,13 +282,13 @@
 				obs.disconnect(); // Stop observing once we've found it
 			}
 		});
-		
+
 		// Start observing
 		observer.observe(document.body, {
 			childList: true,
 			subtree: true
 		});
-		
+
 		// Fallback in case observer doesn't trigger
 		setTimeout(() => {
 			if (!domReady) {
@@ -283,86 +301,86 @@
 			}
 		}, 1000);
 	}
-	
+
 	// Function to handle title animation complete
 	function handleTitleAnimationComplete() {
 		debug('Title animation complete');
 		titleAnimationComplete = true;
 	}
-	
+
 	// Function to handle subtitle animation complete
 	function handleSubtitleAnimationComplete() {
 		debug('Subtitle animation complete');
 		subtitleAnimationComplete = true;
 	}
-	
+
 	// Component lifecycle
 	onMount(() => {
 		debug('Component mounted');
 		setupDomObserver();
-		
+
 		// Set up animation sequence timing
 		setTimeout(handleTitleAnimationComplete, 1200); // After staggered animation
 		setTimeout(handleSubtitleAnimationComplete, 2000); // After subtitle slide-in
-		
+
 		return () => {
 			debug('Component unmounting, clearing timeouts');
 			clearAllBlinkTimeouts();
 		};
 	});
-	
+
 	// Reliable recording toggle with ambient blinking support
 	function startRecordingFromGhost(event) {
 		// Stop event propagation to prevent bubbling
 		event.stopPropagation();
 		event.preventDefault();
-		
+
 		// Debug current state
 		debug(`Ghost clicked! Recording state: ${audioToTextComponent?.recording}`);
-		
+
 		// Get DOM elements with error checking
 		const iconContainer = event.currentTarget;
 		if (!iconContainer) {
 			debug('No icon container found during click handler');
 			return;
 		}
-		
+
 		const eyes = getEyesElement();
 		if (!eyes) {
 			debug('Eyes element not found during click handler');
 			return;
 		}
-		
+
 		if (!audioToTextComponent) {
 			debug('No audioToTextComponent found');
 			return;
 		}
-		
+
 		// Use DOM class as source of truth (reliable)
 		const hasRecordingClass = iconContainer.classList.contains('recording');
 		debug(`DOM state: has 'recording' class = ${hasRecordingClass}`);
-		
+
 		if (hasRecordingClass) {
 			// STOPPING RECORDING
 			debug('Stopping recording');
-			
+
 			// Update recording state
 			isRecording = false;
-			
+
 			// Reset all animation state
 			eyes.style.animation = 'none';
-			
+
 			// Remove the recording class
 			iconContainer.classList.remove('recording');
-			
+
 			// Add wobble animation when stopping from ghost click
 			debug('Applying wobble animation to ghost icon on stop');
 			// Force reflow to ensure animation applies
 			void iconContainer.offsetWidth;
-			
+
 			// Clear any existing animation classes first
 			iconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
-			
+
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
 			debug(`Adding class: ${wobbleClass}`);
 			iconContainer.classList.add(wobbleClass);
@@ -371,19 +389,19 @@
 				debug(`Removing class: ${wobbleClass}`);
 				iconContainer.classList.remove(wobbleClass);
 			}, 600);
-			
+
 			// Blink once to acknowledge stop
 			setTimeout(() => {
 				debug('Performing stop acknowledgment blink');
 				performSingleBlink();
-				
+
 				// Resume ambient blinking after a pause
 				setTimeout(() => {
 					debug('Resuming ambient blinking');
 					startAmbientBlinking();
 				}, 1000);
 			}, 100);
-			
+
 			// Stop the recording
 			try {
 				audioToTextComponent.stopRecording();
@@ -391,26 +409,25 @@
 			} catch (err) {
 				debug(`Error stopping recording: ${err.message}`);
 			}
-			
 		} else {
 			// STARTING RECORDING
 			debug('Starting recording');
-			
+
 			// Update recording state and stop ambient system
 			isRecording = true;
 			clearAllBlinkTimeouts();
-			
+
 			// Reset any existing animations
 			eyes.style.animation = 'none';
-			
+
 			// Add wobble animation when starting from ghost click
 			debug('Applying wobble animation to ghost icon on start');
 			// Force reflow to ensure animation applies
 			void iconContainer.offsetWidth;
-			
+
 			// Clear any existing animation classes first
 			iconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
-			
+
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
 			debug(`Adding class: ${wobbleClass}`);
 			iconContainer.classList.add(wobbleClass);
@@ -419,12 +436,12 @@
 				debug(`Removing class: ${wobbleClass}`);
 				iconContainer.classList.remove(wobbleClass);
 			}, 600);
-			
+
 			// Give a tiny delay to ensure animation reset
 			setTimeout(() => {
 				// Random chance for different start behaviors
 				const startBehavior = Math.random();
-				
+
 				if (startBehavior < 0.7) {
 					// 70% chance: Standard quick blink
 					debug('Performing standard start blink');
@@ -438,13 +455,13 @@
 					debug('Performing attentive triple start blink');
 					performTripleBlink();
 				}
-				
+
 				// Add recording class after the blink animation completes
 				setTimeout(() => {
 					debug('Adding recording class');
 					iconContainer.classList.add('recording');
 				}, 600);
-				
+
 				// Start recording
 				try {
 					audioToTextComponent.startRecording();
@@ -482,14 +499,18 @@
 			</div>
 		</div>
 
-		<!-- Typography - Always using animated version for consistency -->
+		<!-- Typography - Always using animated version with improved interactions -->
 		<h1
-			class="mb-1 text-center text-5xl font-black tracking-tight sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl staggered-text"
+			class="staggered-text title-shimmer title-hover mb-1 cursor-default text-center text-5xl font-black tracking-tight sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
 		>
-			<span class="stagger-letter">T</span><span class="stagger-letter">a</span><span class="stagger-letter">l</span><span class="stagger-letter">k</span><span class="stagger-letter">T</span><span class="stagger-letter">y</span><span class="stagger-letter">p</span><span class="stagger-letter">e</span>
+			<span class="stagger-letter">T</span><span class="stagger-letter">a</span><span
+				class="stagger-letter">l</span
+			><span class="stagger-letter">k</span><span class="stagger-letter">T</span><span
+				class="stagger-letter">y</span
+			><span class="stagger-letter">p</span><span class="stagger-letter">e</span>
 		</h1>
 		<p
-			class="mx-auto mb-4 max-w-sm text-center text-xl text-gray-700 sm:mb-4 sm:max-w-md sm:text-2xl md:mb-6 md:max-w-lg md:text-3xl slide-in-subtitle"
+			class="slide-in-subtitle subtitle-hover mx-auto mb-4 max-w-sm cursor-default text-center text-xl text-gray-700 sm:mb-4 sm:max-w-md sm:text-2xl md:mb-6 md:max-w-lg md:text-3xl"
 		>
 			Fast, accurate, and free voice-to-text transcription.
 		</p>
@@ -555,14 +576,16 @@
 
 	/* Simple quick snappy ambient blinking animation */
 	@keyframes blink {
-		0%, 96.5%, 100% { 
-			transform: scaleY(1); 
+		0%,
+		96.5%,
+		100% {
+			transform: scaleY(1);
 		}
-		97.5% { 
+		97.5% {
 			transform: scaleY(0); /* Quick blink - just closed and open */
 		}
 		98.5% {
-			transform: scaleY(1); 
+			transform: scaleY(1);
 		}
 	}
 
@@ -571,66 +594,81 @@
 		animation: blink-thinking 4s infinite; /* Slightly slower - more deliberate */
 		transform-origin: center center; /* Squinch exactly in the middle */
 	}
-	
+
 	/* Quick snappy blink animation for programmatic use */
 	.icon-eyes.blink-once {
 		animation: blink-once 0.2s forwards !important;
 		transform-origin: center center;
 	}
-	
+
 	@keyframes blink-once {
-		0%, 30% { transform: scaleY(1); }
-		50% { transform: scaleY(0); } /* Closed eyes */
-		65%, 100% { transform: scaleY(1); } /* Quick snappy open */
+		0%,
+		30% {
+			transform: scaleY(1);
+		}
+		50% {
+			transform: scaleY(0);
+		} /* Closed eyes */
+		65%,
+		100% {
+			transform: scaleY(1);
+		} /* Quick snappy open */
 	}
-	
+
 	/* Special animation for when the ghost is thinking hard (transcribing) */
 	.icon-eyes.blink-thinking-hard {
 		animation: blink-thinking-hard 1.5s infinite !important;
 		transform-origin: center center;
 	}
-	
+
 	@keyframes blink-thinking-hard {
-		0%, 10%, 50%, 60% { 
-			transform: scaleY(1); 
+		0%,
+		10%,
+		50%,
+		60% {
+			transform: scaleY(1);
 		}
-		12%, 48% { 
+		12%,
+		48% {
 			transform: scaleY(0); /* Closed eyes - concentrating */
 		}
-		90%, 100% { 
+		90%,
+		100% {
 			transform: scaleY(0.2); /* Squinting - thinking hard */
 		}
 	}
 
 	@keyframes blink-thinking {
 		/* First quick blink */
-		0%, 23%, 100% { 
-			transform: scaleY(1); 
+		0%,
+		23%,
+		100% {
+			transform: scaleY(1);
 		}
-		3% { 
+		3% {
 			transform: scaleY(0); /* Fast blink */
 		}
 		4% {
 			transform: scaleY(1); /* Very snappy */
 		}
-		
+
 		/* Second blink - thinking pattern */
-		40% { 
+		40% {
 			transform: scaleY(1);
 		}
-		42% { 
+		42% {
 			transform: scaleY(0); /* First close */
 		}
-		43% { 
+		43% {
 			transform: scaleY(0.2); /* Short peek */
 		}
-		46% { 
+		46% {
 			transform: scaleY(0); /* Second close (squinty thinking) */
 		}
 		48% {
 			transform: scaleY(1); /* Open again */
 		}
-		
+
 		/* Third quick blink */
 		80% {
 			transform: scaleY(1);
@@ -699,7 +737,7 @@
 				drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
 		}
 	}
-	
+
 	/* Ghost wobble animations */
 	@keyframes ghost-wobble-left {
 		0% {
@@ -718,7 +756,7 @@
 			transform: rotate(0deg);
 		}
 	}
-	
+
 	@keyframes ghost-wobble-right {
 		0% {
 			transform: rotate(0deg);
@@ -736,21 +774,21 @@
 			transform: rotate(0deg);
 		}
 	}
-	
+
 	:global(.ghost-wobble-left) {
 		animation: ghost-wobble-left 0.6s ease-in-out !important;
 	}
-	
+
 	:global(.ghost-wobble-right) {
 		animation: ghost-wobble-right 0.6s ease-in-out !important;
 	}
-	
+
 	/* Staggered text animation for title - more reliable approach */
 	.staggered-text {
 		animation: none; /* Reset any existing animations */
 		opacity: 1; /* Default to visible */
 	}
-	
+
 	.stagger-letter {
 		display: inline-block;
 		opacity: 0;
@@ -758,17 +796,33 @@
 		animation: staggerFadeIn 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 		will-change: transform, opacity;
 	}
-	
+
 	/* Apply different delays to each letter */
-	.stagger-letter:nth-child(1) { animation-delay: 0.05s; }
-	.stagger-letter:nth-child(2) { animation-delay: 0.10s; }
-	.stagger-letter:nth-child(3) { animation-delay: 0.15s; }
-	.stagger-letter:nth-child(4) { animation-delay: 0.20s; }
-	.stagger-letter:nth-child(5) { animation-delay: 0.25s; }
-	.stagger-letter:nth-child(6) { animation-delay: 0.30s; }
-	.stagger-letter:nth-child(7) { animation-delay: 0.35s; }
-	.stagger-letter:nth-child(8) { animation-delay: 0.40s; }
-	
+	.stagger-letter:nth-child(1) {
+		animation-delay: 0.05s;
+	}
+	.stagger-letter:nth-child(2) {
+		animation-delay: 0.1s;
+	}
+	.stagger-letter:nth-child(3) {
+		animation-delay: 0.15s;
+	}
+	.stagger-letter:nth-child(4) {
+		animation-delay: 0.2s;
+	}
+	.stagger-letter:nth-child(5) {
+		animation-delay: 0.25s;
+	}
+	.stagger-letter:nth-child(6) {
+		animation-delay: 0.3s;
+	}
+	.stagger-letter:nth-child(7) {
+		animation-delay: 0.35s;
+	}
+	.stagger-letter:nth-child(8) {
+		animation-delay: 0.4s;
+	}
+
 	@keyframes staggerFadeIn {
 		0% {
 			opacity: 0;
@@ -779,7 +833,7 @@
 			transform: translateY(0);
 		}
 	}
-	
+
 	/* Slide-in animation for subtitle - with hardware acceleration for performance */
 	.slide-in-subtitle {
 		opacity: 0;
@@ -789,7 +843,7 @@
 		will-change: transform, opacity;
 		backface-visibility: hidden;
 	}
-	
+
 	@keyframes slideIn {
 		0% {
 			opacity: 0;
@@ -799,5 +853,96 @@
 			opacity: 1;
 			transform: translateY(0);
 		}
+	}
+
+	/* Title shimmer effect */
+	.title-shimmer {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.title-shimmer::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 50%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+		animation: shimmer 3s ease-out 2.5s;
+	}
+
+	@keyframes shimmer {
+		0% {
+			left: -100%;
+		}
+		100% {
+			left: 200%;
+		}
+	}
+
+	/* Subtle hover effect for paragraphs */
+	.subtle-hover {
+		transition:
+			color 0.3s ease,
+			text-shadow 0.3s ease;
+	}
+
+	.subtle-hover:hover {
+		color: #000;
+		text-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+	}
+
+	/* Default cursor for non-editable text */
+	.cursor-default {
+		cursor: default;
+	}
+
+	/* Greeting wobble animation for ghost icon */
+	@keyframes ghost-wobble-greeting {
+		0% {
+			transform: rotate(0deg);
+		}
+		20% {
+			transform: rotate(-3deg) scale(1.02);
+		}
+		40% {
+			transform: rotate(2deg) scale(1.04);
+		}
+		60% {
+			transform: rotate(-1deg) scale(1.02);
+		}
+		80% {
+			transform: rotate(1deg) scale(1.01);
+		}
+		100% {
+			transform: rotate(0deg) scale(1);
+		}
+	}
+
+	.ghost-wobble-greeting {
+		animation: ghost-wobble-greeting 1s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+		transform-origin: center center;
+	}
+
+	/* Title hover effect */
+	.title-hover {
+		transition: text-shadow 0.3s ease;
+	}
+
+	.title-hover:hover {
+		text-shadow: 0 0 15px rgba(249, 168, 212, 0.6);
+	}
+
+	/* Subtitle hover effect */
+	.subtitle-hover {
+		transition:
+			color 0.3s ease,
+			text-shadow 0.3s ease;
+	}
+
+	.subtitle-hover:hover {
+		color: #000;
+		text-shadow: 0 0 8px rgba(249, 168, 212, 0.3);
 	}
 </style>

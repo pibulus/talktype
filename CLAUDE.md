@@ -27,52 +27,69 @@
 The TalkType app uses subtle text animations for improved user experience:
 
 ### Staggered Text Animation
+
 - **Implementation**: Split text into `<span>` elements, one per letter
 - **Animation**: Each letter fades in and moves up with CSS transitions
 - **Timing**: Letters have cascading delays (50-100ms apart)
 - **Performance**: Use `will-change` and hardware acceleration for smoothness
 - **CSS Properties**:
+
   ```css
   .stagger-letter {
-    display: inline-block;
-    opacity: 0;
-    transform: translateY(15px);
-    animation: staggerFadeIn 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-    will-change: transform, opacity;
+  	display: inline-block;
+  	opacity: 0;
+  	transform: translateY(15px);
+  	animation: staggerFadeIn 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  	will-change: transform, opacity;
   }
-  
+
   /* Incremental delays per letter */
-  .stagger-letter:nth-child(1) { animation-delay: 0.05s; }
-  .stagger-letter:nth-child(2) { animation-delay: 0.10s; }
+  .stagger-letter:nth-child(1) {
+  	animation-delay: 0.05s;
+  }
+  .stagger-letter:nth-child(2) {
+  	animation-delay: 0.1s;
+  }
   /* ... and so on */
   ```
 
 ### Slide-In Animation
+
 - **Used For**: Subtitle text and other content blocks
 - **Effect**: Text slides up and fades in simultaneously
 - **Timing**: Typically starts after main title animation begins
 - **CSS Properties**:
   ```css
   .slide-in-subtitle {
-    opacity: 0;
-    transform: translateY(10px);
-    animation: slideIn 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-    animation-delay: 0.6s;
-    will-change: transform, opacity;
-    backface-visibility: hidden;
+  	opacity: 0;
+  	transform: translateY(10px);
+  	animation: slideIn 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  	animation-delay: 0.6s;
+  	will-change: transform, opacity;
+  	backface-visibility: hidden;
   }
   ```
 
 ### Animation Coordination
+
 - **Sequence**: Main title → Subtitle → Interactive elements
 - **Timing**: Total sequence completes in ~2-2.5 seconds
 - **Session Management**: Optional storage-based tracking to show animations only on first visit
+
+### Hover Effects
+
+- **Title Hover**: Subtle pink text-shadow glow effect (15px radius with 0.6 opacity)
+- **Subtitle Hover**: Color darkening with subtle pink text-shadow (8px radius with 0.3 opacity)
+- **Timing**: All hover effects use smooth 0.3s ease transitions
+- **Implementation**: Applied through dedicated CSS classes (.title-hover, .subtitle-hover)
+- **Note**: Hover effects should be subtle and not interfere with entrance animations
 
 ## Ghost Icon Animation System
 
 The ghost icon uses a Brian Eno-inspired generative/ambient animation system:
 
 ### Blinking Animation Parameters
+
 - **Ambient Timing**: 4-9 seconds between blinks (minGap = 4000ms, maxGap = 9000ms)
 - **Blink Types**: Single (60%), Double (30%), Triple (10%) with weighted probability
 - **Animation Durations**:
@@ -82,6 +99,7 @@ The ghost icon uses a Brian Eno-inspired generative/ambient animation system:
 - **CSS Fallback**: `.icon-eyes` has `animation: blink 6s infinite` as baseline
 
 ### Wobble Animations
+
 - **Hover Wobble**: Gentle rotation (±1.5°) with drop-shadow when hovering
 - **Recording Glow**: Pulsing red shadow effect during recording state
 - **Directional Wobbles**: Applied when recording finishes based on response direction
@@ -91,6 +109,7 @@ The ghost icon uses a Brian Eno-inspired generative/ambient animation system:
   - Down wobble: Scale down to 90% with downward drop-shadow
 
 ### State Management
+
 - **DOM Class Source of Truth**: Uses `.recording` class to track recording state
 - **State Transitions**:
   - Force browser reflow between animation changes with `void element.offsetWidth`
@@ -98,6 +117,7 @@ The ghost icon uses a Brian Eno-inspired generative/ambient animation system:
   - Separated ambient system from state-based animations
 
 ### Troubleshooting
+
 - **Animation Not Applying**: May need to force browser reflow
 - **Inconsistent Blinking**: Check ambient system isn't being disabled by other states
 - **Ghost Not Responding to Click**: Verify DOM class state matches component state
