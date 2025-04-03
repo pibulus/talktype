@@ -945,7 +945,7 @@
 		text-shadow: 0 0 8px rgba(249, 168, 212, 0.3);
 	}
 
-	/* TalkType Logo Typography Fixes */
+	/* TalkType Logo Typography Fixes - Simplified and Stabilized */
 	.talktype-logo {
 		/* Font smoothing for better rendering */
 		-webkit-font-smoothing: antialiased;
@@ -958,23 +958,24 @@
 		letter-spacing: 0.01em;
 		/* Ensure the container has enough height and doesn't clip */
 		overflow: visible;
-		/* Add smooth transition for hover effect */
-		transition: letter-spacing 0.2s ease-out;
+		/* Make sure the element is a block for stable animations */
+		display: inline-block;
+		/* Smooth transition for hover */
+		transition: all 0.2s ease;
 	}
 
-	/* Subtle letter spacing change on hover for interactivity */
+	/* Simple, cohesive hover effect that treats the wordmark as one unit */
 	.talktype-logo:hover {
 		letter-spacing: 0.02em;
+		transform: translateY(-1px);
 	}
 
 	/* Custom kerning for specific letter pairs */
 	.talktype-logo .letter-t1 {
-		margin-right: -0.05em; /* Further tighten spacing between T and a */
+		margin-right: -0.05em; /* Tighten spacing between T and a */
 	}
 
-	.talktype-logo .letter-a1 {
-		transform: translateX(-1px); /* Nudge "a" closer to "T" */
-	}
+	/* Removed transform on letter-a1 as it caused layout instability */
 
 	.talktype-logo .letter-k {
 		margin-right: -0.02em; /* Adjust k-T spacing */
@@ -989,47 +990,8 @@
 		/* Ensure the y descender is fully visible */
 		display: inline-block;
 		position: relative;
-		margin-bottom: 2px; /* Increase margin to prevent descender clipping */
+		margin-bottom: 2px; /* Prevent descender clipping */
 	}
 
-	/* Bonus: Subtle bounce effect on hover */
-	@keyframes subtle-wordmark-bounce {
-		0%,
-		100% {
-			transform: translateY(0);
-		}
-		50% {
-			transform: translateY(-1px);
-		}
-	}
-
-	.talktype-logo:hover .stagger-letter {
-		animation: subtle-wordmark-bounce 0.8s ease-in-out;
-		animation-delay: calc(var(--order, 0) * 0.05s);
-	}
-
-	.talktype-logo .letter-t1 {
-		--order: 1;
-	}
-	.talktype-logo .letter-a1 {
-		--order: 2;
-	}
-	.talktype-logo .letter-l {
-		--order: 3;
-	}
-	.talktype-logo .letter-k {
-		--order: 4;
-	}
-	.talktype-logo .letter-t2 {
-		--order: 5;
-	}
-	.talktype-logo .letter-y {
-		--order: 6;
-	}
-	.talktype-logo .letter-p {
-		--order: 7;
-	}
-	.talktype-logo .letter-e {
-		--order: 8;
-	}
+	/* No complicated per-letter animations - removed for stability */
 </style>
