@@ -1,3 +1,7 @@
+<script context="module">
+	let showExtensionInfo = false;
+</script>
+
 <script>
 	import { onMount } from 'svelte';
 	import AudioToText from '$lib/components/AudioToText.svelte';
@@ -473,6 +477,7 @@
 		}
 	}
 </script>
+
 <section
 	class="bg-gradient-mesh mt-[-5vh] flex min-h-screen flex-col items-center justify-center px-4 py-8 pb-28 pt-[6vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-32"
 >
@@ -500,12 +505,16 @@
 
 		<!-- Typography - Always using animated version for consistency -->
 		<h1
-			class="mb-1 text-center text-5xl font-black tracking-tight sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl staggered-text"
+			class="staggered-text mb-1 text-center text-5xl font-black tracking-tight sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
 		>
-			<span class="stagger-letter">T</span><span class="stagger-letter">a</span><span class="stagger-letter">l</span><span class="stagger-letter">k</span><span class="stagger-letter">T</span><span class="stagger-letter">y</span><span class="stagger-letter">p</span><span class="stagger-letter">e</span>
+			<span class="stagger-letter">T</span><span class="stagger-letter">a</span><span
+				class="stagger-letter">l</span
+			><span class="stagger-letter">k</span><span class="stagger-letter">T</span><span
+				class="stagger-letter">y</span
+			><span class="stagger-letter">p</span><span class="stagger-letter">e</span>
 		</h1>
 		<p
-			class="mx-auto mb-4 max-w-sm text-center text-xl text-gray-700 sm:mb-4 sm:max-w-md sm:text-2xl md:mb-6 md:max-w-lg md:text-3xl slide-in-subtitle"
+			class="slide-in-subtitle mx-auto mb-4 max-w-sm text-center text-xl text-gray-700 sm:mb-4 sm:max-w-md sm:text-2xl md:mb-6 md:max-w-lg md:text-3xl"
 		>
 			Fast, accurate, and free voice-to-text transcription.
 		</p>
@@ -515,6 +524,69 @@
 			<AudioToText bind:this={audioToTextComponent} />
 		</div>
 	</div>
+
+	<!-- Footer section with attribution and Chrome extension info -->
+	<footer
+		class="fixed bottom-0 left-0 right-0 border-t border-pink-100/30 bg-white/30 px-4 py-2 text-center text-xs text-gray-500 backdrop-blur-sm"
+	>
+		<div class="container mx-auto flex flex-col items-center justify-between gap-2 sm:flex-row">
+			<div class="copyright">
+				© {new Date().getFullYear()} TalkType ·
+				<span class="text-gray-400">Made with ❤️ by Dennis & Pablo</span>
+			</div>
+			<div class="text-xs">
+				<a
+					href="#extension"
+					class="text-amber-600 underline transition-colors hover:text-amber-700"
+					on:click|preventDefault={() => (showExtensionInfo = !showExtensionInfo)}
+				>
+					Chrome Extension
+				</a>
+			</div>
+		</div>
+
+		{#if showExtensionInfo}
+			<div
+				class="extension-info fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+				on:click|self={() => (showExtensionInfo = false)}
+			>
+				<div class="mx-4 max-w-md rounded-lg bg-white p-6 shadow-xl">
+					<h3 class="mb-3 text-lg font-bold text-gray-800">TalkType Chrome Extension</h3>
+					<p class="mb-4 text-sm text-gray-600">
+						Use TalkType directly in any text field across the web!
+					</p>
+
+					<div class="mb-4 rounded border border-gray-200 bg-gray-50 p-3">
+						<h4 class="text-sm font-medium">Installation Instructions:</h4>
+						<ol class="mt-2 list-decimal space-y-1 pl-5 text-left text-xs text-gray-700">
+							<li>
+								Download the extension files <a href="#" class="text-amber-600 hover:underline"
+									>here</a
+								>
+							</li>
+							<li>
+								Open Chrome and go to <code class="rounded bg-gray-200 px-1"
+									>chrome://extensions</code
+								>
+							</li>
+							<li>Enable "Developer mode" in the top-right corner</li>
+							<li>Click "Load unpacked" and select the extension folder</li>
+							<li>TalkType will appear in your extensions toolbar</li>
+						</ol>
+					</div>
+
+					<div class="flex justify-end">
+						<button
+							class="rounded-full bg-amber-400 px-4 py-2 text-sm text-black transition-colors hover:bg-amber-500"
+							on:click={() => (showExtensionInfo = false)}
+						>
+							Close
+						</button>
+					</div>
+				</div>
+			</div>
+		{/if}
+	</footer>
 </section>
 
 <style>
