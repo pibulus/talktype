@@ -300,7 +300,7 @@
 	});
 </script>
 
-<div class="history-container">
+<div class="history-container standard-container">
 	{#each history as level, index (index)}
 		<div
 			class="history-bar"
