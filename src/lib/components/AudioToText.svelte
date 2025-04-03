@@ -15,6 +15,10 @@
 	let animationFrameId;
 	let editableTranscript;
 
+	// Accessibility state management
+	let screenReaderStatus = ''; // For ARIA announcements
+	let copyButtonRef; // Reference to the copy button
+
 	// Fun copy confirmation messages with friendly emojis
 	const copyMessages = [
 		'Copied to clipboard! ✨',
@@ -288,12 +292,14 @@
 			}, 400);
 		}
 	}
-	function toggleRecording() {
+	function toggleRecording(event) {
 		// Animate button press
 		animateButtonPress();
 
 		if (recording) {
 			stopRecording();
+			// Screen reader announcement
+			screenReaderStatus = 'Recording stopped.';
 		} else {
 			// Subtle pulse ghost icon when starting a new recording
 			const ghostIcon = document.querySelector('.icon-container');
@@ -304,6 +310,17 @@
 				}, 500);
 			}
 			startRecording();
+			// Screen reader announcement
+			screenReaderStatus = 'Recording started. Speak now.';
+		}
+	}
+
+	// Handle keyboard interaction for accessibility
+	function handleKeyDown(event) {
+		// Space or Enter key to toggle recording when focused
+		if ((event.key === 'Enter' || event.key === ' ') && !transcribing) {
+			event.preventDefault(); // Prevent default space/enter behavior
+			toggleRecording(event);
 		}
 	}
 
@@ -345,17 +362,30 @@
 				console.log('📋 Transcript copied to clipboard');
 				clipboardSuccess = true;
 
+				// Update screen reader status
+				screenReaderStatus = 'Transcript copied to clipboard';
+
 				// Auto-hide the clipboard success message after 3 seconds
 				if (clipboardTimer) clearTimeout(clipboardTimer);
 				clipboardTimer = setTimeout(() => {
 					clipboardSuccess = false;
 				}, 3000);
+
+				// Return focus to the copy button after operation
+				if (copyButtonRef) {
+					setTimeout(() => {
+						copyButtonRef.focus();
+					}, 100);
+				}
 			} else {
 				// Document not focused - show friendly notification and try to recover
 				console.log('📋 Document not focused - trying to bring window to focus');
 
 				// Attempt to focus window first
 				window.focus();
+
+				// Update screen reader status
+				screenReaderStatus = 'Please click in the window to enable copy functionality';
 
 				// Wait a short time for focus to take effect
 				setTimeout(async () => {
@@ -366,14 +396,25 @@
 							console.log('📋 Transcript copied to clipboard after focus recovery');
 							clipboardSuccess = true;
 
+							// Update screen reader status
+							screenReaderStatus = 'Transcript copied to clipboard after focus recovery';
+
 							if (clipboardTimer) clearTimeout(clipboardTimer);
 							clipboardTimer = setTimeout(() => {
 								clipboardSuccess = false;
 							}, 3000);
+
+							// Return focus to the copy button
+							if (copyButtonRef) {
+								setTimeout(() => {
+									copyButtonRef.focus();
+								}, 100);
+							}
 						} catch (focusError) {
 							console.error('❌ Still failed after focus attempt:', focusError);
 							// Show more helpful message that doesn't look like an error
 							clipboardSuccess = true; // Show toast anyway with special message
+							screenReaderStatus = 'Unable to copy. Please click in the window first.';
 							if (clipboardTimer) clearTimeout(clipboardTimer);
 							clipboardTimer = setTimeout(() => {
 								clipboardSuccess = false;
@@ -383,6 +424,7 @@
 						// Still no focus, show user-friendly message
 						console.log('📋 Document still not focused - clipboard operation not possible');
 						errorMessage = '';
+						screenReaderStatus = 'Unable to copy. Please click in the window first.';
 					}
 				}, 100);
 			}
@@ -390,6 +432,7 @@
 			console.error('❌ Failed to copy transcript to clipboard: ', err);
 			clipboardSuccess = false;
 			errorMessage = '';
+			screenReaderStatus = 'Failed to copy to clipboard. Please try again.';
 		}
 	}
 
@@ -492,6 +535,11 @@
 				<!-- Progress bar (transforms the button) - adjusted height for mobile -->
 				<div
 					class="progress-container relative h-[72px] w-full overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[66px]"
+					role="progressbar"
+					aria-label="Transcription progress"
+					aria-valuenow={transcriptionProgress}
+					aria-valuemin="0"
+					aria-valuemax="100"
 				>
 					<div
 						class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
@@ -499,12 +547,15 @@
 					></div>
 				</div>
 			{:else}
-				<!-- Recording button - improved for mobile with larger tap area -->
+				<!-- Recording button - improved for mobile and accessibility -->
 				<button
-					class="record-button w-full rounded-full bg-amber-400 px-6 py-6 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5"
+					class="record-button w-full rounded-full bg-amber-400 px-6 py-6 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5"
 					on:click={toggleRecording}
+					on:keydown={handleKeyDown}
 					disabled={transcribing}
-					aria-label="Toggle Recording"
+					aria-label={recording ? 'Stop Recording' : 'Start Recording'}
+					aria-pressed={recording}
+					aria-busy={transcribing}
 				>
 					{buttonLabel}
 				</button>
@@ -540,14 +591,44 @@
 							<div
 								class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5"
 							>
+								<!-- Copy button with enhanced accessibility -->
+								<button
+									class="copy-btn absolute right-4 top-4 rounded-full bg-amber-100 p-2 text-amber-600 shadow-sm transition-all hover:bg-amber-200 hover:text-amber-700 focus:outline focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 sm:right-5 sm:top-5"
+									on:click|preventDefault={copyToClipboard}
+									aria-label="Copy transcript to clipboard"
+									bind:this={copyButtonRef}
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										class="h-5 w-5"
+										viewBox="0 0 20 20"
+										fill="currentColor"
+									>
+										<path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+										<path
+											d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"
+										/>
+									</svg>
+								</button>
 								<div
 									class={`transcript-text ${responsiveFontSize} animate-text-appear`}
 									contenteditable="true"
 									role="textbox"
 									aria-label="Transcript editor"
+									aria-multiline="true"
+									tabindex="0"
+									aria-describedby="transcript-instructions"
 									bind:this={editableTranscript}
+									on:focus={() => {
+										screenReaderStatus =
+											'You can edit this transcript. Use keyboard to make changes.';
+									}}
 								>
 									{transcript}
+								</div>
+								<!-- Hidden instructions for screen readers -->
+								<div id="transcript-instructions" class="sr-only">
+									Editable transcript. You can modify the text if needed.
 								</div>
 							</div>
 						</div>
@@ -563,6 +644,13 @@
 			</p>
 		{/if}
 	</div>
+</div>
+
+<!-- Screen reader only status announcements -->
+<div aria-live="polite" aria-atomic="true" class="sr-only">
+	{#if screenReaderStatus}
+		{screenReaderStatus}
+	{/if}
 </div>
 
 <!-- Floating success toast - positioned fixed and independently from content -->
@@ -799,6 +887,27 @@
 
 	.transcript-text:focus {
 		color: #000;
+		outline: 2px solid rgba(217, 119, 6, 0.5);
+		border-radius: 0.25rem;
+	}
+
+	/* Screen reader only class */
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border-width: 0;
+	}
+
+	/* Improved focus styles for keyboard navigation */
+	:focus-visible {
+		outline: 2px solid #f59e0b;
+		outline-offset: 2px;
 	}
 
 	/* Speech bubble point */
