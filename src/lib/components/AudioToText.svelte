@@ -280,12 +280,12 @@
 			// Remove any existing animation classes and force a reflow
 			recordButton.classList.remove('button-press');
 			void recordButton.offsetWidth; // Force reflow
-			
-			// Apply the immediate press animation
+
+			// Apply the smoother press animation
 			recordButton.classList.add('button-press');
 			setTimeout(() => {
 				recordButton.classList.remove('button-press');
-			}, 300);
+			}, 400);
 		}
 	}
 	function toggleRecording() {
@@ -432,14 +432,23 @@
 
 			// Random position and animation duration
 			const startPos = Math.random() * 100; // Position 0-100%
-			const delay = Math.random() * 0.7; // Delay 0-0.7s
-			const duration = Math.random() * 1.5 + 1.5; // Duration 1.5-3s
+			const delay = Math.random() * 0.8; // More delay variation (0-0.8s) // Delay 0-0.7s
+			const duration = Math.random() * 2 + 2; // Longer durations (2-4s) // Duration 1.5-3s
 			const rotation = Math.random() * 720 - 360; // Rotation -360 to +360 degrees
 
-			confetti.style.left = `${startPos}%`;
-			confetti.style.top = '0';
+			const horizontalPos = Math.random() * 10 - 5; // Small horizontal variation
+			confetti.style.left = `calc(% + px)`;
+			const startOffset = Math.random() * 15 - 7.5; // Starting y-position variation
+			confetti.style.top = `px`;
 			confetti.style.animationDelay = `${delay}s`;
-			confetti.style.animationDuration = `${duration}s`;
+			confetti.style.animationDuration = `s`;
+			const easing =
+				Math.random() > 0.7
+					? 'cubic-bezier(0.25, 0.1, 0.25, 1)'
+					: Math.random() > 0.5
+						? 'cubic-bezier(0.42, 0, 0.58, 1)'
+						: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+			confetti.style.animationTimingFunction = easing;
 			confetti.style.transform = `rotate(${rotation}deg)`;
 
 			// Add to container
@@ -989,20 +998,20 @@
 
 	/* Button animations */
 	.button-press {
-		animation: button-press 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		animation: button-press 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
 	}
 
 	@keyframes button-press {
 		0% {
 			transform: scale(1);
 		}
-		30% {
-			transform: scale(0.95);
+		35% {
+			transform: scale(0.98);
 			background-color: #f59e0b;
-			box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+			box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 		}
-		60% {
-			transform: scale(1.02);
+		75% {
+			transform: scale(1.01);
 			background-color: #fbbf24;
 		}
 		100% {
@@ -1072,8 +1081,9 @@
 
 	:global(.confetti-piece) {
 		position: absolute;
-		animation: confetti-fall 3s ease-in-out forwards;
+		animation: confetti-fall 3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
 		opacity: 0.9;
+		will-change: transform, opacity;
 	}
 
 	@keyframes confetti-fall {
@@ -1081,21 +1091,28 @@
 			transform: translateY(-10px) rotate(0deg) scale(0.7);
 			opacity: 0;
 		}
-		10% {
-			opacity: 1;
+		5% {
+			opacity: 0.7;
 		}
-		25% {
-			transform: translateY(25vh) translateX(20px) rotate(90deg) scale(1);
+		15% {
+			opacity: 1;
+			transform: translateY(10vh) translateX(10px) rotate(45deg) scale(0.9);
+		}
+		35% {
+			transform: translateY(30vh) translateX(15px) rotate(90deg) scale(1);
 		}
 		50% {
-			transform: translateY(50vh) translateX(-15px) rotate(180deg) scale(0.9);
+			transform: translateY(50vh) translateX(-10px) rotate(180deg) scale(0.95);
 		}
-		75% {
-			transform: translateY(75vh) translateX(10px) rotate(270deg) scale(0.8);
-			opacity: 1;
+		65% {
+			transform: translateY(65vh) translateX(5px) rotate(240deg) scale(0.9);
+		}
+		85% {
+			transform: translateY(85vh) translateX(-5px) rotate(320deg) scale(0.85);
+			opacity: 0.7;
 		}
 		100% {
-			transform: translateY(105vh) translateX(-20px) rotate(360deg) scale(0.7);
+			transform: translateY(105vh) translateX(-10px) rotate(360deg) scale(0.8);
 			opacity: 0;
 		}
 	}
