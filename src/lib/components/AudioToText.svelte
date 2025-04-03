@@ -1,3 +1,7 @@
+<!--
+  This is the main component for audio recording and transcription.
+  It handles recording, transcription, clipboard operations, and UI feedback.
+-->
 <script>
 	import { geminiService } from '$lib/services/geminiService';
 	import { onMount } from 'svelte';
@@ -355,84 +359,88 @@
 		try {
 			// Get current text from editable div
 			const textToCopy = getEditedTranscript();
+			
+			// Don't try to copy empty text
+			if (!textToCopy || textToCopy.trim() === '') {
+				console.log('📋 Nothing to copy - transcript is empty');
+				return;
+			}
 
-			// Focus check before attempting clipboard operation
-			if (document.hasFocus()) {
+			console.log('📋 Attempting to copy text:', textToCopy.substring(0, 20) + '...');
+
+			// Try using the modern clipboard API
+			try {
 				await navigator.clipboard.writeText(textToCopy);
-				console.log('📋 Transcript copied to clipboard');
+				console.log('📋 Successfully copied using Clipboard API');
 				clipboardSuccess = true;
-
+				
 				// Update screen reader status
 				screenReaderStatus = 'Transcript copied to clipboard';
-
+				
 				// Auto-hide the clipboard success message after 3 seconds
 				if (clipboardTimer) clearTimeout(clipboardTimer);
 				clipboardTimer = setTimeout(() => {
 					clipboardSuccess = false;
 				}, 3000);
-
+				
 				// Return focus to the copy button after operation
 				if (copyButtonRef) {
 					setTimeout(() => {
 						copyButtonRef.focus();
 					}, 100);
 				}
-			} else {
-				// Document not focused - show friendly notification and try to recover
-				console.log('📋 Document not focused - trying to bring window to focus');
+				
+				return;
+			} catch (clipboardError) {
+				console.error('❌ Clipboard API failed:', clipboardError);
+				// Fall back to document.execCommand method below
+			}
 
-				// Attempt to focus window first
-				window.focus();
-
+			// Fallback to execCommand for browsers that don't support clipboard API
+			// or when the API fails (e.g., due to permissions)
+			const textarea = document.createElement('textarea');
+			textarea.value = textToCopy;
+			textarea.style.position = 'fixed';  // Prevent scrolling to bottom of page
+			document.body.appendChild(textarea);
+			textarea.focus();
+			textarea.select();
+			
+			const successful = document.execCommand('copy');
+			document.body.removeChild(textarea);
+			
+			if (successful) {
+				console.log('📋 Transcript copied via execCommand fallback');
+				clipboardSuccess = true;
+				
 				// Update screen reader status
-				screenReaderStatus = 'Please click in the window to enable copy functionality';
-
-				// Wait a short time for focus to take effect
-				setTimeout(async () => {
-					if (document.hasFocus()) {
-						// Try again now that we have focus
-						try {
-							await navigator.clipboard.writeText(textToCopy);
-							console.log('📋 Transcript copied to clipboard after focus recovery');
-							clipboardSuccess = true;
-
-							// Update screen reader status
-							screenReaderStatus = 'Transcript copied to clipboard after focus recovery';
-
-							if (clipboardTimer) clearTimeout(clipboardTimer);
-							clipboardTimer = setTimeout(() => {
-								clipboardSuccess = false;
-							}, 3000);
-
-							// Return focus to the copy button
-							if (copyButtonRef) {
-								setTimeout(() => {
-									copyButtonRef.focus();
-								}, 100);
-							}
-						} catch (focusError) {
-							console.error('❌ Still failed after focus attempt:', focusError);
-							// Show more helpful message that doesn't look like an error
-							clipboardSuccess = true; // Show toast anyway with special message
-							screenReaderStatus = 'Unable to copy. Please click in the window first.';
-							if (clipboardTimer) clearTimeout(clipboardTimer);
-							clipboardTimer = setTimeout(() => {
-								clipboardSuccess = false;
-							}, 5000);
-						}
-					} else {
-						// Still no focus, show user-friendly message
-						console.log('📋 Document still not focused - clipboard operation not possible');
-						errorMessage = '';
-						screenReaderStatus = 'Unable to copy. Please click in the window first.';
-					}
-				}, 100);
+				screenReaderStatus = 'Transcript copied to clipboard';
+				
+				// Auto-hide the clipboard success message after 3 seconds
+				if (clipboardTimer) clearTimeout(clipboardTimer);
+				clipboardTimer = setTimeout(() => {
+					clipboardSuccess = false;
+				}, 3000);
+				
+				// Attempt to return focus to copy button
+				if (copyButtonRef) {
+					setTimeout(() => {
+						copyButtonRef.focus();
+					}, 100);
+				}
+			} else {
+				throw new Error('execCommand copy failed');
 			}
 		} catch (err) {
-			console.error('❌ Failed to copy transcript to clipboard: ', err);
-			clipboardSuccess = false;
-			errorMessage = '';
-			screenReaderStatus = 'Failed to copy to clipboard. Please try again.';
+			console.error('❌ All clipboard methods failed:', err);
+			
+			// Show user-friendly error message
+			clipboardSuccess = true; // Use the success toast but with error message
+			screenReaderStatus = 'Unable to copy. Please try clicking in the window first.';
+			
+			if (clipboardTimer) clearTimeout(clipboardTimer);
+			clipboardTimer = setTimeout(() => {
+				clipboardSuccess = false;
+			}, 5000);
 		}
 	}
 
@@ -586,30 +594,26 @@
 				<div class="transcript-wrapper animate-fadeIn-from-top">
 					<!-- Speech bubble with transcript -->
 					<div class="wrapper-container flex w-full justify-center">
-						<div class="transcript-box-wrapper mx-auto w-full max-w-[600px]">
+						<div class="transcript-box-wrapper relative mx-auto w-full max-w-[600px]">
+							<!-- Ghost icon copy button positioned outside the transcript box -->
+							<button
+								class="copy-btn absolute -top-12 right-3 z-10 h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 sm:right-2"
+								on:click|preventDefault={copyToClipboard}
+								aria-label="Copy transcript to clipboard"
+								bind:this={copyButtonRef}
+							>
+								<div class="relative h-full w-full">
+									<!-- Ghost icon layers - same as main app icon but smaller -->
+									<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
+									<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
+									<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 h-full w-full copy-eyes" aria-hidden="true" />
+								</div>
+							</button>
+							
 							<!-- Editable transcript box -->
 							<div
 								class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5"
 							>
-								<!-- Copy button with enhanced accessibility -->
-								<button
-									class="copy-btn absolute right-4 top-4 rounded-full bg-amber-100 p-2 text-amber-600 shadow-sm transition-all hover:bg-amber-200 hover:text-amber-700 focus:outline focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 sm:right-5 sm:top-5"
-									on:click|preventDefault={copyToClipboard}
-									aria-label="Copy transcript to clipboard"
-									bind:this={copyButtonRef}
-								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										class="h-5 w-5"
-										viewBox="0 0 20 20"
-										fill="currentColor"
-									>
-										<path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-										<path
-											d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"
-										/>
-									</svg>
-								</button>
 								<div
 									class={`transcript-text ${responsiveFontSize} animate-text-appear`}
 									contenteditable="true"
@@ -891,6 +895,65 @@
 		border-radius: 0.25rem;
 	}
 
+	/* Copy button styling - ghost icon version, anchored to textbox */
+	.copy-btn {
+		opacity: 0.95;
+		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+		filter: drop-shadow(0 4px 6px rgba(249, 168, 212, 0.25));
+		animation: gentle-float 3s ease-in-out infinite;
+		/* Ring effect to anchor the button visually to the text box */
+		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.25), 0 4px 6px rgba(0, 0, 0, 0.05);
+	}
+
+	.copy-btn:hover {
+		opacity: 1;
+		filter: drop-shadow(0 6px 12px rgba(249, 168, 212, 0.4));
+		transform: translateY(-1px) scale(1.05);
+		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.4), 0 8px 16px rgba(249, 168, 212, 0.15);
+	}
+	
+	.copy-btn:active {
+		transform: translateY(1px) scale(0.95);
+		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.5), 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	/* Special animation for the copy button ghost eyes */
+	.copy-eyes {
+		animation: copy-ghost-blink 8s infinite;
+	}
+
+	.copy-btn:hover .copy-eyes {
+		animation: copy-ghost-blink-excited 2s infinite;
+	}
+	
+	@keyframes gentle-float {
+		0%, 100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-3px);
+		}
+	}
+
+	/* Ghost eyes blinking animations for copy button */
+	@keyframes copy-ghost-blink {
+		0%, 95%, 100% {
+			transform: scaleY(1);
+		}
+		96%, 99% {
+			transform: scaleY(0);
+		}
+	}
+
+	@keyframes copy-ghost-blink-excited {
+		0%, 40%, 50%, 90%, 100% {
+			transform: scaleY(1);
+		}
+		45%, 95% {
+			transform: scaleY(0);
+		}
+	}
+
 	/* Screen reader only class */
 	.sr-only {
 		position: absolute;
@@ -942,7 +1005,7 @@
 		}
 	}
 
-	/* Toast notification - soft gradient background with subtle styling */
+	/* Toast notification - enhanced to be more noticeable */
 	.clipboard-toast {
 		position: relative;
 		background: linear-gradient(to right, #fff8fa, #faf5ff);
@@ -953,13 +1016,15 @@
 		padding: 0.75rem 1.5rem;
 		border-radius: 2.5rem;
 		box-shadow:
-			0 8px 15px -3px rgba(212, 180, 241, 0.25),
-			0 3px 8px -2px rgba(254, 205, 211, 0.15),
-			0 0 0 1px rgba(255, 232, 242, 0.6) inset;
+			0 12px 20px -5px rgba(212, 180, 241, 0.35),
+			0 5px 12px -3px rgba(254, 205, 211, 0.25),
+			0 0 0 1px rgba(255, 232, 242, 0.7) inset,
+			0 0 25px rgba(249, 168, 212, 0.3);
 		backdrop-filter: blur(8px);
 		animation:
-			toast-bounce 0.4s ease-[cubic-bezier(0.34, 1.56, 0.64, 1)],
-			toast-fade 3.5s ease-in-out forwards;
+			toast-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+			toast-pulse 2s ease-in-out infinite,
+			toast-fade 4s ease-in-out forwards;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -967,8 +1032,27 @@
 		width: 100%;
 		max-width: 600px; /* Match button width exactly */
 		letter-spacing: -0.01em; /* tracking-tight */
-		border: 1.5px solid rgba(249, 168, 212, 0.3);
+		border: 1.5px solid rgba(249, 168, 212, 0.5);
 		text-align: center;
+		will-change: transform, opacity, box-shadow;
+	}
+
+	/* Add toast pulse animation for better visibility */
+	@keyframes toast-pulse {
+		0%, 100% {
+			box-shadow:
+				0 12px 20px -5px rgba(212, 180, 241, 0.35),
+				0 5px 12px -3px rgba(254, 205, 211, 0.25),
+				0 0 0 1px rgba(255, 232, 242, 0.7) inset,
+				0 0 25px rgba(249, 168, 212, 0.3);
+		}
+		50% {
+			box-shadow:
+				0 12px 25px -5px rgba(212, 180, 241, 0.45),
+				0 5px 15px -3px rgba(254, 205, 211, 0.35),
+				0 0 0 1px rgba(255, 232, 242, 0.8) inset,
+				0 0 35px rgba(249, 168, 212, 0.4);
+		}
 	}
 
 	@media (min-width: 768px) {
@@ -984,12 +1068,32 @@
 		color: #9c5e3b; /* amber-orange */
 		border: 1.5px solid rgba(251, 191, 36, 0.4);
 		box-shadow:
-			0 8px 15px -3px rgba(251, 211, 141, 0.3),
-			0 3px 8px -2px rgba(254, 215, 170, 0.2),
-			0 0 0 1px rgba(255, 237, 213, 0.7) inset;
+			0 12px 20px -5px rgba(251, 211, 141, 0.35),
+			0 5px 12px -3px rgba(254, 215, 170, 0.25),
+			0 0 0 1px rgba(255, 237, 213, 0.7) inset,
+			0 0 25px rgba(251, 191, 36, 0.3);
 		animation:
-			toast-bounce 0.4s ease-[cubic-bezier(0.34, 1.56, 0.64, 1)],
+			toast-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+			toast-pulse-warning 2s ease-in-out infinite,
 			toast-fade 4.5s ease-in-out forwards;
+	}
+	
+	/* Warning toast special pulse */
+	@keyframes toast-pulse-warning {
+		0%, 100% {
+			box-shadow:
+				0 12px 20px -5px rgba(251, 211, 141, 0.3),
+				0 5px 12px -3px rgba(254, 215, 170, 0.2),
+				0 0 0 1px rgba(255, 237, 213, 0.7) inset,
+				0 0 25px rgba(251, 191, 36, 0.3);
+		}
+		50% {
+			box-shadow:
+				0 12px 25px -5px rgba(251, 211, 141, 0.4),
+				0 5px 15px -3px rgba(254, 215, 170, 0.3),
+				0 0 0 1px rgba(255, 237, 213, 0.8) inset,
+				0 0 35px rgba(251, 191, 36, 0.4);
+		}
 	}
 
 	/* Ghost icon in toast */
