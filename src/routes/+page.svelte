@@ -1,8 +1,8 @@
 <script>
-	import AudioToText from '$lib/components/AudioToText.svelte';
-	let audioToTextComponent;
-		// Import at the top
 	import { onMount } from 'svelte';
+	import AudioToText from '$lib/components/AudioToText.svelte';
+	
+	let audioToTextComponent;
 	
 	// Brian Eno-inspired ambient blinking system with proper state tracking
 	let blinkTimeouts = [];
@@ -148,9 +148,9 @@
 			return;
 		}
 		
-		// Parameters for generative system - Brian Eno style
-		const minGap = 7000;  // Minimum time between blinks (7s)
-		const maxGap = 16000; // Maximum time between blinks (16s)
+		// Parameters for generative system - Brian Eno style (more frequent now)
+		const minGap = 4000;  // Minimum time between blinks (4s - was 7s)
+		const maxGap = 9000; // Maximum time between blinks (9s - was 16s)
 		
 		// Blink type probabilities
 		const blinkTypes = [
@@ -495,7 +495,7 @@
 
 	.icon-eyes {
 		z-index: 3; /* Top layer */
-		animation: blink 10s infinite; /* Occasional ambient blinking - quick and snappy */
+		animation: blink 6s infinite; /* More frequent ambient blinking (was 10s) */
 		transform-origin: center center; /* Squinch exactly in the middle */
 	}
 
