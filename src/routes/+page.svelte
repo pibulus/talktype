@@ -1,5 +1,6 @@
 <script context="module">
 	let showExtensionInfo = false;
+	let showAboutInfo = false;
 </script>
 
 <script>
@@ -527,20 +528,40 @@
 
 	<!-- Footer section with attribution and Chrome extension info -->
 	<footer
-		class="fixed bottom-0 left-0 right-0 border-t border-pink-100/30 bg-white/30 px-4 py-2 text-center text-xs text-gray-500 backdrop-blur-sm"
+		class="fixed bottom-0 left-0 right-0 border-t border-pink-100/40 bg-gradient-to-r from-white/40 to-pink-50/30 px-4 py-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.1)] backdrop-blur-md sm:py-5"
 	>
-		<div class="container mx-auto flex flex-col items-center justify-between gap-2 sm:flex-row">
-			<div class="copyright">
-				© {new Date().getFullYear()} TalkType ·
-				<span class="text-gray-400">Made with ❤️ by Dennis & Pablo</span>
+		<div class="container mx-auto flex flex-col items-center justify-between gap-3 sm:flex-row">
+			<div class="copyright flex items-center">
+				<span class="mr-1 text-sm font-medium tracking-tight">
+					© {new Date().getFullYear()} TalkType
+				</span>
+				<span class="mx-2 text-pink-200">•</span>
+				<span class="font-light text-gray-500"
+					>Made with
+					<span
+						class="mx-0.5 inline-block transform animate-pulse text-pink-400 transition-transform duration-300 hover:scale-110"
+						>❤️</span
+					>
+					by Dennis & Pablo
+				</span>
 			</div>
-			<div class="text-xs">
+			<div class="flex items-center gap-4">
+				<a
+					href="#about"
+					class="text-gray-500 transition-colors duration-200 hover:text-amber-600"
+					on:click|preventDefault={() => (showAboutInfo = !showAboutInfo)}
+				>
+					About
+				</a>
 				<a
 					href="#extension"
-					class="text-amber-600 underline transition-colors hover:text-amber-700"
+					class="group relative rounded-full bg-gradient-to-r from-amber-100/80 to-amber-200/70 px-3 py-1.5 text-amber-700 transition-all duration-200 hover:from-amber-200/90 hover:to-amber-300/80 hover:text-amber-800 hover:shadow-md"
 					on:click|preventDefault={() => (showExtensionInfo = !showExtensionInfo)}
 				>
-					Chrome Extension
+					<span class="relative z-10 text-xs font-medium">Chrome Extension</span>
+					<span
+						class="absolute inset-0 rounded-full bg-white/30 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+					></span>
 				</a>
 			</div>
 		</div>
@@ -550,38 +571,86 @@
 				class="extension-info fixed inset-0 z-50 flex items-center justify-center bg-black/50"
 				on:click|self={() => (showExtensionInfo = false)}
 			>
-				<div class="mx-4 max-w-md rounded-lg bg-white p-6 shadow-xl">
-					<h3 class="mb-3 text-lg font-bold text-gray-800">TalkType Chrome Extension</h3>
-					<p class="mb-4 text-sm text-gray-600">
-						Use TalkType directly in any text field across the web!
-					</p>
-
-					<div class="mb-4 rounded border border-gray-200 bg-gray-50 p-3">
-						<h4 class="text-sm font-medium">Installation Instructions:</h4>
-						<ol class="mt-2 list-decimal space-y-1 pl-5 text-left text-xs text-gray-700">
-							<li>
-								Download the extension files <a href="#" class="text-amber-600 hover:underline"
-									>here</a
-								>
-							</li>
-							<li>
-								Open Chrome and go to <code class="rounded bg-gray-200 px-1"
-									>chrome://extensions</code
-								>
-							</li>
-							<li>Enable "Developer mode" in the top-right corner</li>
-							<li>Click "Load unpacked" and select the extension folder</li>
-							<li>TalkType will appear in your extensions toolbar</li>
-						</ol>
+				<div class="mx-4 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
+					<div class="bg-gradient-to-r from-amber-50/80 to-pink-100/70 px-6 py-4">
+						<h3 class="text-lg font-bold text-gray-800">TalkType Chrome Extension</h3>
 					</div>
+					<div class="p-6">
+						<p class="mb-4 text-sm leading-relaxed text-gray-600">
+							Use TalkType directly in any text field across the web!
+						</p>
 
-					<div class="flex justify-end">
-						<button
-							class="rounded-full bg-amber-400 px-4 py-2 text-sm text-black transition-colors hover:bg-amber-500"
-							on:click={() => (showExtensionInfo = false)}
+						<div
+							class="mb-5 rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50/50 to-white p-4"
 						>
-							Close
-						</button>
+							<h4 class="mb-2 text-sm font-medium text-amber-700">Installation Instructions:</h4>
+							<ol class="mt-2 list-decimal space-y-2 pl-5 text-left text-xs text-gray-700">
+								<li>
+									Download the extension files <a
+										href="#"
+										class="text-amber-600 transition-colors hover:text-amber-700 hover:underline"
+										>here</a
+									>
+								</li>
+								<li>
+									Open Chrome and go to <code
+										class="rounded-md bg-amber-100/70 px-1.5 py-0.5 font-mono text-amber-800"
+										>chrome://extensions</code
+									>
+								</li>
+								<li>Enable "Developer mode" in the top-right corner</li>
+								<li>Click "Load unpacked" and select the extension folder</li>
+								<li>TalkType will appear in your extensions toolbar</li>
+							</ol>
+						</div>
+
+						<div class="flex justify-end">
+							<button
+								class="rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-2 text-sm font-medium text-black shadow-sm transition-colors hover:from-amber-500 hover:to-amber-600"
+								on:click={() => (showExtensionInfo = false)}
+							>
+								Close
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		{/if}
+
+		{#if showAboutInfo}
+			<div
+				class="about-info fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+				on:click|self={() => (showAboutInfo = false)}
+			>
+				<div class="mx-4 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
+					<div class="bg-gradient-to-r from-pink-100/80 to-amber-50/70 px-6 py-4">
+						<h3 class="text-lg font-bold text-gray-800">About TalkType</h3>
+					</div>
+					<div class="p-6">
+						<p class="mb-4 text-sm leading-relaxed text-gray-600">
+							TalkType is a minimalist voice-to-text tool that makes transcription simple and
+							delightful. Part of the Soft Stack family of tools designed to be emotionally
+							intelligent and tactile.
+						</p>
+
+						<div class="mb-4 border-l-2 border-amber-200 py-1 pl-3">
+							<p class="text-xs italic text-gray-500">
+								"A little bit of soul, a hint of chaos, and a deep love for clarity."
+							</p>
+						</div>
+
+						<p class="text-sm text-gray-600">
+							Made in Melbourne, Australia with care and attention to the details that matter.
+						</p>
+
+						<div class="mt-6 flex justify-end">
+							<button
+								class="rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-2 text-sm font-medium text-black shadow-sm transition-colors hover:from-amber-500 hover:to-amber-600"
+								on:click={() => (showAboutInfo = false)}
+							>
+								Close
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
