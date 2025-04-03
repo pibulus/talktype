@@ -15,6 +15,10 @@
 		console.log(`[Ghost Eyes] ${message}`);
 	}
 	
+	// Animation state variables
+	let titleAnimationComplete = false;
+	let subtitleAnimationComplete = false;
+	
 	// Get eyes element safely with retry mechanism
 	function getEyesElement() {
 		if (eyesElement) return eyesElement;
@@ -227,13 +231,13 @@
 		
 		debug('Performing greeting blink');
 		
-		// Do a friendly double-blink when page loads
+		// Do a friendly double-blink after animations complete
 		setTimeout(() => {
 			performDoubleBlink();
 			
 			// Start ambient blinking system after greeting
 			setTimeout(startAmbientBlinking, 1000);
-		}, 800);
+		}, 2000); // Delay long enough for text animations
 	}
 	
 	// Domain Ready and Observer setup
@@ -280,10 +284,26 @@
 		}, 1000);
 	}
 	
+	// Function to handle title animation complete
+	function handleTitleAnimationComplete() {
+		debug('Title animation complete');
+		titleAnimationComplete = true;
+	}
+	
+	// Function to handle subtitle animation complete
+	function handleSubtitleAnimationComplete() {
+		debug('Subtitle animation complete');
+		subtitleAnimationComplete = true;
+	}
+	
 	// Component lifecycle
 	onMount(() => {
 		debug('Component mounted');
 		setupDomObserver();
+		
+		// Set up animation sequence timing
+		setTimeout(handleTitleAnimationComplete, 1200); // After staggered animation
+		setTimeout(handleSubtitleAnimationComplete, 2000); // After subtitle slide-in
 		
 		return () => {
 			debug('Component unmounting, clearing timeouts');
@@ -462,14 +482,14 @@
 			</div>
 		</div>
 
-		<!-- Typography - Tighter on mobile, more spacious on desktop -->
+		<!-- Typography - Always using animated version for consistency -->
 		<h1
-			class="mb-1 text-center text-5xl font-black tracking-tight sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
+			class="mb-1 text-center text-5xl font-black tracking-tight sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl staggered-text"
 		>
-			TalkType
+			<span class="stagger-letter">T</span><span class="stagger-letter">a</span><span class="stagger-letter">l</span><span class="stagger-letter">k</span><span class="stagger-letter">T</span><span class="stagger-letter">y</span><span class="stagger-letter">p</span><span class="stagger-letter">e</span>
 		</h1>
 		<p
-			class="mx-auto mb-4 max-w-sm text-center text-xl text-gray-700 sm:mb-4 sm:max-w-md sm:text-2xl md:mb-6 md:max-w-lg md:text-3xl"
+			class="mx-auto mb-4 max-w-sm text-center text-xl text-gray-700 sm:mb-4 sm:max-w-md sm:text-2xl md:mb-6 md:max-w-lg md:text-3xl slide-in-subtitle"
 		>
 			Fast, accurate, and free voice-to-text transcription.
 		</p>
@@ -723,5 +743,61 @@
 	
 	:global(.ghost-wobble-right) {
 		animation: ghost-wobble-right 0.6s ease-in-out !important;
+	}
+	
+	/* Staggered text animation for title - more reliable approach */
+	.staggered-text {
+		animation: none; /* Reset any existing animations */
+		opacity: 1; /* Default to visible */
+	}
+	
+	.stagger-letter {
+		display: inline-block;
+		opacity: 0;
+		transform: translateY(15px);
+		animation: staggerFadeIn 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+		will-change: transform, opacity;
+	}
+	
+	/* Apply different delays to each letter */
+	.stagger-letter:nth-child(1) { animation-delay: 0.05s; }
+	.stagger-letter:nth-child(2) { animation-delay: 0.10s; }
+	.stagger-letter:nth-child(3) { animation-delay: 0.15s; }
+	.stagger-letter:nth-child(4) { animation-delay: 0.20s; }
+	.stagger-letter:nth-child(5) { animation-delay: 0.25s; }
+	.stagger-letter:nth-child(6) { animation-delay: 0.30s; }
+	.stagger-letter:nth-child(7) { animation-delay: 0.35s; }
+	.stagger-letter:nth-child(8) { animation-delay: 0.40s; }
+	
+	@keyframes staggerFadeIn {
+		0% {
+			opacity: 0;
+			transform: translateY(15px);
+		}
+		100% {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	
+	/* Slide-in animation for subtitle - with hardware acceleration for performance */
+	.slide-in-subtitle {
+		opacity: 0;
+		transform: translateY(10px);
+		animation: slideIn 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+		animation-delay: 0.6s; /* Start before title animation completes */
+		will-change: transform, opacity;
+		backface-visibility: hidden;
+	}
+	
+	@keyframes slideIn {
+		0% {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		100% {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 </style>

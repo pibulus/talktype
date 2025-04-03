@@ -419,7 +419,7 @@
 			{:else}
 				<!-- Recording button -->
 				<button
-					class="record-button w-full rounded-full bg-amber-400 px-10 py-5 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:scale-95 active:bg-amber-500 active:shadow-inner"
+					class="record-button button-bounce w-full rounded-full bg-amber-400 px-10 py-5 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:scale-95 active:bg-amber-500 active:shadow-inner"
 					on:click={toggleRecording}
 					disabled={transcribing}
 					aria-label="Toggle Recording"
@@ -910,9 +910,13 @@
 		animation: ghost-wobble-right 0.6s ease-in-out;
 	}
 
-	/* Button press animation */
+	/* Button animations */
 	.button-press {
 		animation: button-press 0.3s ease-out;
+	}
+
+	.button-bounce {
+		animation: button-bounce 3s ease-in-out 2.5s;
 	}
 
 	@keyframes button-press {
@@ -928,6 +932,24 @@
 		100% {
 			transform: scale(1);
 			background-color: #fbbf24;
+		}
+	}
+
+	@keyframes button-bounce {
+		0%, 100% {
+			transform: translateY(0);
+		}
+		5% {
+			transform: translateY(-5px);
+		}
+		10% {
+			transform: translateY(0);
+		}
+		15% {
+			transform: translateY(-3px);
+		}
+		20% {
+			transform: translateY(0);
 		}
 	}
 

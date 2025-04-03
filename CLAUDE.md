@@ -22,6 +22,52 @@
 - **Documentation**: Include JSDoc comments for functions
 - **Reactivity**: Use Svelte's reactive declarations and statements properly
 
+## Text Animation System
+
+The TalkType app uses subtle text animations for improved user experience:
+
+### Staggered Text Animation
+- **Implementation**: Split text into `<span>` elements, one per letter
+- **Animation**: Each letter fades in and moves up with CSS transitions
+- **Timing**: Letters have cascading delays (50-100ms apart)
+- **Performance**: Use `will-change` and hardware acceleration for smoothness
+- **CSS Properties**:
+  ```css
+  .stagger-letter {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(15px);
+    animation: staggerFadeIn 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+    will-change: transform, opacity;
+  }
+  
+  /* Incremental delays per letter */
+  .stagger-letter:nth-child(1) { animation-delay: 0.05s; }
+  .stagger-letter:nth-child(2) { animation-delay: 0.10s; }
+  /* ... and so on */
+  ```
+
+### Slide-In Animation
+- **Used For**: Subtitle text and other content blocks
+- **Effect**: Text slides up and fades in simultaneously
+- **Timing**: Typically starts after main title animation begins
+- **CSS Properties**:
+  ```css
+  .slide-in-subtitle {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: slideIn 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+    animation-delay: 0.6s;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
+  ```
+
+### Animation Coordination
+- **Sequence**: Main title → Subtitle → Interactive elements
+- **Timing**: Total sequence completes in ~2-2.5 seconds
+- **Session Management**: Optional storage-based tracking to show animations only on first visit
+
 ## Ghost Icon Animation System
 
 The ghost icon uses a Brian Eno-inspired generative/ambient animation system:
