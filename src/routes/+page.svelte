@@ -473,7 +473,6 @@
 		}
 	}
 </script>
-
 <section
 	class="bg-gradient-mesh mt-[-5vh] flex min-h-screen flex-col items-center justify-center px-4 py-8 pb-28 pt-[6vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-32"
 >
@@ -499,17 +498,14 @@
 			</div>
 		</div>
 
-		<!-- Typography - Always using animated version with improved interactions -->
+		<!-- Typography - Always using animated version for consistency -->
 		<h1
-			class="talktype-logo staggered-text title-shimmer title-hover mb-0 cursor-default text-center text-5xl font-black sm:mb-0 sm:text-6xl md:mb-0 md:text-7xl lg:text-8xl xl:text-9xl"
+			class="mb-1 text-center text-5xl font-black tracking-tight sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl staggered-text"
 		>
-			<span class="stagger-letter letter-t1">T</span><span class="stagger-letter letter-a1">a</span
-			><span class="stagger-letter letter-l">l</span><span class="stagger-letter letter-k">k</span
-			><span class="stagger-letter letter-t2">T</span><span class="stagger-letter letter-y">y</span
-			><span class="stagger-letter letter-p">p</span><span class="stagger-letter letter-e">e</span>
+			<span class="stagger-letter">T</span><span class="stagger-letter">a</span><span class="stagger-letter">l</span><span class="stagger-letter">k</span><span class="stagger-letter">T</span><span class="stagger-letter">y</span><span class="stagger-letter">p</span><span class="stagger-letter">e</span>
 		</h1>
 		<p
-			class="slide-in-subtitle subtitle-hover mx-auto mb-2 max-w-sm cursor-default text-center text-xl text-gray-700 sm:mb-2 sm:max-w-md sm:text-2xl md:mb-3 md:max-w-lg md:text-3xl"
+			class="mx-auto mb-4 max-w-sm text-center text-xl text-gray-700 sm:mb-4 sm:max-w-md sm:text-2xl md:mb-6 md:max-w-lg md:text-3xl slide-in-subtitle"
 		>
 			Fast, accurate, and free voice-to-text transcription.
 		</p>
