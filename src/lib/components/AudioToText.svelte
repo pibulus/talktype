@@ -489,9 +489,9 @@
 	<div class="button-section relative flex w-full justify-center">
 		<div class="button-container w-full max-w-[600px]">
 			{#if transcribing}
-				<!-- Progress bar (transforms the button) -->
+				<!-- Progress bar (transforms the button) - adjusted height for mobile -->
 				<div
-					class="progress-container relative h-[66px] w-full overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10"
+					class="progress-container relative h-[72px] w-full overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[66px]"
 				>
 					<div
 						class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
@@ -499,9 +499,9 @@
 					></div>
 				</div>
 			{:else}
-				<!-- Recording button -->
+				<!-- Recording button - improved for mobile with larger tap area -->
 				<button
-					class="record-button w-full rounded-full bg-amber-400 px-10 py-5 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:scale-95 active:bg-amber-500 active:shadow-inner"
+					class="record-button w-full rounded-full bg-amber-400 px-6 py-6 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5"
 					on:click={toggleRecording}
 					disabled={transcribing}
 					aria-label="Toggle Recording"
@@ -538,7 +538,7 @@
 						<div class="transcript-box-wrapper mx-auto w-full max-w-[600px]">
 							<!-- Editable transcript box -->
 							<div
-								class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-6 py-5 font-mono leading-relaxed text-gray-800 shadow-xl"
+								class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5"
 							>
 								<div
 									class={`transcript-text ${responsiveFontSize} animate-text-appear`}
@@ -820,7 +820,7 @@
 	/* Toast container for alignment with button */
 	.toast-container {
 		position: fixed;
-		bottom: 2rem; /* 8 in Tailwind units (bottom-8) */
+		bottom: 1.5rem; /* Closer to bottom on mobile */
 		left: 0;
 		right: 0;
 		z-index: 999;
@@ -829,7 +829,7 @@
 
 	@media (min-width: 768px) {
 		.toast-container {
-			bottom: 3rem; /* 12 in Tailwind units (md:bottom-12) */
+			bottom: 3rem; /* More space on desktop */
 		}
 	}
 
@@ -1037,12 +1037,14 @@
 		.transcript-box {
 			padding: 1rem 1.25rem; /* Adjusted padding on mobile */
 			border-radius: 1.5rem;
+			margin-top: 0.5rem; /* Add a bit more space on top on mobile */
 		}
 
 		.clipboard-toast {
 			font-size: 1rem;
 			padding: 0.9rem 1.3rem;
 			max-width: calc(100% - 40px);
+			bottom: 1.5rem; /* Position closer to bottom of screen on mobile */
 		}
 
 		.toast-ghost svg {
@@ -1055,6 +1057,23 @@
 		.transcript-box-wrapper {
 			width: calc(100% - 20px);
 		}
+
+		/* Increase tap target size for buttons on mobile */
+		.record-button {
+			min-height: 66px; /* Ensure minimum height for touch */
+			font-size: 1.2rem; /* Slightly smaller font on mobile */
+		}
+
+		/* Adjust spacing for mobile */
+		.position-wrapper {
+			margin-top: 1rem;
+			margin-bottom: 1rem;
+		}
+
+		/* Make the visualizer more compact on mobile */
+		.visualizer-container {
+			top: -5px;
+		}
 	}
 
 	/* Even smaller screens */
@@ -1062,11 +1081,18 @@
 		.clipboard-toast {
 			font-size: 0.9rem;
 			padding: 0.75rem 1.1rem;
+			bottom: 1rem;
 		}
 
 		.toast-ghost svg {
 			height: 18px;
 			width: 18px;
+		}
+
+		/* Make the recording button even more prominent */
+		.record-button {
+			min-height: 72px;
+			font-size: 1.1rem;
 		}
 	}
 
