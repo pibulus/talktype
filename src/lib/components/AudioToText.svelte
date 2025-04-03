@@ -432,16 +432,19 @@
 
 			// Random position and animation duration
 			const startPos = Math.random() * 100; // Position 0-100%
-			const delay = Math.random() * 0.8; // More delay variation (0-0.8s) // Delay 0-0.7s
-			const duration = Math.random() * 2 + 2; // Longer durations (2-4s) // Duration 1.5-3s
+			const delay = Math.random() * 0.8; // Delay variation (0-0.8s)
+			const duration = Math.random() * 2 + 2; // Animation duration (2-4s)
 			const rotation = Math.random() * 720 - 360; // Rotation -360 to +360 degrees
 
+			// Apply positions and animation styles
 			const horizontalPos = Math.random() * 10 - 5; // Small horizontal variation
-			confetti.style.left = `calc(% + px)`;
+			confetti.style.left = `calc(${startPos}% + ${horizontalPos}px)`;
 			const startOffset = Math.random() * 15 - 7.5; // Starting y-position variation
-			confetti.style.top = `px`;
+			confetti.style.top = `${startOffset}px`;
 			confetti.style.animationDelay = `${delay}s`;
-			confetti.style.animationDuration = `s`;
+			confetti.style.animationDuration = `${duration}s`;
+
+			// Choose a random easing function for variety
 			const easing =
 				Math.random() > 0.7
 					? 'cubic-bezier(0.25, 0.1, 0.25, 1)'
