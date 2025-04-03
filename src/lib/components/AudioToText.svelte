@@ -277,6 +277,11 @@
 	function animateButtonPress() {
 		const recordButton = document.querySelector('.record-button');
 		if (recordButton) {
+			// Remove any existing animation classes and force a reflow
+			recordButton.classList.remove('button-press');
+			void recordButton.offsetWidth; // Force reflow
+			
+			// Apply the immediate press animation
 			recordButton.classList.add('button-press');
 			setTimeout(() => {
 				recordButton.classList.remove('button-press');
@@ -484,7 +489,7 @@
 			{:else}
 				<!-- Recording button -->
 				<button
-					class="record-button button-bounce w-full rounded-full bg-amber-400 px-10 py-5 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:scale-95 active:bg-amber-500 active:shadow-inner"
+					class="record-button w-full rounded-full bg-amber-400 px-10 py-5 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline-none active:scale-95 active:bg-amber-500 active:shadow-inner"
 					on:click={toggleRecording}
 					disabled={transcribing}
 					aria-label="Toggle Recording"
@@ -984,60 +989,25 @@
 
 	/* Button animations */
 	.button-press {
-		animation: button-press 0.3s ease-out;
-	}
-
-	.button-bounce {
-		animation: button-bounce 3s ease-in-out 2.5s;
+		animation: button-press 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 	}
 
 	@keyframes button-press {
 		0% {
-			transform: scale(1) rotate(0deg);
-			background-color: #fbbf24;
+			transform: scale(1);
 		}
-		40% {
-			transform: scale(0.95) rotate(-0.5deg);
+		30% {
+			transform: scale(0.95);
 			background-color: #f59e0b;
-			box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+			box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 		}
 		60% {
-			transform: scale(0.97) rotate(0.5deg);
-		}
-		100% {
-			transform: scale(1) rotate(0deg);
+			transform: scale(1.02);
 			background-color: #fbbf24;
 		}
-	}
-
-	@keyframes button-bounce {
-		0%,
 		100% {
-			transform: translateY(0) scale(1);
-			box-shadow:
-				0 4px 6px -1px rgba(0, 0, 0, 0.1),
-				0 2px 4px -1px rgba(0, 0, 0, 0.06);
-		}
-		5% {
-			transform: translateY(-5px) scale(1.03);
-			box-shadow:
-				0 10px 15px -3px rgba(0, 0, 0, 0.1),
-				0 4px 6px -2px rgba(0, 0, 0, 0.05);
-		}
-		10% {
-			transform: translateY(0) scale(1);
-		}
-		15% {
-			transform: translateY(-3px) scale(1.01);
-			box-shadow:
-				0 7px 10px -2px rgba(0, 0, 0, 0.1),
-				0 3px 5px -1px rgba(0, 0, 0, 0.06);
-		}
-		20% {
-			transform: translateY(0) scale(1);
-			box-shadow:
-				0 4px 6px -1px rgba(0, 0, 0, 0.1),
-				0 2px 4px -1px rgba(0, 0, 0, 0.06);
+			transform: scale(1);
+			background-color: #fbbf24;
 		}
 	}
 
