@@ -952,8 +952,8 @@
 		-moz-osx-font-smoothing: grayscale;
 		text-rendering: optimizeLegibility;
 		/* Ensure proper vertical spacing and prevent y descender clipping */
-		line-height: 1.25;
-		padding-bottom: 4px;
+		line-height: 1.3; /* Increased line height for better descender handling */
+		padding-bottom: 6px; /* Increased padding to prevent descender clipping */
 		/* Subtle letter-spacing for better visual balance */
 		letter-spacing: 0.01em;
 		/* Ensure the container has enough height and doesn't clip */
@@ -975,7 +975,10 @@
 		margin-right: -0.05em; /* Tighten spacing between T and a */
 	}
 
-	/* Removed transform on letter-a1 as it caused layout instability */
+	/* Tighter kerning for "a" - pull it closer to "T" */
+	.talktype-logo .letter-a1 {
+		margin-left: -0.06em; /* Pull "a" closer to "T" */
+	}
 
 	.talktype-logo .letter-k {
 		margin-right: -0.02em; /* Adjust k-T spacing */
@@ -990,7 +993,7 @@
 		/* Ensure the y descender is fully visible */
 		display: inline-block;
 		position: relative;
-		margin-bottom: 2px; /* Prevent descender clipping */
+		margin-bottom: 3px; /* Increased margin to prevent descender clipping */
 	}
 
 	/* No complicated per-letter animations - removed for stability */
