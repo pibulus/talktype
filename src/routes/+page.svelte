@@ -335,6 +335,13 @@
 			// Remove the recording class
 			iconContainer.classList.remove('recording');
 			
+			// Add wobble animation when stopping from ghost click
+			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
+			iconContainer.classList.add(wobbleClass);
+			setTimeout(() => {
+				iconContainer.classList.remove(wobbleClass);
+			}, 600);
+			
 			// Blink once to acknowledge stop
 			setTimeout(() => {
 				debug('Performing stop acknowledgment blink');
@@ -365,6 +372,13 @@
 			
 			// Reset any existing animations
 			eyes.style.animation = 'none';
+			
+			// Add wobble animation when starting from ghost click
+			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
+			iconContainer.classList.add(wobbleClass);
+			setTimeout(() => {
+				iconContainer.classList.remove(wobbleClass);
+			}, 600);
 			
 			// Give a tiny delay to ensure animation reset
 			setTimeout(() => {
