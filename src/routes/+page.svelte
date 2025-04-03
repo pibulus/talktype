@@ -336,9 +336,19 @@
 			iconContainer.classList.remove('recording');
 			
 			// Add wobble animation when stopping from ghost click
+			debug('Applying wobble animation to ghost icon on stop');
+			// Force reflow to ensure animation applies
+			void iconContainer.offsetWidth;
+			
+			// Clear any existing animation classes first
+			iconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
+			
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
+			debug(`Adding class: ${wobbleClass}`);
 			iconContainer.classList.add(wobbleClass);
+			console.log('Current classes:', iconContainer.className);
 			setTimeout(() => {
+				debug(`Removing class: ${wobbleClass}`);
 				iconContainer.classList.remove(wobbleClass);
 			}, 600);
 			
@@ -374,9 +384,19 @@
 			eyes.style.animation = 'none';
 			
 			// Add wobble animation when starting from ghost click
+			debug('Applying wobble animation to ghost icon on start');
+			// Force reflow to ensure animation applies
+			void iconContainer.offsetWidth;
+			
+			// Clear any existing animation classes first
+			iconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
+			
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
+			debug(`Adding class: ${wobbleClass}`);
 			iconContainer.classList.add(wobbleClass);
+			console.log('Current classes:', iconContainer.className);
 			setTimeout(() => {
+				debug(`Removing class: ${wobbleClass}`);
 				iconContainer.classList.remove(wobbleClass);
 			}, 600);
 			
@@ -658,5 +678,50 @@
 			filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5))
 				drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
 		}
+	}
+	
+	/* Ghost wobble animations */
+	@keyframes ghost-wobble-left {
+		0% {
+			transform: rotate(0deg);
+		}
+		25% {
+			transform: rotate(-5deg);
+		}
+		50% {
+			transform: rotate(3deg);
+		}
+		75% {
+			transform: rotate(-2deg);
+		}
+		100% {
+			transform: rotate(0deg);
+		}
+	}
+	
+	@keyframes ghost-wobble-right {
+		0% {
+			transform: rotate(0deg);
+		}
+		25% {
+			transform: rotate(5deg);
+		}
+		50% {
+			transform: rotate(-3deg);
+		}
+		75% {
+			transform: rotate(2deg);
+		}
+		100% {
+			transform: rotate(0deg);
+		}
+	}
+	
+	:global(.ghost-wobble-left) {
+		animation: ghost-wobble-left 0.6s ease-in-out !important;
+	}
+	
+	:global(.ghost-wobble-right) {
+		animation: ghost-wobble-right 0.6s ease-in-out !important;
 	}
 </style>

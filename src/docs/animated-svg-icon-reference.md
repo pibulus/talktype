@@ -337,6 +337,62 @@ Detailed parameters for all icon animations:
 - **State Transitions**: 0.15s ease-in-out
 - **Animation Speed**: Fast (150-250ms) for small movements, slower (300-500ms) for larger movements
 
+### Wobble Animation Implementation
+- **CSS Animation Definition**: Must use `:global()` selector for cross-component access
+- **Animation Duration**: 0.6s with ease-in-out timing function
+- **Force Reflow**: Use `void element.offsetWidth` before applying wobble
+- **Clear Existing Classes**: Remove all animation classes before adding new ones
+- **Self-Removing Animation**: Set timeout to remove animation class (600ms)
+
+```javascript
+// Proper wobble animation implementation
+function applyWobbleAnimation(element) {
+  // Force a browser reflow to ensure animation applies cleanly
+  void element.offsetWidth;
+  
+  // Clear any existing animation classes
+  element.classList.remove('wobble-left', 'wobble-right');
+  
+  // Choose animation direction randomly
+  const wobbleClass = Math.random() > 0.5 ? 'wobble-left' : 'wobble-right';
+  
+  // Apply the animation class
+  element.classList.add(wobbleClass);
+  
+  // Remove class after animation completes
+  setTimeout(() => {
+    element.classList.remove(wobbleClass);
+  }, 600);
+}
+```
+
+```css
+/* Proper CSS implementation with global scope */
+@keyframes wobble-left {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  50% { transform: rotate(3deg); }
+  75% { transform: rotate(-2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes wobble-right {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(5deg); }
+  50% { transform: rotate(-3deg); }
+  75% { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+:global(.wobble-left) {
+  animation: wobble-left 0.6s ease-in-out !important;
+}
+
+:global(.wobble-right) {
+  animation: wobble-right 0.6s ease-in-out !important;
+}
+```
+
 ## Implementation Guidelines
 
 ### Core Best Practices
@@ -345,6 +401,104 @@ Detailed parameters for all icon animations:
 3. **Force Browser Reflow**: Use `void element.offsetWidth` between animation changes
 4. **Clear Timeouts on State Changes**: Prevent animation conflicts
 5. **Accessibility**: Provide proper ARIA attributes and keyboard support
+
+### Click-Triggered Animation Pattern
+
+This is a complete, reusable pattern for implementing click-triggered animations like wobble effects:
+
+```javascript
+function handleIconClick(event) {
+  // Stop event propagation to prevent bubbling
+  event.stopPropagation();
+  event.preventDefault();
+  
+  // Get the icon container element
+  const iconContainer = event.currentTarget;
+  if (!iconContainer) return;
+  
+  // Toggle the icon's state if needed
+  const isActive = iconContainer.classList.contains('active');
+  
+  if (isActive) {
+    // Deactivation logic
+    iconContainer.classList.remove('active');
+  } else {
+    // Activation logic
+    iconContainer.classList.add('active');
+  }
+  
+  // Apply wobble animation regardless of state change
+  applyWobbleAnimation(iconContainer);
+  
+  // Other state-specific logic
+  // ...
+}
+
+function applyWobbleAnimation(element) {
+  // Force browser reflow to ensure animation applies cleanly
+  void element.offsetWidth;
+  
+  // Clear any existing animation classes first
+  element.classList.remove('wobble-left', 'wobble-right');
+  
+  // Choose random direction for variety
+  const wobbleClass = Math.random() > 0.5 ? 'wobble-left' : 'wobble-right';
+  
+  // Apply the wobble class
+  element.classList.add(wobbleClass);
+  
+  // Remove class after animation completes (match duration with CSS)
+  setTimeout(() => {
+    element.classList.remove(wobbleClass);
+  }, 600);
+}
+```
+
+```css
+/* Animation keyframes - defined in the same component that applies them */
+@keyframes wobble-left {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  50% { transform: rotate(3deg); }
+  75% { transform: rotate(-2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes wobble-right {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(5deg); }
+  50% { transform: rotate(-3deg); }
+  75% { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* Global scoping for cross-component animation classes */
+:global(.wobble-left) {
+  animation: wobble-left 0.6s ease-in-out !important;
+}
+
+:global(.wobble-right) {
+  animation: wobble-right 0.6s ease-in-out !important;
+}
+
+/* State-specific styling */
+.icon-container.active {
+  /* Active state styling */
+}
+```
+
+```html
+<!-- In your component template -->
+<div 
+  class="icon-container"
+  on:click|preventDefault|stopPropagation={handleIconClick}
+  role="button"
+  tabindex="0"
+  aria-label="Toggle State"
+>
+  <!-- Icon content -->
+</div>
+```
 
 ### Implementation Steps
 1. **Create SVG Components**:
@@ -370,6 +524,7 @@ Detailed parameters for all icon animations:
    - Track state with DOM classes
    - Implement proper animation transitions
    - Force browser reflows between state changes
+   - Clear existing animation classes before adding new ones
 
 ### Key JavaScript Functions to Implement
 1. `setupDomObserver()`: Reliably detect when SVG elements are available
@@ -521,6 +676,39 @@ Detailed parameters for all icon animations:
       animation: simple-animation 4s infinite;
     }
   }
+  ```
+
+#### CSS Scoping Issues in Component Frameworks
+**Problem**: Animation styles defined in one component don't affect elements in other components
+**Solution**:
+- Use global CSS selectors (`:global()` in Svelte) for animations used across components
+- Define animation keyframes in a shared styles file or in every component that needs them
+- Always check the CSS inspector to verify animation classes are being applied
+- Example in Svelte:
+  ```css
+  /* ❌ WRONG - Scoped to component only */
+  .wobble-animation {
+    animation: wobble 0.6s ease-in-out;
+  }
+  
+  /* ✅ CORRECT - Available globally across components */
+  :global(.wobble-animation) {
+    animation: wobble 0.6s ease-in-out !important;
+  }
+  ```
+
+#### Animation Conflicts Between Components
+**Problem**: Multiple components trying to animate the same element
+**Solution**:
+- Use a single source of truth for animation state
+- Implement proper cleanup when switching between animation states
+- Use the `!important` flag for critical animations
+- Add debug logging to track animation class application:
+  ```javascript
+  // Debug animation state
+  console.log('Before adding class:', element.className);
+  element.classList.add('animation-class');
+  console.log('After adding class:', element.className);
   ```
 
 #### Browser Compatibility
