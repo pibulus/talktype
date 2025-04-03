@@ -5,6 +5,7 @@ This document provides essential information for maintaining and extending the T
 ## Project Overview
 
 TalkType is a lightweight, browser-based voice transcription tool with the following features:
+
 - Real-time audio recording and visualization
 - Text transcription using AI services
 - Responsive design for all device sizes
@@ -13,11 +14,13 @@ TalkType is a lightweight, browser-based voice transcription tool with the follo
 ## Technology Stack
 
 ### Framework & UI
+
 - **SvelteKit**: Primary framework for reactive UI components
 - **Tailwind CSS**: Utility-first CSS framework for styling
 - **DaisyUI**: Component library built on Tailwind
 
 ### Audio & Transcription
+
 - **WebAudio API**: For audio recording and visualization
 - **MediaRecorder API**: For capturing audio streams
 - **AI Service**: External API for speech-to-text conversion
@@ -33,6 +36,7 @@ TalkType is a lightweight, browser-based voice transcription tool with the follo
 ## Browser Compatibility
 
 TalkType is designed to work with modern browsers:
+
 - Chrome/Edge (latest 2 versions)
 - Firefox (latest 2 versions)
 - Safari (latest 2 versions)
@@ -41,17 +45,20 @@ TalkType is designed to work with modern browsers:
 ## Important Considerations
 
 ### Audio Recording
+
 - Always check for browser permissions before attempting to record
 - Provide clear feedback when recording starts/stops
 - Handle iOS Safari-specific audio quirks with appropriate fallbacks
 
 ### SVG Animation
+
 - See the comprehensive SVG animation guide in `src/docs/animated-svg-icon-reference.md`
 - Always separate animated elements into distinct SVG components
 - Use CSS for baseline animations and JS for enhanced interactions
 - Test animations across browser/device combinations
 
 ### SSR Considerations
+
 - ⚠️ Avoid direct window/document references in component initialization
 - Use onMount() for browser-only code to prevent SSR errors
 - Check for browser environment before accessing browser APIs
@@ -73,17 +80,17 @@ import { onMount } from 'svelte';
 let audioContext;
 
 onMount(() => {
-  // Safe to access browser APIs here
-  if (typeof window !== 'undefined') {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  
-  return () => {
-    // Cleanup when component unmounts
-    if (audioContext) {
-      audioContext.close();
-    }
-  };
+	// Safe to access browser APIs here
+	if (typeof window !== 'undefined') {
+		audioContext = new (window.AudioContext || window.webkitAudioContext)();
+	}
+
+	return () => {
+		// Cleanup when component unmounts
+		if (audioContext) {
+			audioContext.close();
+		}
+	};
 });
 ```
 

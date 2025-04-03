@@ -42,7 +42,7 @@
 		}
 		return copyMessages[Math.floor(Math.random() * copyMessages.length)];
 	}
-	
+
 	// Ghost expression functions - add personality through blinking
 	function ghostThinkingHard() {
 		const eyes = document.querySelector('.icon-eyes');
@@ -50,18 +50,18 @@
 			eyes.classList.add('blink-thinking-hard');
 		}
 	}
-	
+
 	function ghostStopThinking() {
 		const eyes = document.querySelector('.icon-eyes');
 		if (eyes) {
 			eyes.classList.remove('blink-thinking-hard');
 		}
 	}
-	
+
 	function ghostReactToTranscript(textLength = 0) {
 		const eyes = document.querySelector('.icon-eyes');
 		if (!eyes) return;
-		
+
 		if (textLength > 20) {
 			// For longer transcripts, do a "satisfied" double blink
 			setTimeout(() => {
@@ -151,8 +151,8 @@
 
 				try {
 					console.log('🤖 Transcription started');
-						// Make the ghost look like it's thinking hard
-						ghostThinkingHard();
+					// Make the ghost look like it's thinking hard
+					ghostThinkingHard();
 					transcript = await geminiService.transcribeAudio(audioBlob);
 
 					// Complete the progress bar smoothly
@@ -168,6 +168,12 @@
 								setTimeout(() => {
 									// Button will do a completion glow effect
 									document.querySelector('.progress-container')?.classList.add('completion-pulse');
+
+									// Add confetti celebration for successful transcription
+									if (transcript && transcript.length > 20) {
+										showConfettiCelebration();
+									}
+
 									setTimeout(() => {
 										document
 											.querySelector('.progress-container')
@@ -382,6 +388,65 @@
 		}
 	}
 
+	// Confetti celebration effect for successful transcription
+	function showConfettiCelebration() {
+		// Create a container for the confetti
+		const container = document.createElement('div');
+		container.className = 'confetti-container';
+		document.body.appendChild(container);
+
+		// Number of confetti pieces
+		const confettiCount = 70;
+		const colors = ['#ff9cef', '#fde68a', '#a78bfa', '#f472b6', '#60a5fa'];
+
+		// Create and animate confetti pieces
+		for (let i = 0; i < confettiCount; i++) {
+			const confetti = document.createElement('div');
+			confetti.className = 'confetti-piece';
+
+			// Random styling
+			const size = Math.random() * 10 + 6; // Size between 6-16px
+			const color = colors[Math.floor(Math.random() * colors.length)];
+
+			// Shape variety (circle, square, triangle)
+			const shape = Math.random() > 0.66 ? 'circle' : Math.random() > 0.33 ? 'triangle' : 'square';
+
+			// Set styles
+			confetti.style.width = `${size}px`;
+			confetti.style.height = `${size}px`;
+			confetti.style.background = color;
+			confetti.style.borderRadius = shape === 'circle' ? '50%' : shape === 'triangle' ? '0' : '2px';
+			if (shape === 'triangle') {
+				confetti.style.background = 'transparent';
+				confetti.style.borderBottom = `${size}px solid ${color}`;
+				confetti.style.borderLeft = `${size / 2}px solid transparent`;
+				confetti.style.borderRight = `${size / 2}px solid transparent`;
+				confetti.style.width = '0';
+				confetti.style.height = '0';
+			}
+
+			// Random position and animation duration
+			const startPos = Math.random() * 100; // Position 0-100%
+			const delay = Math.random() * 0.7; // Delay 0-0.7s
+			const duration = Math.random() * 1.5 + 1.5; // Duration 1.5-3s
+			const rotation = Math.random() * 720 - 360; // Rotation -360 to +360 degrees
+
+			confetti.style.left = `${startPos}%`;
+			confetti.style.top = '0';
+			confetti.style.animationDelay = `${delay}s`;
+			confetti.style.animationDuration = `${duration}s`;
+			confetti.style.transform = `rotate(${rotation}deg)`;
+
+			// Add to container
+			container.appendChild(confetti);
+		}
+
+		// Remove container after animation completes
+		setTimeout(() => {
+			document.body.removeChild(container);
+		}, 4000); // Slightly longer than the longest animation
+	}
+
 	// Function to calculate responsive font size based on transcript length
 	function getResponsiveFontSize(text) {
 		if (!text) return 'text-lg'; // Default size
@@ -551,9 +616,10 @@
 	}
 
 	.animate-fadeIn-from-top {
-		animation: fadeInFromTop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+		animation: fadeInFromTop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
 		transform-origin: center top;
 		will-change: transform, opacity;
+		animation-fill-mode: forwards;
 	}
 
 	@keyframes localFadeIn {
@@ -570,7 +636,13 @@
 	@keyframes fadeInFromTop {
 		0% {
 			opacity: 0;
-			transform: translateY(-8px) scale(0.99);
+			transform: translateY(-15px) scale(0.98);
+		}
+		60% {
+			transform: translateY(3px) scale(1.01);
+		}
+		80% {
+			transform: translateY(-2px) scale(1);
 		}
 		100% {
 			opacity: 1;
@@ -921,35 +993,51 @@
 
 	@keyframes button-press {
 		0% {
-			transform: scale(1);
+			transform: scale(1) rotate(0deg);
 			background-color: #fbbf24;
 		}
 		40% {
-			transform: scale(0.95);
+			transform: scale(0.95) rotate(-0.5deg);
 			background-color: #f59e0b;
 			box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 		}
+		60% {
+			transform: scale(0.97) rotate(0.5deg);
+		}
 		100% {
-			transform: scale(1);
+			transform: scale(1) rotate(0deg);
 			background-color: #fbbf24;
 		}
 	}
 
 	@keyframes button-bounce {
-		0%, 100% {
-			transform: translateY(0);
+		0%,
+		100% {
+			transform: translateY(0) scale(1);
+			box-shadow:
+				0 4px 6px -1px rgba(0, 0, 0, 0.1),
+				0 2px 4px -1px rgba(0, 0, 0, 0.06);
 		}
 		5% {
-			transform: translateY(-5px);
+			transform: translateY(-5px) scale(1.03);
+			box-shadow:
+				0 10px 15px -3px rgba(0, 0, 0, 0.1),
+				0 4px 6px -2px rgba(0, 0, 0, 0.05);
 		}
 		10% {
-			transform: translateY(0);
+			transform: translateY(0) scale(1);
 		}
 		15% {
-			transform: translateY(-3px);
+			transform: translateY(-3px) scale(1.01);
+			box-shadow:
+				0 7px 10px -2px rgba(0, 0, 0, 0.1),
+				0 3px 5px -1px rgba(0, 0, 0, 0.06);
 		}
 		20% {
-			transform: translateY(0);
+			transform: translateY(0) scale(1);
+			box-shadow:
+				0 4px 6px -1px rgba(0, 0, 0, 0.1),
+				0 2px 4px -1px rgba(0, 0, 0, 0.06);
 		}
 	}
 
@@ -997,6 +1085,48 @@
 		.toast-ghost svg {
 			height: 18px;
 			width: 18px;
+		}
+	}
+
+	/* Confetti celebration animation styles */
+	:global(.confetti-container) {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100vh;
+		overflow: hidden;
+		z-index: 9000;
+		pointer-events: none;
+	}
+
+	:global(.confetti-piece) {
+		position: absolute;
+		animation: confetti-fall 3s ease-in-out forwards;
+		opacity: 0.9;
+	}
+
+	@keyframes confetti-fall {
+		0% {
+			transform: translateY(-10px) rotate(0deg) scale(0.7);
+			opacity: 0;
+		}
+		10% {
+			opacity: 1;
+		}
+		25% {
+			transform: translateY(25vh) translateX(20px) rotate(90deg) scale(1);
+		}
+		50% {
+			transform: translateY(50vh) translateX(-15px) rotate(180deg) scale(0.9);
+		}
+		75% {
+			transform: translateY(75vh) translateX(10px) rotate(270deg) scale(0.8);
+			opacity: 1;
+		}
+		100% {
+			transform: translateY(105vh) translateX(-20px) rotate(360deg) scale(0.7);
+			opacity: 0;
 		}
 	}
 </style>
