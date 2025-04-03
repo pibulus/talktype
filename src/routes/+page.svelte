@@ -501,13 +501,12 @@
 
 		<!-- Typography - Always using animated version with improved interactions -->
 		<h1
-			class="staggered-text title-shimmer title-hover mb-1 cursor-default text-center text-5xl font-black tracking-tight sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
+			class="talktype-logo staggered-text title-shimmer title-hover mb-1 cursor-default text-center text-5xl font-black sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
 		>
-			<span class="stagger-letter">T</span><span class="stagger-letter">a</span><span
-				class="stagger-letter">l</span
-			><span class="stagger-letter">k</span><span class="stagger-letter">T</span><span
-				class="stagger-letter">y</span
-			><span class="stagger-letter">p</span><span class="stagger-letter">e</span>
+			<span class="stagger-letter letter-t1">T</span><span class="stagger-letter letter-a1">a</span
+			><span class="stagger-letter letter-l">l</span><span class="stagger-letter letter-k">k</span
+			><span class="stagger-letter letter-t2">T</span><span class="stagger-letter letter-y">y</span
+			><span class="stagger-letter letter-p">p</span><span class="stagger-letter letter-e">e</span>
 		</h1>
 		<p
 			class="slide-in-subtitle subtitle-hover mx-auto mb-4 max-w-sm cursor-default text-center text-xl text-gray-700 sm:mb-4 sm:max-w-md sm:text-2xl md:mb-6 md:max-w-lg md:text-3xl"
@@ -944,5 +943,40 @@
 	.subtitle-hover:hover {
 		color: #000;
 		text-shadow: 0 0 8px rgba(249, 168, 212, 0.3);
+	}
+
+	/* TalkType Logo Typography Fixes */
+	.talktype-logo {
+		/* Font smoothing for better rendering */
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		/* Ensure proper vertical spacing and prevent y descender clipping */
+		line-height: 1.2;
+		padding-bottom: 0.1em;
+		/* Remove default letter-spacing to allow custom kerning */
+		letter-spacing: 0;
+		/* Ensure the container has enough height and doesn't clip */
+		overflow: visible;
+	}
+
+	/* Custom kerning for specific letter pairs */
+	.talktype-logo .letter-t1 {
+		margin-right: -0.03em; /* Tighten spacing between T and a */
+	}
+
+	.talktype-logo .letter-k {
+		margin-right: -0.02em; /* Adjust k-T spacing */
+	}
+
+	.talktype-logo .letter-t2 {
+		margin-right: -0.02em; /* Adjust T-y spacing */
+	}
+
+	/* Fix for the 'y' descender to prevent clipping */
+	.talktype-logo .letter-y {
+		/* Ensure the y descender is fully visible */
+		display: inline-block;
+		position: relative;
+		margin-bottom: 0.02em; /* Slight lift to prevent descender clipping */
 	}
 </style>
