@@ -545,7 +545,7 @@
 </script>
 
 <!-- Main wrapper with fixed position to prevent pushing page layout -->
-<div class="main-wrapper mx-auto w-full box-border">
+<div class="main-wrapper mx-auto w-full box-border fixed-layout">
 	<!-- Shared container with proper centering for mobile -->
 	<div class="mobile-centered-container flex flex-col items-center justify-center w-full">
 		<!-- Recording button/progress bar section - always in same position -->
@@ -721,15 +721,26 @@
 		width: 100%;
 	}
 
+	/* Fixed layout structure to prevent bouncing */
+	.fixed-layout {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-start;
+		height: auto;
+	}
+
 	/* Position wrapper to create a stable layout without shifts */
 	.position-wrapper {
-		min-height: 150px; /* Increased to accommodate visualizer without pushing content */
-		max-height: 600px; /* Cap the height to prevent excessive expansion */
+		min-height: 150px; /* Ensure there's enough space for content */
+		max-height: none; /* Remove max-height constraint to prevent content cutoff */
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		position: relative; /* Ensure proper positioning context */
 		overflow-y: visible; /* Allow overflow without jumping */
+		transition: all 0.3s ease-in-out; /* Smooth transition when content changes */
+			contain: layout; /* Improve layout containment */
 	}
 
 	/* Content container for transcripts and visualizers */
@@ -868,19 +879,22 @@
 			rgba(255, 251, 252, 0.98)
 		);
 		position: relative;
-		min-height: 120px; /* Increased minimum height for better appearance */
+		min-height: 120px; /* Minimum height for better appearance */
 		min-width: 280px; /* Minimum width to prevent too-narrow boxes on mobile */
 		height: auto;
-		max-height: 400px; /* Fixed pixel height instead of vh to prevent layout shifts */
+		max-height: 50vh; /* Cap height as percentage of viewport to prevent excessive scrolling */
 		overflow-y: auto;
+		/* No fade effect for cleaner reading */
 		/* Custom scrollbar styling */
 		scrollbar-width: thin;
 		scrollbar-color: rgba(249, 168, 212, 0.3) transparent;
-		transition: all 0.2s ease;
+		transition: all 0.3s ease-in-out;
 		/* Performance optimization */
 		will-change: transform, opacity;
 		backface-visibility: hidden;
 		-webkit-font-smoothing: subpixel-antialiased;
+		/* Force transcript to not affect layout */
+		z-index: 10;
 	}
 
 	/* Subtle hover effect for transcript box */
@@ -1062,7 +1076,7 @@
 	/* Toast container for alignment with button */
 	.toast-container {
 		position: fixed;
-		bottom: 1.5rem; /* Closer to bottom on mobile */
+		bottom: 5rem; /* Increased space above footer on mobile */
 		left: 0;
 		right: 0;
 		z-index: 999;
@@ -1071,7 +1085,7 @@
 
 	@media (min-width: 768px) {
 		.toast-container {
-			bottom: 3rem; /* More space on desktop */
+			bottom: 6rem; /* More space on desktop */
 		}
 	}
 
@@ -1323,6 +1337,7 @@
 			margin: 1rem auto; /* Space above and below, centered */
 			width: 100%; /* Full width of container */
 			max-width: 90vw; /* Cap width on mobile to prevent overflow */
+			max-height: 240px; /* Shorter max height on mobile to minimize layout shifts */
 		}
 
 		.transcript-text {
@@ -1334,7 +1349,6 @@
 			padding: 0.6rem 1rem;
 			max-width: 360px;
 			width: calc(100% - 2rem);
-			bottom: 1.5rem; /* Position closer to bottom of screen on mobile */
 		}
 
 		.toast-ghost svg {
@@ -1367,16 +1381,27 @@
 			margin: 0 auto; /* Center horizontally */
 			text-align: center; /* Center text */
 			align-self: center; /* Center the button itself */
+			position: relative; /* Helps maintain position */
+		}
+
+		/* Fix button to prevent jumping on long transcripts */
+		.button-section {
+			position: sticky;
+			top: 0;
+			z-index: 20;
+			margin-bottom: 10px;
+			background: transparent;
 		}
 
 		/* Adjust spacing for mobile */
 		.position-wrapper {
 			margin-top: 1rem;
-			margin-bottom: 1rem;
+			margin-bottom: 3rem; /* More space for footer */
 			padding: 0 8px; /* Add side padding */
 			display: flex;
 			flex-direction: column;
 			align-items: center;
+			padding-bottom: 30px; /* Extra padding to avoid footer overlap */
 		}
 
 		/* Make the visualizer more compact on mobile */
