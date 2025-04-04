@@ -8,6 +8,27 @@
 	import { onMount } from 'svelte';
 	import AudioToText from '$lib/components/AudioToText.svelte';
 	import { browser } from '$app/environment';
+	
+	// Create a reusable Svelte action for handling clicks outside an element
+	function clickOutside(node, { enabled = true, callback = () => {} }) {
+		const handleClick = (event) => {
+			if (!node.contains(event.target) && !event.defaultPrevented && enabled) {
+				callback();
+			}
+		};
+		
+		document.addEventListener('click', handleClick, true);
+		
+		return {
+			update(params) {
+				enabled = params.enabled;
+				callback = params.callback;
+			},
+			destroy() {
+				document.removeEventListener('click', handleClick, true);
+			}
+		};
+	}
 
 	let audioToTextComponent;
 	let showIntroModal = false;
@@ -337,7 +358,7 @@
 					console.log('Opening intro modal on first visit');
 					modal.showModal();
 					
-					// Set up event listener to mark intro as seen when modal closes
+					// Set up event listener to handle modal close event from any source
 					modal.addEventListener('close', () => {
 						console.log('Modal closed, marking intro as seen');
 						markIntroAsSeen();
@@ -798,9 +819,16 @@
 	
 	<!-- First-time Intro Modal (DaisyUI version) -->
 	<dialog id="intro_modal" class="modal">
-		<!-- This form with method="dialog" makes clicking the backdrop close the modal -->
+		<!-- Modal content with clickOutside Svelte action for reliable backdrop clicking -->
 		<div class="modal-box relative bg-white rounded-3xl p-6 sm:p-8 md:p-10 w-[95%] max-w-[90vw] sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto border-0"
-			style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);">
+			style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
+			use:clickOutside={{ enabled: true, callback: () => {
+				const modal = document.getElementById('intro_modal');
+				if (modal) {
+					modal.close();
+					markIntroAsSeen();
+				}
+			}}}>
 			
 			<!-- Close button -->
 			<form method="dialog">
@@ -872,7 +900,8 @@
 				</form>
 			</div>
 		</div>
-		<form method="dialog" class="modal-backdrop"></form>
+		<!-- Modal backdrop - for styling only, actual click handling is done by our custom Svelte action -->
+		<div class="modal-backdrop"></div>
 	</dialog>
 </section>
 
