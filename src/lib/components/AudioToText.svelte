@@ -641,11 +641,11 @@
 										<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 h-full w-full copy-eyes" aria-hidden="true" />
 									</div>
 									
-									<!-- Smart tooltip - only shows for first few hovers -->
+									<!-- Smart tooltip - only shows for first few hovers - positioned at top right to avoid clipping -->
 									{#if showCopyTooltip}
-										<div class="copy-tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md">
+										<div class="copy-tooltip absolute -top-10 right-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md z-50">
 											Copy to clipboard
-											<div class="tooltip-arrow absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-white"></div>
+											<div class="tooltip-arrow absolute -bottom-1.5 right-4 h-3 w-3 rotate-45 bg-white"></div>
 										</div>
 									{/if}
 								</button>
@@ -982,18 +982,18 @@
 		animation: tooltip-appear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 		border: 1px solid rgba(249, 168, 212, 0.3);
 		box-shadow: 0 4px 8px -2px rgba(249, 168, 212, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
-		z-index: 20;
+		z-index: 60; /* Higher z-index to ensure it's above visualizer */
 		pointer-events: none;
 	}
 
 	@keyframes tooltip-appear {
 		0% {
 			opacity: 0;
-			transform: translate(-50%, 5px) scale(0.95);
+			transform: translateY(5px) scale(0.95);
 		}
 		100% {
 			opacity: 1;
-			transform: translate(-50%, 0) scale(1);
+			transform: translateY(0) scale(1);
 		}
 	}
 
