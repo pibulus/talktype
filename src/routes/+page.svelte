@@ -332,8 +332,19 @@
 		if (!hasSeenIntro) {
 			// First visit, show intro modal after a brief delay
 			setTimeout(() => {
-				showIntroModal = true;
-				document.getElementById('intro_modal')?.showModal();
+				const modal = document.getElementById('intro_modal');
+				if (modal) {
+					console.log('Opening intro modal on first visit');
+					modal.showModal();
+					
+					// Set up event listener to mark intro as seen when modal closes
+					modal.addEventListener('close', () => {
+						console.log('Modal closed, marking intro as seen');
+						markIntroAsSeen();
+					});
+				} else {
+					console.error('Intro modal element not found');
+				}
 			}, 500);
 		}
 	}
@@ -342,7 +353,6 @@
 	function markIntroAsSeen() {
 		if (!browser) return;
 		localStorage.setItem('hasSeenTalkTypeIntro', 'true');
-		showIntroModal = false;
 	}
 
 	// Component lifecycle
@@ -356,6 +366,9 @@
 		// Set up animation sequence timing
 		setTimeout(handleTitleAnimationComplete, 1200); // After staggered animation
 		setTimeout(handleSubtitleAnimationComplete, 2000); // After subtitle slide-in
+		
+		// For testing without localStorage, you can uncomment this line
+		// localStorage.removeItem('hasSeenTalkTypeIntro');
 
 		return () => {
 			debug('Component unmounting, clearing timeouts');
@@ -562,10 +575,10 @@
 		modalOpen = false;
 	}
 	
-	// Close intro modal and mark as seen
+	// Function is no longer needed with DaisyUI modal
+	// Keeping a minimal version to maintain existing references
 	function closeIntroModal() {
 		markIntroAsSeen();
-		document.getElementById('intro_modal')?.close();
 	}
 </script>
 
@@ -783,61 +796,83 @@
 		}}></div>
 	</dialog>
 	
-	<!-- First-time Intro Modal -->
-	<dialog id="intro_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;">
-		<div class="modal-box bg-gradient-to-b from-[#fdfaf5] to-[#fff2f5] shadow-xl border border-neutral-200/80 rounded-2xl overflow-y-auto max-h-[80vh] p-9 pt-12 pb-10 backdrop-blur bg-white/80">
+	<!-- First-time Intro Modal (DaisyUI version) -->
+	<dialog id="intro_modal" class="modal">
+		<!-- This form with method="dialog" makes clicking the backdrop close the modal -->
+		<div class="modal-box relative bg-white rounded-3xl p-8 sm:p-10 max-w-md md:max-w-lg lg:max-w-xl mx-auto border-0"
+			style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);">
+			
+			<!-- Close button -->
 			<form method="dialog">
-				<button 
-					class="btn btn-sm btn-circle absolute right-4 top-4 bg-white border-neutral-200 text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 shadow-sm transition-all duration-200"
-					on:click={closeIntroModal}
-				>✕</button>
+				<button class="btn btn-sm btn-circle absolute right-4 top-4 bg-white/70 border-0 text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 shadow-sm">✕</button>
 			</form>
 			
-			<div class="animate-float-in space-y-6">
-				<div class="flex items-center justify-center mb-4">
-					<div class="relative w-20 h-20 animate-gentle-float -mt-12 transform hover:scale-110 transition-transform duration-300">
+			<div class="space-y-7 animate-fadeIn">
+				<!-- Animated ghost icon -->
+				<div class="flex justify-center mb-4">
+					<div class="relative w-16 h-16 animate-pulse-slow">
 						<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
 						<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
 						<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full intro-eyes" />
 					</div>
 				</div>
 				
-				<div class="space-y-8 mt-1 text-center px-2">
-					<h2 class="font-black tracking-tight leading-[1.1] mb-7 text-[clamp(2.25rem,6vw,3.5rem)]" style="font-family: 'Inter', system-ui, sans-serif;">
-						TalkType's the best.<br>Kick out the rest.
-					</h2>
-					
-					<p class="text-xl font-medium text-neutral-700 leading-[1.7] tracking-wide mb-5" style="letter-spacing: 0.02em;">
+				<!-- Main heading - ultra chunky -->
+				<h1 class="text-center text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-tight text-gray-900">
+					TalkType's the best. <br> Kick out the rest.
+				</h1>
+				
+				<!-- Main description - spacious and readable -->
+				<div class="space-y-4">
+					<p class="text-base sm:text-lg font-medium text-gray-700 leading-relaxed">
 						Clean, sweet, and stupidly easy.
 					</p>
 					
-					<div class="text-lg font-medium text-neutral-600 leading-[1.7] tracking-tight space-y-2 mb-6">
-						<p>Use it anywhere.</p>
-						<p>Save it to your home screen.</p>
-						<p>Add the extension.</p>
-						<p>Talk into any box on any site.</p>
-					</div>
+					<p class="text-base sm:text-lg font-medium text-gray-700 leading-relaxed">
+						Tap the ghost to speak — we turn your voice into text.
+					</p>
 					
-					<div class="bg-gradient-to-r from-amber-50/90 to-[#fff8f9]/90 p-6 rounded-xl border border-neutral-200/70 shadow-md text-center font-extrabold text-2xl text-neutral-700 mb-6 transform rotate-[-0.5deg] hover:rotate-[0.5deg] transition-transform duration-300">
-						You click the ghost,<br>we do the most.
-					</div>
-					
-					<p class="text-2xl font-bold text-pink-600 leading-relaxed mt-4" style="letter-spacing: -0.01em;">
-						It's fast, it's fun, it's freaky good.
+					<p class="text-base sm:text-lg font-medium text-gray-700 leading-relaxed">
+						Use it anywhere. Save it to your home screen.
+						Add the extension. Talk into any box on any site.
 					</p>
 				</div>
 				
-				<div class="pt-8 flex justify-center">
-					<button class="bg-gradient-to-r from-amber-300 to-[#ff9cef] text-white font-extrabold py-4 px-10 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 text-xl tracking-wide"
-						on:click={closeIntroModal}
-						style="text-shadow: 0 1px 1px rgba(0,0,0,0.1);"
+				<!-- Highlighted quote as clickable button -->
+				<button 
+					class="w-full bg-gradient-to-r from-amber-100 to-amber-200 px-5 py-4 rounded-xl text-center text-gray-800 font-bold shadow-md border border-amber-300/50 sm:text-lg hover:shadow-lg hover:bg-gradient-to-r hover:from-amber-200 hover:to-amber-300 hover:text-gray-900 active:scale-[0.98] transition-all duration-300 cursor-pointer relative"
+					on:click={() => {
+						// First close the modal
+						document.getElementById('intro_modal').close();
+						markIntroAsSeen();
+						
+						// Then after a brief delay, start recording
+						setTimeout(() => {
+							const ghostBtn = document.querySelector('.icon-container');
+							if (ghostBtn) ghostBtn.click();
+						}, 300);
+					}}
+				>
+					You click the ghost, we do the most.
+				</button>
+				
+				<!-- Tagline -->
+				<p class="text-center text-pink-600 font-bold text-lg sm:text-xl py-2">
+					It's fast, it's fun, it's freaky good.
+				</p>
+				
+				<!-- Call to action button - extra chunky -->
+				<form method="dialog">
+					<button 
+						class="w-full text-lg font-bold py-3 px-6 rounded-full bg-gradient-to-r from-yellow-400 to-pink-400 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+						on:click={markIntroAsSeen}
 					>
 						Let's Go! 🚀
 					</button>
-				</div>
+				</form>
 			</div>
 		</div>
-		<div class="modal-backdrop bg-black/30 backdrop-blur-sm" on:click|self|preventDefault|stopPropagation={closeIntroModal}></div>
+		<form method="dialog" class="modal-backdrop"></form>
 	</dialog>
 </section>
 
@@ -850,47 +885,63 @@
 	}
 	
 	@keyframes intro-blink {
-		0%, 30%, 40%, 100% {
+		0%, 30%, 33%, 69%, 100% {
 			transform: scaleY(1);
 		}
-		35%, 38% {
+		31%, 32% {
 			transform: scaleY(0);
 		}
-		85%, 88% {
+		70%, 71% {
 			transform: scaleY(0);
 		}
 	}
 	
-	.animate-float-in {
-		animation: float-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+	.animate-pulse-slow {
+		animation: pulse-slow 3s ease-in-out infinite;
 	}
 	
-	@keyframes float-in {
-		0% { 
+	@keyframes pulse-slow {
+		0%, 100% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.05);
+		}
+	}
+	
+	.animate-modal-in {
+		animation: modal-in 0.5s ease-out forwards;
+	}
+	
+	.animate-modal-out {
+		animation: modal-out 0.3s ease-in forwards;
+	}
+	
+	@keyframes modal-in {
+		0% {
 			opacity: 0;
-			transform: translateY(10px); 
+			transform: scale(0.95);
 		}
-		100% { 
+		100% {
 			opacity: 1;
-			transform: translateY(0);
+			transform: scale(1);
 		}
 	}
 	
-	.animate-gentle-float {
-		animation: gentle-float 6s cubic-bezier(0.47, 0, 0.745, 0.715) infinite;
-		transform-origin: center center;
+	@keyframes modal-out {
+		0% {
+			opacity: 1;
+			transform: scale(1);
+		}
+		100% {
+			opacity: 0;
+			transform: scale(0.95);
+		}
 	}
 	
-	@keyframes gentle-float {
-		0%, 100% { 
-			transform: translateY(0) rotate(0deg); 
-		}
-		33% {
-			transform: translateY(-8px) rotate(-1deg);
-		}
-		66% { 
-			transform: translateY(-4px) rotate(1deg); 
-		}
+	/* Radial gradient support */
+	.bg-gradient-radial {
+		background-image: radial-gradient(circle at center, var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to));
 	}
 	
 	:global(*:focus) {
@@ -1386,4 +1437,20 @@
 	}
 
 	/* No complicated per-letter animations - removed for stability */
+	
+	/* Animation for intro modal content */
+	@keyframes fadeIn {
+		0% {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+		100% {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.animate-fadeIn {
+		animation: fadeIn 0.5s ease-out forwards;
+	}
 </style>
