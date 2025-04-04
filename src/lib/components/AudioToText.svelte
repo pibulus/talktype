@@ -384,6 +384,9 @@
 				console.log('📋 Successfully copied using Clipboard API');
 				clipboardSuccess = true;
 				
+				// Show toast message regardless of tooltip visibility
+				// This ensures mobile users who don't get tooltips still get feedback
+				
 				// Update screen reader status
 				screenReaderStatus = 'Transcript copied to clipboard';
 				
@@ -553,12 +556,12 @@
 	$: buttonLabel = recording ? 'Stop Recording' : transcript ? 'New Recording' : 'Start Recording';
 </script>
 
-<!-- Main wrapper with fixed position to prevent pushing page layout -->
-<div class="main-wrapper mx-auto w-full box-border fixed-layout">
+<!-- Main wrapper with proper containment to prevent layout issues -->
+<div class="main-wrapper mx-auto w-full box-border">
 	<!-- Shared container with proper centering for mobile -->
 	<div class="mobile-centered-container flex flex-col items-center justify-center w-full">
-		<!-- Recording button/progress bar section - always in same position -->
-		<div class="button-section relative flex w-full justify-center">
+		<!-- Recording button/progress bar section - sticky positioned for stability -->
+		<div class="button-section relative flex w-full justify-center sticky top-0 z-20 pt-2 pb-4 bg-transparent">
 			<div class="button-container w-full max-w-[500px] mx-auto flex justify-center">
 				{#if transcribing}
 					<!-- Progress bar (transforms the button) - adjusted height for mobile -->
@@ -592,11 +595,11 @@
 			</div>
 		</div>
 
-		<!-- Dynamic content area with smooth animation to prevent jarring layout shifts -->
-		<div class="position-wrapper relative mb-20 mt-6 w-full flex flex-col items-center transition-all duration-500 ease-in-out">
-			<!-- Fixed positioned content that won't affect document flow -->
+		<!-- Dynamic content area with smooth animation and proper containment -->
+		<div class="position-wrapper relative mb-20 mt-2 w-full flex flex-col items-center transition-all duration-300 ease-in-out">
+			<!-- Content container with controlled overflow -->
 			<div class="content-container w-full flex flex-col items-center">
-				<!-- Audio visualizer - absolutely positioned to not push content up -->
+				<!-- Audio visualizer - properly positioned -->
 				{#if recording}
 					<div class="visualizer-container absolute left-0 top-0 flex w-full justify-center">
 						<div class="wrapper-container flex w-full justify-center">
@@ -618,12 +621,12 @@
 							<div class="transcript-box-wrapper relative mx-auto w-[90%] sm:w-full max-w-[500px] px-2 sm:px-3 md:px-0">
 								<!-- Ghost icon copy button positioned outside the transcript box -->
 								<button
-									class="copy-btn absolute -top-4 -right-4 z-10 h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2"
+									class="copy-btn absolute -top-4 -right-4 z-[200] h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2"
 									on:click|preventDefault={copyToClipboard}
 									on:mouseenter={() => {
 										// Only show tooltip if user hasn't used the button yet 
 										// or hasn't hovered too many times
-										if (!hasUsedCopyButton && tooltipHoverCount < MAX_TOOLTIP_HOVER_COUNT) {
+										if (typeof window !== "undefined" && window.innerWidth >= 640 && !hasUsedCopyButton && tooltipHoverCount < MAX_TOOLTIP_HOVER_COUNT) {
 											showCopyTooltip = true;
 											tooltipHoverCount++;
 										}
@@ -643,16 +646,16 @@
 									
 									<!-- Smart tooltip - only shows for first few hovers - positioned at top right to avoid clipping -->
 									{#if showCopyTooltip}
-										<div class="copy-tooltip absolute -top-10 right-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md z-50">
+										<div class="copy-tooltip absolute top-12 right-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md z-[250]">
 											Copy to clipboard
-											<div class="tooltip-arrow absolute -bottom-1.5 right-4 h-3 w-3 rotate-45 bg-white"></div>
+											<div class="tooltip-arrow absolute -top-1.5 right-4 h-3 w-3 rotate-45 bg-white"></div>
 										</div>
 									{/if}
 								</button>
 								
-								<!-- Editable transcript box -->
+								<!-- Editable transcript box with controlled scrolling -->
 								<div
-									class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5 max-w-[90vw] box-border mx-auto my-4 transition-all duration-300 overflow-y-auto"
+									class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5 max-w-[90vw] box-border mx-auto my-4 transition-all duration-300 max-h-[60vh] overflow-y-auto scrollbar-thin"
 								>
 									<div
 										class={`transcript-text ${responsiveFontSize} animate-text-appear`}
@@ -670,6 +673,8 @@
 									>
 										{transcript}
 									</div>
+									<!-- Subtle gradient mask to indicate scrollable content -->
+									<div class="scroll-indicator-bottom absolute bottom-0 left-0 right-0 h-6 pointer-events-none bg-gradient-to-t from-white/90 to-transparent rounded-b-[2rem]"></div>
 									<!-- Hidden instructions for screen readers -->
 									<div id="transcript-instructions" class="sr-only">
 										Editable transcript. You can modify the text if needed.
@@ -723,33 +728,25 @@
 {/if}
 
 <style>
-	/* Main wrapper to ensure fixed positioning */
+	/* Main wrapper to ensure proper positioning */
 	.main-wrapper {
 		position: relative;
 		z-index: 1;
 		width: 100%;
-	}
-
-	/* Fixed layout structure to prevent bouncing */
-	.fixed-layout {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: flex-start;
-		height: auto;
+		box-sizing: border-box;
 	}
 
 	/* Position wrapper to create a stable layout without shifts */
 	.position-wrapper {
 		min-height: 150px; /* Ensure there's enough space for content */
-		max-height: none; /* Remove max-height constraint to prevent content cutoff */
+		max-height: calc(100vh - 240px); /* Control max height to prevent overflow */
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		position: relative; /* Ensure proper positioning context */
 		overflow-y: visible; /* Allow overflow without jumping */
 		transition: all 0.3s ease-in-out; /* Smooth transition when content changes */
-			contain: layout; /* Improve layout containment */
+		contain: layout; /* Improve layout containment */
 	}
 
 	/* Content container for transcripts and visualizers */
@@ -895,20 +892,43 @@
 		min-height: 120px; /* Minimum height for better appearance */
 		min-width: 280px; /* Minimum width to prevent too-narrow boxes on mobile */
 		height: auto;
-		max-height: 70vh; /* Increased maximum height for better content visibility */
-		overflow-y: auto;
-		/* No fade effect for cleaner reading */
+		max-height: 60vh; /* Control height to prevent pushing footer */
+		overflow-y: auto; /* Enable scrolling within the box */
 		/* Custom scrollbar styling */
 		scrollbar-width: thin;
 		scrollbar-color: rgba(249, 168, 212, 0.3) transparent;
-		transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Smooth elastic transition with easing */
+		transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Smooth elastic transition */
 		/* Performance optimization */
 		will-change: transform, opacity;
 		backface-visibility: hidden;
 		-webkit-font-smoothing: subpixel-antialiased;
-		/* Force transcript to not affect layout */
+		/* Proper positioning */
 		z-index: 10;
-		}
+	}
+
+	/* Hide scrollbar for cleaner appearance but maintain functionality */
+	.scrollbar-thin::-webkit-scrollbar {
+		width: 4px;
+	}
+
+	.scrollbar-thin::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.scrollbar-thin::-webkit-scrollbar-thumb {
+		background-color: rgba(249, 168, 212, 0.3);
+		border-radius: 20px;
+	}
+
+	/* Subtle gradient mask at the bottom to indicate scrollable content */
+	.scroll-indicator-bottom {
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+
+	.transcript-box:hover .scroll-indicator-bottom {
+		opacity: 1;
+	}
 
 	/* Subtle hover effect for transcript box */
 	.transcript-box:hover {
@@ -924,25 +944,12 @@
 		border-color: rgba(249, 168, 212, 0.25);
 	}
 
-	/* Webkit scrollbar styling */
-	.transcript-box::-webkit-scrollbar {
-		width: 6px;
-	}
-
-	.transcript-box::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	.transcript-box::-webkit-scrollbar-thumb {
-		background-color: rgba(249, 168, 212, 0.3);
-		border-radius: 20px;
-	}
-
 	/* Make transcript editable with a cursor */
 	.transcript-text {
 		cursor: text;
 		outline: none;
 		transition: all 0.2s ease;
+		word-break: break-word; /* Prevent text overflow on all screens */
 	}
 
 	.transcript-text:hover {
@@ -963,6 +970,12 @@
 		animation: gentle-float 3s ease-in-out infinite;
 		/* Ring effect to anchor the button visually to the text box */
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.25), 0 4px 6px rgba(0, 0, 0, 0.05);
+		/* Isolation to prevent inheriting filter effects from parents */
+		isolation: isolate;
+		/* Add backdrop filter to prevent button from being affected by blur */
+		backdrop-filter: none !important;
+		/* Add background color to ensure opacity */
+		background-color: rgba(255, 255, 255, 0.95);
 	}
 
 	.copy-btn:hover {
@@ -970,6 +983,7 @@
 		filter: drop-shadow(0 6px 12px rgba(249, 168, 212, 0.4));
 		transform: translateY(-1px) scale(1.05);
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.4), 0 8px 16px rgba(249, 168, 212, 0.15);
+		background-color: rgba(255, 255, 255, 0.9);
 	}
 	
 	.copy-btn:active {
@@ -982,7 +996,7 @@
 		animation: tooltip-appear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 		border: 1px solid rgba(249, 168, 212, 0.3);
 		box-shadow: 0 4px 8px -2px rgba(249, 168, 212, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
-		z-index: 60; /* Higher z-index to ensure it's above visualizer */
+		z-index: 250; /* Higher z-index to ensure it's above visualizer */
 		pointer-events: none;
 	}
 
@@ -1342,6 +1356,17 @@
 		);
 	}
 
+	/* Make the button section sticky to prevent jumping */
+	.button-section {
+		position: sticky;
+		top: 0;
+		z-index: 20;
+		padding-bottom: 0.75rem;
+		background: transparent;
+		/* Remove backdrop blur to prevent affecting other elements */
+		/* backdrop-filter: blur(4px); */
+	}
+
 	/* Media queries for mobile responsiveness */
 	@media (max-width: 768px) {
 		.transcript-box {
@@ -1351,10 +1376,6 @@
 			width: 100%; /* Full width of container */
 			max-width: 90vw; /* Cap width on mobile to prevent overflow */
 			max-height: 60vh; /* Increased for more content visibility, but not overwhelming on small screens */
-		}
-
-		.transcript-text {
-			word-break: break-word; /* Prevent text overflow on small screens */
 		}
 
 		.clipboard-toast {
@@ -1397,24 +1418,12 @@
 			position: relative; /* Helps maintain position */
 		}
 
-		/* Fix button to prevent jumping on long transcripts */
-		.button-section {
-			position: sticky;
-			top: 0;
-			z-index: 20;
-			margin-bottom: 10px;
-			background: transparent;
-		}
-
 		/* Adjust spacing for mobile */
 		.position-wrapper {
-			margin-top: 1rem;
-			margin-bottom: 3rem; /* More space for footer */
+			margin-top: 0.5rem;
+			margin-bottom: 5rem; /* More space for footer */
 			padding: 0 8px; /* Add side padding */
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			padding-bottom: 30px; /* Extra padding to avoid footer overlap */
+			max-height: calc(100vh - 180px); /* Control height on mobile */
 		}
 
 		/* Make the visualizer more compact on mobile */
@@ -1494,9 +1503,10 @@
 
 		/* Ensure proper spacing on tiny screens */
 		.position-wrapper {
-			margin-top: 0.75rem;
-			margin-bottom: 0.75rem;
+			margin-top: 0.5rem;
+			margin-bottom: 1rem;
 			padding: 0 4px;
+			max-height: calc(100vh - 160px); /* More compact on very small screens */
 		}
 	}
 
