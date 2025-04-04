@@ -1,3 +1,4 @@
+<!-- This content is replaced with improved version using the Replace tool -->
 <script context="module">
 	let showExtensionInfo = false;
 	let showAboutInfo = false;
@@ -6,8 +7,10 @@
 <script>
 	import { onMount } from 'svelte';
 	import AudioToText from '$lib/components/AudioToText.svelte';
+	import { browser } from '$app/environment';
 
 	let audioToTextComponent;
+	let showIntroModal = false;
 
 	// Brian Eno-inspired ambient blinking system with proper state tracking
 	let blinkTimeouts = [];
@@ -319,10 +322,36 @@
 		subtitleAnimationComplete = true;
 	}
 
+	// Check if this is the first visit to show intro modal
+	function checkFirstVisit() {
+		if (!browser) return;
+		
+		// Check if user has seen the intro before
+		const hasSeenIntro = localStorage.getItem('hasSeenTalkTypeIntro');
+		
+		if (!hasSeenIntro) {
+			// First visit, show intro modal after a brief delay
+			setTimeout(() => {
+				showIntroModal = true;
+				document.getElementById('intro_modal')?.showModal();
+			}, 500);
+		}
+	}
+
+	// Save that user has seen the intro
+	function markIntroAsSeen() {
+		if (!browser) return;
+		localStorage.setItem('hasSeenTalkTypeIntro', 'true');
+		showIntroModal = false;
+	}
+
 	// Component lifecycle
 	onMount(() => {
 		debug('Component mounted');
 		setupDomObserver();
+
+		// Check if first visit to show intro
+		checkFirstVisit();
 
 		// Set up animation sequence timing
 		setTimeout(handleTitleAnimationComplete, 1200); // After staggered animation
@@ -472,10 +501,71 @@
 					audioToTextComponent.startRecording();
 					debug('Called startRecording() on component');
 				} catch (err) {
-					debug(`Error starting recording: ${err.message}`);
+					debug(`Error stopping recording: ${err.message}`);
 				}
 			}, 50);
 		}
+	}
+
+	// Function to show the About modal
+	// Variables to track modal state and store scroll position
+	let modalOpen = false;
+	let scrollPosition = 0;
+
+	function showAboutModal() {
+		// Radical approach to prevent scrollbar issues
+		scrollPosition = window.scrollY;
+		const width = document.body.clientWidth;
+		modalOpen = true;
+		
+		// Lock the body in place exactly where it was
+		document.body.style.position = 'fixed';
+		document.body.style.top = `-${scrollPosition}px`;
+		document.body.style.width = `${width}px`;
+		document.body.style.overflow = 'hidden';
+		
+		// Now show the modal
+		const modal = document.getElementById('about_modal');
+		if (modal) modal.showModal();
+	}
+
+	// Function to show the Extension modal
+	function showExtensionModal() {
+		// Radical approach to prevent scrollbar issues
+		scrollPosition = window.scrollY;
+		const width = document.body.clientWidth;
+		modalOpen = true;
+		
+		// Lock the body in place exactly where it was
+		document.body.style.position = 'fixed';
+		document.body.style.top = `-${scrollPosition}px`;
+		document.body.style.width = `${width}px`;
+		document.body.style.overflow = 'hidden';
+		
+		// Now show the modal
+		const modal = document.getElementById('extension_modal');
+		if (modal) modal.showModal();
+	}
+	
+	// Function to restore scroll position when modal closes
+	function closeModal() {
+		if (!modalOpen) return;
+		
+		// Restore body styles
+		document.body.style.position = '';
+		document.body.style.top = '';
+		document.body.style.width = '';
+		document.body.style.overflow = '';
+		
+		// Restore scroll position
+		window.scrollTo(0, scrollPosition);
+		modalOpen = false;
+	}
+	
+	// Close intro modal and mark as seen
+	function closeIntroModal() {
+		markIntroAsSeen();
+		document.getElementById('intro_modal')?.close();
 	}
 </script>
 
@@ -486,11 +576,10 @@
 		class="mx-auto flex w-full max-w-md flex-col items-center sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
 	>
 		<!-- Ghost Icon - Mobile: tight, Desktop: chunky -->
-		<div
-			class="icon-container mb-0 h-32 w-32 cursor-pointer sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64"
+		<button
+			class="icon-container mb-0 h-32 w-32 cursor-pointer sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64 appearance-none border-0 bg-transparent p-0"
+			style="outline: none; -webkit-tap-highlight-color: transparent;"
 			on:click|preventDefault|stopPropagation={startRecordingFromGhost}
-			role="button"
-			tabindex="0"
 			aria-label="Toggle Recording"
 		>
 			<!-- Layered approach with gradient background and blinking eyes -->
@@ -502,20 +591,20 @@
 				<!-- Just the eyes (top layer - for blinking) -->
 				<img src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
 			</div>
-		</div>
+		</button>
 
 		<!-- Typography - Always using animated version for consistency -->
 		<h1
-			class="staggered-text mb-1 text-center text-5xl font-black tracking-tight sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
+			class="staggered-text mb-1 text-center text-5xl font-black tracking-tight cursor-default select-none sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
 		>
-			<span class="stagger-letter">T</span><span class="stagger-letter">a</span><span
+			<span class="stagger-letter mr-[-0.08em]">T</span><span class="stagger-letter">a</span><span
 				class="stagger-letter">l</span
 			><span class="stagger-letter">k</span><span class="stagger-letter">T</span><span
 				class="stagger-letter">y</span
 			><span class="stagger-letter">p</span><span class="stagger-letter">e</span>
 		</h1>
 		<p
-			class="slide-in-subtitle mx-auto mb-4 max-w-sm text-center text-xl text-gray-700 sm:mb-4 sm:max-w-md sm:text-2xl md:mb-6 md:max-w-lg md:text-3xl"
+			class="slide-in-subtitle mx-auto mb-4 max-w-sm text-center text-xl text-gray-700 cursor-default select-none sm:mb-4 sm:max-w-md sm:text-2xl md:mb-6 md:max-w-lg md:text-3xl"
 		>
 			Fast, accurate, and free voice-to-text transcription.
 		</p>
@@ -528,137 +617,286 @@
 
 	<!-- Footer section with attribution and Chrome extension info -->
 	<footer
-		class="fixed bottom-0 left-0 right-0 border-t border-pink-100/40 bg-gradient-to-r from-white/40 to-pink-50/30 px-4 py-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.1)] backdrop-blur-md sm:py-5"
+		class="fixed bottom-0 left-0 right-0 border-t border-pink-200/80 bg-gradient-to-r from-[#fefaf4] via-[#fde4da] to-[#fdf7ef] px-4 py-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[2px] sm:py-5 box-border"
 	>
-		<div class="container mx-auto flex flex-col items-center justify-between gap-3 sm:flex-row">
-			<div class="copyright flex items-center">
-				<span class="mr-1 text-sm font-medium tracking-tight">
+		<div class="container mx-auto flex flex-col items-center justify-between gap-2 sm:gap-3 sm:flex-row flex-wrap">
+			<div class="copyright flex items-center flex-wrap justify-center">
+				<span class="mr-1 text-sm font-medium tracking-tight sm:text-sm text-xs">
 					© {new Date().getFullYear()} TalkType
 				</span>
-				<span class="mx-2 text-pink-200">•</span>
-				<span class="font-light text-gray-500"
+				<span class="mx-1 sm:mx-2 text-pink-300">•</span>
+				<span class="font-light text-gray-600 text-xs sm:text-sm"
 					>Made with
 					<span
-						class="mx-0.5 inline-block transform animate-pulse text-pink-400 transition-transform duration-300 hover:scale-110"
+						class="mx-0.5 inline-block transform animate-pulse text-pink-500 transition-transform duration-300 hover:scale-110"
 						>❤️</span
 					>
 					by Dennis & Pablo
 				</span>
 			</div>
-			<div class="flex items-center gap-4">
-				<a
-					href="#about"
-					class="text-gray-500 transition-colors duration-200 hover:text-amber-600"
-					on:click|preventDefault={() => (showAboutInfo = !showAboutInfo)}
+			<div class="flex items-center gap-2 sm:gap-4">
+				<button
+					class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-1 px-2 sm:px-3 sm:py-2 h-auto min-h-0"
+					on:click={showAboutModal}
 				>
 					About
-				</a>
-				<a
-					href="#extension"
-					class="group relative rounded-full bg-gradient-to-r from-amber-100/80 to-amber-200/70 px-3 py-1.5 text-amber-700 transition-all duration-200 hover:from-amber-200/90 hover:to-amber-300/80 hover:text-amber-800 hover:shadow-md"
-					on:click|preventDefault={() => (showExtensionInfo = !showExtensionInfo)}
+				</button>
+				<button 
+					class="btn btn-sm bg-gradient-to-r from-pink-50 to-purple-100 text-purple-600 border-none hover:bg-opacity-90 shadow-sm hover:shadow transition-all text-xs sm:text-sm py-1 px-2 sm:px-3 sm:py-2 h-auto min-h-0"
+					on:click={showExtensionModal}
 				>
-					<span class="relative z-10 text-xs font-medium">Chrome Extension</span>
-					<span
-						class="absolute inset-0 rounded-full bg-white/30 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-					></span>
-				</a>
+					Chrome Extension
+				</button>
 			</div>
 		</div>
-
-		{#if showExtensionInfo}
-			<div
-				class="extension-info fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-				on:click|self={() => (showExtensionInfo = false)}
-			>
-				<div class="mx-4 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
-					<div class="bg-gradient-to-r from-amber-50/80 to-pink-100/70 px-6 py-4">
-						<h3 class="text-lg font-bold text-gray-800">TalkType Chrome Extension</h3>
-					</div>
-					<div class="p-6">
-						<p class="mb-4 text-sm leading-relaxed text-gray-600">
-							Use TalkType directly in any text field across the web!
-						</p>
-
-						<div
-							class="mb-5 rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50/50 to-white p-4"
-						>
-							<h4 class="mb-2 text-sm font-medium text-amber-700">Installation Instructions:</h4>
-							<ol class="mt-2 list-decimal space-y-2 pl-5 text-left text-xs text-gray-700">
-								<li>
-									Download the extension files <a
-										href="#"
-										class="text-amber-600 transition-colors hover:text-amber-700 hover:underline"
-										>here</a
-									>
-								</li>
-								<li>
-									Open Chrome and go to <code
-										class="rounded-md bg-amber-100/70 px-1.5 py-0.5 font-mono text-amber-800"
-										>chrome://extensions</code
-									>
-								</li>
-								<li>Enable "Developer mode" in the top-right corner</li>
-								<li>Click "Load unpacked" and select the extension folder</li>
-								<li>TalkType will appear in your extensions toolbar</li>
-							</ol>
-						</div>
-
-						<div class="flex justify-end">
-							<button
-								class="rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-2 text-sm font-medium text-black shadow-sm transition-colors hover:from-amber-500 hover:to-amber-600"
-								on:click={() => (showExtensionInfo = false)}
-							>
-								Close
-							</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		{/if}
-
-		{#if showAboutInfo}
-			<div
-				class="about-info fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-				on:click|self={() => (showAboutInfo = false)}
-			>
-				<div class="mx-4 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
-					<div class="bg-gradient-to-r from-pink-100/80 to-amber-50/70 px-6 py-4">
-						<h3 class="text-lg font-bold text-gray-800">About TalkType</h3>
-					</div>
-					<div class="p-6">
-						<p class="mb-4 text-sm leading-relaxed text-gray-600">
-							TalkType is a minimalist voice-to-text tool that makes transcription simple and
-							delightful. Part of the Soft Stack family of tools designed to be emotionally
-							intelligent and tactile.
-						</p>
-
-						<div class="mb-4 border-l-2 border-amber-200 py-1 pl-3">
-							<p class="text-xs italic text-gray-500">
-								"A little bit of soul, a hint of chaos, and a deep love for clarity."
-							</p>
-						</div>
-
-						<p class="text-sm text-gray-600">
-							Made in Melbourne, Australia with care and attention to the details that matter.
-						</p>
-
-						<div class="mt-6 flex justify-end">
-							<button
-								class="rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-2 text-sm font-medium text-black shadow-sm transition-colors hover:from-amber-500 hover:to-amber-600"
-								on:click={() => (showAboutInfo = false)}
-							>
-								Close
-							</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		{/if}
 	</footer>
+
+	<!-- DaisyUI About Modal -->
+	<dialog id="about_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;">
+		<div class="modal-box bg-gradient-to-br from-white to-[#fefaf4] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
+			<form method="dialog">
+				<button 
+					class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
+					on:click={closeModal}
+				>✕</button>
+			</form>
+			
+			<div class="animate-fadeUp space-y-4">
+				<div class="flex items-center gap-3 mb-1">
+					<div class="w-9 h-9 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
+						<div class="relative w-7 h-7">
+							<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
+							<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
+							<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
+						</div>
+					</div>
+					<h3 class="font-black text-xl text-gray-800 tracking-tight">About TalkType</h3>
+				</div>
+				
+				<div class="bg-gradient-to-r from-pink-50/80 to-amber-50/80 p-4 rounded-lg border border-pink-200/60 shadow-sm">
+					<p class="text-sm leading-relaxed text-gray-700">
+						TalkType is a minimalist voice-to-text tool that transforms your speech into text effortlessly. 
+						Built with love by two friends who think tech should be <span class="text-pink-600 font-medium">simple</span>, 
+						<span class="text-amber-600 font-medium">delightful</span>, and actually <span class="text-pink-600 font-medium">helpful</span>.
+					</p>
+				</div>
+
+				<div>
+					<h4 class="font-bold text-sm text-gray-700 mb-2">Why we made this:</h4>
+					<ul class="space-y-1.5 text-sm text-gray-600">
+						<li class="flex items-start gap-2">
+							<span class="text-pink-500 text-lg">⬩</span>
+							<span>We both think better by <span class="italic">talking</span>, not typing</span>
+						</li>
+						<li class="flex items-start gap-2">
+							<span class="text-pink-500 text-lg">⬩</span>
+							<span>Other voice-typing tools are either expensive or clunky</span>
+						</li>
+						<li class="flex items-start gap-2">
+							<span class="text-pink-500 text-lg">⬩</span>
+							<span>We wanted something beautiful that just works</span>
+						</li>
+					</ul>
+				</div>
+
+				<div class="border-l-3 border-pink-300 py-1 pl-4 ml-1 my-2 italic text-gray-600">
+					"A little bit of soul, a hint of chaos, and a deep love for clarity."
+				</div>
+
+				<div class="flex justify-between items-end pt-2">
+					<div>
+						<p class="text-xs text-gray-500">Made with ☕ in Melbourne, Australia</p>
+					</div>
+					<div class="flex items-center gap-2 text-xs font-medium text-gray-600">
+						<span class="animate-pulse text-pink-500">❤️</span> Dennis & Pabs
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal-backdrop bg-black/40" on:click|self|preventDefault|stopPropagation={() => {
+			document.getElementById('about_modal').close();
+			// Use the closeModal function to restore scrolling properly
+			setTimeout(closeModal, 50);
+		}}></div>
+	</dialog>
+
+	<!-- DaisyUI Extension Modal -->
+	<dialog id="extension_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;">
+		<div class="modal-box bg-gradient-to-br from-white to-[#fefaf4] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
+			<form method="dialog">
+				<button 
+					class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
+					on:click={closeModal}
+				>✕</button>
+			</form>
+			
+			<div class="animate-fadeUp space-y-4">
+				<div class="flex items-center gap-3 mb-1">
+					<div class="w-9 h-9 bg-gradient-to-br from-white to-purple-50 rounded-full flex items-center justify-center shadow-sm border border-purple-200/60">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-purple-600">
+							<path d="M6 2l.01 6L10 12l-4 4 .01 6H20V2H6zm7 11a1 1 0 110-2 1 1 0 010 2zm-1-9a1 1 0 000 2h5a1 1 0 100-2h-5z" />
+						</svg>
+					</div>
+					<h3 class="font-black text-xl text-gray-800 tracking-tight">Chrome Extension</h3>
+				</div>
+				
+				<div class="bg-gradient-to-r from-pink-50/80 to-amber-50/80 p-4 rounded-lg border border-pink-200/60 shadow-sm">
+					<p class="text-sm leading-relaxed text-gray-700">
+						Use TalkType everywhere on the web! Our Chrome extension lets you transcribe directly into any text field. 
+						Perfect for emails, social media, messaging apps, or anywhere else you need to type.
+					</p>
+				</div>
+
+				<div class="rounded-xl border border-pink-200/60 bg-gradient-to-br from-white to-pink-50/50 p-4 shadow-sm">
+					<h4 class="font-bold text-sm text-gray-800 mb-2">Installation in 5 easy steps:</h4>
+					<ol class="mt-2 list-decimal space-y-2 pl-5 text-left text-sm text-gray-700">
+						<li class="pb-1">
+							Download the extension files <a
+								href="#"
+								class="text-pink-600 transition-colors hover:text-pink-700 hover:underline font-medium"
+								>here</a
+							>
+						</li>
+						<li class="pb-1">
+							Unzip the files to a folder on your computer
+						</li>
+						<li class="pb-1">
+							Open Chrome and go to <code
+								class="rounded-md bg-pink-100 px-1.5 py-0.5 font-mono text-pink-700"
+								>chrome://extensions</code
+							>
+						</li>
+						<li class="pb-1">Enable "Developer mode" in the top-right corner</li>
+						<li>Click "Load unpacked" and select the extension folder</li>
+					</ol>
+				</div>
+
+				<div class="pt-1 flex justify-end">
+					<span class="text-xs text-gray-600 italic font-medium">Voice-to-text anywhere, anytime 🎙️</span>
+				</div>
+			</div>
+		</div>
+		<div class="modal-backdrop bg-black/40" on:click|self|preventDefault|stopPropagation={() => {
+			document.getElementById('extension_modal').close();
+			// Use the closeModal function to restore scrolling properly
+			setTimeout(closeModal, 50);
+		}}></div>
+	</dialog>
+	
+	<!-- First-time Intro Modal -->
+	<dialog id="intro_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;">
+		<div class="modal-box bg-gradient-to-b from-[#fdfaf5] to-[#fff2f5] shadow-xl border border-neutral-200/80 rounded-2xl overflow-y-auto max-h-[80vh] p-9 pt-12 pb-10 backdrop-blur bg-white/80">
+			<form method="dialog">
+				<button 
+					class="btn btn-sm btn-circle absolute right-4 top-4 bg-white border-neutral-200 text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 shadow-sm transition-all duration-200"
+					on:click={closeIntroModal}
+				>✕</button>
+			</form>
+			
+			<div class="animate-float-in space-y-6">
+				<div class="flex items-center justify-center mb-4">
+					<div class="relative w-20 h-20 animate-gentle-float -mt-12 transform hover:scale-110 transition-transform duration-300">
+						<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
+						<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
+						<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full intro-eyes" />
+					</div>
+				</div>
+				
+				<div class="space-y-8 mt-1 text-center px-2">
+					<h2 class="font-black tracking-tight leading-[1.1] mb-7 text-[clamp(2.25rem,6vw,3.5rem)]" style="font-family: 'Inter', system-ui, sans-serif;">
+						TalkType's the best.<br>Kick out the rest.
+					</h2>
+					
+					<p class="text-xl font-medium text-neutral-700 leading-[1.7] tracking-wide mb-5" style="letter-spacing: 0.02em;">
+						Clean, sweet, and stupidly easy.
+					</p>
+					
+					<div class="text-lg font-medium text-neutral-600 leading-[1.7] tracking-tight space-y-2 mb-6">
+						<p>Use it anywhere.</p>
+						<p>Save it to your home screen.</p>
+						<p>Add the extension.</p>
+						<p>Talk into any box on any site.</p>
+					</div>
+					
+					<div class="bg-gradient-to-r from-amber-50/90 to-[#fff8f9]/90 p-6 rounded-xl border border-neutral-200/70 shadow-md text-center font-extrabold text-2xl text-neutral-700 mb-6 transform rotate-[-0.5deg] hover:rotate-[0.5deg] transition-transform duration-300">
+						You click the ghost,<br>we do the most.
+					</div>
+					
+					<p class="text-2xl font-bold text-pink-600 leading-relaxed mt-4" style="letter-spacing: -0.01em;">
+						It's fast, it's fun, it's freaky good.
+					</p>
+				</div>
+				
+				<div class="pt-8 flex justify-center">
+					<button class="bg-gradient-to-r from-amber-300 to-[#ff9cef] text-white font-extrabold py-4 px-10 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 text-xl tracking-wide"
+						on:click={closeIntroModal}
+						style="text-shadow: 0 1px 1px rgba(0,0,0,0.1);"
+					>
+						Let's Go! 🚀
+					</button>
+				</div>
+			</div>
+		</div>
+		<div class="modal-backdrop bg-black/30 backdrop-blur-sm" on:click|self|preventDefault|stopPropagation={closeIntroModal}></div>
+	</dialog>
 </section>
 
 <style>
+	/* Global styles */
+	
+	/* Intro modal animations */
+	:global(.intro-eyes) {
+		animation: intro-blink 3s infinite;
+	}
+	
+	@keyframes intro-blink {
+		0%, 30%, 40%, 100% {
+			transform: scaleY(1);
+		}
+		35%, 38% {
+			transform: scaleY(0);
+		}
+		85%, 88% {
+			transform: scaleY(0);
+		}
+	}
+	
+	.animate-float-in {
+		animation: float-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+	
+	@keyframes float-in {
+		0% { 
+			opacity: 0;
+			transform: translateY(10px); 
+		}
+		100% { 
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	
+	.animate-gentle-float {
+		animation: gentle-float 6s cubic-bezier(0.47, 0, 0.745, 0.715) infinite;
+		transform-origin: center center;
+	}
+	
+	@keyframes gentle-float {
+		0%, 100% { 
+			transform: translateY(0) rotate(0deg); 
+		}
+		33% {
+			transform: translateY(-8px) rotate(-1deg);
+		}
+		66% { 
+			transform: translateY(-4px) rotate(1deg); 
+		}
+	}
+	
+	:global(*:focus) {
+		outline: none !important;
+	}
+	
 	/* Subtle cream background with just enough texture/noise */
 	:global(.bg-gradient-mesh) {
 		background-color: #fefaf4; /* Base cream color */
@@ -675,6 +913,20 @@
 	.icon-container {
 		filter: drop-shadow(0 0 8px rgba(255, 156, 243, 0.15));
 		transition: all 0.3s ease;
+		outline: none !important; /* Prevents the default browser outline */
+		-webkit-tap-highlight-color: transparent; /* Removes tap highlight on mobile */
+		-webkit-touch-callout: none; /* Disables callout */
+		border: none !important; /* Ensures no border */
+	}
+	
+	/* Remove focus outline and any other focus indicators */
+	.icon-container:focus, .icon-container:active, .icon-container:focus-visible {
+		outline: none !important;
+		outline-offset: 0 !important;
+		box-shadow: none !important;
+		-webkit-appearance: none !important;
+		-moz-appearance: none !important;
+		border: none !important;
 	}
 
 	/* Layered icon styling */
