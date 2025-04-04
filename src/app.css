@@ -2,6 +2,69 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* Remove outlines globally */
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent modals from creating scroll issues - stronger overrides */
+html:has(dialog[open]),
+html.modal-active {
+  overflow: hidden !important;
+  padding-right: 0 !important; /* Prevent layout shift */
+  margin-right: 0 !important;
+  width: 100vw !important; 
+  position: fixed !important;
+}
+
+body:has(dialog[open]),
+body.modal-active {
+  overflow: hidden !important;
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+  width: 100% !important;
+  position: relative !important;
+}
+
+/* Modal fixes to prevent scrollbar issues */
+.modal {
+  padding: 0 !important;
+  overflow: hidden !important;
+  position: fixed !important;
+  inset: 0 !important;
+}
+
+dialog.modal::backdrop {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Custom modal styling */
+.modal-box {
+  max-height: 85vh !important;
+  overflow-y: auto !important;
+  margin: 1rem auto !important;
+  width: 95% !important;
+  border-radius: 1.5rem !important;
+}
+
+/* Ensure scrollbars don't cause layout shifts */
+/* Add padding to account for the scrollbar width to avoid layout shifts */
+@media screen and (min-width: 768px) {
+  :root {
+    --scrollbar-compensation: 0px;
+  }
+  
+  html.modal-active {
+    padding-right: var(--scrollbar-compensation) !important;
+  }
+}
+
 /* Custom classes for Lukens-style UI */
 .text-gradient {
 	fill: url(#gradient-fill);
@@ -11,6 +74,17 @@
 	from {
 		opacity: 0;
 		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fadeUp {
+	from {
+		opacity: 0;
+		transform: translateY(15px);
 	}
 	to {
 		opacity: 1;
@@ -32,4 +106,8 @@
 
 .animate-fadeIn {
 	animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-fadeUp {
+	animation: fadeUp 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 }

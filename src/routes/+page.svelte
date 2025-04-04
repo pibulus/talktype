@@ -799,7 +799,7 @@
 	<!-- First-time Intro Modal (DaisyUI version) -->
 	<dialog id="intro_modal" class="modal">
 		<!-- This form with method="dialog" makes clicking the backdrop close the modal -->
-		<div class="modal-box relative bg-white rounded-3xl p-8 sm:p-10 max-w-md md:max-w-lg lg:max-w-xl mx-auto border-0"
+		<div class="modal-box relative bg-white rounded-3xl p-6 sm:p-8 md:p-10 w-[95%] max-w-[90vw] sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto border-0"
 			style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);">
 			
 			<!-- Close button -->
@@ -807,7 +807,7 @@
 				<button class="btn btn-sm btn-circle absolute right-4 top-4 bg-white/70 border-0 text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 shadow-sm">✕</button>
 			</form>
 			
-			<div class="space-y-7 animate-fadeIn">
+			<div class="space-y-5 sm:space-y-6 md:space-y-7 animate-fadeIn">
 				<!-- Animated ghost icon -->
 				<div class="flex justify-center mb-4">
 					<div class="relative w-16 h-16 animate-pulse-slow">
@@ -818,21 +818,21 @@
 				</div>
 				
 				<!-- Main heading - ultra chunky -->
-				<h1 class="text-center text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-tight text-gray-900">
+				<h1 class="text-center text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-gray-900">
 					TalkType's the best. <br> Kick out the rest.
 				</h1>
 				
 				<!-- Main description - spacious and readable -->
-				<div class="space-y-4">
-					<p class="text-base sm:text-lg font-medium text-gray-700 leading-relaxed">
+				<div class="space-y-3 sm:space-y-4">
+					<p class="text-sm sm:text-base md:text-lg font-medium text-gray-700 leading-relaxed">
 						Clean, sweet, and stupidly easy.
 					</p>
 					
-					<p class="text-base sm:text-lg font-medium text-gray-700 leading-relaxed">
+					<p class="text-sm sm:text-base md:text-lg font-medium text-gray-700 leading-relaxed">
 						Tap the ghost to speak — we turn your voice into text.
 					</p>
 					
-					<p class="text-base sm:text-lg font-medium text-gray-700 leading-relaxed">
+					<p class="text-sm sm:text-base md:text-lg font-medium text-gray-700 leading-relaxed">
 						Use it anywhere. Save it to your home screen.
 						Add the extension. Talk into any box on any site.
 					</p>
@@ -840,7 +840,7 @@
 				
 				<!-- Highlighted quote as clickable button -->
 				<button 
-					class="w-full bg-gradient-to-r from-amber-100 to-amber-200 px-5 py-4 rounded-xl text-center text-gray-800 font-bold shadow-md border border-amber-300/50 sm:text-lg hover:shadow-lg hover:bg-gradient-to-r hover:from-amber-200 hover:to-amber-300 hover:text-gray-900 active:scale-[0.98] transition-all duration-300 cursor-pointer relative"
+					class="w-full bg-gradient-to-r from-amber-100 to-amber-200 px-4 py-3 sm:px-5 sm:py-4 rounded-xl text-center text-sm sm:text-base md:text-lg text-gray-800 font-bold shadow-md border border-amber-300/50 hover:shadow-lg hover:bg-gradient-to-r hover:from-amber-200 hover:to-amber-300 hover:text-gray-900 active:scale-[0.98] transition-all duration-300 cursor-pointer relative"
 					on:click={() => {
 						// First close the modal
 						document.getElementById('intro_modal').close();
@@ -857,14 +857,14 @@
 				</button>
 				
 				<!-- Tagline -->
-				<p class="text-center text-pink-600 font-bold text-lg sm:text-xl py-2">
+				<p class="text-center text-pink-600 font-bold text-base sm:text-lg md:text-xl py-2">
 					It's fast, it's fun, it's freaky good.
 				</p>
 				
 				<!-- Call to action button - extra chunky -->
 				<form method="dialog">
 					<button 
-						class="w-full text-lg font-bold py-3 px-6 rounded-full bg-gradient-to-r from-yellow-400 to-pink-400 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+						class="w-full text-base sm:text-lg font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-full bg-gradient-to-r from-yellow-400 to-pink-400 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
 						on:click={markIntroAsSeen}
 					>
 						Let's Go! 🚀
