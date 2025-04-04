@@ -525,16 +525,25 @@
 		}, 4000); // Slightly longer than the longest animation
 	}
 
-	// Function to calculate responsive font size based on transcript length
+	// Function to calculate responsive font size based on transcript length and device
 	function getResponsiveFontSize(text) {
-		if (!text) return 'text-lg'; // Default size
+		if (!text) return 'text-base'; // Default size
 
+		// Get viewport width for more responsive sizing
+		let viewportWidth = 0;
+		if (typeof window !== 'undefined') {
+			viewportWidth = window.innerWidth;
+		}
+		
+		// Smaller base sizes for mobile
+		const isMobile = viewportWidth > 0 && viewportWidth < 640;
+		
 		const length = text.length;
-		if (length < 50) return 'text-xl md:text-2xl'; // Very short text
-		if (length < 150) return 'text-lg md:text-xl'; // Short text
-		if (length < 300) return 'text-base md:text-lg'; // Medium text
-		if (length < 500) return 'text-base'; // Medium-long text
-		return 'text-sm md:text-base'; // Long text
+		if (length < 50) return isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl'; // Very short text
+		if (length < 150) return isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl'; // Short text
+		if (length < 300) return isMobile ? 'text-sm sm:text-base md:text-lg' : 'text-base md:text-lg'; // Medium text
+		if (length < 500) return isMobile ? 'text-xs sm:text-sm md:text-base' : 'text-sm md:text-base'; // Medium-long text
+		return isMobile ? 'text-xs sm:text-sm' : 'text-sm md:text-base'; // Long text
 	}
 
 	// Reactive font size based on transcript length
@@ -583,8 +592,8 @@
 			</div>
 		</div>
 
-		<!-- Dynamic content area that ensures spacing consistency without layout shifts -->
-		<div class="position-wrapper relative mb-20 mt-6 w-full flex flex-col items-center">
+		<!-- Dynamic content area with smooth animation to prevent jarring layout shifts -->
+		<div class="position-wrapper relative mb-20 mt-6 w-full flex flex-col items-center transition-all duration-500 ease-in-out">
 			<!-- Fixed positioned content that won't affect document flow -->
 			<div class="content-container w-full flex flex-col items-center">
 				<!-- Audio visualizer - absolutely positioned to not push content up -->
@@ -609,7 +618,7 @@
 							<div class="transcript-box-wrapper relative mx-auto w-[90%] sm:w-full max-w-[500px] px-2 sm:px-3 md:px-0">
 								<!-- Ghost icon copy button positioned outside the transcript box -->
 								<button
-									class="copy-btn absolute -top-4 -right-4 z-10 h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2"
+									class="copy-btn fixed z-50 h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2"
 									on:click|preventDefault={copyToClipboard}
 									on:mouseenter={() => {
 										// Only show tooltip if user hasn't used the button yet 
@@ -888,13 +897,14 @@
 		/* Custom scrollbar styling */
 		scrollbar-width: thin;
 		scrollbar-color: rgba(249, 168, 212, 0.3) transparent;
-		transition: all 0.3s ease-in-out;
+		transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); /* Smooth transition with easing */
 		/* Performance optimization */
 		will-change: transform, opacity;
 		backface-visibility: hidden;
 		-webkit-font-smoothing: subpixel-antialiased;
 		/* Force transcript to not affect layout */
 		z-index: 10;
+		padding-right: 40px; /* Extra space for floating copy button */
 	}
 
 	/* Subtle hover effect for transcript box */
@@ -942,25 +952,29 @@
 		border-radius: 0.25rem;
 	}
 
-	/* Copy button styling - ghost icon version, anchored to textbox */
+	/* Copy button styling - ghost icon version, floating fixed position */
 	.copy-btn {
 		opacity: 0.95;
 		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 		filter: drop-shadow(0 4px 6px rgba(249, 168, 212, 0.25));
 		animation: gentle-float 3s ease-in-out infinite;
-		/* Ring effect to anchor the button visually to the text box */
+		/* Ring effect for visibility */
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.25), 0 4px 6px rgba(0, 0, 0, 0.05);
+		/* Fixed positioning relative to transcript box */
+		top: 0.5rem;
+		right: 0.5rem;
+		transform: translate(-0.5rem, -0.5rem);
 	}
 
 	.copy-btn:hover {
 		opacity: 1;
 		filter: drop-shadow(0 6px 12px rgba(249, 168, 212, 0.4));
-		transform: translateY(-1px) scale(1.05);
+		transform: translate(-0.5rem, -1.5rem) scale(1.05);
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.4), 0 8px 16px rgba(249, 168, 212, 0.15);
 	}
 	
 	.copy-btn:active {
-		transform: translateY(1px) scale(0.95);
+		transform: translate(-0.5rem, 0) scale(0.95);
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.5), 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 
@@ -1364,12 +1378,14 @@
 			margin: 0 auto; /* Center horizontally */
 		}
 
-		/* Better sizing for copy button on mobile */
+		/* Better sizing for copy button on mobile - now floating */
 		.copy-btn {
 			height: 38px; /* Larger touch target */
 			width: 38px; /* Larger touch target */
-			top: -12px; /* Better positioned for mobile */
-			right: -8px; /* Better positioned for mobile */
+			top: 0; /* Fixed position */
+			right: 0; /* Fixed position */
+			margin: 8px; /* Add spacing */
+			z-index: 100; /* Ensure it stays on top */
 		}
 
 		/* Button width cleanup for mobile */
@@ -1453,10 +1469,11 @@
 
 		/* Adjust copy button position for very small screens */
 		.copy-btn {
-			top: -12px;
-			right: -6px;
+			top: 0;
+			right: 0;
 			height: 34px;
 			width: 34px;
+			margin: 6px; /* Smaller margin on very small screens */
 		}
 
 		/* Ensure transcript text is readable */
