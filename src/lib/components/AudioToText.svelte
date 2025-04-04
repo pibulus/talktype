@@ -22,6 +22,12 @@
 	// Accessibility state management
 	let screenReaderStatus = ''; // For ARIA announcements
 	let copyButtonRef; // Reference to the copy button
+	
+	// Smart tooltip management
+	let showCopyTooltip = false;
+	let tooltipHoverCount = 0;
+	let hasUsedCopyButton = false;
+	const MAX_TOOLTIP_HOVER_COUNT = 3; // Only show tooltip the first 3 times on hover
 
 	// Fun copy confirmation messages with friendly emojis
 	const copyMessages = [
@@ -366,6 +372,10 @@
 				return;
 			}
 
+			// Update tooltip usage tracking - hide tooltip after button is used
+			hasUsedCopyButton = true;
+			showCopyTooltip = false;
+			
 			console.log('📋 Attempting to copy text:', textToCopy.substring(0, 20) + '...');
 
 			// Try using the modern clipboard API
@@ -535,118 +545,140 @@
 </script>
 
 <!-- Main wrapper with fixed position to prevent pushing page layout -->
-<div class="main-wrapper mx-auto w-full">
-	<!-- Recording button/progress bar section - always in same position -->
-	<div class="button-section relative flex w-full justify-center">
-		<div class="button-container w-full max-w-[600px]">
-			{#if transcribing}
-				<!-- Progress bar (transforms the button) - adjusted height for mobile -->
-				<div
-					class="progress-container relative h-[72px] w-full overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[66px]"
-					role="progressbar"
-					aria-label="Transcription progress"
-					aria-valuenow={transcriptionProgress}
-					aria-valuemin="0"
-					aria-valuemax="100"
-				>
+<div class="main-wrapper mx-auto w-full box-border">
+	<!-- Shared container with proper centering for mobile -->
+	<div class="mobile-centered-container flex flex-col items-center justify-center w-full">
+		<!-- Recording button/progress bar section - always in same position -->
+		<div class="button-section relative flex w-full justify-center">
+			<div class="button-container w-full max-w-[500px] mx-auto flex justify-center">
+				{#if transcribing}
+					<!-- Progress bar (transforms the button) - adjusted height for mobile -->
 					<div
-						class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
-						style="width: {transcriptionProgress}%;"
-					></div>
-				</div>
-			{:else}
-				<!-- Recording button - improved for mobile and accessibility -->
-				<button
-					class="record-button w-full rounded-full bg-amber-400 px-6 py-6 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5"
-					on:click={toggleRecording}
-					on:keydown={handleKeyDown}
-					disabled={transcribing}
-					aria-label={recording ? 'Stop Recording' : 'Start Recording'}
-					aria-pressed={recording}
-					aria-busy={transcribing}
-				>
-					{buttonLabel}
-				</button>
-			{/if}
-		</div>
-	</div>
-
-	<!-- Dynamic content area that ensures spacing consistency without layout shifts -->
-	<div class="position-wrapper relative mb-20 mt-6 w-full">
-		<!-- Fixed positioned content that won't affect document flow -->
-		<div class="content-container">
-			<!-- Audio visualizer - absolutely positioned to not push content up -->
-			{#if recording}
-				<div class="visualizer-container absolute left-0 top-0 flex w-full justify-center">
-					<div class="wrapper-container flex w-full justify-center">
+						class="progress-container relative h-[72px] w-full overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[66px] max-w-[500px]"
+						role="progressbar"
+						aria-label="Transcription progress"
+						aria-valuenow={transcriptionProgress}
+						aria-valuemin="0"
+						aria-valuemax="100"
+					>
 						<div
-							class="visualizer-wrapper mx-auto w-full max-w-[600px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md"
-							style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
-						>
-							<AudioVisualizer />
+							class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
+							style="width: {transcriptionProgress}%;"
+						></div>
+					</div>
+				{:else}
+					<!-- Recording button - improved for mobile and accessibility -->
+					<button
+						class="record-button w-[90%] sm:w-full rounded-full bg-amber-400 px-6 py-6 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 max-w-[500px] mx-auto text-center"
+						on:click={toggleRecording}
+						on:keydown={handleKeyDown}
+						disabled={transcribing}
+						aria-label={recording ? 'Stop Recording' : 'Start Recording'}
+						aria-pressed={recording}
+						aria-busy={transcribing}
+					>
+						{buttonLabel}
+					</button>
+				{/if}
+			</div>
+		</div>
+
+		<!-- Dynamic content area that ensures spacing consistency without layout shifts -->
+		<div class="position-wrapper relative mb-20 mt-6 w-full flex flex-col items-center">
+			<!-- Fixed positioned content that won't affect document flow -->
+			<div class="content-container w-full flex flex-col items-center">
+				<!-- Audio visualizer - absolutely positioned to not push content up -->
+				{#if recording}
+					<div class="visualizer-container absolute left-0 top-0 flex w-full justify-center">
+						<div class="wrapper-container flex w-full justify-center">
+							<div
+								class="visualizer-wrapper mx-auto w-[90%] sm:w-full max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md"
+								style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
+							>
+								<AudioVisualizer />
+							</div>
 						</div>
 					</div>
-				</div>
-			{/if}
+				{/if}
 
-			<!-- Transcript output - only visible when not recording and has transcript -->
-			{#if transcript && !recording}
-				<div class="transcript-wrapper animate-fadeIn-from-top">
-					<!-- Speech bubble with transcript -->
-					<div class="wrapper-container flex w-full justify-center">
-						<div class="transcript-box-wrapper relative mx-auto w-full max-w-[600px]">
-							<!-- Ghost icon copy button positioned outside the transcript box -->
-							<button
-								class="copy-btn absolute -top-12 right-3 z-10 h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 sm:right-2"
-								on:click|preventDefault={copyToClipboard}
-								aria-label="Copy transcript to clipboard"
-								bind:this={copyButtonRef}
-							>
-								<div class="relative h-full w-full">
-									<!-- Ghost icon layers - same as main app icon but smaller -->
-									<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
-									<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
-									<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 h-full w-full copy-eyes" aria-hidden="true" />
-								</div>
-							</button>
-							
-							<!-- Editable transcript box -->
-							<div
-								class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5"
-							>
-								<div
-									class={`transcript-text ${responsiveFontSize} animate-text-appear`}
-									contenteditable="true"
-									role="textbox"
-									aria-label="Transcript editor"
-									aria-multiline="true"
-									tabindex="0"
-									aria-describedby="transcript-instructions"
-									bind:this={editableTranscript}
-									on:focus={() => {
-										screenReaderStatus =
-											'You can edit this transcript. Use keyboard to make changes.';
+				<!-- Transcript output - only visible when not recording and has transcript -->
+				{#if transcript && !recording}
+					<div class="transcript-wrapper w-full animate-fadeIn-from-top">
+						<!-- Speech bubble with transcript -->
+						<div class="wrapper-container flex w-full justify-center">
+							<div class="transcript-box-wrapper relative mx-auto w-[90%] sm:w-full max-w-[500px] px-2 sm:px-3 md:px-0">
+								<!-- Ghost icon copy button positioned outside the transcript box -->
+								<button
+									class="copy-btn absolute -top-4 -right-4 z-10 h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2"
+									on:click|preventDefault={copyToClipboard}
+									on:mouseenter={() => {
+										// Only show tooltip if user hasn't used the button yet 
+										// or hasn't hovered too many times
+										if (!hasUsedCopyButton && tooltipHoverCount < MAX_TOOLTIP_HOVER_COUNT) {
+											showCopyTooltip = true;
+											tooltipHoverCount++;
+										}
 									}}
+									on:mouseleave={() => {
+										showCopyTooltip = false;
+									}}
+									aria-label="Copy transcript to clipboard"
+									bind:this={copyButtonRef}
 								>
-									{transcript}
-								</div>
-								<!-- Hidden instructions for screen readers -->
-								<div id="transcript-instructions" class="sr-only">
-									Editable transcript. You can modify the text if needed.
+									<div class="relative h-full w-full">
+										<!-- Ghost icon layers - same as main app icon but smaller -->
+										<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
+										<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
+										<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 h-full w-full copy-eyes" aria-hidden="true" />
+									</div>
+									
+									<!-- Smart tooltip - only shows for first few hovers -->
+									{#if showCopyTooltip}
+										<div class="copy-tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md">
+											Copy to clipboard
+											<div class="tooltip-arrow absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-white"></div>
+										</div>
+									{/if}
+								</button>
+								
+								<!-- Editable transcript box -->
+								<div
+									class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5 max-w-[90vw] box-border mx-auto my-4 max-h-[300px] overflow-y-auto"
+								>
+									<div
+										class={`transcript-text ${responsiveFontSize} animate-text-appear`}
+										contenteditable="true"
+										role="textbox"
+										aria-label="Transcript editor"
+										aria-multiline="true"
+										tabindex="0"
+										aria-describedby="transcript-instructions"
+										bind:this={editableTranscript}
+										on:focus={() => {
+											screenReaderStatus =
+												'You can edit this transcript. Use keyboard to make changes.';
+										}}
+									>
+										{transcript}
+									</div>
+									<!-- Hidden instructions for screen readers -->
+									<div id="transcript-instructions" class="sr-only">
+										Editable transcript. You can modify the text if needed.
+									</div>
 								</div>
 							</div>
 						</div>
 					</div>
-				</div>
+				{/if}
+			</div>
+
+			<!-- Error message -->
+			{#if errorMessage}
+				<p class="error-message mt-4 text-center font-medium text-red-500">
+					{errorMessage}
+				</p>
 			{/if}
 		</div>
-
-		<!-- Error message -->
-		{#if errorMessage}
-			<p class="error-message mt-4 text-center font-medium text-red-500">
-				{errorMessage}
-			</p>
-		{/if}
 	</div>
 </div>
 
@@ -660,10 +692,10 @@
 <!-- Floating success toast - positioned fixed and independently from content -->
 {#if clipboardSuccess}
 	<div class="toast-container flex w-full justify-center">
-		<div class="clipboard-toast {!document.hasFocus() ? 'focus-warning' : ''}" aria-live="polite">
+		<div class="clipboard-toast {!document.hasFocus() ? 'focus-warning' : ''} w-[calc(100%-2rem)] max-w-[360px]" aria-live="polite">
 			<!-- Ghost icon to match app theme -->
 			<div class="toast-ghost">
-				<svg viewBox="0 0 24 24" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg">
+				<svg viewBox="0 0 24 24" class="h-5 w-5 sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg">
 					<path
 						d="M12,2 C7.6,2 4,5.6 4,10 L4,17 C4,18.1 4.9,19 6,19 L8,19 L8,21 C8,21.6 8.4,22 9,22 C9.3,22 9.5,21.9 9.7,21.7 L12.4,19 L18,19 C19.1,19 20,18.1 20,17 L20,10 C20,5.6 16.4,2 12,2 Z"
 						fill="currentColor"
@@ -836,7 +868,8 @@
 			rgba(255, 251, 252, 0.98)
 		);
 		position: relative;
-		min-height: 80px;
+		min-height: 120px; /* Increased minimum height for better appearance */
+		min-width: 280px; /* Minimum width to prevent too-narrow boxes on mobile */
 		height: auto;
 		max-height: 400px; /* Fixed pixel height instead of vh to prevent layout shifts */
 		overflow-y: auto;
@@ -917,6 +950,26 @@
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.5), 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 
+	/* Tooltip styling */
+	.copy-tooltip {
+		animation: tooltip-appear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+		border: 1px solid rgba(249, 168, 212, 0.3);
+		box-shadow: 0 4px 8px -2px rgba(249, 168, 212, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+		z-index: 20;
+		pointer-events: none;
+	}
+
+	@keyframes tooltip-appear {
+		0% {
+			opacity: 0;
+			transform: translate(-50%, 5px) scale(0.95);
+		}
+		100% {
+			opacity: 1;
+			transform: translate(-50%, 0) scale(1);
+		}
+	}
+
 	/* Special animation for the copy button ghost eyes */
 	.copy-eyes {
 		animation: copy-ghost-blink 8s infinite;
@@ -987,6 +1040,23 @@
 		border-bottom: 1.5px solid rgba(249, 168, 212, 0.4);
 		border-top-left-radius: 4px;
 		transform: rotate(45deg);
+	}
+
+	/* Apply box-sizing to all elements for consistent layout */
+	* {
+		box-sizing: border-box;
+	}
+	
+	/* Mobile-centered container */
+	.mobile-centered-container {
+		width: 100%;
+		max-width: 100vw;
+		margin: 0 auto;
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
 	}
 
 	/* Toast container for alignment with button */
@@ -1246,55 +1316,25 @@
 	}
 
 	/* Media queries for mobile responsiveness */
-	@media (max-width: 640px) {
+	@media (max-width: 768px) {
 		.transcript-box {
-			padding: 1rem 1.25rem; /* Adjusted padding on mobile */
+			padding: 1.25rem 1.5rem; /* Increased padding for better readability */
 			border-radius: 1.5rem;
-			margin-top: 0.5rem; /* Add a bit more space on top on mobile */
+			margin: 1rem auto; /* Space above and below, centered */
+			width: 100%; /* Full width of container */
+			max-width: 90vw; /* Cap width on mobile to prevent overflow */
+		}
+
+		.transcript-text {
+			word-break: break-word; /* Prevent text overflow on small screens */
 		}
 
 		.clipboard-toast {
-			font-size: 1rem;
-			padding: 0.9rem 1.3rem;
-			max-width: calc(100% - 40px);
+			font-size: 0.875rem;
+			padding: 0.6rem 1rem;
+			max-width: 360px;
+			width: calc(100% - 2rem);
 			bottom: 1.5rem; /* Position closer to bottom of screen on mobile */
-		}
-
-		.toast-ghost svg {
-			height: 20px;
-			width: 20px;
-		}
-
-		.button-container,
-		.visualizer-wrapper,
-		.transcript-box-wrapper {
-			width: calc(100% - 20px);
-		}
-
-		/* Increase tap target size for buttons on mobile */
-		.record-button {
-			min-height: 66px; /* Ensure minimum height for touch */
-			font-size: 1.2rem; /* Slightly smaller font on mobile */
-		}
-
-		/* Adjust spacing for mobile */
-		.position-wrapper {
-			margin-top: 1rem;
-			margin-bottom: 1rem;
-		}
-
-		/* Make the visualizer more compact on mobile */
-		.visualizer-container {
-			top: -5px;
-		}
-	}
-
-	/* Even smaller screens */
-	@media (max-width: 380px) {
-		.clipboard-toast {
-			font-size: 0.9rem;
-			padding: 0.75rem 1.1rem;
-			bottom: 1rem;
 		}
 
 		.toast-ghost svg {
@@ -1302,10 +1342,121 @@
 			width: 18px;
 		}
 
-		/* Make the recording button even more prominent */
+		.button-container,
+		.visualizer-wrapper,
+		.transcript-box-wrapper {
+			width: 90%;
+			max-width: 90vw; /* Prevent overflow */
+			margin: 0 auto; /* Center horizontally */
+		}
+
+		/* Better sizing for copy button on mobile */
+		.copy-btn {
+			height: 38px; /* Larger touch target */
+			width: 38px; /* Larger touch target */
+			top: -12px; /* Better positioned for mobile */
+			right: -8px; /* Better positioned for mobile */
+		}
+
+		/* Button width cleanup for mobile */
 		.record-button {
-			min-height: 72px;
-			font-size: 1.1rem;
+			min-height: 66px; /* Ensure minimum height for touch */
+			font-size: 1.2rem; /* Slightly smaller font on mobile */
+			width: 90%; /* Width on mobile */
+			max-width: 320px; /* Consistent with spec */
+			margin: 0 auto; /* Center horizontally */
+			text-align: center; /* Center text */
+			align-self: center; /* Center the button itself */
+		}
+
+		/* Adjust spacing for mobile */
+		.position-wrapper {
+			margin-top: 1rem;
+			margin-bottom: 1rem;
+			padding: 0 8px; /* Add side padding */
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+
+		/* Make the visualizer more compact on mobile */
+		.visualizer-container {
+			top: -5px;
+			display: flex;
+			justify-content: center;
+			width: 100%;
+		}
+
+		/* Ensure minimum width even on very small screens */
+		.wrapper-container {
+			min-width: 280px;
+			display: flex;
+			justify-content: center;
+		}
+	}
+
+	/* Even smaller screens */
+	@media (max-width: 380px) {
+		.clipboard-toast {
+			font-size: 0.75rem;
+			padding: 0.6rem 1rem;
+			bottom: 1rem;
+			max-width: 90%;
+			width: calc(100% - 2rem);
+		}
+
+		.toast-ghost svg {
+			height: 16px;
+			width: 16px;
+		}
+
+		/* Make the recording button even more prominent but well-sized */
+		.record-button {
+			min-height: 66px;
+			font-size: 1rem;
+			width: 92%; /* Use more available space but keep some padding */
+			padding: 0.75rem 1rem;
+		}
+
+		/* Ensure minimum text box sizing */
+		.transcript-box {
+			min-height: 100px;
+			padding: 1rem 1.25rem;
+			border-radius: 1.25rem;
+			max-height: 250px; /* Shorter max height on very small screens */
+		}
+
+		/* Adjust copy button position for very small screens */
+		.copy-btn {
+			top: -12px;
+			right: -6px;
+			height: 34px;
+			width: 34px;
+		}
+
+		/* Ensure transcript text is readable */
+		.transcript-text {
+			font-size: 0.95rem !important;
+		}
+
+		/* Ensure minimum container width */
+		.transcript-box-wrapper {
+			min-width: 250px;
+			width: 92%;
+			margin: 0 auto;
+		}
+
+		/* Visualizer adjustments for tiny screens */
+		.visualizer-wrapper {
+			padding: 0.75rem;
+			border-radius: 1.25rem;
+		}
+
+		/* Ensure proper spacing on tiny screens */
+		.position-wrapper {
+			margin-top: 0.75rem;
+			margin-bottom: 0.75rem;
+			padding: 0 4px;
 		}
 	}
 
