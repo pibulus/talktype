@@ -45,6 +45,7 @@ Our typography is clean, readable, and friendly:
 - **Transcript Text**: Monospace, for clear distinction and readability
 
 Typography should be responsive, with text sizes scaling appropriately across device sizes:
+
 - Mobile: Compact but readable (text-base to text-xl for primary content)
 - Desktop: More generous spacing and sizing (text-lg to text-3xl)
 
@@ -136,6 +137,7 @@ Our interface copy matches our visual style:
 - Celebratory for success states
 
 Examples:
+
 - "Start Recording" (clear action)
 - "Transcript copied to clipboard! ✨" (confirmation with personality)
 - "Made with ❤️ by Dennis & Pablo" (personal touch)
