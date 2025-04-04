@@ -618,7 +618,7 @@
 							<div class="transcript-box-wrapper relative mx-auto w-[90%] sm:w-full max-w-[500px] px-2 sm:px-3 md:px-0">
 								<!-- Ghost icon copy button positioned outside the transcript box -->
 								<button
-									class="copy-btn fixed z-50 h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2"
+									class="copy-btn absolute -top-4 -right-4 z-10 h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2"
 									on:click|preventDefault={copyToClipboard}
 									on:mouseenter={() => {
 										// Only show tooltip if user hasn't used the button yet 
@@ -652,7 +652,7 @@
 								
 								<!-- Editable transcript box -->
 								<div
-									class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5 max-w-[90vw] box-border mx-auto my-4 max-h-[300px] overflow-y-auto"
+									class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5 max-w-[90vw] box-border mx-auto my-4 transition-all duration-300 overflow-y-auto"
 								>
 									<div
 										class={`transcript-text ${responsiveFontSize} animate-text-appear`}
@@ -812,14 +812,18 @@
 	}
 
 	.animate-text-appear {
-		animation: textAppear 0.5s cubic-bezier(0.1, 0.7, 0.2, 1);
+		animation: textAppear 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 		will-change: opacity, transform;
 	}
 
 	@keyframes textAppear {
 		0% {
 			opacity: 0;
-			transform: translateY(3px);
+			transform: translateY(5px);
+		}
+		70% {
+			opacity: 0.9;
+			transform: translateY(-2px);
 		}
 		100% {
 			opacity: 1;
@@ -891,21 +895,20 @@
 		min-height: 120px; /* Minimum height for better appearance */
 		min-width: 280px; /* Minimum width to prevent too-narrow boxes on mobile */
 		height: auto;
-		max-height: 50vh; /* Cap height as percentage of viewport to prevent excessive scrolling */
+		max-height: 70vh; /* Increased maximum height for better content visibility */
 		overflow-y: auto;
 		/* No fade effect for cleaner reading */
 		/* Custom scrollbar styling */
 		scrollbar-width: thin;
 		scrollbar-color: rgba(249, 168, 212, 0.3) transparent;
-		transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); /* Smooth transition with easing */
+		transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Smooth elastic transition with easing */
 		/* Performance optimization */
 		will-change: transform, opacity;
 		backface-visibility: hidden;
 		-webkit-font-smoothing: subpixel-antialiased;
 		/* Force transcript to not affect layout */
 		z-index: 10;
-		padding-right: 40px; /* Extra space for floating copy button */
-	}
+		}
 
 	/* Subtle hover effect for transcript box */
 	.transcript-box:hover {
@@ -952,29 +955,25 @@
 		border-radius: 0.25rem;
 	}
 
-	/* Copy button styling - ghost icon version, floating fixed position */
+	/* Copy button styling - ghost icon version, anchored to textbox */
 	.copy-btn {
 		opacity: 0.95;
 		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 		filter: drop-shadow(0 4px 6px rgba(249, 168, 212, 0.25));
 		animation: gentle-float 3s ease-in-out infinite;
-		/* Ring effect for visibility */
+		/* Ring effect to anchor the button visually to the text box */
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.25), 0 4px 6px rgba(0, 0, 0, 0.05);
-		/* Fixed positioning relative to transcript box */
-		top: 0.5rem;
-		right: 0.5rem;
-		transform: translate(-0.5rem, -0.5rem);
 	}
 
 	.copy-btn:hover {
 		opacity: 1;
 		filter: drop-shadow(0 6px 12px rgba(249, 168, 212, 0.4));
-		transform: translate(-0.5rem, -1.5rem) scale(1.05);
+		transform: translateY(-1px) scale(1.05);
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.4), 0 8px 16px rgba(249, 168, 212, 0.15);
 	}
 	
 	.copy-btn:active {
-		transform: translate(-0.5rem, 0) scale(0.95);
+		transform: translateY(1px) scale(0.95);
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.5), 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 
@@ -1351,7 +1350,7 @@
 			margin: 1rem auto; /* Space above and below, centered */
 			width: 100%; /* Full width of container */
 			max-width: 90vw; /* Cap width on mobile to prevent overflow */
-			max-height: 240px; /* Shorter max height on mobile to minimize layout shifts */
+			max-height: 60vh; /* Increased for more content visibility, but not overwhelming on small screens */
 		}
 
 		.transcript-text {
@@ -1378,14 +1377,12 @@
 			margin: 0 auto; /* Center horizontally */
 		}
 
-		/* Better sizing for copy button on mobile - now floating */
+		/* Better sizing for copy button on mobile */
 		.copy-btn {
 			height: 38px; /* Larger touch target */
 			width: 38px; /* Larger touch target */
-			top: 0; /* Fixed position */
-			right: 0; /* Fixed position */
-			margin: 8px; /* Add spacing */
-			z-index: 100; /* Ensure it stays on top */
+			top: -12px; /* Better positioned for mobile */
+			right: -8px; /* Better positioned for mobile */
 		}
 
 		/* Button width cleanup for mobile */
@@ -1464,21 +1461,22 @@
 			min-height: 100px;
 			padding: 1rem 1.25rem;
 			border-radius: 1.25rem;
-			max-height: 250px; /* Shorter max height on very small screens */
+			max-height: 55vh; /* Slightly reduced height for very small screens */
 		}
 
 		/* Adjust copy button position for very small screens */
 		.copy-btn {
-			top: 0;
-			right: 0;
+			top: -12px;
+			right: -6px;
 			height: 34px;
 			width: 34px;
-			margin: 6px; /* Smaller margin on very small screens */
 		}
 
-		/* Ensure transcript text is readable */
+		/* Ensure transcript text is readable and responsive */
 		.transcript-text {
-			font-size: 0.95rem !important;
+			font-size: 0.95rem !important; 
+			line-height: 1.6;
+			transition: font-size 0.3s ease;
 		}
 
 		/* Ensure minimum container width */
