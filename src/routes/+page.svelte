@@ -2,11 +2,13 @@
 <script context="module">
 	let showExtensionInfo = false;
 	let showAboutInfo = false;
+	let showSettingsModal = false;
 </script>
 
 <script>
 	import { onMount } from 'svelte';
 	import AudioToText from '$lib/components/AudioToText.svelte';
+	import SettingsModal from '$lib/components/settings/SettingsModal.svelte';
 	import { browser } from '$app/environment';
 	
 	// Create a reusable Svelte action for handling clicks outside an element
@@ -388,14 +390,98 @@
 		setTimeout(handleTitleAnimationComplete, 1200); // After staggered animation
 		setTimeout(handleSubtitleAnimationComplete, 2000); // After subtitle slide-in
 		
-		// For testing without localStorage, you can uncomment this line
+		// Initialize theme from localStorage
+		if (browser) {
+			const savedVibe = localStorage.getItem('talktype-vibe');
+			if (savedVibe) {
+				applyTheme(savedVibe);
+			}
+		}
+		
+		// For testing without localStorage, you can uncomment these lines
 		// localStorage.removeItem('hasSeenTalkTypeIntro');
+		// localStorage.removeItem('talktype-vibe');
 
 		return () => {
 			debug('Component unmounting, clearing timeouts');
 			clearAllBlinkTimeouts();
 		};
 	});
+	
+	// Apply theme/vibe function for initial load
+	function applyTheme(vibeId) {
+		// Define theme options with embedded SVG gradient colors
+		const vibeOptions = [
+			{ 
+				id: 'peach', 
+				startColor: '#ffb6c1',  // Light pink
+				endColor: '#dda0dd',    // Light purple
+				visualizerGradient: 'linear-gradient(to top, #ff9a84, #ff7eb3)'
+			},
+			{ 
+				id: 'mint', 
+				startColor: '#60a5fa',  // Light blue
+				endColor: '#34d399',    // Light green
+				visualizerGradient: 'linear-gradient(to top, #60a5fa, #34d399)'
+			},
+			{ 
+				id: 'bubblegum', 
+				startColor: '#f472b6',  // Pink
+				endColor: '#a78bfa',    // Purple
+				visualizerGradient: 'linear-gradient(to top, #f472b6, #a78bfa)'
+			},
+			{ 
+				id: 'rainbow', 
+				animated: true,
+				visualizerGradient: 'rainbow'
+			}
+		];
+		
+		const vibe = vibeOptions.find(v => v.id === vibeId);
+		if (!vibe) return;
+		
+		// Get the SVG gradient elements and visualizer bars
+		const linearGradient = document.querySelector('#pinkPurpleGradient');
+		const svgStops = linearGradient ? linearGradient.querySelectorAll('stop') : null;
+		const visualizerBars = document.querySelectorAll('.history-bar');
+		const ghostFill = document.querySelector('.ghost-fill');
+		
+		// Update SVG gradient colors directly
+		if (svgStops && svgStops.length >= 2 && ghostFill) {
+			if (vibe.animated && vibe.id === 'rainbow') {
+				// Apply rainbow animation to the fill
+				ghostFill.classList.add('rainbow-animated');
+			} else {
+				// Remove any animation classes
+				ghostFill.classList.remove('rainbow-animated');
+				
+				// Update gradient colors if not rainbow
+				if (svgStops[0] && vibe.startColor) {
+					svgStops[0].setAttribute('stop-color', vibe.startColor);
+				}
+				if (svgStops[1] && vibe.endColor) {
+					svgStops[1].setAttribute('stop-color', vibe.endColor);
+				}
+			}
+			
+			// Force a reflow to ensure the gradient is visible
+			void ghostFill.offsetWidth;
+		}
+		
+		// Update visualizer bars
+		visualizerBars.forEach(bar => {
+			if (vibe.animated && vibe.id === 'rainbow') {
+				bar.classList.add('rainbow-animated-bars');
+				bar.style.backgroundImage = '';
+			} else {
+				bar.classList.remove('rainbow-animated-bars');
+				bar.style.backgroundImage = vibe.visualizerGradient;
+			}
+		});
+		
+		// Update global CSS variables for new components
+		document.documentElement.style.setProperty('--visualizer-gradient', vibe.visualizerGradient || '');
+	};
 
 	// Reliable recording toggle with ambient blinking support
 	function startRecordingFromGhost(event) {
@@ -581,15 +667,72 @@
 		if (modal) modal.showModal();
 	}
 	
+	// Function to show the Settings modal
+	function openSettingsModal() {
+		// First, ensure any open dialogs are closed and scroll is restored
+		if (modalOpen) {
+			closeModal();
+		}
+
+		// Get current scroll position and body dimensions
+		scrollPosition = window.scrollY;
+		const width = document.body.clientWidth;
+		modalOpen = true;
+		
+		// Lock the body in place exactly where it was
+		document.body.style.position = 'fixed';
+		document.body.style.top = `-${scrollPosition}px`;
+		document.body.style.width = `${width}px`;
+		document.body.style.overflow = 'hidden';
+		document.body.style.height = '100%';
+		
+		// Show the settings modal directly
+		const modal = document.getElementById('settings_modal');
+		if (modal) {
+			// If the modal is already open, just close it
+			if (modal.hasAttribute('open')) {
+				modal.close();
+				setTimeout(() => {
+					closeModal();
+				}, 50);
+				return;
+			}
+			
+			// Dispatch a custom event that will be caught in the SettingsModal component
+			const event = new Event('beforeshow');
+			modal.dispatchEvent(event);
+			
+			// Show the modal
+			modal.showModal();
+		}
+	}
+	
+	// Function to close the Settings modal
+	function closeSettingsModal() {
+		// Close modal and restore scroll
+		closeModal();
+	}
+	
 	// Function to restore scroll position when modal closes
 	function closeModal() {
 		if (!modalOpen) return;
+		
+		// Ensure any open dialogs are properly closed
+		document.querySelectorAll('dialog[open]').forEach(dialog => {
+			if (dialog && typeof dialog.close === 'function') {
+				dialog.close();
+			}
+		});
 		
 		// Restore body styles
 		document.body.style.position = '';
 		document.body.style.top = '';
 		document.body.style.width = '';
 		document.body.style.overflow = '';
+		document.body.style.height = '';
+		
+		// Remove any potentially problematic classes
+		document.body.classList.remove('overflow-hidden', 'fixed', 'modal-open');
 		
 		// Restore scroll position
 		window.scrollTo(0, scrollPosition);
@@ -618,12 +761,176 @@
 		>
 			<!-- Layered approach with gradient background and blinking eyes -->
 			<div class="icon-layers">
-				<!-- Gradient background (bottom layer) -->
-				<img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
-				<!-- Outline without eyes (middle layer) -->
-				<img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" aria-hidden="true" />
-				<!-- Just the eyes (top layer - for blinking) -->
-				<img src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
+				<!-- Completely new approach with SVG embedded directly -->
+				<svg viewBox="0 0 1024 1024" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+					<!-- Gradient definitions -->
+					<defs>
+						<linearGradient id="pinkPurpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+							<stop offset="0%" stop-color="#ffb6c1" stop-opacity="1" />
+							<stop offset="100%" stop-color="#dda0dd" stop-opacity="1" />
+						</linearGradient>
+						
+						<!-- Rainbow gradient for animation -->
+						<linearGradient id="rainbowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+							<stop offset="0%" stop-color="#ff5e62" />
+							<stop offset="16.67%" stop-color="#ff9966" />
+							<stop offset="33.33%" stop-color="#fffc00" />
+							<stop offset="50%" stop-color="#73fa79" />
+							<stop offset="66.67%" stop-color="#73c2fb" />
+							<stop offset="83.33%" stop-color="#d344b7" />
+							<stop offset="100%" stop-color="#ff5e62" />
+						</linearGradient>
+						
+						<!-- Define a clip path using the ghost shape -->
+						<clipPath id="ghostClipPath">
+							<path 
+								d="M513.404419,867.481567 
+								C500.638763,868.907959 488.331787,868.194336 476.009705,867.866089 
+								C446.462891,867.078796 417.884583,859.610352 388.801971,855.681885 
+								C370.149475,853.162231 352.112579,857.574646 334.511139,863.822144 
+								C315.368408,870.616699 297.161530,879.791504 277.721497,885.828918 
+								C254.681473,892.984314 231.232208,897.413452 207.021820,896.261047 
+								C189.047836,895.405457 171.990540,891.317932 158.356384,878.565979 
+								C147.208923,868.139954 141.529053,854.882935 139.624680,839.847839 
+								C137.264587,821.214722 142.483505,803.992310 148.934418,786.895508 
+								C156.505127,766.830994 164.596375,746.925598 168.849991,725.765869 
+								C174.432098,697.997681 173.665695,670.337097 168.186920,642.630127 
+								C163.947479,621.190674 156.486160,600.699402 150.462204,579.785400 
+								C143.638535,556.094910 139.159988,532.038147 137.504852,507.372742 
+								C131.064590,411.397430 157.581161,325.368225 215.925552,249.300003 
+								C256.117920,196.897995 307.335602,158.445419 368.502960,133.354050 
+								C400.531647,120.215607 433.768219,111.837654 468.098663,107.519447 
+								C487.134308,105.125092 506.230377,104.015808 525.362000,104.827698 
+								C596.538330,107.848198 662.704651,127.277710 722.209900,167.011292 
+								C803.810486,221.498611 856.047241,296.743835 879.300354,392.061066 
+								C884.184937,412.083374 887.114685,432.389526 888.554993,452.994354 
+								C889.719971,469.660492 889.983215,486.340546 889.047058,502.913361 
+								C886.752075,543.540771 877.620850,582.802795 862.444458,620.580078 
+								C840.634644,674.869141 809.072632,722.769043 765.879944,762.294067 
+								C714.632507,809.189697 656.007019,842.916016 587.328186,857.500854 
+								C563.079834,862.650391 538.753174,867.051331 513.404419,867.481567 
+								M231.830231,347.227020 
+								C210.293030,395.676147 198.984055,446.071472 202.137405,499.390686 
+								C203.379990,520.401123 207.011154,540.925964 212.771942,561.075439 
+								C221.804901,592.669983 232.889542,623.721558 235.886505,656.807068 
+								C237.528046,674.929260 238.041809,693.021240 236.125473,711.088745 
+								C233.663315,734.302429 228.079376,756.867920 220.703934,778.997375 
+								C216.070633,792.899231 211.026505,806.639221 204.976135,820.001709 
+								C202.237274,826.050598 204.640930,829.986755 211.224380,830.599182 
+								C212.216553,830.691467 213.222946,830.652954 214.222412,830.641785 
+								C229.674545,830.469666 244.630646,827.182190 259.157257,822.373352 
+								C278.265167,816.048035 297.069214,808.811035 316.070312,802.155701 
+								C350.310822,790.162659 385.034760,785.834839 420.907745,794.570801 
+								C442.249481,799.768066 464.089172,802.233215 486.075745,802.573059 
+								C510.252686,802.946838 534.166016,800.326538 557.923584,795.787598 
+								C608.719604,786.082764 654.687195,765.450806 695.782959,734.304016 
+								C746.750122,695.675598 782.895020,645.900330 805.225037,585.981445 
+								C818.084045,551.476379 824.147156,515.703613 824.386597,479.079163 
+								C824.510071,460.195374 822.352417,441.325256 818.809448,422.629791 
+								C806.773621,359.119690 777.563049,304.698578 731.504028,259.715424 
+								C677.962280,207.424286 613.008545,178.958206 538.785400,171.496796 
+								C511.977112,168.801819 485.289978,171.008865 458.802246,175.699249 
+								C411.962860,183.993408 369.315247,202.284042 330.532043,229.690826 
+								C287.560181,260.057526 255.228470,299.415741 231.830231,347.227020 
+								z"
+							/>
+						</clipPath>
+					</defs>
+					
+					<!-- Layered approach: -->
+					<!-- 1. First layer: Background rectangle with gradient that will show through the clip path -->
+					<rect 
+						x="0" y="0" 
+						width="1024" height="1024" 
+						fill="url(#pinkPurpleGradient)" 
+						class="ghost-fill"
+						clip-path="url(#ghostClipPath)" 
+					/>
+					
+					<!-- 2. Second layer: Ghost outline stays black -->
+					<path 
+						d="M513.404419,867.481567 
+						C500.638763,868.907959 488.331787,868.194336 476.009705,867.866089 
+						C446.462891,867.078796 417.884583,859.610352 388.801971,855.681885 
+						C370.149475,853.162231 352.112579,857.574646 334.511139,863.822144 
+						C315.368408,870.616699 297.161530,879.791504 277.721497,885.828918 
+						C254.681473,892.984314 231.232208,897.413452 207.021820,896.261047 
+						C189.047836,895.405457 171.990540,891.317932 158.356384,878.565979 
+						C147.208923,868.139954 141.529053,854.882935 139.624680,839.847839 
+						C137.264587,821.214722 142.483505,803.992310 148.934418,786.895508 
+						C156.505127,766.830994 164.596375,746.925598 168.849991,725.765869 
+						C174.432098,697.997681 173.665695,670.337097 168.186920,642.630127 
+						C163.947479,621.190674 156.486160,600.699402 150.462204,579.785400 
+						C143.638535,556.094910 139.159988,532.038147 137.504852,507.372742 
+						C131.064590,411.397430 157.581161,325.368225 215.925552,249.300003 
+						C256.117920,196.897995 307.335602,158.445419 368.502960,133.354050 
+						C400.531647,120.215607 433.768219,111.837654 468.098663,107.519447 
+						C487.134308,105.125092 506.230377,104.015808 525.362000,104.827698 
+						C596.538330,107.848198 662.704651,127.277710 722.209900,167.011292 
+						C803.810486,221.498611 856.047241,296.743835 879.300354,392.061066 
+						C884.184937,412.083374 887.114685,432.389526 888.554993,452.994354 
+						C889.719971,469.660492 889.983215,486.340546 889.047058,502.913361 
+						C886.752075,543.540771 877.620850,582.802795 862.444458,620.580078 
+						C840.634644,674.869141 809.072632,722.769043 765.879944,762.294067 
+						C714.632507,809.189697 656.007019,842.916016 587.328186,857.500854 
+						C563.079834,862.650391 538.753174,867.051331 513.404419,867.481567 
+						M231.830231,347.227020 
+						C210.293030,395.676147 198.984055,446.071472 202.137405,499.390686 
+						C203.379990,520.401123 207.011154,540.925964 212.771942,561.075439 
+						C221.804901,592.669983 232.889542,623.721558 235.886505,656.807068 
+						C237.528046,674.929260 238.041809,693.021240 236.125473,711.088745 
+						C233.663315,734.302429 228.079376,756.867920 220.703934,778.997375 
+						C216.070633,792.899231 211.026505,806.639221 204.976135,820.001709 
+						C202.237274,826.050598 204.640930,829.986755 211.224380,830.599182 
+						C212.216553,830.691467 213.222946,830.652954 214.222412,830.641785 
+						C229.674545,830.469666 244.630646,827.182190 259.157257,822.373352 
+						C278.265167,816.048035 297.069214,808.811035 316.070312,802.155701 
+						C350.310822,790.162659 385.034760,785.834839 420.907745,794.570801 
+						C442.249481,799.768066 464.089172,802.233215 486.075745,802.573059 
+						C510.252686,802.946838 534.166016,800.326538 557.923584,795.787598 
+						C608.719604,786.082764 654.687195,765.450806 695.782959,734.304016 
+						C746.750122,695.675598 782.895020,645.900330 805.225037,585.981445 
+						C818.084045,551.476379 824.147156,515.703613 824.386597,479.079163 
+						C824.510071,460.195374 822.352417,441.325256 818.809448,422.629791 
+						C806.773621,359.119690 777.563049,304.698578 731.504028,259.715424 
+						C677.962280,207.424286 613.008545,178.958206 538.785400,171.496796 
+						C511.977112,168.801819 485.289978,171.008865 458.802246,175.699249 
+						C411.962860,183.993408 369.315247,202.284042 330.532043,229.690826 
+						C287.560181,260.057526 255.228470,299.415741 231.830231,347.227020 
+						z"
+						fill="none" stroke="#333" stroke-width="2" />
+						
+					<!-- Eyes from talktype-icon-eyes.svg -->
+					<g class="icon-eyes">
+						<path 
+							d="M580.705505,471.768982 
+							C579.774292,452.215668 582.605713,433.818390 590.797302,416.428589 
+							C595.017090,407.470551 600.340088,399.277374 607.772888,392.579346 
+							C627.716553,374.607117 653.145935,376.202209 670.873657,396.487671 
+							C682.259460,409.516235 688.856201,424.818604 691.954407,441.620636 
+							C696.671631,467.203156 693.889832,491.915649 682.163452,515.365479 
+							C678.942444,521.806519 674.902405,527.726013 669.904602,532.915588 
+							C649.577148,554.023315 621.761536,553.062683 602.886780,530.571594 
+							C591.909119,517.490662 585.759705,502.182648 582.712219,485.533203 
+							C581.906189,481.129486 581.375549,476.675323 580.705505,471.768982 
+							z"
+							fill="#000000" class="eye right-eye" />
+						
+						<path 
+							d="M445.338440,471.851562 
+							C443.176758,493.788635 436.942841,513.715637 422.903229,530.550293 
+							C414.712860,540.371216 404.428955,546.983215 391.426178,547.988098 
+							C380.129303,548.861206 370.128235,544.991821 361.551147,537.658081 
+							C346.242279,524.568481 338.807251,507.057800 334.925110,487.966980 
+							C330.108337,464.279877 331.868622,440.935730 341.490295,418.566833 
+							C348.688934,401.831055 359.017548,387.645721 377.318176,381.896362 
+							C395.780701,376.096130 410.714722,383.333527 422.873901,396.788544 
+							C435.662811,410.940399 441.511841,428.347931 444.441101,446.954803 
+							C445.723877,455.103149 445.097168,463.233063 445.338440,471.851562 
+							z"
+							fill="#000000" class="eye left-eye" />
+					</g>
+				</svg>
 			</div>
 		</button>
 
@@ -675,6 +982,12 @@
 				>
 					About
 				</button>
+				<button
+					class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-1 px-2 sm:px-3 sm:py-2 h-auto min-h-0"
+					on:click={openSettingsModal}
+				>
+					Settings
+				</button>
 				<button 
 					class="btn btn-sm bg-gradient-to-r from-pink-50 to-purple-100 text-purple-600 border-none hover:bg-opacity-90 shadow-sm hover:shadow transition-all text-xs sm:text-sm py-1 px-2 sm:px-3 sm:py-2 h-auto min-h-0"
 					on:click={showExtensionModal}
@@ -699,9 +1012,9 @@
 				<div class="flex items-center gap-3 mb-1">
 					<div class="w-9 h-9 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
 						<div class="relative w-7 h-7">
-							<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
-							<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
-							<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
+							<img src="/static/assets/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
+							<img src="/static/assets/talktype-icon-outline.svg" alt="" class="absolute inset-0 w-full h-full" />
+							<img src="/static/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
 						</div>
 					</div>
 					<h3 class="font-black text-xl text-gray-800 tracking-tight">About TalkType</h3>
@@ -817,6 +1130,9 @@
 		}}></div>
 	</dialog>
 	
+	<!-- Settings Modal -->
+	<SettingsModal open={showSettingsModal} closeModal={closeSettingsModal} />
+	
 	<!-- First-time Intro Modal (DaisyUI version) -->
 	<dialog id="intro_modal" class="modal">
 		<!-- Modal content with clickOutside Svelte action for reliable backdrop clicking -->
@@ -839,9 +1155,9 @@
 				<!-- Animated ghost icon -->
 				<div class="flex justify-center mb-4">
 					<div class="relative w-16 h-16 animate-pulse-slow">
-						<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
-						<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
-						<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full intro-eyes" />
+						<img src="/static/assets/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
+						<img src="/static/assets/talktype-icon-outline.svg" alt="" class="absolute inset-0 w-full h-full" />
+						<img src="/static/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full intro-eyes" />
 					</div>
 				</div>
 				
@@ -1027,13 +1343,39 @@
 		transition: all 0.3s ease;
 	}
 
-	/* Stack the layers correctly */
-	.icon-bg {
-		z-index: 1; /* Bottom layer */
+	/* Properly layered SVG approach */
+	.ghost-fill {
+		opacity: 1; /* Ensure full visibility */
+	}
+	
+	/* Eyes animation for blinking */
+	@keyframes blinkSvgEyes {
+		0%, 95%, 100% {
+			transform: scaleY(1);
+		}
+		97.5% {
+			transform: scaleY(0); /* Closed eyes */
+		}
+	}
+	
+	.icon-eyes {
+		animation: blinkSvgEyes 6s infinite;
+		transform-origin: center center;
+	}
+	
+	.eye {
+		transform-origin: center center;
+	}
+	
+	/* Rainbow animation for ghost fill */
+	.ghost-fill.rainbow-animated {
+		animation: hueShift 8s linear infinite;
+		fill: url(#rainbowGradient) !important;
 	}
 
 	.icon-base {
 		z-index: 2; /* Middle layer */
+		opacity: 0.9; /* Allow gradient to show through - outline only */
 	}
 
 	.icon-eyes {
@@ -1481,5 +1823,55 @@
 
 	.animate-fadeIn {
 		animation: fadeIn 0.5s ease-out forwards;
+	}
+	
+	/* Ghost gradient overlay */
+	.ghost-gradient-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 1;
+		-webkit-mask-image: url(/static/assets/talktype-icon-base.svg);
+		mask-image: url(/static/assets/talktype-icon-base.svg);
+		-webkit-mask-size: contain;
+		mask-size: contain;
+		-webkit-mask-repeat: no-repeat;
+		mask-repeat: no-repeat;
+		-webkit-mask-position: center;
+		mask-position: center;
+		opacity: 1 !important; /* Force visibility */
+	}
+	
+	/* Global rainbow animation for settings */
+	:global(.rainbow-animated) {
+		animation: hueShift 8s linear infinite;
+		background-image: linear-gradient(135deg, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
+		background-size: 200% 200%;
+		fill: url(#rainbowGradient) !important;
+	}
+	
+	/* SVG-specific rainbow animation */
+	#rainbowGradient {
+		animation: hueShift 8s linear infinite;
+	}
+	
+	:global(.rainbow-animated-bars) {
+		animation: hueShift 8s linear infinite;
+		background-image: linear-gradient(to top, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
+		background-size: 100% 800%;
+	}
+	
+	@keyframes hueShift {
+		0% {
+			background-position: 0% 0%;
+		}
+		50% {
+			background-position: 100% 100%;
+		}
+		100% {
+			background-position: 0% 0%;
+		}
 	}
 </style>
