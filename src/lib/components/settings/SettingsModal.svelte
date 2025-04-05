@@ -168,9 +168,11 @@
   <div class="modal-box bg-gradient-to-br from-white to-[#fefaf4] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh] w-[95%] max-w-md md:max-w-lg animate-modal-enter">
     <form method="dialog">
       <button 
-        class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
+        class="btn btn-sm min-h-[32px] min-w-[32px] h-8 w-8 btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm flex items-center justify-center p-0"
         on:click={handleModalClose}
-      >✕</button>
+      >
+        <span class="text-lg leading-none">✕</span>
+      </button>
     </form>
     
     <div class="animate-fadeUp space-y-6">
@@ -198,15 +200,19 @@
                 <div class="preview-ghost-wrapper w-12 h-12 relative">
                   <div class="preview-icon-layers w-full h-full relative">
                     <!-- Gradient background (bottom layer) with proper theme-specific path -->
-                    <img 
-                      src={vibe.id === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
-                          vibe.id === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
-                          vibe.id === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
-                          '/talktype-icon-bg-gradient.svg'} 
-                      alt="" 
-                      class="absolute inset-0 w-full h-full preview-ghost-bg" 
-                      class:rainbow-animated={vibe.id === 'rainbow'} 
-                      aria-hidden="true" />
+                    {#if vibe.id === 'rainbow'}
+                      <!-- Special handling for rainbow to avoid full background -->
+                      <div class="absolute inset-0 w-full h-full preview-ghost-bg rainbow-animated-ghost"></div>
+                    {:else}
+                      <!-- Regular gradient backgrounds for other themes -->
+                      <img 
+                        src={vibe.id === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
+                            vibe.id === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
+                            '/talktype-icon-bg-gradient.svg'} 
+                        alt="" 
+                        class="absolute inset-0 w-full h-full preview-ghost-bg" 
+                        aria-hidden="true" />
+                    {/if}
                     <!-- Outline without eyes -->
                     <img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" aria-hidden="true" />
                     <!-- Just the eyes -->
@@ -319,9 +325,23 @@
     box-shadow: 0 0 0 2px rgba(249, 168, 212, 0.4), 0 4px 8px rgba(249, 168, 212, 0.2);
   }
   
-  /* Using position:absolute instead of masking now, so we can remove this */
+  /* Using position:absolute instead of masking now, but we need it for rainbow */
   .preview-ghost-bg {
-    /* Keeping layer visible without masking, since we're using the full SVG now */
+    /* Default styling */
+  }
+  
+  .rainbow-animated-ghost {
+    -webkit-mask-image: url(/assets/talktype-icon-base.svg);
+    mask-image: url(/assets/talktype-icon-base.svg);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    animation: hueShift 8s linear infinite;
+    background-image: linear-gradient(135deg, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
+    background-size: 200% 200%;
   }
   
   .preview-visualizer-container {
