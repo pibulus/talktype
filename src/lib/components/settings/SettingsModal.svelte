@@ -119,28 +119,9 @@
     // Update global CSS variables for new components
     document.documentElement.style.setProperty('--visualizer-gradient', vibe.visualizerGradient || '');
     
-    // For preview elements in the settings panel
-    const previewGhost = document.querySelector('.preview-ghost-bg');
-    if (previewGhost) {
-      if (vibe.animated && vibe.id === 'rainbow') {
-        previewGhost.classList.add('rainbow-animated');
-        previewGhost.style.backgroundImage = '';
-      } else {
-        previewGhost.classList.remove('rainbow-animated');
-        previewGhost.style.backgroundImage = vibe.previewGradient;
-      }
-    }
-    
-    // Update preview visualizer
-    const previewVisualizer = document.querySelector('.preview-visualizer');
-    if (previewVisualizer) {
-      if (vibe.animated && vibe.id === 'rainbow') {
-        previewVisualizer.classList.add('rainbow-animated');
-      } else {
-        previewVisualizer.classList.remove('rainbow-animated');
-        previewVisualizer.style.backgroundImage = vibe.visualizerGradient;
-      }
-    }
+    // We no longer need to change the preview elements in the settings panel
+    // as they will already show the correct static colors for each theme
+    // This prevents the colors from randomly changing in the theme selector
   }
   
   // Handle vibe change
@@ -216,22 +197,31 @@
                 <!-- Ghost preview -->
                 <div class="preview-ghost-wrapper w-12 h-12 relative">
                   <div class="preview-icon-layers w-full h-full relative">
-                    <!-- Gradient background (bottom layer) -->
-                    <img src={vibe.ghostGradientSrc} alt="" class="absolute inset-0 w-full h-full preview-ghost-bg" 
-                      class:rainbow-animated={vibe.id === 'rainbow'} aria-hidden="true" />
+                    <!-- Gradient background (bottom layer) with proper theme-specific path -->
+                    <img 
+                      src={vibe.id === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
+                          vibe.id === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
+                          vibe.id === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
+                          '/talktype-icon-bg-gradient.svg'} 
+                      alt="" 
+                      class="absolute inset-0 w-full h-full preview-ghost-bg" 
+                      class:rainbow-animated={vibe.id === 'rainbow'} 
+                      aria-hidden="true" />
                     <!-- Outline without eyes -->
-                    <img src="/talktype-icon.svg" alt="" class="absolute inset-0 w-full h-full" aria-hidden="true" />
+                    <img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" aria-hidden="true" />
                     <!-- Just the eyes -->
                     <img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" aria-hidden="true" />
                   </div>
                 </div>
                 
-                <!-- Visualizer preview -->
+                <!-- Visualizer preview - with static gradients that match each theme -->
                 <div class="preview-visualizer-container mt-1.5 rounded-md overflow-hidden border border-pink-100 w-full h-3">
                   <div 
                     class="preview-visualizer w-full h-full"
                     class:rainbow-animated-bars={vibe.id === 'rainbow'}
-                    style={vibe.id !== 'rainbow' ? `background-image: ${vibe.visualizerGradient}` : ''}
+                    style={vibe.id === 'peach' ? 'background-image: linear-gradient(to top, #ff9a84, #ff7eb3)' : 
+                           vibe.id === 'mint' ? 'background-image: linear-gradient(to top, #60a5fa, #34d399)' :
+                           vibe.id === 'bubblegum' ? 'background-image: linear-gradient(to top, #f472b6, #a78bfa)' : ''}
                   ></div>
                 </div>
               </div>
@@ -329,15 +319,9 @@
     box-shadow: 0 0 0 2px rgba(249, 168, 212, 0.4), 0 4px 8px rgba(249, 168, 212, 0.2);
   }
   
+  /* Using position:absolute instead of masking now, so we can remove this */
   .preview-ghost-bg {
-    -webkit-mask-image: url(/assets/talktype-icon-base.svg);
-    mask-image: url(/assets/talktype-icon-base.svg);
-    -webkit-mask-size: contain;
-    mask-size: contain;
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-position: center;
-    mask-position: center;
+    /* Keeping layer visible without masking, since we're using the full SVG now */
   }
   
   .preview-visualizer-container {
