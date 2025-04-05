@@ -643,7 +643,7 @@
 											<!-- Gradient background (bottom layer) -->
 											<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
 											<!-- Outline without eyes -->
-											<img src="/talktype-icon.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
+											<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
 											<!-- Just the eyes (for blinking) -->
 											<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 h-full w-full copy-eyes" aria-hidden="true" />
 										</div>

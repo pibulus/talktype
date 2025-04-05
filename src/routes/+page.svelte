@@ -57,12 +57,10 @@
 		eyesElement = document.querySelector('.icon-eyes');
 		if (!eyesElement) {
 			debug('Eyes element not found yet');
-			console.log('EYES NOT FOUND - this is likely why blinking is not working');
 			return null;
 		}
 
 		debug('Eyes element found');
-		console.log('EYES FOUND - blinking should work now');
 		return eyesElement;
 	}
 
@@ -383,17 +381,10 @@
 	// Component lifecycle
 	onMount(() => {
 		debug('Component mounted');
-		console.log('Component mounted - should initialize blinking');
 		setupDomObserver();
 
 		// Check if first visit to show intro
 		checkFirstVisit();
-
-		// Manually trigger blinking system after a delay to ensure everything is ready
-		setTimeout(() => {
-			console.log('Forcing ambient blinking to start');
-			startAmbientBlinking();
-		}, 3000);
 
 		// Set up animation sequence timing
 		setTimeout(handleTitleAnimationComplete, 1200); // After staggered animation
@@ -586,36 +577,19 @@
 
 			// Add wobble animation when starting from ghost click
 			debug('Applying wobble animation to ghost icon on start');
-			console.log('WOBBLE START: Applying animation class');
-			
-			// Force reflow more aggressively
-			iconContainer.style.animation = 'none';
-			void iconContainer.offsetWidth;
-			
-			// Remove any existing animations and reset
-			iconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
+			// Force reflow to ensure animation applies
 			void iconContainer.offsetWidth;
 
-			// Apply new wobble with a more specific approach
+			// Clear any existing animation classes first
+			iconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
+
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
 			debug(`Adding class: ${wobbleClass}`);
-			console.log('WOBBLE: Adding class', wobbleClass);
-			
-			// Apply inline style first for reliability
-			if (wobbleClass === 'ghost-wobble-left') {
-				iconContainer.style.animation = 'ghost-wobble-left 0.6s ease-in-out';
-			} else {
-				iconContainer.style.animation = 'ghost-wobble-right 0.6s ease-in-out';
-			}
-			
-			// Then also add the class
 			iconContainer.classList.add(wobbleClass);
-			
 			console.log('Current classes:', iconContainer.className);
 			setTimeout(() => {
 				debug(`Removing class: ${wobbleClass}`);
 				iconContainer.classList.remove(wobbleClass);
-				iconContainer.style.animation = '';
 			}, 600);
 
 			// Give a tiny delay to ensure animation reset
@@ -803,7 +777,7 @@
 					<img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
 				{/if}
 				<!-- Outline without eyes (middle layer) -->
-				<img src="/talktype-icon.svg" alt="" class="icon-base" aria-hidden="true" />
+				<img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" aria-hidden="true" />
 				<!-- Just the eyes (top layer - for blinking) -->
 				<img src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
 			</div>
@@ -888,7 +862,7 @@
 					<div class="w-9 h-9 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
 						<div class="relative w-7 h-7">
 							<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
-							<img src="/talktype-icon.svg" alt="" class="absolute inset-0 w-full h-full" />
+							<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
 							<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
 						</div>
 					</div>
@@ -1031,7 +1005,7 @@
 				<div class="flex justify-center mb-4">
 					<div class="relative w-16 h-16 animate-pulse-slow">
 						<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
-						<img src="/talktype-icon.svg" alt="" class="absolute inset-0 w-full h-full" />
+						<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
 						<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full intro-eyes" />
 					</div>
 				</div>
@@ -1229,23 +1203,21 @@
 
 	.icon-eyes {
 		z-index: 3; /* Top layer */
-		animation: blink 6s infinite !important; /* More frequent ambient blinking (was 10s) */
+		animation: blink 6s infinite; /* More frequent ambient blinking (was 10s) */
 		transform-origin: center center; /* Squinch exactly in the middle */
-		/* Make sure animation is visible */
-		will-change: transform;
 	}
 
-	/* Simple quick snappy ambient blinking animation - made more obvious */
+	/* Simple quick snappy ambient blinking animation */
 	@keyframes blink {
 		0%,
-		85%,
+		96.5%,
 		100% {
 			transform: scaleY(1);
 		}
-		90% {
+		97.5% {
 			transform: scaleY(0); /* Quick blink - just closed and open */
 		}
-		95% {
+		98.5% {
 			transform: scaleY(1);
 		}
 	}
