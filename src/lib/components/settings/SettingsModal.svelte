@@ -29,7 +29,7 @@
       id: 'bubblegum', 
       name: 'Bubblegum', 
       ghostGradientSrc: '/assets/talktype-icon-bg-gradient-bubblegum.svg',
-      visualizerGradient: 'linear-gradient(to top, #f472b6, #a78bfa)',
+      visualizerGradient: 'linear-gradient(to top, #ff7eb3, #7b68ee)', /* Original visualizer pink-purple gradient */
       previewGradient: 'linear-gradient(135deg, #f472b6, #a78bfa)'
     },
     { 

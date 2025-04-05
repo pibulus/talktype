@@ -325,15 +325,35 @@
 	.history-bar {
 		position: absolute;
 		bottom: 0;
-		background: linear-gradient(
+		/* Use CSS variable for theme-aware gradient, with default peach gradient as fallback */
+		background: var(--visualizer-gradient, linear-gradient(
 			to top,
-			#ff7eb3,
-			/* Pink - matches ghost icon gradient */ #7b68ee /* Purple - matches ghost icon gradient */
-		);
-		transition: height 0.15s ease-in-out;
+			#ff9a84, /* Peach start */
+			#ff7eb3  /* Peach end */
+		));
+		transition: height 0.15s ease-in-out, background-image 0.3s ease;
 		border-radius: 3px 3px 0 0;
 		margin-right: 1px; /* Add slight margin to prevent white line gaps */
 		box-shadow: 0 0 8px rgba(249, 168, 212, 0.2); /* Subtle glow on bars */
 		opacity: 0.95;
+	}
+
+	/* Theme-specific gradient styles - applied through JS by updating --visualizer-gradient CSS var */
+	:global(.rainbow-animated-bars) {
+		animation: hueShift 8s linear infinite !important;
+		background-image: linear-gradient(to top, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62) !important;
+		background-size: 100% 800% !important;
+	}
+
+	@keyframes hueShift {
+		0% {
+			background-position: 0% 0%;
+		}
+		50% {
+			background-position: 100% 100%;
+		}
+		100% {
+			background-position: 0% 0%;
+		}
 	}
 </style>
