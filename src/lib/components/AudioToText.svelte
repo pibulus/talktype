@@ -639,9 +639,14 @@
 								>
 									<div class="relative h-full w-full">
 										<!-- Ghost icon layers - same as main app icon but smaller -->
-										<img src="/assets/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
-										<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
-										<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 h-full w-full copy-eyes" aria-hidden="true" />
+										<div class="icon-layers absolute inset-0 h-full w-full">
+											<!-- Gradient background (bottom layer) -->
+											<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
+											<!-- Outline without eyes -->
+											<img src="/talktype-icon.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
+											<!-- Just the eyes (for blinking) -->
+											<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 h-full w-full copy-eyes" aria-hidden="true" />
+										</div>
 									</div>
 									
 									<!-- Smart tooltip - only shows for first few hovers - positioned at top right to avoid clipping -->

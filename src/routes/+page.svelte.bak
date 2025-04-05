@@ -57,12 +57,10 @@
 		eyesElement = document.querySelector('.icon-eyes');
 		if (!eyesElement) {
 			debug('Eyes element not found yet');
-			console.log('EYES NOT FOUND - this is likely why blinking is not working');
 			return null;
 		}
 
 		debug('Eyes element found');
-		console.log('EYES FOUND - blinking should work now');
 		return eyesElement;
 	}
 
@@ -383,29 +381,26 @@
 	// Component lifecycle
 	onMount(() => {
 		debug('Component mounted');
-		console.log('Component mounted - should initialize blinking');
 		setupDomObserver();
 
 		// Check if first visit to show intro
 		checkFirstVisit();
 
-		// Manually trigger blinking system after a delay to ensure everything is ready
-		setTimeout(() => {
-			console.log('Forcing ambient blinking to start');
-			startAmbientBlinking();
-		}, 3000);
-
 		// Set up animation sequence timing
 		setTimeout(handleTitleAnimationComplete, 1200); // After staggered animation
 		setTimeout(handleSubtitleAnimationComplete, 2000); // After subtitle slide-in
 		
-		// Handle default theme for first-time visitors
-		if (browser && !localStorage.getItem('talktype-vibe')) {
-			// First visit - set default theme in localStorage
-			localStorage.setItem("talktype-vibe", "peach");
+		// Initialize theme from localStorage
+		if (browser) {
+			const savedVibe = localStorage.getItem('talktype-vibe');
+			if (savedVibe) {
+				applyTheme(savedVibe);
+			} else {
+					// Apply default theme if nothing in localStorage
+					applyTheme("peach");
+					localStorage.setItem("talktype-vibe", "peach");
+				}
 		}
-		// We no longer need to call applyTheme here since theme is applied directly in the HTML
-		// This prevents the flash of changing themes
 		
 		// For testing without localStorage, you can uncomment these lines
 		// localStorage.removeItem('hasSeenTalkTypeIntro');
@@ -586,36 +581,19 @@
 
 			// Add wobble animation when starting from ghost click
 			debug('Applying wobble animation to ghost icon on start');
-			console.log('WOBBLE START: Applying animation class');
-			
-			// Force reflow more aggressively
-			iconContainer.style.animation = 'none';
-			void iconContainer.offsetWidth;
-			
-			// Remove any existing animations and reset
-			iconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
+			// Force reflow to ensure animation applies
 			void iconContainer.offsetWidth;
 
-			// Apply new wobble with a more specific approach
+			// Clear any existing animation classes first
+			iconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
+
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
 			debug(`Adding class: ${wobbleClass}`);
-			console.log('WOBBLE: Adding class', wobbleClass);
-			
-			// Apply inline style first for reliability
-			if (wobbleClass === 'ghost-wobble-left') {
-				iconContainer.style.animation = 'ghost-wobble-left 0.6s ease-in-out';
-			} else {
-				iconContainer.style.animation = 'ghost-wobble-right 0.6s ease-in-out';
-			}
-			
-			// Then also add the class
 			iconContainer.classList.add(wobbleClass);
-			
 			console.log('Current classes:', iconContainer.className);
 			setTimeout(() => {
 				debug(`Removing class: ${wobbleClass}`);
 				iconContainer.classList.remove(wobbleClass);
-				iconContainer.style.animation = '';
 			}, 600);
 
 			// Give a tiny delay to ensure animation reset
@@ -788,20 +766,20 @@
 		>
 			<!-- Layered approach with gradient background and blinking eyes -->
 			<div class="icon-layers">
-				<!-- Gradient background (bottom layer) - directly load theme from localStorage -->
+				<!-- Gradient background (bottom layer) -->
 				{#if browser}
-					<img 
-						src={localStorage.getItem('talktype-vibe') === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
-							localStorage.getItem('talktype-vibe') === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
-							localStorage.getItem('talktype-vibe') === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
-							'/talktype-icon-bg-gradient.svg'} 
-						class={localStorage.getItem('talktype-vibe') === 'rainbow' ? 'icon-bg rainbow-animated' : 'icon-bg'} 
-						alt="" 
-						aria-hidden="true" 
-					/>
-				{:else}
-					<img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
-				{/if}
+						<img 
+							src={localStorage.getItem('talktype-vibe') === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
+								localStorage.getItem('talktype-vibe') === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
+								localStorage.getItem('talktype-vibe') === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
+								'/talktype-icon-bg-gradient.svg'} 
+							class={localStorage.getItem('talktype-vibe') === 'rainbow' ? 'icon-bg rainbow-animated' : 'icon-bg'} 
+							alt="" 
+							aria-hidden="true" 
+						/>
+					{:else}
+						<img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
+					{/if}
 				<!-- Outline without eyes (middle layer) -->
 				<img src="/talktype-icon.svg" alt="" class="icon-base" aria-hidden="true" />
 				<!-- Just the eyes (top layer - for blinking) -->
@@ -889,7 +867,7 @@
 						<div class="relative w-7 h-7">
 							<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
 							<img src="/talktype-icon.svg" alt="" class="absolute inset-0 w-full h-full" />
-							<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
+							<img src="/talktype-icon.svg" alt="" class="absolute inset-0 w-full h-full" />
 						</div>
 					</div>
 					<h3 class="font-black text-xl text-gray-800 tracking-tight">About TalkType</h3>
@@ -1229,23 +1207,21 @@
 
 	.icon-eyes {
 		z-index: 3; /* Top layer */
-		animation: blink 6s infinite !important; /* More frequent ambient blinking (was 10s) */
+		animation: blink 6s infinite; /* More frequent ambient blinking (was 10s) */
 		transform-origin: center center; /* Squinch exactly in the middle */
-		/* Make sure animation is visible */
-		will-change: transform;
 	}
 
-	/* Simple quick snappy ambient blinking animation - made more obvious */
+	/* Simple quick snappy ambient blinking animation */
 	@keyframes blink {
 		0%,
-		85%,
+		96.5%,
 		100% {
 			transform: scaleY(1);
 		}
-		90% {
+		97.5% {
 			transform: scaleY(0); /* Quick blink - just closed and open */
 		}
-		95% {
+		98.5% {
 			transform: scaleY(1);
 		}
 	}

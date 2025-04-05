@@ -84,9 +84,39 @@ The TalkType app uses subtle text animations for improved user experience:
 - **Implementation**: Applied through dedicated CSS classes (.title-hover, .subtitle-hover)
 - **Note**: Hover effects should be subtle and not interfere with entrance animations
 
-## Ghost Icon Animation System
+## Ghost Icon System
 
-The ghost icon uses a Brian Eno-inspired generative/ambient animation system:
+The ghost icon uses a layered SVG approach with animation:
+
+### SVG Layer Structure
+
+- **Background Gradient** (`/talktype-icon-bg-gradient.svg`): Bottom layer with theme colors
+- **Outline** (`/talktype-icon.svg`): Middle layer with ghost outline
+- **Eyes** (`/assets/talktype-icon-eyes.svg`): Top layer for isolated blinking animation
+
+### Implementation Details
+
+- **Layer Structure**: Three separate `<img>` elements stacked with absolute positioning
+- **Path Structure**: Static assets must use web paths (`/assets/...` not `/static/assets/...`)
+- **Theme Variants**: Each theme has a dedicated gradient background SVG:
+  - Peach: `/talktype-icon-bg-gradient.svg` (default)
+  - Mint: `/talktype-icon-bg-gradient-mint.svg`
+  - Bubblegum: `/talktype-icon-bg-gradient-bubblegum.svg`
+  - Rainbow: `/talktype-icon-bg-gradient-rainbow.svg` (with animation)
+
+### Theme Switching
+
+- **Theme Application**: Updates the `src` attribute of the gradient background image
+- **Rainbow Animation**: Adds `rainbow-animated` class for hue-shift animation
+- **Storage**: Theme preference saved in `localStorage` as `talktype-vibe`
+- **Visualizer Colors**: Match the gradient theme in the audio visualizer bars
+
+### Common Pitfalls
+
+- **Incorrect Paths**: Must use web paths (`/assets/...`) not file system paths (`/static/assets/...`)
+- **Blinking Issues**: Eyes must be in a separate SVG to animate independently
+- **Multiple Theme Applications**: Ensure theme is only applied once during initialization
+- **Force Reflow**: Use `void element.offsetWidth` after changing `src` to ensure update
 
 ### Blinking Animation Parameters
 

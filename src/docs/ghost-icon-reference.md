@@ -1,469 +1,409 @@
-# Ghost Icon Reference Document
+# TalkType Ghost Icon System Reference
 
-This document provides a comprehensive reference for implementing, animating, and interacting with the TalkType ghost icon. It covers SVG structure, layering, animations, interaction states, and best practices.
+This document provides comprehensive information about the ghost icon system used in TalkType, including its layered SVG approach, animation system, and theme management. It details implementation details, technical specifications, and common pitfalls to avoid when working with the ghost icon.
 
-## Table of Contents
+## Overview
 
-1. [SVG Structure](#svg-structure)
-2. [Layering System](#layering-system)
-3. [Animation System](#animation-system)
-4. [Recording State & Interactions](#recording-state--interactions)
-5. [DOM Element Structure](#dom-element-structure)
-6. [Animation Parameters](#animation-parameters)
-7. [Implementation Guidelines](#implementation-guidelines)
-8. [Troubleshooting](#troubleshooting)
+The TalkType ghost icon is central to the app's identity and user experience. It uses a layered SVG approach with three separate components that combine to create a visually appealing, animated character that responds to user interaction and changes with theme selection.
 
-## SVG Structure
+## SVG Layer Structure
 
-The ghost icon consists of multiple SVG components that are layered together to create the complete icon:
+The ghost icon consists of three separate SVG files stacked in the following order (bottom to top):
 
-### Core SVG Components
+1. **Background Gradient** (`/talktype-icon-bg-gradient.svg`)
+   - The bottom layer containing the theme's gradient fill
+   - Changes based on selected theme/vibe
+   - Multiple variants exist for different themes
 
-- **Base Outline** (`talktype-icon-base.svg`): The ghost body outline without eyes
-- **Eyes Only** (`talktype-icon-eyes.svg`): Just the eyes, separated for animation
-- **Gradient Background** (`talktype-icon-bg-gradient.svg`): Pink/purple gradient behind the ghost
-- **Complete Icon** (`talktype-icon.svg`): Combined outline and eyes (used only as fallback)
+2. **Outline** (`/talktype-icon.svg`)
+   - The middle layer with the ghost's outline/shape
+   - Remains consistent across themes
+   - Black outline with transparent interior to show gradient background
 
-### SVG Paths Structure
+3. **Eyes** (`/assets/talktype-icon-eyes.svg`)
+   - The top layer containing only the eyes
+   - Isolated from the outline to enable independent blinking animation
+   - Black fill with specific shape to match outline
 
-1. **Ghost Body**: A complex path defining the classic ghost shape with a wavy bottom
-2. **Left Eye**: Oval path with specific positioning for animation
-3. **Right Eye**: Matching oval path, positioned for symmetrical blinking
+## Implementation Example
 
-### SVG Markup Example (Eyes Component)
-
-```xml
-<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-  <!-- Only the eyes from the ghost icon -->
-  <path fill="#000000" opacity="1.000000" stroke="none"
-    d="M580.705505,471.768982..."/>
-
-  <path fill="#000000" opacity="1.000000" stroke="none"
-    d="M445.338440,471.851562..."/>
-</svg>
-```
-
-### Gradient Background
-
-The background uses a linear gradient from light pink (`#ffb6c1`) to light purple (`#dda0dd`), creating a subtle glow effect behind the ghost.
-
-## Layering System
-
-The icon uses a layered approach for maximum animation flexibility:
+The ghost icon is implemented as three stacked `<img>` elements within a container:
 
 ```html
 <div class="icon-layers">
-	<!-- Gradient background (bottom layer) -->
-	<img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
-	<!-- Outline without eyes (middle layer) -->
-	<img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" aria-hidden="true" />
-	<!-- Just the eyes (top layer - for blinking) -->
-	<img src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
+  <!-- Gradient background (bottom layer) -->
+  <img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
+  <!-- Outline without eyes (middle layer) -->
+  <img src="/talktype-icon.svg" alt="" class="icon-base" aria-hidden="true" />
+  <!-- Just the eyes (top layer - for blinking) -->
+  <img src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
 </div>
 ```
 
-### Layer CSS Positioning
+## CSS Setup
+
+The icon layers rely on proper CSS to ensure stacking and animations work correctly:
 
 ```css
 .icon-layers {
-	position: relative;
-	width: 100%;
-	height: 100%;
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .icon-bg,
 .icon-base,
 .icon-eyes {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	transition: all 0.3s ease;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transition: all 0.3s ease;
 }
 
 /* Stack the layers correctly */
 .icon-bg {
-	z-index: 1;
-} /* Bottom layer */
+  z-index: 1; /* Bottom layer */
+}
+
 .icon-base {
-	z-index: 2;
-} /* Middle layer */
+  z-index: 2; /* Middle layer */
+}
+
 .icon-eyes {
-	z-index: 3;
-} /* Top layer */
+  z-index: 3; /* Top layer */
+  animation: blink 6s infinite; /* Default ambient blinking */
+  transform-origin: center center; /* Ensure eyes blink from center */
+}
+```
+
+## Theme/Vibe System
+
+### Available Themes
+
+The ghost icon supports multiple themes through different gradient SVG files:
+
+1. **Peach** (Default)
+   - Gradient SVG: `/talktype-icon-bg-gradient.svg`
+   - Colors: Pink/Purple (#ff9a84, #ff7eb3)
+
+2. **Mint**
+   - Gradient SVG: `/talktype-icon-bg-gradient-mint.svg`
+   - Colors: Blue/Green (#60a5fa, #34d399)
+
+3. **Bubblegum**
+   - Gradient SVG: `/talktype-icon-bg-gradient-bubblegum.svg`
+   - Colors: Pink/Purple (#f472b6, #a78bfa)
+
+4. **Rainbow** (Animated)
+   - Gradient SVG: `/talktype-icon-bg-gradient-rainbow.svg`
+   - Colors: Multi-colored with animation
+
+### Theme Application
+
+Theme switching is implemented by changing the `src` attribute of the background gradient image and applying appropriate classes:
+
+```javascript
+function applyTheme(vibeId) {
+  // Find the theme configuration
+  const vibe = vibeOptions.find(v => v.id === vibeId);
+  if (!vibe) return;
+  
+  // Get the ghost background image element
+  const ghostBg = document.querySelector('.icon-bg');
+  
+  if (ghostBg) {
+    if (vibe.animated && vibe.id === 'rainbow') {
+      // For rainbow theme, apply animation class
+      ghostBg.classList.add('rainbow-animated');
+      ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
+    } else {
+      // Remove animation class for static themes
+      ghostBg.classList.remove('rainbow-animated');
+      
+      // Set the appropriate gradient SVG based on theme
+      switch(vibe.id) {
+        case 'mint':
+          ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
+          break;
+        case 'bubblegum':
+          ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
+          break;
+        default: // Default to peach
+          ghostBg.src = '/talktype-icon-bg-gradient.svg';
+          break;
+      }
+    }
+    
+    // Force a reflow to ensure the gradient is visible
+    void ghostBg.offsetWidth;
+  }
+}
 ```
 
 ## Animation System
 
-The ghost uses a Brian Eno-inspired generative/ambient animation system with multiple blinking types and patterns.
+### Blinking Animation
 
-### Blinking Types
+The eyes use a combination of CSS and JavaScript to implement a Brian Eno-inspired generative blinking system with weighted probabilities:
 
-1. **Single Blink**: Simple quick close/open of eyes
-2. **Double Blink**: Two consecutive blinks with slight pause between
-3. **Triple Blink**: Three consecutive blinks with pauses
-
-### Animation States
-
-1. **Ambient Blinking**: Random blinks during idle state
-2. **Recording Blinking**: Different pattern during audio recording
-3. **Thinking Blinking**: "Concentrating" pattern during transcription
-4. **Interactive Blinking**: Responses to user actions (hover, click)
-
-### Core Animation Implementation
-
-#### CSS Fallback Animation
-
-Basic CSS animation provides a fallback blinking pattern:
+#### CSS Animation Baseline
 
 ```css
 .icon-eyes {
-	animation: blink 6s infinite; /* Ambient blinking baseline */
-	transform-origin: center center;
+  animation: blink 6s infinite; /* Fallback ambient blinking */
 }
 
 @keyframes blink {
-	0%,
-	96.5%,
-	100% {
-		transform: scaleY(1);
-	}
-	97.5% {
-		transform: scaleY(0);
-	}
-	98.5% {
-		transform: scaleY(1);
-	}
+  0%, 96.5%, 100% {
+    transform: scaleY(1);
+  }
+  97.5% {
+    transform: scaleY(0); /* Closed eyes */
+  }
+  98.5% {
+    transform: scaleY(1); /* Open eyes */
+  }
 }
 ```
 
-#### JS-Enhanced Animation
-
-JavaScript enhances the baseline with generative patterns:
+#### JavaScript Ambient Blinking (Weighted Random)
 
 ```javascript
+// Blink type probabilities
+const blinkTypes = [
+  { type: 'single', probability: 0.6 }, // 60%
+  { type: 'double', probability: 0.3 }, // 30%
+  { type: 'triple', probability: 0.1 }  // 10%
+];
+
 // Parameters for generative system
 const minGap = 4000; // Minimum time between blinks (4s)
 const maxGap = 9000; // Maximum time between blinks (9s)
 
-// Blink type probabilities
-const blinkTypes = [
-	{ type: 'single', probability: 0.6 }, // 60%
-	{ type: 'double', probability: 0.3 }, // 30%
-	{ type: 'triple', probability: 0.1 } // 10%
-];
-
-// Schedule the next blink recursively with randomized timing
+// Schedule the next blink recursively
 function scheduleNextBlink() {
-	const nextInterval = Math.floor(minGap + Math.random() * (maxGap - minGap));
-	// ...implementation details...
+  // Random time interval with Brian Eno-like indeterminacy
+  const nextInterval = Math.floor(minGap + Math.random() * (maxGap - minGap));
+  
+  setTimeout(() => {
+    // Choose blink type based on probability distribution
+    const rand = Math.random();
+    let cumulativeProbability = 0;
+    let selectedType = 'single'; // Default
+    
+    for (const blink of blinkTypes) {
+      cumulativeProbability += blink.probability;
+      if (rand <= cumulativeProbability) {
+        selectedType = blink.type;
+        break;
+      }
+    }
+    
+    // Execute the selected blink pattern
+    if (selectedType === 'single') {
+      performSingleBlink();
+    } else if (selectedType === 'double') {
+      performDoubleBlink();
+    } else {
+      performTripleBlink();
+    }
+    
+    // Schedule the next blink
+    scheduleNextBlink();
+  }, nextInterval);
 }
 ```
-
-## Recording State & Interactions
-
-The ghost icon serves as the primary recording toggle and status indicator.
-
-### Recording Toggle Implementation
-
-```javascript
-function startRecordingFromGhost(event) {
-	// Stop event propagation
-	event.stopPropagation();
-	event.preventDefault();
-
-	// Get DOM elements with error checking
-	const iconContainer = event.currentTarget;
-
-	// Use DOM class as source of truth
-	const hasRecordingClass = iconContainer.classList.contains('recording');
-
-	if (hasRecordingClass) {
-		// STOPPING RECORDING
-		isRecording = false;
-
-		// Reset all animation state
-		eyes.style.animation = 'none';
-
-		// Remove the recording class
-		iconContainer.classList.remove('recording');
-
-		// Blink once to acknowledge stop, then resume ambient blinking
-		// ...implementation details...
-
-		// Stop the recording
-		audioToTextComponent.stopRecording();
-	} else {
-		// STARTING RECORDING
-		isRecording = true;
-		clearAllBlinkTimeouts();
-
-		// Reset any existing animations
-		eyes.style.animation = 'none';
-
-		// Random chance for different start behaviors (70/20/10 split)
-		// ...implementation details...
-
-		// Add recording class after the blink animation completes
-		iconContainer.classList.add('recording');
-
-		// Start recording
-		audioToTextComponent.startRecording();
-	}
-}
-```
-
-### Recording State CSS
-
-```css
-.icon-container.recording {
-	animation: recording-glow 1.5s infinite;
-	transform: scale(1.05);
-}
-
-@keyframes recording-glow {
-	0% {
-		filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5))
-			drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
-	}
-	50% {
-		filter: drop-shadow(0 0 25px rgba(255, 100, 243, 0.8))
-			drop-shadow(0 0 35px rgba(255, 120, 170, 0.5)) drop-shadow(0 0 40px rgba(249, 168, 212, 0.4));
-	}
-	100% {
-		filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5))
-			drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
-	}
-}
-```
-
-### Recording Animation States
-
-During recording, the icon eyes use a special animation pattern:
-
-```css
-.icon-container.recording .icon-eyes {
-	animation: blink-thinking 4s infinite;
-	transform-origin: center center;
-}
-
-@keyframes blink-thinking {
-	/* First quick blink */
-	0%,
-	23%,
-	100% {
-		transform: scaleY(1);
-	}
-	3% {
-		transform: scaleY(0);
-	}
-	4% {
-		transform: scaleY(1);
-	}
-
-	/* Second blink - thinking pattern */
-	40% {
-		transform: scaleY(1);
-	}
-	42% {
-		transform: scaleY(0);
-	}
-	43% {
-		transform: scaleY(0.2);
-	} /* Short peek */
-	46% {
-		transform: scaleY(0);
-	}
-	48% {
-		transform: scaleY(1);
-	}
-
-	/* Third quick blink */
-	80% {
-		transform: scaleY(1);
-	}
-	82% {
-		transform: scaleY(0);
-	}
-	83% {
-		transform: scaleY(1);
-	}
-}
-```
-
-### Hover Effects
-
-```css
-.icon-container:hover,
-.icon-container:active {
-	filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45))
-		drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
-	transform: scale(1.03);
-	animation: gentle-pulse 3s infinite;
-}
-
-@keyframes gentle-pulse {
-	0% {
-		filter: drop-shadow(0 0 15px rgba(249, 168, 212, 0.4))
-			drop-shadow(0 0 20px rgba(255, 156, 243, 0.25));
-	}
-	50% {
-		filter: drop-shadow(0 0 25px rgba(249, 168, 212, 0.55))
-			drop-shadow(0 0 30px rgba(255, 156, 243, 0.35));
-	}
-	100% {
-		filter: drop-shadow(0 0 15px rgba(249, 168, 212, 0.4))
-			drop-shadow(0 0 20px rgba(255, 156, 243, 0.25));
-	}
-}
-```
-
-## DOM Element Structure
-
-The complete DOM structure for the ghost icon:
-
-```html
-<!-- Ghost Icon Container -->
-<div
-	class="icon-container mb-0 h-32 w-32 cursor-pointer sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64"
-	on:click|preventDefault|stopPropagation="{startRecordingFromGhost}"
-	role="button"
-	tabindex="0"
-	aria-label="Toggle Recording"
->
-	<!-- Layered approach with gradient background and blinking eyes -->
-	<div class="icon-layers">
-		<!-- Gradient background (bottom layer) -->
-		<img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
-		<!-- Outline without eyes (middle layer) -->
-		<img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" aria-hidden="true" />
-		<!-- Just the eyes (top layer - for blinking) -->
-		<img src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
-	</div>
-</div>
-```
-
-## Animation Parameters
-
-Detailed parameters for all ghost icon animations:
-
-### Blinking Animation Parameters
-
-- **Ambient Timing**: 4-9 seconds between blinks (minGap = 4000ms, maxGap = 9000ms)
-- **Blink Types**: Single (60%), Double (30%), Triple (10%) with weighted probability
-- **Animation Durations**:
-  - Single blink: 300ms
-  - Double blink: 300ms per blink, 200ms gap (800ms total)
-  - Triple blink: 300ms per blink, 200ms gaps (1100ms total)
-- **CSS Fallback**: `.icon-eyes` has `animation: blink 6s infinite` as baseline
 
 ### Wobble Animations
 
-- **Hover Wobble**: Gentle rotation (±1.5°) with drop-shadow when hovering
-- **Recording Glow**: Pulsing red shadow effect during recording state
-- **Directional Wobbles**: Applied when recording finishes based on response direction
-  - Left wobble: `-3.5deg` rotation with left drop-shadow
-  - Right wobble: `3.5deg` rotation with right drop-shadow
-  - Up wobble: Scale up to 110% with upward drop-shadow
-  - Down wobble: Scale down to 90% with downward drop-shadow
+The ghost icon has wobble animations for various states and interactions:
 
-### Animation Transition Timing
+```css
+@keyframes ghost-wobble-left {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  50% { transform: rotate(3deg); }
+  75% { transform: rotate(-2deg); }
+  100% { transform: rotate(0deg); }
+}
 
-- **Animation Transitions**: 0.3s ease
-- **Hover Transitions**: 0.3s ease-in-out
-- **Recording State Transitions**: 0.15s ease-in-out
-- **Blinking Speed**: Fast (150-250ms) for natural eye movement
+@keyframes ghost-wobble-right {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(5deg); }
+  50% { transform: rotate(-3deg); }
+  75% { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
 
-## Implementation Guidelines
+.ghost-wobble-left {
+  animation: ghost-wobble-left 0.6s ease-in-out !important;
+}
 
-### Core Best Practices
+.ghost-wobble-right {
+  animation: ghost-wobble-right 0.6s ease-in-out !important;
+}
+```
 
-1. **Layered SVG Approach**: Always use the layered approach with separate SVGs for body and eyes
-2. **DOM Class as Source of Truth**: Use `.recording` class to track state, not JS variables
-3. **Force Browser Reflow**: Use `void element.offsetWidth` between animation changes
-4. **Clear Timeouts on State Changes**: Prevent animation conflicts
+## Rainbow Animation
 
-### Implementation Steps
+The rainbow theme uses a special animation to shift colors over time:
 
-1. **Create SVG Components**:
-   - Separate the ghost body and eyes into different SVG files
-   - Create a gradient background SVG
-2. **Set Up DOM Structure**:
+```css
+.rainbow-animated {
+  animation: hueShift 8s linear infinite;
+}
 
-   - Use the layered div structure with absolute positioning
-   - Set proper z-index values
+@keyframes hueShift {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  100% {
+    background-position: 0% 0%;
+  }
+}
+```
 
-3. **Implement CSS Animations**:
+## State Management
 
-   - Add baseline CSS animations
-   - Define keyframes for different states
+The ghost icon uses DOM classes and event listeners to manage its state:
 
-4. **Add JavaScript Enhancement**:
+- `.recording` class is applied during active recording
+- Eye animation changes based on recording state
+- Wobble animations are applied when state changes
+- Timeouts are cleared between state changes to prevent animation conflicts
 
-   - Implement the Brian Eno-inspired ambient system
-   - Add event handlers for recording toggle
+## Technical Details
 
-5. **Handle State Changes**:
-   - Track recording state with DOM classes
-   - Implement proper animation transitions
+### SVG Files Structure
 
-### Key JavaScript Functions to Implement
+Each SVG file in the ghost system has a specific structure:
 
-1. `setupDomObserver()`: Reliably detect when elements are available
-2. `startAmbientBlinking()`: Begin the generative blinking system
-3. `performSingleBlink()`, `performDoubleBlink()`, `performTripleBlink()`: Different blink patterns
-4. `startRecordingFromGhost()`: Handle recording toggle with proper state management
+1. **Background Gradient SVG**
+   - Contains a path with the ghost shape
+   - Uses gradient fills for coloring
+   - May include animation features for rainbow theme
 
-## Troubleshooting
+2. **Outline SVG**
+   - Contains just the ghost outline path
+   - Uses black fill with full opacity
+   - Does not include the eyes
 
-### Common Issues and Solutions
+3. **Eyes SVG**
+   - Contains only the eye paths
+   - Uses black fill
+   - Isolated to enable independent animation
 
-#### Animation Not Applying
+### Path Management
 
-**Problem**: Animations sometimes don't apply or get stuck
+Critical path information:
+
+- **Web Paths**: Always use web paths (`/assets/...`) not file system paths (`/static/assets/...`)
+- **File Locations**:
+  - Theme gradients: Located at `/talktype-icon-bg-gradient*.svg` in the static root
+  - Eyes SVG: Located at `/assets/talktype-icon-eyes.svg`
+  - Outline SVG: Located at `/talktype-icon.svg` in the static root
+
+**IMPORTANT**: The file system location (`/static/assets/...`) is different from the web path (`/assets/...`). Never use `/static/` in web paths as Svelte serves the `/static` directory at root.
+
+## Common Pitfalls and Solutions
+
+### 1. Broken Image Links
+
+**Problem**: Ghost icon appears as broken image or "alt text" only.
+
+**Causes**:
+- Incorrect path referencing `/static/assets/...` instead of `/assets/...`
+- Missing SVG files in the expected locations
+- Case sensitivity issues in file paths
+
 **Solution**:
+- Always use web paths (`/assets/...`) not file system paths (`/static/assets/...`)
+- Verify all SVG files exist in the correct locations
+- Check case sensitivity in file paths
 
-- Force browser reflow with `void element.offsetWidth`
-- Clear existing animations with `element.style.animation = 'none'`
-- Give a small delay (50ms) before applying new animations
+### 2. Blinking Issues
 
-#### Inconsistent Blinking
+**Problem**: The entire ghost blinks instead of just the eyes.
 
-**Problem**: Ambient blinking stops working randomly
+**Causes**:
+- Eyes not separated into a separate SVG file
+- Animation applied to the wrong element
+- Using full ghost SVG for all layers
+
 **Solution**:
+- Ensure eyes are in a separate SVG file
+- Apply animation classes only to the eyes layer
+- Use the three-layer approach with separate SVGs
 
-- Check if the ambient system is being disabled by other states
-- Ensure `isRecording` state properly tracks recording state
-- Verify that timeouts are being cleared properly
+### 3. Theme Switching Problems
 
-#### Ghost Not Responding to Click
+**Problem**: Theme doesn't change or flickers between themes.
 
-**Problem**: Ghost icon click doesn't toggle recording properly
+**Causes**:
+- Multiple theme applications
+- Incorrect theme file paths
+- Missing force reflow
+
 **Solution**:
+- Apply theme only once during initialization
+- Use correct file paths for theme SVGs
+- Force reflow with `void element.offsetWidth` after changing `src`
 
-- Verify DOM class state matches component state
-- Use `event.stopPropagation()` and `event.preventDefault()`
-- Check that event handlers are properly attached
+### 4. Animation Conflicts
 
-#### Animation Conflicts
+**Problem**: Animations behave erratically or stop working.
 
-**Problem**: Multiple animations trying to run simultaneously
+**Causes**:
+- Multiple animation classes applied simultaneously
+- Timeouts not cleared between state changes
+- Missing force reflow between animation changes
+
 **Solution**:
+- Remove existing animation classes before adding new ones
+- Clear timeouts when changing states
+- Force reflow between animation changes with `void element.offsetWidth`
 
-- Use the `!important` flag for programmatic animations
-- Clear all existing animations before applying new ones
-- Implement proper state tracking and cleanup
+## Browser Compatibility
 
-#### SVG Loading Issues
+The ghost icon system has been tested and works well in:
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
 
-**Problem**: SVG elements not found by JavaScript
-**Solution**:
+For older browsers, consider adding fallbacks for:
+- CSS animation support
+- SVG support
+- JavaScript animation frames
 
-- Use MutationObserver to reliably detect when SVGs are loaded
-- Implement retry mechanisms for element selection
-- Add fallback timeout for browsers without MutationObserver support
+## Performance Considerations
 
----
+- Use `will-change` property for hardware acceleration on animations
+- Optimize SVG files to reduce file size
+- Consider using SVG sprites for production to reduce HTTP requests
+- Use `backface-visibility: hidden` to prevent rendering artifacts
 
-By following this reference document, you can implement the TalkType ghost icon with its full suite of animations and interactions across different web applications while avoiding common pitfalls.
+## Initialization Flow
+
+For proper ghost icon initialization:
+
+1. Load HTML structure with all three layers
+2. Apply default theme on page load
+3. Read saved theme from localStorage if available
+4. Start ambient blinking system after DOM is ready
+5. Register event listeners for state changes
+
+## Future Improvements
+
+Potential enhancements to the ghost icon system:
+
+- Convert to SVG sprites to reduce HTTP requests
+- Add more theme options
+- Expand animation variety for different app states
+- Add subtle particle effects for special events
+- Implement seasonal variants (halloween, winter, etc.)

@@ -14,28 +14,28 @@
     { 
       id: 'peach', 
       name: 'Peach', 
-      ghostGradientSrc: '/static/assets/talktype-icon-bg-gradient.svg',
+      ghostGradientSrc: '/assets/talktype-icon-bg-gradient.svg',
       visualizerGradient: 'linear-gradient(to top, #ff9a84, #ff7eb3)',
       previewGradient: 'linear-gradient(135deg, #ff9a84, #ff7eb3)'
     },
     { 
       id: 'mint', 
       name: 'Mint', 
-      ghostGradientSrc: '/static/assets/talktype-icon-bg-gradient-mint.svg',
+      ghostGradientSrc: '/assets/talktype-icon-bg-gradient-mint.svg',
       visualizerGradient: 'linear-gradient(to top, #60a5fa, #34d399)',
       previewGradient: 'linear-gradient(135deg, #60a5fa, #34d399)'
     },
     { 
       id: 'bubblegum', 
       name: 'Bubblegum', 
-      ghostGradientSrc: '/static/assets/talktype-icon-bg-gradient-bubblegum.svg',
+      ghostGradientSrc: '/assets/talktype-icon-bg-gradient-bubblegum.svg',
       visualizerGradient: 'linear-gradient(to top, #f472b6, #a78bfa)',
       previewGradient: 'linear-gradient(135deg, #f472b6, #a78bfa)'
     },
     { 
       id: 'rainbow', 
       name: 'Rainbow',
-      ghostGradientSrc: '/static/assets/talktype-icon-bg-gradient-rainbow.svg',
+      ghostGradientSrc: '/assets/talktype-icon-bg-gradient-rainbow.svg',
       previewGradient: 'rainbow',
       animated: true
     }
@@ -54,14 +54,14 @@
       if (modal) {
         // Listen for custom beforeshow event
         modal.addEventListener('beforeshow', () => {
-          // Apply theme immediately
-          updateTheme(selectedVibe);
+          // Just update the selected value, don't apply theme
+          // The main app already has the theme applied
+          // This fixes the double flash issue
         });
 
         // Also listen for the standard dialog open event
         modal.addEventListener('open', () => {
-          // Apply theme after a slight delay to ensure DOM is ready
-          setTimeout(() => updateTheme(selectedVibe), 100);
+          // No need to apply theme here - we just want settings to reflect current state
         });
       }
     }
@@ -77,56 +77,32 @@
     // Store selection in localStorage
     localStorage.setItem('talktype-vibe', vibeId);
     
-    // Use the new inline SVG approach
-    // Get the SVG gradient elements and visualizer bars
-    const linearGradient = document.querySelector('#pinkPurpleGradient');
-    const svgStops = linearGradient ? linearGradient.querySelectorAll('stop') : null;
-    const ghostFill = document.querySelector('.ghost-fill');
+    // Update ghost icon by swapping the SVG file
+    const ghostBg = document.querySelector('.icon-bg');
     const visualizerBars = document.querySelectorAll('.history-bar');
     
-    // Define theme colors based on the selected vibe
-    let startColor, endColor;
-    
-    switch(vibeId) {
-      case 'mint':
-        startColor = '#60a5fa';  // Light blue
-        endColor = '#34d399';    // Light green
-        break;
-      case 'bubblegum':
-        startColor = '#f472b6';  // Pink
-        endColor = '#a78bfa';    // Purple
-        break;
-      case 'peach':
-      default:
-        startColor = '#ffb6c1';  // Light pink
-        endColor = '#dda0dd';    // Light purple
-        break;
-    }
-    
-    // Update SVG gradient colors directly
-    if (svgStops && svgStops.length >= 2 && ghostFill) {
+    if (ghostBg) {
       if (vibe.animated && vibe.id === 'rainbow') {
-        // Apply rainbow animation to the fill
-        ghostFill.classList.add('rainbow-animated');
-        // Use the rainbow gradient for the fill
-        ghostFill.setAttribute('fill', 'url(#rainbowGradient)');
+        ghostBg.classList.add('rainbow-animated');
+        ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
       } else {
-        // Remove any animation classes
-        ghostFill.classList.remove('rainbow-animated');
-        // Restore the regular gradient fill
-        ghostFill.setAttribute('fill', 'url(#pinkPurpleGradient)');
-        
-        // Update gradient colors if not rainbow
-        if (svgStops[0] && startColor) {
-          svgStops[0].setAttribute('stop-color', startColor);
-        }
-        if (svgStops[1] && endColor) {
-          svgStops[1].setAttribute('stop-color', endColor);
+        ghostBg.classList.remove('rainbow-animated');
+        // Set the appropriate gradient SVG based on theme
+        switch(vibe.id) {
+          case 'mint':
+            ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
+            break;
+          case 'bubblegum':
+            ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
+            break;
+          default: // Default to peach
+            ghostBg.src = '/talktype-icon-bg-gradient.svg';
+            break;
         }
       }
       
       // Force a reflow to ensure the gradient is visible
-      void ghostFill.offsetWidth;
+      void ghostBg.offsetWidth;
     }
     
     // Update visualizer bars gradient
@@ -239,94 +215,14 @@
               <div class="preview-container mb-1.5">
                 <!-- Ghost preview -->
                 <div class="preview-ghost-wrapper w-12 h-12 relative">
-                  <div 
-                    class="preview-ghost-bg absolute inset-0 w-full h-full rounded-full"
-                    class:rainbow-animated={vibe.id === 'rainbow'}
-                    style={vibe.id !== 'rainbow' ? `background-image: ${vibe.previewGradient}` : ''}
-                  ></div>
-                  <div class="ghost-outline absolute inset-0 w-full h-full opacity-80">
-                    <svg viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path 
-                        d="M513.404419,867.481567 
-                        C500.638763,868.907959 488.331787,868.194336 476.009705,867.866089 
-                        C446.462891,867.078796 417.884583,859.610352 388.801971,855.681885 
-                        C370.149475,853.162231 352.112579,857.574646 334.511139,863.822144 
-                        C315.368408,870.616699 297.161530,879.791504 277.721497,885.828918 
-                        C254.681473,892.984314 231.232208,897.413452 207.021820,896.261047 
-                        C189.047836,895.405457 171.990540,891.317932 158.356384,878.565979 
-                        C147.208923,868.139954 141.529053,854.882935 139.624680,839.847839 
-                        C137.264587,821.214722 142.483505,803.992310 148.934418,786.895508 
-                        C156.505127,766.830994 164.596375,746.925598 168.849991,725.765869 
-                        C174.432098,697.997681 173.665695,670.337097 168.186920,642.630127 
-                        C163.947479,621.190674 156.486160,600.699402 150.462204,579.785400 
-                        C143.638535,556.094910 139.159988,532.038147 137.504852,507.372742 
-                        C131.064590,411.397430 157.581161,325.368225 215.925552,249.300003 
-                        C256.117920,196.897995 307.335602,158.445419 368.502960,133.354050 
-                        C400.531647,120.215607 433.768219,111.837654 468.098663,107.519447 
-                        C487.134308,105.125092 506.230377,104.015808 525.362000,104.827698 
-                        C596.538330,107.848198 662.704651,127.277710 722.209900,167.011292 
-                        C803.810486,221.498611 856.047241,296.743835 879.300354,392.061066 
-                        C884.184937,412.083374 887.114685,432.389526 888.554993,452.994354 
-                        C889.719971,469.660492 889.983215,486.340546 889.047058,502.913361 
-                        C886.752075,543.540771 877.620850,582.802795 862.444458,620.580078 
-                        C840.634644,674.869141 809.072632,722.769043 765.879944,762.294067 
-                        C714.632507,809.189697 656.007019,842.916016 587.328186,857.500854 
-                        C563.079834,862.650391 538.753174,867.051331 513.404419,867.481567 
-                        M231.830231,347.227020 
-                        C210.293030,395.676147 198.984055,446.071472 202.137405,499.390686 
-                        C203.379990,520.401123 207.011154,540.925964 212.771942,561.075439 
-                        C221.804901,592.669983 232.889542,623.721558 235.886505,656.807068 
-                        C237.528046,674.929260 238.041809,693.021240 236.125473,711.088745 
-                        C233.663315,734.302429 228.079376,756.867920 220.703934,778.997375 
-                        C216.070633,792.899231 211.026505,806.639221 204.976135,820.001709 
-                        C202.237274,826.050598 204.640930,829.986755 211.224380,830.599182 
-                        C212.216553,830.691467 213.222946,830.652954 214.222412,830.641785 
-                        C229.674545,830.469666 244.630646,827.182190 259.157257,822.373352 
-                        C278.265167,816.048035 297.069214,808.811035 316.070312,802.155701 
-                        C350.310822,790.162659 385.034760,785.834839 420.907745,794.570801 
-                        C442.249481,799.768066 464.089172,802.233215 486.075745,802.573059 
-                        C510.252686,802.946838 534.166016,800.326538 557.923584,795.787598 
-                        C608.719604,786.082764 654.687195,765.450806 695.782959,734.304016 
-                        C746.750122,695.675598 782.895020,645.900330 805.225037,585.981445 
-                        C818.084045,551.476379 824.147156,515.703613 824.386597,479.079163 
-                        C824.510071,460.195374 822.352417,441.325256 818.809448,422.629791 
-                        C806.773621,359.119690 777.563049,304.698578 731.504028,259.715424 
-                        C677.962280,207.424286 613.008545,178.958206 538.785400,171.496796 
-                        C511.977112,168.801819 485.289978,171.008865 458.802246,175.699249 
-                        C411.962860,183.993408 369.315247,202.284042 330.532043,229.690826 
-                        C287.560181,260.057526 255.228470,299.415741 231.830231,347.227020 
-                        z" 
-                        fill="white" fill-opacity="0.8" stroke="#333" stroke-width="2"/>
-                      
-                      <!-- Eyes -->
-                      <path 
-                        d="M580.705505,471.768982 
-                        C579.774292,452.215668 582.605713,433.818390 590.797302,416.428589 
-                        C595.017090,407.470551 600.340088,399.277374 607.772888,392.579346 
-                        C627.716553,374.607117 653.145935,376.202209 670.873657,396.487671 
-                        C682.259460,409.516235 688.856201,424.818604 691.954407,441.620636 
-                        C696.671631,467.203156 693.889832,491.915649 682.163452,515.365479 
-                        C678.942444,521.806519 674.902405,527.726013 669.904602,532.915588 
-                        C649.577148,554.023315 621.761536,553.062683 602.886780,530.571594 
-                        C591.909119,517.490662 585.759705,502.182648 582.712219,485.533203 
-                        C581.906189,481.129486 581.375549,476.675323 580.705505,471.768982 
-                        z"
-                        fill="#333" />
-                      
-                      <path 
-                        d="M445.338440,471.851562 
-                        C443.176758,493.788635 436.942841,513.715637 422.903229,530.550293 
-                        C414.712860,540.371216 404.428955,546.983215 391.426178,547.988098 
-                        C380.129303,548.861206 370.128235,544.991821 361.551147,537.658081 
-                        C346.242279,524.568481 338.807251,507.057800 334.925110,487.966980 
-                        C330.108337,464.279877 331.868622,440.935730 341.490295,418.566833 
-                        C348.688934,401.831055 359.017548,387.645721 377.318176,381.896362 
-                        C395.780701,376.096130 410.714722,383.333527 422.873901,396.788544 
-                        C435.662811,410.940399 441.511841,428.347931 444.441101,446.954803 
-                        C445.723877,455.103149 445.097168,463.233063 445.338440,471.851562 
-                        z"
-                        fill="#333" />
-                    </svg>
+                  <div class="preview-icon-layers w-full h-full relative">
+                    <!-- Gradient background (bottom layer) -->
+                    <img src={vibe.ghostGradientSrc} alt="" class="absolute inset-0 w-full h-full preview-ghost-bg" 
+                      class:rainbow-animated={vibe.id === 'rainbow'} aria-hidden="true" />
+                    <!-- Outline without eyes -->
+                    <img src="/talktype-icon.svg" alt="" class="absolute inset-0 w-full h-full" aria-hidden="true" />
+                    <!-- Just the eyes -->
+                    <img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" aria-hidden="true" />
                   </div>
                 </div>
                 
@@ -434,8 +330,8 @@
   }
   
   .preview-ghost-bg {
-    -webkit-mask-image: url(/static/assets/talktype-icon-base.svg);
-    mask-image: url(/static/assets/talktype-icon-base.svg);
+    -webkit-mask-image: url(/assets/talktype-icon-base.svg);
+    mask-image: url(/assets/talktype-icon-base.svg);
     -webkit-mask-size: contain;
     mask-size: contain;
     -webkit-mask-repeat: no-repeat;
