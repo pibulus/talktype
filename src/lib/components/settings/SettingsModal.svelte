@@ -165,13 +165,13 @@
 </script>
 
 <dialog id="settings_modal" class="modal fixed z-50" style="overflow: hidden !important; z-index: 999;">
-  <div class="modal-box bg-gradient-to-br from-white to-[#fefaf4] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh] w-[95%] max-w-md md:max-w-lg animate-modal-enter">
+  <div class="modal-box bg-gradient-to-br from-white to-[#fefaf4] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh] w-[95%] max-w-md md:max-w-lg animate-modal-enter relative">
     <form method="dialog">
       <button 
-        class="btn btn-sm min-h-[32px] min-w-[32px] h-8 w-8 btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm flex items-center justify-center p-0"
+        class="close-btn absolute right-3 top-3 z-50 h-9 w-9 rounded-full bg-pink-100 border border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm transition-all duration-200 ease-in-out flex items-center justify-center"
         on:click={handleModalClose}
       >
-        <span class="text-lg leading-none">✕</span>
+        <span class="text-lg font-medium leading-none relative top-[-1px]">✕</span>
       </button>
     </form>
     
@@ -201,19 +201,19 @@
                   <div class="preview-icon-layers w-full h-full relative">
                     <!-- Gradient background (bottom layer) with proper theme-specific path -->
                     <!-- Each SVG file already contains the proper ghost shape with its gradient -->
-                    <!-- Fixed path to use native svg in correct location -->
+                    <!-- Use the same paths as the main app for consistency -->
                     <img 
-                      src={vibe.id === 'mint' ? '/assets/talktype-icon-bg-gradient-mint.svg' : 
-                          vibe.id === 'bubblegum' ? '/assets/talktype-icon-bg-gradient-bubblegum.svg' :
-                          vibe.id === 'rainbow' ? '/assets/talktype-icon-bg-gradient-rainbow.svg' :
-                          '/assets/talktype-icon-bg-gradient.svg'} 
+                      src={vibe.id === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
+                          vibe.id === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
+                          vibe.id === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
+                          '/talktype-icon-bg-gradient.svg'} 
                       class={vibe.id === 'rainbow' ? 'absolute inset-0 w-full h-full rainbow-animated' : 'absolute inset-0 w-full h-full'} 
                       alt="" 
                       aria-hidden="true" />
                     <!-- Outline without eyes -->
                     <img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" aria-hidden="true" />
-                    <!-- Just the eyes -->
-                    <img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" aria-hidden="true" />
+                    <!-- Just the eyes (with the blink animation) -->
+                    <img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full preview-eyes" aria-hidden="true" />
                   </div>
                 </div>
                 
@@ -297,12 +297,32 @@
   </div>
   
   <div class="modal-backdrop bg-black/40" on:click|self|preventDefault|stopPropagation={() => {
-    document.getElementById('settings_modal').close();
-    setTimeout(handleModalClose, 50);
+    const modal = document.getElementById('settings_modal');
+    if (modal) {
+      modal.close();
+      setTimeout(handleModalClose, 50);
+    }
   }}></div>
 </dialog>
 
 <style>
+  /* Improve close button */
+  .close-btn {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    cursor: pointer;
+    user-select: none;
+    z-index: 1000;
+  }
+  
+  .close-btn:hover {
+    transform: scale(1.1);
+  }
+  
+  .close-btn:active {
+    transform: scale(0.95);
+  }
+  
   .animate-fadeUp {
     animation: fadeUp 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
   }
@@ -366,8 +386,46 @@
   /* Rainbow animation for ghost and visualizer */
   .rainbow-animated {
     animation: hueShift 8s linear infinite;
-    background-image: linear-gradient(135deg, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
-    background-size: 200% 200%;
+  }
+  
+  /* Connect the preview eyes to the main app's Brian Eno-inspired ambient blinking system */
+  .preview-eyes {
+    animation: preview-blink 6s infinite;
+    transform-origin: center center;
+  }
+  
+  /* Each theme preview has a slightly different blink timing 
+     to create an organic, non-synchronized effect */
+  .vibe-option:nth-child(1) .preview-eyes {
+    animation-duration: 6.7s;
+    animation-delay: 0.4s;
+  }
+  
+  .vibe-option:nth-child(2) .preview-eyes {
+    animation-duration: 7.3s;
+    animation-delay: 1.2s;
+  }
+  
+  .vibe-option:nth-child(3) .preview-eyes {
+    animation-duration: 5.9s;
+    animation-delay: 2.3s;
+  }
+  
+  .vibe-option:nth-child(4) .preview-eyes {
+    animation-duration: 8.2s;
+    animation-delay: 0.7s;
+  }
+  
+  @keyframes preview-blink {
+    0%, 96.5%, 100% {
+      transform: scaleY(1);
+    }
+    97.5% {
+      transform: scaleY(0); /* Closed eyes */
+    }
+    98.5% {
+      transform: scaleY(1); /* Open eyes */
+    }
   }
   
   .rainbow-animated-bars {

@@ -10,12 +10,12 @@ The TalkType ghost icon is central to the app's identity and user experience. It
 
 The ghost icon consists of three separate SVG files stacked in the following order (bottom to top):
 
-1. **Background Gradient** (`/talktype-icon-bg-gradient.svg`)
+1. **Background Gradient** (`/talktype-icon-bg-gradient*.svg`)
    - The bottom layer containing the theme's gradient fill
-   - Changes based on selected theme/vibe
-   - Multiple variants exist for different themes
+   - Changes based on selected theme/vibe (peach, mint, bubblegum, rainbow)
+   - Multiple variants exist for different themes (e.g., `/talktype-icon-bg-gradient-mint.svg`)
 
-2. **Outline** (`/talktype-icon.svg`)
+2. **Outline** (`/assets/talktype-icon-base.svg`)
    - The middle layer with the ghost's outline/shape
    - Remains consistent across themes
    - Black outline with transparent interior to show gradient background
@@ -34,7 +34,7 @@ The ghost icon is implemented as three stacked `<img>` elements within a contain
   <!-- Gradient background (bottom layer) -->
   <img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
   <!-- Outline without eyes (middle layer) -->
-  <img src="/talktype-icon.svg" alt="" class="icon-base" aria-hidden="true" />
+  <img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" aria-hidden="true" />
   <!-- Just the eyes (top layer - for blinking) -->
   <img src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
 </div>
@@ -286,12 +286,14 @@ Each SVG file in the ghost system has a specific structure:
 1. **Background Gradient SVG**
    - Contains a path with the ghost shape
    - Uses gradient fills for coloring
+   - Path already confined to ghost shape (no rectangular background)
    - May include animation features for rainbow theme
 
 2. **Outline SVG**
    - Contains just the ghost outline path
    - Uses black fill with full opacity
    - Does not include the eyes
+   - Provides the definitive shape boundary for the ghost
 
 3. **Eyes SVG**
    - Contains only the eye paths
@@ -304,9 +306,9 @@ Critical path information:
 
 - **Web Paths**: Always use web paths (`/assets/...`) not file system paths (`/static/assets/...`)
 - **File Locations**:
-  - Theme gradients: Located at `/talktype-icon-bg-gradient*.svg` in the static root
-  - Eyes SVG: Located at `/assets/talktype-icon-eyes.svg`
-  - Outline SVG: Located at `/talktype-icon.svg` in the static root
+  - Theme gradients: Located at `/static/talktype-icon-bg-gradient*.svg` but accessed via `/talktype-icon-bg-gradient*.svg`
+  - Eyes SVG: Located at `/static/assets/talktype-icon-eyes.svg` but accessed via `/assets/talktype-icon-eyes.svg`
+  - Outline SVG: Located at `/static/assets/talktype-icon-base.svg` but accessed via `/assets/talktype-icon-base.svg`
 
 **IMPORTANT**: The file system location (`/static/assets/...`) is different from the web path (`/assets/...`). Never use `/static/` in web paths as Svelte serves the `/static` directory at root.
 
@@ -318,11 +320,15 @@ Critical path information:
 
 **Causes**:
 - Incorrect path referencing `/static/assets/...` instead of `/assets/...`
+- Mixing up paths between base outline (`/assets/talktype-icon-base.svg`) and legacy outline (`/talktype-icon.svg`)
+- Using `/assets/` prefix for gradient files (they should be `/talktype-icon-bg-gradient*.svg` with no `/assets/`)
 - Missing SVG files in the expected locations
 - Case sensitivity issues in file paths
 
 **Solution**:
-- Always use web paths (`/assets/...`) not file system paths (`/static/assets/...`)
+- For gradient background images: Use `/talktype-icon-bg-gradient.svg` (NO `/assets/` prefix)
+- For outline and eyes: Use `/assets/talktype-icon-base.svg` and `/assets/talktype-icon-eyes.svg` (WITH `/assets/` prefix)
+- Never use file system paths with `/static/` prefix
 - Verify all SVG files exist in the correct locations
 - Check case sensitivity in file paths
 
@@ -342,17 +348,21 @@ Critical path information:
 
 ### 3. Theme Switching Problems
 
-**Problem**: Theme doesn't change or flickers between themes.
+**Problem**: Theme doesn't change, flickers between themes, or shows rectangular background instead of ghost shape.
 
 **Causes**:
 - Multiple theme applications
 - Incorrect theme file paths
 - Missing force reflow
+- Using CSS backgrounds instead of SVGs with built-in paths
+- Using `talktype-icon-bg-gradient-rainbow.svg` without the proper path constraints
 
 **Solution**:
 - Apply theme only once during initialization
 - Use correct file paths for theme SVGs
 - Force reflow with `void element.offsetWidth` after changing `src`
+- Always use the SVG files directly, as they contain the proper ghost-shaped paths
+- For rainbow theme, use the correct SVG file which already has the ghost shape constraint
 
 ### 4. Animation Conflicts
 
@@ -407,3 +417,49 @@ Potential enhancements to the ghost icon system:
 - Expand animation variety for different app states
 - Add subtle particle effects for special events
 - Implement seasonal variants (halloween, winter, etc.)
+
+## Quick Reference 
+
+### Correct File Paths
+
+| Layer | File System Location | Web Path to Use |
+|-------|----------------------|----------------|
+| Background (Default) | `/static/talktype-icon-bg-gradient.svg` | `/talktype-icon-bg-gradient.svg` |
+| Background (Mint) | `/static/talktype-icon-bg-gradient-mint.svg` | `/talktype-icon-bg-gradient-mint.svg` |
+| Background (Bubblegum) | `/static/talktype-icon-bg-gradient-bubblegum.svg` | `/talktype-icon-bg-gradient-bubblegum.svg` |
+| Background (Rainbow) | `/static/talktype-icon-bg-gradient-rainbow.svg` | `/talktype-icon-bg-gradient-rainbow.svg` |
+| Outline | `/static/assets/talktype-icon-base.svg` | `/assets/talktype-icon-base.svg` |
+| Eyes | `/static/assets/talktype-icon-eyes.svg` | `/assets/talktype-icon-eyes.svg` |
+
+### Important Notes
+
+1. **Never use** `/static/` in your image paths in HTML/CSS
+2. **Always use** `/assets/talktype-icon-base.svg` for the outline layer (middle) 
+3. The original `/talktype-icon.svg` path is now considered legacy and should not be used
+4. **Critical**: For theme gradients (`.svg` files), use paths like `/talktype-icon-bg-gradient.svg` (no `/assets/`)
+5. **Critical**: For outline and eyes, use paths like `/assets/talktype-icon-base.svg` (with `/assets/`) 
+6. SVG files already contain the ghost shape - no additional masking or clipping is required
+
+### Implementation in Different Components
+
+When implementing the ghost icon in different components:
+
+1. **Main App**: `/src/routes/+page.svelte`
+   ```html
+   <!-- Gradient background (bottom layer) -->
+   <img src="/talktype-icon-bg-gradient.svg" class="icon-bg" alt="" aria-hidden="true" />
+   <!-- Outline without eyes (middle layer) -->
+   <img src="/assets/talktype-icon-base.svg" class="icon-base" alt="" aria-hidden="true" />
+   <!-- Just the eyes (top layer - for blinking) -->
+   <img src="/assets/talktype-icon-eyes.svg" class="icon-eyes" alt="TalkType Ghost Icon" />
+   ```
+
+2. **Settings Modal Preview**: `/src/lib/components/settings/SettingsModal.svelte`
+   ```html
+   <!-- Gradient background (bottom layer) -->
+   <img src="/talktype-icon-bg-gradient.svg" class="absolute inset-0 w-full h-full" alt="" aria-hidden="true" />
+   <!-- Outline without eyes (middle layer) -->
+   <img src="/assets/talktype-icon-base.svg" class="absolute inset-0 w-full h-full" alt="" aria-hidden="true" />
+   <!-- Just the eyes (top layer) -->
+   <img src="/assets/talktype-icon-eyes.svg" class="absolute inset-0 w-full h-full preview-eyes" alt="" aria-hidden="true" />
+   ```
