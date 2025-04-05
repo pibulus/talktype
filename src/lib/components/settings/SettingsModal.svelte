@@ -200,19 +200,16 @@
                 <div class="preview-ghost-wrapper w-12 h-12 relative">
                   <div class="preview-icon-layers w-full h-full relative">
                     <!-- Gradient background (bottom layer) with proper theme-specific path -->
-                    {#if vibe.id === 'rainbow'}
-                      <!-- Special handling for rainbow to avoid full background -->
-                      <div class="absolute inset-0 w-full h-full preview-ghost-bg rainbow-animated-ghost"></div>
-                    {:else}
-                      <!-- Regular gradient backgrounds for other themes -->
-                      <img 
-                        src={vibe.id === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
-                            vibe.id === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
-                            '/talktype-icon-bg-gradient.svg'} 
-                        alt="" 
-                        class="absolute inset-0 w-full h-full preview-ghost-bg" 
-                        aria-hidden="true" />
-                    {/if}
+                    <!-- All themes use their SVG files directly -->
+                    <img 
+                      src={vibe.id === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
+                          vibe.id === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
+                          vibe.id === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
+                          '/talktype-icon-bg-gradient.svg'} 
+                      alt="" 
+                      class="absolute inset-0 w-full h-full preview-ghost-bg" 
+                      class:rainbow-animated={vibe.id === 'rainbow'} 
+                      aria-hidden="true" />
                     <!-- Outline without eyes -->
                     <img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" aria-hidden="true" />
                     <!-- Just the eyes -->
