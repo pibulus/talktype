@@ -200,15 +200,15 @@
                 <div class="preview-ghost-wrapper w-12 h-12 relative">
                   <div class="preview-icon-layers w-full h-full relative">
                     <!-- Gradient background (bottom layer) with proper theme-specific path -->
-                    <!-- All themes use their SVG files directly -->
+                    <!-- Each SVG file already contains the proper ghost shape with its gradient -->
+                    <!-- Fixed path to use native svg in correct location -->
                     <img 
-                      src={vibe.id === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
-                          vibe.id === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
-                          vibe.id === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
-                          '/talktype-icon-bg-gradient.svg'} 
+                      src={vibe.id === 'mint' ? '/assets/talktype-icon-bg-gradient-mint.svg' : 
+                          vibe.id === 'bubblegum' ? '/assets/talktype-icon-bg-gradient-bubblegum.svg' :
+                          vibe.id === 'rainbow' ? '/assets/talktype-icon-bg-gradient-rainbow.svg' :
+                          '/assets/talktype-icon-bg-gradient.svg'} 
+                      class={vibe.id === 'rainbow' ? 'absolute inset-0 w-full h-full rainbow-animated' : 'absolute inset-0 w-full h-full'} 
                       alt="" 
-                      class="absolute inset-0 w-full h-full preview-ghost-bg" 
-                      class:rainbow-animated={vibe.id === 'rainbow'} 
                       aria-hidden="true" />
                     <!-- Outline without eyes -->
                     <img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" aria-hidden="true" />
@@ -322,12 +322,14 @@
     box-shadow: 0 0 0 2px rgba(249, 168, 212, 0.4), 0 4px 8px rgba(249, 168, 212, 0.2);
   }
   
-  /* Using position:absolute instead of masking now, but we need it for rainbow */
+  /* Default styles for image-based gradients */
   .preview-ghost-bg {
     /* Default styling */
   }
   
-  .rainbow-animated-ghost {
+  /* Properly masked rainbow gradient that only shows inside the ghost */
+  .masked-rainbow-gradient {
+    /* Apply mask to clip the gradient to the ghost shape */
     -webkit-mask-image: url(/assets/talktype-icon-base.svg);
     mask-image: url(/assets/talktype-icon-base.svg);
     -webkit-mask-size: contain;
@@ -336,6 +338,8 @@
     mask-repeat: no-repeat;
     -webkit-mask-position: center;
     mask-position: center;
+    
+    /* Apply rainbow gradient and animation */
     animation: hueShift 8s linear infinite;
     background-image: linear-gradient(135deg, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
     background-size: 200% 200%;
