@@ -36,6 +36,7 @@
       id: 'rainbow', 
       name: 'Rainbow',
       ghostGradientSrc: '/assets/talktype-icon-bg-gradient-rainbow.svg',
+      visualizerGradient: 'rainbow-gradient', /* Special identifier for rainbow animation */
       previewGradient: 'rainbow',
       animated: true
     }
@@ -71,57 +72,39 @@
   function updateTheme(vibeId) {
     if (typeof window === 'undefined') return;
     
-    const vibe = vibeOptions.find(v => v.id === vibeId);
-    if (!vibe) return;
-    
     // Store selection in localStorage
     localStorage.setItem('talktype-vibe', vibeId);
     
+    // Apply theme to document root for consistent CSS targeting
+    document.documentElement.setAttribute('data-theme', vibeId);
+    
     // Update ghost icon by swapping the SVG file
     const ghostBg = document.querySelector('.icon-bg');
-    const visualizerBars = document.querySelectorAll('.history-bar');
     
     if (ghostBg) {
-      if (vibe.animated && vibe.id === 'rainbow') {
-        ghostBg.classList.add('rainbow-animated');
-        ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
-      } else {
-        ghostBg.classList.remove('rainbow-animated');
-        // Set the appropriate gradient SVG based on theme
-        switch(vibe.id) {
-          case 'mint':
-            ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
-            break;
-          case 'bubblegum':
-            ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
-            break;
-          default: // Default to peach
-            ghostBg.src = '/talktype-icon-bg-gradient.svg';
-            break;
-        }
+      // Set the appropriate gradient SVG based on theme
+      switch(vibeId) {
+        case 'mint':
+          ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
+          ghostBg.classList.remove('rainbow-animated');
+          break;
+        case 'bubblegum':
+          ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
+          ghostBg.classList.remove('rainbow-animated');
+          break;
+        case 'rainbow':
+          ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
+          ghostBg.classList.add('rainbow-animated');
+          break;
+        default: // Default to peach
+          ghostBg.src = '/talktype-icon-bg-gradient.svg';
+          ghostBg.classList.remove('rainbow-animated');
+          break;
       }
       
       // Force a reflow to ensure the gradient is visible
       void ghostBg.offsetWidth;
     }
-    
-    // Update visualizer bars gradient
-    visualizerBars.forEach(bar => {
-      if (vibe.animated && vibe.id === 'rainbow') {
-        bar.classList.add('rainbow-animated-bars');
-        bar.style.backgroundImage = '';
-      } else {
-        bar.classList.remove('rainbow-animated-bars');
-        bar.style.backgroundImage = vibe.visualizerGradient;
-      }
-    });
-    
-    // Update global CSS variables for new components
-    document.documentElement.style.setProperty('--visualizer-gradient', vibe.visualizerGradient || '');
-    
-    // We no longer need to change the preview elements in the settings panel
-    // as they will already show the correct static colors for each theme
-    // This prevents the colors from randomly changing in the theme selector
   }
   
   // Handle vibe change
@@ -221,10 +204,7 @@
                 <div class="preview-visualizer-container mt-1.5 rounded-md overflow-hidden border border-pink-100 w-full h-3">
                   <div 
                     class="preview-visualizer w-full h-full"
-                    class:rainbow-animated-bars={vibe.id === 'rainbow'}
-                    style={vibe.id === 'peach' ? 'background-image: linear-gradient(to top, #ff9a84, #ff7eb3)' : 
-                           vibe.id === 'mint' ? 'background-image: linear-gradient(to top, #60a5fa, #34d399)' :
-                           vibe.id === 'bubblegum' ? 'background-image: linear-gradient(to top, #f472b6, #a78bfa)' : ''}
+                    data-preview-theme={vibe.id}
                   ></div>
                 </div>
               </div>
@@ -360,7 +340,7 @@
     mask-position: center;
     
     /* Apply rainbow gradient and animation */
-    animation: hueShift 8s linear infinite;
+    animation: hueShift 5s linear infinite;
     background-image: linear-gradient(135deg, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
     background-size: 200% 200%;
   }
@@ -369,6 +349,25 @@
     width: 100%;
     min-width: 40px;
     height: 10px;
+  }
+  
+  /* Theme-specific gradient styles for previews */
+  .preview-visualizer[data-preview-theme="peach"] {
+    background: linear-gradient(to top, #ff9a84, #ff7eb3);
+  }
+  
+  .preview-visualizer[data-preview-theme="mint"] {
+    background: linear-gradient(to top, #60a5fa, #34d399);
+  }
+  
+  .preview-visualizer[data-preview-theme="bubblegum"] {
+    background: linear-gradient(to top, #ff7eb3, #7b68ee);
+  }
+  
+  .preview-visualizer[data-preview-theme="rainbow"] {
+    animation: hueShift 4s linear infinite;
+    background-image: linear-gradient(to top, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
+    background-size: 100% 600%;
   }
   
   .vibe-option {
@@ -383,9 +382,16 @@
     transform: translateY(0px);
   }
   
-  /* Rainbow animation for ghost and visualizer */
+  /* Rainbow animation for ghost */
   .rainbow-animated {
-    animation: hueShift 8s linear infinite;
+    animation: hueShift 4s linear infinite;
+  }
+  
+  /* Theme-based visualizer styling using data-theme */
+  :global([data-theme="rainbow"] .history-bar) {
+    animation: hueShift 4s linear infinite;
+    background-image: linear-gradient(to top, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
+    background-size: 100% 600%;
   }
   
   /* Connect the preview eyes to the main app's Brian Eno-inspired ambient blinking system */
@@ -428,18 +434,17 @@
     }
   }
   
-  .rainbow-animated-bars {
-    animation: hueShift 8s linear infinite;
-    background-image: linear-gradient(to top, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
-    background-size: 100% 800%;
-  }
+  /* Removed redundant rainbow-animated-bars class */
   
   @keyframes hueShift {
     0% {
       background-position: 0% 0%;
     }
-    50% {
-      background-position: 100% 100%;
+    33% {
+      background-position: 100% 50%;
+    }
+    67% {
+      background-position: 0% 100%;
     }
     100% {
       background-position: 0% 0%;

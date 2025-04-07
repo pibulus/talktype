@@ -390,10 +390,17 @@
 		setTimeout(handleTitleAnimationComplete, 1200); // After staggered animation
 		setTimeout(handleSubtitleAnimationComplete, 2000); // After subtitle slide-in
 		
-		// Handle default theme for first-time visitors
-		if (browser && !localStorage.getItem('talktype-vibe')) {
-			// First visit - set default theme in localStorage
-			localStorage.setItem("talktype-vibe", "peach");
+		// Handle theme for visitors (first time or returning)
+		if (browser) {
+			const savedVibe = localStorage.getItem("talktype-vibe");
+			if (!savedVibe) {
+				// First visit - set default theme in localStorage
+				localStorage.setItem("talktype-vibe", "peach");
+				document.documentElement.setAttribute('data-theme', 'peach');
+			} else {
+				// Apply theme to document element for consistent CSS targeting
+				document.documentElement.setAttribute('data-theme', savedVibe);
+			}
 		}
 		// We no longer need to call applyTheme here since theme is applied directly in the HTML
 		// This prevents the flash of changing themes
@@ -410,79 +417,39 @@
 	
 	// Apply theme/vibe function for initial load
 	function applyTheme(vibeId) {
-		// Define theme options with embedded SVG gradient colors
-		const vibeOptions = [
-			{ 
-				id: 'peach', 
-				startColor: '#ffb6c1',  // Light pink
-				endColor: '#dda0dd',    // Light purple
-				visualizerGradient: 'linear-gradient(to top, #ff9a84, #ff7eb3)'
-			},
-			{ 
-				id: 'mint', 
-				startColor: '#60a5fa',  // Light blue
-				endColor: '#34d399',    // Light green
-				visualizerGradient: 'linear-gradient(to top, #60a5fa, #34d399)'
-			},
-			{ 
-				id: 'bubblegum', 
-				startColor: '#f472b6',  // Pink
-				endColor: '#a78bfa',    // Purple
-				visualizerGradient: 'linear-gradient(to top, #f472b6, #a78bfa)'
-			},
-			{ 
-				id: 'rainbow', 
-				animated: true,
-				visualizerGradient: 'rainbow'
-			}
-		];
+		// Store in localStorage
+		localStorage.setItem("talktype-vibe", vibeId);
 		
-		const vibe = vibeOptions.find(v => v.id === vibeId);
-		if (!vibe) return;
-		
-		// Get the visualizer bars and ghost background image
-		const visualizerBars = document.querySelectorAll('.history-bar');
-		const ghostBg = document.querySelector('.icon-bg');
+		// Apply theme to document root for consistent CSS targeting
+		document.documentElement.setAttribute('data-theme', vibeId);
 		
 		// Update ghost icon by swapping the SVG file
+		const ghostBg = document.querySelector('.icon-bg');
 		if (ghostBg) {
-			if (vibe.animated && vibe.id === 'rainbow') {
-				ghostBg.classList.add('rainbow-animated');
-				ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
-			} else {
-				ghostBg.classList.remove('rainbow-animated');
-				// Set the appropriate gradient SVG based on theme
-				switch(vibe.id) {
-					case 'mint':
-						ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
-						break;
-					case 'bubblegum':
-						ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
-						break;
-					default: // Default to peach
-						ghostBg.src = '/talktype-icon-bg-gradient.svg';
-						break;
-				}
+			// Set the appropriate gradient SVG based on theme
+			switch(vibeId) {
+				case 'mint':
+					ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
+					ghostBg.classList.remove('rainbow-animated');
+					break;
+				case 'bubblegum':
+					ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
+					ghostBg.classList.remove('rainbow-animated');
+					break;
+				case 'rainbow':
+					ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
+					ghostBg.classList.add('rainbow-animated');
+					break;
+				default: // Default to peach
+					ghostBg.src = '/talktype-icon-bg-gradient.svg';
+					ghostBg.classList.remove('rainbow-animated');
+					break;
 			}
 			
 			// Force a reflow to ensure the gradient is visible
 			void ghostBg.offsetWidth;
 		}
-		
-		// Update visualizer bars
-		visualizerBars.forEach(bar => {
-			if (vibe.animated && vibe.id === 'rainbow') {
-				bar.classList.add('rainbow-animated-bars');
-				bar.style.backgroundImage = '';
-			} else {
-				bar.classList.remove('rainbow-animated-bars');
-				bar.style.backgroundImage = vibe.visualizerGradient;
-			}
-		});
-		
-		// Update global CSS variables for new components
-		document.documentElement.style.setProperty('--visualizer-gradient', vibe.visualizerGradient || '');
-	};
+	}
 
 	// Reliable recording toggle with ambient blinking support
 	function startRecordingFromGhost(event) {
@@ -762,14 +729,14 @@
 		>
 			<!-- Layered approach with gradient background and blinking eyes -->
 			<div class="icon-layers">
-				<!-- Gradient background (bottom layer) - directly load theme from localStorage -->
+				<!-- Gradient background (bottom layer) - load based on data-theme -->
 				{#if browser}
 					<img 
-						src={localStorage.getItem('talktype-vibe') === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
-							localStorage.getItem('talktype-vibe') === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
-							localStorage.getItem('talktype-vibe') === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
+						src={document.documentElement.getAttribute('data-theme') === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
+							document.documentElement.getAttribute('data-theme') === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
+							document.documentElement.getAttribute('data-theme') === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
 							'/talktype-icon-bg-gradient.svg'} 
-						class={localStorage.getItem('talktype-vibe') === 'rainbow' ? 'icon-bg rainbow-animated' : 'icon-bg'} 
+						class={document.documentElement.getAttribute('data-theme') === 'rainbow' ? 'icon-bg rainbow-animated' : 'icon-bg'} 
 						alt="" 
 						aria-hidden="true" 
 					/>
@@ -1648,23 +1615,27 @@
 		animation: fadeIn 0.5s ease-out forwards;
 	}
 	
-	/* Rainbow animation for ghost svg and visualizer */
+	/* Rainbow animation for ghost svg */
 	.rainbow-animated {
-		animation: hueShift 8s linear infinite;
+		animation: hueShift 4s linear infinite;
 	}
 	
-	.rainbow-animated-bars {
-		animation: hueShift 8s linear infinite;
+	/* Theme-based visualizer styling using data-theme attribute */
+	:global([data-theme="rainbow"] .history-bar) {
+		animation: hueShift 4s linear infinite;
 		background-image: linear-gradient(to top, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
-		background-size: 100% 800%;
+		background-size: 100% 600%;
 	}
 	
 	@keyframes hueShift {
 		0% {
 			background-position: 0% 0%;
 		}
-		50% {
-			background-position: 100% 100%;
+		33% {
+			background-position: 100% 50%;
+		}
+		67% {
+			background-position: 0% 100%;
 		}
 		100% {
 			background-position: 0% 0%;

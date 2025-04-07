@@ -272,6 +272,21 @@
 
 	// ===== LIFECYCLE HOOKS =====
 	onMount(() => {
+		// Check if rainbow theme is active and apply the animation
+		if (typeof window !== 'undefined') {
+			// Check for theme in localStorage
+			const currentTheme = localStorage.getItem('talktype-vibe');
+			if (currentTheme) {
+				// Apply the theme attribute to the document root for CSS targeting
+				document.documentElement.setAttribute('data-theme', currentTheme);
+			} else {
+				// Default to peach theme if none is set
+				document.documentElement.setAttribute('data-theme', 'peach');
+				localStorage.setItem('talktype-vibe', 'peach');
+			}
+		}
+
+		// Initialize visualizer
 		if (useFallbackVisualizer) {
 			initFallbackVisualizer();
 		} else {
@@ -325,32 +340,43 @@
 	.history-bar {
 		position: absolute;
 		bottom: 0;
-		/* Use CSS variable for theme-aware gradient, with default peach gradient as fallback */
-		background: var(--visualizer-gradient, linear-gradient(
-			to top,
-			#ff9a84, /* Peach start */
-			#ff7eb3  /* Peach end */
-		));
-		transition: height 0.15s ease-in-out, background-image 0.3s ease;
+		/* Default peach gradient as fallback */
+		background: linear-gradient(to top, #ff9a84, #ff7eb3);
+		transition: height 0.15s ease-in-out;
 		border-radius: 3px 3px 0 0;
 		margin-right: 1px; /* Add slight margin to prevent white line gaps */
 		box-shadow: 0 0 8px rgba(249, 168, 212, 0.2); /* Subtle glow on bars */
 		opacity: 0.95;
 	}
+	
+	/* Theme-specific gradient styles - directly applied based on data-theme */
+	:global([data-theme="peach"] .history-bar) {
+		background: linear-gradient(to top, #ff9a84, #ff7eb3);
+	}
+	
+	:global([data-theme="mint"] .history-bar) {
+		background: linear-gradient(to top, #60a5fa, #34d399);
+	}
+	
+	:global([data-theme="bubblegum"] .history-bar) {
+		background: linear-gradient(to top, #ff7eb3, #7b68ee);
+	}
 
-	/* Theme-specific gradient styles - applied through JS by updating --visualizer-gradient CSS var */
-	:global(.rainbow-animated-bars) {
-		animation: hueShift 8s linear infinite !important;
-		background-image: linear-gradient(to top, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62) !important;
-		background-size: 100% 800% !important;
+	:global([data-theme="rainbow"] .history-bar) {
+		animation: hueShift 4s linear infinite;
+		background-image: linear-gradient(to top, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
+		background-size: 100% 600%;
 	}
 
 	@keyframes hueShift {
 		0% {
 			background-position: 0% 0%;
 		}
-		50% {
-			background-position: 100% 100%;
+		33% {
+			background-position: 100% 50%;
+		}
+		67% {
+			background-position: 0% 100%;
 		}
 		100% {
 			background-position: 0% 0%;
