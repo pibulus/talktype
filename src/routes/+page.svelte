@@ -382,6 +382,72 @@
 	onMount(() => {
 		debug('Component mounted');
 		setupDomObserver();
+		
+		// Check for auto-record setting and start recording if enabled
+		if (browser && localStorage.getItem('talktype-autoRecord') === 'true') {
+			// Wait for component to fully initialize and title animations to complete
+			setTimeout(() => {
+				if (audioToTextComponent && !audioToTextComponent.recording) {
+					debug('Auto-record enabled, starting recording');
+					
+					// Make ghost do a special "ready to record" animation
+					const ghostIcon = document.querySelector('.icon-container');
+					if (ghostIcon) {
+						// First do a quick double-blink to show eagerness
+						const eyes = document.querySelector('.icon-eyes');
+						if (eyes) {
+							clearAllBlinkTimeouts(); // Clear any existing animations
+							
+							// Double blink animation sequence
+							eyes.classList.add('blink-once');
+							setTimeout(() => {
+								eyes.classList.remove('blink-once');
+								setTimeout(() => {
+									eyes.classList.add('blink-once');
+									setTimeout(() => {
+										eyes.classList.remove('blink-once');
+										
+										// After blinking, do a subtle wobble before recording
+										ghostIcon.classList.add('ghost-wobble-right');
+										setTimeout(() => {
+											ghostIcon.classList.remove('ghost-wobble-right');
+											
+											// Now start actual recording
+											audioToTextComponent.startRecording();
+											
+											// Update UI state
+											ghostIcon.classList.add('recording');
+											
+											// Also update the local recording state variable
+											isRecording = true;
+										}, 400);
+									}, 150);
+								}, 150);
+							}, 150);
+						} else {
+							// Fallback if eyes element not found
+							audioToTextComponent.startRecording();
+							ghostIcon.classList.add('recording');
+							isRecording = true;
+						}
+					} else {
+						// Fallback if ghost icon not found
+						audioToTextComponent.startRecording();
+						isRecording = true;
+					}
+				}
+			}, 2500); // Delay to allow intro animations to complete
+		}
+		
+		// Listen for settings changes
+		if (browser) {
+			window.addEventListener('talktype-setting-changed', (event) => {
+				if (event.detail && event.detail.setting === 'autoRecord') {
+					debug('Auto-record setting changed:', event.detail.value);
+					// No immediate action needed, setting will apply on next page load
+				}
+			});
+		}
 
 		// Check if first visit to show intro
 		checkFirstVisit();

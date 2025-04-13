@@ -9,6 +9,9 @@
   let selectedVibe = 'peach'; // Default theme
   let scrollPosition = 0;
   
+  // Auto-record setting - get from localStorage
+  let autoRecord = typeof window !== 'undefined' && localStorage.getItem('talktype-autoRecord') === 'true';
+  
   // Theme options with gradient SVG files for ghost and CSS gradients for visualizer
   const vibeOptions = [
     { 
@@ -113,6 +116,18 @@
     updateTheme(vibeId);
   }
   
+  // Handle auto-record toggle
+  function toggleAutoRecord() {
+    autoRecord = !autoRecord;
+    localStorage.setItem('talktype-autoRecord', autoRecord.toString());
+    debug('Auto-record toggled', autoRecord);
+    
+    // Dispatch a custom event that the main page can listen for
+    window.dispatchEvent(new CustomEvent('talktype-setting-changed', {
+      detail: { setting: 'autoRecord', value: autoRecord }
+    }));
+  }
+  
   // Handle modal opening - called when the modal is opened
   function handleModalOpen() {
     if (typeof window === 'undefined') return;
@@ -169,6 +184,31 @@
       </div>
 
       <!-- Vibe Selector Section -->
+      <!-- Behavior Settings Section -->
+      <div class="space-y-3 mb-5">
+        <h4 class="text-sm font-bold text-gray-700">Behavior</h4>
+        
+        <div class="flex items-center justify-between p-3 rounded-xl border border-pink-100 bg-white shadow-sm hover:border-pink-200 transition-all duration-200">
+          <div>
+            <span class="text-sm font-medium text-gray-700">Auto-Record on Start</span>
+            <p class="text-xs text-gray-500 mt-0.5">Start recording immediately when you open TalkType</p>
+          </div>
+          <label class="cursor-pointer flex items-center">
+            <span class="sr-only">Auto-Record Toggle</span>
+            <div class="relative">
+              <input 
+                type="checkbox" 
+                class="sr-only"
+                checked={autoRecord}
+                on:change={toggleAutoRecord}
+              />
+              <div class={`w-10 h-5 rounded-full ${autoRecord ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}></div>
+              <div class={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-all duration-200 transform ${autoRecord ? 'translate-x-5' : ''}`}></div>
+            </div>
+          </label>
+        </div>
+      </div>
+      
       <div class="space-y-4">
         <h4 class="text-sm font-bold text-gray-700">Choose Your Vibe</h4>
         
