@@ -2,9 +2,10 @@
 <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="ghostGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff9cee" />
-      <stop offset="50%" stop-color="#ff85c2" />
-      <stop offset="100%" stop-color="#ff9b88" />
+      <stop offset="0%" stop-color="#ffb6f3" />
+      <stop offset="40%" stop-color="#ff7fcd" />
+      <stop offset="70%" stop-color="#ff8f9a" />
+      <stop offset="100%" stop-color="#ffa573" />
     </linearGradient>
   </defs>
   <path d="
