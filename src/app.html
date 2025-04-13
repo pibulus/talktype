@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="coffee">
+<html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
@@ -13,6 +13,18 @@
 			content="speech to text, voice recognition, transcription, audio to text, voice typing"
 		/>
 		<meta name="author" content="Dennis & Pablo" />
+			<script>
+				// Apply saved theme immediately to prevent flash of default theme
+				if (typeof localStorage !== 'undefined') {
+					const savedTheme = localStorage.getItem('talktype-vibe');
+					if (savedTheme) {
+						document.documentElement.setAttribute('data-theme', savedTheme);
+					} else {
+						// Default to peach if no theme is saved
+						document.documentElement.setAttribute('data-theme', 'peach');
+					}
+				}
+			</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
