@@ -341,7 +341,7 @@
 		position: absolute;
 		bottom: 0;
 		/* Default peach gradient as fallback */
-		background: linear-gradient(to top, #ff9a84, #ff7eb3);
+		background: linear-gradient(to top, #ffa573, #ff9f9a, #ff7fcd, #ffb6f3);
 		transition: height 0.15s ease-in-out;
 		border-radius: 3px 3px 0 0;
 		margin-right: 1px; /* Add slight margin to prevent white line gaps */
@@ -351,20 +351,20 @@
 	
 	/* Theme-specific gradient styles - directly applied based on data-theme */
 	:global([data-theme="peach"] .history-bar) {
-		background: linear-gradient(to top, #ff9a84, #ff7eb3);
+		background: linear-gradient(to top, #ffa573, #ff9f9a, #ff7fcd, #ffb6f3);
 	}
 	
 	:global([data-theme="mint"] .history-bar) {
-		background: linear-gradient(to top, #60a5fa, #34d399);
+		background: linear-gradient(to top, #86efac, #5eead4, #67e8f9);
 	}
 	
 	:global([data-theme="bubblegum"] .history-bar) {
-		background: linear-gradient(to top, #ff7eb3, #7b68ee);
+		background: linear-gradient(to top, #c084fc, #e879f9, #fb7185);
 	}
 
 	:global([data-theme="rainbow"] .history-bar) {
 		animation: hueShift 4s linear infinite;
-		background-image: linear-gradient(to top, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
+		background-image: linear-gradient(to top, #ff70a6, #ff9770, #ffd670, #a0e9a0, #86e0ff, #d6a4ff, #ff70a6);
 		background-size: 100% 600%;
 	}
 

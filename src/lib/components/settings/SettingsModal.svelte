@@ -18,22 +18,22 @@
       id: 'peach', 
       name: 'Peach', 
       ghostGradientSrc: '/assets/talktype-icon-bg-gradient.svg',
-      visualizerGradient: 'linear-gradient(to top, #ff9a84, #ff7eb3)',
-      previewGradient: 'linear-gradient(135deg, #ff9a84, #ff7eb3)'
+      visualizerGradient: 'linear-gradient(to top, #ffa573, #ff9f9a, #ff7fcd, #ffb6f3)',
+      previewGradient: 'linear-gradient(135deg, #ffa573, #ff8f9a, #ff7fcd, #ffb6f3)'
     },
     { 
       id: 'mint', 
       name: 'Mint', 
       ghostGradientSrc: '/assets/talktype-icon-bg-gradient-mint.svg',
-      visualizerGradient: 'linear-gradient(to top, #60a5fa, #34d399)',
-      previewGradient: 'linear-gradient(135deg, #60a5fa, #34d399)'
+      visualizerGradient: 'linear-gradient(to top, #86efac, #5eead4, #67e8f9)',
+      previewGradient: 'linear-gradient(135deg, #86efac, #5eead4, #67e8f9)'
     },
     { 
       id: 'bubblegum', 
       name: 'Bubblegum', 
       ghostGradientSrc: '/assets/talktype-icon-bg-gradient-bubblegum.svg',
-      visualizerGradient: 'linear-gradient(to top, #ff7eb3, #7b68ee)', /* Original visualizer pink-purple gradient */
-      previewGradient: 'linear-gradient(135deg, #f472b6, #a78bfa)'
+      visualizerGradient: 'linear-gradient(to top, #c084fc, #e879f9, #fb7185)', 
+      previewGradient: 'linear-gradient(135deg, #c084fc, #e879f9, #fb7185)'
     },
     { 
       id: 'rainbow', 
@@ -381,7 +381,7 @@
     
     /* Apply rainbow gradient and animation */
     animation: hueShift 5s linear infinite;
-    background-image: linear-gradient(135deg, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
+    background-image: linear-gradient(135deg, #ff70a6, #ff9770, #ffd670, #a0e9a0, #86e0ff, #d6a4ff, #ff70a6);
     background-size: 200% 200%;
   }
   
@@ -393,20 +393,20 @@
   
   /* Theme-specific gradient styles for previews */
   .preview-visualizer[data-preview-theme="peach"] {
-    background: linear-gradient(to top, #ff9a84, #ff7eb3);
+    background: linear-gradient(to top, #ffa573, #ff9f9a, #ff7fcd, #ffb6f3);
   }
   
   .preview-visualizer[data-preview-theme="mint"] {
-    background: linear-gradient(to top, #60a5fa, #34d399);
+    background: linear-gradient(to top, #86efac, #5eead4, #67e8f9);
   }
   
   .preview-visualizer[data-preview-theme="bubblegum"] {
-    background: linear-gradient(to top, #ff7eb3, #7b68ee);
+    background: linear-gradient(to top, #c084fc, #e879f9, #fb7185);
   }
   
   .preview-visualizer[data-preview-theme="rainbow"] {
     animation: hueShift 4s linear infinite;
-    background-image: linear-gradient(to top, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
+    background-image: linear-gradient(to top, #ff70a6, #ff9770, #ffd670, #a0e9a0, #86e0ff, #d6a4ff, #ff70a6);
     background-size: 100% 600%;
   }
   

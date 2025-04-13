@@ -1689,7 +1689,7 @@
 	/* Theme-based visualizer styling using data-theme attribute */
 	:global([data-theme="rainbow"] .history-bar) {
 		animation: hueShift 4s linear infinite;
-		background-image: linear-gradient(to top, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
+		background-image: linear-gradient(to top, #ff70a6, #ff9770, #ffd670, #a0e9a0, #86e0ff, #d6a4ff, #ff70a6);
 		background-size: 100% 600%;
 	}
 	
