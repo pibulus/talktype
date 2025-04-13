@@ -359,7 +359,7 @@
 	}
 	
 	:global([data-theme="bubblegum"] .history-bar) {
-		background: linear-gradient(to top, #c084fc, #e879f9, #fb7185);
+		background: linear-gradient(to top, #a875ff, #d554ff, #f95bf9, #ff2a8d);
 	}
 
 	:global([data-theme="rainbow"] .history-bar) {

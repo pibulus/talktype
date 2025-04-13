@@ -32,8 +32,8 @@
       id: 'bubblegum', 
       name: 'Bubblegum', 
       ghostGradientSrc: '/assets/talktype-icon-bg-gradient-bubblegum.svg',
-      visualizerGradient: 'linear-gradient(to top, #c084fc, #e879f9, #fb7185)', 
-      previewGradient: 'linear-gradient(135deg, #c084fc, #e879f9, #fb7185)'
+      visualizerGradient: 'linear-gradient(to top, #a875ff, #d554ff, #f95bf9, #ff2a8d)', 
+      previewGradient: 'linear-gradient(135deg, #a875ff, #d554ff, #f95bf9, #ff2a8d)'
     },
     { 
       id: 'rainbow', 
@@ -401,7 +401,7 @@
   }
   
   .preview-visualizer[data-preview-theme="bubblegum"] {
-    background: linear-gradient(to top, #c084fc, #e879f9, #fb7185);
+    background: linear-gradient(to top, #a875ff, #d554ff, #f95bf9, #ff2a8d);
   }
   
   .preview-visualizer[data-preview-theme="rainbow"] {
