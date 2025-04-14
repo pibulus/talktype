@@ -820,8 +820,8 @@
 		
 		<!-- Updated subheadline with improved typography and brand voice -->
 		<p
-			class="slide-in-subtitle mx-auto mb-8 max-w-xs text-center cursor-default select-none sm:mb-8 md:mb-8"
-			style="font-weight: 400; font-size: 1.125rem; letter-spacing: 0.02em; line-height: 1.6; max-width: 40ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
+			class="slide-in-subtitle mx-auto mt-3 mb-8 max-w-prose text-xl text-center text-gray-700/85 cursor-default select-none sm:mt-4 sm:mb-8 md:mt-4 md:mb-8"
+			style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.6; max-width: 40ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 		>
 			Voice-to-text that doesn't suck. Free, fast, and spooky good.
 		</p>
