@@ -109,7 +109,7 @@
 		if (recording) return;
 
 		errorMessage = '';
-		transcript = '';
+		// Don't clear transcript here - we do it in toggleRecording for better control of CTA rotation
 		recording = true;
 		audioChunks = [];
 		clipboardSuccess = false;
@@ -268,6 +268,8 @@
 					transcribing = false;
 				} finally {
 					recording = false;
+					// We don't need to set shouldUpdateCta here since we're
+					// using immediate rotation in the toggleRecording function
 				}
 			};
 
@@ -311,6 +313,24 @@
 			// Screen reader announcement
 			screenReaderStatus = 'Recording stopped.';
 		} else {
+			// When using "New Recording" button, rotate to next phrase immediately
+			if (transcript) {
+				console.log('🧹 Clearing transcript for new recording');
+				
+				// Pick a random CTA phrase that's not the current one
+				let newIndex;
+				do {
+					newIndex = Math.floor(Math.random() * (ctaPhrases.length - 1)) + 1; // Skip first one (Start Recording)
+				} while (newIndex === currentCtaIndex);
+				
+				currentCtaIndex = newIndex;
+				currentCta = ctaPhrases[currentCtaIndex];
+				console.log(`🔥 Rotating to: "${currentCta}"`);
+				
+				// Then clear transcript
+				transcript = '';
+			}
+			
 			// Subtle pulse ghost icon when starting a new recording
 			const ghostIcon = document.querySelector('.icon-container');
 			if (ghostIcon) {
@@ -557,11 +577,14 @@
 		"Start Recording", // Always first
 		"Click & Speak",
 		"Talk Now",
-		"Click the Ghost, We Do the Most",
 		"Transcribe Me Baby",
 		"Start Yer Yappin'",
 		"Say the Thing",
-		"Feed Words Now"
+		"Feed Words Now", 
+		"Just Say It",
+		"Speak Up Friend",
+		"Talk to Me",
+		"Ready When You Are"
 	];
 	
 	// Always start with "Start Recording"
@@ -571,23 +594,30 @@
 	// Track if we need to update CTA after transcription
 	let shouldUpdateCta = false;
 	
-	// Update CTA after transcription
+	// Button label that changes based on state
+	let buttonLabel;
+	
+	// We've simplified the CTA rotation to happen directly in the toggleRecording function
+	// This reactive block is just for logging changes to the CTA
 	$: {
-		// When transcript is cleared and shouldUpdateCta is true
-		if (!transcript && shouldUpdateCta && !recording) {
-			currentCtaIndex = (currentCtaIndex + 1) % ctaPhrases.length;
-			currentCta = ctaPhrases[currentCtaIndex];
-			shouldUpdateCta = false;
-		}
-		
-		// Set flag to update after next transcription
-		if (transcript && !shouldUpdateCta) {
-			shouldUpdateCta = true;
+		if (!transcript && !recording && !transcribing) {
+			console.log(`🎯 Current CTA phrase: "${currentCta}"`);
 		}
 	}
 	
-	// Computed button label: if recording, show "Stop Recording"; else if transcript exists, show "New Recording"; otherwise, use the current CTA
-	$: buttonLabel = recording ? 'Stop Recording' : transcript ? 'New Recording' : currentCta;
+	// Button label computation - fixed to show CTA phrases
+	$: {
+		// Only three states: Recording, Ready for New Recording, or Waiting for First Recording
+		if (recording) {
+			buttonLabel = 'Stop Recording';
+		} else if (transcript) {
+			// This is where we want to show the rotating CTA phrases, not "New Recording"
+			buttonLabel = currentCta;
+			console.log(`🔄 Using CTA phrase instead of "New Recording": "${buttonLabel}"`);
+		} else {
+			buttonLabel = currentCta;
+		}
+	}
 </script>
 
 <!-- Main wrapper with proper containment to prevent layout issues -->
@@ -615,7 +645,7 @@
 				{:else}
 					<!-- Recording button - improved for mobile and accessibility -->
 					<button
-						class="record-button w-[90%] sm:w-full rounded-full bg-amber-400 px-6 py-6 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 max-w-[500px] mx-auto text-center"
+						class="record-button w-[90%] sm:w-full rounded-full bg-amber-400 px-6 py-6 text-xl font-bold text-black shadow-md transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 max-w-[500px] mx-auto text-center {!recording && buttonLabel === 'Start Recording' ? 'pulse-subtle' : ''}"
 						style="min-width: 300px; min-height: 72px; transform-origin: center center;"
 						on:click={toggleRecording}
 						on:keydown={handleKeyDown}
@@ -1599,6 +1629,20 @@
 		100% {
 			transform: translateY(105vh) translateX(-10px) rotate(360deg) scale(0.8);
 			opacity: 0;
+		}
+	}
+	
+	/* Simple breathing glow for button */
+	.pulse-subtle {
+		animation: button-breathe 3s ease-in-out infinite;
+	}
+	
+	@keyframes button-breathe {
+		0%, 100% {
+			box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.3);
+		}
+		50% {
+			box-shadow: 0 0 20px 5px rgba(251, 191, 36, 0.45);
 		}
 	}
 </style>
