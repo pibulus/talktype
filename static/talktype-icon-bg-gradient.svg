@@ -5,7 +5,8 @@
       <stop offset="0%" stop-color="#ff60e0" />
       <stop offset="35%" stop-color="#ff82ca" />
       <stop offset="65%" stop-color="#ff9a85" />
-      <stop offset="100%" stop-color="#ffb060" />
+      <stop offset="85%" stop-color="#ffb060" />
+      <stop offset="100%" stop-color="#ffcf40" />
     </linearGradient>
     <style>
       @keyframes shimmer {
@@ -100,6 +101,18 @@
         100% { stop-color: #ff9a85; stop-opacity: 0.9; }
       }
       
+      @keyframes mandarinPulse {
+        0% { stop-color: #ffb060; stop-opacity: 0.9; }
+        50% { stop-color: #ffa550; stop-opacity: 0.7; }
+        100% { stop-color: #ffb060; stop-opacity: 0.9; }
+      }
+      
+      @keyframes yellowPulse {
+        0% { stop-color: #ffcf40; stop-opacity: 0.9; }
+        50% { stop-color: #ffdf30; stop-opacity: 0.85; }
+        100% { stop-color: #ffcf40; stop-opacity: 0.9; }
+      }
+      
       #peachGradient stop:nth-child(1) {
         animation: pinkPulse 5s infinite ease-in-out;
       }
@@ -110,6 +123,14 @@
       
       #peachGradient stop:nth-child(3) {
         animation: peachPulse 5s 1s infinite ease-in-out;
+      }
+      
+      #peachGradient stop:nth-child(4) {
+        animation: mandarinPulse 5s 1.5s infinite ease-in-out;
+      }
+      
+      #peachGradient stop:nth-child(5) {
+        animation: yellowPulse 5s 2s infinite ease-in-out;
       }
     </style>
   </defs>
