@@ -1184,7 +1184,7 @@
 
 	.icon-container {
 		filter: drop-shadow(0 0 8px rgba(255, 156, 243, 0.15));
-		transition: all 0.3s ease;
+		transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
 		outline: none !important; /* Prevents the default browser outline */
 		-webkit-tap-highlight-color: transparent; /* Removes tap highlight on mobile */
 		-webkit-touch-callout: none; /* Disables callout */
@@ -1346,9 +1346,8 @@
 	.icon-container:active {
 		filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45))
 			drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
-		transform: scale(1.015);
-		animation: gentle-pulse 3s infinite;
-		transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+		transform: scale(1.01);
+		animation: ghost-hover 1.2s ease-in-out infinite alternate;
 	}
 
 	.icon-container.recording {
@@ -1703,6 +1702,15 @@
 		}
 		50% {
 			transform: translateY(-5px);
+		}
+	}
+	
+	@keyframes ghost-hover {
+		0% {
+			transform: scale(1.005) translateY(0);
+		}
+		100% {
+			transform: scale(1.015) translateY(-3px);
 		}
 	}
 	
