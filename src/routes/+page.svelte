@@ -820,10 +820,10 @@
 		
 		<!-- Updated subheadline with improved typography and brand voice -->
 		<p
-			class="slide-in-subtitle mx-auto mt-3 mb-8 max-w-prose text-xl text-center text-gray-700/85 cursor-default select-none sm:mt-4 sm:mb-8 md:mt-4 md:mb-8"
+			class="slide-in-subtitle mx-auto mt-6 mb-8 max-w-prose text-xl text-center text-gray-700/85 cursor-default select-none sm:mt-6 sm:mb-8 md:mt-6 md:mb-8"
 			style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.6; max-width: 40ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 		>
-			Voice-to-text that doesn't suck. Free, fast, and spooky good.
+			Voice-to-text that doesn't suck. Spooky good, freaky fast, always free.
 		</p>
 
 		<!-- Audio component - Wider container for better transcript layout -->
@@ -1189,6 +1189,7 @@
 		-webkit-tap-highlight-color: transparent; /* Removes tap highlight on mobile */
 		-webkit-touch-callout: none; /* Disables callout */
 		border: none !important; /* Ensures no border */
+		animation: gentle-float 3s ease-in-out infinite;
 	}
 	
 	/* Remove focus outline and any other focus indicators */
@@ -1692,6 +1693,16 @@
 
 	.animate-fadeIn {
 		animation: fadeIn 0.5s ease-out forwards;
+	}
+	
+	/* Gentle floating animation for ghost icon */
+	@keyframes gentle-float {
+		0%, 100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-5px);
+		}
 	}
 	
 	/* Rainbow animation for ghost svg */
