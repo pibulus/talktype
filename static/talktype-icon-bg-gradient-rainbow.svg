@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <svg baseProfile="full" height="100%" version="1.1" viewBox="0 0 1740 1392" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><linearGradient id="rainbowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff5e62" />
-      <stop offset="16.67%" stop-color="#ff9966" />
-      <stop offset="33.33%" stop-color="#fffc00" />
-      <stop offset="50%" stop-color="#73fa79" />
-      <stop offset="66.67%" stop-color="#73c2fb" />
-      <stop offset="83.33%" stop-color="#d344b7" />
-      <stop offset="100%" stop-color="#ff5e62" />
+      <stop offset="0%" stop-color="#ff70a6" />
+      <stop offset="16.67%" stop-color="#ff9770" />
+      <stop offset="33.33%" stop-color="#ffd670" />
+      <stop offset="50%" stop-color="#a0e9a0" />
+      <stop offset="66.67%" stop-color="#86e0ff" />
+      <stop offset="83.33%" stop-color="#d6a4ff" />
+      <stop offset="100%" stop-color="#ff70a6" />
     </linearGradient>
     <style>
       @keyframes hueRotate {
@@ -19,6 +19,6 @@
     fill="url(#rainbowGradient)" 
     fill-rule="evenodd" 
     stroke="none" 
-    style="animation: hueRotate 8s infinite linear">
+    style="animation: hueRotate 6s infinite linear">
   </path>
 </svg>

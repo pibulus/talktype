@@ -806,10 +806,10 @@
 			</div>
 		</button>
 
-		<!-- Typography with improved kerning and weight per updated specs -->
+		<!-- Typography with improved kerning and weight using font-variation-settings -->
 		<h1
-			class="staggered-text mb-3 text-center text-5xl font-black tracking-tight cursor-default select-none sm:mb-3 sm:text-6xl md:mb-3 md:text-7xl lg:text-8xl xl:text-9xl"
-			style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal;"
+			class="staggered-text mb-2 text-center text-5xl font-black tracking-tight cursor-default select-none sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
+			style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal; font-variation-settings: 'wght' 900, 'opsz' 32;"
 		>
 			<span class="stagger-letter mr-[-0.06em]">T</span><span class="stagger-letter ml-[-0.04em]">a</span><span
 				class="stagger-letter">l</span
@@ -818,12 +818,12 @@
 			><span class="stagger-letter">p</span><span class="stagger-letter">e</span>
 		</h1>
 		
-		<!-- Updated subheadline with improved typography -->
+		<!-- Updated subheadline with improved typography and brand voice -->
 		<p
-			class="slide-in-subtitle mx-auto mb-10 max-w-xs text-center cursor-default select-none sm:mb-10 md:mb-10"
-			style="font-weight: 400; font-size: 1.125rem; letter-spacing: 0.02em; line-height: 1.6; max-width: 40ch;"
+			class="slide-in-subtitle mx-auto mb-8 max-w-xs text-center cursor-default select-none sm:mb-8 md:mb-8"
+			style="font-weight: 400; font-size: 1.125rem; letter-spacing: 0.02em; line-height: 1.6; max-width: 40ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 		>
-			Voice-to-text that's fast, accurate, and free.
+			Voice-to-text that doesn't suck. Free, fast, and spooky good.
 		</p>
 
 		<!-- Audio component - Wider container for better transcript layout -->
@@ -1696,12 +1696,12 @@
 	
 	/* Rainbow animation for ghost svg */
 	.rainbow-animated {
-		animation: hueShift 4s linear infinite;
+		animation: hueShift 6s linear infinite;
 	}
 	
 	/* Theme-based visualizer styling using data-theme attribute */
 	:global([data-theme="rainbow"] .history-bar) {
-		animation: hueShift 4s linear infinite;
+		animation: hueShift 6s linear infinite;
 		background-image: linear-gradient(to top, #ff70a6, #ff9770, #ffd670, #a0e9a0, #86e0ff, #d6a4ff, #ff70a6);
 		background-size: 100% 600%;
 	}

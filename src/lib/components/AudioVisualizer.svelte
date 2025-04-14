@@ -363,7 +363,7 @@
 	}
 
 	:global([data-theme="rainbow"] .history-bar) {
-		animation: hueShift 4s linear infinite;
+		animation: hueShift 6s linear infinite;
 		background-image: linear-gradient(to top, #ff70a6, #ff9770, #ffd670, #a0e9a0, #86e0ff, #d6a4ff, #ff70a6);
 		background-size: 100% 600%;
 	}
