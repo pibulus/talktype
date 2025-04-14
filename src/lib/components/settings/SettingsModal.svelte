@@ -176,9 +176,11 @@
     <div class="animate-fadeUp space-y-6">
       <div class="flex items-center gap-3 mb-1">
         <div class="w-9 h-9 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-pink-500">
-            <path d="M12 15c-1.654 0-3-1.346-3-3s1.346-3 3-3 3 1.346 3 3-1.346 3-3 3zm9-3c0-1.488-.144-2.697-.915-3.279A9.974 9.974 0 0016 4.274V3c0-.552-.448-1-1-1h-2c-.552 0-1 .448-1 1v1.307a9.99 9.99 0 00-4.048 1.658C7.335 6.371 7.09 6.97 6.918 7.5L3 7a1 1 0 00-.894 1.447l2.874 4.78a8.73 8.73 0 00-.042 1.923C5.313 16.722 8.232 19 12 19s6.687-2.278 7.062-3.85a8.73 8.73 0 00-.042-1.923l2.874-4.78A1 1 0 0021 7l-3.835.5C17.04 6.51 16.825 6 16 6a9.974 9.974 0 00-4.048-1.726A10.082 10.082 0 0013 12z" />
-          </svg>
+          <div class="relative w-7 h-7">
+            <img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
+            <img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
+            <img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
+          </div>
         </div>
         <h3 class="font-black text-xl text-gray-800 tracking-tight">Settings</h3>
       </div>
