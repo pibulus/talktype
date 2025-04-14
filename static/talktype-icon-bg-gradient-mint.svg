@@ -9,32 +9,109 @@
       <stop offset="100%" stop-color="#a3e635" />
     </linearGradient>
     <style>
+      /* Synchronize all animations to multiples of 5s for better alignment */
       @keyframes mintShimmer {
         0% { opacity: 1.0; }
-        50% { opacity: 0.9; }
+        50% { opacity: 0.6; }
         100% { opacity: 1.0; }
       }
       
       @keyframes mintFlow {
         0% { 
-          filter: hue-rotate(-10deg) saturate(1.1) brightness(1);
+          filter: hue-rotate(-15deg) saturate(1.3) brightness(1);
           transform: scale(1.0);
         }
         20% { 
-          filter: hue-rotate(-5deg) saturate(1.2) brightness(1.02);
-          transform: scale(1.004);
+          filter: hue-rotate(0deg) saturate(1.5) brightness(1.15);
+          transform: scale(1.03);
         }
         50% { 
-          filter: hue-rotate(10deg) saturate(1.4) brightness(1.08);
-          transform: scale(1.015);
+          filter: hue-rotate(15deg) saturate(1.8) brightness(1.2);
+          transform: scale(1.05);
         }
         80% { 
-          filter: hue-rotate(5deg) saturate(1.3) brightness(1.06);
-          transform: scale(1.008);
+          filter: hue-rotate(0deg) saturate(1.5) brightness(1.15);
+          transform: scale(1.03);
         }
         100% { 
-          filter: hue-rotate(-10deg) saturate(1.1) brightness(1);
+          filter: hue-rotate(-15deg) saturate(1.3) brightness(1);
           transform: scale(1.0);
+        }
+      }
+      
+      /* Add color animation to each gradient stop */
+      @keyframes blueFlow {
+        0% { 
+          stop-color: #0ac5ef;
+          stop-opacity: 0.9;
+        }
+        50% { 
+          stop-color: #08b7ff; /* More vivid blue */
+          stop-opacity: 0.7;
+        }
+        100% { 
+          stop-color: #0ac5ef;
+          stop-opacity: 0.9;
+        }
+      }
+      
+      @keyframes cyanFlow {
+        0% { 
+          stop-color: #22d3ed;
+          stop-opacity: 0.8;
+        }
+        50% { 
+          stop-color: #0be7e7; /* Brighter cyan */
+          stop-opacity: 1;
+        }
+        100% { 
+          stop-color: #22d3ed;
+          stop-opacity: 0.8;
+        }
+      }
+      
+      @keyframes tealFlow {
+        0% { 
+          stop-color: #2dd4bf;
+          stop-opacity: 0.9;
+        }
+        50% { 
+          stop-color: #36e2ba; /* Brighter teal */
+          stop-opacity: 0.7;
+        }
+        100% { 
+          stop-color: #2dd4bf;
+          stop-opacity: 0.9;
+        }
+      }
+      
+      @keyframes greenFlow {
+        0% { 
+          stop-color: #4ade80;
+          stop-opacity: 0.9;
+        }
+        50% { 
+          stop-color: #39f76f; /* More vivid green */
+          stop-opacity: 0.7;
+        }
+        100% { 
+          stop-color: #4ade80;
+          stop-opacity: 0.9;
+        }
+      }
+      
+      @keyframes limeFlow {
+        0% { 
+          stop-color: #a3e635;
+          stop-opacity: 0.9;
+        }
+        50% { 
+          stop-color: #baff1a; /* More vivid lime */
+          stop-opacity: 0.7;
+        }
+        100% { 
+          stop-color: #a3e635;
+          stop-opacity: 0.9;
         }
       }
       
@@ -46,22 +123,22 @@
           y2: 100%;
         }
         25% {
-          x1: 3%;
-          y1: 2%;
-          x2: 97%;
-          y2: 101%;
+          x1: 10%;
+          y1: 5%;
+          x2: 90%;
+          y2: 110%;
         }
         50% {
-          x1: 5%;
-          y1: 3%;
-          x2: 95%;
-          y2: 97%;
+          x1: 15%;
+          y1: 10%;
+          x2: 85%;
+          y2: 90%;
         }
         75% {
-          x1: 2%;
-          y1: 4%;
-          x2: 98%;
-          y2: 96%;
+          x1: 5%;
+          y1: 15%;
+          x2: 95%;
+          y2: 85%;
         }
         100% {
           x1: 0%;
@@ -72,13 +149,30 @@
       }
       
       #mintGradient {
-        animation: mintGradientShift 11s infinite ease-in-out;
+        animation: mintGradientShift 5s infinite ease-in-out;
       }
       
       #ghost-shape {
         animation: 
           mintShimmer 5s infinite ease-in-out,
-          mintFlow 9.5s infinite cubic-bezier(0.4, 0, 0.6, 1);
+          mintFlow 5s infinite cubic-bezier(0.4, 0, 0.6, 1);
+      }
+      
+      /* Animate each stop with its own timing for a pseudo-mesh effect */
+      #mintGradient stop:nth-child(1) {
+        animation: blueFlow 5s infinite ease-in-out;
+      }
+      #mintGradient stop:nth-child(2) {
+        animation: cyanFlow 5s 0.3s infinite ease-in-out;
+      }
+      #mintGradient stop:nth-child(3) {
+        animation: tealFlow 5s 0.7s infinite ease-in-out;
+      }
+      #mintGradient stop:nth-child(4) {
+        animation: greenFlow 5s 1.1s infinite ease-in-out;
+      }
+      #mintGradient stop:nth-child(5) {
+        animation: limeFlow 5s 1.5s infinite ease-in-out alternate;
       }
     </style>
   </defs>

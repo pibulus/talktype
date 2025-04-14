@@ -3,12 +3,13 @@
   <defs>
     <linearGradient id="bubblegumGradient" x1="0%" x2="100%" y1="0%" y2="100%">
       <stop offset="0%" stop-color="#ff1a8d" />
-      <stop offset="30%" stop-color="#ff3ba0" />
+      <stop offset="25%" stop-color="#ff3ba0" />
       <stop offset="50%" stop-color="#f95bf9" />
       <stop offset="75%" stop-color="#d554ff" />
       <stop offset="100%" stop-color="#9d65ff" />
     </linearGradient>
     <style>
+      /* Synchronize all animations to multiples of 5s for better alignment */
       @keyframes bubblegumFlow {
         0% { 
           stop-color: #ff1a8d;
@@ -16,7 +17,7 @@
         }
         25% { 
           stop-color: #ff3ba0;
-          stop-opacity: 0.95;
+          stop-opacity: 0.7;
         }
         50% { 
           stop-color: #f95bf9;
@@ -24,7 +25,7 @@
         }
         75% { 
           stop-color: #d554ff;
-          stop-opacity: 0.9;
+          stop-opacity: 0.7;
         }
         100% { 
           stop-color: #ff1a8d;
@@ -32,31 +33,77 @@
         }
       }
       
+      /* Add color animation to all stops for a richer effect */
+      @keyframes purpleFlow {
+        0% { 
+          stop-color: #9d65ff;
+          stop-opacity: 0.9;
+        }
+        50% { 
+          stop-color: #8a4af0; /* Deeper purple */
+          stop-opacity: 0.7;
+        }
+        100% { 
+          stop-color: #9d65ff;
+          stop-opacity: 0.9;
+        }
+      }
+      
+      @keyframes pinkFlow {
+        0% { 
+          stop-color: #f95bf9;
+          stop-opacity: 0.8;
+        }
+        50% { 
+          stop-color: #e83dff; /* More vibrant pink */
+          stop-opacity: 1;
+        }
+        100% { 
+          stop-color: #f95bf9;
+          stop-opacity: 0.8;
+        }
+      }
+      
+      @keyframes orangeFlow {
+        0% { 
+          stop-color: #ff3ba0;
+          stop-opacity: 0.9;
+        }
+        50% { 
+          stop-color: #ff2e7c; /* More orange-pink */
+          stop-opacity: 0.7;
+        }
+        100% { 
+          stop-color: #ff3ba0;
+          stop-opacity: 0.9;
+        }
+      }
+      
       @keyframes bubblegumShimmer {
         0% { opacity: 1.0; }
-        50% { opacity: 0.85; }
+        50% { opacity: 0.6; }
         100% { opacity: 1.0; }
       }
       
       @keyframes bubblegumGlow {
         0% { 
-          filter: hue-rotate(-8deg) saturate(1.1) brightness(1);
+          filter: hue-rotate(-15deg) saturate(1.3) brightness(1);
           transform: scale(1.0);
         }
         20% { 
-          filter: hue-rotate(0deg) saturate(1.2) brightness(1.04);
-          transform: scale(1.005);
+          filter: hue-rotate(0deg) saturate(1.5) brightness(1.15);
+          transform: scale(1.03);
         }
         50% { 
-          filter: hue-rotate(8deg) saturate(1.35) brightness(1.08);
-          transform: scale(1.015);
+          filter: hue-rotate(15deg) saturate(1.8) brightness(1.2);
+          transform: scale(1.05);
         }
         80% { 
-          filter: hue-rotate(0deg) saturate(1.25) brightness(1.06);
-          transform: scale(1.008);
+          filter: hue-rotate(0deg) saturate(1.5) brightness(1.15);
+          transform: scale(1.03);
         }
         100% { 
-          filter: hue-rotate(-8deg) saturate(1.1) brightness(1);
+          filter: hue-rotate(-15deg) saturate(1.3) brightness(1);
           transform: scale(1.0);
         }
       }
@@ -69,22 +116,22 @@
           y2: 100%;
         }
         25% {
-          x1: 3%;
-          y1: 2%;
-          x2: 98%;
-          y2: 103%;
+          x1: 10%;
+          y1: 5%;
+          x2: 90%;
+          y2: 110%;
         }
         50% {
-          x1: 5%;
-          y1: 4%;
-          x2: 95%;
-          y2: 96%;
+          x1: 15%;
+          y1: 10%;
+          x2: 85%;
+          y2: 90%;
         }
         75% {
-          x1: 2%;
-          y1: 3%;
-          x2: 98%;
-          y2: 97%;
+          x1: 5%;
+          y1: 15%;
+          x2: 95%;
+          y2: 85%;
         }
         100% {
           x1: 0%;
@@ -95,23 +142,30 @@
       }
       
       #bubblegumGradient {
-        animation: bubblegumGradientShift 12s infinite ease-in-out;
+        animation: bubblegumGradientShift 5s infinite ease-in-out;
       }
       
       #ghost-shape {
         animation: 
           bubblegumShimmer 5s infinite ease-in-out,
-          bubblegumGlow 8.5s infinite cubic-bezier(0.4, 0, 0.6, 1);
+          bubblegumGlow 5s infinite cubic-bezier(0.4, 0, 0.6, 1);
       }
       
+      /* Animate each stop with its own timing for a pseudo-mesh effect */
       #bubblegumGradient stop:nth-child(1) {
-        animation: bubblegumFlow 7s infinite ease-in-out;
+        animation: bubblegumFlow 5s infinite ease-in-out;
+      }
+      #bubblegumGradient stop:nth-child(2) {
+        animation: orangeFlow 5s 0.3s infinite ease-in-out;
       }
       #bubblegumGradient stop:nth-child(3) {
-        animation: bubblegumFlow 8s 1s infinite ease-in-out reverse;
+        animation: pinkFlow 5s 0.7s infinite ease-in-out;
+      }
+      #bubblegumGradient stop:nth-child(4) {
+        animation: purpleFlow 5s 1.1s infinite ease-in-out;
       }
       #bubblegumGradient stop:nth-child(5) {
-        animation: bubblegumFlow 9s 2s infinite ease-in-out;
+        animation: purpleFlow 5s 1.5s infinite ease-in-out alternate;
       }
     </style>
   </defs>
