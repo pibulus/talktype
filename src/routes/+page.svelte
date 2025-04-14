@@ -385,45 +385,35 @@
 		
 		// Check for auto-record setting and start recording if enabled
 		if (browser && localStorage.getItem('talktype-autoRecord') === 'true') {
-			// Wait for component to fully initialize and title animations to complete
+			// Wait minimal time for component initialization
 			setTimeout(() => {
 				if (audioToTextComponent && !audioToTextComponent.recording) {
-					debug('Auto-record enabled, starting recording');
+					debug('Auto-record enabled, starting recording immediately');
 					
-					// Make ghost do a special "ready to record" animation
+					// Make ghost do a quick animation and start recording immediately
 					const ghostIcon = document.querySelector('.icon-container');
 					if (ghostIcon) {
-						// First do a quick double-blink to show eagerness
+						// Start recording immediately with minimal animation
 						const eyes = document.querySelector('.icon-eyes');
 						if (eyes) {
 							clearAllBlinkTimeouts(); // Clear any existing animations
 							
-							// Double blink animation sequence
+							// Quick single blink and start recording immediately
 							eyes.classList.add('blink-once');
+							
+							// Start recording immediately
+							audioToTextComponent.startRecording();
+							
+							// Update UI state
+							ghostIcon.classList.add('recording');
+							
+							// Also update the local recording state variable
+							isRecording = true;
+							
+							// Remove blink class after a short delay
 							setTimeout(() => {
 								eyes.classList.remove('blink-once');
-								setTimeout(() => {
-									eyes.classList.add('blink-once');
-									setTimeout(() => {
-										eyes.classList.remove('blink-once');
-										
-										// After blinking, do a subtle wobble before recording
-										ghostIcon.classList.add('ghost-wobble-right');
-										setTimeout(() => {
-											ghostIcon.classList.remove('ghost-wobble-right');
-											
-											// Now start actual recording
-											audioToTextComponent.startRecording();
-											
-											// Update UI state
-											ghostIcon.classList.add('recording');
-											
-											// Also update the local recording state variable
-											isRecording = true;
-										}, 400);
-									}, 150);
-								}, 150);
-							}, 150);
+							}, 100);
 						} else {
 							// Fallback if eyes element not found
 							audioToTextComponent.startRecording();
@@ -436,7 +426,7 @@
 						isRecording = true;
 					}
 				}
-			}, 2500); // Delay to allow intro animations to complete
+			}, 500); // Reduced delay - just enough for component initialization
 		}
 		
 		// Listen for settings changes
@@ -816,20 +806,24 @@
 			</div>
 		</button>
 
-		<!-- Typography - Always using animated version for consistency -->
+		<!-- Typography with improved kerning and weight per updated specs -->
 		<h1
-			class="staggered-text mb-1 text-center text-5xl font-black tracking-tight cursor-default select-none sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
+			class="staggered-text mb-3 text-center text-5xl font-black tracking-tight cursor-default select-none sm:mb-3 sm:text-6xl md:mb-3 md:text-7xl lg:text-8xl xl:text-9xl"
+			style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal;"
 		>
-			<span class="stagger-letter mr-[-0.08em]">T</span><span class="stagger-letter">a</span><span
+			<span class="stagger-letter mr-[-0.06em]">T</span><span class="stagger-letter ml-[-0.04em]">a</span><span
 				class="stagger-letter">l</span
-			><span class="stagger-letter">k</span><span class="stagger-letter">T</span><span
-				class="stagger-letter">y</span
+			><span class="stagger-letter">k</span><span class="stagger-letter mr-[-0.04em]">T</span><span
+				class="stagger-letter ml-[-0.03em]">y</span
 			><span class="stagger-letter">p</span><span class="stagger-letter">e</span>
 		</h1>
+		
+		<!-- Updated subheadline with improved typography -->
 		<p
-			class="slide-in-subtitle mx-auto mb-4 max-w-sm text-center text-xl text-gray-700 cursor-default select-none sm:mb-4 sm:max-w-md sm:text-2xl md:mb-6 md:max-w-lg md:text-3xl"
+			class="slide-in-subtitle mx-auto mb-10 max-w-xs text-center cursor-default select-none sm:mb-10 md:mb-10"
+			style="font-weight: 400; font-size: 1.125rem; letter-spacing: 0.02em; line-height: 1.6; max-width: 40ch;"
 		>
-			Fast, accurate, and free voice-to-text transcription.
+			Voice-to-text that's fast, accurate, and free.
 		</p>
 
 		<!-- Audio component - Wider container for better transcript layout -->
@@ -1453,6 +1447,10 @@
 	.staggered-text {
 		animation: none; /* Reset any existing animations */
 		opacity: 1; /* Default to visible */
+		font-feature-settings: "kern" 1; /* Enable kerning */
+		font-kerning: normal; /* Normalize kerning */
+		-webkit-font-smoothing: antialiased; /* Improve text rendering */
+		-moz-osx-font-smoothing: grayscale; /* Improve text rendering */
 	}
 
 	.stagger-letter {
@@ -1508,6 +1506,11 @@
 		animation-delay: 0.6s; /* Start before title animation completes */
 		will-change: transform, opacity;
 		backface-visibility: hidden;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		font-feature-settings: "kern" 1;
+		font-kerning: normal;
+		max-width: 40ch; /* Optimal reading width */
 	}
 
 	@keyframes slideIn {
@@ -1610,6 +1613,16 @@
 	.subtitle-hover:hover {
 		color: #000;
 		text-shadow: 0 0 8px rgba(249, 168, 212, 0.3);
+	}
+	
+	/* CTA button hover effect */
+	button.rounded-full {
+		transition: all 0.3s ease;
+	}
+	
+	button.rounded-full:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 	}
 
 	/* TalkType Logo Typography Fixes - Simplified and Stabilized */
