@@ -1346,8 +1346,9 @@
 	.icon-container:active {
 		filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45))
 			drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
-		transform: scale(1.03);
+		transform: scale(1.015);
 		animation: gentle-pulse 3s infinite;
+		transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
 	.icon-container.recording {
