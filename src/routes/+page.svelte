@@ -771,14 +771,14 @@
 </script>
 
 <section
-	class="bg-gradient-mesh mt-[-5vh] flex min-h-screen flex-col items-center justify-center px-4 py-8 pb-28 pt-[6vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-32"
+	class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-center px-4 py-8 pb-28 pt-[10vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-32"
 >
 	<div
-		class="mx-auto flex w-full max-w-md flex-col items-center sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
+		class="mx-auto flex w-full max-w-md flex-col items-center pt-4 sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
 	>
 		<!-- Ghost Icon - Mobile: tight, Desktop: chunky -->
 		<button
-			class="icon-container mb-0 h-32 w-32 cursor-pointer sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64 appearance-none border-0 bg-transparent p-0"
+			class="icon-container mb-4 h-36 w-36 cursor-pointer sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64 appearance-none border-0 bg-transparent p-0"
 			style="outline: none; -webkit-tap-highlight-color: transparent;"
 			on:click|preventDefault|stopPropagation={startRecordingFromGhost}
 			aria-label="Toggle Recording"
@@ -820,14 +820,14 @@
 		
 		<!-- Updated subheadline with improved typography and brand voice -->
 		<p
-			class="slide-in-subtitle mx-auto mt-6 mb-8 max-w-prose text-xl text-center text-gray-700/85 cursor-default select-none sm:mt-6 sm:mb-8 md:mt-6 md:mb-8"
-			style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.6; max-width: 40ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
+			class="slide-in-subtitle mx-auto mt-2 mb-4 max-w-prose text-xl text-center text-gray-700/85 cursor-default select-none sm:mt-6 sm:mb-8 md:mt-6 md:mb-8"
+			style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.6; max-width: 35ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 		>
 			Voice-to-text that doesn't suck. Spooky good, freaky fast, always free.
 		</p>
 
 		<!-- Audio component - Wider container for better transcript layout -->
-		<div class="w-full max-w-xl sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
+		<div class="w-full max-w-xl mt-4 sm:mt-0 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
 			<AudioToText bind:this={audioToTextComponent} />
 		</div>
 	</div>
@@ -851,21 +851,21 @@
 					by Dennis & Pablo
 				</span>
 			</div>
-			<div class="flex items-center gap-2 sm:gap-4">
+			<div class="flex items-center gap-3 sm:gap-4">
 				<button
-					class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-1 px-2 sm:px-3 sm:py-2 h-auto min-h-0"
+					class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-2 px-3 sm:px-4 sm:py-2.5 h-auto min-h-0"
 					on:click={showAboutModal}
 				>
 					About
 				</button>
 				<button
-					class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-1 px-2 sm:px-3 sm:py-2 h-auto min-h-0"
+					class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-2 px-3 sm:px-4 sm:py-2.5 h-auto min-h-0"
 					on:click={openSettingsModal}
 				>
 					Settings
 				</button>
 				<button 
-					class="btn btn-sm bg-gradient-to-r from-pink-50 to-purple-100 text-purple-600 border-none hover:bg-opacity-90 shadow-sm hover:shadow transition-all text-xs sm:text-sm py-1 px-2 sm:px-3 sm:py-2 h-auto min-h-0"
+					class="btn btn-sm bg-gradient-to-r from-pink-50 to-purple-100 text-purple-600 border-none hover:bg-opacity-90 shadow-sm hover:shadow transition-all text-xs sm:text-sm py-2 px-3 sm:px-4 sm:py-2.5 h-auto min-h-0"
 					on:click={showExtensionModal}
 				>
 					Chrome Extension
@@ -1738,6 +1738,52 @@
 		}
 		100% {
 			background-position: 0% 0%;
+		}
+	}
+	
+	/* Media queries for mobile optimization */
+	@media (max-width: 640px) {
+		section {
+			padding-top: 8vh !important;
+			min-height: 100vh;
+			display: flex;
+			flex-direction: column;
+			justify-content: flex-start;
+		}
+		
+		.icon-container {
+			height: 9rem !important; 
+			width: 9rem !important;
+			margin-bottom: 1rem !important; /* 4 units on 8px grid */
+		}
+		
+		.slide-in-subtitle {
+			max-width: 28ch !important;
+			margin-top: 0.5rem !important; /* 2 units on 8px grid */
+			margin-bottom: 1rem !important; /* 4 units on 8px grid */
+		}
+		
+		/* Button section spacing */
+		.button-section {
+			margin-top: 1rem !important; /* 4 units on 8px grid */
+		}
+		
+		/* Position wrapper adjustments */
+		.position-wrapper {
+			margin-top: 1.5rem !important; /* 6 units on 8px grid */
+		}
+		
+		footer button {
+			min-height: 2.5rem;
+			padding-top: 0.5rem;
+			padding-bottom: 0.5rem;
+			padding-left: 0.75rem;
+			padding-right: 0.75rem;
+		}
+		
+		footer {
+			padding-top: 1rem;
+			padding-bottom: 1rem;
 		}
 	}
 </style>
