@@ -552,8 +552,42 @@
 	// Reactive font size based on transcript length
 	$: responsiveFontSize = getResponsiveFontSize(transcript);
 
-	// Computed button label: if recording, show "Stop Recording"; else if transcript exists, show "New Recording"; otherwise, "Start Recording"
-	$: buttonLabel = recording ? 'Stop Recording' : transcript ? 'New Recording' : 'Start Recording';
+	// Array of fun CTA phrases for the button
+	const ctaPhrases = [
+		"Start Recording",
+		"Click & Speak",
+		"Talk Now",
+		"Summon the Ghost",
+		"Click the Ghost, We Do the Most",
+		"Transcribe Me Baby",
+		"Start Yappin'",
+		"Say the Thing",
+		"Spit It Out"
+	];
+	
+	// Function to get a random CTA phrase
+	let currentCtaIndex = Math.floor(Math.random() * ctaPhrases.length);
+	let currentCta = ctaPhrases[currentCtaIndex];
+	
+	// Setup rotation of CTAs
+	let ctaRotationInterval;
+	
+	onMount(() => {
+		// Rotate CTAs every 8 seconds
+		ctaRotationInterval = setInterval(() => {
+			if (!recording && !transcript) {
+				currentCtaIndex = (currentCtaIndex + 1) % ctaPhrases.length;
+				currentCta = ctaPhrases[currentCtaIndex];
+			}
+		}, 8000);
+		
+		return () => {
+			if (ctaRotationInterval) clearInterval(ctaRotationInterval);
+		};
+	});
+	
+	// Computed button label: if recording, show "Stop Recording"; else if transcript exists, show "New Recording"; otherwise, use the current CTA
+	$: buttonLabel = recording ? 'Stop Recording' : transcript ? 'New Recording' : currentCta;
 </script>
 
 <!-- Main wrapper with proper containment to prevent layout issues -->
@@ -582,6 +616,7 @@
 					<!-- Recording button - improved for mobile and accessibility -->
 					<button
 						class="record-button w-[90%] sm:w-full rounded-full bg-amber-400 px-6 py-6 text-xl font-bold text-black shadow-md shadow-black/10 transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 max-w-[500px] mx-auto text-center"
+						style="min-width: 300px; min-height: 72px; transform-origin: center center;"
 						on:click={toggleRecording}
 						on:keydown={handleKeyDown}
 						disabled={transcribing}
@@ -589,7 +624,9 @@
 						aria-pressed={recording}
 						aria-busy={transcribing}
 					>
-						{buttonLabel}
+						<span class="cta-text inline-block h-[28px] whitespace-nowrap transition-all duration-300 ease-in-out">
+							{buttonLabel}
+						</span>
 					</button>
 				{/if}
 			</div>
