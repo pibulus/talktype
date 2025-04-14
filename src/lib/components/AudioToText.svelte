@@ -554,37 +554,37 @@
 
 	// Array of fun CTA phrases for the button
 	const ctaPhrases = [
-		"Start Recording",
+		"Start Recording", // Always first
 		"Click & Speak",
 		"Talk Now",
-		"Summon the Ghost",
 		"Click the Ghost, We Do the Most",
 		"Transcribe Me Baby",
-		"Start Yappin'",
+		"Start Yer Yappin'",
 		"Say the Thing",
-		"Spit It Out"
+		"Feed Words Now"
 	];
 	
-	// Function to get a random CTA phrase
-	let currentCtaIndex = Math.floor(Math.random() * ctaPhrases.length);
+	// Always start with "Start Recording"
+	let currentCtaIndex = 0;
 	let currentCta = ctaPhrases[currentCtaIndex];
 	
-	// Setup rotation of CTAs
-	let ctaRotationInterval;
+	// Track if we need to update CTA after transcription
+	let shouldUpdateCta = false;
 	
-	onMount(() => {
-		// Rotate CTAs every 8 seconds
-		ctaRotationInterval = setInterval(() => {
-			if (!recording && !transcript) {
-				currentCtaIndex = (currentCtaIndex + 1) % ctaPhrases.length;
-				currentCta = ctaPhrases[currentCtaIndex];
-			}
-		}, 8000);
+	// Update CTA after transcription
+	$: {
+		// When transcript is cleared and shouldUpdateCta is true
+		if (!transcript && shouldUpdateCta && !recording) {
+			currentCtaIndex = (currentCtaIndex + 1) % ctaPhrases.length;
+			currentCta = ctaPhrases[currentCtaIndex];
+			shouldUpdateCta = false;
+		}
 		
-		return () => {
-			if (ctaRotationInterval) clearInterval(ctaRotationInterval);
-		};
-	});
+		// Set flag to update after next transcription
+		if (transcript && !shouldUpdateCta) {
+			shouldUpdateCta = true;
+		}
+	}
 	
 	// Computed button label: if recording, show "Stop Recording"; else if transcript exists, show "New Recording"; otherwise, use the current CTA
 	$: buttonLabel = recording ? 'Stop Recording' : transcript ? 'New Recording' : currentCta;
