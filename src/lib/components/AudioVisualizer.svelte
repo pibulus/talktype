@@ -363,7 +363,7 @@
 	}
 
 	:global([data-theme="rainbow"] .history-bar) {
-		animation: hueShift 7s ease-in-out infinite, rainbowBars 3s ease-in-out infinite;
+		animation: hueShift 9.1s linear infinite, rainbowBars 3s ease-in-out infinite;
 		background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
 		background-size: 100% 600%;
 		box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 156, 227, 0.1);
@@ -378,10 +378,10 @@
 	}
 
 	@keyframes hueShift {
-		0%, 100% { 
+		0% { 
 			filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); 
 		}
-		50% { 
+		100% { 
 			filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); 
 		}
 	}

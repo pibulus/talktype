@@ -434,18 +434,18 @@
   
   /* Rainbow animation for ghost with sparkle effect */
   .rainbow-animated {
-    animation: rainbowFlow 8s linear infinite;
+    animation: rainbowFlow 8.3s linear infinite;
     filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
   }
   
   @keyframes rainbowFlow {
-    0%, 100% { filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); }
-    50% { filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); }
+    0% { filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); }
+    100% { filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); }
   }
   
   /* Add extra sparkle when previewing the rainbow theme */
   .vibe-option[data-vibe-type="rainbow"]:hover .preview-icon-layers .rainbow-animated {
-    animation: rainbowFlow 4s linear infinite, settingsSparkle 2s ease-in-out infinite;
+    animation: rainbowFlow 4.7s linear infinite, settingsSparkle 2s ease-in-out infinite;
   }
   
   @keyframes settingsSparkle {

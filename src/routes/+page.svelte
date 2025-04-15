@@ -1716,19 +1716,19 @@
 	
 	/* Rainbow animation for ghost svg with sparkle effect */
 	.rainbow-animated {
-		animation: rainbowFlow 8s linear infinite;
+		animation: rainbowFlow 7s linear infinite;
 		filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
 	}
 
 	/* Special rainbow sparkle effect when hovered */
 	.icon-container:hover .rainbow-animated {
-		animation: rainbowFlow 5s linear infinite, sparkle 2s ease-in-out infinite;
+		animation: rainbowFlow 4.5s linear infinite, sparkle 2s ease-in-out infinite;
 		filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
 	}
 	
 	@keyframes rainbowFlow {
-		0%, 100% { filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); }
-		50% { filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); }
+		0% { filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); }
+		100% { filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); }
 	}
 
 	@keyframes sparkle {
