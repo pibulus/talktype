@@ -359,27 +359,30 @@
 	}
 	
 	:global([data-theme="bubblegum"] .history-bar) {
-		background: linear-gradient(to top, #a875ff, #d554ff, #f95bf9, #ff2a8d);
+		background: linear-gradient(to top, #20c5ff, #4d7bff, #c85aff, #ee45f0, #ff3ba0, #ff1a8d);
 	}
 
 	:global([data-theme="rainbow"] .history-bar) {
-		animation: hueShift 6s linear infinite;
-		background-image: linear-gradient(to top, #ff70a6, #ff9770, #ffd670, #a0e9a0, #86e0ff, #d6a4ff, #ff70a6);
+		animation: hueShift 7s ease-in-out infinite, rainbowBars 3s ease-in-out infinite;
+		background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
 		background-size: 100% 600%;
+		box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 156, 227, 0.1);
+	}
+	
+	/* Special animation for rainbow theme bars */
+	@keyframes rainbowBars {
+		0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 156, 227, 0.3)); }
+		25% { filter: drop-shadow(0 0 3px rgba(169, 255, 156, 0.3)); }
+		50% { filter: drop-shadow(0 0 3px rgba(156, 221, 255, 0.3)); }
+		75% { filter: drop-shadow(0 0 2px rgba(255, 234, 138, 0.3)); }
 	}
 
 	@keyframes hueShift {
-		0% {
-			background-position: 0% 0%;
+		0%, 100% { 
+			filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); 
 		}
-		33% {
-			background-position: 100% 50%;
-		}
-		67% {
-			background-position: 0% 100%;
-		}
-		100% {
-			background-position: 0% 0%;
+		50% { 
+			filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); 
 		}
 	}
 </style>

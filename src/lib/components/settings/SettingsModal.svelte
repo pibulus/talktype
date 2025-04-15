@@ -32,8 +32,8 @@
       id: 'bubblegum', 
       name: 'Bubblegum', 
       ghostGradientSrc: '/assets/talktype-icon-bg-gradient-bubblegum.svg',
-      visualizerGradient: 'linear-gradient(to top, #a875ff, #d554ff, #f95bf9, #ff2a8d)', 
-      previewGradient: 'linear-gradient(135deg, #a875ff, #d554ff, #f95bf9, #ff2a8d)'
+      visualizerGradient: 'linear-gradient(to top, #20c5ff, #4d7bff, #c85aff, #ee45f0, #ff3ba0, #ff1a8d)', 
+      previewGradient: 'linear-gradient(135deg, #20c5ff, #4d7bff, #c85aff, #ee45f0, #ff1a8d)'
     },
     { 
       id: 'rainbow', 
@@ -218,6 +218,7 @@
           {#each vibeOptions as vibe}
             <button 
               class="vibe-option flex flex-col items-center p-3 rounded-xl border border-pink-100 bg-white shadow-sm hover:shadow-md hover:border-pink-200 transition-all duration-300 relative {selectedVibe === vibe.id ? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60' : ''}"
+              data-vibe-type={vibe.id}
               on:click={() => changeVibe(vibe.id)}
             >
               <div class="preview-container mb-1.5">
@@ -383,7 +384,7 @@
     
     /* Apply rainbow gradient and animation */
     animation: hueShift 5s linear infinite;
-    background-image: linear-gradient(135deg, #ff70a6, #ff9770, #ffd670, #a0e9a0, #86e0ff, #d6a4ff, #ff70a6);
+    background-image: linear-gradient(135deg, #61D4B3, #FDD365, #FB8D62, #FD2EB3, #61D4B3);
     background-size: 200% 200%;
   }
   
@@ -407,9 +408,16 @@
   }
   
   .preview-visualizer[data-preview-theme="rainbow"] {
-    animation: hueShift 4s linear infinite;
-    background-image: linear-gradient(to top, #ff70a6, #ff9770, #ffd670, #a0e9a0, #86e0ff, #d6a4ff, #ff70a6);
-    background-size: 100% 600%;
+    animation: rainbowFlow 5s linear infinite;
+    background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.18), 0 0 18px rgba(255, 156, 227, 0.15);
+  }
+  
+  @keyframes rainbowPreview {
+    0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 61, 127, 0.4)) saturate(1.3) brightness(1.1); }
+    25% { filter: drop-shadow(0 0 4px rgba(255, 249, 73, 0.5)) saturate(1.4) brightness(1.15); }
+    50% { filter: drop-shadow(0 0 4px rgba(53, 222, 255, 0.5)) saturate(1.5) brightness(1.2); }
+    75% { filter: drop-shadow(0 0 3px rgba(159, 122, 255, 0.4)) saturate(1.4) brightness(1.15); }
   }
   
   .vibe-option {
@@ -424,16 +432,35 @@
     transform: translateY(0px);
   }
   
-  /* Rainbow animation for ghost */
+  /* Rainbow animation for ghost with sparkle effect */
   .rainbow-animated {
-    animation: hueShift 4s linear infinite;
+    animation: rainbowFlow 8s linear infinite;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
+  }
+  
+  @keyframes rainbowFlow {
+    0%, 100% { filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); }
+    50% { filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); }
+  }
+  
+  /* Add extra sparkle when previewing the rainbow theme */
+  .vibe-option[data-vibe-type="rainbow"]:hover .preview-icon-layers .rainbow-animated {
+    animation: rainbowFlow 4s linear infinite, settingsSparkle 2s ease-in-out infinite;
+  }
+  
+  @keyframes settingsSparkle {
+    0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 6px rgba(255, 61, 127, 0.5)); }
+    25% { filter: drop-shadow(0 0 4px rgba(255, 141, 60, 0.7)) drop-shadow(0 0 8px rgba(255, 249, 73, 0.6)); }
+    50% { filter: drop-shadow(0 0 4px rgba(77, 255, 96, 0.6)) drop-shadow(0 0 7px rgba(53, 222, 255, 0.7)); }
+    75% { filter: drop-shadow(0 0 5px rgba(159, 122, 255, 0.7)) drop-shadow(0 0 8px rgba(255, 61, 127, 0.6)); }
   }
   
   /* Theme-based visualizer styling using data-theme */
   :global([data-theme="rainbow"] .history-bar) {
-    animation: hueShift 4s linear infinite;
-    background-image: linear-gradient(to top, #ff5e62, #ff9966, #fffc00, #73fa79, #73c2fb, #d344b7, #ff5e62);
+    animation: hueShift 5s ease-in-out infinite, rainbowPreview 3s ease-in-out infinite;
+    background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
     background-size: 100% 600%;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.15), 0 0 15px rgba(255, 156, 227, 0.1);
   }
   
   /* Connect the preview eyes to the main app's Brian Eno-inspired ambient blinking system */
@@ -481,15 +508,23 @@
   @keyframes hueShift {
     0% {
       background-position: 0% 0%;
+      filter: saturate(1.3) brightness(1.1);
     }
-    33% {
-      background-position: 100% 50%;
+    25% {
+      background-position: 0% 33%;
+      filter: saturate(1.4) brightness(1.15);
     }
-    67% {
+    50% {
+      background-position: 0% 66%;
+      filter: saturate(1.5) brightness(1.2);
+    }
+    75% {
       background-position: 0% 100%;
+      filter: saturate(1.4) brightness(1.15);
     }
     100% {
       background-position: 0% 0%;
+      filter: saturate(1.3) brightness(1.1);
     }
   }
   

@@ -3,10 +3,11 @@
   <defs>
     <linearGradient id="bubblegumGradient" x1="0%" x2="100%" y1="0%" y2="100%">
       <stop offset="0%" stop-color="#ff1a8d" />
-      <stop offset="30%" stop-color="#ff3ba0" />
-      <stop offset="50%" stop-color="#f95bf9" />
-      <stop offset="75%" stop-color="#d554ff" />
-      <stop offset="100%" stop-color="#9d65ff" />
+      <stop offset="25%" stop-color="#ff3ba0" />
+      <stop offset="40%" stop-color="#ee45f0" />
+      <stop offset="60%" stop-color="#c85aff" />
+      <stop offset="80%" stop-color="#4d7bff" />
+      <stop offset="100%" stop-color="#20c5ff" />
     </linearGradient>
     <style>
       @keyframes bubblegumFlow {
@@ -19,16 +20,16 @@
           stop-opacity: 0.95;
         }
         50% { 
-          stop-color: #f95bf9;
+          stop-color: #ee45f0;
           stop-opacity: 1;
         }
         75% { 
-          stop-color: #d554ff;
+          stop-color: #4d7bff;
           stop-opacity: 0.9;
         }
         100% { 
-          stop-color: #ff1a8d;
-          stop-opacity: 1;
+          stop-color: #20c5ff;
+          stop-opacity: 0.95;
         }
       }
       
@@ -112,6 +113,9 @@
       }
       #bubblegumGradient stop:nth-child(5) {
         animation: bubblegumFlow 9s 2s infinite ease-in-out;
+      }
+      #bubblegumGradient stop:nth-child(6) {
+        animation: bubblegumFlow 7.5s 3s infinite ease-in-out alternate;
       }
     </style>
   </defs>

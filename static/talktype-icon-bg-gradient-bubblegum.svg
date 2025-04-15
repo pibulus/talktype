@@ -4,9 +4,10 @@
     <linearGradient id="bubblegumGradient" x1="0%" x2="100%" y1="0%" y2="100%">
       <stop offset="0%" stop-color="#ff1a8d" />
       <stop offset="25%" stop-color="#ff3ba0" />
-      <stop offset="50%" stop-color="#f95bf9" />
-      <stop offset="75%" stop-color="#d554ff" />
-      <stop offset="100%" stop-color="#9d65ff" />
+      <stop offset="40%" stop-color="#ee45f0" />
+      <stop offset="60%" stop-color="#c85aff" />
+      <stop offset="80%" stop-color="#4d7bff" />
+      <stop offset="100%" stop-color="#20c5ff" />
     </linearGradient>
     <style>
       /* Synchronize all animations to multiples of 5s for better alignment */
@@ -17,41 +18,72 @@
         }
         25% { 
           stop-color: #ff3ba0;
-          stop-opacity: 0.7;
+          stop-opacity: 0.8;
         }
         50% { 
-          stop-color: #f95bf9;
+          stop-color: #ee45f0;
           stop-opacity: 1;
         }
         75% { 
-          stop-color: #d554ff;
-          stop-opacity: 0.7;
+          stop-color: #4d7bff;
+          stop-opacity: 0.9;
         }
         100% { 
-          stop-color: #ff1a8d;
-          stop-opacity: 1;
+          stop-color: #20c5ff;
+          stop-opacity: 0.95;
         }
       }
       
       /* Add color animation to all stops for a richer effect */
+      @keyframes blueFlow {
+        0% { 
+          stop-color: #20c5ff;
+          stop-opacity: 0.85;
+        }
+        50% { 
+          stop-color: #00d2ff; /* More vivid cyan-blue */
+          stop-opacity: 0.9;
+        }
+        100% { 
+          stop-color: #20c5ff;
+          stop-opacity: 0.85;
+        }
+      }
+      
+      @keyframes purpleBlueFlow {
+        0% { 
+          stop-color: #4d7bff;
+          stop-opacity: 0.8;
+        }
+        50% { 
+          stop-color: #3a8bff; /* More vivid blue */
+          stop-opacity: 0.9;
+        }
+        100% { 
+          stop-color: #4d7bff;
+          stop-opacity: 0.8;
+        }
+      }
+      }
+      
       @keyframes purpleFlow {
         0% { 
-          stop-color: #9d65ff;
+          stop-color: #cc5dff;
           stop-opacity: 0.9;
         }
         50% { 
-          stop-color: #8a4af0; /* Deeper purple */
+          stop-color: #b567ff; /* More vibrant purple */
           stop-opacity: 0.7;
         }
         100% { 
-          stop-color: #9d65ff;
+          stop-color: #cc5dff;
           stop-opacity: 0.9;
         }
       }
       
       @keyframes pinkFlow {
         0% { 
-          stop-color: #f95bf9;
+          stop-color: #f54ff7;
           stop-opacity: 0.8;
         }
         50% { 
@@ -59,7 +91,7 @@
           stop-opacity: 1;
         }
         100% { 
-          stop-color: #f95bf9;
+          stop-color: #f54ff7;
           stop-opacity: 0.8;
         }
       }
@@ -70,7 +102,7 @@
           stop-opacity: 0.9;
         }
         50% { 
-          stop-color: #ff2e7c; /* More orange-pink */
+          stop-color: #ff2e7c; /* More hot pink */
           stop-opacity: 0.7;
         }
         100% { 
@@ -160,13 +192,16 @@
         animation: orangeFlow 5s 0.3s infinite ease-in-out;
       }
       #bubblegumGradient stop:nth-child(3) {
-        animation: pinkFlow 5s 0.7s infinite ease-in-out;
+        animation: pinkFlow 5s 0.6s infinite ease-in-out;
       }
       #bubblegumGradient stop:nth-child(4) {
-        animation: purpleFlow 5s 1.1s infinite ease-in-out;
+        animation: purpleFlow 5s 0.9s infinite ease-in-out;
       }
       #bubblegumGradient stop:nth-child(5) {
-        animation: purpleFlow 5s 1.5s infinite ease-in-out alternate;
+        animation: purpleBlueFlow 5s 1.2s infinite ease-in-out;
+      }
+      #bubblegumGradient stop:nth-child(6) {
+        animation: blueFlow 5s 1.5s infinite ease-in-out alternate;
       }
     </style>
   </defs>

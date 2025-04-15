@@ -1714,30 +1714,63 @@
 		}
 	}
 	
-	/* Rainbow animation for ghost svg */
+	/* Rainbow animation for ghost svg with sparkle effect */
 	.rainbow-animated {
-		animation: hueShift 6s linear infinite;
+		animation: rainbowFlow 8s linear infinite;
+		filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
+	}
+
+	/* Special rainbow sparkle effect when hovered */
+	.icon-container:hover .rainbow-animated {
+		animation: rainbowFlow 5s linear infinite, sparkle 2s ease-in-out infinite;
+		filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+	}
+	
+	@keyframes rainbowFlow {
+		0%, 100% { filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); }
+		50% { filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); }
+	}
+
+	@keyframes sparkle {
+		0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 8px rgba(255, 61, 127, 0.6)); }
+		25% { filter: drop-shadow(0 0 6px rgba(255, 141, 60, 0.8)) drop-shadow(0 0 10px rgba(255, 249, 73, 0.7)); }
+		50% { filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 9px rgba(53, 222, 255, 0.7)); }
+		75% { filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.8)) drop-shadow(0 0 9px rgba(255, 61, 127, 0.6)); }
 	}
 	
 	/* Theme-based visualizer styling using data-theme attribute */
 	:global([data-theme="rainbow"] .history-bar) {
-		animation: hueShift 6s linear infinite;
-		background-image: linear-gradient(to top, #ff70a6, #ff9770, #ffd670, #a0e9a0, #86e0ff, #d6a4ff, #ff70a6);
+		animation: hueShift 7s ease-in-out infinite, rainbowBars 3s ease-in-out infinite;
+		background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
 		background-size: 100% 600%;
+		box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 156, 227, 0.1);
+	}
+	
+	@keyframes rainbowBars {
+		0%, 100% { transform: scale(1); }
+		50% { transform: scale(1.02); }
 	}
 	
 	@keyframes hueShift {
 		0% {
 			background-position: 0% 0%;
+			filter: saturate(1.3) brightness(1.1);
 		}
-		33% {
-			background-position: 100% 50%;
+		25% {
+			background-position: 0% 33%;
+			filter: saturate(1.4) brightness(1.15);
 		}
-		67% {
+		50% {
+			background-position: 0% 66%;
+			filter: saturate(1.5) brightness(1.2);
+		}
+		75% {
 			background-position: 0% 100%;
+			filter: saturate(1.4) brightness(1.15);
 		}
 		100% {
 			background-position: 0% 0%;
+			filter: saturate(1.3) brightness(1.1);
 		}
 	}
 	

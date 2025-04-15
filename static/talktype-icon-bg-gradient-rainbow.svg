@@ -1,17 +1,39 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <svg baseProfile="full" height="100%" version="1.1" viewBox="0 0 1740 1392" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><linearGradient id="rainbowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ff70a6" />
-      <stop offset="16.67%" stop-color="#ff9770" />
-      <stop offset="33.33%" stop-color="#ffd670" />
-      <stop offset="50%" stop-color="#a0e9a0" />
-      <stop offset="66.67%" stop-color="#86e0ff" />
-      <stop offset="83.33%" stop-color="#d6a4ff" />
-      <stop offset="100%" stop-color="#ff70a6" />
+      <stop offset="0%" stop-color="#FF3D7F" /> <!-- Bright Red/Pink -->
+      <stop offset="16%" stop-color="#FF8D3C" /> <!-- Orange -->
+      <stop offset="33%" stop-color="#FFF949" /> <!-- Bright Yellow -->
+      <stop offset="50%" stop-color="#4DFF60" /> <!-- Bright Green -->
+      <stop offset="66%" stop-color="#35DEFF" /> <!-- Bright Blue -->
+      <stop offset="83%" stop-color="#9F7AFF" /> <!-- Bright Purple -->
+      <stop offset="100%" stop-color="#FF3D7F" /> <!-- Back to Red/Pink -->
     </linearGradient>
     <style>
-      @keyframes hueRotate {
-        0% { filter: hue-rotate(0deg); }
-        100% { filter: hue-rotate(360deg); }
+      @keyframes rainbowPulse {
+        0% { 
+          filter: saturate(1.4) brightness(1.15) drop-shadow(0 0 8px rgba(255, 61, 127, 0.4)); 
+          transform: scale(1.01);
+        }
+        20% { 
+          filter: saturate(1.6) brightness(1.18) drop-shadow(0 0 12px rgba(255, 141, 60, 0.5)); 
+          transform: scale(1.015);
+        }
+        40% { 
+          filter: saturate(1.7) brightness(1.22) drop-shadow(0 0 15px rgba(255, 249, 73, 0.5)); 
+          transform: scale(1.02);
+        }
+        60% { 
+          filter: saturate(1.7) brightness(1.25) drop-shadow(0 0 12px rgba(77, 255, 96, 0.5)); 
+          transform: scale(1.025);
+        }
+        80% { 
+          filter: saturate(1.6) brightness(1.2) drop-shadow(0 0 15px rgba(53, 222, 255, 0.6)); 
+          transform: scale(1.02);
+        }
+        100% { 
+          filter: saturate(1.4) brightness(1.15) drop-shadow(0 0 8px rgba(159, 122, 255, 0.5)); 
+          transform: scale(1.01);
+        }
       }
     </style>
   </defs>
@@ -19,6 +41,6 @@
     fill="url(#rainbowGradient)" 
     fill-rule="evenodd" 
     stroke="none" 
-    style="animation: hueRotate 6s infinite linear">
+    style="animation: rainbowPulse 4s infinite ease-in-out">
   </path>
 </svg>
