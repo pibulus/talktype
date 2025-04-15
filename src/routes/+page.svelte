@@ -71,9 +71,9 @@
 
 		debug('Performing single blink');
 
-		// Add class then remove it after animation completes
+		// Add class then remove it after animation completes - make it more visible
 		eyes.classList.add('blink-once');
-
+		
 		const timeout = setTimeout(() => {
 			eyes.classList.remove('blink-once');
 		}, 400);
@@ -89,71 +89,30 @@
 		debug('Performing double blink');
 
 		// First blink
-		eyes.classList.add('blink-once');
-
+		// Use the new dedicated double-blink animation instead of separate blinks
+		eyes.classList.add('blink-double');
+		
 		const timeout1 = setTimeout(() => {
-			eyes.classList.remove('blink-once');
-
-			// Short pause between blinks
-			const timeout2 = setTimeout(() => {
-				// Second blink
-				eyes.classList.add('blink-once');
-
-				const timeout3 = setTimeout(() => {
-					eyes.classList.remove('blink-once');
-				}, 300);
-
-				blinkTimeouts.push(timeout3);
-			}, 180);
-
-			blinkTimeouts.push(timeout2);
-		}, 300);
-
+			eyes.classList.remove('blink-double');
+		}, 800);
+		
 		blinkTimeouts.push(timeout1);
 	}
 
 	// Triple blink pattern
 	function performTripleBlink() {
-		const eyes = getEyesElement();
-		if (!eyes) return;
+			const eyes = getEyesElement();
+			if (!eyes) return;
 
-		debug('Performing triple blink');
+			debug('Performing triple blink');
 
-		// First blink
-		eyes.classList.add('blink-once');
-
-		const timeout1 = setTimeout(() => {
-			eyes.classList.remove('blink-once');
-
-			// Short pause between blinks
-			const timeout2 = setTimeout(() => {
-				// Second blink
-				eyes.classList.add('blink-once');
-
-				const timeout3 = setTimeout(() => {
-					eyes.classList.remove('blink-once');
-
-					// Another short pause
-					const timeout4 = setTimeout(() => {
-						// Third blink
-						eyes.classList.add('blink-once');
-
-						const timeout5 = setTimeout(() => {
-							eyes.classList.remove('blink-once');
-						}, 250);
-
-						blinkTimeouts.push(timeout5);
-					}, 150);
-
-					blinkTimeouts.push(timeout4);
-				}, 250);
-
-				blinkTimeouts.push(timeout3);
-			}, 150);
-
-			blinkTimeouts.push(timeout2);
-		}, 250);
-
+			// Use the dedicated triple-blink animation
+			eyes.classList.add('blink-triple');
+			
+			const timeout1 = setTimeout(() => {
+			eyes.classList.remove('blink-triple');
+		}, 1200);
+		
 		blinkTimeouts.push(timeout1);
 	}
 
@@ -210,6 +169,7 @@
 
 				// Choose blink type based on probability distribution
 				const rand = Math.random();
+					
 				let cumulativeProbability = 0;
 				let selectedType = 'single'; // Default
 
@@ -221,7 +181,7 @@
 					}
 				}
 
-				debug(`Selected ${selectedType} blink`);
+				debug(`Selected ${selectedType} blink with random value ${rand.toFixed(3)}`);
 
 				// Execute the selected blink pattern
 				if (selectedType === 'single') {
@@ -232,7 +192,8 @@
 					performTripleBlink();
 				}
 
-				// Schedule the next blink
+				
+					// Schedule the next blink
 				scheduleNextBlink();
 			}, nextInterval);
 
@@ -1263,16 +1224,41 @@
 	}
 
 	@keyframes blink-once {
-		0%,
-		30% {
-			transform: scaleY(1);
+			0%,
+			30% {
+				transform: scaleY(1);
+			}
+			50% {
+				transform: scaleY(0);
+			} /* Closed eyes */
+			65%,
+			100% {
+				transform: scaleY(1);
+			}
 		}
-		50% {
-			transform: scaleY(0);
-		} /* Closed eyes */
-		65%,
-		100% {
-			transform: scaleY(1);
+
+		/* Distinct double blink animation */
+		.icon-eyes.blink-double {
+			animation: blink-double 0.8s forwards !important;
+			transform-origin: center center;
+		}
+
+		@keyframes blink-double {
+			0%, 15% {
+				transform: scaleY(1);
+			}
+			20%, 25% {
+				transform: scaleY(0);
+			}
+			30%, 40% {
+				transform: scaleY(1);
+			}
+			45%, 50% {
+				transform: scaleY(0);
+			}
+			55%, 100% {
+				transform: scaleY(1);
+			}
 		} /* Quick snappy open */
 	}
 
