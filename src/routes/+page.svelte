@@ -34,9 +34,8 @@
 	let audioToTextComponent;
 	let showIntroModal = false;
 
-	// Simplified blinking system
+	// Ultra simplified blinking system
 	let blinkTimeout = null;
-	let ambientBlinkInterval = null;
 	let isRecording = false;
 	let eyesElement = null;
 
@@ -63,7 +62,7 @@
 		return eyesElement;
 	}
 
-	// Single blink using CSS classes - simplified
+	// Single blink using CSS classes - simplified and faster
 	function blink() {
 		const eyes = getEyesElement();
 		if (!eyes) return;
@@ -78,49 +77,10 @@
 		// Apply blink animation
 		eyes.classList.add('blink-once');
 		
-		// Remove class after animation completes
+		// Remove class after animation completes (faster animation)
 		blinkTimeout = setTimeout(() => {
 			eyes.classList.remove('blink-once');
-		}, 300);
-	}
-
-	// Start ambient blinking - simplified
-	function startAmbientBlinking() {
-		debug('Starting ambient blinking');
-		
-		// Don't run ambient blinks if recording
-		if (isRecording) {
-			debug('Recording active, skipping ambient blinks');
-			return;
-		}
-
-		// Clear any existing intervals
-		if (ambientBlinkInterval) {
-			clearInterval(ambientBlinkInterval);
-		}
-		
-		// Set up a new interval with randomized timing
-		ambientBlinkInterval = setInterval(() => {
-			// Skip if recording started
-			if (isRecording) return;
-			
-			// Add jitter to blinking (2-5 seconds)
-			const nextBlink = 2000 + Math.random() * 3000;
-			
-			// Schedule next blink with jitter
-			setTimeout(() => {
-				if (!isRecording) blink();
-			}, nextBlink);
-			
-		}, 5000); // Base interval of 5 seconds
-	}
-
-	// Stop ambient blinking
-	function stopAmbientBlinking() {
-		if (ambientBlinkInterval) {
-			clearInterval(ambientBlinkInterval);
-			ambientBlinkInterval = null;
-		}
+		}, 180);
 	}
 
 	// Greeting blink on page load - simplified
@@ -137,9 +97,6 @@
 		// Do a friendly blink after animations complete
 		setTimeout(() => {
 			blink();
-
-			// Start ambient blinking system after greeting
-			setTimeout(startAmbientBlinking, 500);
 		}, 1000);
 	}
 
@@ -245,8 +202,6 @@
 						// Start recording immediately with minimal animation
 						const eyes = document.querySelector('.icon-eyes');
 						if (eyes) {
-							stopAmbientBlinking(); // Stop ambient blinking
-							
 							// Quick single blink and start recording immediately
 							blink();
 							
@@ -312,7 +267,6 @@
 		return () => {
 			debug('Component unmounting, clearing timeouts');
 			if (blinkTimeout) clearTimeout(blinkTimeout);
-			stopAmbientBlinking();
 		};
 	});
 	
@@ -352,7 +306,7 @@
 		}
 	}
 
-	// Simplified recording toggle
+	// Simplified recording toggle with no animation state connections
 	function startRecordingFromGhost(event) {
 		// Stop event propagation to prevent bubbling
 		event.stopPropagation();
@@ -364,9 +318,6 @@
 		// Get DOM elements
 		const iconContainer = event.currentTarget;
 		if (!iconContainer) return;
-
-		const eyes = getEyesElement();
-		if (!eyes) return;
 
 		if (!audioToTextComponent) return;
 
@@ -393,9 +344,6 @@
 				
 				// Blink once to acknowledge stop
 				blink();
-				
-				// Resume ambient blinking after a pause
-				setTimeout(startAmbientBlinking, 500);
 			}, 600);
 
 			// Stop the recording
@@ -409,9 +357,8 @@
 			// STARTING RECORDING
 			debug('Starting recording');
 
-			// Update recording state and stop ambient system
+			// Update recording state
 			isRecording = true;
-			stopAmbientBlinking();
 
 			// Add wobble animation when starting
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
@@ -1019,7 +966,7 @@
 
 	.icon-eyes {
 		z-index: 3; /* Top layer */
-		animation: blink 6s infinite; /* Ambient blinking */
+		animation: blink 4s infinite; /* Ambient blinking */
 		transform-origin: center center; 
 	}
 
@@ -1044,21 +991,21 @@
 		transform-origin: center center;
 	}
 
-	/* Quick blink animation for programmatic use */
+	/* Quick blink animation for programmatic use - faster */
 	.icon-eyes.blink-once {
-		animation: blink-once 0.3s forwards !important;
+		animation: blink-once 0.18s forwards !important;
 		transform-origin: center center;
 	}
 
 	@keyframes blink-once {
 		0%,
-		30% {
+		20% {
 			transform: scaleY(1);
 		}
 		50% {
-			transform: scaleY(0.1);
+			transform: scaleY(0.05);
 		}
-		65%,
+		80%,
 		100% {
 			transform: scaleY(1);
 		}
