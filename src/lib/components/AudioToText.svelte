@@ -1632,17 +1632,20 @@
 		}
 	}
 	
-	/* Simple breathing glow for button */
+	/* Enhanced breathing glow for button - more noticeable and smoother */
 	.pulse-subtle {
-		animation: button-breathe 3s ease-in-out infinite;
+		animation: button-breathe 3.5s ease-in-out infinite;
+		transform-origin: center;
 	}
 	
 	@keyframes button-breathe {
 		0%, 100% {
-			box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.3);
+			box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.35);
+			transform: scale(1);
 		}
 		50% {
-			box-shadow: 0 0 20px 5px rgba(251, 191, 36, 0.45);
+			box-shadow: 0 0 20px 6px rgba(251, 191, 36, 0.5);
+			transform: scale(1.02);
 		}
 	}
 </style>
