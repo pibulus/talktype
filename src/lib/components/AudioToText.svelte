@@ -365,45 +365,61 @@
 		// Animate button press
 		animateButtonPress();
 
-		if (recording) {
-			// Haptic feedback for stop - single pulse
-			vibrate(50);
-			
-			stopRecording();
-			// Screen reader announcement
-			screenReaderStatus = 'Recording stopped.';
-		} else {
-			// Haptic feedback for start - double pulse
-			vibrate([40, 60, 40]);
-			// When using "New Recording" button, rotate to next phrase immediately
-			if (transcript) {
-				console.log('🧹 Clearing transcript for new recording');
+		try {
+			if (recording) {
+				// Haptic feedback for stop - single pulse
+				vibrate(50);
 				
-				// Pick a random CTA phrase that's not the current one
-				let newIndex;
-				do {
-					newIndex = Math.floor(Math.random() * (ctaPhrases.length - 1)) + 1; // Skip first one (Start Recording)
-				} while (newIndex === currentCtaIndex);
+				stopRecording();
+				// Screen reader announcement
+				screenReaderStatus = 'Recording stopped.';
+			} else {
+				// Haptic feedback for start - double pulse
+				vibrate([40, 60, 40]);
+				// When using "New Recording" button, rotate to next phrase immediately
+				if (transcript) {
+					console.log('🧹 Clearing transcript for new recording');
+					
+					// Pick a random CTA phrase that's not the current one
+					let newIndex;
+					do {
+						newIndex = Math.floor(Math.random() * (ctaPhrases.length - 1)) + 1; // Skip first one (Start Recording)
+					} while (newIndex === currentCtaIndex);
+					
+					currentCtaIndex = newIndex;
+					currentCta = ctaPhrases[currentCtaIndex];
+					console.log(`🔥 Rotating to: "${currentCta}"`);
+					
+					// Then clear transcript
+					transcript = '';
+				}
 				
-				currentCtaIndex = newIndex;
-				currentCta = ctaPhrases[currentCtaIndex];
-				console.log(`🔥 Rotating to: "${currentCta}"`);
-				
-				// Then clear transcript
-				transcript = '';
+				// Subtle pulse ghost icon when starting a new recording
+				const icon = ghostIconElement || parentGhostIconElement;
+				if (icon) {
+					icon.classList.add('ghost-pulse');
+					setTimeout(() => {
+						icon.classList.remove('ghost-pulse');
+					}, 500);
+				}
+				startRecording();
+				// Screen reader announcement
+				screenReaderStatus = 'Recording started. Speak now.';
 			}
+		} catch (err) {
+			console.error('Recording operation failed:', err);
 			
-			// Subtle pulse ghost icon when starting a new recording
-			const icon = ghostIconElement || parentGhostIconElement;
-			if (icon) {
-				icon.classList.add('ghost-pulse');
-				setTimeout(() => {
-					icon.classList.remove('ghost-pulse');
-				}, 500);
-			}
-			startRecording();
-			// Screen reader announcement
-			screenReaderStatus = 'Recording started. Speak now.';
+			// Show error message using existing toast system
+			errorMessage = `Recording error: ${err.message || 'Unknown error'}`;
+			
+			// Haptic feedback for error
+			vibrate([20, 150, 20]);
+			
+			// Reset recording state if needed
+			recording = false;
+			
+			// Update screen reader status
+			screenReaderStatus = 'Recording failed. Please try again.';
 		}
 	}
 
