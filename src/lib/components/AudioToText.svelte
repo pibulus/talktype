@@ -20,6 +20,17 @@
 	let editableTranscript;
 	let showPermissionError = false;
 	let permissionErrorTimer;
+	
+	// DOM element references
+	let eyesElement;
+	let ghostIconElement;
+	let copyEyesElement;
+	let recordButtonElement;
+	let progressContainerElement;
+	
+	// These will be set from the parent component
+	export let parentEyesElement = null;
+	export let parentGhostIconElement = null;
 
 	// Accessibility state management
 	let screenReaderStatus = ''; // For ARIA announcements
@@ -61,33 +72,36 @@
 
 	// Ghost expression functions - add personality through blinking
 	function ghostThinkingHard() {
-		const eyes = document.querySelector('.icon-eyes');
-		if (eyes) {
-			eyes.classList.add('blink-thinking-hard');
+		// Try using the element from the parent component first
+		if (parentEyesElement) {
+			parentEyesElement.classList.add('blink-thinking-hard');
+		} else if (eyesElement) {
+			eyesElement.classList.add('blink-thinking-hard');
 		}
 	}
 
 	function ghostStopThinking() {
-		const eyes = document.querySelector('.icon-eyes');
-		if (eyes) {
-			eyes.classList.remove('blink-thinking-hard');
+		// Try using the element from the parent component first
+		if (parentEyesElement) {
+			parentEyesElement.classList.remove('blink-thinking-hard');
+		} else if (eyesElement) {
+			eyesElement.classList.remove('blink-thinking-hard');
 		}
 	}
 
 	function ghostReactToTranscript(textLength = 0) {
-		const eyes = document.querySelector('.icon-eyes');
-		if (!eyes) return;
+		if (!eyesElement) return;
 
 		if (textLength > 20) {
 			// For longer transcripts, do a "satisfied" double blink
 			setTimeout(() => {
-				eyes.classList.add('blink-once');
+				eyesElement.classList.add('blink-once');
 				setTimeout(() => {
-					eyes.classList.remove('blink-once');
+					eyesElement.classList.remove('blink-once');
 					setTimeout(() => {
-						eyes.classList.add('blink-once');
+						eyesElement.classList.add('blink-once');
 						setTimeout(() => {
-							eyes.classList.remove('blink-once');
+							eyesElement.classList.remove('blink-once');
 						}, 150);
 					}, 150);
 				}, 150);
@@ -95,9 +109,9 @@
 		} else if (textLength > 0) {
 			// For short transcripts, just do a single blink
 			setTimeout(() => {
-				eyes.classList.add('blink-once');
+				eyesElement.classList.add('blink-once');
 				setTimeout(() => {
-					eyes.classList.remove('blink-once');
+					eyesElement.classList.remove('blink-once');
 				}, 200);
 			}, 200);
 		}
@@ -178,31 +192,38 @@
 					const completeProgress = () => {
 						if (transcriptionProgress < 100) {
 							transcriptionProgress += (100 - transcriptionProgress) * 0.2;
+							
 							if (transcriptionProgress > 99.5) {
+								// We've reached the end
 								transcriptionProgress = 100;
+								
 								// Add a slight delay for the completion glow effect
-								setTimeout(() => {
-									// Button will do a completion glow effect
-									document.querySelector('.progress-container')?.classList.add('completion-pulse');
-
-									// Add confetti celebration for successful transcription (randomly 1/7 times)
-									if (transcript && transcript.length > 20 && Math.floor(Math.random() * 7) === 0) {
-										showConfettiCelebration();
-									}
-
-									setTimeout(() => {
-										document
-											.querySelector('.progress-container')
-											?.classList.remove('completion-pulse');
-										transcribing = false;
-										transcriptionProgress = 0;
-									}, 600);
-								}, 200);
+								setTimeout(handleCompletionEffects, 200);
 							} else {
+								// Continue the animation
 								animationFrameId = requestAnimationFrame(completeProgress);
 							}
 						}
 					};
+					
+					// Handle the completion effects (extracted for clarity)
+					function handleCompletionEffects() {
+						if (progressContainerElement) {
+							progressContainerElement.classList.add('completion-pulse');
+							
+							// Add confetti celebration for successful transcription (randomly 1/7 times)
+							if (transcript && transcript.length > 20 && Math.floor(Math.random() * 7) === 0) {
+								showConfettiCelebration();
+							}
+							
+							// Clean up after animation finishes
+							setTimeout(() => {
+								progressContainerElement.classList.remove('completion-pulse');
+								transcribing = false;
+								transcriptionProgress = 0;
+							}, 600);
+						}
+					}
 
 					completeProgress();
 
@@ -328,16 +349,15 @@
 
 	// Handle button press animation with classes
 	function animateButtonPress() {
-		const recordButton = document.querySelector('.record-button');
-		if (recordButton) {
+		if (recordButtonElement) {
 			// Remove any existing animation classes and force a reflow
-			recordButton.classList.remove('button-press');
-			void recordButton.offsetWidth; // Force reflow
+			recordButtonElement.classList.remove('button-press');
+			void recordButtonElement.offsetWidth; // Force reflow
 
 			// Apply the smoother press animation
-			recordButton.classList.add('button-press');
+			recordButtonElement.classList.add('button-press');
 			setTimeout(() => {
-				recordButton.classList.remove('button-press');
+				recordButtonElement.classList.remove('button-press');
 			}, 400);
 		}
 	}
@@ -374,11 +394,11 @@
 			}
 			
 			// Subtle pulse ghost icon when starting a new recording
-			const ghostIcon = document.querySelector('.icon-container');
-			if (ghostIcon) {
-				ghostIcon.classList.add('ghost-pulse');
+			const icon = ghostIconElement || parentGhostIconElement;
+			if (icon) {
+				icon.classList.add('ghost-pulse');
 				setTimeout(() => {
-					ghostIcon.classList.remove('ghost-pulse');
+					icon.classList.remove('ghost-pulse');
 				}, 500);
 			}
 			startRecording();
@@ -398,6 +418,10 @@
 
 	// Cleanup
 	onMount(() => {
+		// Set local references using parent elements if available
+		eyesElement = parentEyesElement;
+		ghostIconElement = parentGhostIconElement;
+		
 		return () => {
 			if (animationFrameId) cancelAnimationFrame(animationFrameId);
 			if (clipboardTimer) clearTimeout(clipboardTimer);
@@ -407,14 +431,11 @@
 
 	// Add/remove recording class on ghost icon when recording state changes
 	$: {
-		if (typeof window !== 'undefined') {
-			const ghostIcon = document.querySelector('.icon-container');
-			if (ghostIcon) {
-				if (recording) {
-					ghostIcon.classList.add('recording');
-				} else {
-					ghostIcon.classList.remove('recording');
-				}
+		if (typeof window !== 'undefined' && ghostIconElement) {
+			if (recording) {
+				ghostIconElement.classList.add('recording');
+			} else {
+				ghostIconElement.classList.remove('recording');
 			}
 		}
 	}
@@ -697,6 +718,7 @@
 				{#if transcribing}
 					<!-- Progress bar (transforms the button) - adjusted height for mobile -->
 					<div
+						bind:this={progressContainerElement}
 						class="progress-container relative h-[72px] w-full overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[66px] max-w-[500px]"
 						role="progressbar"
 						aria-label="Transcription progress"
@@ -712,6 +734,7 @@
 				{:else}
 					<!-- Recording button - improved for mobile and accessibility -->
 					<button
+						bind:this={recordButtonElement}
 						class="record-button w-[90%] sm:w-full rounded-full bg-amber-400 px-6 py-6 text-xl font-bold text-black shadow-md transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 max-w-[500px] mx-auto text-center {!recording && buttonLabel === 'Start Recording' ? 'pulse-subtle' : ''}"
 						style="min-width: 300px; min-height: 72px; transform-origin: center center;"
 						on:click={toggleRecording}

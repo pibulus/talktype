@@ -77,7 +77,7 @@ export const geminiService = {
 		try {
 			console.log('🎤 Transcribing audio with Gemini');
 			const prompt =
-				"Transcribe this audio file accurately and completely, removing any redundant 'ums,' 'likes, 'uhs', and similar filler words. Return only the cleaned-up transcription, with no additional text.";
+				"Transcribe this audio file accurately and completely, removing any redundant 'ums,' 'likes', 'uhs', and similar filler words. Return only the cleaned-up transcription, with no additional text.";
 			const audioPart = await blobToGenerativePart(audioBlob);
 
 			const result = await model.generateContent([prompt, audioPart]);

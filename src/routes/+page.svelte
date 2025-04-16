@@ -39,6 +39,8 @@
 	let blinkTimeouts = [];
 	let isRecording = false;
 	let eyesElement = null;
+	let iconBgElement = null; // Reference to the background gradient
+	let iconContainer = null; // Reference to the icon container
 	let domReady = false;
 
 	// Debug Helper that won't pollute console in production but helps during development
@@ -50,18 +52,11 @@
 	let titleAnimationComplete = false;
 	let subtitleAnimationComplete = false;
 
-	// Get eyes element safely with retry mechanism
+	// Get eyes element safely - now using bind:this
 	function getEyesElement() {
 		if (eyesElement) return eyesElement;
-
-		eyesElement = document.querySelector('.icon-eyes');
-		if (!eyesElement) {
-			debug('Eyes element not found yet');
-			return null;
-		}
-
-		debug('Eyes element found');
-		return eyesElement;
+		debug('Eyes element not found yet');
+		return null;
 	}
 
 	// Single blink using CSS classes
@@ -263,7 +258,6 @@
 		debug('Performing greeting blink');
 
 		// First apply a gentle wobble to the ghost icon
-		const iconContainer = document.querySelector('.icon-container');
 		if (iconContainer) {
 			// Add slight wobble animation to ghost
 			setTimeout(() => {
@@ -293,8 +287,7 @@
 	function setupDomObserver() {
 		debug('Setting up DOM observer');
 
-		// Check if we can find the eyes immediately
-		eyesElement = document.querySelector('.icon-eyes');
+		// We now use bind:this instead of querySelector
 		if (eyesElement) {
 			debug('Eyes element found immediately');
 			domReady = true;
@@ -304,10 +297,8 @@
 
 		// If not found, set up observer to watch for it
 		const observer = new MutationObserver((mutations, obs) => {
-			const eyes = document.querySelector('.icon-eyes');
-			if (eyes) {
-				debug('Eyes element found via MutationObserver');
-				eyesElement = eyes;
+			if (eyesElement) {
+				debug('Eyes element found via bind:this');
 				domReady = true;
 				greetingBlink();
 				obs.disconnect(); // Stop observing once we've found it
@@ -322,13 +313,10 @@
 
 		// Fallback in case observer doesn't trigger
 		setTimeout(() => {
-			if (!domReady) {
+			if (!domReady && eyesElement) {
 				debug('Fallback DOM ready check');
-				eyesElement = document.querySelector('.icon-eyes');
-				if (eyesElement) {
-					domReady = true;
-					greetingBlink();
-				}
+				domReady = true;
+				greetingBlink();
 			}
 		}, 1000);
 	}
@@ -391,33 +379,31 @@
 					debug('Auto-record enabled, starting recording immediately');
 					
 					// Make ghost do a quick animation and start recording immediately
-					const ghostIcon = document.querySelector('.icon-container');
-					if (ghostIcon) {
+					if (iconContainer) {
 						// Start recording immediately with minimal animation
-						const eyes = document.querySelector('.icon-eyes');
-						if (eyes) {
+						if (eyesElement) {
 							clearAllBlinkTimeouts(); // Clear any existing animations
 							
 							// Quick single blink and start recording immediately
-							eyes.classList.add('blink-once');
+							eyesElement.classList.add('blink-once');
 							
 							// Start recording immediately
 							audioToTextComponent.startRecording();
 							
 							// Update UI state
-							ghostIcon.classList.add('recording');
+							iconContainer.classList.add('recording');
 							
 							// Also update the local recording state variable
 							isRecording = true;
 							
 							// Remove blink class after a short delay
 							setTimeout(() => {
-								eyes.classList.remove('blink-once');
+								eyesElement.classList.remove('blink-once');
 							}, 100);
 						} else {
 							// Fallback if eyes element not found
 							audioToTextComponent.startRecording();
-							ghostIcon.classList.add('recording');
+							iconContainer.classList.add('recording');
 							isRecording = true;
 						}
 					} else {
@@ -480,30 +466,29 @@
 		document.documentElement.setAttribute('data-theme', vibeId);
 		
 		// Update ghost icon by swapping the SVG file
-		const ghostBg = document.querySelector('.icon-bg');
-		if (ghostBg) {
+		if (iconBgElement) {
 			// Set the appropriate gradient SVG based on theme
 			switch(vibeId) {
 				case 'mint':
-					ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
-					ghostBg.classList.remove('rainbow-animated');
+					iconBgElement.src = '/talktype-icon-bg-gradient-mint.svg';
+					iconBgElement.classList.remove('rainbow-animated');
 					break;
 				case 'bubblegum':
-					ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
-					ghostBg.classList.remove('rainbow-animated');
+					iconBgElement.src = '/talktype-icon-bg-gradient-bubblegum.svg';
+					iconBgElement.classList.remove('rainbow-animated');
 					break;
 				case 'rainbow':
-					ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
-					ghostBg.classList.add('rainbow-animated');
+					iconBgElement.src = '/talktype-icon-bg-gradient-rainbow.svg';
+					iconBgElement.classList.add('rainbow-animated');
 					break;
 				default: // Default to peach
-					ghostBg.src = '/talktype-icon-bg-gradient.svg';
-					ghostBg.classList.remove('rainbow-animated');
+					iconBgElement.src = '/talktype-icon-bg-gradient.svg';
+					iconBgElement.classList.remove('rainbow-animated');
 					break;
 			}
 			
 			// Force a reflow to ensure the gradient is visible
-			void ghostBg.offsetWidth;
+			void iconBgElement.offsetWidth;
 		}
 	}
 
@@ -517,8 +502,8 @@
 		debug(`Ghost clicked! Recording state: ${audioToTextComponent?.recording}`);
 
 		// Get DOM elements with error checking
-		const iconContainer = event.currentTarget;
-		if (!iconContainer) {
+		const currentIconContainer = event.currentTarget;
+		if (!currentIconContainer) {
 			debug('No icon container found during click handler');
 			return;
 		}
@@ -535,7 +520,7 @@
 		}
 
 		// Use DOM class as source of truth (reliable)
-		const hasRecordingClass = iconContainer.classList.contains('recording');
+		const hasRecordingClass = currentIconContainer.classList.contains('recording');
 		debug(`DOM state: has 'recording' class = ${hasRecordingClass}`);
 
 		if (hasRecordingClass) {
@@ -549,23 +534,23 @@
 			eyes.style.animation = 'none';
 
 			// Remove the recording class
-			iconContainer.classList.remove('recording');
+			currentIconContainer.classList.remove('recording');
 
 			// Add wobble animation when stopping from ghost click
 			debug('Applying wobble animation to ghost icon on stop');
 			// Force reflow to ensure animation applies
-			void iconContainer.offsetWidth;
+			void currentIconContainer.offsetWidth;
 
 			// Clear any existing animation classes first
-			iconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
+			currentIconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
 
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
 			debug(`Adding class: ${wobbleClass}`);
-			iconContainer.classList.add(wobbleClass);
-			console.log('Current classes:', iconContainer.className);
+			currentIconContainer.classList.add(wobbleClass);
+			console.log('Current classes:', currentIconContainer.className);
 			setTimeout(() => {
 				debug(`Removing class: ${wobbleClass}`);
-				iconContainer.classList.remove(wobbleClass);
+				currentIconContainer.classList.remove(wobbleClass);
 			}, 600);
 
 			// Blink once to acknowledge stop
@@ -601,18 +586,18 @@
 			// Add wobble animation when starting from ghost click
 			debug('Applying wobble animation to ghost icon on start');
 			// Force reflow to ensure animation applies
-			void iconContainer.offsetWidth;
+			void currentIconContainer.offsetWidth;
 
 			// Clear any existing animation classes first
-			iconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
+			currentIconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
 
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
 			debug(`Adding class: ${wobbleClass}`);
-			iconContainer.classList.add(wobbleClass);
-			console.log('Current classes:', iconContainer.className);
+			currentIconContainer.classList.add(wobbleClass);
+			console.log('Current classes:', currentIconContainer.className);
 			setTimeout(() => {
 				debug(`Removing class: ${wobbleClass}`);
-				iconContainer.classList.remove(wobbleClass);
+				currentIconContainer.classList.remove(wobbleClass);
 			}, 600);
 
 			// Give a tiny delay to ensure animation reset
@@ -637,7 +622,7 @@
 				// Add recording class after the blink animation completes
 				setTimeout(() => {
 					debug('Adding recording class');
-					iconContainer.classList.add('recording');
+					currentIconContainer.classList.add('recording');
 				}, 600);
 
 				// Start recording
@@ -778,6 +763,7 @@
 	>
 		<!-- Ghost Icon - Mobile: tight, Desktop: chunky -->
 		<button
+				bind:this={iconContainer}
 				class="icon-container mb-4 h-36 w-36 cursor-pointer sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64 appearance-none border-0 bg-transparent p-0"
 				style="outline: none; -webkit-tap-highlight-color: transparent;"
 				on:click|preventDefault|stopPropagation={startRecordingFromGhost}
@@ -795,6 +781,7 @@
 				<!-- Gradient background (bottom layer) - load based on data-theme -->
 				{#if browser}
 					<img 
+						bind:this={iconBgElement}
 						src={document.documentElement.getAttribute('data-theme') === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
 							document.documentElement.getAttribute('data-theme') === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
 							document.documentElement.getAttribute('data-theme') === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
@@ -804,12 +791,12 @@
 						aria-hidden="true" 
 					/>
 				{:else}
-					<img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
+					<img bind:this={iconBgElement} src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
 				{/if}
 				<!-- Outline without eyes (middle layer) -->
 				<img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" aria-hidden="true" />
 				<!-- Just the eyes (top layer - for blinking) -->
-				<img src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
+				<img bind:this={eyesElement} src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
 			</div>
 		</button>
 
@@ -835,7 +822,11 @@
 
 		<!-- Audio component - Wider container for better transcript layout -->
 		<div class="w-full max-w-xl mt-4 sm:mt-0 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
-			<AudioToText bind:this={audioToTextComponent} />
+			<AudioToText 
+				bind:this={audioToTextComponent} 
+				parentEyesElement={eyesElement}
+				parentGhostIconElement={iconContainer}
+			/>
 		</div>
 	</div>
 
