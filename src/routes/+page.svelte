@@ -1165,13 +1165,13 @@
 	
 	/* Subtle cream background with just enough texture/noise */
 	:global(.bg-gradient-mesh) {
-		background-color: #fefaf4; /* Base cream color */
+		background-color: #fff6e6; /* More pronounced cream color */
 		background-image: radial-gradient(
 			circle at center,
-			#fefaf4 0%,
-			#fefaf4 50%,
-			#fdf7ef 85%,
-			#fcf5ea 100%
+			#fff6e6 0%,
+			#fff6e6 50%,
+			#fff3df 85%,
+			#ffefda 100%
 		);
 		background-attachment: fixed;
 	}
