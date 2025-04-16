@@ -309,10 +309,15 @@
 		animateButtonPress();
 
 		if (recording) {
+			// Haptic feedback for stop - single pulse
+			vibrate(50);
+			
 			stopRecording();
 			// Screen reader announcement
 			screenReaderStatus = 'Recording stopped.';
 		} else {
+			// Haptic feedback for start - double pulse
+			vibrate([40, 60, 40]);
 			// When using "New Recording" button, rotate to next phrase immediately
 			if (transcript) {
 				console.log('🧹 Clearing transcript for new recording');
@@ -404,6 +409,9 @@
 				console.log('📋 Successfully copied using Clipboard API');
 				clipboardSuccess = true;
 				
+				// Haptic feedback for successful copy - single quick pulse
+				vibrate(25);
+				
 				// Show toast message regardless of tooltip visibility
 				// This ensures mobile users who don't get tooltips still get feedback
 				
@@ -445,6 +453,9 @@
 				console.log('📋 Transcript copied via execCommand fallback');
 				clipboardSuccess = true;
 				
+				// Haptic feedback for successful copy - single quick pulse
+				vibrate(25);
+				
 				// Update screen reader status
 				screenReaderStatus = 'Transcript copied to clipboard';
 				
@@ -465,6 +476,9 @@
 			}
 		} catch (err) {
 			console.error('❌ All clipboard methods failed:', err);
+			
+			// Error pattern haptic feedback - two short bursts for error
+			vibrate([20, 150, 20]);
 			
 			// Show user-friendly error message
 			clipboardSuccess = true; // Use the success toast but with error message
@@ -546,6 +560,21 @@
 		setTimeout(() => {
 			document.body.removeChild(container);
 		}, 4000); // Slightly longer than the longest animation
+	}
+
+	// Helper for haptic feedback on mobile devices
+	function vibrate(pattern) {
+		// Only vibrate if:
+		// 1. The navigator.vibrate API is available
+		// 2. We're likely on a mobile device (using viewport width as rough heuristic)
+		if (typeof window !== 'undefined' && 'vibrate' in navigator && window.innerWidth <= 768) {
+			try {
+				navigator.vibrate(pattern);
+			} catch (e) {
+				// Silent fail - vibration not critical for app function
+				console.log(`Vibration failed: ${e.message}`);
+			}
+		}
 	}
 
 	// Function to calculate responsive font size based on transcript length and device
