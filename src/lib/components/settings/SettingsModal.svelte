@@ -1,16 +1,24 @@
 <script>
   import { onMount } from 'svelte';
+  import { theme, autoRecord, showSettingsModal, applyTheme } from '$lib';
   
   // Props for the modal
-  export let open = false;
   export let closeModal = () => {};
   
   // Theme/vibe selection
-  let selectedVibe = 'peach'; // Default theme
+  let selectedVibe;
   let scrollPosition = 0;
+  let autoRecordValue = false;
   
-  // Auto-record setting - get from localStorage
-  let autoRecord = typeof window !== 'undefined' && localStorage.getItem('talktype-autoRecord') === 'true';
+  // Subscribe to theme store
+  const unsubscribeTheme = theme.subscribe(value => {
+    selectedVibe = value;
+  });
+  
+  // Subscribe to autoRecord store
+  const unsubscribeAutoRecord = autoRecord.subscribe(value => {
+    autoRecordValue = value === 'true';
+  });
   
   // Theme options with gradient SVG files for ghost and CSS gradients for visualizer
   const vibeOptions = [
@@ -45,86 +53,45 @@
     }
   ];
   
-  // Load user's theme preference from localStorage on component mount
+  // Set up event listeners for the modal on component mount
   onMount(() => {
-    if (typeof window !== 'undefined') {
-      const savedVibe = localStorage.getItem('talktype-vibe');
-      if (savedVibe) {
-        selectedVibe = savedVibe;
-      }
-      
-      // Set up event listeners for the modal
-      const modal = document.getElementById('settings_modal');
-      if (modal) {
-        // Listen for custom beforeshow event
-        modal.addEventListener('beforeshow', () => {
-          // Just update the selected value, don't apply theme
-          // The main app already has the theme applied
-          // This fixes the double flash issue
-        });
+    // Set up event listeners for the modal
+    const modal = document.getElementById('settings_modal');
+    if (modal) {
+      // Listen for custom beforeshow event
+      modal.addEventListener('beforeshow', () => {
+        // Just update the selected value, don't apply theme
+        // The main app already has the theme applied
+        // This fixes the double flash issue
+      });
 
-        // Also listen for the standard dialog open event
-        modal.addEventListener('open', () => {
-          // No need to apply theme here - we just want settings to reflect current state
-        });
-      }
+      // Also listen for the standard dialog open event
+      modal.addEventListener('open', () => {
+        // No need to apply theme here - we just want settings to reflect current state
+      });
     }
+    
+    // Clean up subscriptions on component destroy
+    return () => {
+      unsubscribeTheme();
+      unsubscribeAutoRecord();
+    };
   });
-  
-  // Function to update theme/vibe throughout the app
-  function updateTheme(vibeId) {
-    if (typeof window === 'undefined') return;
-    
-    // Store selection in localStorage
-    localStorage.setItem('talktype-vibe', vibeId);
-    
-    // Apply theme to document root for consistent CSS targeting
-    document.documentElement.setAttribute('data-theme', vibeId);
-    
-    // Update ghost icon by swapping the SVG file
-    const ghostBg = document.querySelector('.icon-bg');
-    
-    if (ghostBg) {
-      // Set the appropriate gradient SVG based on theme
-      switch(vibeId) {
-        case 'mint':
-          ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
-          ghostBg.classList.remove('rainbow-animated');
-          break;
-        case 'bubblegum':
-          ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
-          ghostBg.classList.remove('rainbow-animated');
-          break;
-        case 'rainbow':
-          ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
-          ghostBg.classList.add('rainbow-animated');
-          break;
-        default: // Default to peach
-          ghostBg.src = '/talktype-icon-bg-gradient.svg';
-          ghostBg.classList.remove('rainbow-animated');
-          break;
-      }
-      
-      // Force a reflow to ensure the gradient is visible
-      void ghostBg.offsetWidth;
-    }
-  }
   
   // Handle vibe change
   function changeVibe(vibeId) {
     selectedVibe = vibeId;
-    updateTheme(vibeId);
+    applyTheme(vibeId);
   }
   
   // Handle auto-record toggle
   function toggleAutoRecord() {
-    autoRecord = !autoRecord;
-    localStorage.setItem('talktype-autoRecord', autoRecord.toString());
-    debug('Auto-record toggled', autoRecord);
+    autoRecordValue = !autoRecordValue;
+    autoRecord.set(autoRecordValue.toString());
     
-    // Dispatch a custom event that the main page can listen for
+    // Dispatch a custom event that the main page can listen for (for backward compatibility)
     window.dispatchEvent(new CustomEvent('talktype-setting-changed', {
-      detail: { setting: 'autoRecord', value: autoRecord }
+      detail: { setting: 'autoRecord', value: autoRecordValue }
     }));
   }
   
@@ -201,11 +168,11 @@
               <input 
                 type="checkbox" 
                 class="sr-only"
-                checked={autoRecord}
+                checked={autoRecordValue}
                 on:change={toggleAutoRecord}
               />
-              <div class={`w-10 h-5 rounded-full ${autoRecord ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}></div>
-              <div class={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-all duration-200 transform ${autoRecord ? 'translate-x-5' : ''}`}></div>
+              <div class={`w-10 h-5 rounded-full ${autoRecordValue ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}></div>
+              <div class={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-all duration-200 transform ${autoRecordValue ? 'translate-x-5' : ''}`}></div>
             </div>
           </label>
         </div>

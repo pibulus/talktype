@@ -183,8 +183,8 @@
 									// Button will do a completion glow effect
 									document.querySelector('.progress-container')?.classList.add('completion-pulse');
 
-									// Add confetti celebration for successful transcription
-									if (transcript && transcript.length > 20) {
+									// Add confetti celebration for successful transcription (randomly 1/7 times)
+									if (transcript && transcript.length > 20 && Math.floor(Math.random() * 7) === 0) {
 										showConfettiCelebration();
 									}
 

@@ -1,14 +1,34 @@
-<script context="module">
-	let showExtensionInfo = false;
-	let showAboutInfo = false;
-	let showSettingsModal = false;
-</script>
-
 <script>
 	import { onMount } from 'svelte';
 	import AudioToText from '$lib/components/AudioToText.svelte';
 	import SettingsModal from '$lib/components/settings/SettingsModal.svelte';
 	import { browser } from '$app/environment';
+	import { 
+		isRecording as recordingStore, 
+		theme, 
+		showAboutInfo, 
+		showExtensionInfo, 
+		showSettingsModal,
+		hasSeenIntro,
+		autoRecord as autoRecordStore,
+		applyTheme
+	} from '$lib';
+	
+	// Initialize and sync values with stores for easier migration
+	let localThemeValue;
+	let localModalStates = {
+		aboutModal: false,
+		extensionModal: false,
+		settingsModal: false
+	};
+	let localAutoRecordValue = false;
+	
+	// Subscribe to stores
+	const unsubTheme = theme.subscribe(value => { localThemeValue = value; });
+	const unsubAboutInfo = showAboutInfo.subscribe(value => { localModalStates.aboutModal = value; });
+	const unsubExtensionInfo = showExtensionInfo.subscribe(value => { localModalStates.extensionModal = value; });
+	const unsubSettingsModal = showSettingsModal.subscribe(value => { localModalStates.settingsModal = value; });
+	const unsubAutoRecord = autoRecordStore.subscribe(value => { localAutoRecordValue = value === 'true'; });
 	
 	// Create a reusable Svelte action for handling clicks outside an element
 	function clickOutside(node, { enabled = true, callback = () => {} }) {
@@ -36,8 +56,13 @@
 
 	// Ultra simplified blinking system
 	let blinkTimeout = null;
-	let isRecording = false;
+	let isRecording = false; // Local variable for component state
 	let eyesElement = null;
+
+	// Subscribe to recording store
+	const unsubscribeRecording = recordingStore.subscribe(value => {
+		isRecording = value; // Keep local variable in sync with store
+	});
 
 	// Debug Helper that won't pollute console in production but helps during development
 	function debug(message) {
@@ -155,10 +180,15 @@
 	function checkFirstVisit() {
 		if (!browser) return;
 		
-		// Check if user has seen the intro before
-		const hasSeenIntro = localStorage.getItem('hasSeenTalkTypeIntro');
+		// Local variable to track seen status
+		let seenIntro = false;
 		
-		if (!hasSeenIntro) {
+		// Get intro seen status from store
+		const unsubIntroSeen = hasSeenIntro.subscribe(value => {
+			seenIntro = value === 'true';
+		});
+		
+		if (!seenIntro) {
 			// First visit, show intro modal after a brief delay
 			setTimeout(() => {
 				const modal = document.getElementById('intro_modal');
@@ -176,12 +206,15 @@
 				}
 			}, 500);
 		}
+		
+		// Clean up subscription
+		unsubIntroSeen();
 	}
 
 	// Save that user has seen the intro
 	function markIntroAsSeen() {
 		if (!browser) return;
-		localStorage.setItem('hasSeenTalkTypeIntro', 'true');
+		hasSeenIntro.set('true');
 	}
 
 	// Component lifecycle
@@ -265,45 +298,24 @@
 		// localStorage.removeItem('talktype-vibe');
 
 		return () => {
-			debug('Component unmounting, clearing timeouts');
+			debug('Component unmounting, clearing timeouts and subscriptions');
 			if (blinkTimeout) clearTimeout(blinkTimeout);
+			
+			// Clean up all subscriptions
+			unsubscribeRecording();
+			unsubTheme();
+			unsubAboutInfo();
+			unsubExtensionInfo();
+			unsubSettingsModal();
+			unsubAutoRecord();
 		};
 	});
 	
-	// Apply theme/vibe function for initial load
-	function applyTheme(vibeId) {
-		// Store in localStorage
-		localStorage.setItem("talktype-vibe", vibeId);
-		
-		// Apply theme to document root for consistent CSS targeting
-		document.documentElement.setAttribute('data-theme', vibeId);
-		
-		// Update ghost icon by swapping the SVG file
-		const ghostBg = document.querySelector('.icon-bg');
-		if (ghostBg) {
-			// Set the appropriate gradient SVG based on theme
-			switch(vibeId) {
-				case 'mint':
-					ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
-					ghostBg.classList.remove('rainbow-animated');
-					break;
-				case 'bubblegum':
-					ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
-					ghostBg.classList.remove('rainbow-animated');
-					break;
-				case 'rainbow':
-					ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
-					ghostBg.classList.add('rainbow-animated');
-					break;
-				default: // Default to peach
-					ghostBg.src = '/talktype-icon-bg-gradient.svg';
-					ghostBg.classList.remove('rainbow-animated');
-					break;
-			}
-			
-			// Force a reflow to ensure the gradient is visible
-			void ghostBg.offsetWidth;
-		}
+	// Apply theme/vibe function now uses centralized store function from $lib
+	// This local wrapper preserves backward compatibility during transition
+	function localApplyTheme(vibeId) {
+		// Apply theme using the centralized function from $lib
+		applyTheme(vibeId);
 	}
 
 	// Simplified recording toggle with no animation state connections
@@ -392,6 +404,9 @@
 	let scrollPosition = 0;
 
 	function showAboutModal() {
+		// Update store state
+		showAboutInfo.set(true);
+		
 		// Radical approach to prevent scrollbar issues
 		scrollPosition = window.scrollY;
 		const width = document.body.clientWidth;
@@ -410,6 +425,9 @@
 
 	// Function to show the Extension modal
 	function showExtensionModal() {
+		// Update store state
+		showExtensionInfo.set(true);
+
 		// Radical approach to prevent scrollbar issues
 		scrollPosition = window.scrollY;
 		const width = document.body.clientWidth;
@@ -428,6 +446,9 @@
 	
 	// Function to show the Settings modal
 	function openSettingsModal() {
+		// Update store state
+		showSettingsModal.set(true);
+
 		// First, ensure any open dialogs are closed and scroll is restored
 		if (modalOpen) {
 			closeModal();
@@ -475,6 +496,11 @@
 	// Function to restore scroll position when modal closes
 	function closeModal() {
 		if (!modalOpen) return;
+		
+		// Reset all modal states in stores
+		showAboutInfo.set(false);
+		showExtensionInfo.set(false);
+		showSettingsModal.set(false);
 		
 		// Ensure any open dialogs are properly closed
 		document.querySelectorAll('dialog[open]').forEach(dialog => {
@@ -742,7 +768,7 @@
 	</dialog>
 	
 	<!-- Settings Modal -->
-	<SettingsModal open={showSettingsModal} closeModal={closeSettingsModal} />
+	<SettingsModal closeModal={closeSettingsModal} />
 	
 	<!-- First-time Intro Modal (DaisyUI version) -->
 	<dialog id="intro_modal" class="modal">
