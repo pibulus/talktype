@@ -1,18 +1,16 @@
-# sv
+# TalkType
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Fast, accurate, and free voice-to-text transcription app.
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```bash
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
-```
+- Instant speech-to-text transcription
+- Beautifully animated ghost interface
+- Easy copy to clipboard
+- Multiple visual themes
+- No cloud storage or account required
+- Fully responsive design
+- Built with accessibility in mind
 
 ## Developing
 
@@ -35,4 +33,25 @@ npm run build
 
 You can preview the production build with `npm run preview`.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## Quality Assurance
+
+We use Lighthouse CI to maintain high performance, accessibility, and best practices standards.
+
+```bash
+# Run Lighthouse CI tests
+npm run lighthouse
+```
+
+This will:
+1. Build the production version of the app
+2. Run Lighthouse audits against key metrics
+3. Generate reports in the `lighthouse-reports` directory
+
+### Thresholds
+
+- Performance: 85+
+- Accessibility: 90+
+- Best Practices: 85+
+- SEO: 90+
+
+Failing these thresholds will cause warnings or errors in the CI process. We prioritize accessibility with stricter error thresholds.
