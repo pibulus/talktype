@@ -18,6 +18,8 @@
 	let transcriptionProgress = 0;
 	let animationFrameId;
 	let editableTranscript;
+	let showPermissionError = false;
+	let permissionErrorTimer;
 
 	// Accessibility state management
 	let screenReaderStatus = ''; // For ARIA announcements
@@ -277,7 +279,42 @@
 			console.log('✅ Recording started');
 		} catch (err) {
 			console.error('❌ Error accessing microphone:', err);
-			errorMessage = 'Error accessing microphone. Please check microphone permissions.';
+			
+			// Check for specific permission errors
+			let isPermissionDenied = false;
+			if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+				isPermissionDenied = true;
+			} else if (err.message && (err.message.includes('permission') || err.message.includes('denied'))) {
+				isPermissionDenied = true;
+			}
+			
+			if (isPermissionDenied) {
+				// Show the permission error modal
+				showPermissionError = true;
+				vibrate([20, 100, 20, 100, 20]); // Triple vibration pattern for error
+				
+				// Animate ghost to look sad/disappointed
+				const eyes = document.querySelector('.icon-eyes');
+				if (eyes) {
+					eyes.classList.add('eyes-sad');
+					setTimeout(() => {
+						eyes.classList.remove('eyes-sad');
+					}, 2000);
+				}
+				
+				// Auto-hide the modal after a while
+				if (permissionErrorTimer) clearTimeout(permissionErrorTimer);
+				permissionErrorTimer = setTimeout(() => {
+					showPermissionError = false;
+				}, 8000); // Show for 8 seconds
+				
+				// Clear generic error message since we're showing a modal
+				errorMessage = '';
+			} else {
+				// Generic error handling
+				errorMessage = 'Error accessing microphone. Please check your device settings.';
+			}
+			
 			recording = false;
 		}
 	}
@@ -364,6 +401,7 @@
 		return () => {
 			if (animationFrameId) cancelAnimationFrame(animationFrameId);
 			if (clipboardTimer) clearTimeout(clipboardTimer);
+			if (permissionErrorTimer) clearTimeout(permissionErrorTimer);
 		};
 	});
 
@@ -828,6 +866,49 @@
 	</div>
 {/if}
 
+<!-- Permission error modal -->
+{#if showPermissionError}
+	<div class="permission-error-container flex w-full justify-center" on:click={() => showPermissionError = false} role="alertdialog" aria-live="assertive">
+		<div class="permission-error-modal">
+			<!-- Icon and title -->
+			<div class="modal-header">
+				<div class="error-icon">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+						<circle cx="12" cy="12" r="10"></circle>
+						<line x1="12" y1="8" x2="12" y2="12"></line>
+						<line x1="12" y1="16" x2="12.01" y2="16"></line>
+					</svg>
+				</div>
+				<h3>Microphone Access Denied</h3>
+			</div>
+			
+			<!-- Permission error message -->
+			<p>TalkType needs microphone access to transcribe your speech. Please update your browser settings to allow microphone access.</p>
+			
+			<!-- Solution steps -->
+			<div class="error-steps">
+				<div class="step">
+					<div class="step-number">1</div>
+					<p>Click the microphone or lock icon in your address bar</p>
+				</div>
+				<div class="step">
+					<div class="step-number">2</div>
+					<p>Select "Allow" for microphone access</p>
+				</div>
+				<div class="step">
+					<div class="step-number">3</div>
+					<p>Refresh the page and try again</p>
+				</div>
+			</div>
+			
+			<!-- Dismiss button -->
+			<button class="dismiss-btn" on:click|stopPropagation={() => showPermissionError = false}>
+				Got it
+			</button>
+		</div>
+	</div>
+{/if}
+
 <style>
 	/* Main wrapper to ensure proper positioning */
 	.main-wrapper {
@@ -1148,6 +1229,21 @@
 			transform: scaleY(0);
 		}
 	}
+	
+	/* Sad eyes animation for permission errors */
+	.eyes-sad {
+		animation: eyes-sad-animation 2s ease-in-out forwards !important;
+		transform-origin: center center;
+	}
+	
+	@keyframes eyes-sad-animation {
+		0%, 100% {
+			transform: scaleY(0.7) translateY(2px);
+		}
+		30%, 70% {
+			transform: scaleY(0.5) translateY(3px);
+		}
+	}
 
 	/* Screen reader only class */
 	.sr-only {
@@ -1354,6 +1450,148 @@
 		}
 		100% {
 			opacity: 0;
+		}
+	}
+	
+	/* Permission Error Modal Styling */
+	.permission-error-container {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.5);
+		z-index: 1000;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 1rem;
+		animation: fade-in 0.3s ease-out;
+	}
+	
+	.permission-error-modal {
+		background: linear-gradient(to bottom right, #fff, #fefcff);
+		border-radius: 1rem;
+		box-shadow: 
+			0 10px 25px -5px rgba(249, 168, 212, 0.4),
+			0 8px 10px -6px rgba(249, 168, 212, 0.2),
+			0 0 0 1px rgba(249, 168, 212, 0.3) inset;
+		padding: 1.5rem;
+		max-width: 90%;
+		width: 400px;
+		color: #4b5563;
+		position: relative;
+		animation: slide-up 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+		text-align: center;
+	}
+	
+	.modal-header {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+		flex-direction: column;
+	}
+	
+	.error-icon {
+		width: 3rem;
+		height: 3rem;
+		border-radius: 50%;
+		background-color: rgba(239, 68, 68, 0.1);
+		color: #ef4444;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 0.5rem;
+	}
+	
+	.modal-header h3 {
+		color: #111827;
+		font-weight: 700;
+		font-size: 1.25rem;
+		margin: 0;
+	}
+	
+	.permission-error-modal p {
+		margin: 0.75rem 0;
+		line-height: 1.6;
+		font-size: 0.95rem;
+	}
+	
+	.error-steps {
+		background-color: rgba(249, 168, 212, 0.08);
+		border-radius: 0.75rem;
+		padding: 1rem;
+		margin: 1.25rem 0;
+		text-align: left;
+	}
+	
+	.step {
+		display: flex;
+		gap: 0.75rem;
+		margin-bottom: 0.75rem;
+		align-items: flex-start;
+	}
+	
+	.step:last-child {
+		margin-bottom: 0;
+	}
+	
+	.step-number {
+		width: 1.5rem;
+		height: 1.5rem;
+		background-color: rgba(249, 168, 212, 0.3);
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 600;
+		font-size: 0.875rem;
+		color: #be185d;
+		flex-shrink: 0;
+	}
+	
+	.step p {
+		margin: 0;
+		font-size: 0.875rem;
+	}
+	
+	.dismiss-btn {
+		background-color: #be185d;
+		color: white;
+		border: none;
+		border-radius: 9999px;
+		padding: 0.75rem 2rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		margin-top: 0.75rem;
+		font-size: 1rem;
+	}
+	
+	.dismiss-btn:hover {
+		background-color: #9d174d;
+		transform: translateY(-1px);
+	}
+	
+	.dismiss-btn:active {
+		transform: translateY(1px);
+	}
+	
+	@keyframes fade-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+	
+	@keyframes slide-up {
+		from { 
+			opacity: 0; 
+			transform: translateY(20px); 
+		}
+		to { 
+			opacity: 1; 
+			transform: translateY(0); 
 		}
 	}
 
