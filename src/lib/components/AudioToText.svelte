@@ -144,7 +144,7 @@
 
 			mediaRecorder.onstop = async () => {
 				// Add wobble animation to ghost when recording stops
-				const ghostIcon = document.querySelector('.icon-container');
+				const ghostIcon = ghostIconElement || parentGhostIconElement;
 				if (ghostIcon) {
 					// Add slight randomness to the wobble
 					const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
@@ -315,7 +315,7 @@
 				vibrate([20, 100, 20, 100, 20]); // Triple vibration pattern for error
 				
 				// Animate ghost to look sad/disappointed
-				const eyes = document.querySelector('.icon-eyes');
+				const eyes = eyesElement || parentEyesElement;
 				if (eyes) {
 					eyes.classList.add('eyes-sad');
 					setTimeout(() => {
