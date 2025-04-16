@@ -852,6 +852,13 @@
 			<div class="flex items-center gap-3 sm:gap-4">
 				<button
 						class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-2 px-3 sm:px-4 sm:py-2.5 h-auto min-h-0"
+						on:click={showAboutModal}
+						aria-label="About TalkType"
+					>
+					About
+				</button>
+				<button
+						class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-2 px-3 sm:px-4 sm:py-2.5 h-auto min-h-0"
 						on:click={openSettingsModal}
 						aria-label="Open Settings"
 					>
