@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TalkType - You're Offline</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #fff6e6;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .container {
+      max-width: 500px;
+      background-color: #fffaef;
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2);
+      border: 1px solid rgba(249, 168, 212, 0.2);
+    }
+    
+    .icon {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 20px;
+      position: relative;
+    }
+    
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .haiku {
+      font-style: italic;
+      margin: 30px 0;
+      font-size: 1.25rem;
+      line-height: 1.8;
+      color: #444;
+      background-color: rgba(249, 168, 212, 0.1);
+      padding: 20px;
+      border-radius: 16px;
+    }
+    
+    p {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      color: #555;
+      margin-bottom: 25px;
+    }
+    
+    .button {
+      background: linear-gradient(to right, #f472b6, #e879f9);
+      color: white;
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 50px;
+      text-decoration: none;
+      display: inline-block;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(249, 168, 212, 0.4);
+    }
+    
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(249, 168, 212, 0.5);
+    }
+    
+    .offline-message {
+      margin-top: 30px;
+      font-size: 0.9rem;
+      color: #777;
+    }
+    
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+    
+    .icon {
+      animation: float 3s ease-in-out infinite;
+    }
+
+    /* Ghost eye blinking animation */
+    @keyframes blink {
+      0%, 95%, 100% { transform: scaleY(1); }
+      97.5% { transform: scaleY(0); }
+    }
+
+    .ghost-eyes {
+      animation: blink 6s infinite;
+      transform-origin: center center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">
+      <!-- Ghost icon with layers -->
+      <div style="position: relative; width: 100%; height: 100%;">
+        <img src="/talktype-icon-bg-gradient.svg" style="position: absolute; inset: 0; width: 100%; height: 100%;" alt="">
+        <img src="/assets/talktype-icon-base.svg" style="position: absolute; inset: 0; width: 100%; height: 100%;" alt="">
+        <img src="/assets/talktype-icon-eyes.svg" style="position: absolute; inset: 0; width: 100%; height: 100%;" class="ghost-eyes" alt="">
+      </div>
+    </div>
+    
+    <h1>You're Offline</h1>
+    
+    <div class="haiku" id="haiku-container">
+      Connection is lost<br>
+      Words float in digital void<br>
+      Try again, speak soon
+    </div>
+    
+    <script>
+      // Random haikus to display when offline
+      const OFFLINE_HAIKUS = [
+        `Connection is lost<br>Words float in digital void<br>Try again, speak soon`,
+        `Microphone silent<br>No network to hear your words<br>Waiting for signals`,
+        `Ghostly transcription<br>Cannot find your voice today<br>Internet missing`,
+        `Voice lost in the waves<br>Digital silence prevails<br>Connect and try again`,
+        `Whispers unheard now<br>The ghost waits patiently<br>Until we're online`
+      ];
+      
+      // Get a random haiku
+      function getRandomHaiku() {
+        return OFFLINE_HAIKUS[Math.floor(Math.random() * OFFLINE_HAIKUS.length)];
+      }
+      
+      // Update the haiku container
+      document.getElementById('haiku-container').innerHTML = getRandomHaiku();
+    </script>
+    
+    <p>
+      TalkType can't record or transcribe while you're offline. 
+      Please reconnect to continue using our voice-to-text magic.
+    </p>
+    
+    <button class="button" onclick="location.reload()">Try Again</button>
+    
+    <div class="offline-message">
+      Once you're back online, your ghost will be ready to listen!
+    </div>
+  </div>
+</body>
+</html>

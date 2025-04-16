@@ -3,6 +3,7 @@
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta
 			name="description"
@@ -13,54 +14,76 @@
 			content="speech to text, voice recognition, transcription, audio to text, voice typing"
 		/>
 		<meta name="author" content="Dennis & Pablo" />
-			<script>
-				// Apply saved theme immediately to prevent flash of default theme
-				if (typeof localStorage !== 'undefined') {
-					const savedTheme = localStorage.getItem('talktype-vibe');
-					if (savedTheme) {
-						document.documentElement.setAttribute('data-theme', savedTheme);
-					} else {
-						// Default to peach if no theme is saved
-						document.documentElement.setAttribute('data-theme', 'peach');
-					}
+		
+		<!-- PWA related meta tags -->
+		<meta name="theme-color" content="#FFF6E6" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+		<meta name="apple-mobile-web-app-title" content="TalkType" />
+		<link rel="manifest" href="%sveltekit.assets%/manifest.json" />
+		
+		<!-- Open Graph / Facebook -->
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content="https://talktype.app/" />
+		<meta property="og:title" content="TalkType - Voice to Text" />
+		<meta property="og:description" content="Fast, accurate, and free voice-to-text transcription. Convert speech to text instantly." />
+		<meta property="og:image" content="%sveltekit.assets%/og-image.png" />
+		
+		<!-- Twitter -->
+		<meta property="twitter:card" content="summary_large_image" />
+		<meta property="twitter:url" content="https://talktype.app/" />
+		<meta property="twitter:title" content="TalkType - Voice to Text" />
+		<meta property="twitter:description" content="Fast, accurate, and free voice-to-text transcription. Convert speech to text instantly." />
+		<meta property="twitter:image" content="%sveltekit.assets%/og-image.png" />
+		
+		<script>
+			// Apply saved theme immediately to prevent flash of default theme
+			if (typeof localStorage !== 'undefined') {
+				const savedTheme = localStorage.getItem('talktype-vibe');
+				if (savedTheme) {
+					document.documentElement.setAttribute('data-theme', savedTheme);
+				} else {
+					// Default to peach if no theme is saved
+					document.documentElement.setAttribute('data-theme', 'peach');
 				}
-			</script>
-			
-			<script type="application/ld+json">
-				{
-					"@context": "https://schema.org",
-					"@type": "WebApplication",
-					"name": "TalkType",
-					"url": "https://talktype.app",
-					"applicationCategory": "UtilitiesApplication",
-					"operatingSystem": "Web",
-					"offers": {
+			}
+		</script>
+		
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "WebApplication",
+				"name": "TalkType",
+				"url": "https://talktype.app",
+				"applicationCategory": "UtilitiesApplication",
+				"operatingSystem": "Web",
+				"offers": {
+					"@type": "Offer",
+					"price": "0",
+					"priceCurrency": "USD"
+				},
+				"description": "Fast, accurate, and free voice-to-text transcription. Convert speech to text instantly with TalkType, the open source transcription tool.",
+				"potentialAction": {
+					"@type": "ConsumeAction",
+					"target": {
+						"@type": "EntryPoint",
+						"urlTemplate": "https://talktype.app",
+						"actionPlatform": [
+							"http://schema.org/DesktopWebPlatform",
+							"http://schema.org/MobileWebPlatform"
+						]
+					},
+					"expectsAcceptanceOf": {
 						"@type": "Offer",
-						"price": "0",
-						"priceCurrency": "USD"
-					},
-					"description": "Fast, accurate, and free voice-to-text transcription. Convert speech to text instantly with TalkType, the open source transcription tool.",
-					"potentialAction": {
-						"@type": "ConsumeAction",
-						"target": {
-							"@type": "EntryPoint",
-							"urlTemplate": "https://talktype.app",
-							"actionPlatform": [
-								"http://schema.org/DesktopWebPlatform",
-								"http://schema.org/MobileWebPlatform"
-							]
-						},
-						"expectsAcceptanceOf": {
-							"@type": "Offer",
-							"category": "free",
-							"description": "Free speech-to-text transcription service"
-						}
-					},
-					"browserRequirements": "Requires a modern web browser with WebSpeech API or microphone access. Works best in Chrome, Edge, Safari, and Firefox.",
-					"keywords": "speech to text, voice recognition, transcription, audio to text, voice typing, speech recognition",
-					"applicationSubCategory": "Voice Recognition"
-				}
-			</script>
+						"category": "free",
+						"description": "Free speech-to-text transcription service"
+					}
+				},
+				"browserRequirements": "Requires a modern web browser with WebSpeech API or microphone access. Works best in Chrome, Edge, Safari, and Firefox.",
+				"keywords": "speech to text, voice recognition, transcription, audio to text, voice typing, speech recognition",
+				"applicationSubCategory": "Voice Recognition"
+			}
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

@@ -1,6 +1,7 @@
 // Centralized stores for application state management
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import * as CONSTANTS from './constants';
 
 // Initialize store with localStorage value if available
 function createLocalStorageStore(key, initialValue) {
@@ -37,7 +38,7 @@ function createLocalStorageStore(key, initialValue) {
 }
 
 // Create centralized store for theme/vibe management
-export const theme = createLocalStorageStore('talktype-vibe', 'peach');
+export const theme = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.THEME, CONSTANTS.DEFAULT_THEME);
 
 // Create centralized store for recording state
 export const isRecording = writable(false);
@@ -48,10 +49,13 @@ export const showExtensionInfo = writable(false);
 export const showSettingsModal = writable(false);
 
 // Store for first visit tracking
-export const hasSeenIntro = createLocalStorageStore('hasSeenTalkTypeIntro', 'false');
+export const hasSeenIntro = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.FIRST_VISIT, 'false');
 
 // Store for auto-record preference
-export const autoRecord = createLocalStorageStore('talktype-autoRecord', 'false');
+export const autoRecord = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.AUTO_RECORD, 'false');
+
+// Export all constants for use throughout the app
+export { CONSTANTS };
 
 // Helper function to apply theme across app components
 export function applyTheme(vibeId) {
@@ -67,15 +71,15 @@ export function applyTheme(vibeId) {
     if (ghostBg) {
       // Set the appropriate gradient SVG based on theme
       switch(vibeId) {
-        case 'mint':
+        case CONSTANTS.THEMES.MINT:
           ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
           ghostBg.classList.remove('rainbow-animated');
           break;
-        case 'bubblegum':
+        case CONSTANTS.THEMES.BUBBLEGUM:
           ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
           ghostBg.classList.remove('rainbow-animated');
           break;
-        case 'rainbow':
+        case CONSTANTS.THEMES.RAINBOW:
           ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
           ghostBg.classList.add('rainbow-animated');
           break;
