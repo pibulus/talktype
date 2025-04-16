@@ -25,6 +25,42 @@
 					}
 				}
 			</script>
+			
+			<script type="application/ld+json">
+				{
+					"@context": "https://schema.org",
+					"@type": "WebApplication",
+					"name": "TalkType",
+					"url": "https://talktype.app",
+					"applicationCategory": "UtilitiesApplication",
+					"operatingSystem": "Web",
+					"offers": {
+						"@type": "Offer",
+						"price": "0",
+						"priceCurrency": "USD"
+					},
+					"description": "Fast, accurate, and free voice-to-text transcription. Convert speech to text instantly with TalkType, the open source transcription tool.",
+					"potentialAction": {
+						"@type": "ConsumeAction",
+						"target": {
+							"@type": "EntryPoint",
+							"urlTemplate": "https://talktype.app",
+							"actionPlatform": [
+								"http://schema.org/DesktopWebPlatform",
+								"http://schema.org/MobileWebPlatform"
+							]
+						},
+						"expectsAcceptanceOf": {
+							"@type": "Offer",
+							"category": "free",
+							"description": "Free speech-to-text transcription service"
+						}
+					},
+					"browserRequirements": "Requires a modern web browser with WebSpeech API or microphone access. Works best in Chrome, Edge, Safari, and Firefox.",
+					"keywords": "speech to text, voice recognition, transcription, audio to text, voice typing, speech recognition",
+					"applicationSubCategory": "Voice Recognition"
+				}
+			</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
