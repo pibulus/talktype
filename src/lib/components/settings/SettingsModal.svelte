@@ -130,7 +130,7 @@
 </script>
 
 <dialog id="settings_modal" class="modal fixed z-50" style="overflow: hidden !important; z-index: 999;" role="dialog" aria-labelledby="settings_modal_title" aria-modal="true">
-  <div class="modal-box bg-gradient-to-br from-white to-[#fefaf4] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh] w-[95%] max-w-md md:max-w-lg animate-modal-enter relative">
+  <div class="modal-box bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh] w-[95%] max-w-md md:max-w-lg animate-modal-enter relative">
     <form method="dialog">
       <button 
         class="close-btn absolute right-3 top-3 z-50 h-9 w-9 rounded-full bg-pink-100 border border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm transition-all duration-200 ease-in-out flex items-center justify-center"
@@ -157,7 +157,7 @@
       <div class="space-y-3 mb-5">
         <h4 class="text-sm font-bold text-gray-700">Behavior</h4>
         
-        <div class="flex items-center justify-between p-3 rounded-xl border border-pink-100 bg-white shadow-sm hover:border-pink-200 transition-all duration-200">
+        <div class="flex items-center justify-between p-3 rounded-xl border border-pink-100 bg-[#fffdf5] shadow-sm hover:border-pink-200 transition-all duration-200">
           <div>
             <span class="text-sm font-medium text-gray-700">Auto-Record on Start</span>
             <p class="text-xs text-gray-500 mt-0.5">Start recording immediately when you open TalkType</p>
@@ -184,7 +184,7 @@
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {#each vibeOptions as vibe}
             <button 
-              class="vibe-option flex flex-col items-center p-3 rounded-xl border border-pink-100 bg-white shadow-sm hover:shadow-md hover:border-pink-200 transition-all duration-300 relative {selectedVibe === vibe.id ? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60' : ''}"
+              class="vibe-option flex flex-col items-center p-3 rounded-xl border border-pink-100 bg-[#fffdf5] shadow-sm hover:shadow-md hover:border-pink-200 transition-all duration-300 relative {selectedVibe === vibe.id ? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60' : ''}"
               data-vibe-type={vibe.id}
               on:click={() => changeVibe(vibe.id)}
             >
