@@ -8,8 +8,15 @@
 <script>
 	import { onMount } from 'svelte';
 	import AudioToText from '$lib/components/AudioToText.svelte';
-	import SettingsModal from '$lib/components/settings/SettingsModal.svelte';
 	import { browser } from '$app/environment';
+	import { geminiService } from '$lib/services/geminiService';
+	
+	// Lazy load modals - only import when needed
+	let SettingsModal;
+	let loadingSettingsModal = false;
+	
+	// Track speech model preloading state
+	let speechModelPreloaded = false;
 	
 	// Create a reusable Svelte action for handling clicks outside an element
 	function clickOutside(node, { enabled = true, callback = () => {} }) {
@@ -366,10 +373,46 @@
 		localStorage.setItem('hasSeenTalkTypeIntro', 'true');
 	}
 
+	// Function to preload speech model for faster initial response
+	function preloadSpeechModel() {
+		if (!speechModelPreloaded && browser) {
+			debug('Preloading speech model for faster response');
+			speechModelPreloaded = true;
+			geminiService.preloadModel()
+				.catch(err => {
+					// Just log the error, don't block UI
+					console.error('Error preloading speech model:', err);
+					// Reset so we can try again
+					speechModelPreloaded = false;
+				});
+		}
+	}
+
+	// Variable to track the ghost icon event listener for cleanup
+	let ghostIconEventCleanup = null;
+
 	// Component lifecycle
 	onMount(() => {
 		debug('Component mounted');
 		setupDomObserver();
+		
+		// Add mouseenter event listener to the ghost icon for model preloading
+		if (browser) {
+			// Wait for the DOM to be ready
+			setTimeout(() => {
+				const ghostIcon = document.querySelector('.icon-container');
+				if (ghostIcon) {
+					ghostIcon.addEventListener('mouseenter', preloadSpeechModel);
+					debug('Added mouseenter event listener to ghost icon for model preloading');
+					
+					// Store cleanup function
+					ghostIconEventCleanup = () => {
+						ghostIcon.removeEventListener('mouseenter', preloadSpeechModel);
+						debug('Removed mouseenter event listener from ghost icon');
+					};
+				}
+			}, 500);
+		}
 		
 		// Check for auto-record setting and start recording if enabled
 		if (browser && localStorage.getItem('talktype-autoRecord') === 'true') {
@@ -452,8 +495,13 @@
 		// localStorage.removeItem('talktype-vibe');
 
 		return () => {
-			debug('Component unmounting, clearing timeouts');
+			debug('Component unmounting, clearing timeouts and event listeners');
 			clearAllBlinkTimeouts();
+			
+			// Clean up the mouseenter event listener
+			if (ghostIconEventCleanup) {
+				ghostIconEventCleanup();
+			}
 		};
 	});
 	
@@ -636,12 +684,174 @@
 		}
 	}
 
-	// Function to show the About modal
 	// Variables to track modal state and store scroll position
 	let modalOpen = false;
 	let scrollPosition = 0;
+	
+	// Function to create and add a modal to the document using template strings
+	function createModalFromTemplate(modalId, templateHtml) {
+		// Check if the modal already exists
+		if (document.getElementById(modalId)) return;
+		
+		// Create a temporary container
+		const container = document.createElement('div');
+		container.innerHTML = templateHtml.trim();
+		
+		// Append the first element (the modal)
+		const modal = container.firstElementChild;
+		document.body.appendChild(modal);
+		
+		return modal;
+	}
+	
+	// About modal template
+	const aboutModalTemplate = `
+	<dialog id="about_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;" role="dialog" aria-labelledby="about_modal_title" aria-modal="true">
+		<div class="modal-box bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
+			<form method="dialog">
+				<button 
+					class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
+					onclick="window.closeModal()"
+				>✕</button>
+			</form>
+			
+			<div class="animate-fadeUp space-y-4">
+				<div class="flex items-center gap-3 mb-1">
+					<div class="w-9 h-9 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
+						<div class="relative w-7 h-7">
+							<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
+							<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
+							<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
+						</div>
+					</div>
+					<h3 id="about_modal_title" class="font-black text-xl text-gray-800 tracking-tight">About TalkType</h3>
+				</div>
+				
+				<div class="bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 rounded-lg border border-pink-200/60 shadow-sm">
+					<p class="text-sm leading-relaxed text-gray-700">
+						TalkType is a minimalist voice-to-text tool that transforms your speech into text effortlessly. 
+						Built with love by two friends who think tech should be <span class="text-pink-600 font-medium">simple</span>, 
+						<span class="text-amber-600 font-medium">delightful</span>, and actually <span class="text-pink-600 font-medium">helpful</span>.
+					</p>
+				</div>
 
+				<div>
+					<h4 class="font-bold text-sm text-gray-700 mb-2">Why we made this:</h4>
+					<ul class="space-y-1.5 text-sm text-gray-600">
+						<li class="flex items-start gap-2">
+							<span class="text-pink-500 text-lg">⬩</span>
+							<span>We both think better by <span class="italic">talking</span>, not typing</span>
+						</li>
+						<li class="flex items-start gap-2">
+							<span class="text-pink-500 text-lg">⬩</span>
+							<span>Other voice-typing tools are either expensive or clunky</span>
+						</li>
+						<li class="flex items-start gap-2">
+							<span class="text-pink-500 text-lg">⬩</span>
+							<span>We wanted something beautiful that just works</span>
+						</li>
+					</ul>
+				</div>
+
+				<div class="border-l-3 border-pink-300 py-1 pl-4 ml-1 my-2 italic text-gray-600">
+					"A little bit of soul, a hint of chaos, and a deep love for clarity."
+				</div>
+
+				<div class="flex justify-between items-end pt-2">
+					<div>
+						<p class="text-xs text-gray-500">Made with ☕ in Melbourne, Australia</p>
+					</div>
+					<div class="flex items-center gap-2 text-xs font-medium text-gray-600">
+						<span class="animate-pulse text-pink-500">❤️</span> Dennis & Pabs
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal-backdrop bg-black/40"></div>
+	</dialog>`;
+	
+	// Extension modal template
+	const extensionModalTemplate = `
+	<dialog id="extension_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;" role="dialog" aria-labelledby="extension_modal_title" aria-modal="true">
+		<div class="modal-box bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
+			<form method="dialog">
+				<button 
+					class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
+					onclick="window.closeModal()"
+				>✕</button>
+			</form>
+			
+			<div class="animate-fadeUp space-y-4">
+				<div class="flex items-center gap-3 mb-1">
+					<div class="w-9 h-9 bg-gradient-to-br from-white to-purple-50 rounded-full flex items-center justify-center shadow-sm border border-purple-200/60">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-purple-600">
+							<path d="M6 2l.01 6L10 12l-4 4 .01 6H20V2H6zm7 11a1 1 0 110-2 1 1 0 010 2zm-1-9a1 1 0 000 2h5a1 1 0 100-2h-5z" />
+						</svg>
+					</div>
+					<h3 id="extension_modal_title" class="font-black text-xl text-gray-800 tracking-tight">Chrome Extension</h3>
+				</div>
+				
+				<div class="bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 rounded-lg border border-pink-200/60 shadow-sm">
+					<p class="text-sm leading-relaxed text-gray-700">
+						Use TalkType everywhere on the web! Our Chrome extension lets you transcribe directly into any text field. 
+						Perfect for emails, social media, messaging apps, or anywhere else you need to type.
+					</p>
+				</div>
+
+				<div class="rounded-xl border border-pink-200/60 bg-gradient-to-br from-white to-pink-50/50 p-4 shadow-sm">
+					<h4 class="font-bold text-sm text-gray-800 mb-2">Installation in 5 easy steps:</h4>
+					<ol class="mt-2 list-decimal space-y-2 pl-5 text-left text-sm text-gray-700">
+						<li class="pb-1">
+							Download the extension files <a
+								href="#"
+								class="text-pink-600 transition-colors hover:text-pink-700 hover:underline font-medium"
+								>here</a
+							>
+						</li>
+						<li class="pb-1">
+							Unzip the files to a folder on your computer
+						</li>
+						<li class="pb-1">
+							Open Chrome and go to <code
+								class="rounded-md bg-pink-100 px-1.5 py-0.5 font-mono text-pink-700"
+								>chrome://extensions</code
+							>
+						</li>
+						<li class="pb-1">Enable "Developer mode" in the top-right corner</li>
+						<li>Click "Load unpacked" and select the extension folder</li>
+					</ol>
+				</div>
+
+				<div class="pt-1 flex justify-end">
+					<span class="text-xs text-gray-600 italic font-medium">Voice-to-text anywhere, anytime 🎙️</span>
+				</div>
+			</div>
+		</div>
+		<div class="modal-backdrop bg-black/40"></div>
+	</dialog>`;
+
+	// Function to show the About modal - lazy loaded via DOM
 	function showAboutModal() {
+		// Create the modal if it doesn't exist
+		createModalFromTemplate('about_modal', aboutModalTemplate);
+		
+		// Setup close handlers
+		if (window && !window.closeModal) {
+			window.closeModal = closeModal;
+		}
+		
+		// Add click handler to backdrop
+		const modal = document.getElementById('about_modal');
+		if (modal) {
+			const backdrop = modal.querySelector('.modal-backdrop');
+			if (backdrop) {
+				backdrop.onclick = () => {
+					modal.close();
+					setTimeout(closeModal, 50);
+				};
+			}
+		}
+		
 		// Radical approach to prevent scrollbar issues
 		scrollPosition = window.scrollY;
 		const width = document.body.clientWidth;
@@ -654,12 +864,31 @@
 		document.body.style.overflow = 'hidden';
 		
 		// Now show the modal
-		const modal = document.getElementById('about_modal');
 		if (modal) modal.showModal();
 	}
 
-	// Function to show the Extension modal
+	// Function to show the Extension modal - lazy loaded via DOM
 	function showExtensionModal() {
+		// Create the modal if it doesn't exist
+		createModalFromTemplate('extension_modal', extensionModalTemplate);
+		
+		// Setup close handlers
+		if (window && !window.closeModal) {
+			window.closeModal = closeModal;
+		}
+		
+		// Add click handler to backdrop
+		const modal = document.getElementById('extension_modal');
+		if (modal) {
+			const backdrop = modal.querySelector('.modal-backdrop');
+			if (backdrop) {
+				backdrop.onclick = () => {
+					modal.close();
+					setTimeout(closeModal, 50);
+				};
+			}
+		}
+		
 		// Radical approach to prevent scrollbar issues
 		scrollPosition = window.scrollY;
 		const width = document.body.clientWidth;
@@ -672,15 +901,36 @@
 		document.body.style.overflow = 'hidden';
 		
 		// Now show the modal
-		const modal = document.getElementById('extension_modal');
 		if (modal) modal.showModal();
 	}
 	
-	// Function to show the Settings modal
-	function openSettingsModal() {
+	// Function to show the Settings modal - now with lazy loading
+	async function openSettingsModal() {
 		// First, ensure any open dialogs are closed and scroll is restored
 		if (modalOpen) {
 			closeModal();
+		}
+
+		// Check if we're already loading the modal
+		if (loadingSettingsModal) return;
+		
+		// Dynamically import the SettingsModal component if not already loaded
+		if (!SettingsModal) {
+			loadingSettingsModal = true;
+			debug('Lazy loading SettingsModal component');
+			
+			try {
+				// Import the component dynamically
+				const module = await import('$lib/components/settings/SettingsModal.svelte');
+				SettingsModal = module.default;
+				debug('SettingsModal component loaded successfully');
+			} catch (err) {
+				console.error('Error loading SettingsModal:', err);
+				loadingSettingsModal = false;
+				return;
+			}
+			
+			loadingSettingsModal = false;
 		}
 
 		// Get current scroll position and body dimensions
@@ -875,140 +1125,10 @@
 		</div>
 	</footer>
 
-	<!-- DaisyUI About Modal -->
-	<dialog id="about_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;" role="dialog" aria-labelledby="about_modal_title" aria-modal="true">
-		<div class="modal-box bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
-			<form method="dialog">
-				<button 
-					class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
-					on:click={closeModal}
-				>✕</button>
-			</form>
-			
-			<div class="animate-fadeUp space-y-4">
-				<div class="flex items-center gap-3 mb-1">
-					<div class="w-9 h-9 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
-						<div class="relative w-7 h-7">
-							<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
-							<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
-							<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
-						</div>
-					</div>
-					<h3 id="about_modal_title" class="font-black text-xl text-gray-800 tracking-tight">About TalkType</h3>
-				</div>
-				
-				<div class="bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 rounded-lg border border-pink-200/60 shadow-sm">
-					<p class="text-sm leading-relaxed text-gray-700">
-						TalkType is a minimalist voice-to-text tool that transforms your speech into text effortlessly. 
-						Built with love by two friends who think tech should be <span class="text-pink-600 font-medium">simple</span>, 
-						<span class="text-amber-600 font-medium">delightful</span>, and actually <span class="text-pink-600 font-medium">helpful</span>.
-					</p>
-				</div>
-
-				<div>
-					<h4 class="font-bold text-sm text-gray-700 mb-2">Why we made this:</h4>
-					<ul class="space-y-1.5 text-sm text-gray-600">
-						<li class="flex items-start gap-2">
-							<span class="text-pink-500 text-lg">⬩</span>
-							<span>We both think better by <span class="italic">talking</span>, not typing</span>
-						</li>
-						<li class="flex items-start gap-2">
-							<span class="text-pink-500 text-lg">⬩</span>
-							<span>Other voice-typing tools are either expensive or clunky</span>
-						</li>
-						<li class="flex items-start gap-2">
-							<span class="text-pink-500 text-lg">⬩</span>
-							<span>We wanted something beautiful that just works</span>
-						</li>
-					</ul>
-				</div>
-
-				<div class="border-l-3 border-pink-300 py-1 pl-4 ml-1 my-2 italic text-gray-600">
-					"A little bit of soul, a hint of chaos, and a deep love for clarity."
-				</div>
-
-				<div class="flex justify-between items-end pt-2">
-					<div>
-						<p class="text-xs text-gray-500">Made with ☕ in Melbourne, Australia</p>
-					</div>
-					<div class="flex items-center gap-2 text-xs font-medium text-gray-600">
-						<span class="animate-pulse text-pink-500">❤️</span> Dennis & Pabs
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="modal-backdrop bg-black/40" on:click|self|preventDefault|stopPropagation={() => {
-			document.getElementById('about_modal').close();
-			// Use the closeModal function to restore scrolling properly
-			setTimeout(closeModal, 50);
-		}}></div>
-	</dialog>
-
-	<!-- DaisyUI Extension Modal -->
-	<dialog id="extension_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;" role="dialog" aria-labelledby="extension_modal_title" aria-modal="true">
-		<div class="modal-box bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
-			<form method="dialog">
-				<button 
-					class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
-					on:click={closeModal}
-				>✕</button>
-			</form>
-			
-			<div class="animate-fadeUp space-y-4">
-				<div class="flex items-center gap-3 mb-1">
-					<div class="w-9 h-9 bg-gradient-to-br from-white to-purple-50 rounded-full flex items-center justify-center shadow-sm border border-purple-200/60">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-purple-600">
-							<path d="M6 2l.01 6L10 12l-4 4 .01 6H20V2H6zm7 11a1 1 0 110-2 1 1 0 010 2zm-1-9a1 1 0 000 2h5a1 1 0 100-2h-5z" />
-						</svg>
-					</div>
-					<h3 id="extension_modal_title" class="font-black text-xl text-gray-800 tracking-tight">Chrome Extension</h3>
-				</div>
-				
-				<div class="bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 rounded-lg border border-pink-200/60 shadow-sm">
-					<p class="text-sm leading-relaxed text-gray-700">
-						Use TalkType everywhere on the web! Our Chrome extension lets you transcribe directly into any text field. 
-						Perfect for emails, social media, messaging apps, or anywhere else you need to type.
-					</p>
-				</div>
-
-				<div class="rounded-xl border border-pink-200/60 bg-gradient-to-br from-white to-pink-50/50 p-4 shadow-sm">
-					<h4 class="font-bold text-sm text-gray-800 mb-2">Installation in 5 easy steps:</h4>
-					<ol class="mt-2 list-decimal space-y-2 pl-5 text-left text-sm text-gray-700">
-						<li class="pb-1">
-							Download the extension files <a
-								href="#"
-								class="text-pink-600 transition-colors hover:text-pink-700 hover:underline font-medium"
-								>here</a
-							>
-						</li>
-						<li class="pb-1">
-							Unzip the files to a folder on your computer
-						</li>
-						<li class="pb-1">
-							Open Chrome and go to <code
-								class="rounded-md bg-pink-100 px-1.5 py-0.5 font-mono text-pink-700"
-								>chrome://extensions</code
-							>
-						</li>
-						<li class="pb-1">Enable "Developer mode" in the top-right corner</li>
-						<li>Click "Load unpacked" and select the extension folder</li>
-					</ol>
-				</div>
-
-				<div class="pt-1 flex justify-end">
-					<span class="text-xs text-gray-600 italic font-medium">Voice-to-text anywhere, anytime 🎙️</span>
-				</div>
-			</div>
-		</div>
-		<div class="modal-backdrop bg-black/40" on:click|self|preventDefault|stopPropagation={() => {
-			document.getElementById('extension_modal').close();
-			// Use the closeModal function to restore scrolling properly
-			setTimeout(closeModal, 50);
-		}}></div>
-	</dialog>
-	
-	<!-- Settings Modal -->
-	<SettingsModal open={showSettingsModal} closeModal={closeSettingsModal} />
+	<!-- Settings Modal - lazy loaded -->
+	{#if SettingsModal}
+		<svelte:component this={SettingsModal} open={showSettingsModal} closeModal={closeSettingsModal} />
+	{/if}
 	
 	<!-- First-time Intro Modal (DaisyUI version) -->
 	<dialog id="intro_modal" class="modal" role="dialog" aria-labelledby="intro_modal_title" aria-modal="true">

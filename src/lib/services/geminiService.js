@@ -7,6 +7,37 @@ if (!genAIKEY) {
 const genAI = new GoogleGenerativeAI(genAIKEY);
 const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
+// Track model initialization state
+let modelInitialized = false;
+let initializationPromise = null;
+
+// Function to preload/initialize the model for faster response
+function preloadModel() {
+  // Only initialize once
+  if (modelInitialized || initializationPromise) {
+    return initializationPromise;
+  }
+  
+  console.log('🔍 Preloading speech model for faster response');
+  
+  // We create a very small "ping" query to initialize the model
+  // This warms up the Gemini API connection and loads necessary client-side resources
+  initializationPromise = model.generateContent('hello')
+    .then(response => {
+      console.log('✅ Speech model preloaded successfully');
+      modelInitialized = true;
+      return response;
+    })
+    .catch(error => {
+      console.error('❌ Error preloading speech model:', error);
+      // Reset the initialization state so we can try again
+      initializationPromise = null;
+      throw error;
+    });
+    
+  return initializationPromise;
+}
+
 function blobToGenerativePart(blob) {
 	return new Promise((resolve) => {
 		const reader = new FileReader();
@@ -24,6 +55,9 @@ function blobToGenerativePart(blob) {
 }
 
 export const geminiService = {
+	// Expose the preload function for hover-based preloading
+	preloadModel,
+	
 	async extractActionItems(text) {
 		try {
 			console.log('🤖 Extracting action items with Gemini');
@@ -76,6 +110,19 @@ export const geminiService = {
 	async transcribeAudio(audioBlob) {
 		try {
 			console.log('🎤 Transcribing audio with Gemini');
+			
+			// Try to preload the model if it hasn't been preloaded yet
+			// This ensures we take advantage of preloading optimization when possible
+			if (!modelInitialized && !initializationPromise) {
+				try {
+					console.log('🔍 Preloading model before transcription');
+					await preloadModel();
+				} catch (err) {
+					// Continue even if preloading fails - we'll still attempt transcription
+					console.log('⚠️ Preloading failed, continuing with transcription:', err);
+				}
+			}
+			
 			const prompt =
 				"Transcribe this audio file accurately and completely, removing any redundant 'ums,' 'likes', 'uhs', and similar filler words. Return only the cleaned-up transcription, with no additional text.";
 			const audioPart = await blobToGenerativePart(audioBlob);
