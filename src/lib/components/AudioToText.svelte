@@ -836,7 +836,7 @@
 </div>
 
 <!-- Screen reader only status announcements -->
-<div aria-live="polite" aria-atomic="true" class="sr-only">
+<div role="status" aria-live="polite" aria-atomic="true" class="sr-only">
 	{#if screenReaderStatus}
 		{screenReaderStatus}
 	{/if}
@@ -844,8 +844,8 @@
 
 <!-- Floating success toast - positioned fixed and independently from content -->
 {#if clipboardSuccess}
-	<div class="toast-container flex w-full justify-center">
-		<div class="clipboard-toast {!document.hasFocus() ? 'focus-warning' : ''} w-[calc(100%-2rem)] max-w-[360px]" aria-live="polite">
+	<div class="toast-container flex w-full justify-center" role="status" aria-live="polite">
+		<div class="clipboard-toast {!document.hasFocus() ? 'focus-warning' : ''} w-[calc(100%-2rem)] max-w-[360px]">
 			<!-- Ghost icon to match app theme -->
 			<div class="toast-ghost">
 				<svg viewBox="0 0 24 24" class="h-5 w-5 sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg">
@@ -868,7 +868,7 @@
 
 <!-- Permission error modal -->
 {#if showPermissionError}
-	<div class="permission-error-container flex w-full justify-center" on:click={() => showPermissionError = false} role="alertdialog" aria-live="assertive">
+	<div class="permission-error-container flex w-full justify-center" on:click={() => showPermissionError = false} role="alertdialog" aria-labelledby="permission_error_title" aria-describedby="permission_error_description" aria-live="assertive">
 		<div class="permission-error-modal">
 			<!-- Icon and title -->
 			<div class="modal-header">
@@ -879,11 +879,11 @@
 						<line x1="12" y1="16" x2="12.01" y2="16"></line>
 					</svg>
 				</div>
-				<h3>Microphone Access Denied</h3>
+				<h3 id="permission_error_title">Microphone Access Denied</h3>
 			</div>
 			
 			<!-- Permission error message -->
-			<p>TalkType needs microphone access to transcribe your speech. Please update your browser settings to allow microphone access.</p>
+			<p id="permission_error_description">TalkType needs microphone access to transcribe your speech. Please update your browser settings to allow microphone access.</p>
 			
 			<!-- Solution steps -->
 			<div class="error-steps">
@@ -1059,6 +1059,19 @@
 		}
 	}
 
+	/* Override for icon-layers in AudioToText component */
+	:global(.recording .icon-layers) {
+		overflow: visible !important;
+		position: relative;
+		z-index: 2;
+	}
+	
+	/* Make sure the outline is visible on top of the gradient */
+	:global(.recording .icon-bg),
+	:global(.recording .icon-base) {
+		filter: brightness(1.05);
+	}
+	
 	/* Transcript box styling */
 	.transcript-box {
 		box-shadow:
@@ -1661,6 +1674,8 @@
 	:global(.ghost-wobble-right) {
 		animation: ghost-wobble-right 0.6s ease-in-out;
 	}
+	
+	/* Recording state glow effect is now handled in +page.svelte */
 
 	/* Button animations */
 	.button-press {

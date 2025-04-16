@@ -1,34 +1,15 @@
+<!-- This content is replaced with improved version using the Replace tool -->
+<script context="module">
+	let showExtensionInfo = false;
+	let showAboutInfo = false;
+	let showSettingsModal = false;
+</script>
+
 <script>
 	import { onMount } from 'svelte';
 	import AudioToText from '$lib/components/AudioToText.svelte';
 	import SettingsModal from '$lib/components/settings/SettingsModal.svelte';
 	import { browser } from '$app/environment';
-	import { 
-		isRecording as recordingStore, 
-		theme, 
-		showAboutInfo, 
-		showExtensionInfo, 
-		showSettingsModal,
-		hasSeenIntro,
-		autoRecord as autoRecordStore,
-		applyTheme
-	} from '$lib';
-	
-	// Initialize and sync values with stores for easier migration
-	let localThemeValue;
-	let localModalStates = {
-		aboutModal: false,
-		extensionModal: false,
-		settingsModal: false
-	};
-	let localAutoRecordValue = false;
-	
-	// Subscribe to stores
-	const unsubTheme = theme.subscribe(value => { localThemeValue = value; });
-	const unsubAboutInfo = showAboutInfo.subscribe(value => { localModalStates.aboutModal = value; });
-	const unsubExtensionInfo = showExtensionInfo.subscribe(value => { localModalStates.extensionModal = value; });
-	const unsubSettingsModal = showSettingsModal.subscribe(value => { localModalStates.settingsModal = value; });
-	const unsubAutoRecord = autoRecordStore.subscribe(value => { localAutoRecordValue = value === 'true'; });
 	
 	// Create a reusable Svelte action for handling clicks outside an element
 	function clickOutside(node, { enabled = true, callback = () => {} }) {
@@ -54,15 +35,11 @@
 	let audioToTextComponent;
 	let showIntroModal = false;
 
-	// Ultra simplified blinking system
-	let blinkTimeout = null;
-	let isRecording = false; // Local variable for component state
+	// Brian Eno-inspired ambient blinking system with proper state tracking
+	let blinkTimeouts = [];
+	let isRecording = false;
 	let eyesElement = null;
-
-	// Subscribe to recording store
-	const unsubscribeRecording = recordingStore.subscribe(value => {
-		isRecording = value; // Keep local variable in sync with store
-	});
+	let domReady = false;
 
 	// Debug Helper that won't pollute console in production but helps during development
 	function debug(message) {
@@ -73,7 +50,7 @@
 	let titleAnimationComplete = false;
 	let subtitleAnimationComplete = false;
 
-	// Get eyes element safely
+	// Get eyes element safely with retry mechanism
 	function getEyesElement() {
 		if (eyesElement) return eyesElement;
 
@@ -87,63 +64,253 @@
 		return eyesElement;
 	}
 
-	// Single blink using CSS classes - simplified and faster
-	function blink() {
+	// Single blink using CSS classes
+	function performSingleBlink() {
 		const eyes = getEyesElement();
 		if (!eyes) return;
 
-		debug('Performing blink');
+		debug('Performing single blink');
 
-		// Clear any existing animations first
-		if (blinkTimeout) {
-			clearTimeout(blinkTimeout);
-		}
-		
-		// Apply blink animation
+		// Add class then remove it after animation completes
 		eyes.classList.add('blink-once');
-		
-		// Remove class after animation completes (faster animation)
-		blinkTimeout = setTimeout(() => {
+
+		const timeout = setTimeout(() => {
 			eyes.classList.remove('blink-once');
-		}, 180);
+		}, 400);
+
+		blinkTimeouts.push(timeout);
 	}
 
-	// Greeting blink on page load - simplified
+	// Double blink using CSS classes and timeouts
+	function performDoubleBlink() {
+		const eyes = getEyesElement();
+		if (!eyes) return;
+
+		debug('Performing double blink');
+
+		// First blink
+		eyes.classList.add('blink-once');
+
+		const timeout1 = setTimeout(() => {
+			eyes.classList.remove('blink-once');
+
+			// Short pause between blinks
+			const timeout2 = setTimeout(() => {
+				// Second blink
+				eyes.classList.add('blink-once');
+
+				const timeout3 = setTimeout(() => {
+					eyes.classList.remove('blink-once');
+				}, 300);
+
+				blinkTimeouts.push(timeout3);
+			}, 180);
+
+			blinkTimeouts.push(timeout2);
+		}, 300);
+
+		blinkTimeouts.push(timeout1);
+	}
+
+	// Triple blink pattern
+	function performTripleBlink() {
+		const eyes = getEyesElement();
+		if (!eyes) return;
+
+		debug('Performing triple blink');
+
+		// First blink
+		eyes.classList.add('blink-once');
+
+		const timeout1 = setTimeout(() => {
+			eyes.classList.remove('blink-once');
+
+			// Short pause between blinks
+			const timeout2 = setTimeout(() => {
+				// Second blink
+				eyes.classList.add('blink-once');
+
+				const timeout3 = setTimeout(() => {
+					eyes.classList.remove('blink-once');
+
+					// Another short pause
+					const timeout4 = setTimeout(() => {
+						// Third blink
+						eyes.classList.add('blink-once');
+
+						const timeout5 = setTimeout(() => {
+							eyes.classList.remove('blink-once');
+						}, 250);
+
+						blinkTimeouts.push(timeout5);
+					}, 150);
+
+					blinkTimeouts.push(timeout4);
+				}, 250);
+
+				blinkTimeouts.push(timeout3);
+			}, 150);
+
+			blinkTimeouts.push(timeout2);
+		}, 250);
+
+		blinkTimeouts.push(timeout1);
+	}
+
+	// Generative ambient blinking system - Brian Eno style
+	function startAmbientBlinking() {
+		debug('Starting ambient blinking system');
+
+		if (!domReady) {
+			debug('DOM not ready, delaying ambient blinking');
+			setTimeout(startAmbientBlinking, 500);
+			return;
+		}
+
+		const eyes = getEyesElement();
+		if (!eyes) {
+			debug('Eyes element not found, delaying ambient blinking');
+			setTimeout(startAmbientBlinking, 500);
+			return;
+		}
+
+		// Clear any existing timeouts to avoid conflicts
+		clearAllBlinkTimeouts();
+
+		// Don't run ambient blinks if recording
+		if (isRecording) {
+			debug('Recording active, skipping ambient blinks');
+			return;
+		}
+
+		// Parameters for generative system - Brian Eno style (more frequent now)
+		const minGap = 4000; // Minimum time between blinks (4s - was 7s)
+		const maxGap = 9000; // Maximum time between blinks (9s - was 16s)
+
+		// Blink type probabilities
+		const blinkTypes = [
+			{ type: 'single', probability: 0.6 }, // 60%
+			{ type: 'double', probability: 0.3 }, // 30%
+			{ type: 'triple', probability: 0.1 } // 10%
+		];
+
+		// Schedule the next blink recursively
+		function scheduleNextBlink() {
+			// Random time interval with Brian Eno-like indeterminacy
+			const nextInterval = Math.floor(minGap + Math.random() * (maxGap - minGap));
+
+			debug(`Next blink in ${nextInterval}ms`);
+
+			const timeout = setTimeout(() => {
+				// Exit if we've switched to recording state
+				if (isRecording) {
+					debug('Recording active, skipping scheduled blink');
+					return;
+				}
+
+				// Choose blink type based on probability distribution
+				const rand = Math.random();
+				let cumulativeProbability = 0;
+				let selectedType = 'single'; // Default
+
+				for (const blink of blinkTypes) {
+					cumulativeProbability += blink.probability;
+					if (rand <= cumulativeProbability) {
+						selectedType = blink.type;
+						break;
+					}
+				}
+
+				debug(`Selected ${selectedType} blink`);
+
+				// Execute the selected blink pattern
+				if (selectedType === 'single') {
+					performSingleBlink();
+				} else if (selectedType === 'double') {
+					performDoubleBlink();
+				} else {
+					performTripleBlink();
+				}
+
+				// Schedule the next blink
+				scheduleNextBlink();
+			}, nextInterval);
+
+			blinkTimeouts.push(timeout);
+		}
+
+		// Start with a slight delay
+		setTimeout(scheduleNextBlink, 1000);
+	}
+
+	// Helper function to clear all scheduled blinks
+	function clearAllBlinkTimeouts() {
+		debug(`Clearing ${blinkTimeouts.length} blink timeouts`);
+		blinkTimeouts.forEach((timeout) => clearTimeout(timeout));
+		blinkTimeouts = [];
+	}
+
+	// Greeting blink on page load
 	function greetingBlink() {
 		const eyes = getEyesElement();
 		if (!eyes) {
 			// Retry if eyes not found yet
+			debug('Eyes not found for greeting, retrying');
 			setTimeout(greetingBlink, 300);
 			return;
 		}
 
 		debug('Performing greeting blink');
 
-		// Do a friendly blink after animations complete
+		// First apply a gentle wobble to the ghost icon
+		const iconContainer = document.querySelector('.icon-container');
+		if (iconContainer) {
+			// Add slight wobble animation to ghost
+			setTimeout(() => {
+				debug('Adding greeting wobble to ghost');
+
+				// Apply the wobble animation
+				const wobbleClass = 'ghost-wobble-greeting';
+				iconContainer.classList.add(wobbleClass);
+
+				// Remove class after animation completes
+				setTimeout(() => {
+					iconContainer.classList.remove(wobbleClass);
+				}, 1000);
+			}, 1000); // Start the wobble after the text starts animating
+		}
+
+		// Do a friendly double-blink after animations complete
 		setTimeout(() => {
-			blink();
-		}, 1000);
+			performDoubleBlink();
+
+			// Start ambient blinking system after greeting
+			setTimeout(startAmbientBlinking, 1000);
+		}, 2000); // Delay long enough for text animations
 	}
 
-	// Setup ghost eyes when DOM is ready
-	function setupGhostEyes() {
-		debug('Setting up ghost eyes');
+	// Domain Ready and Observer setup
+	function setupDomObserver() {
+		debug('Setting up DOM observer');
 
-		// Look for the eyes element
+		// Check if we can find the eyes immediately
 		eyesElement = document.querySelector('.icon-eyes');
 		if (eyesElement) {
 			debug('Eyes element found immediately');
+			domReady = true;
 			greetingBlink();
 			return;
 		}
 
-		// If not found, use a simpler observer
+		// If not found, set up observer to watch for it
 		const observer = new MutationObserver((mutations, obs) => {
-			eyesElement = document.querySelector('.icon-eyes');
-			if (eyesElement) {
-				debug('Eyes element found');
+			const eyes = document.querySelector('.icon-eyes');
+			if (eyes) {
+				debug('Eyes element found via MutationObserver');
+				eyesElement = eyes;
+				domReady = true;
 				greetingBlink();
-				obs.disconnect();
+				obs.disconnect(); // Stop observing once we've found it
 			}
 		});
 
@@ -155,9 +322,11 @@
 
 		// Fallback in case observer doesn't trigger
 		setTimeout(() => {
-			if (!eyesElement) {
+			if (!domReady) {
+				debug('Fallback DOM ready check');
 				eyesElement = document.querySelector('.icon-eyes');
 				if (eyesElement) {
+					domReady = true;
 					greetingBlink();
 				}
 			}
@@ -180,15 +349,10 @@
 	function checkFirstVisit() {
 		if (!browser) return;
 		
-		// Local variable to track seen status
-		let seenIntro = false;
+		// Check if user has seen the intro before
+		const hasSeenIntro = localStorage.getItem('hasSeenTalkTypeIntro');
 		
-		// Get intro seen status from store
-		const unsubIntroSeen = hasSeenIntro.subscribe(value => {
-			seenIntro = value === 'true';
-		});
-		
-		if (!seenIntro) {
+		if (!hasSeenIntro) {
 			// First visit, show intro modal after a brief delay
 			setTimeout(() => {
 				const modal = document.getElementById('intro_modal');
@@ -206,21 +370,18 @@
 				}
 			}, 500);
 		}
-		
-		// Clean up subscription
-		unsubIntroSeen();
 	}
 
 	// Save that user has seen the intro
 	function markIntroAsSeen() {
 		if (!browser) return;
-		hasSeenIntro.set('true');
+		localStorage.setItem('hasSeenTalkTypeIntro', 'true');
 	}
 
 	// Component lifecycle
 	onMount(() => {
 		debug('Component mounted');
-		setupGhostEyes();
+		setupDomObserver();
 		
 		// Check for auto-record setting and start recording if enabled
 		if (browser && localStorage.getItem('talktype-autoRecord') === 'true') {
@@ -235,8 +396,10 @@
 						// Start recording immediately with minimal animation
 						const eyes = document.querySelector('.icon-eyes');
 						if (eyes) {
+							clearAllBlinkTimeouts(); // Clear any existing animations
+							
 							// Quick single blink and start recording immediately
-							blink();
+							eyes.classList.add('blink-once');
 							
 							// Start recording immediately
 							audioToTextComponent.startRecording();
@@ -246,6 +409,11 @@
 							
 							// Also update the local recording state variable
 							isRecording = true;
+							
+							// Remove blink class after a short delay
+							setTimeout(() => {
+								eyes.classList.remove('blink-once');
+							}, 100);
 						} else {
 							// Fallback if eyes element not found
 							audioToTextComponent.startRecording();
@@ -298,27 +466,48 @@
 		// localStorage.removeItem('talktype-vibe');
 
 		return () => {
-			debug('Component unmounting, clearing timeouts and subscriptions');
-			if (blinkTimeout) clearTimeout(blinkTimeout);
-			
-			// Clean up all subscriptions
-			unsubscribeRecording();
-			unsubTheme();
-			unsubAboutInfo();
-			unsubExtensionInfo();
-			unsubSettingsModal();
-			unsubAutoRecord();
+			debug('Component unmounting, clearing timeouts');
+			clearAllBlinkTimeouts();
 		};
 	});
 	
-	// Apply theme/vibe function now uses centralized store function from $lib
-	// This local wrapper preserves backward compatibility during transition
-	function localApplyTheme(vibeId) {
-		// Apply theme using the centralized function from $lib
-		applyTheme(vibeId);
+	// Apply theme/vibe function for initial load
+	function applyTheme(vibeId) {
+		// Store in localStorage
+		localStorage.setItem("talktype-vibe", vibeId);
+		
+		// Apply theme to document root for consistent CSS targeting
+		document.documentElement.setAttribute('data-theme', vibeId);
+		
+		// Update ghost icon by swapping the SVG file
+		const ghostBg = document.querySelector('.icon-bg');
+		if (ghostBg) {
+			// Set the appropriate gradient SVG based on theme
+			switch(vibeId) {
+				case 'mint':
+					ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
+					ghostBg.classList.remove('rainbow-animated');
+					break;
+				case 'bubblegum':
+					ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
+					ghostBg.classList.remove('rainbow-animated');
+					break;
+				case 'rainbow':
+					ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
+					ghostBg.classList.add('rainbow-animated');
+					break;
+				default: // Default to peach
+					ghostBg.src = '/talktype-icon-bg-gradient.svg';
+					ghostBg.classList.remove('rainbow-animated');
+					break;
+			}
+			
+			// Force a reflow to ensure the gradient is visible
+			void ghostBg.offsetWidth;
+		}
 	}
 
-	// Simplified recording toggle with no animation state connections
+	// Reliable recording toggle with ambient blinking support
 	function startRecordingFromGhost(event) {
 		// Stop event propagation to prevent bubbling
 		event.stopPropagation();
@@ -327,13 +516,25 @@
 		// Debug current state
 		debug(`Ghost clicked! Recording state: ${audioToTextComponent?.recording}`);
 
-		// Get DOM elements
+		// Get DOM elements with error checking
 		const iconContainer = event.currentTarget;
-		if (!iconContainer) return;
+		if (!iconContainer) {
+			debug('No icon container found during click handler');
+			return;
+		}
 
-		if (!audioToTextComponent) return;
+		const eyes = getEyesElement();
+		if (!eyes) {
+			debug('Eyes element not found during click handler');
+			return;
+		}
 
-		// Use DOM class as source of truth
+		if (!audioToTextComponent) {
+			debug('No audioToTextComponent found');
+			return;
+		}
+
+		// Use DOM class as source of truth (reliable)
 		const hasRecordingClass = iconContainer.classList.contains('recording');
 		debug(`DOM state: has 'recording' class = ${hasRecordingClass}`);
 
@@ -344,19 +545,40 @@
 			// Update recording state
 			isRecording = false;
 
+			// Reset all animation state
+			eyes.style.animation = 'none';
+
 			// Remove the recording class
 			iconContainer.classList.remove('recording');
 
-			// Add wobble animation when stopping
+			// Add wobble animation when stopping from ghost click
+			debug('Applying wobble animation to ghost icon on stop');
+			// Force reflow to ensure animation applies
+			void iconContainer.offsetWidth;
+
+			// Clear any existing animation classes first
+			iconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
+
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
+			debug(`Adding class: ${wobbleClass}`);
 			iconContainer.classList.add(wobbleClass);
-			
+			console.log('Current classes:', iconContainer.className);
 			setTimeout(() => {
+				debug(`Removing class: ${wobbleClass}`);
 				iconContainer.classList.remove(wobbleClass);
-				
-				// Blink once to acknowledge stop
-				blink();
 			}, 600);
+
+			// Blink once to acknowledge stop
+			setTimeout(() => {
+				debug('Performing stop acknowledgment blink');
+				performSingleBlink();
+
+				// Resume ambient blinking after a pause
+				setTimeout(() => {
+					debug('Resuming ambient blinking');
+					startAmbientBlinking();
+				}, 1000);
+			}, 100);
 
 			// Stop the recording
 			try {
@@ -369,32 +591,63 @@
 			// STARTING RECORDING
 			debug('Starting recording');
 
-			// Update recording state
+			// Update recording state and stop ambient system
 			isRecording = true;
+			clearAllBlinkTimeouts();
 
-			// Add wobble animation when starting
+			// Reset any existing animations
+			eyes.style.animation = 'none';
+
+			// Add wobble animation when starting from ghost click
+			debug('Applying wobble animation to ghost icon on start');
+			// Force reflow to ensure animation applies
+			void iconContainer.offsetWidth;
+
+			// Clear any existing animation classes first
+			iconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
+
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
+			debug(`Adding class: ${wobbleClass}`);
 			iconContainer.classList.add(wobbleClass);
-			
+			console.log('Current classes:', iconContainer.className);
 			setTimeout(() => {
+				debug(`Removing class: ${wobbleClass}`);
 				iconContainer.classList.remove(wobbleClass);
-				
-				// Blink to acknowledge start
-				blink();
-				
-				// Add recording class
+			}, 600);
+
+			// Give a tiny delay to ensure animation reset
+			setTimeout(() => {
+				// Random chance for different start behaviors
+				const startBehavior = Math.random();
+
+				if (startBehavior < 0.7) {
+					// 70% chance: Standard quick blink
+					debug('Performing standard start blink');
+					performSingleBlink();
+				} else if (startBehavior < 0.9) {
+					// 20% chance: Double blink (excited)
+					debug('Performing excited double start blink');
+					performDoubleBlink();
+				} else {
+					// 10% chance: Triple blink (super attentive)
+					debug('Performing attentive triple start blink');
+					performTripleBlink();
+				}
+
+				// Add recording class after the blink animation completes
 				setTimeout(() => {
+					debug('Adding recording class');
 					iconContainer.classList.add('recording');
-				}, 300);
-				
+				}, 600);
+
 				// Start recording
 				try {
 					audioToTextComponent.startRecording();
 					debug('Called startRecording() on component');
 				} catch (err) {
-					debug(`Error starting recording: ${err.message}`);
+					debug(`Error stopping recording: ${err.message}`);
 				}
-			}, 600);
+			}, 50);
 		}
 	}
 
@@ -404,9 +657,6 @@
 	let scrollPosition = 0;
 
 	function showAboutModal() {
-		// Update store state
-		showAboutInfo.set(true);
-		
 		// Radical approach to prevent scrollbar issues
 		scrollPosition = window.scrollY;
 		const width = document.body.clientWidth;
@@ -425,9 +675,6 @@
 
 	// Function to show the Extension modal
 	function showExtensionModal() {
-		// Update store state
-		showExtensionInfo.set(true);
-
 		// Radical approach to prevent scrollbar issues
 		scrollPosition = window.scrollY;
 		const width = document.body.clientWidth;
@@ -446,9 +693,6 @@
 	
 	// Function to show the Settings modal
 	function openSettingsModal() {
-		// Update store state
-		showSettingsModal.set(true);
-
 		// First, ensure any open dialogs are closed and scroll is restored
 		if (modalOpen) {
 			closeModal();
@@ -497,11 +741,6 @@
 	function closeModal() {
 		if (!modalOpen) return;
 		
-		// Reset all modal states in stores
-		showAboutInfo.set(false);
-		showExtensionInfo.set(false);
-		showSettingsModal.set(false);
-		
 		// Ensure any open dialogs are properly closed
 		document.querySelectorAll('dialog[open]').forEach(dialog => {
 			if (dialog && typeof dialog.close === 'function') {
@@ -535,14 +774,21 @@
 	class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-center px-4 py-8 pb-28 pt-[10vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-32"
 >
 	<div
-		class="flex flex-col items-center w-full max-w-md pt-4 mx-auto sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
+		class="mx-auto flex w-full max-w-md flex-col items-center pt-4 sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
 	>
 		<!-- Ghost Icon - Mobile: tight, Desktop: chunky -->
 		<button
-			class="p-0 mb-4 bg-transparent border-0 appearance-none cursor-pointer icon-container h-36 w-36 sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64"
-			style="outline: none; -webkit-tap-highlight-color: transparent;"
-			on:click|preventDefault|stopPropagation={startRecordingFromGhost}
-			aria-label="Toggle Recording"
+				class="icon-container mb-4 h-36 w-36 cursor-pointer sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64 appearance-none border-0 bg-transparent p-0"
+				style="outline: none; -webkit-tap-highlight-color: transparent;"
+				on:click|preventDefault|stopPropagation={startRecordingFromGhost}
+				on:keydown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						startRecordingFromGhost(e);
+					}
+				}}
+				aria-label="Toggle Recording"
+				aria-pressed={isRecording}
 		>
 			<!-- Layered approach with gradient background and blinking eyes -->
 			<div class="icon-layers">
@@ -569,7 +815,7 @@
 
 		<!-- Typography with improved kerning and weight using font-variation-settings -->
 		<h1
-			class="mb-2 text-5xl font-black tracking-tight text-center cursor-default select-none staggered-text sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
+			class="staggered-text mb-2 text-center text-5xl font-black tracking-tight cursor-default select-none sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
 			style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal; font-variation-settings: 'wght' 900, 'opsz' 32;"
 		>
 			<span class="stagger-letter mr-[-0.06em]">T</span><span class="stagger-letter ml-[-0.04em]">a</span><span
@@ -581,7 +827,7 @@
 		
 		<!-- Updated subheadline with improved typography and brand voice -->
 		<p
-			class="mx-auto mt-2 mb-4 text-xl text-center cursor-default select-none slide-in-subtitle max-w-prose text-gray-700/85 sm:mt-6 sm:mb-8 md:mt-6 md:mb-8"
+			class="slide-in-subtitle mx-auto mt-2 mb-4 max-w-prose text-xl text-center text-gray-700/85 cursor-default select-none sm:mt-6 sm:mb-8 md:mt-6 md:mb-8"
 			style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.6; max-width: 35ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 		>
 			Voice-to-text that doesn't suck. Spooky good, freaky fast, always free.
@@ -597,13 +843,13 @@
 	<footer
 		class="fixed bottom-0 left-0 right-0 border-t border-pink-200/80 bg-gradient-to-r from-[#fefaf4] via-[#fde4da] to-[#fdf7ef] px-4 py-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[2px] sm:py-5 box-border"
 	>
-		<div class="container flex flex-col flex-wrap items-center justify-between gap-2 mx-auto sm:gap-3 sm:flex-row">
-			<div class="flex flex-wrap items-center justify-center copyright">
-				<span class="mr-1 text-xs text-sm font-medium tracking-tight sm:text-sm">
+		<div class="container mx-auto flex flex-col items-center justify-between gap-2 sm:gap-3 sm:flex-row flex-wrap">
+			<div class="copyright flex items-center flex-wrap justify-center">
+				<span class="mr-1 text-sm font-medium tracking-tight sm:text-sm text-xs">
 					© {new Date().getFullYear()} TalkType
 				</span>
-				<span class="mx-1 text-pink-300 sm:mx-2">•</span>
-				<span class="text-xs font-light text-gray-600 sm:text-sm"
+				<span class="mx-1 sm:mx-2 text-pink-300">•</span>
+				<span class="font-light text-gray-600 text-xs sm:text-sm"
 					>Made with
 					<span
 						class="mx-0.5 inline-block transform animate-pulse text-pink-500 transition-transform duration-300 hover:scale-110"
@@ -614,21 +860,17 @@
 			</div>
 			<div class="flex items-center gap-3 sm:gap-4">
 				<button
-					class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-2 px-3 sm:px-4 sm:py-2.5 h-auto min-h-0"
-					on:click={showAboutModal}
-				>
-					About
-				</button>
-				<button
-					class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-2 px-3 sm:px-4 sm:py-2.5 h-auto min-h-0"
-					on:click={openSettingsModal}
-				>
+						class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-2 px-3 sm:px-4 sm:py-2.5 h-auto min-h-0"
+						on:click={openSettingsModal}
+						aria-label="Open Settings"
+					>
 					Settings
 				</button>
-				<button 
-					class="btn btn-sm bg-gradient-to-r from-pink-50 to-purple-100 text-purple-600 border-none hover:bg-opacity-90 shadow-sm hover:shadow transition-all text-xs sm:text-sm py-2 px-3 sm:px-4 sm:py-2.5 h-auto min-h-0"
-					on:click={showExtensionModal}
-				>
+				<button
+						class="btn btn-sm bg-gradient-to-r from-pink-50 to-purple-100 text-purple-600 border-none hover:bg-opacity-90 shadow-sm hover:shadow transition-all text-xs sm:text-sm py-2 px-3 sm:px-4 sm:py-2.5 h-auto min-h-0"
+						on:click={showExtensionModal}
+						aria-label="Chrome Extension Information"
+					>
 					Chrome Extension
 				</button>
 			</div>
@@ -636,63 +878,63 @@
 	</footer>
 
 	<!-- DaisyUI About Modal -->
-	<dialog id="about_modal" class="fixed z-50 overflow-hidden modal modal-bottom sm:modal-middle" style="overflow-y: hidden!important;">
+	<dialog id="about_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;" role="dialog" aria-labelledby="about_modal_title" aria-modal="true">
 		<div class="modal-box bg-gradient-to-br from-white to-[#fefaf4] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
 			<form method="dialog">
 				<button 
-					class="absolute text-pink-500 bg-pink-100 border-pink-200 shadow-sm btn btn-sm btn-circle right-3 top-3 hover:bg-pink-200 hover:text-pink-700"
+					class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
 					on:click={closeModal}
 				>✕</button>
 			</form>
 			
-			<div class="space-y-4 animate-fadeUp">
+			<div class="animate-fadeUp space-y-4">
 				<div class="flex items-center gap-3 mb-1">
-					<div class="flex items-center justify-center border rounded-full shadow-sm w-9 h-9 bg-gradient-to-br from-white to-pink-50 border-pink-200/60">
+					<div class="w-9 h-9 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
 						<div class="relative w-7 h-7">
 							<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
 							<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
 							<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
 						</div>
 					</div>
-					<h3 class="text-xl font-black tracking-tight text-gray-800">About TalkType</h3>
+					<h3 id="about_modal_title" class="font-black text-xl text-gray-800 tracking-tight">About TalkType</h3>
 				</div>
 				
-				<div class="p-4 border rounded-lg shadow-sm bg-gradient-to-r from-pink-50/80 to-amber-50/80 border-pink-200/60">
+				<div class="bg-gradient-to-r from-pink-50/80 to-amber-50/80 p-4 rounded-lg border border-pink-200/60 shadow-sm">
 					<p class="text-sm leading-relaxed text-gray-700">
 						TalkType is a minimalist voice-to-text tool that transforms your speech into text effortlessly. 
-						Built with love by two friends who think tech should be <span class="font-medium text-pink-600">simple</span>, 
-						<span class="font-medium text-amber-600">delightful</span>, and actually <span class="font-medium text-pink-600">helpful</span>.
+						Built with love by two friends who think tech should be <span class="text-pink-600 font-medium">simple</span>, 
+						<span class="text-amber-600 font-medium">delightful</span>, and actually <span class="text-pink-600 font-medium">helpful</span>.
 					</p>
 				</div>
 
 				<div>
-					<h4 class="mb-2 text-sm font-bold text-gray-700">Why we made this:</h4>
+					<h4 class="font-bold text-sm text-gray-700 mb-2">Why we made this:</h4>
 					<ul class="space-y-1.5 text-sm text-gray-600">
 						<li class="flex items-start gap-2">
-							<span class="text-lg text-pink-500">⬩</span>
+							<span class="text-pink-500 text-lg">⬩</span>
 							<span>We both think better by <span class="italic">talking</span>, not typing</span>
 						</li>
 						<li class="flex items-start gap-2">
-							<span class="text-lg text-pink-500">⬩</span>
+							<span class="text-pink-500 text-lg">⬩</span>
 							<span>Other voice-typing tools are either expensive or clunky</span>
 						</li>
 						<li class="flex items-start gap-2">
-							<span class="text-lg text-pink-500">⬩</span>
+							<span class="text-pink-500 text-lg">⬩</span>
 							<span>We wanted something beautiful that just works</span>
 						</li>
 					</ul>
 				</div>
 
-				<div class="py-1 pl-4 my-2 ml-1 italic text-gray-600 border-pink-300 border-l-3">
+				<div class="border-l-3 border-pink-300 py-1 pl-4 ml-1 my-2 italic text-gray-600">
 					"A little bit of soul, a hint of chaos, and a deep love for clarity."
 				</div>
 
-				<div class="flex items-end justify-between pt-2">
+				<div class="flex justify-between items-end pt-2">
 					<div>
 						<p class="text-xs text-gray-500">Made with ☕ in Melbourne, Australia</p>
 					</div>
 					<div class="flex items-center gap-2 text-xs font-medium text-gray-600">
-						<span class="text-pink-500 animate-pulse">❤️</span> Dennis & Pabs
+						<span class="animate-pulse text-pink-500">❤️</span> Dennis & Pabs
 					</div>
 				</div>
 			</div>
@@ -705,39 +947,39 @@
 	</dialog>
 
 	<!-- DaisyUI Extension Modal -->
-	<dialog id="extension_modal" class="fixed z-50 overflow-hidden modal modal-bottom sm:modal-middle" style="overflow-y: hidden!important;">
+	<dialog id="extension_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;" role="dialog" aria-labelledby="extension_modal_title" aria-modal="true">
 		<div class="modal-box bg-gradient-to-br from-white to-[#fefaf4] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
 			<form method="dialog">
 				<button 
-					class="absolute text-pink-500 bg-pink-100 border-pink-200 shadow-sm btn btn-sm btn-circle right-3 top-3 hover:bg-pink-200 hover:text-pink-700"
+					class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
 					on:click={closeModal}
 				>✕</button>
 			</form>
 			
-			<div class="space-y-4 animate-fadeUp">
+			<div class="animate-fadeUp space-y-4">
 				<div class="flex items-center gap-3 mb-1">
-					<div class="flex items-center justify-center border rounded-full shadow-sm w-9 h-9 bg-gradient-to-br from-white to-purple-50 border-purple-200/60">
+					<div class="w-9 h-9 bg-gradient-to-br from-white to-purple-50 rounded-full flex items-center justify-center shadow-sm border border-purple-200/60">
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-purple-600">
 							<path d="M6 2l.01 6L10 12l-4 4 .01 6H20V2H6zm7 11a1 1 0 110-2 1 1 0 010 2zm-1-9a1 1 0 000 2h5a1 1 0 100-2h-5z" />
 						</svg>
 					</div>
-					<h3 class="text-xl font-black tracking-tight text-gray-800">Chrome Extension</h3>
+					<h3 id="extension_modal_title" class="font-black text-xl text-gray-800 tracking-tight">Chrome Extension</h3>
 				</div>
 				
-				<div class="p-4 border rounded-lg shadow-sm bg-gradient-to-r from-pink-50/80 to-amber-50/80 border-pink-200/60">
+				<div class="bg-gradient-to-r from-pink-50/80 to-amber-50/80 p-4 rounded-lg border border-pink-200/60 shadow-sm">
 					<p class="text-sm leading-relaxed text-gray-700">
 						Use TalkType everywhere on the web! Our Chrome extension lets you transcribe directly into any text field. 
 						Perfect for emails, social media, messaging apps, or anywhere else you need to type.
 					</p>
 				</div>
 
-				<div class="p-4 border shadow-sm rounded-xl border-pink-200/60 bg-gradient-to-br from-white to-pink-50/50">
-					<h4 class="mb-2 text-sm font-bold text-gray-800">Installation in 5 easy steps:</h4>
-					<ol class="pl-5 mt-2 space-y-2 text-sm text-left text-gray-700 list-decimal">
+				<div class="rounded-xl border border-pink-200/60 bg-gradient-to-br from-white to-pink-50/50 p-4 shadow-sm">
+					<h4 class="font-bold text-sm text-gray-800 mb-2">Installation in 5 easy steps:</h4>
+					<ol class="mt-2 list-decimal space-y-2 pl-5 text-left text-sm text-gray-700">
 						<li class="pb-1">
 							Download the extension files <a
 								href="#"
-								class="font-medium text-pink-600 transition-colors hover:text-pink-700 hover:underline"
+								class="text-pink-600 transition-colors hover:text-pink-700 hover:underline font-medium"
 								>here</a
 							>
 						</li>
@@ -755,8 +997,8 @@
 					</ol>
 				</div>
 
-				<div class="flex justify-end pt-1">
-					<span class="text-xs italic font-medium text-gray-600">Voice-to-text anywhere, anytime 🎙️</span>
+				<div class="pt-1 flex justify-end">
+					<span class="text-xs text-gray-600 italic font-medium">Voice-to-text anywhere, anytime 🎙️</span>
 				</div>
 			</div>
 		</div>
@@ -768,10 +1010,10 @@
 	</dialog>
 	
 	<!-- Settings Modal -->
-	<SettingsModal closeModal={closeSettingsModal} />
+	<SettingsModal open={showSettingsModal} closeModal={closeSettingsModal} />
 	
 	<!-- First-time Intro Modal (DaisyUI version) -->
-	<dialog id="intro_modal" class="modal">
+	<dialog id="intro_modal" class="modal" role="dialog" aria-labelledby="intro_modal_title" aria-modal="true">
 		<!-- Modal content with clickOutside Svelte action for reliable backdrop clicking -->
 		<div class="modal-box relative bg-white rounded-3xl p-6 sm:p-8 md:p-10 w-[95%] max-w-[90vw] sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto border-0"
 			style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
@@ -785,7 +1027,7 @@
 			
 			<!-- Close button -->
 			<form method="dialog">
-				<button class="absolute border-0 shadow-sm btn btn-sm btn-circle right-4 top-4 bg-white/70 text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700">✕</button>
+				<button class="btn btn-sm btn-circle absolute right-4 top-4 bg-white/70 border-0 text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 shadow-sm">✕</button>
 			</form>
 			
 			<div class="space-y-5 sm:space-y-6 md:space-y-7 animate-fadeIn">
@@ -799,21 +1041,21 @@
 				</div>
 				
 				<!-- Main heading - ultra chunky -->
-				<h1 class="text-2xl font-extrabold leading-tight tracking-tight text-center text-gray-900 sm:text-3xl md:text-4xl lg:text-5xl">
+				<h1 class="text-center text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-gray-900">
 					TalkType's the best. <br> Kick out the rest.
 				</h1>
 				
 				<!-- Main description - spacious and readable -->
 				<div class="space-y-3 sm:space-y-4">
-					<p class="text-sm font-medium leading-relaxed text-gray-700 sm:text-base md:text-lg">
+					<p class="text-sm sm:text-base md:text-lg font-medium text-gray-700 leading-relaxed">
 						Clean, sweet, and stupidly easy.
 					</p>
 					
-					<p class="text-sm font-medium leading-relaxed text-gray-700 sm:text-base md:text-lg">
+					<p class="text-sm sm:text-base md:text-lg font-medium text-gray-700 leading-relaxed">
 						Tap the ghost to speak — we turn your voice into text.
 					</p>
 					
-					<p class="text-sm font-medium leading-relaxed text-gray-700 sm:text-base md:text-lg">
+					<p class="text-sm sm:text-base md:text-lg font-medium text-gray-700 leading-relaxed">
 						Use it anywhere. Save it to your home screen.
 						Add the extension. Talk into any box on any site.
 					</p>
@@ -838,7 +1080,7 @@
 				</button>
 				
 				<!-- Tagline -->
-				<p class="py-2 text-base font-bold text-center text-pink-600 sm:text-lg md:text-xl">
+				<p class="text-center text-pink-600 font-bold text-base sm:text-lg md:text-xl py-2">
 					It's fast, it's fun, it's freaky good.
 				</p>
 				
@@ -858,7 +1100,7 @@
 	</dialog>
 </section>
 
-<style lang="postcss">
+<style>
 	/* Global styles */
 	
 	/* Intro modal animations */
@@ -992,80 +1234,114 @@
 
 	.icon-eyes {
 		z-index: 3; /* Top layer */
-		animation: blink 4s infinite; /* Ambient blinking */
-		transform-origin: center center; 
+		animation: blink 6s infinite; /* More frequent ambient blinking (was 10s) */
+		transform-origin: center center; /* Squinch exactly in the middle */
 	}
 
-	/* Simple ambient blinking animation */
+	/* Simple quick snappy ambient blinking animation */
 	@keyframes blink {
 		0%,
-		92%,
+		96.5%,
 		100% {
 			transform: scaleY(1);
 		}
-		94% {
-			transform: scaleY(0.15);
+		97.5% {
+			transform: scaleY(0); /* Quick blink - just closed and open */
 		}
-		96% {
+		98.5% {
 			transform: scaleY(1);
 		}
 	}
 
 	/* "Thinking" animation when recording is active */
 	.icon-container.recording .icon-eyes {
-		animation: blink-thinking 4s infinite;
-		transform-origin: center center;
+		animation: blink-thinking 4s infinite; /* Slightly slower - more deliberate */
+		transform-origin: center center; /* Squinch exactly in the middle */
 	}
 
-	/* Quick blink animation for programmatic use - faster */
+	/* Quick snappy blink animation for programmatic use */
 	.icon-eyes.blink-once {
-		animation: blink-once 0.18s forwards !important;
+		animation: blink-once 0.2s forwards !important;
 		transform-origin: center center;
 	}
 
 	@keyframes blink-once {
 		0%,
-		20% {
+		30% {
 			transform: scaleY(1);
 		}
 		50% {
-			transform: scaleY(0.05);
-		}
-		80%,
+			transform: scaleY(0);
+		} /* Closed eyes */
+		65%,
 		100% {
 			transform: scaleY(1);
+		} /* Quick snappy open */
+	}
+
+	/* Special animation for when the ghost is thinking hard (transcribing) */
+	.icon-eyes.blink-thinking-hard {
+		animation: blink-thinking-hard 1.5s infinite !important;
+		transform-origin: center center;
+	}
+
+	@keyframes blink-thinking-hard {
+		0%,
+		10%,
+		50%,
+		60% {
+			transform: scaleY(1);
+		}
+		12%,
+		48% {
+			transform: scaleY(0); /* Closed eyes - concentrating */
+		}
+		90%,
+		100% {
+			transform: scaleY(0.2); /* Squinting - thinking hard */
 		}
 	}
 
 	@keyframes blink-thinking {
+		/* First quick blink */
 		0%,
 		23%,
 		100% {
 			transform: scaleY(1);
 		}
 		3% {
-			transform: scaleY(0);
+			transform: scaleY(0); /* Fast blink */
 		}
 		4% {
-			transform: scaleY(1);
+			transform: scaleY(1); /* Very snappy */
 		}
+
+		/* Second blink - thinking pattern */
 		40% {
 			transform: scaleY(1);
 		}
 		42% {
-			transform: scaleY(0);
+			transform: scaleY(0); /* First close */
+		}
+		43% {
+			transform: scaleY(0.2); /* Short peek */
+		}
+		46% {
+			transform: scaleY(0); /* Second close (squinty thinking) */
 		}
 		48% {
-			transform: scaleY(1);
+			transform: scaleY(1); /* Open again */
 		}
+
+		/* Third quick blink */
 		80% {
 			transform: scaleY(1);
 		}
 		82% {
-			transform: scaleY(0);
+			transform: scaleY(0); /* Fast blink */
 		}
 		83% {
-			transform: scaleY(1);
+			transform: scaleY(1); /* Snappy */
 		}
 	}
 
@@ -1443,26 +1719,22 @@
 	
 	/* Rainbow animation for ghost svg with sparkle effect */
 	.rainbow-animated {
-		animation: rainbowFlow 7s linear infinite;
-		filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
+		animation: hueShift 5s ease-in-out infinite;
+		filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+		transform-origin: center center;
 	}
 
 	/* Special rainbow sparkle effect when hovered */
 	.icon-container:hover .rainbow-animated {
-		animation: rainbowFlow 4.5s linear infinite, sparkle 2s ease-in-out infinite;
-		filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
-	}
-	
-	@keyframes rainbowFlow {
-		0% { filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); }
-		100% { filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); }
+		animation: hueShift 4s ease-in-out infinite, sparkle 3s ease-in-out infinite;
+		filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.7));
 	}
 
 	@keyframes sparkle {
-		0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 8px rgba(255, 61, 127, 0.6)); }
-		25% { filter: drop-shadow(0 0 6px rgba(255, 141, 60, 0.8)) drop-shadow(0 0 10px rgba(255, 249, 73, 0.7)); }
-		50% { filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 9px rgba(53, 222, 255, 0.7)); }
-		75% { filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.8)) drop-shadow(0 0 9px rgba(255, 61, 127, 0.6)); }
+		0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 8px rgba(255, 61, 127, 0.5)); transform: scale(1.01); }
+		25% { filter: drop-shadow(0 0 7px rgba(255, 141, 60, 0.7)) drop-shadow(0 0 10px rgba(255, 249, 73, 0.6)); transform: scale(1.015); }
+		50% { filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 12px rgba(53, 222, 255, 0.6)); transform: scale(1.02); }
+		75% { filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.7)) drop-shadow(0 0 10px rgba(255, 61, 127, 0.6)); transform: scale(1.015); }
 	}
 	
 	/* Theme-based visualizer styling using data-theme attribute */
@@ -1470,12 +1742,14 @@
 		animation: hueShift 7s ease-in-out infinite, rainbowBars 3s ease-in-out infinite;
 		background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
 		background-size: 100% 600%;
-		box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 156, 227, 0.1);
+		box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 61, 127, 0.1);
 	}
 	
+	/* Special animation for rainbow bars */
 	@keyframes rainbowBars {
-		0%, 100% { transform: scale(1); }
-		50% { transform: scale(1.02); }
+		0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 61, 127, 0.3)); }
+		33% { filter: drop-shadow(0 0 4px rgba(255, 249, 73, 0.4)); }
+		66% { filter: drop-shadow(0 0 4px rgba(53, 222, 255, 0.4)); }
 	}
 	
 	@keyframes hueShift {

@@ -129,7 +129,7 @@
   // When this component is initialized, we just make sure the modal exists
 </script>
 
-<dialog id="settings_modal" class="modal fixed z-50" style="overflow: hidden !important; z-index: 999;">
+<dialog id="settings_modal" class="modal fixed z-50" style="overflow: hidden !important; z-index: 999;" role="dialog" aria-labelledby="settings_modal_title" aria-modal="true">
   <div class="modal-box bg-gradient-to-br from-white to-[#fefaf4] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh] w-[95%] max-w-md md:max-w-lg animate-modal-enter relative">
     <form method="dialog">
       <button 
@@ -149,7 +149,7 @@
             <img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
           </div>
         </div>
-        <h3 class="font-black text-xl text-gray-800 tracking-tight">Settings</h3>
+        <h3 id="settings_modal_title" class="font-black text-xl text-gray-800 tracking-tight">Settings</h3>
       </div>
 
       <!-- Vibe Selector Section -->
@@ -163,7 +163,7 @@
             <p class="text-xs text-gray-500 mt-0.5">Start recording immediately when you open TalkType</p>
           </div>
           <label class="cursor-pointer flex items-center">
-            <span class="sr-only">Auto-Record Toggle</span>
+            <span class="sr-only">Auto-Record Toggle {autoRecordValue ? 'Enabled' : 'Disabled'}</span>
             <div class="relative">
               <input 
                 type="checkbox" 
