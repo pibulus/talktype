@@ -1076,6 +1076,8 @@
 				bind:this={audioToTextComponent} 
 				parentEyesElement={eyesElement}
 				parentGhostIconElement={iconContainer}
+				isModelPreloaded={speechModelPreloaded}
+				onPreloadRequest={preloadSpeechModel}
 			/>
 		</div>
 	</div>

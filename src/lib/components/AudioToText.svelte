@@ -31,6 +31,8 @@
 	// These will be set from the parent component
 	export let parentEyesElement = null;
 	export let parentGhostIconElement = null;
+	export let isModelPreloaded = false;
+	export let onPreloadRequest = null;
 
 	// Accessibility state management
 	let screenReaderStatus = ''; // For ARIA announcements
@@ -120,9 +122,20 @@
 	// Export recording state and functions for external components
 	export { recording, stopRecording, startRecording };
 
+	// Function to preload the speech model before recording starts
+	function preloadSpeechModel() {
+		if (onPreloadRequest) {
+			// Use the parent component's shared preload function
+			onPreloadRequest();
+		}
+	}
+
 	async function startRecording() {
 		// Don't start a new recording if already recording
 		if (recording) return;
+
+		// Try to preload the speech model if not already done
+		preloadSpeechModel();
 
 		errorMessage = '';
 		// Don't clear transcript here - we do it in toggleRecording for better control of CTA rotation
@@ -754,6 +767,7 @@
 						class="record-button w-[90%] sm:w-full rounded-full bg-amber-400 px-6 py-6 text-xl font-bold text-black shadow-md transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 max-w-[500px] mx-auto text-center {!recording && buttonLabel === 'Start Recording' ? 'pulse-subtle' : ''}"
 						style="min-width: 300px; min-height: 72px; transform-origin: center center;"
 						on:click={toggleRecording}
+						on:mouseenter={preloadSpeechModel}
 						on:keydown={handleKeyDown}
 						disabled={transcribing}
 						aria-label={recording ? 'Stop Recording' : 'Start Recording'}
