@@ -832,7 +832,7 @@
 
 	<!-- Footer section with attribution and Chrome extension info -->
 	<footer
-		class="fixed bottom-0 left-0 right-0 border-t border-pink-200/80 bg-gradient-to-r from-[#fefaf4] via-[#fde4da] to-[#fdf7ef] px-4 py-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[2px] sm:py-5 box-border"
+		class="fixed bottom-0 left-0 right-0 border-t border-pink-200/80 bg-gradient-to-r from-[#fff6e6] via-[#ffead8] to-[#fff1df] px-4 py-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[2px] sm:py-5 box-border"
 	>
 		<div class="container mx-auto flex flex-col items-center justify-between gap-2 sm:gap-3 sm:flex-row flex-wrap">
 			<div class="copyright flex items-center flex-wrap justify-center">
@@ -870,7 +870,7 @@
 
 	<!-- DaisyUI About Modal -->
 	<dialog id="about_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;" role="dialog" aria-labelledby="about_modal_title" aria-modal="true">
-		<div class="modal-box bg-gradient-to-br from-white to-[#fefaf4] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
+		<div class="modal-box bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
 			<form method="dialog">
 				<button 
 					class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
@@ -890,7 +890,7 @@
 					<h3 id="about_modal_title" class="font-black text-xl text-gray-800 tracking-tight">About TalkType</h3>
 				</div>
 				
-				<div class="bg-gradient-to-r from-pink-50/80 to-amber-50/80 p-4 rounded-lg border border-pink-200/60 shadow-sm">
+				<div class="bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 rounded-lg border border-pink-200/60 shadow-sm">
 					<p class="text-sm leading-relaxed text-gray-700">
 						TalkType is a minimalist voice-to-text tool that transforms your speech into text effortlessly. 
 						Built with love by two friends who think tech should be <span class="text-pink-600 font-medium">simple</span>, 
@@ -939,7 +939,7 @@
 
 	<!-- DaisyUI Extension Modal -->
 	<dialog id="extension_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;" role="dialog" aria-labelledby="extension_modal_title" aria-modal="true">
-		<div class="modal-box bg-gradient-to-br from-white to-[#fefaf4] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
+		<div class="modal-box bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
 			<form method="dialog">
 				<button 
 					class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
@@ -957,7 +957,7 @@
 					<h3 id="extension_modal_title" class="font-black text-xl text-gray-800 tracking-tight">Chrome Extension</h3>
 				</div>
 				
-				<div class="bg-gradient-to-r from-pink-50/80 to-amber-50/80 p-4 rounded-lg border border-pink-200/60 shadow-sm">
+				<div class="bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 rounded-lg border border-pink-200/60 shadow-sm">
 					<p class="text-sm leading-relaxed text-gray-700">
 						Use TalkType everywhere on the web! Our Chrome extension lets you transcribe directly into any text field. 
 						Perfect for emails, social media, messaging apps, or anywhere else you need to type.
@@ -1006,7 +1006,7 @@
 	<!-- First-time Intro Modal (DaisyUI version) -->
 	<dialog id="intro_modal" class="modal" role="dialog" aria-labelledby="intro_modal_title" aria-modal="true">
 		<!-- Modal content with clickOutside Svelte action for reliable backdrop clicking -->
-		<div class="modal-box relative bg-white rounded-3xl p-6 sm:p-8 md:p-10 w-[95%] max-w-[90vw] sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto border-0"
+		<div class="modal-box relative bg-[#fff9ed] rounded-3xl p-6 sm:p-8 md:p-10 w-[95%] max-w-[90vw] sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto border-0"
 			style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
 			use:clickOutside={{ enabled: true, callback: () => {
 				const modal = document.getElementById('intro_modal');
@@ -1018,7 +1018,7 @@
 			
 			<!-- Close button -->
 			<form method="dialog">
-				<button class="btn btn-sm btn-circle absolute right-4 top-4 bg-white/70 border-0 text-neutral-400 hover:bg-neutral-50 hover:text-neutral-700 shadow-sm">✕</button>
+				<button class="btn btn-sm btn-circle absolute right-4 top-4 bg-[#fff9ed]/80 border-0 text-neutral-400 hover:bg-[#fff6e6] hover:text-neutral-700 shadow-sm">✕</button>
 			</form>
 			
 			<div class="space-y-5 sm:space-y-6 md:space-y-7 animate-fadeIn">
