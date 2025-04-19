@@ -162,6 +162,16 @@
 		audioChunks = [];
 		clipboardSuccess = false;
 		transcriptionProgress = 0;
+		
+		// Scroll to bottom when recording starts
+		setTimeout(() => {
+			if (typeof window !== 'undefined') {
+				window.scrollTo({
+					top: document.body.scrollHeight,
+					behavior: 'smooth'
+				});
+			}
+		}, 100);
 
 		try {
 			console.log('🎤 Start recording');
@@ -911,7 +921,15 @@
 			<div class="content-container w-full flex flex-col items-center">
 				<!-- Audio visualizer - properly positioned -->
 				{#if recording}
-					<div class="visualizer-container absolute left-0 top-0 flex w-full justify-center">
+					<div class="visualizer-container absolute left-0 top-0 flex w-full justify-center" on:animationend={() => {
+						// Scroll to the bottom when visualizer appears
+						if (typeof window !== 'undefined') {
+							window.scrollTo({
+								top: document.body.scrollHeight,
+								behavior: 'smooth'
+							});
+						}
+					}}>
 						<div class="wrapper-container flex w-full justify-center">
 							<div
 								class="visualizer-wrapper mx-auto w-[90%] sm:w-full max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md"
