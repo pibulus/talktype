@@ -424,6 +424,23 @@
 					};
 				}
 			}, 500);
+			
+			// Pre-load the SettingsModal component after a short delay
+			setTimeout(async () => {
+				if (!SettingsModal && !loadingSettingsModal) {
+					try {
+						loadingSettingsModal = true;
+						debug('Pre-loading SettingsModal component');
+						const module = await import('$lib/components/settings/SettingsModal.svelte');
+						SettingsModal = module.default;
+						loadingSettingsModal = false;
+						debug('SettingsModal component pre-loaded successfully');
+					} catch (err) {
+						console.error('Error pre-loading SettingsModal:', err);
+						loadingSettingsModal = false;
+					}
+				}
+			}, 1000);
 		}
 		
 		// Check for auto-record setting and start recording if enabled
@@ -963,25 +980,38 @@
 		document.body.style.overflow = 'hidden';
 		document.body.style.height = '100%';
 		
-		// Show the settings modal directly
-		const modal = document.getElementById('settings_modal');
-		if (modal) {
-			// If the modal is already open, just close it
-			if (modal.hasAttribute('open')) {
-				modal.close();
-				setTimeout(() => {
-					closeModal();
-				}, 50);
-				return;
+		// Wait briefly for the SettingsModal component to render
+		setTimeout(() => {
+			// Show the settings modal directly
+			const modal = document.getElementById('settings_modal');
+			if (modal) {
+				// If the modal is already open, just close it
+				if (modal.hasAttribute('open')) {
+					modal.close();
+					setTimeout(() => {
+						closeModal();
+					}, 50);
+					return;
+				}
+				
+				// Dispatch a custom event that will be caught in the SettingsModal component
+				const event = new Event('beforeshow');
+				modal.dispatchEvent(event);
+				
+				// Show the modal
+				modal.showModal();
+			} else {
+				console.error('Settings modal element not found after loading component');
+				// Reset the modal state in case the modal wasn't found
+				loadingSettingsModal = false;
+				modalOpen = false;
+				document.body.style.position = '';
+				document.body.style.top = '';
+				document.body.style.width = '';
+				document.body.style.overflow = '';
+				document.body.style.height = '';
 			}
-			
-			// Dispatch a custom event that will be caught in the SettingsModal component
-			const event = new Event('beforeshow');
-			modal.dispatchEvent(event);
-			
-			// Show the modal
-			modal.showModal();
-		}
+		}, 100); // Short delay to allow component to render
 	}
 	
 	// Function to close the Settings modal

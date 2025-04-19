@@ -15,6 +15,11 @@ const createPromptStyleStore = () => {
     const storedStyle = localStorage.getItem(STORAGE_KEY);
     if (storedStyle && promptTemplates[storedStyle]) {
       store.set(storedStyle);
+    } else if (storedStyle && !promptTemplates[storedStyle]) {
+      // Handle the case where a stored style is no longer available (like 'corporate')
+      console.log(`Stored prompt style '${storedStyle}' is no longer available, using default`);
+      localStorage.setItem(STORAGE_KEY, DEFAULT_STYLE);
+      store.set(DEFAULT_STYLE);
     }
   }
   
@@ -58,12 +63,14 @@ export const promptManager = {
   
   // Get a prompt for a specific operation using the current style
   getPrompt: (operation, variables = {}) => {
-    const currentStyle = get(promptStyleStore);
+    let currentStyle = get(promptStyleStore);
     
-    // Get the template for the current style and operation
+    // Check if current style exists, if not, reset to default
     if (!promptTemplates[currentStyle]) {
       console.error(`Prompt style '${currentStyle}' not found, falling back to standard`);
-      return applyTemplate(promptTemplates.standard[operation].text, variables);
+      currentStyle = DEFAULT_STYLE;
+      // Update the store to prevent repeated errors
+      promptStyleStore.setStyle(DEFAULT_STYLE);
     }
     
     if (!promptTemplates[currentStyle][operation]) {

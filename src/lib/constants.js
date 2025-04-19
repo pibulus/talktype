@@ -27,7 +27,10 @@ export const STORAGE_KEYS = {
 export const PROMPT_STYLES = {
   STANDARD: 'standard',
   SURLY_PIRATE: 'surlyPirate',
-  CORPORATE: 'corporate'
+  LEET_SPEAK: 'leetSpeak',
+  SPARKLE_POP: 'sparklePop',
+  CODE_WHISPERER: 'codeWhisperer',
+  QUILL_AND_INK: 'quillAndInk'
 };
 
 export const DEFAULT_PROMPT_STYLE = PROMPT_STYLES.STANDARD;

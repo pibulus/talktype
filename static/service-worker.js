@@ -4,7 +4,6 @@ const CACHE_NAME = 'talktype-cache-v1';
 // Assets to cache for offline use
 const ASSETS_TO_CACHE = [
   '/',
-  '/index.html',
   '/manifest.json',
   '/favicon.png',
   '/favicon-light.png',

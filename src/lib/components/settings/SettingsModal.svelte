@@ -238,16 +238,54 @@
                   on:click={() => changePromptStyle(style)}
                 >
                   <div class="flex items-center gap-2">
-                    <span class="text-lg">{promptStyleIcons[style] || '💬'}</span>
+                    <span class="text-lg">
+                      {#if style === 'standard'}
+                        💬
+                      {:else if style === 'surlyPirate'}
+                        🏴‍☠️
+                      {:else if style === 'leetSpeak'}
+                        💻
+                      {:else if style === 'sparklePop'}
+                        ✨
+                      {:else if style === 'codeWhisperer'}
+                        ⚙️
+                      {:else if style === 'quillAndInk'}
+                        🖋️
+                      {:else}
+                        💬
+                      {/if}
+                    </span>
                     <div>
-                      <span class="text-sm font-medium text-gray-700">{promptStyleNames[style] || style}</span>
+                      <span class="text-sm font-medium text-gray-700">
+                        {#if style === 'standard'}
+                          Standard
+                        {:else if style === 'surlyPirate'}
+                          Surly Pirate
+                        {:else if style === 'leetSpeak'}
+                          L33T Sp34k
+                        {:else if style === 'sparklePop'}
+                          Sparkle Pop
+                        {:else if style === 'codeWhisperer'}
+                          Code Whisperer
+                        {:else if style === 'quillAndInk'}
+                          Quill & Ink
+                        {:else}
+                          {style}
+                        {/if}
+                      </span>
                       <p class="text-xs text-gray-500 mt-0.5">
                         {#if style === 'standard'}
                           Professional, helpful responses
                         {:else if style === 'surlyPirate'}
                           Arrr matey! Talk like a surly pirate, ye scallywag!
-                        {:else if style === 'corporate'}
-                          Professional jargon and buzzwords
+                        {:else if style === 'leetSpeak'}
+                          H4ck3r 5tyl3 w1th l33t c0d35p34k
+                        {:else if style === 'sparklePop'}
+                          OMG!!! SUPER excited teen with TONS of emojis!!! 💖
+                        {:else if style === 'codeWhisperer'}
+                          Clean, structured technical language
+                        {:else if style === 'quillAndInk'}
+                          Eloquent Victorian literary prose
                         {:else}
                           Custom response style
                         {/if}
