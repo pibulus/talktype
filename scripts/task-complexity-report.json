@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "generatedAt": "2025-04-19T19:01:57.851Z",
+    "tasksAnalyzed": 10,
+    "thresholdScore": 5,
+    "projectName": "Your Project Name",
+    "usedResearch": false
+  },
+  "complexityAnalysis": [
+    {
+      "taskId": 1,
+      "taskTitle": "Create InstallPrompt Svelte Component",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the InstallPrompt Svelte component development into specific subtasks covering component structure, animations, responsive design, gesture handling, and integration with the design system.",
+      "reasoning": "This task involves UI component development with animations, gesture handling, and responsive design. It's moderately complex due to the animation requirements and gesture support, but is self-contained with clear requirements."
+    },
+    {
+      "taskId": 2,
+      "taskTitle": "Implement Installation Logic and Browser Detection",
+      "complexityScore": 7,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Divide the installation logic implementation into subtasks covering browser detection, platform-specific behavior handling, event management for installation prompts, installation state tracking, and API development for triggering installation flows.",
+      "reasoning": "This task requires handling browser-specific APIs, event management, and platform detection. The complexity comes from dealing with different browser behaviors and the need to create a unified API across platforms."
+    },
+    {
+      "taskId": 3,
+      "taskTitle": "Implement Installation Prompt Timing Logic",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the installation prompt timing logic into subtasks covering user activity tracking, prompt scheduling based on conditions, state persistence across sessions, and handling user response options.",
+      "reasoning": "This task involves implementing business logic for prompt timing with state management. It's moderately complex due to the need for persistent storage and tracking user interactions across sessions."
+    },
+    {
+      "taskId": 4,
+      "taskTitle": "Create SVG Icon Generation Pipeline",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Divide the SVG icon generation pipeline into subtasks covering SVG manipulation, platform-specific asset generation, image optimization, manifest integration, and build process automation.",
+      "reasoning": "This task requires creating a build pipeline for generating multiple icon formats with specific requirements per platform. The complexity comes from handling different image formats, optimizations, and integrating with the manifest."
+    },
+    {
+      "taskId": 5,
+      "taskTitle": "Implement Branded Splash Screen",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the branded splash screen implementation into subtasks covering design consistency with app icons, manifest configuration, responsive handling for different devices, and transition animations to the main app.",
+      "reasoning": "This task involves creating a branded splash screen with proper transitions. It's moderately complex due to the need for responsive design and smooth animations, but has well-defined requirements."
+    },
+    {
+      "taskId": 6,
+      "taskTitle": "Optimize App Shell for Instant Loading",
+      "complexityScore": 8,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Divide the app shell optimization into subtasks covering service worker caching strategies, critical asset identification and prioritization, skeleton UI implementation, transition animations, and performance testing methodology.",
+      "reasoning": "This task involves advanced performance optimization techniques including service worker configuration, critical path rendering, and skeleton screens. The complexity is high due to the technical depth required for effective performance optimization."
+    },
+    {
+      "taskId": 7,
+      "taskTitle": "Implement Installation Analytics",
+      "complexityScore": 6,
+      "recommendedSubtasks": 5,
+      "expansionPrompt": "Break down the installation analytics implementation into subtasks covering event tracking design, integration with existing analytics, privacy compliance measures, custom metrics definition, and reporting setup.",
+      "reasoning": "This task requires implementing analytics for installation-related events. The complexity comes from the need to track browser events accurately, integrate with existing systems, and ensure privacy compliance."
+    },
+    {
+      "taskId": 8,
+      "taskTitle": "Implement PWA Usage Metrics",
+      "complexityScore": 7,
+      "recommendedSubtasks": 6,
+      "expansionPrompt": "Divide the PWA usage metrics implementation into subtasks covering offline usage tracking, launch source detection, comparative analysis framework, retention measurement, dashboard creation, and alerting system setup.",
+      "reasoning": "This task involves advanced analytics to compare installed vs. non-installed user behavior. The complexity comes from the need to accurately identify user segments, track complex metrics, and create reporting mechanisms."
+    },
+    {
+      "taskId": 9,
+      "taskTitle": "Implement iOS-Specific Installation Instructions",
+      "complexityScore": 5,
+      "recommendedSubtasks": 4,
+      "expansionPrompt": "Break down the iOS installation instructions implementation into subtasks covering visual guide creation, iOS detection logic, UI design for iOS-specific prompts, and cross-version testing methodology.",
+      "reasoning": "This task focuses on creating custom installation instructions for iOS users. It's moderately complex due to the need for platform detection and creating clear visual guides, but has a narrow scope focused on iOS."
+    },
+    {
+      "taskId": 10,
+      "taskTitle": "Integrate and Test Complete PWA Enhancement Solution",
+      "complexityScore": 9,
+      "recommendedSubtasks": 7,
+      "expansionPrompt": "Divide the integration and testing of the PWA enhancement solution into subtasks covering component integration, user journey testing, platform-specific verification, performance benchmarking, analytics validation, offline functionality testing, and documentation creation.",
+      "reasoning": "This is the most complex task as it involves integrating all previous components and conducting comprehensive testing across platforms. The complexity comes from the breadth of testing required and ensuring all components work together seamlessly."
+    }
+  ]
+}

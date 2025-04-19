@@ -6,6 +6,9 @@
 	import { geminiService } from '$lib/services/geminiService';
 	import { onMount } from 'svelte';
 	import AudioVisualizer from './AudioVisualizer.svelte';
+	
+	// Helper variable to check if we're in a browser environment
+	const browser = typeof window !== 'undefined';
 
 	let recording = false;
 	let mediaRecorder;
@@ -65,25 +68,25 @@
 	// Special message when document lost focus but was recovered
 	const focusRecoveryMessage = 'Click in window first, then copy again! 🔍';
 	
-	// Attribution tags for different contexts
-	const simpleAttributionTag = "\n\n✨ Transcribed with TalkType 👻";
+	// Attribution tags for different contexts (using Unicode italic for discretion)
+	const simpleAttributionTag = "\n\n𝘛𝘳𝘢𝘯𝘴𝘤𝘳𝘪𝘣𝘦𝘥 𝘣𝘺 𝘛𝘢𝘭𝘬𝘛𝘺𝘱𝘦 👻";
 	
 	// Function to generate viral attribution with preview
 	function getViralAttribution(text) {
-		// Cleaner format with just the text and a tighter credit line
-		return `${text}\n\n--Transcribed by TalkType 👻`;
+		// Cleaner format with just the text and a discreet credit line (smaller and italicized)
+		// Note: We can't use HTML in the share text, but we can use Unicode to indicate italics
+		return `${text}\n\n𝘛𝘳𝘢𝘯𝘴𝘤𝘳𝘪𝘣𝘦𝘥 𝘣𝘺 𝘛𝘢𝘭𝘬𝘛𝘺𝘱𝘦 👻`;
 	}
 
 	function getRandomCopyMessage(useSpecialMessage = false) {
-		if (useSpecialMessage) {
-			return focusRecoveryMessage;
-		}
+		// Simplified version that doesn't depend on browser APIs
 		return copyMessages[Math.floor(Math.random() * copyMessages.length)];
 	}
 	
 	// Check if Web Share API is available
 	function isWebShareSupported() {
-		return typeof navigator !== 'undefined' && 
+		return browser && 
+			   typeof navigator !== 'undefined' && 
 			   navigator.share && 
 			   typeof navigator.share === 'function';
 	}
@@ -263,7 +266,7 @@
 					if (transcript) {
 						try {
 							// Focus check - document must be focused for clipboard operations
-							const isDocumentFocused = document.hasFocus();
+							const isDocumentFocused = typeof document !== 'undefined' && document.hasFocus();
 
 							if (isDocumentFocused) {
 								await navigator.clipboard.writeText(transcript);
@@ -274,17 +277,17 @@
 								if (clipboardTimer) clearTimeout(clipboardTimer);
 								clipboardTimer = setTimeout(() => {
 									clipboardSuccess = false;
-								}, 3000); // Longer visibility for better UX
+								}, 2500); // Longer visibility for smoother transition
 							} else {
 								// Document not focused - try to bring focus back
 								console.log('📋 Document not focused - attempting to regain focus');
 
-								// Try to focus the window
-								window.focus();
+								// Try to focus the window (only in browser environment)
+								if (browser) window.focus();
 
 								// Wait a short time for focus to take effect
 								setTimeout(async () => {
-									if (document.hasFocus()) {
+									if (typeof document !== 'undefined' && document.hasFocus()) {
 										// We have focus now, try again
 										try {
 											await navigator.clipboard.writeText(transcript);
@@ -294,7 +297,7 @@
 											if (clipboardTimer) clearTimeout(clipboardTimer);
 											clipboardTimer = setTimeout(() => {
 												clipboardSuccess = false;
-											}, 3000);
+											}, 2500);
 										} catch (focusError) {
 											console.error('❌ Still failed after focus attempt:', focusError);
 											// Silent fail - but user can use copy button
@@ -504,6 +507,12 @@
 			// Add simple attribution tag to the copied text
 			textToCopy += simpleAttributionTag;
 
+			// Skip clipboard operations in non-browser environments
+			if (!browser) {
+				console.log('📋 Not in browser environment, skipping clipboard operations');
+				return;
+			}
+
 			// Update tooltip usage tracking - hide tooltip after button is used
 			hasUsedCopyButton = true;
 			showCopyTooltip = false;
@@ -527,11 +536,11 @@
 				// Update screen reader status
 				screenReaderStatus = 'Transcript copied to clipboard';
 				
-				// Auto-hide the clipboard success message after 3 seconds
+				// Auto-hide the clipboard success message after 2.5 seconds for snappier response
 				if (clipboardTimer) clearTimeout(clipboardTimer);
 				clipboardTimer = setTimeout(() => {
 					clipboardSuccess = false;
-				}, 3000);
+				}, 2500);
 				
 				// Return focus to the copy button after operation
 				if (copyButtonRef) {
@@ -568,11 +577,11 @@
 				// Update screen reader status
 				screenReaderStatus = 'Transcript copied to clipboard';
 				
-				// Auto-hide the clipboard success message after 3 seconds
+				// Auto-hide the clipboard success message after 2.5 seconds for snappier response
 				if (clipboardTimer) clearTimeout(clipboardTimer);
 				clipboardTimer = setTimeout(() => {
 					clipboardSuccess = false;
-				}, 3000);
+				}, 2500);
 				
 				// Attempt to return focus to copy button
 				if (copyButtonRef) {
@@ -596,12 +605,15 @@
 			if (clipboardTimer) clearTimeout(clipboardTimer);
 			clipboardTimer = setTimeout(() => {
 				clipboardSuccess = false;
-			}, 5000);
+			}, 2500);
 		}
 	}
 
 	// Confetti celebration effect for successful transcription
 	function showConfettiCelebration() {
+		// Only run in browser environment
+		if (!browser) return;
+		
 		// Create a container for the confetti
 		const container = document.createElement('div');
 		container.className = 'confetti-container';
@@ -668,7 +680,7 @@
 		// Remove container after animation completes
 		setTimeout(() => {
 			document.body.removeChild(container);
-		}, 4000); // Slightly longer than the longest animation
+		}, 2500); // Slightly longer than the longest animation
 	}
 
 	// Helper for haptic feedback on mobile devices
@@ -747,6 +759,12 @@
 				return;
 			}
 			
+			// Skip share operations in non-browser environments
+			if (!browser) {
+				console.log('📤 Not in browser environment, skipping share operations');
+				return;
+			}
+			
 			// Add viral attribution tag with preview to shared text
 			const textWithAttribution = textToShare + getViralAttribution(textToShare);
 			
@@ -757,7 +775,6 @@
 			if (isWebShareSupported()) {
 				try {
 					await navigator.share({
-						title: 'Share Transcript',
 						text: getViralAttribution(textToShare).trim()
 					});
 					
@@ -774,7 +791,7 @@
 					if (clipboardTimer) clearTimeout(clipboardTimer);
 					clipboardTimer = setTimeout(() => {
 						clipboardSuccess = false;
-					}, 3000);
+					}, 2500);
 				} catch (err) {
 					console.error('❌ Share API error:', err);
 					// User might have cancelled - don't show error
@@ -792,7 +809,7 @@
 				if (clipboardTimer) clearTimeout(clipboardTimer);
 				clipboardTimer = setTimeout(() => {
 					clipboardSuccess = false;
-				}, 3000);
+				}, 2500);
 			}
 		} catch (err) {
 			console.error('❌ Error sharing transcript:', err);
@@ -854,7 +871,7 @@
 					<!-- Recording button - improved for mobile and accessibility -->
 					<button
 						bind:this={recordButtonElement}
-						class="record-button w-[90%] sm:w-full rounded-full bg-amber-400 px-6 py-6 text-xl font-bold text-black shadow-md transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 max-w-[500px] mx-auto text-center {!recording && buttonLabel === 'Start Recording' ? 'pulse-subtle' : ''}"
+						class="record-button w-[90%] sm:w-full rounded-full transition-all duration-400 ease-out {clipboardSuccess ? 'bg-purple-50 border-purple-200 border text-black' : 'bg-amber-400 text-black'} px-6 py-6 text-xl font-bold shadow-md hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 max-w-[500px] mx-auto text-center {!recording && buttonLabel === 'Start Recording' && !clipboardSuccess ? 'pulse-subtle' : ''} {clipboardSuccess ? 'notification-pulse' : ''}"
 						style="min-width: 300px; min-height: 72px; transform-origin: center center;"
 						on:click={toggleRecording}
 						on:mouseenter={preloadSpeechModel}
@@ -864,8 +881,24 @@
 						aria-pressed={recording}
 						aria-busy={transcribing}
 					>
-						<span class="cta-text inline-block h-[28px] whitespace-nowrap transition-all duration-300 ease-in-out">
-							{buttonLabel}
+						<span class="cta-text inline-block min-h-[28px] whitespace-nowrap transition-all duration-300 ease-out relative">
+							<span class="transition-all duration-300 ease-out absolute inset-0 flex items-center justify-center transform {clipboardSuccess ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}" style="visibility: {clipboardSuccess ? 'visible' : 'hidden'};">
+								<span class="flex items-center gap-1 justify-center">
+									<svg class="h-4 w-4 mr-1 text-purple-500" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+										<path
+											d="M12,2 C7.6,2 4,5.6 4,10 L4,17 C4,18.1 4.9,19 6,19 L8,19 L8,21 C8,21.6 8.4,22 9,22 C9.3,22 9.5,21.9 9.7,21.7 L12.4,19 L18,19 C19.1,19 20,18.1 20,17 L20,10 C20,5.6 16.4,2 12,2 Z"
+											fill="currentColor"
+											opacity="0.8"
+										/>
+										<circle cx="9" cy="10" r="1.2" fill="white" />
+										<circle cx="15" cy="10" r="1.2" fill="white" />
+									</svg>
+									{getRandomCopyMessage()}
+								</span>
+							</span>
+							<span class="transition-all duration-300 ease-out transform {clipboardSuccess ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}" style="visibility: {clipboardSuccess ? 'hidden' : 'visible'};">
+								{buttonLabel}
+							</span>
 						</span>
 					</button>
 				{/if}
@@ -959,11 +992,14 @@
 									<!-- Subtle gradient mask to indicate scrollable content -->
 									<div class="scroll-indicator-bottom absolute bottom-0 left-0 right-0 h-6 pointer-events-none bg-gradient-to-t from-white/90 to-transparent rounded-b-[2rem]"></div>
 									
+									<!-- Add padding at the bottom of transcript for the share button -->
+									<div class="pb-16"></div>
+									
 									<!-- Simple share button at bottom middle - only visible when Web Share API is supported -->
 									{#if isWebShareSupported()}
-										<div class="flex justify-center w-full absolute bottom-4 left-0 right-0 z-[200]">
+										<div class="flex justify-center w-full absolute bottom-6 left-0 right-0 z-[200]">
 											<button
-												class="share-btn-text px-4 py-1.5 bg-gradient-to-r from-indigo-50 to-purple-100 text-indigo-600 text-sm font-medium rounded-full shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2"
+												class="share-btn-text px-5 py-2 bg-gradient-to-r from-indigo-50 to-purple-100 text-indigo-600 text-sm font-medium rounded-full shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2"
 												on:click|preventDefault={shareTranscript}
 												aria-label="Share transcript"
 											>
@@ -1000,29 +1036,7 @@
 	{/if}
 </div>
 
-<!-- Floating success toast - positioned fixed and independently from content -->
-{#if clipboardSuccess}
-	<div class="toast-container flex w-full justify-center" role="status" aria-live="polite">
-		<div class="clipboard-toast {!document.hasFocus() ? 'focus-warning' : ''} w-[calc(100%-2rem)] max-w-[360px]">
-			<!-- Ghost icon to match app theme -->
-			<div class="toast-ghost">
-				<svg viewBox="0 0 24 24" class="h-5 w-5 sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg">
-					<path
-						d="M12,2 C7.6,2 4,5.6 4,10 L4,17 C4,18.1 4.9,19 6,19 L8,19 L8,21 C8,21.6 8.4,22 9,22 C9.3,22 9.5,21.9 9.7,21.7 L12.4,19 L18,19 C19.1,19 20,18.1 20,17 L20,10 C20,5.6 16.4,2 12,2 Z"
-						fill="currentColor"
-						opacity="0.9"
-						transform="scale(0.95)"
-					/>
-					<!-- Eyes for ghost -->
-					<circle cx="9" cy="10" r="1.2" fill="white" />
-					<circle cx="15" cy="10" r="1.2" fill="white" />
-				</svg>
-			</div>
-			<!-- Message with fun emojis -->
-			<span>{document.hasFocus() ? getRandomCopyMessage() : focusRecoveryMessage}</span>
-		</div>
-	</div>
-{/if}
+<!-- We've moved the toast into the button for a more space-efficient design -->
 
 <!-- Permission error modal -->
 {#if showPermissionError}
@@ -1495,10 +1509,10 @@
 		justify-content: center;
 	}
 
-	/* Toast container for alignment with button */
+	/* Toast container positioned at the top of the screen */
 	.toast-container {
 		position: fixed;
-		bottom: 5rem; /* Increased space above footer on mobile */
+		top: 1.5rem; /* Position at top with space */
 		left: 0;
 		right: 0;
 		z-index: 999;
@@ -1507,7 +1521,7 @@
 
 	@media (min-width: 768px) {
 		.toast-container {
-			bottom: 6rem; /* More space on desktop */
+			top: 2rem; /* More space on desktop */
 		}
 	}
 
@@ -1535,12 +1549,14 @@
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem; /* gap-2 */
-		width: 100%;
-		max-width: 600px; /* Match button width exactly */
+		width: 320px; /* Match button min-width */
+		min-width: 300px; /* Match min-width of button */
+		max-width: 90%; /* Same percentage as record button */
 		letter-spacing: -0.01em; /* tracking-tight */
 		border: 1.5px solid rgba(249, 168, 212, 0.5);
 		text-align: center;
 		will-change: transform, opacity, box-shadow;
+		margin: 0 auto; /* Center horizontally */
 	}
 
 	/* Add toast pulse animation for better visibility */
@@ -2129,5 +2145,42 @@
 			box-shadow: 0 0 20px 6px rgba(251, 191, 36, 0.5);
 			transform: scale(1.02);
 		}
+	}
+	
+	/* Notification pulse animation for when the button shows a notification */
+	.notification-pulse {
+		animation: notification-glow 2.5s ease-in-out infinite;
+		transform-origin: center;
+		box-shadow: 
+			0 0 10px 2px rgba(139, 92, 246, 0.15),
+			0 0 3px 1px rgba(139, 92, 246, 0.08);
+	}
+	
+	@keyframes notification-glow {
+		0%, 100% {
+			box-shadow: 
+				0 0 6px 1px rgba(139, 92, 246, 0.1),
+				0 0 2px 0px rgba(139, 92, 246, 0.05);
+			transform: scale(1);
+		}
+		50% {
+			box-shadow: 
+				0 0 12px 3px rgba(139, 92, 246, 0.2),
+				0 0 4px 1px rgba(139, 92, 246, 0.1);
+			transform: scale(1.002);
+		}
+	}
+	
+	/* Wiggle animation for the ghost icon in notifications */
+	@keyframes tada {
+		0% { transform: scale(1); }
+		10%, 20% { transform: scale(0.9) rotate(-3deg); }
+		30%, 50%, 70%, 90% { transform: scale(1.1) rotate(3deg); }
+		40%, 60%, 80% { transform: scale(1.1) rotate(-3deg); }
+		100% { transform: scale(1) rotate(0); }
+	}
+	
+	.animate-tada {
+		animation: tada 1.5s ease infinite;
 	}
 </style>
