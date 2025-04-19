@@ -1,12 +1,13 @@
 {
   "name": "TalkType",
   "short_name": "TalkType",
-  "description": "Fast, accurate, and free voice-to-text transcription",
-  "start_url": "/",
+  "description": "Voice-to-text that doesn't suck. Spooky good, freaky fast.",
+  "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#FFF6E6",
   "theme_color": "#FFF6E6",
   "orientation": "portrait-primary",
+  "categories": ["utilities", "productivity"],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -63,6 +64,22 @@
       "purpose": "maskable"
     }
   ],
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "TalkType in action"
+    },
+    {
+      "src": "/screenshots/screenshot-mobile.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "TalkType on mobile"
+    }
+  ],
   "theme_icons": [
     {
       "src": "/icons/icon-maskable-light-512x512.png",
@@ -84,8 +101,14 @@
       "name": "Start Recording",
       "short_name": "Record",
       "description": "Start a new voice recording",
-      "url": "/",
+      "url": "/?action=record",
       "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
     }
-  ]
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "scope": "/",
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  }
 }

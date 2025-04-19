@@ -4,11 +4,14 @@
 -->
 <script>
 	import { geminiService } from '$lib/services/geminiService';
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte'; // Import createEventDispatcher
 	import AudioVisualizer from './AudioVisualizer.svelte';
-	
+
 	// Helper variable to check if we're in a browser environment
 	const browser = typeof window !== 'undefined';
+
+	// Initialize the event dispatcher
+	const dispatch = createEventDispatcher();
 
 	let recording = false;
 	let mediaRecorder;
@@ -23,14 +26,14 @@
 	let editableTranscript;
 	let showPermissionError = false;
 	let permissionErrorTimer;
-	
+
 	// DOM element references
 	let eyesElement;
 	let ghostIconElement;
 	let copyEyesElement;
 	let recordButtonElement;
 	let progressContainerElement;
-	
+
 	// These will be set from the parent component
 	export let parentEyesElement = null;
 	export let parentGhostIconElement = null;
@@ -40,7 +43,7 @@
 	// Accessibility state management
 	let screenReaderStatus = ''; // For ARIA announcements
 	let copyButtonRef; // Reference to the copy button
-	
+
 	// Smart tooltip management
 	let showCopyTooltip = false;
 	let tooltipHoverCount = 0;
@@ -67,10 +70,10 @@
 
 	// Special message when document lost focus but was recovered
 	const focusRecoveryMessage = 'Click in window first, then copy again! 🔍';
-	
+
 	// Attribution tags for different contexts (using Unicode italic for discretion)
 	const simpleAttributionTag = "\n\n𝘛𝘳𝘢𝘯𝘴𝘤𝘳𝘪𝘣𝘦𝘥 𝘣𝘺 𝘛𝘢𝘭𝘬𝘛𝘺𝘱𝘦 👻";
-	
+
 	// Function to generate viral attribution with preview
 	function getViralAttribution(text) {
 		// Cleaner format with just the text and a discreet credit line (smaller and italicized)
@@ -82,12 +85,12 @@
 		// Simplified version that doesn't depend on browser APIs
 		return copyMessages[Math.floor(Math.random() * copyMessages.length)];
 	}
-	
+
 	// Check if Web Share API is available
 	function isWebShareSupported() {
-		return browser && 
-			   typeof navigator !== 'undefined' && 
-			   navigator.share && 
+		return browser &&
+			   typeof navigator !== 'undefined' &&
+			   navigator.share &&
 			   typeof navigator.share === 'function';
 	}
 
@@ -139,7 +142,16 @@
 	}
 
 	// Export recording state and functions for external components
-	export { recording, stopRecording, startRecording };
+	export { 
+		recording, 
+		stopRecording, 
+		startRecording, 
+		// PWA installation state functions
+		shouldShowPWAPrompt,
+		recordPWAPromptShown,
+		markPWAAsInstalled,
+		isRunningAsPWA
+	};
 
 	// Function to preload the speech model before recording starts
 	function preloadSpeechModel() {
@@ -148,6 +160,194 @@
 			onPreloadRequest();
 		}
 	}
+
+	// --- Transcription Count & PWA Installation State Tracking ---
+	const TRANSCRIPTION_COUNT_KEY = 'talktype-transcription-count';
+	const PWA_PROMPT_SHOWN_KEY = 'talktype-pwa-prompt-shown';
+	const PWA_PROMPT_COUNT_KEY = 'talktype-pwa-prompt-count';
+	const PWA_LAST_PROMPT_DATE_KEY = 'talktype-pwa-last-prompt-date';
+	const PWA_INSTALLED_KEY = 'talktype-pwa-installed';
+
+	/**
+	 * Retrieves the current transcription count from localStorage.
+	 * Returns 0 if not found or not in a browser environment.
+	 * @returns {number} The current transcription count.
+	 */
+	function getTranscriptionCount() {
+		if (!browser) {
+			return 0; // Not in browser, cannot access localStorage
+		}
+		try {
+			const countStr = localStorage.getItem(TRANSCRIPTION_COUNT_KEY);
+			const count = parseInt(countStr || '0', 10);
+			return isNaN(count) ? 0 : count;
+		} catch (error) {
+			console.error('Error reading transcription count from localStorage:', error);
+			return 0; // Return 0 on error
+		}
+	}
+
+	/**
+	 * Increments the transcription count in localStorage and dispatches an event.
+	 * Only runs in a browser environment.
+	 */
+	function incrementTranscriptionCount() {
+		if (!browser) {
+			return; // Not in browser, cannot access localStorage
+		}
+		try {
+			const currentCount = getTranscriptionCount();
+			const newCount = currentCount + 1;
+			localStorage.setItem(TRANSCRIPTION_COUNT_KEY, newCount.toString());
+			console.log(`📈 Transcription count incremented to: ${newCount}`);
+
+			// Dispatch event to notify parent component about the completed transcription
+			dispatch('transcriptionCompleted', { count: newCount });
+
+		} catch (error) {
+			console.error('Error incrementing transcription count in localStorage:', error);
+		}
+	}
+
+	/**
+	 * Checks if the PWA installation prompt should be shown.
+	 * Bases decision on transcription count, time since last prompt, and installation status.
+	 * @returns {boolean} Whether the PWA installation prompt should be shown.
+	 */
+	function shouldShowPWAPrompt() {
+		if (!browser) {
+			return false; // Not in browser, cannot check installation state
+		}
+		
+		try {
+			// Check if the app is already installed as a PWA
+			const isInstalled = localStorage.getItem(PWA_INSTALLED_KEY) === 'true';
+			if (isInstalled) {
+				return false; // Don't show prompt if already installed
+			}
+			
+			// Get the transcription count
+			const transcriptionCount = getTranscriptionCount();
+			
+			// Check if we've shown the prompt before
+			const hasShownPrompt = localStorage.getItem(PWA_PROMPT_SHOWN_KEY) === 'true';
+			
+			// Get how many times we've shown the prompt
+			const promptCount = parseInt(localStorage.getItem(PWA_PROMPT_COUNT_KEY) || '0', 10);
+			
+			// Get the date when we last showed the prompt
+			const lastPromptDate = localStorage.getItem(PWA_LAST_PROMPT_DATE_KEY);
+			
+			// If we've never shown the prompt before, show it after 3 transcriptions
+			if (!hasShownPrompt && transcriptionCount >= 3) {
+				return true;
+			}
+			
+			// If we've shown the prompt 1-2 times before, check if enough time has passed
+			// and enough new transcriptions have happened
+			if (hasShownPrompt && promptCount < 3) {
+				const daysSinceLastPrompt = lastPromptDate 
+					? Math.floor((Date.now() - new Date(lastPromptDate).getTime()) / (1000 * 60 * 60 * 24)) 
+					: 0;
+					
+				// Show again after at least 3 days and 5 more transcriptions
+				if (daysSinceLastPrompt >= 3 && transcriptionCount >= 5) {
+					return true;
+				}
+			}
+			
+			// If we've shown the prompt 3 or more times, be more conservative
+			if (promptCount >= 3) {
+				const daysSinceLastPrompt = lastPromptDate 
+					? Math.floor((Date.now() - new Date(lastPromptDate).getTime()) / (1000 * 60 * 60 * 24)) 
+					: 0;
+					
+				// Show again after at least 14 days (2 weeks) and 10 more transcriptions
+				if (daysSinceLastPrompt >= 14 && transcriptionCount >= 10) {
+					return true;
+				}
+			}
+			
+			return false;
+		} catch (error) {
+			console.error('Error checking if PWA prompt should be shown:', error);
+			return false; // Default to not showing on error
+		}
+	}
+
+	/**
+	 * Records that the PWA installation prompt was shown.
+	 * Updates the prompt count, shown status, and last prompt date.
+	 */
+	function recordPWAPromptShown() {
+		if (!browser) {
+			return;
+		}
+		
+		try {
+			// Mark that we've shown the prompt
+			localStorage.setItem(PWA_PROMPT_SHOWN_KEY, 'true');
+			
+			// Get and increment the prompt count
+			const promptCount = parseInt(localStorage.getItem(PWA_PROMPT_COUNT_KEY) || '0', 10);
+			localStorage.setItem(PWA_PROMPT_COUNT_KEY, (promptCount + 1).toString());
+			
+			// Record the current date
+			localStorage.setItem(PWA_LAST_PROMPT_DATE_KEY, new Date().toISOString());
+			
+			console.log(`📱 PWA installation prompt shown (count: ${promptCount + 1})`);
+		} catch (error) {
+			console.error('Error recording PWA prompt shown:', error);
+		}
+	}
+
+	/**
+	 * Marks the PWA as installed in localStorage.
+	 * This prevents further installation prompts.
+	 */
+	function markPWAAsInstalled() {
+		if (!browser) {
+			return;
+		}
+		
+		try {
+			localStorage.setItem(PWA_INSTALLED_KEY, 'true');
+			console.log('📱 PWA marked as installed');
+		} catch (error) {
+			console.error('Error marking PWA as installed:', error);
+		}
+	}
+
+	/**
+	 * Checks if the app is running as an installed PWA.
+	 * @returns {boolean} Whether the app is running as an installed PWA.
+	 */
+	function isRunningAsPWA() {
+		if (!browser) {
+			return false;
+		}
+		
+		try {
+			// Different ways to detect if running as PWA
+			const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+			const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+			const isMinimalUi = window.matchMedia('(display-mode: minimal-ui)').matches;
+			const isInPWA = navigator.standalone || // iOS
+				isStandalone || isFullscreen || isMinimalUi;
+				
+			// If we detect it's a PWA, also mark it in localStorage
+			if (isInPWA) {
+				markPWAAsInstalled();
+			}
+			
+			return isInPWA;
+		} catch (error) {
+			console.error('Error checking if running as PWA:', error);
+			return false;
+		}
+	}
+	// --- End Transcription Count & PWA Installation State Tracking ---
+
 
 	async function startRecording() {
 		// Don't start a new recording if already recording
@@ -224,11 +424,11 @@
 					const completeProgress = () => {
 						if (transcriptionProgress < 100) {
 							transcriptionProgress += (100 - transcriptionProgress) * 0.2;
-							
+
 							if (transcriptionProgress > 99.5) {
 								// We've reached the end
 								transcriptionProgress = 100;
-								
+
 								// Add a slight delay for the completion glow effect
 								setTimeout(handleCompletionEffects, 200);
 							} else {
@@ -237,17 +437,17 @@
 							}
 						}
 					};
-					
+
 					// Handle the completion effects (extracted for clarity)
 					function handleCompletionEffects() {
 						if (progressContainerElement) {
 							progressContainerElement.classList.add('completion-pulse');
-							
+
 							// Add confetti celebration for successful transcription (randomly 1/7 times)
 							if (transcript && transcript.length > 20 && Math.floor(Math.random() * 7) === 0) {
 								showConfettiCelebration();
 							}
-							
+
 							// Clean up after animation finishes
 							setTimeout(() => {
 								progressContainerElement.classList.remove('completion-pulse');
@@ -262,8 +462,11 @@
 					// Brief delay before showing the transcript - just enough for a smooth transition
 					await new Promise((resolve) => setTimeout(resolve, 650));
 
-					// Automatically copy to clipboard when transcription finishes
+					// Automatically copy to clipboard and increment count when transcription finishes
 					if (transcript) {
+						// Increment the transcription count on success
+						incrementTranscriptionCount(); // <<< Call the increment function HERE
+
 						try {
 							// Focus check - document must be focused for clipboard operations
 							const isDocumentFocused = typeof document !== 'undefined' && document.hasFocus();
@@ -323,6 +526,7 @@
 					transcribing = false;
 				} finally {
 					recording = false;
+					ghostStopThinking(); // Ensure ghost stops thinking even if there's an error after transcription
 					// We don't need to set shouldUpdateCta here since we're
 					// using immediate rotation in the toggleRecording function
 				}
@@ -332,7 +536,7 @@
 			console.log('✅ Recording started');
 		} catch (err) {
 			console.error('❌ Error accessing microphone:', err);
-			
+
 			// Check for specific permission errors
 			let isPermissionDenied = false;
 			if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
@@ -340,12 +544,12 @@
 			} else if (err.message && (err.message.includes('permission') || err.message.includes('denied'))) {
 				isPermissionDenied = true;
 			}
-			
+
 			if (isPermissionDenied) {
 				// Show the permission error modal
 				showPermissionError = true;
 				vibrate([20, 100, 20, 100, 20]); // Triple vibration pattern for error
-				
+
 				// Animate ghost to look sad/disappointed
 				const eyes = eyesElement || parentEyesElement;
 				if (eyes) {
@@ -354,20 +558,20 @@
 						eyes.classList.remove('eyes-sad');
 					}, 2000);
 				}
-				
+
 				// Auto-hide the modal after a while
 				if (permissionErrorTimer) clearTimeout(permissionErrorTimer);
 				permissionErrorTimer = setTimeout(() => {
 					showPermissionError = false;
 				}, 8000); // Show for 8 seconds
-				
+
 				// Clear generic error message since we're showing a modal
 				errorMessage = '';
 			} else {
 				// Generic error handling
 				errorMessage = 'Error accessing microphone. Please check your device settings.';
 			}
-			
+
 			recording = false;
 		}
 	}
@@ -401,7 +605,7 @@
 			if (recording) {
 				// Haptic feedback for stop - single pulse
 				vibrate(50);
-				
+
 				stopRecording();
 				// Screen reader announcement
 				screenReaderStatus = 'Recording stopped.';
@@ -411,21 +615,21 @@
 				// When using "New Recording" button, rotate to next phrase immediately
 				if (transcript) {
 					console.log('🧹 Clearing transcript for new recording');
-					
+
 					// Pick a random CTA phrase that's not the current one
 					let newIndex;
 					do {
 						newIndex = Math.floor(Math.random() * (ctaPhrases.length - 1)) + 1; // Skip first one (Start Recording)
 					} while (newIndex === currentCtaIndex);
-					
+
 					currentCtaIndex = newIndex;
 					currentCta = ctaPhrases[currentCtaIndex];
 					console.log(`🔥 Rotating to: "${currentCta}"`);
-					
+
 					// Then clear transcript
 					transcript = '';
 				}
-				
+
 				// Subtle pulse ghost icon when starting a new recording
 				const icon = ghostIconElement || parentGhostIconElement;
 				if (icon) {
@@ -440,16 +644,16 @@
 			}
 		} catch (err) {
 			console.error('Recording operation failed:', err);
-			
+
 			// Show error message using existing toast system
 			errorMessage = `Recording error: ${err.message || 'Unknown error'}`;
-			
+
 			// Haptic feedback for error
 			vibrate([20, 150, 20]);
-			
+
 			// Reset recording state if needed
 			recording = false;
-			
+
 			// Update screen reader status
 			screenReaderStatus = 'Recording failed. Please try again.';
 		}
@@ -469,7 +673,19 @@
 		// Set local references using parent elements if available
 		eyesElement = parentEyesElement;
 		ghostIconElement = parentGhostIconElement;
-		
+
+		// Check if the app is running as a PWA on component mount
+		if (browser) {
+			// Short delay to ensure window.matchMedia is available
+			setTimeout(() => {
+				// Check if running as PWA and mark if true
+				const isPWA = isRunningAsPWA();
+				if (isPWA) {
+					console.log('📱 App is running as PWA');
+				}
+			}, 100);
+		}
+
 		return () => {
 			if (animationFrameId) cancelAnimationFrame(animationFrameId);
 			if (clipboardTimer) clearTimeout(clipboardTimer);
@@ -497,13 +713,13 @@
 		try {
 			// Get current text from editable div
 			let textToCopy = getEditedTranscript();
-			
+
 			// Don't try to copy empty text
 			if (!textToCopy || textToCopy.trim() === '') {
 				console.log('📋 Nothing to copy - transcript is empty');
 				return;
 			}
-			
+
 			// Add simple attribution tag to the copied text
 			textToCopy += simpleAttributionTag;
 
@@ -516,7 +732,7 @@
 			// Update tooltip usage tracking - hide tooltip after button is used
 			hasUsedCopyButton = true;
 			showCopyTooltip = false;
-			
+
 			console.log('📋 Attempting to copy text with attribution');
 			// Simple tracking event
 			console.log('🔄 TRACKING: user_action=copy_transcript');
@@ -526,29 +742,29 @@
 				await navigator.clipboard.writeText(textToCopy);
 				console.log('📋 Successfully copied using Clipboard API');
 				clipboardSuccess = true;
-				
+
 				// Haptic feedback for successful copy - single quick pulse
 				vibrate(25);
-				
+
 				// Show toast message regardless of tooltip visibility
 				// This ensures mobile users who don't get tooltips still get feedback
-				
+
 				// Update screen reader status
 				screenReaderStatus = 'Transcript copied to clipboard';
-				
+
 				// Auto-hide the clipboard success message after 2.5 seconds for snappier response
 				if (clipboardTimer) clearTimeout(clipboardTimer);
 				clipboardTimer = setTimeout(() => {
 					clipboardSuccess = false;
 				}, 2500);
-				
+
 				// Return focus to the copy button after operation
 				if (copyButtonRef) {
 					setTimeout(() => {
 						copyButtonRef.focus();
 					}, 100);
 				}
-				
+
 				return;
 			} catch (clipboardError) {
 				console.error('❌ Clipboard API failed:', clipboardError);
@@ -563,26 +779,26 @@
 			document.body.appendChild(textarea);
 			textarea.focus();
 			textarea.select();
-			
+
 			const successful = document.execCommand('copy');
 			document.body.removeChild(textarea);
-			
+
 			if (successful) {
 				console.log('📋 Transcript copied via execCommand fallback');
 				clipboardSuccess = true;
-				
+
 				// Haptic feedback for successful copy - single quick pulse
 				vibrate(25);
-				
+
 				// Update screen reader status
 				screenReaderStatus = 'Transcript copied to clipboard';
-				
+
 				// Auto-hide the clipboard success message after 2.5 seconds for snappier response
 				if (clipboardTimer) clearTimeout(clipboardTimer);
 				clipboardTimer = setTimeout(() => {
 					clipboardSuccess = false;
 				}, 2500);
-				
+
 				// Attempt to return focus to copy button
 				if (copyButtonRef) {
 					setTimeout(() => {
@@ -594,14 +810,14 @@
 			}
 		} catch (err) {
 			console.error('❌ All clipboard methods failed:', err);
-			
+
 			// Error pattern haptic feedback - two short bursts for error
 			vibrate([20, 150, 20]);
-			
+
 			// Show user-friendly error message
 			clipboardSuccess = true; // Use the success toast but with error message
 			screenReaderStatus = 'Unable to copy. Please try clicking in the window first.';
-			
+
 			if (clipboardTimer) clearTimeout(clipboardTimer);
 			clipboardTimer = setTimeout(() => {
 				clipboardSuccess = false;
@@ -613,7 +829,7 @@
 	function showConfettiCelebration() {
 		// Only run in browser environment
 		if (!browser) return;
-		
+
 		// Create a container for the confetti
 		const container = document.createElement('div');
 		container.className = 'confetti-container';
@@ -707,10 +923,10 @@
 		if (typeof window !== 'undefined') {
 			viewportWidth = window.innerWidth;
 		}
-		
+
 		// Smaller base sizes for mobile
 		const isMobile = viewportWidth > 0 && viewportWidth < 640;
-		
+
 		const length = text.length;
 		if (length < 50) return isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl'; // Very short text
 		if (length < 150) return isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl'; // Short text
@@ -730,63 +946,63 @@
 		"Transcribe Me Baby",
 		"Start Yer Yappin'",
 		"Say the Thing",
-		"Feed Words Now", 
+		"Feed Words Now",
 		"Just Say It",
 		"Speak Up Friend",
 		"Talk to Me",
 		"Ready When You Are"
 	];
-	
+
 	// Always start with "Start Recording"
 	let currentCtaIndex = 0;
 	let currentCta = ctaPhrases[currentCtaIndex];
-	
+
 	// Track if we need to update CTA after transcription
 	let shouldUpdateCta = false;
-	
+
 	// Button label that changes based on state
 	let buttonLabel;
-	
+
 	// Function to share transcript using Web Share API
 	async function shareTranscript() {
 		try {
 			// Get the current text from the editable div
 			const textToShare = getEditedTranscript();
-			
+
 			// Don't share empty text
 			if (!textToShare || textToShare.trim() === '') {
 				console.log('📤 Nothing to share - transcript is empty');
 				return;
 			}
-			
+
 			// Skip share operations in non-browser environments
 			if (!browser) {
 				console.log('📤 Not in browser environment, skipping share operations');
 				return;
 			}
-			
+
 			// Add viral attribution tag with preview to shared text
 			const textWithAttribution = textToShare + getViralAttribution(textToShare);
-			
+
 			// Simple tracking event
 			console.log('🔄 TRACKING: user_action=share_transcript');
-			
+
 			// Check if Web Share API is supported
 			if (isWebShareSupported()) {
 				try {
 					await navigator.share({
 						text: getViralAttribution(textToShare).trim()
 					});
-					
+
 					console.log('📤 Successfully shared transcript');
-					
+
 					// Show success toast (reuse the clipboard success toast)
 					clipboardSuccess = true;
 					screenReaderStatus = 'Transcript shared successfully';
-					
+
 					// Haptic feedback for successful share
 					vibrate([30, 50, 30]);
-					
+
 					// Auto-hide the success message after 3 seconds
 					if (clipboardTimer) clearTimeout(clipboardTimer);
 					clipboardTimer = setTimeout(() => {
@@ -800,11 +1016,11 @@
 				// Fallback to clipboard if Web Share API is not supported
 				console.log('📤 Web Share API not supported, falling back to clipboard');
 				await navigator.clipboard.writeText(getViralAttribution(textToShare).trim());
-				
+
 				// Show success toast
 				clipboardSuccess = true;
 				screenReaderStatus = 'Transcript copied to clipboard (sharing not supported)';
-				
+
 				// Auto-hide the message after 3 seconds
 				if (clipboardTimer) clearTimeout(clipboardTimer);
 				clipboardTimer = setTimeout(() => {
@@ -815,12 +1031,12 @@
 			console.error('❌ Error sharing transcript:', err);
 			// Show error in toast
 			errorMessage = 'Error sharing transcript. Please try copying instead.';
-			
+
 			// Error vibration pattern
 			vibrate([20, 150, 20]);
 		}
 	}
-	
+
 	// We've simplified the CTA rotation to happen directly in the toggleRecording function
 	// This reactive block is just for logging changes to the CTA
 	$: {
@@ -828,7 +1044,7 @@
 			console.log(`🎯 Current CTA phrase: "${currentCta}"`);
 		}
 	}
-	
+
 	// Button label computation - fixed to show CTA phrases
 	$: {
 		// Only three states: Recording, Ready for New Recording, or Waiting for First Recording
@@ -934,7 +1150,7 @@
 									class="copy-btn absolute -top-4 -right-4 z-[200] h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2"
 									on:click|preventDefault={copyToClipboard}
 									on:mouseenter={() => {
-										// Only show tooltip if user hasn't used the button yet 
+										// Only show tooltip if user hasn't used the button yet
 										// or hasn't hovered too many times
 										if (typeof window !== "undefined" && window.innerWidth >= 640 && !hasUsedCopyButton && tooltipHoverCount < MAX_TOOLTIP_HOVER_COUNT) {
 											showCopyTooltip = true;
@@ -958,7 +1174,7 @@
 											<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 h-full w-full copy-eyes" aria-hidden="true" />
 										</div>
 									</div>
-									
+
 									<!-- Smart tooltip - only shows for first few hovers - positioned at top right to avoid clipping -->
 									{#if showCopyTooltip}
 										<div class="copy-tooltip absolute top-12 right-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md z-[250]">
@@ -967,8 +1183,8 @@
 										</div>
 									{/if}
 								</button>
-								
-								
+
+
 								<!-- Editable transcript box with controlled scrolling -->
 								<div
 									class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5 max-w-[90vw] box-border mx-auto my-4 transition-all duration-300 max-h-[60vh] overflow-y-auto scrollbar-thin"
@@ -991,10 +1207,10 @@
 									</div>
 									<!-- Subtle gradient mask to indicate scrollable content -->
 									<div class="scroll-indicator-bottom absolute bottom-0 left-0 right-0 h-6 pointer-events-none bg-gradient-to-t from-white/90 to-transparent rounded-b-[2rem]"></div>
-									
+
 									<!-- Add padding at the bottom of transcript for the share button -->
 									<div class="pb-16"></div>
-									
+
 									<!-- Simple share button at bottom middle - only visible when Web Share API is supported -->
 									{#if isWebShareSupported()}
 										<div class="flex justify-center w-full absolute bottom-6 left-0 right-0 z-[200]">
@@ -1007,7 +1223,7 @@
 											</button>
 										</div>
 									{/if}
-									
+
 									<!-- Hidden instructions for screen readers -->
 									<div id="transcript-instructions" class="sr-only">
 										Editable transcript. You can modify the text if needed.
@@ -1053,10 +1269,10 @@
 				</div>
 				<h3 id="permission_error_title">Microphone Access Denied</h3>
 			</div>
-			
+
 			<!-- Permission error message -->
 			<p id="permission_error_description">TalkType needs microphone access to transcribe your speech. Please update your browser settings to allow microphone access.</p>
-			
+
 			<!-- Solution steps -->
 			<div class="error-steps">
 				<div class="step">
@@ -1072,7 +1288,7 @@
 					<p>Refresh the page and try again</p>
 				</div>
 			</div>
-			
+
 			<!-- Dismiss button -->
 			<button class="dismiss-btn" on:click|stopPropagation={() => showPermissionError = false}>
 				Got it
@@ -1237,13 +1453,13 @@
 		position: relative;
 		z-index: 2;
 	}
-	
+
 	/* Make sure the outline is visible on top of the gradient */
 	:global(.recording .icon-bg),
 	:global(.recording .icon-base) {
 		filter: brightness(1.05);
 	}
-	
+
 	/* Transcript box styling */
 	.transcript-box {
 		box-shadow:
@@ -1352,12 +1568,12 @@
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.4), 0 8px 16px rgba(249, 168, 212, 0.15);
 		background-color: rgba(255, 255, 255, 0.9);
 	}
-	
+
 	.copy-btn:active {
 		transform: translateY(1px) scale(0.95);
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.5), 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
-	
+
 	/* Share button styling */
 	.share-btn {
 		opacity: 0.95;
@@ -1371,7 +1587,7 @@
 		/* Slight delay in animation to be offset from copy button */
 		animation-delay: 0.4s;
 	}
-	
+
 	.share-btn:hover {
 		opacity: 1;
 		filter: drop-shadow(0 6px 12px rgba(168, 173, 249, 0.4));
@@ -1379,7 +1595,7 @@
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(168, 173, 249, 0.4), 0 8px 16px rgba(168, 173, 249, 0.15);
 		background-color: rgba(255, 255, 255, 0.9);
 	}
-	
+
 	.share-btn:active {
 		transform: translateY(1px) scale(0.95);
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(168, 173, 249, 0.5), 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -1413,7 +1629,7 @@
 	.copy-btn:hover .copy-eyes {
 		animation: copy-ghost-blink-excited 2s infinite;
 	}
-	
+
 	@keyframes gentle-float {
 		0%, 100% {
 			transform: translateY(0);
@@ -1441,13 +1657,13 @@
 			transform: scaleY(0);
 		}
 	}
-	
+
 	/* Sad eyes animation for permission errors */
 	.eyes-sad {
 		animation: eyes-sad-animation 2s ease-in-out forwards !important;
 		transform-origin: center center;
 	}
-	
+
 	@keyframes eyes-sad-animation {
 		0%, 100% {
 			transform: scaleY(0.7) translateY(2px);
@@ -1496,7 +1712,7 @@
 	* {
 		box-sizing: border-box;
 	}
-	
+
 	/* Mobile-centered container */
 	.mobile-centered-container {
 		width: 100%;
@@ -1599,7 +1815,7 @@
 			toast-pulse-warning 2s ease-in-out infinite,
 			toast-fade 4.5s ease-in-out forwards;
 	}
-	
+
 	/* Warning toast special pulse */
 	@keyframes toast-pulse-warning {
 		0%, 100% {
@@ -1666,7 +1882,7 @@
 			opacity: 0;
 		}
 	}
-	
+
 	/* Permission Error Modal Styling */
 	.permission-error-container {
 		position: fixed;
@@ -1682,11 +1898,11 @@
 		padding: 1rem;
 		animation: fade-in 0.3s ease-out;
 	}
-	
+
 	.permission-error-modal {
 		background: linear-gradient(to bottom right, #fff, #fefcff);
 		border-radius: 1rem;
-		box-shadow: 
+		box-shadow:
 			0 10px 25px -5px rgba(249, 168, 212, 0.4),
 			0 8px 10px -6px rgba(249, 168, 212, 0.2),
 			0 0 0 1px rgba(249, 168, 212, 0.3) inset;
@@ -1698,7 +1914,7 @@
 		animation: slide-up 0.4s cubic-bezier(0.19, 1, 0.22, 1);
 		text-align: center;
 	}
-	
+
 	.modal-header {
 		display: flex;
 		align-items: center;
@@ -1707,7 +1923,7 @@
 		margin-bottom: 1rem;
 		flex-direction: column;
 	}
-	
+
 	.error-icon {
 		width: 3rem;
 		height: 3rem;
@@ -1719,20 +1935,20 @@
 		justify-content: center;
 		margin-bottom: 0.5rem;
 	}
-	
+
 	.modal-header h3 {
 		color: #111827;
 		font-weight: 700;
 		font-size: 1.25rem;
 		margin: 0;
 	}
-	
+
 	.permission-error-modal p {
 		margin: 0.75rem 0;
 		line-height: 1.6;
 		font-size: 0.95rem;
 	}
-	
+
 	.error-steps {
 		background-color: rgba(249, 168, 212, 0.08);
 		border-radius: 0.75rem;
@@ -1740,18 +1956,18 @@
 		margin: 1.25rem 0;
 		text-align: left;
 	}
-	
+
 	.step {
 		display: flex;
 		gap: 0.75rem;
 		margin-bottom: 0.75rem;
 		align-items: flex-start;
 	}
-	
+
 	.step:last-child {
 		margin-bottom: 0;
 	}
-	
+
 	.step-number {
 		width: 1.5rem;
 		height: 1.5rem;
@@ -1765,12 +1981,12 @@
 		color: #be185d;
 		flex-shrink: 0;
 	}
-	
+
 	.step p {
 		margin: 0;
 		font-size: 0.875rem;
 	}
-	
+
 	.dismiss-btn {
 		background-color: #be185d;
 		color: white;
@@ -1783,29 +1999,29 @@
 		margin-top: 0.75rem;
 		font-size: 1rem;
 	}
-	
+
 	.dismiss-btn:hover {
 		background-color: #9d174d;
 		transform: translateY(-1px);
 	}
-	
+
 	.dismiss-btn:active {
 		transform: translateY(1px);
 	}
-	
+
 	@keyframes fade-in {
 		from { opacity: 0; }
 		to { opacity: 1; }
 	}
-	
+
 	@keyframes slide-up {
-		from { 
-			opacity: 0; 
-			transform: translateY(20px); 
+		from {
+			opacity: 0;
+			transform: translateY(20px);
 		}
-		to { 
-			opacity: 1; 
-			transform: translateY(0); 
+		to {
+			opacity: 1;
+			transform: translateY(0);
 		}
 	}
 
@@ -1875,7 +2091,7 @@
 	:global(.ghost-wobble-right) {
 		animation: ghost-wobble-right 0.6s ease-in-out;
 	}
-	
+
 	/* Recording state glow effect is now handled in +page.svelte */
 
 	/* Button animations */
@@ -1960,7 +2176,7 @@
 			top: -12px; /* Better positioned for mobile */
 			right: -8px; /* Better positioned for mobile */
 		}
-		
+
 		/* Better sizing for share button on mobile */
 		.share-btn {
 			height: 38px; /* Larger touch target */
@@ -2043,7 +2259,7 @@
 			height: 34px;
 			width: 34px;
 		}
-		
+
 		/* Adjust share button style for very small screens */
 		.share-btn-text {
 			font-size: 0.8rem;
@@ -2053,7 +2269,7 @@
 
 		/* Ensure transcript text is readable and responsive */
 		.transcript-text {
-			font-size: 0.95rem !important; 
+			font-size: 0.95rem !important;
 			line-height: 1.6;
 			transition: font-size 0.3s ease;
 		}
@@ -2129,13 +2345,13 @@
 			opacity: 0;
 		}
 	}
-	
+
 	/* Enhanced breathing glow for button - more noticeable and smoother */
 	.pulse-subtle {
 		animation: button-breathe 3.5s ease-in-out infinite;
 		transform-origin: center;
 	}
-	
+
 	@keyframes button-breathe {
 		0%, 100% {
 			box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.35);
@@ -2146,31 +2362,31 @@
 			transform: scale(1.02);
 		}
 	}
-	
+
 	/* Notification pulse animation for when the button shows a notification */
 	.notification-pulse {
 		animation: notification-glow 2.5s ease-in-out infinite;
 		transform-origin: center;
-		box-shadow: 
+		box-shadow:
 			0 0 10px 2px rgba(139, 92, 246, 0.15),
 			0 0 3px 1px rgba(139, 92, 246, 0.08);
 	}
-	
+
 	@keyframes notification-glow {
 		0%, 100% {
-			box-shadow: 
+			box-shadow:
 				0 0 6px 1px rgba(139, 92, 246, 0.1),
 				0 0 2px 0px rgba(139, 92, 246, 0.05);
 			transform: scale(1);
 		}
 		50% {
-			box-shadow: 
+			box-shadow:
 				0 0 12px 3px rgba(139, 92, 246, 0.2),
 				0 0 4px 1px rgba(139, 92, 246, 0.1);
 			transform: scale(1.002);
 		}
 	}
-	
+
 	/* Wiggle animation for the ghost icon in notifications */
 	@keyframes tada {
 		0% { transform: scale(1); }
@@ -2179,7 +2395,7 @@
 		40%, 60%, 80% { transform: scale(1.1) rotate(-3deg); }
 		100% { transform: scale(1) rotate(0); }
 	}
-	
+
 	.animate-tada {
 		animation: tada 1.5s ease infinite;
 	}

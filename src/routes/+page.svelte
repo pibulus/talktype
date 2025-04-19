@@ -10,14 +10,22 @@
 	import AudioToText from '$lib/components/AudioToText.svelte';
 	import { browser } from '$app/environment';
 	import { geminiService } from '$lib/services/geminiService';
-	
+
 	// Lazy load modals - only import when needed
 	let SettingsModal;
 	let loadingSettingsModal = false;
-	
+	// PWA Install Prompt component - lazy loaded
+	let PwaInstallPrompt;
+	let loadingPwaPrompt = false;
+
 	// Track speech model preloading state
 	let speechModelPreloaded = false;
-	
+
+	// PWA Install Prompt Logic
+	const PWA_INSTALL_PROMPT_THRESHOLD = 5; // Show prompt after 5 successful transcriptions
+	let deferredInstallPrompt = null; // Stores the beforeinstallprompt event
+	let showPwaInstallPrompt = false; // Controls visibility of the PWA install prompt
+
 	// Create a reusable Svelte action for handling clicks outside an element
 	function clickOutside(node, { enabled = true, callback = () => {} }) {
 		const handleClick = (event) => {
@@ -25,9 +33,9 @@
 				callback();
 			}
 		};
-		
+
 		document.addEventListener('click', handleClick, true);
-		
+
 		return {
 			update(params) {
 				enabled = params.enabled;
@@ -343,10 +351,10 @@
 	// Check if this is the first visit to show intro modal
 	function checkFirstVisit() {
 		if (!browser) return;
-		
+
 		// Check if user has seen the intro before
 		const hasSeenIntro = localStorage.getItem('hasSeenTalkTypeIntro');
-		
+
 		if (!hasSeenIntro) {
 			// First visit, show intro modal after a brief delay
 			setTimeout(() => {
@@ -354,7 +362,7 @@
 				if (modal) {
 					console.log('Opening intro modal on first visit');
 					modal.showModal();
-					
+
 					// Set up event listener to handle modal close event from any source
 					modal.addEventListener('close', () => {
 						console.log('Modal closed, marking intro as seen');
@@ -395,7 +403,7 @@
 	onMount(() => {
 		debug('Component mounted');
 		setupDomObserver();
-		
+
 		// Add mouseenter event listener to the ghost icon for model preloading
 		if (browser) {
 			// Wait for the DOM to be ready
@@ -404,7 +412,7 @@
 				if (ghostIcon) {
 					ghostIcon.addEventListener('mouseenter', preloadSpeechModel);
 					debug('Added mouseenter event listener to ghost icon for model preloading');
-					
+
 					// Store cleanup function
 					ghostIconEventCleanup = () => {
 						ghostIcon.removeEventListener('mouseenter', preloadSpeechModel);
@@ -413,32 +421,32 @@
 				}
 			}, 500);
 		}
-		
+
 		// Check for auto-record setting and start recording if enabled
 		if (browser && localStorage.getItem('talktype-autoRecord') === 'true') {
 			// Wait minimal time for component initialization
 			setTimeout(() => {
 				if (audioToTextComponent && !audioToTextComponent.recording) {
 					debug('Auto-record enabled, starting recording immediately');
-					
+
 					// Make ghost do a quick animation and start recording immediately
 					if (iconContainer) {
 						// Start recording immediately with minimal animation
 						if (eyesElement) {
 							clearAllBlinkTimeouts(); // Clear any existing animations
-							
+
 							// Quick single blink and start recording immediately
 							eyesElement.classList.add('blink-once');
-							
+
 							// Start recording immediately
 							audioToTextComponent.startRecording();
-							
+
 							// Update UI state
 							iconContainer.classList.add('recording');
-							
+
 							// Also update the local recording state variable
 							isRecording = true;
-							
+
 							// Remove blink class after a short delay
 							setTimeout(() => {
 								eyesElement.classList.remove('blink-once');
@@ -457,7 +465,7 @@
 				}
 			}, 500); // Reduced delay - just enough for component initialization
 		}
-		
+
 		// Listen for settings changes
 		if (browser) {
 			window.addEventListener('talktype-setting-changed', (event) => {
@@ -474,7 +482,7 @@
 		// Set up animation sequence timing
 		setTimeout(handleTitleAnimationComplete, 1200); // After staggered animation
 		setTimeout(handleSubtitleAnimationComplete, 2000); // After subtitle slide-in
-		
+
 		// Handle theme for visitors (first time or returning)
 		if (browser) {
 			const savedVibe = localStorage.getItem("talktype-vibe");
@@ -489,30 +497,56 @@
 		}
 		// We no longer need to call applyTheme here since theme is applied directly in the HTML
 		// This prevents the flash of changing themes
-		
+
 		// For testing without localStorage, you can uncomment these lines
 		// localStorage.removeItem('hasSeenTalkTypeIntro');
 		// localStorage.removeItem('talktype-vibe');
+		// localStorage.removeItem('talktype-transcription-count'); // For testing PWA prompt
+
+		// --- PWA Install Prompt Listener ---
+		if (browser) {
+			window.addEventListener('beforeinstallprompt', (e) => {
+				// Prevent the mini-infobar from appearing on mobile
+				e.preventDefault();
+				// Stash the event so it can be triggered later.
+				deferredInstallPrompt = e;
+				console.log('✅ `beforeinstallprompt` event captured.');
+				// Optionally, update UI to notify the user they can install the PWA
+				// We will do this based on transcription count later
+			});
+
+			window.addEventListener('appinstalled', () => {
+				// Log install to analytics or clear install prompt UI
+				console.log('✅ TalkType PWA installed successfully!');
+				deferredInstallPrompt = null; // Clear the stored event
+				showPwaInstallPrompt = false; // Hide prompt if it was somehow visible
+			});
+		}
+		// --- End PWA Install Prompt Listener ---
+
 
 		return () => {
 			debug('Component unmounting, clearing timeouts and event listeners');
 			clearAllBlinkTimeouts();
-			
+
 			// Clean up the mouseenter event listener
 			if (ghostIconEventCleanup) {
 				ghostIconEventCleanup();
 			}
+			// Remove PWA listeners if needed (though usually they persist for the session)
+			// window.removeEventListener('beforeinstallprompt', ...);
+			// window.removeEventListener('appinstalled', ...);
 		};
 	});
-	
+
 	// Apply theme/vibe function for initial load
 	function applyTheme(vibeId) {
 		// Store in localStorage
 		localStorage.setItem("talktype-vibe", vibeId);
-		
+
 		// Apply theme to document root for consistent CSS targeting
 		document.documentElement.setAttribute('data-theme', vibeId);
-		
+
 		// Update ghost icon by swapping the SVG file
 		if (iconBgElement) {
 			// Set the appropriate gradient SVG based on theme
@@ -534,7 +568,7 @@
 					iconBgElement.classList.remove('rainbow-animated');
 					break;
 			}
-			
+
 			// Force a reflow to ensure the gradient is visible
 			void iconBgElement.offsetWidth;
 		}
@@ -687,34 +721,34 @@
 	// Variables to track modal state and store scroll position
 	let modalOpen = false;
 	let scrollPosition = 0;
-	
+
 	// Function to create and add a modal to the document using template strings
 	function createModalFromTemplate(modalId, templateHtml) {
 		// Check if the modal already exists
 		if (document.getElementById(modalId)) return;
-		
+
 		// Create a temporary container
 		const container = document.createElement('div');
 		container.innerHTML = templateHtml.trim();
-		
+
 		// Append the first element (the modal)
 		const modal = container.firstElementChild;
 		document.body.appendChild(modal);
-		
+
 		return modal;
 	}
-	
+
 	// About modal template
 	const aboutModalTemplate = `
 	<dialog id="about_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;" role="dialog" aria-labelledby="about_modal_title" aria-modal="true">
 		<div class="modal-box bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
 			<form method="dialog">
-				<button 
+				<button
 					class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
 					onclick="window.closeModal()"
 				>✕</button>
 			</form>
-			
+
 			<div class="animate-fadeUp space-y-4">
 				<div class="flex items-center gap-3 mb-1">
 					<div class="w-9 h-9 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
@@ -726,11 +760,11 @@
 					</div>
 					<h3 id="about_modal_title" class="font-black text-xl text-gray-800 tracking-tight">About TalkType</h3>
 				</div>
-				
+
 				<div class="bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 rounded-lg border border-pink-200/60 shadow-sm">
 					<p class="text-sm leading-relaxed text-gray-700">
-						TalkType is a minimalist voice-to-text tool that transforms your speech into text effortlessly. 
-						Built with love by two friends who think tech should be <span class="text-pink-600 font-medium">simple</span>, 
+						TalkType is a minimalist voice-to-text tool that transforms your speech into text effortlessly.
+						Built with love by two friends who think tech should be <span class="text-pink-600 font-medium">simple</span>,
 						<span class="text-amber-600 font-medium">delightful</span>, and actually <span class="text-pink-600 font-medium">helpful</span>.
 					</p>
 				</div>
@@ -769,18 +803,18 @@
 		</div>
 		<div class="modal-backdrop bg-black/40"></div>
 	</dialog>`;
-	
+
 	// Extension modal template
 	const extensionModalTemplate = `
 	<dialog id="extension_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;" role="dialog" aria-labelledby="extension_modal_title" aria-modal="true">
 		<div class="modal-box bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
 			<form method="dialog">
-				<button 
+				<button
 					class="btn btn-sm btn-circle absolute right-3 top-3 bg-pink-100 border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm"
 					onclick="window.closeModal()"
 				>✕</button>
 			</form>
-			
+
 			<div class="animate-fadeUp space-y-4">
 				<div class="flex items-center gap-3 mb-1">
 					<div class="w-9 h-9 bg-gradient-to-br from-white to-purple-50 rounded-full flex items-center justify-center shadow-sm border border-purple-200/60">
@@ -790,10 +824,10 @@
 					</div>
 					<h3 id="extension_modal_title" class="font-black text-xl text-gray-800 tracking-tight">Chrome Extension</h3>
 				</div>
-				
+
 				<div class="bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 rounded-lg border border-pink-200/60 shadow-sm">
 					<p class="text-sm leading-relaxed text-gray-700">
-						Use TalkType everywhere on the web! Our Chrome extension lets you transcribe directly into any text field. 
+						Use TalkType everywhere on the web! Our Chrome extension lets you transcribe directly into any text field.
 						Perfect for emails, social media, messaging apps, or anywhere else you need to type.
 					</p>
 				</div>
@@ -834,12 +868,12 @@
 	function showAboutModal() {
 		// Create the modal if it doesn't exist
 		createModalFromTemplate('about_modal', aboutModalTemplate);
-		
+
 		// Setup close handlers
 		if (window && !window.closeModal) {
 			window.closeModal = closeModal;
 		}
-		
+
 		// Add click handler to backdrop
 		const modal = document.getElementById('about_modal');
 		if (modal) {
@@ -851,18 +885,18 @@
 				};
 			}
 		}
-		
+
 		// Radical approach to prevent scrollbar issues
 		scrollPosition = window.scrollY;
 		const width = document.body.clientWidth;
 		modalOpen = true;
-		
+
 		// Lock the body in place exactly where it was
 		document.body.style.position = 'fixed';
 		document.body.style.top = `-${scrollPosition}px`;
 		document.body.style.width = `${width}px`;
 		document.body.style.overflow = 'hidden';
-		
+
 		// Now show the modal
 		if (modal) modal.showModal();
 	}
@@ -871,12 +905,12 @@
 	function showExtensionModal() {
 		// Create the modal if it doesn't exist
 		createModalFromTemplate('extension_modal', extensionModalTemplate);
-		
+
 		// Setup close handlers
 		if (window && !window.closeModal) {
 			window.closeModal = closeModal;
 		}
-		
+
 		// Add click handler to backdrop
 		const modal = document.getElementById('extension_modal');
 		if (modal) {
@@ -888,22 +922,22 @@
 				};
 			}
 		}
-		
+
 		// Radical approach to prevent scrollbar issues
 		scrollPosition = window.scrollY;
 		const width = document.body.clientWidth;
 		modalOpen = true;
-		
+
 		// Lock the body in place exactly where it was
 		document.body.style.position = 'fixed';
 		document.body.style.top = `-${scrollPosition}px`;
 		document.body.style.width = `${width}px`;
 		document.body.style.overflow = 'hidden';
-		
+
 		// Now show the modal
 		if (modal) modal.showModal();
 	}
-	
+
 	// Function to show the Settings modal - now with lazy loading
 	async function openSettingsModal() {
 		// First, ensure any open dialogs are closed and scroll is restored
@@ -913,12 +947,12 @@
 
 		// Check if we're already loading the modal
 		if (loadingSettingsModal) return;
-		
+
 		// Dynamically import the SettingsModal component if not already loaded
 		if (!SettingsModal) {
 			loadingSettingsModal = true;
 			debug('Lazy loading SettingsModal component');
-			
+
 			try {
 				// Import the component dynamically
 				const module = await import('$lib/components/settings/SettingsModal.svelte');
@@ -929,7 +963,7 @@
 				loadingSettingsModal = false;
 				return;
 			}
-			
+
 			loadingSettingsModal = false;
 		}
 
@@ -937,14 +971,14 @@
 		scrollPosition = window.scrollY;
 		const width = document.body.clientWidth;
 		modalOpen = true;
-		
+
 		// Lock the body in place exactly where it was
 		document.body.style.position = 'fixed';
 		document.body.style.top = `-${scrollPosition}px`;
 		document.body.style.width = `${width}px`;
 		document.body.style.overflow = 'hidden';
 		document.body.style.height = '100%';
-		
+
 		// Show the settings modal directly
 		const modal = document.getElementById('settings_modal');
 		if (modal) {
@@ -956,53 +990,121 @@
 				}, 50);
 				return;
 			}
-			
+
 			// Dispatch a custom event that will be caught in the SettingsModal component
 			const event = new Event('beforeshow');
 			modal.dispatchEvent(event);
-			
+
 			// Show the modal
 			modal.showModal();
 		}
 	}
-	
+
 	// Function to close the Settings modal
 	function closeSettingsModal() {
 		// Close modal and restore scroll
 		closeModal();
 	}
-	
+
 	// Function to restore scroll position when modal closes
 	function closeModal() {
 		if (!modalOpen) return;
-		
+
 		// Ensure any open dialogs are properly closed
 		document.querySelectorAll('dialog[open]').forEach(dialog => {
 			if (dialog && typeof dialog.close === 'function') {
 				dialog.close();
 			}
 		});
-		
+
 		// Restore body styles
 		document.body.style.position = '';
 		document.body.style.top = '';
 		document.body.style.width = '';
 		document.body.style.overflow = '';
 		document.body.style.height = '';
-		
+
 		// Remove any potentially problematic classes
 		document.body.classList.remove('overflow-hidden', 'fixed', 'modal-open');
-		
+
 		// Restore scroll position
 		window.scrollTo(0, scrollPosition);
 		modalOpen = false;
 	}
-	
+
 	// Function is no longer needed with DaisyUI modal
 	// Keeping a minimal version to maintain existing references
 	function closeIntroModal() {
 		markIntroAsSeen();
 	}
+
+	// --- PWA Install Prompt Logic ---
+	/**
+	 * Handles the transcriptionCompleted event from AudioToText.
+	 * Checks if conditions are met to show the PWA install prompt.
+	 * @param {CustomEvent<{count: number}>} event
+	 */
+	async function handleTranscriptionCompleted(event) {
+		if (!browser) return;
+
+		const newCount = event.detail.count;
+		console.log(`🔔 Transcription completed event received. Count: ${newCount}`);
+
+		// Check if the app is already installed (standalone mode)
+		const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+		// Check if we should show the prompt
+		if (
+			newCount >= PWA_INSTALL_PROMPT_THRESHOLD &&
+			deferredInstallPrompt &&
+			!isStandalone &&
+			!showPwaInstallPrompt // Don't show if already showing
+		) {
+			console.log('⭐ Conditions met for showing PWA install prompt.');
+			
+			// Lazy load the PWA install prompt component if needed
+			if (!PwaInstallPrompt && !loadingPwaPrompt) {
+				loadingPwaPrompt = true;
+				console.log('📱 Lazy loading PWA install prompt component...');
+				
+				try {
+					// Import the component dynamically
+					const module = await import('$lib/components/pwa/PwaInstallPrompt.svelte');
+					PwaInstallPrompt = module.default;
+					console.log('📱 PWA install prompt component loaded successfully');
+				} catch (err) {
+					console.error('Error loading PWA install prompt:', err);
+					loadingPwaPrompt = false;
+					return;
+				}
+				
+				loadingPwaPrompt = false;
+			}
+			
+			// Show the prompt
+			showPwaInstallPrompt = true;
+		} else {
+			console.log('Conditions not met for PWA prompt:', {
+				count: newCount,
+				threshold: PWA_INSTALL_PROMPT_THRESHOLD,
+				promptAvailable: !!deferredInstallPrompt,
+				isStandalone: isStandalone,
+				alreadyShowing: showPwaInstallPrompt
+			});
+		}
+	}
+
+	/**
+	 * Closes the PWA install prompt.
+	 */
+	function closePwaInstallPrompt() {
+		showPwaInstallPrompt = false;
+		// Optionally, store preference to not show again for a while
+		// localStorage.setItem('talktype-pwa-prompt-dismissed', Date.now().toString());
+		console.log('ℹ️ PWA install prompt dismissed.');
+	}
+	// --- End PWA Install Prompt Logic ---
+
 </script>
 
 <section
@@ -1030,15 +1132,15 @@
 			<div class="icon-layers">
 				<!-- Gradient background (bottom layer) - load based on data-theme -->
 				{#if browser}
-					<img 
+					<img
 						bind:this={iconBgElement}
-						src={document.documentElement.getAttribute('data-theme') === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
+						src={document.documentElement.getAttribute('data-theme') === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' :
 							document.documentElement.getAttribute('data-theme') === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
 							document.documentElement.getAttribute('data-theme') === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
-							'/talktype-icon-bg-gradient.svg'} 
-						class={document.documentElement.getAttribute('data-theme') === 'rainbow' ? 'icon-bg rainbow-animated' : 'icon-bg'} 
-						alt="" 
-						aria-hidden="true" 
+							'/talktype-icon-bg-gradient.svg'}
+						class={document.documentElement.getAttribute('data-theme') === 'rainbow' ? 'icon-bg rainbow-animated' : 'icon-bg'}
+						alt=""
+						aria-hidden="true"
 					/>
 				{:else}
 					<img bind:this={iconBgElement} src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
@@ -1061,7 +1163,7 @@
 				class="stagger-letter ml-[-0.03em]">y</span
 			><span class="stagger-letter">p</span><span class="stagger-letter">e</span>
 		</h1>
-		
+
 		<!-- Updated subheadline with improved typography and brand voice -->
 		<p
 			class="slide-in-subtitle mx-auto mt-2 mb-4 max-w-prose text-xl text-center text-gray-700/85 cursor-default select-none sm:mt-6 sm:mb-8 md:mt-6 md:mb-8"
@@ -1072,12 +1174,13 @@
 
 		<!-- Audio component - Wider container for better transcript layout -->
 		<div class="w-full max-w-xl mt-4 sm:mt-0 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
-			<AudioToText 
-				bind:this={audioToTextComponent} 
+			<AudioToText
+				bind:this={audioToTextComponent}
 				parentEyesElement={eyesElement}
 				parentGhostIconElement={iconContainer}
 				isModelPreloaded={speechModelPreloaded}
 				onPreloadRequest={preloadSpeechModel}
+				on:transcriptionCompleted={handleTranscriptionCompleted}
 			/>
 		</div>
 	</div>
@@ -1131,7 +1234,7 @@
 	{#if SettingsModal}
 		<svelte:component this={SettingsModal} open={showSettingsModal} closeModal={closeSettingsModal} />
 	{/if}
-	
+
 	<!-- First-time Intro Modal (DaisyUI version) -->
 	<dialog id="intro_modal" class="modal" role="dialog" aria-labelledby="intro_modal_title" aria-modal="true">
 		<!-- Modal content with clickOutside Svelte action for reliable backdrop clicking -->
@@ -1144,12 +1247,12 @@
 					markIntroAsSeen();
 				}
 			}}}>
-			
+
 			<!-- Close button -->
 			<form method="dialog">
 				<button class="btn btn-sm btn-circle absolute right-4 top-4 bg-[#fff9ed]/80 border-0 text-neutral-400 hover:bg-[#fff6e6] hover:text-neutral-700 shadow-sm">✕</button>
 			</form>
-			
+
 			<div class="space-y-5 sm:space-y-6 md:space-y-7 animate-fadeIn">
 				<!-- Animated ghost icon -->
 				<div class="flex justify-center mb-4">
@@ -1159,36 +1262,36 @@
 						<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full intro-eyes" />
 					</div>
 				</div>
-				
+
 				<!-- Main heading - ultra chunky -->
 				<h1 class="text-center text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-gray-900">
 					TalkType's the best. <br> Kick out the rest.
 				</h1>
-				
+
 				<!-- Main description - spacious and readable -->
 				<div class="space-y-3 sm:space-y-4">
 					<p class="text-sm sm:text-base md:text-lg font-medium text-gray-700 leading-relaxed">
 						Clean, sweet, and stupidly easy.
 					</p>
-					
+
 					<p class="text-sm sm:text-base md:text-lg font-medium text-gray-700 leading-relaxed">
 						Tap the ghost to speak — we turn your voice into text.
 					</p>
-					
+
 					<p class="text-sm sm:text-base md:text-lg font-medium text-gray-700 leading-relaxed">
 						Use it anywhere. Save it to your home screen.
 						Add the extension. Talk into any box on any site.
 					</p>
 				</div>
-				
+
 				<!-- Highlighted quote as clickable button -->
-				<button 
+				<button
 					class="w-full bg-gradient-to-r from-amber-100 to-amber-200 px-4 py-3 sm:px-5 sm:py-4 rounded-xl text-center text-sm sm:text-base md:text-lg text-gray-800 font-bold shadow-md border border-amber-300/50 hover:shadow-lg hover:bg-gradient-to-r hover:from-amber-200 hover:to-amber-300 hover:text-gray-900 active:scale-[0.98] transition-all duration-300 cursor-pointer relative"
 					on:click={() => {
 						// First close the modal
 						document.getElementById('intro_modal').close();
 						markIntroAsSeen();
-						
+
 						// Then after a brief delay, start recording
 						setTimeout(() => {
 							const ghostBtn = document.querySelector('.icon-container');
@@ -1198,15 +1301,15 @@
 				>
 					You click the ghost, we do the most.
 				</button>
-				
+
 				<!-- Tagline -->
 				<p class="text-center text-pink-600 font-bold text-base sm:text-lg md:text-xl py-2">
 					It's fast, it's fun, it's freaky good.
 				</p>
-				
+
 				<!-- Call to action button - extra chunky -->
 				<form method="dialog">
-					<button 
+					<button
 						class="w-full text-base sm:text-lg font-bold py-2.5 sm:py-3 px-4 sm:px-6 rounded-full bg-gradient-to-r from-yellow-400 to-pink-400 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
 						on:click={markIntroAsSeen}
 					>
@@ -1218,16 +1321,26 @@
 		<!-- Modal backdrop - for styling only, actual click handling is done by our custom Svelte action -->
 		<div class="modal-backdrop"></div>
 	</dialog>
+
+	<!-- PWA Install Prompt -->
+	{#if showPwaInstallPrompt && PwaInstallPrompt}
+		<svelte:component
+			this={PwaInstallPrompt}
+			installPromptEvent={deferredInstallPrompt}
+			on:closeprompt={closePwaInstallPrompt}
+		/>
+	{/if}
+
 </section>
 
 <style>
 	/* Global styles */
-	
+
 	/* Intro modal animations */
 	:global(.intro-eyes) {
 		animation: intro-blink 3s infinite;
 	}
-	
+
 	@keyframes intro-blink {
 		0%, 30%, 33%, 69%, 100% {
 			transform: scaleY(1);
@@ -1239,11 +1352,11 @@
 			transform: scaleY(0);
 		}
 	}
-	
+
 	.animate-pulse-slow {
 		animation: pulse-slow 3s ease-in-out infinite;
 	}
-	
+
 	@keyframes pulse-slow {
 		0%, 100% {
 			transform: scale(1);
@@ -1252,15 +1365,15 @@
 			transform: scale(1.05);
 		}
 	}
-	
+
 	.animate-modal-in {
 		animation: modal-in 0.5s ease-out forwards;
 	}
-	
+
 	.animate-modal-out {
 		animation: modal-out 0.3s ease-in forwards;
 	}
-	
+
 	@keyframes modal-in {
 		0% {
 			opacity: 0;
@@ -1271,7 +1384,7 @@
 			transform: scale(1);
 		}
 	}
-	
+
 	@keyframes modal-out {
 		0% {
 			opacity: 1;
@@ -1282,16 +1395,16 @@
 			transform: scale(0.95);
 		}
 	}
-	
+
 	/* Radial gradient support */
 	.bg-gradient-radial {
 		background-image: radial-gradient(circle at center, var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to));
 	}
-	
+
 	:global(*:focus) {
 		outline: none !important;
 	}
-	
+
 	/* Subtle cream background with just enough texture/noise */
 	:global(.bg-gradient-mesh) {
 		background-color: #fff6e6; /* More pronounced cream color */
@@ -1314,7 +1427,7 @@
 		border: none !important; /* Ensures no border */
 		animation: gentle-float 3s ease-in-out infinite;
 	}
-	
+
 	/* Remove focus outline and any other focus indicators */
 	.icon-container:focus, .icon-container:active, .icon-container:focus-visible {
 		outline: none !important;
@@ -1342,7 +1455,7 @@
 		height: 100%;
 		transition: all 0.3s ease;
 	}
-	
+
 	/* Stack the layers correctly */
 	.icon-bg {
 		z-index: 1; /* Bottom layer */
@@ -1738,12 +1851,12 @@
 		color: #000;
 		text-shadow: 0 0 8px rgba(249, 168, 212, 0.3);
 	}
-	
+
 	/* CTA button hover effect */
 	button.rounded-full {
 		transition: all 0.3s ease;
 	}
-	
+
 	button.rounded-full:hover {
 		transform: translateY(-1px);
 		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -1801,7 +1914,7 @@
 	}
 
 	/* No complicated per-letter animations - removed for stability */
-	
+
 	/* Animation for intro modal content */
 	@keyframes fadeIn {
 		0% {
@@ -1817,7 +1930,7 @@
 	.animate-fadeIn {
 		animation: fadeIn 0.5s ease-out forwards;
 	}
-	
+
 	/* Gentle floating animation for ghost icon */
 	@keyframes gentle-float {
 		0%, 100% {
@@ -1827,7 +1940,7 @@
 			transform: translateY(-5px);
 		}
 	}
-	
+
 	@keyframes ghost-hover {
 		0% {
 			transform: scale(1.005) translateY(0);
@@ -1836,7 +1949,7 @@
 			transform: scale(1.015) translateY(-3px);
 		}
 	}
-	
+
 	/* Rainbow animation for ghost svg with sparkle effect */
 	.rainbow-animated {
 		animation: hueShift 5s ease-in-out infinite;
@@ -1856,7 +1969,7 @@
 		50% { filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 12px rgba(53, 222, 255, 0.6)); transform: scale(1.02); }
 		75% { filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.7)) drop-shadow(0 0 10px rgba(255, 61, 127, 0.6)); transform: scale(1.015); }
 	}
-	
+
 	/* Theme-based visualizer styling using data-theme attribute */
 	:global([data-theme="rainbow"] .history-bar) {
 		animation: hueShift 7s ease-in-out infinite, rainbowBars 3s ease-in-out infinite;
@@ -1864,14 +1977,14 @@
 		background-size: 100% 600%;
 		box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 61, 127, 0.1);
 	}
-	
+
 	/* Special animation for rainbow bars */
 	@keyframes rainbowBars {
 		0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 61, 127, 0.3)); }
 		33% { filter: drop-shadow(0 0 4px rgba(255, 249, 73, 0.4)); }
 		66% { filter: drop-shadow(0 0 4px rgba(53, 222, 255, 0.4)); }
 	}
-	
+
 	@keyframes hueShift {
 		0% {
 			background-position: 0% 0%;
@@ -1894,7 +2007,7 @@
 			filter: saturate(1.3) brightness(1.1);
 		}
 	}
-	
+
 	/* Media queries for mobile optimization */
 	@media (max-width: 640px) {
 		section {
@@ -1904,29 +2017,29 @@
 			flex-direction: column;
 			justify-content: flex-start;
 		}
-		
+
 		.icon-container {
-			height: 9rem !important; 
+			height: 9rem !important;
 			width: 9rem !important;
 			margin-bottom: 1rem !important; /* 4 units on 8px grid */
 		}
-		
+
 		.slide-in-subtitle {
 			max-width: 28ch !important;
 			margin-top: 0.5rem !important; /* 2 units on 8px grid */
 			margin-bottom: 1rem !important; /* 4 units on 8px grid */
 		}
-		
+
 		/* Button section spacing */
 		.button-section {
 			margin-top: 1rem !important; /* 4 units on 8px grid */
 		}
-		
+
 		/* Position wrapper adjustments */
 		.position-wrapper {
 			margin-top: 1.5rem !important; /* 6 units on 8px grid */
 		}
-		
+
 		footer button {
 			min-height: 2.5rem;
 			padding-top: 0.5rem;
@@ -1934,7 +2047,7 @@
 			padding-left: 0.75rem;
 			padding-right: 0.75rem;
 		}
-		
+
 		footer {
 			padding-top: 1rem;
 			padding-bottom: 1rem;
