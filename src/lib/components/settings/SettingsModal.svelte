@@ -182,17 +182,17 @@
   <div class="modal-box bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh] w-[95%] max-w-md md:max-w-lg animate-modal-enter relative">
     <form method="dialog">
       <button 
-        class="close-btn absolute right-3 top-3 z-50 h-9 w-9 rounded-full bg-pink-100 border border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm transition-all duration-200 ease-in-out flex items-center justify-center"
+        class="close-btn absolute right-2 top-2 z-50 h-8 w-8 rounded-full bg-pink-100 border border-pink-200 text-pink-500 hover:bg-pink-200 hover:text-pink-700 shadow-sm transition-all duration-200 ease-in-out flex items-center justify-center"
         on:click={handleModalClose}
       >
         <span class="text-lg font-medium leading-none relative top-[-1px]">✕</span>
       </button>
     </form>
     
-    <div class="animate-fadeUp space-y-6">
-      <div class="flex items-center gap-3 mb-1">
-        <div class="w-9 h-9 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
-          <div class="relative w-7 h-7">
+    <div class="animate-fadeUp space-y-4">
+      <div class="flex items-center gap-2 mb-1">
+        <div class="w-8 h-8 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
+          <div class="relative w-6 h-6">
             <img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
             <img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
             <img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
@@ -201,12 +201,11 @@
         <h3 id="settings_modal_title" class="font-black text-xl text-gray-800 tracking-tight">Settings</h3>
       </div>
 
-      <!-- Vibe Selector Section -->
-      <!-- Personalization Settings Section -->
-      <div class="space-y-3 mb-5">
-        <h4 class="text-sm font-bold text-gray-700">Personalization</h4>
+      <!-- Settings Section -->
+      <div class="space-y-2 mb-2">
+        <h4 class="text-sm font-bold text-gray-700">Settings</h4>
         
-        <div class="flex items-center justify-between p-3 rounded-xl border border-pink-100 bg-[#fffdf5] shadow-sm hover:border-pink-200 transition-all duration-200 mb-4">
+        <div class="flex items-center justify-between p-2 rounded-xl border border-pink-100 bg-[#fffdf5] shadow-sm hover:border-pink-200 transition-all duration-200 mb-2">
           <div>
             <span class="text-sm font-medium text-gray-700">Auto-Record on Start</span>
             <p class="text-xs text-gray-500 mt-0.5">Start recording immediately when you open TalkType</p>
@@ -225,103 +224,24 @@
             </div>
           </label>
         </div>
-        
-        <!-- Prompt Style Selection Section -->
-        <div class="mt-4">
-          <h5 class="text-sm font-bold text-gray-700 mb-2">Transcription Style</h5>
-          
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-            {#if promptStyles && promptStyles.length > 0}
-              {#each promptStyles as style}
-                <button 
-                  class="flex flex-col items-center justify-between p-3 rounded-xl border hover:border-pink-200 transition-all duration-200 h-full {selectedPromptStyle === style ? 'border-pink-300 bg-pink-50/50 shadow-sm' : 'border-pink-100 bg-[#fffdf5]'}"
-                  on:click={() => changePromptStyle(style)}
-                >
-                  <div class="flex flex-col items-center text-center gap-1">
-                    <span class="text-2xl mb-1">
-                      {#if style === 'standard'}
-                        💬
-                      {:else if style === 'surlyPirate'}
-                        🏴‍☠️
-                      {:else if style === 'leetSpeak'}
-                        💻
-                      {:else if style === 'sparklePop'}
-                        ✨
-                      {:else if style === 'codeWhisperer'}
-                        ⚙️
-                      {:else if style === 'quillAndInk'}
-                        🖋️
-                      {:else}
-                        💬
-                      {/if}
-                    </span>
-                    <span class="text-sm font-medium text-gray-700 leading-tight">
-                      {#if style === 'standard'}
-                        Refined
-                      {:else if style === 'surlyPirate'}
-                        Surly Pirate
-                      {:else if style === 'leetSpeak'}
-                        L33T Sp34k
-                      {:else if style === 'sparklePop'}
-                        Sparkle Pop
-                      {:else if style === 'codeWhisperer'}
-                        Code Whisperer
-                      {:else if style === 'quillAndInk'}
-                        Quill & Ink
-                      {:else}
-                        {style}
-                      {/if}
-                    </span>
-                    <p class="text-2xs text-gray-500 mt-0.5 leading-tight">
-                      {#if style === 'standard'}
-                        Elegant, professional tone
-                      {:else if style === 'surlyPirate'}
-                        Pirate lingo & swagger
-                      {:else if style === 'leetSpeak'}
-                        H4ck3r c0d35p34k
-                      {:else if style === 'sparklePop'}
-                        OMG!!! Teen vibes!!! 💖
-                      {:else if style === 'codeWhisperer'}
-                        Structured tech syntax
-                      {:else if style === 'quillAndInk'}
-                        Victorian literature
-                      {:else}
-                        Custom style
-                      {/if}
-                    </p>
-                  </div>
-                  
-                  {#if selectedPromptStyle === style}
-                    <div class="h-5 w-5 rounded-full bg-pink-400 flex items-center justify-center text-white text-xs mt-1">
-                      ✓
-                    </div>
-                  {/if}
-                </button>
-              {/each}
-            {:else}
-              <div class="text-xs text-gray-500 italic">Loading prompt styles...</div>
-            {/if}
-          </div>
-        </div>
       </div>
       
-      <div class="space-y-4">
+      <!-- Vibe Selector Section -->
+      <div class="space-y-2">
         <h4 class="text-sm font-bold text-gray-700">Choose Your Vibe</h4>
         
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {#each vibeOptions as vibe}
             <button 
-              class="vibe-option flex flex-col items-center p-3 rounded-xl border border-pink-100 bg-[#fffdf5] shadow-sm hover:shadow-md hover:border-pink-200 transition-all duration-300 relative {selectedVibe === vibe.id ? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60' : ''}"
+              class="vibe-option flex flex-col items-center p-2 rounded-xl border border-pink-100 bg-[#fffdf5] shadow-sm hover:shadow-md hover:border-pink-200 transition-all duration-300 relative {selectedVibe === vibe.id ? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60' : ''}"
               data-vibe-type={vibe.id}
               on:click={() => changeVibe(vibe.id)}
             >
-              <div class="preview-container mb-1.5">
+              <div class="preview-container mb-1">
                 <!-- Ghost preview -->
-                <div class="preview-ghost-wrapper w-12 h-12 relative">
+                <div class="preview-ghost-wrapper w-10 h-10 relative">
                   <div class="preview-icon-layers w-full h-full relative">
                     <!-- Gradient background (bottom layer) with proper theme-specific path -->
-                    <!-- Each SVG file already contains the proper ghost shape with its gradient -->
-                    <!-- Use the same paths as the main app for consistency -->
                     <img 
                       src={vibe.id === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' : 
                           vibe.id === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
@@ -337,8 +257,8 @@
                   </div>
                 </div>
                 
-                <!-- Visualizer preview - with static gradients that match each theme -->
-                <div class="preview-visualizer-container mt-1.5 rounded-md overflow-hidden border border-pink-100 w-full h-3">
+                <!-- Visualizer preview -->
+                <div class="preview-visualizer-container mt-1 rounded-md overflow-hidden border border-pink-100 w-full h-2">
                   <div 
                     class="preview-visualizer w-full h-full"
                     data-preview-theme={vibe.id}
@@ -349,7 +269,7 @@
               <span class="text-xs font-medium text-gray-700">{vibe.name}</span>
               
               {#if selectedVibe === vibe.id}
-                <div class="absolute -top-1 -right-1 bg-pink-400 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-sm">
+                <div class="absolute -top-1 -right-1 bg-pink-400 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs shadow-sm">
                   ✓
                 </div>
               {/if}
@@ -357,11 +277,72 @@
           {/each}
         </div>
         
-        <p class="text-xs text-gray-500 italic mt-1">Changes are applied immediately and saved for future visits.</p>
+        <p class="text-xs text-gray-500 italic mt-0.5">Changes are applied immediately and saved for future visits.</p>
+      </div>
+      
+      <!-- Prompt Style Selection Section -->
+      <div class="mt-1">
+        <h4 class="text-sm font-bold text-gray-700 mb-1">Transcription Style</h4>
+        
+        <div class="grid grid-cols-3 gap-1.5 mb-2">
+          {#if promptStyles && promptStyles.length > 0}
+            {#each promptStyles as style}
+              <button 
+                class="flex flex-col items-center justify-between py-1.5 px-1 rounded-lg border hover:border-pink-200 transition-all duration-200 h-full {selectedPromptStyle === style ? 'border-pink-300 bg-pink-50/50 shadow-sm' : 'border-pink-100 bg-[#fffdf5]'}"
+                on:click={() => changePromptStyle(style)}
+              >
+                <div class="flex flex-col items-center text-center">
+                  <span class="text-sm font-medium text-gray-700 leading-tight">
+                    {#if style === 'standard'}
+                      Refined
+                    {:else if style === 'surlyPirate'}
+                      Surly Pirate
+                    {:else if style === 'leetSpeak'}
+                      L33T Sp34k
+                    {:else if style === 'sparklePop'}
+                      Sparkle Pop
+                    {:else if style === 'codeWhisperer'}
+                      Code Whisperer
+                    {:else if style === 'quillAndInk'}
+                      Quill & Ink
+                    {:else}
+                      {style}
+                    {/if}
+                  </span>
+                  <p class="text-2xs text-gray-500 mt-0.5 leading-tight">
+                    {#if style === 'standard'}
+                      Elegant, professional tone
+                    {:else if style === 'surlyPirate'}
+                      Pirate lingo & swagger
+                    {:else if style === 'leetSpeak'}
+                      H4ck3r c0d35p34k
+                    {:else if style === 'sparklePop'}
+                      OMG!!! Teen vibes!!! 💖
+                    {:else if style === 'codeWhisperer'}
+                      Structured tech syntax
+                    {:else if style === 'quillAndInk'}
+                      Victorian literature
+                    {:else}
+                      Custom style
+                    {/if}
+                  </p>
+                </div>
+                
+                {#if selectedPromptStyle === style}
+                  <div class="h-4 w-4 rounded-full bg-pink-400 flex items-center justify-center text-white text-xs mt-1">
+                    ✓
+                  </div>
+                {/if}
+              </button>
+            {/each}
+          {:else}
+            <div class="text-xs text-gray-500 italic">Loading prompt styles...</div>
+          {/if}
+        </div>
       </div>
       
       <!-- Premium Features Section -->
-      <div class="space-y-3 bg-gradient-to-r from-pink-50/50 to-amber-50/50 p-4 rounded-lg border border-pink-100/60 shadow-sm">
+      <div class="space-y-2 bg-gradient-to-r from-pink-50/50 to-amber-50/50 p-3 rounded-lg border border-pink-100/60 shadow-sm">
         <div class="flex items-center justify-between">
           <h4 class="text-sm font-bold text-gray-700">Bonus Features <span class="text-pink-500 text-xs font-normal">(Coming Soon)</span></h4>
           <span class="badge badge-sm bg-amber-100 text-amber-700 border-amber-200 gap-1 font-medium">
@@ -369,7 +350,7 @@
           </span>
         </div>
         
-        <div class="space-y-3 pt-1">
+        <div class="space-y-2 pt-1">
           <!-- Toggle items -->
           <div class="flex items-center justify-between">
             <span class="text-xs font-medium text-gray-600">Save transcript + audio</span>
@@ -390,16 +371,6 @@
             <span class="text-xs font-medium text-gray-600">Custom filename builder</span>
             <input type="checkbox" disabled class="toggle toggle-xs toggle-primary bg-gray-200" />
           </div>
-          
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-gray-600">Auto-clean filler words</span>
-            <input type="checkbox" disabled class="toggle toggle-xs toggle-primary bg-gray-200" />
-          </div>
-          
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-gray-600">Auto Markdown formatter</span>
-            <input type="checkbox" disabled class="toggle toggle-xs toggle-primary bg-gray-200" />
-          </div>
         </div>
         
         <div class="flex justify-end">
@@ -407,7 +378,7 @@
         </div>
       </div>
       
-      <div class="border-t border-pink-100 pt-3 text-center">
+      <div class="border-t border-pink-100 pt-2 text-center">
         <p class="text-xs text-gray-500">TalkType v0.1.1 • Made with 💜 by Dennis & Pablo</p>
       </div>
     </div>
@@ -485,7 +456,7 @@
   .preview-visualizer-container {
     width: 100%;
     min-width: 40px;
-    height: 10px;
+    height: 8px;
   }
   
   /* Theme-specific gradient styles for previews */
@@ -519,7 +490,7 @@
   }
   
   .vibe-option:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
   }
   
   .vibe-option:active {
