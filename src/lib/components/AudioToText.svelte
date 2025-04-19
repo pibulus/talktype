@@ -226,6 +226,16 @@
 					// Make the ghost look like it's thinking hard
 					ghostThinkingHard();
 					transcript = await geminiService.transcribeAudio(audioBlob);
+					
+					// Schedule a scroll to bottom when transcript is complete
+					setTimeout(() => {
+						if (typeof window !== 'undefined') {
+							window.scrollTo({
+								top: document.body.scrollHeight,
+								behavior: 'smooth'
+							});
+						}
+					}, 650); // Match the delay before showing transcript
 
 					// Complete the progress bar smoothly
 					cancelAnimationFrame(animationFrameId);
@@ -943,7 +953,15 @@
 
 				<!-- Transcript output - only visible when not recording and has transcript -->
 				{#if transcript && !recording}
-					<div class="transcript-wrapper w-full animate-fadeIn-from-top">
+					<div class="transcript-wrapper w-full animate-fadeIn-from-top" on:animationend={() => {
+							// Scroll to the bottom when transcript appears
+							if (typeof window !== 'undefined') {
+								window.scrollTo({
+									top: document.body.scrollHeight,
+									behavior: 'smooth'
+								});
+							}
+						}}>
 						<!-- Speech bubble with transcript -->
 						<div class="wrapper-container flex w-full justify-center">
 							<div class="transcript-box-wrapper relative mx-auto w-[90%] sm:w-full max-w-[500px] px-2 sm:px-3 md:px-0">
