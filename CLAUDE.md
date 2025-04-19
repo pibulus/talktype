@@ -101,8 +101,8 @@ The ghost icon uses a layered SVG approach with animation:
 
 ### SVG Layer Structure
 
-- **Background Gradient** (`/talktype-icon-bg-gradient.svg`): Bottom layer with theme colors
-- **Outline** (`/talktype-icon.svg`): Middle layer with ghost outline
+- **Background Gradient** (`/assets/talktype-icon-bg-gradient.svg`): Bottom layer with theme colors
+- **Outline** (`/assets/talktype-icon-outline.svg`): Middle layer with ghost outline
 - **Eyes** (`/assets/talktype-icon-eyes.svg`): Top layer for isolated blinking animation
 
 ### Implementation Details
@@ -110,10 +110,15 @@ The ghost icon uses a layered SVG approach with animation:
 - **Layer Structure**: Three separate `<img>` elements stacked with absolute positioning
 - **Path Structure**: Static assets must use web paths (`/assets/...` not `/static/assets/...`)
 - **Theme Variants**: Each theme has a dedicated gradient background SVG:
-  - Peach: `/talktype-icon-bg-gradient.svg` (default)
-  - Mint: `/talktype-icon-bg-gradient-mint.svg`
-  - Bubblegum: `/talktype-icon-bg-gradient-bubblegum.svg`
-  - Rainbow: `/talktype-icon-bg-gradient-rainbow.svg` (with animation)
+  - Peach: `/assets/talktype-icon-bg-gradient.svg` (default)
+  - Mint: `/assets/talktype-icon-bg-gradient-mint.svg`
+  - Bubblegum: `/assets/talktype-icon-bg-gradient-bubblegum.svg`
+  - Rainbow: `/assets/talktype-icon-bg-gradient-rainbow.svg` (with animation)
+- **Favicon & PWA Icons**: Generated from the ghost SVG at various sizes
+  - Standard favicon: `/favicon.png` (32x32)
+  - Apple Touch Icon: `/apple-touch-icon.png` (180x180)
+  - PWA Icons: `/icons/icon-*.png` (various sizes)
+  - Special maskable icon: `/icons/icon-maskable-512x512.png` (for Android)
 
 ### Theme Switching
 

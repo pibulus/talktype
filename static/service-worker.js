@@ -7,11 +7,22 @@ const ASSETS_TO_CACHE = [
   '/index.html',
   '/manifest.json',
   '/favicon.png',
+  '/favicon-light.png',
+  '/favicon-dark.png',
+  '/apple-touch-icon.png',
   '/offline.html',
   '/assets/talktype-icon-base.svg',
   '/assets/talktype-icon-eyes.svg',
-  '/talktype-icon-bg-gradient.svg',
+  '/assets/talktype-icon-outline.svg',
+  '/assets/talktype-icon-bg-gradient.svg',
+  '/assets/talktype-icon-bg-gradient-mint.svg',
+  '/assets/talktype-icon-bg-gradient-bubblegum.svg',
+  '/assets/talktype-icon-bg-gradient-rainbow.svg',
   '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/icons/icon-maskable-512x512.png',
+  '/icons/icon-maskable-light-512x512.png',
+  '/icons/icon-maskable-dark-512x512.png',
   // We'll keep the cache list relatively small for optimal loading
 ];
 

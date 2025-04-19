@@ -1,4 +1,26 @@
-# Next Steps for TalkType PWA Implementation
+# TalkType Icon System & PWA Implementation
+
+## The Ghost Icon System
+
+TalkType uses a layered SVG approach for the ghost icon:
+
+### SVG Layer Structure
+- **Base Layer**: `/assets/talktype-icon-base.svg` or `/assets/talktype-icon-outline.svg`
+- **Background Gradient**: `/assets/talktype-icon-bg-gradient*.svg` (with theme variants)
+- **Eyes Layer**: `/assets/talktype-icon-eyes.svg` (top layer for blinking animation)
+
+### Theme Variants
+All gradient backgrounds should be stored in `/static/assets/`:
+- **Peach (Default)**: `talktype-icon-bg-gradient.svg`
+- **Mint**: `talktype-icon-bg-gradient-mint.svg`
+- **Bubblegum**: `talktype-icon-bg-gradient-bubblegum.svg`
+- **Rainbow**: `talktype-icon-bg-gradient-rainbow.svg`
+
+### Icon Standards for Different Platforms
+- **Favicon**: 32x32 PNG at `/static/favicon.png`
+- **Apple Touch Icon**: 180x180 PNG at `/static/apple-touch-icon.png`
+- **PWA Icons**: Various sizes (72x72 to 512x512) in `/static/icons/`
+- **OG Image**: 1200x630 PNG at `/static/og-image.png` for social sharing
 
 ## Generating Icons
 

@@ -80,3 +80,39 @@ console.log('Icon generation completed.');
 - For high-quality resizing of SVG to PNG, the Sharp library is recommended
 - Ensure icons have transparent backgrounds for proper display across platforms
 - The manifest.json file references these icons for PWA installation
+- Make sure all icon paths in the `manifest.json` are web paths (e.g., `/icons/icon-192x192.png`)
+
+## About Maskable and Theme-Aware Icons
+
+TalkType uses a comprehensive icon strategy to support various platforms and themes:
+
+### Maskable Icons
+
+Maskable icons support Android's adaptive icons system:
+- `icon-maskable-512x512.png` - Default gray icon for general use
+- `icon-maskable-light-512x512.png` - Black icon for light themes
+- `icon-maskable-dark-512x512.png` - White icon for dark themes
+
+The manifest includes proper `purpose` attributes and media queries to automatically use the right icons based on the user's theme preferences.
+
+### Theme-Aware Favicons
+
+The browser tab favicons also adapt to the user's color scheme:
+- `favicon.png` - Default gray fallback icon
+- `favicon-light.png` - Black icon for light theme
+- `favicon-dark.png` - White icon for dark theme
+
+These are implemented with HTML `media` attributes to ensure proper loading.
+
+### Implementation Details
+
+1. **Safe Zone**: Keep important icon content within the inner 80% of the icon
+2. **Icon Design**: The ghost design naturally has good padding
+3. **Testing**: Use Chrome DevTools' Application tab to test how icons appear
+
+## Path Consistency
+
+For icon references throughout the app:
+- Always use web paths: `/assets/talktype-icon-eyes.svg` not `/static/assets/talktype-icon-eyes.svg`
+- Store theme variants in the `/assets/` directory for consistency
+- Reference files via SvelteKit's asset path: `%sveltekit.assets%/assets/talktype-icon-eyes.svg`

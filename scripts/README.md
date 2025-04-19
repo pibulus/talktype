@@ -1,4 +1,53 @@
-# Meta-Development Script
+# TalkType Development Scripts
+
+This folder contains various scripts for TalkType development, including:
+
+1. **Meta-Development Script** (`dev.js`) - Task management for AI-driven development workflows
+2. **Icon Generation Scripts** - Tools for creating favicons and PWA assets
+
+## Icon Generation Scripts
+
+### `generate-favicon.js`
+
+Creates a 32x32 PNG favicon from the ghost SVG icon.
+
+```bash
+node scripts/generate-favicon.js
+```
+
+### `generate-theme-favicon.js`
+
+Creates theme-aware favicon variants that adapt to light and dark mode.
+
+```bash
+node scripts/generate-theme-favicon.js
+```
+
+This generates:
+- `favicon-light.png` - Black ghost for light theme
+- `favicon-dark.png` - White ghost for dark theme
+- `favicon.png` - Gray ghost as fallback
+
+### `generate-maskable-icon.js`
+
+Creates theme-aware maskable icon variants with proper padding for Android adaptive icons.
+
+```bash
+node scripts/generate-maskable-icon.js
+```
+
+This generates:
+- `icon-maskable-512x512.png` - Gray ghost for general use
+- `icon-maskable-light-512x512.png` - Black ghost for light theme
+- `icon-maskable-dark-512x512.png` - White ghost for dark theme
+
+All icon generation scripts require the `sharp` package:
+
+```bash
+npm install sharp --save-dev
+```
+
+## Meta-Development Script
 
 This folder contains a **meta-development script** (`dev.js`) and related utilities that manage tasks for an AI-driven or traditional software development workflow. The script revolves around a `tasks.json` file, which holds an up-to-date list of development tasks.
 
