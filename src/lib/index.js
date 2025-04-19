@@ -54,6 +54,9 @@ export const hasSeenIntro = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.FIRST
 // Store for auto-record preference
 export const autoRecord = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.AUTO_RECORD, 'false');
 
+// Store for prompt style preference
+export const promptStyle = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.PROMPT_STYLE, CONSTANTS.DEFAULT_PROMPT_STYLE);
+
 // Export all constants for use throughout the app
 export { CONSTANTS };
 

@@ -19,8 +19,18 @@ export const DEFAULT_THEME = THEMES.PEACH;
 export const STORAGE_KEYS = {
   THEME: 'talktype-vibe',
   FIRST_VISIT: 'hasSeenTalkTypeIntro',
-  AUTO_RECORD: 'talktype-autoRecord'
+  AUTO_RECORD: 'talktype-autoRecord',
+  PROMPT_STYLE: 'talktype-prompt-style'
 };
+
+// Prompt Styles
+export const PROMPT_STYLES = {
+  STANDARD: 'standard',
+  SURLY_PIRATE: 'surlyPirate',
+  CORPORATE: 'corporate'
+};
+
+export const DEFAULT_PROMPT_STYLE = PROMPT_STYLES.STANDARD;
 
 // App Configuration
 export const APP_CONFIG = {

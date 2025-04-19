@@ -378,6 +378,18 @@
 		if (!speechModelPreloaded && browser) {
 			debug('Preloading speech model for faster response');
 			speechModelPreloaded = true;
+			
+			// Make sure the current prompt style is set before preloading
+			if (browser && localStorage.getItem('talktype-prompt-style')) {
+				const savedStyle = localStorage.getItem('talktype-prompt-style');
+				debug(`Setting prompt style from localStorage: ${savedStyle}`);
+				geminiService.setPromptStyle(savedStyle);
+			}
+			
+			// Log available prompt styles
+			const availableStyles = geminiService.getAvailableStyles();
+			debug(`Available prompt styles: ${availableStyles.join(', ')}`);
+			
 			geminiService.preloadModel()
 				.catch(err => {
 					// Just log the error, don't block UI
@@ -464,6 +476,12 @@
 				if (event.detail && event.detail.setting === 'autoRecord') {
 					debug('Auto-record setting changed:', event.detail.value);
 					// No immediate action needed, setting will apply on next page load
+				}
+				
+				if (event.detail && event.detail.setting === 'promptStyle') {
+					debug('Prompt style setting changed:', event.detail.value);
+					// Update the prompt style in the service
+					geminiService.setPromptStyle(event.detail.value);
 				}
 			});
 		}

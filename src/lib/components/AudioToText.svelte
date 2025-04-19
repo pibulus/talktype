@@ -4,6 +4,7 @@
 -->
 <script>
 	import { geminiService } from '$lib/services/geminiService';
+import { promptStyle } from '$lib';
 	import { onMount } from 'svelte';
 	import AudioVisualizer from './AudioVisualizer.svelte';
 	
@@ -36,6 +37,12 @@
 	export let parentGhostIconElement = null;
 	export let isModelPreloaded = false;
 	export let onPreloadRequest = null;
+	
+	// Prompt style subscription
+	let currentPromptStyle;
+	const unsubscribePromptStyle = promptStyle.subscribe(value => {
+		currentPromptStyle = value;
+	});
 
 	// Accessibility state management
 	let screenReaderStatus = ''; // For ARIA announcements
@@ -494,6 +501,7 @@
 			if (animationFrameId) cancelAnimationFrame(animationFrameId);
 			if (clipboardTimer) clearTimeout(clipboardTimer);
 			if (permissionErrorTimer) clearTimeout(permissionErrorTimer);
+			if (unsubscribePromptStyle) unsubscribePromptStyle();
 		};
 	});
 

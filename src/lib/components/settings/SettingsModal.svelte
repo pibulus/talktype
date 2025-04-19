@@ -1,6 +1,8 @@
 <script>
   import { onMount } from 'svelte';
-  import { theme, autoRecord, showSettingsModal, applyTheme } from '$lib';
+  import { theme, autoRecord, showSettingsModal, applyTheme, promptStyle } from '$lib';
+  import { geminiService } from '$lib/services/geminiService';
+  import { PROMPT_STYLES } from '$lib/constants';
   
   // Props for the modal
   export let closeModal = () => {};
@@ -10,6 +12,10 @@
   let scrollPosition = 0;
   let autoRecordValue = false;
   
+  // Prompt style selection
+  let promptStyles = [];
+  let selectedPromptStyle = 'standard';
+  
   // Subscribe to theme store
   const unsubscribeTheme = theme.subscribe(value => {
     selectedVibe = value;
@@ -18,6 +24,11 @@
   // Subscribe to autoRecord store
   const unsubscribeAutoRecord = autoRecord.subscribe(value => {
     autoRecordValue = value === 'true';
+  });
+  
+  // Subscribe to promptStyle store
+  const unsubscribePromptStyle = promptStyle.subscribe(value => {
+    selectedPromptStyle = value;
   });
   
   // Theme options with gradient SVG files for ghost and CSS gradients for visualizer
@@ -53,8 +64,28 @@
     }
   ];
   
+  // Prompt style mapping for display names
+  const promptStyleNames = {
+    'standard': 'Standard',
+    'surlyPirate': 'Surly Pirate',
+    'corporate': 'Corporate'
+  };
+  
+  // Icons for prompt styles
+  const promptStyleIcons = {
+    'standard': '💬',
+    'surlyPirate': '🏴‍☠️',
+    'corporate': '💼'
+  };
+  
   // Set up event listeners for the modal on component mount
   onMount(() => {
+    // Get available prompt styles from the service
+    promptStyles = geminiService.getAvailableStyles();
+    
+    // Get currently selected prompt style
+    selectedPromptStyle = geminiService.getPromptStyle();
+    
     // Set up event listeners for the modal
     const modal = document.getElementById('settings_modal');
     if (modal) {
@@ -68,6 +99,9 @@
       // Also listen for the standard dialog open event
       modal.addEventListener('open', () => {
         // No need to apply theme here - we just want settings to reflect current state
+        
+        // Update prompt style selection in case it was changed elsewhere
+        selectedPromptStyle = geminiService.getPromptStyle();
       });
     }
     
@@ -75,6 +109,7 @@
     return () => {
       unsubscribeTheme();
       unsubscribeAutoRecord();
+      unsubscribePromptStyle();
     };
   });
   
@@ -82,6 +117,20 @@
   function changeVibe(vibeId) {
     selectedVibe = vibeId;
     applyTheme(vibeId);
+  }
+  
+  // Handle prompt style change
+  function changePromptStyle(style) {
+    selectedPromptStyle = style;
+    geminiService.setPromptStyle(style);
+    
+    // Update the store (this will also save to localStorage)
+    promptStyle.set(style);
+    
+    // Dispatch a custom event that the main page can listen for
+    window.dispatchEvent(new CustomEvent('talktype-setting-changed', {
+      detail: { setting: 'promptStyle', value: style }
+    }));
   }
   
   // Handle auto-record toggle
@@ -175,6 +224,48 @@
               <div class={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-all duration-200 transform ${autoRecordValue ? 'translate-x-5' : ''}`}></div>
             </div>
           </label>
+        </div>
+        
+        <!-- Prompt Style Selection Section -->
+        <div class="mt-4">
+          <h5 class="text-sm font-bold text-gray-700 mb-2">Response Style</h5>
+          
+          <div class="grid grid-cols-1 gap-2">
+            {#if promptStyles && promptStyles.length > 0}
+              {#each promptStyles as style}
+                <button 
+                  class="flex items-center justify-between p-3 rounded-xl border hover:border-pink-200 transition-all duration-200 {selectedPromptStyle === style ? 'border-pink-300 bg-pink-50/50 shadow-sm' : 'border-pink-100 bg-[#fffdf5]'}"
+                  on:click={() => changePromptStyle(style)}
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg">{promptStyleIcons[style] || '💬'}</span>
+                    <div>
+                      <span class="text-sm font-medium text-gray-700">{promptStyleNames[style] || style}</span>
+                      <p class="text-xs text-gray-500 mt-0.5">
+                        {#if style === 'standard'}
+                          Professional, helpful responses
+                        {:else if style === 'surlyPirate'}
+                          Arrr matey! Talk like a surly pirate, ye scallywag!
+                        {:else if style === 'corporate'}
+                          Professional jargon and buzzwords
+                        {:else}
+                          Custom response style
+                        {/if}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {#if selectedPromptStyle === style}
+                    <div class="h-6 w-6 rounded-full bg-pink-400 flex items-center justify-center text-white text-xs">
+                      ✓
+                    </div>
+                  {/if}
+                </button>
+              {/each}
+            {:else}
+              <div class="text-xs text-gray-500 italic">Loading prompt styles...</div>
+            {/if}
+          </div>
         </div>
       </div>
       
