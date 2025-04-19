@@ -202,11 +202,11 @@
       </div>
 
       <!-- Vibe Selector Section -->
-      <!-- Behavior Settings Section -->
+      <!-- Personalization Settings Section -->
       <div class="space-y-3 mb-5">
-        <h4 class="text-sm font-bold text-gray-700">Behavior</h4>
+        <h4 class="text-sm font-bold text-gray-700">Personalization</h4>
         
-        <div class="flex items-center justify-between p-3 rounded-xl border border-pink-100 bg-[#fffdf5] shadow-sm hover:border-pink-200 transition-all duration-200">
+        <div class="flex items-center justify-between p-3 rounded-xl border border-pink-100 bg-[#fffdf5] shadow-sm hover:border-pink-200 transition-all duration-200 mb-4">
           <div>
             <span class="text-sm font-medium text-gray-700">Auto-Record on Start</span>
             <p class="text-xs text-gray-500 mt-0.5">Start recording immediately when you open TalkType</p>
@@ -228,17 +228,17 @@
         
         <!-- Prompt Style Selection Section -->
         <div class="mt-4">
-          <h5 class="text-sm font-bold text-gray-700 mb-2">Response Style</h5>
+          <h5 class="text-sm font-bold text-gray-700 mb-2">Transcription Style</h5>
           
-          <div class="grid grid-cols-1 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
             {#if promptStyles && promptStyles.length > 0}
               {#each promptStyles as style}
                 <button 
-                  class="flex items-center justify-between p-3 rounded-xl border hover:border-pink-200 transition-all duration-200 {selectedPromptStyle === style ? 'border-pink-300 bg-pink-50/50 shadow-sm' : 'border-pink-100 bg-[#fffdf5]'}"
+                  class="flex flex-col items-center justify-between p-3 rounded-xl border hover:border-pink-200 transition-all duration-200 h-full {selectedPromptStyle === style ? 'border-pink-300 bg-pink-50/50 shadow-sm' : 'border-pink-100 bg-[#fffdf5]'}"
                   on:click={() => changePromptStyle(style)}
                 >
-                  <div class="flex items-center gap-2">
-                    <span class="text-lg">
+                  <div class="flex flex-col items-center text-center gap-1">
+                    <span class="text-2xl mb-1">
                       {#if style === 'standard'}
                         💬
                       {:else if style === 'surlyPirate'}
@@ -255,46 +255,44 @@
                         💬
                       {/if}
                     </span>
-                    <div>
-                      <span class="text-sm font-medium text-gray-700">
-                        {#if style === 'standard'}
-                          Standard
-                        {:else if style === 'surlyPirate'}
-                          Surly Pirate
-                        {:else if style === 'leetSpeak'}
-                          L33T Sp34k
-                        {:else if style === 'sparklePop'}
-                          Sparkle Pop
-                        {:else if style === 'codeWhisperer'}
-                          Code Whisperer
-                        {:else if style === 'quillAndInk'}
-                          Quill & Ink
-                        {:else}
-                          {style}
-                        {/if}
-                      </span>
-                      <p class="text-xs text-gray-500 mt-0.5">
-                        {#if style === 'standard'}
-                          Professional, helpful responses
-                        {:else if style === 'surlyPirate'}
-                          Arrr matey! Talk like a surly pirate, ye scallywag!
-                        {:else if style === 'leetSpeak'}
-                          H4ck3r 5tyl3 w1th l33t c0d35p34k
-                        {:else if style === 'sparklePop'}
-                          OMG!!! SUPER excited teen with TONS of emojis!!! 💖
-                        {:else if style === 'codeWhisperer'}
-                          Clean, structured technical language
-                        {:else if style === 'quillAndInk'}
-                          Eloquent Victorian literary prose
-                        {:else}
-                          Custom response style
-                        {/if}
-                      </p>
-                    </div>
+                    <span class="text-sm font-medium text-gray-700 leading-tight">
+                      {#if style === 'standard'}
+                        Refined
+                      {:else if style === 'surlyPirate'}
+                        Surly Pirate
+                      {:else if style === 'leetSpeak'}
+                        L33T Sp34k
+                      {:else if style === 'sparklePop'}
+                        Sparkle Pop
+                      {:else if style === 'codeWhisperer'}
+                        Code Whisperer
+                      {:else if style === 'quillAndInk'}
+                        Quill & Ink
+                      {:else}
+                        {style}
+                      {/if}
+                    </span>
+                    <p class="text-2xs text-gray-500 mt-0.5 leading-tight">
+                      {#if style === 'standard'}
+                        Elegant, professional tone
+                      {:else if style === 'surlyPirate'}
+                        Pirate lingo & swagger
+                      {:else if style === 'leetSpeak'}
+                        H4ck3r c0d35p34k
+                      {:else if style === 'sparklePop'}
+                        OMG!!! Teen vibes!!! 💖
+                      {:else if style === 'codeWhisperer'}
+                        Structured tech syntax
+                      {:else if style === 'quillAndInk'}
+                        Victorian literature
+                      {:else}
+                        Custom style
+                      {/if}
+                    </p>
                   </div>
                   
                   {#if selectedPromptStyle === style}
-                    <div class="h-6 w-6 rounded-full bg-pink-400 flex items-center justify-center text-white text-xs">
+                    <div class="h-5 w-5 rounded-full bg-pink-400 flex items-center justify-center text-white text-xs mt-1">
                       ✓
                     </div>
                   {/if}
