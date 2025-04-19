@@ -183,15 +183,15 @@
 			return;
 		}
 
-		// Parameters for generative system - Brian Eno style with more variety
-		const minGap = 3500; // Minimum time between blinks (3.5s - more frequent)
-		const maxGap = 8000; // Maximum time between blinks (8s - was 9s)
+		// Parameters for generative system - Brian Eno style (more frequent now)
+		const minGap = 4000; // Minimum time between blinks (4s - was 7s)
+		const maxGap = 9000; // Maximum time between blinks (9s - was 16s)
 
-		// Blink type probabilities - more natural 80/20 approach
+		// Blink type probabilities
 		const blinkTypes = [
-			{ type: 'single', probability: 0.8 }, // 80% - mostly single blinks for natural feel
-			{ type: 'double', probability: 0.15 }, // 15% - occasional double blinks
-			{ type: 'triple', probability: 0.05 } // 5% - rare triple blinks for subtle character
+			{ type: 'single', probability: 0.6 }, // 60%
+			{ type: 'double', probability: 0.3 }, // 30%
+			{ type: 'triple', probability: 0.1 } // 10%
 		];
 
 		// Schedule the next blink recursively
@@ -280,15 +280,14 @@
 			}, 1000); // Start the wobble after the text starts animating
 		}
 
-		// Do a friendly greeting blink (simplified)
-			setTimeout(() => {
-				// Just a simple single blink to say "hello" - keeping it simple and chill
-				performSingleBlink();
-				
-				// Short delay then start ambient blinking system
-				setTimeout(startAmbientBlinking, 800);
-			}, 2000); // Delay long enough for text animations
-		}
+		// Do a friendly double-blink after animations complete
+		setTimeout(() => {
+			performDoubleBlink();
+
+			// Start ambient blinking system after greeting
+			setTimeout(startAmbientBlinking, 1000);
+		}, 2000); // Delay long enough for text animations
+	}
 
 	// Domain Ready and Observer setup
 	function setupDomObserver() {
@@ -1236,19 +1235,15 @@
 		transform-origin: center center; /* Squinch exactly in the middle */
 	}
 
-	/* Ambient blinking animation with more character */
+	/* Simple quick snappy ambient blinking animation */
 	@keyframes blink {
 		0%,
-		94%,
-		96%,
+		96.5%,
 		100% {
 			transform: scaleY(1);
 		}
-		95% {
-			transform: scaleY(0.2); /* Not fully closed - squinting */
-		}
 		97.5% {
-			transform: scaleY(0); /* Fully closed */
+			transform: scaleY(0); /* Quick blink - just closed and open */
 		}
 		98.5% {
 			transform: scaleY(1);
@@ -1263,28 +1258,22 @@
 
 	/* Quick snappy blink animation for programmatic use */
 	.icon-eyes.blink-once {
-		animation: blink-once 0.3s forwards !important;
+		animation: blink-once 0.2s forwards !important;
 		transform-origin: center center;
 	}
 
 	@keyframes blink-once {
 		0%,
-		25% {
+		30% {
 			transform: scaleY(1);
 		}
-		35% {
-			transform: scaleY(0.4);
-		} /* Partially closed first */
 		50% {
 			transform: scaleY(0);
-		} /* Fully closed */
+		} /* Closed eyes */
 		65%,
-		90% {
-			transform: scaleY(0.8);
-		} /* Not fully open immediately - adds character */
 		100% {
 			transform: scaleY(1);
-		} /* Fully open */
+		} /* Quick snappy open */
 	}
 
 	/* Special animation for when the ghost is thinking hard (transcribing) */
@@ -1295,27 +1284,14 @@
 
 	@keyframes blink-thinking-hard {
 		0%,
-		10% {
+		10%,
+		50%,
+		60% {
 			transform: scaleY(1);
 		}
 		12%,
-		18% {
-			transform: scaleY(0); /* First quick blink - concentration starting */
-		}
-		20%,
-		40% {
-			transform: scaleY(0.95); /* Brief open */
-		}
-		45%,
 		48% {
-			transform: scaleY(0); /* Second blink - deeper concentration */
-		}
-		50%,
-		60% {
-			transform: scaleY(0.9); /* Slightly not fully open - concentration */
-		}
-		75% {
-			transform: scaleY(0.3); /* Starting to squint */
+			transform: scaleY(0); /* Closed eyes - concentrating */
 		}
 		90%,
 		100% {
@@ -1324,31 +1300,22 @@
 	}
 
 	@keyframes blink-thinking {
-		/* First quick blink - attention indicator */
+		/* First quick blink */
 		0%,
 		23%,
 		100% {
 			transform: scaleY(1);
 		}
 		3% {
-			transform: scaleY(0.3); /* Not fully closed - teaser */
+			transform: scaleY(0); /* Fast blink */
 		}
-		3.5% {
-			transform: scaleY(0); /* Fast complete blink */
-		}
-		4.5% {
-			transform: scaleY(0.7); /* Partial open */
-		}
-		5% {
-			transform: scaleY(1); /* Full open - very snappy sequence */
+		4% {
+			transform: scaleY(1); /* Very snappy */
 		}
 
-		/* Second blink - thinking pattern, more natural */
+		/* Second blink - thinking pattern */
 		40% {
 			transform: scaleY(1);
-		}
-		41% {
-			transform: scaleY(0.5); /* Start closing */
 		}
 		42% {
 			transform: scaleY(0); /* First close */
@@ -1356,37 +1323,22 @@
 		43% {
 			transform: scaleY(0.2); /* Short peek */
 		}
-		45% {
-			transform: scaleY(0.1); /* Almost closed */
-		}
 		46% {
 			transform: scaleY(0); /* Second close (squinty thinking) */
-		}
-		47% {
-			transform: scaleY(0.5); /* Starting to open */
 		}
 		48% {
 			transform: scaleY(1); /* Open again */
 		}
 
-		/* Third sequence - more expressive */
-		75% {
-			transform: scaleY(1); /* Fully open */
-		}
-		77% {
-			transform: scaleY(0.7); /* Partial squint */
-		}
+		/* Third quick blink */
 		80% {
-			transform: scaleY(1); /* Fully open again */
+			transform: scaleY(1);
 		}
 		82% {
-			transform: scaleY(0); /* Fast full blink */
+			transform: scaleY(0); /* Fast blink */
 		}
 		83% {
-			transform: scaleY(0.9); /* Almost open */
-		}
-		84% {
-			transform: scaleY(1); /* Fully open - snappy sequence */
+			transform: scaleY(1); /* Snappy */
 		}
 	}
 
@@ -1396,32 +1348,6 @@
 			drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
 		transform: scale(1.01);
 		animation: ghost-hover 1.2s ease-in-out infinite alternate;
-	}
-	
-	/* Long contemplative blink animation */
-	.icon-eyes.blink-long {
-		animation: blink-long 0.8s forwards !important;
-		transform-origin: center center;
-	}
-	
-	@keyframes blink-long {
-		0%, 
-		15% {
-			transform: scaleY(1);
-		}
-		25% {
-			transform: scaleY(0.3); /* Start closing slowly */
-		}
-		40%,
-		70% {
-			transform: scaleY(0); /* Hold completely closed for a while - deep focus */
-		}
-		85% {
-			transform: scaleY(0.7); /* Open slower than closing */
-		}
-		100% {
-			transform: scaleY(1);
-		}
 	}
 
 	.icon-container.recording {
@@ -1790,26 +1716,22 @@
 	
 	/* Rainbow animation for ghost svg with sparkle effect */
 	.rainbow-animated {
-		animation: rainbowFlow 7s linear infinite;
-		filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
+		animation: hueShift 5s ease-in-out infinite;
+		filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+		transform-origin: center center;
 	}
 
 	/* Special rainbow sparkle effect when hovered */
 	.icon-container:hover .rainbow-animated {
-		animation: rainbowFlow 4.5s linear infinite, sparkle 2s ease-in-out infinite;
-		filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
-	}
-	
-	@keyframes rainbowFlow {
-		0% { filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); }
-		100% { filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); }
+		animation: hueShift 4s ease-in-out infinite, sparkle 3s ease-in-out infinite;
+		filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.7));
 	}
 
 	@keyframes sparkle {
-		0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 8px rgba(255, 61, 127, 0.6)); }
-		25% { filter: drop-shadow(0 0 6px rgba(255, 141, 60, 0.8)) drop-shadow(0 0 10px rgba(255, 249, 73, 0.7)); }
-		50% { filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 9px rgba(53, 222, 255, 0.7)); }
-		75% { filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.8)) drop-shadow(0 0 9px rgba(255, 61, 127, 0.6)); }
+		0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 8px rgba(255, 61, 127, 0.5)); transform: scale(1.01); }
+		25% { filter: drop-shadow(0 0 7px rgba(255, 141, 60, 0.7)) drop-shadow(0 0 10px rgba(255, 249, 73, 0.6)); transform: scale(1.015); }
+		50% { filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 12px rgba(53, 222, 255, 0.6)); transform: scale(1.02); }
+		75% { filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.7)) drop-shadow(0 0 10px rgba(255, 61, 127, 0.6)); transform: scale(1.015); }
 	}
 	
 	/* Theme-based visualizer styling using data-theme attribute */
@@ -1817,12 +1739,14 @@
 		animation: hueShift 7s ease-in-out infinite, rainbowBars 3s ease-in-out infinite;
 		background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
 		background-size: 100% 600%;
-		box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 156, 227, 0.1);
+		box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 61, 127, 0.1);
 	}
 	
+	/* Special animation for rainbow bars */
 	@keyframes rainbowBars {
-		0%, 100% { transform: scale(1); }
-		50% { transform: scale(1.02); }
+		0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 61, 127, 0.3)); }
+		33% { filter: drop-shadow(0 0 4px rgba(255, 249, 73, 0.4)); }
+		66% { filter: drop-shadow(0 0 4px rgba(53, 222, 255, 0.4)); }
 	}
 	
 	@keyframes hueShift {

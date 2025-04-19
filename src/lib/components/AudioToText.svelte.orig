@@ -18,21 +18,6 @@
 	let transcriptionProgress = 0;
 	let animationFrameId;
 	let editableTranscript;
-	let showPermissionError = false;
-	let permissionErrorTimer;
-	
-	// DOM element references
-	let eyesElement;
-	let ghostIconElement;
-	let copyEyesElement;
-	let recordButtonElement;
-	let progressContainerElement;
-	
-	// These will be set from the parent component
-	export let parentEyesElement = null;
-	export let parentGhostIconElement = null;
-	export let isModelPreloaded = false;
-	export let onPreloadRequest = null;
 
 	// Accessibility state management
 	let screenReaderStatus = ''; // For ARIA announcements
@@ -64,15 +49,6 @@
 
 	// Special message when document lost focus but was recovered
 	const focusRecoveryMessage = 'Click in window first, then copy again! 🔍';
-	
-	// Attribution tags for different contexts
-	const simpleAttributionTag = "\n\n✨ Transcribed with TalkType 👻";
-	
-	// Function to generate viral attribution with preview
-	function getViralAttribution(text) {
-		// Cleaner format with just the text and a tighter credit line
-		return `${text}\n\n--Transcribed by TalkType 👻`;
-	}
 
 	function getRandomCopyMessage(useSpecialMessage = false) {
 		if (useSpecialMessage) {
@@ -80,46 +56,55 @@
 		}
 		return copyMessages[Math.floor(Math.random() * copyMessages.length)];
 	}
-	
-	// Check if Web Share API is available
-	function isWebShareSupported() {
-		return typeof navigator !== 'undefined' && 
-			   navigator.share && 
-			   typeof navigator.share === 'function';
-	}
 
 	// Ghost expression functions - add personality through blinking
 	function ghostThinkingHard() {
-		// Try using the element from the parent component first
-		if (parentEyesElement) {
-			parentEyesElement.classList.add('blink-thinking-hard');
-		} else if (eyesElement) {
-			eyesElement.classList.add('blink-thinking-hard');
+		const eyes = document.querySelector('.icon-eyes');
+		if (eyes) {
+			eyes.classList.add('blink-thinking-hard');
 		}
 	}
 
 	function ghostStopThinking() {
-		// Try using the element from the parent component first
-		if (parentEyesElement) {
-			parentEyesElement.classList.remove('blink-thinking-hard');
-		} else if (eyesElement) {
-			eyesElement.classList.remove('blink-thinking-hard');
+		const eyes = document.querySelector('.icon-eyes');
+		if (eyes) {
+			eyes.classList.remove('blink-thinking-hard');
 		}
 	}
 
+	// Enhanced ghost blinking functions for more personality
+	
+	// Function for the anticipatory blink before showing transcript
+	async function ghostAnticipationBlink() {
+		const eyes = document.querySelector('.icon-eyes');
+		if (!eyes) return;
+		
+		// Longer, anticipatory blink
+		eyes.classList.add('blink-once');
+		await new Promise(resolve => setTimeout(resolve, 220));
+		eyes.classList.remove('blink-once');
+		
+		// Brief pause and a quick second blink
+		await new Promise(resolve => setTimeout(resolve, 130));
+		eyes.classList.add('blink-once');
+		await new Promise(resolve => setTimeout(resolve, 150));
+		eyes.classList.remove('blink-once');
+	}
+	
 	function ghostReactToTranscript(textLength = 0) {
-		if (!eyesElement) return;
+		const eyes = document.querySelector('.icon-eyes');
+		if (!eyes) return;
 
 		if (textLength > 20) {
 			// For longer transcripts, do a "satisfied" double blink
 			setTimeout(() => {
-				eyesElement.classList.add('blink-once');
+				eyes.classList.add('blink-once');
 				setTimeout(() => {
-					eyesElement.classList.remove('blink-once');
+					eyes.classList.remove('blink-once');
 					setTimeout(() => {
-						eyesElement.classList.add('blink-once');
+						eyes.classList.add('blink-once');
 						setTimeout(() => {
-							eyesElement.classList.remove('blink-once');
+							eyes.classList.remove('blink-once');
 						}, 150);
 					}, 150);
 				}, 150);
@@ -127,9 +112,9 @@
 		} else if (textLength > 0) {
 			// For short transcripts, just do a single blink
 			setTimeout(() => {
-				eyesElement.classList.add('blink-once');
+				eyes.classList.add('blink-once');
 				setTimeout(() => {
-					eyesElement.classList.remove('blink-once');
+					eyes.classList.remove('blink-once');
 				}, 200);
 			}, 200);
 		}
@@ -138,20 +123,9 @@
 	// Export recording state and functions for external components
 	export { recording, stopRecording, startRecording };
 
-	// Function to preload the speech model before recording starts
-	function preloadSpeechModel() {
-		if (onPreloadRequest) {
-			// Use the parent component's shared preload function
-			onPreloadRequest();
-		}
-	}
-
 	async function startRecording() {
 		// Don't start a new recording if already recording
 		if (recording) return;
-
-		// Try to preload the speech model if not already done
-		preloadSpeechModel();
 
 		errorMessage = '';
 		// Don't clear transcript here - we do it in toggleRecording for better control of CTA rotation
@@ -173,7 +147,7 @@
 
 			mediaRecorder.onstop = async () => {
 				// Add wobble animation to ghost when recording stops
-				const ghostIcon = ghostIconElement || parentGhostIconElement;
+				const ghostIcon = document.querySelector('.icon-container');
 				if (ghostIcon) {
 					// Add slight randomness to the wobble
 					const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
@@ -221,43 +195,44 @@
 					const completeProgress = () => {
 						if (transcriptionProgress < 100) {
 							transcriptionProgress += (100 - transcriptionProgress) * 0.2;
-							
 							if (transcriptionProgress > 99.5) {
-								// We've reached the end
 								transcriptionProgress = 100;
-								
 								// Add a slight delay for the completion glow effect
-								setTimeout(handleCompletionEffects, 200);
+								setTimeout(() => {
+									// Button will do a completion glow effect
+									document.querySelector('.progress-container')?.classList.add('completion-pulse');
+
+									// Add confetti celebration for successful transcription (randomly 1/7 times)
+									if (transcript && transcript.length > 20 && Math.floor(Math.random() * 7) === 0) {
+										showConfettiCelebration();
+									}
+
+									setTimeout(() => {
+										document
+											.querySelector('.progress-container')
+											?.classList.remove('completion-pulse');
+										transcribing = false;
+										transcriptionProgress = 0;
+									}, 600);
+								}, 200);
 							} else {
-								// Continue the animation
 								animationFrameId = requestAnimationFrame(completeProgress);
 							}
 						}
 					};
-					
-					// Handle the completion effects (extracted for clarity)
-					function handleCompletionEffects() {
-						if (progressContainerElement) {
-							progressContainerElement.classList.add('completion-pulse');
-							
-							// Add confetti celebration for successful transcription (randomly 1/7 times)
-							if (transcript && transcript.length > 20 && Math.floor(Math.random() * 7) === 0) {
-								showConfettiCelebration();
-							}
-							
-							// Clean up after animation finishes
-							setTimeout(() => {
-								progressContainerElement.classList.remove('completion-pulse');
-								transcribing = false;
-								transcriptionProgress = 0;
-							}, 600);
-						}
-					}
 
 					completeProgress();
 
-					// Brief delay before showing the transcript - just enough for a smooth transition
-					await new Promise((resolve) => setTimeout(resolve, 650));
+					// Do an anticipatory blink before showing the transcript
+					await ghostAnticipationBlink();
+					
+					// Brief pause after the anticipatory blink
+					await new Promise((resolve) => setTimeout(resolve, 250));
+					// Do an anticipatory blink before showing the transcript
+					await ghostAnticipationBlink();
+					
+					// Brief pause after the anticipatory blink
+					await new Promise((resolve) => setTimeout(resolve, 250));
 
 					// Automatically copy to clipboard when transcription finishes
 					if (transcript) {
@@ -329,42 +304,7 @@
 			console.log('✅ Recording started');
 		} catch (err) {
 			console.error('❌ Error accessing microphone:', err);
-			
-			// Check for specific permission errors
-			let isPermissionDenied = false;
-			if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-				isPermissionDenied = true;
-			} else if (err.message && (err.message.includes('permission') || err.message.includes('denied'))) {
-				isPermissionDenied = true;
-			}
-			
-			if (isPermissionDenied) {
-				// Show the permission error modal
-				showPermissionError = true;
-				vibrate([20, 100, 20, 100, 20]); // Triple vibration pattern for error
-				
-				// Animate ghost to look sad/disappointed
-				const eyes = eyesElement || parentEyesElement;
-				if (eyes) {
-					eyes.classList.add('eyes-sad');
-					setTimeout(() => {
-						eyes.classList.remove('eyes-sad');
-					}, 2000);
-				}
-				
-				// Auto-hide the modal after a while
-				if (permissionErrorTimer) clearTimeout(permissionErrorTimer);
-				permissionErrorTimer = setTimeout(() => {
-					showPermissionError = false;
-				}, 8000); // Show for 8 seconds
-				
-				// Clear generic error message since we're showing a modal
-				errorMessage = '';
-			} else {
-				// Generic error handling
-				errorMessage = 'Error accessing microphone. Please check your device settings.';
-			}
-			
+			errorMessage = 'Error accessing microphone. Please check microphone permissions.';
 			recording = false;
 		}
 	}
@@ -378,15 +318,16 @@
 
 	// Handle button press animation with classes
 	function animateButtonPress() {
-		if (recordButtonElement) {
+		const recordButton = document.querySelector('.record-button');
+		if (recordButton) {
 			// Remove any existing animation classes and force a reflow
-			recordButtonElement.classList.remove('button-press');
-			void recordButtonElement.offsetWidth; // Force reflow
+			recordButton.classList.remove('button-press');
+			void recordButton.offsetWidth; // Force reflow
 
 			// Apply the smoother press animation
-			recordButtonElement.classList.add('button-press');
+			recordButton.classList.add('button-press');
 			setTimeout(() => {
-				recordButtonElement.classList.remove('button-press');
+				recordButton.classList.remove('button-press');
 			}, 400);
 		}
 	}
@@ -394,61 +335,46 @@
 		// Animate button press
 		animateButtonPress();
 
-		try {
-			if (recording) {
-				// Haptic feedback for stop - single pulse
-				vibrate(50);
+		if (recording) {
+			// Haptic feedback for stop - single pulse
+			vibrate(50);
+			
+			stopRecording();
+			// Screen reader announcement
+			screenReaderStatus = 'Recording stopped.';
+		} else {
+			// Haptic feedback for start - double pulse
+			vibrate([40, 60, 40]);
+			
+			// When using "New Recording" button, rotate to next phrase immediately
+			if (transcript) {
+				console.log('🧹 Clearing transcript for new recording');
 				
-				stopRecording();
-				// Screen reader announcement
-				screenReaderStatus = 'Recording stopped.';
-			} else {
-				// Haptic feedback for start - double pulse
-				vibrate([40, 60, 40]);
-				// When using "New Recording" button, rotate to next phrase immediately
-				if (transcript) {
-					console.log('🧹 Clearing transcript for new recording');
-					
-					// Pick a random CTA phrase that's not the current one
-					let newIndex;
-					do {
-						newIndex = Math.floor(Math.random() * (ctaPhrases.length - 1)) + 1; // Skip first one (Start Recording)
-					} while (newIndex === currentCtaIndex);
-					
-					currentCtaIndex = newIndex;
-					currentCta = ctaPhrases[currentCtaIndex];
-					console.log(`🔥 Rotating to: "${currentCta}"`);
-					
-					// Then clear transcript
-					transcript = '';
-				}
+				// Pick a random CTA phrase that's not the current one
+				let newIndex;
+				do {
+					newIndex = Math.floor(Math.random() * (ctaPhrases.length - 1)) + 1; // Skip first one (Start Recording)
+				} while (newIndex === currentCtaIndex);
 				
-				// Subtle pulse ghost icon when starting a new recording
-				const icon = ghostIconElement || parentGhostIconElement;
-				if (icon) {
-					icon.classList.add('ghost-pulse');
-					setTimeout(() => {
-						icon.classList.remove('ghost-pulse');
-					}, 500);
-				}
-				startRecording();
-				// Screen reader announcement
-				screenReaderStatus = 'Recording started. Speak now.';
+				currentCtaIndex = newIndex;
+				currentCta = ctaPhrases[currentCtaIndex];
+				console.log(`🔥 Rotating to: "${currentCta}"`);
+				
+				// Then clear transcript
+				transcript = '';
 			}
-		} catch (err) {
-			console.error('Recording operation failed:', err);
 			
-			// Show error message using existing toast system
-			errorMessage = `Recording error: ${err.message || 'Unknown error'}`;
-			
-			// Haptic feedback for error
-			vibrate([20, 150, 20]);
-			
-			// Reset recording state if needed
-			recording = false;
-			
-			// Update screen reader status
-			screenReaderStatus = 'Recording failed. Please try again.';
+			// Subtle pulse ghost icon when starting a new recording
+			const ghostIcon = document.querySelector('.icon-container');
+			if (ghostIcon) {
+				ghostIcon.classList.add('ghost-pulse');
+				setTimeout(() => {
+					ghostIcon.classList.remove('ghost-pulse');
+				}, 500);
+			}
+			startRecording();
+			// Screen reader announcement
+			screenReaderStatus = 'Recording started. Speak now.';
 		}
 	}
 
@@ -463,24 +389,22 @@
 
 	// Cleanup
 	onMount(() => {
-		// Set local references using parent elements if available
-		eyesElement = parentEyesElement;
-		ghostIconElement = parentGhostIconElement;
-		
 		return () => {
 			if (animationFrameId) cancelAnimationFrame(animationFrameId);
 			if (clipboardTimer) clearTimeout(clipboardTimer);
-			if (permissionErrorTimer) clearTimeout(permissionErrorTimer);
 		};
 	});
 
 	// Add/remove recording class on ghost icon when recording state changes
 	$: {
-		if (typeof window !== 'undefined' && ghostIconElement) {
-			if (recording) {
-				ghostIconElement.classList.add('recording');
-			} else {
-				ghostIconElement.classList.remove('recording');
+		if (typeof window !== 'undefined') {
+			const ghostIcon = document.querySelector('.icon-container');
+			if (ghostIcon) {
+				if (recording) {
+					ghostIcon.classList.add('recording');
+				} else {
+					ghostIcon.classList.remove('recording');
+				}
 			}
 		}
 	}
@@ -493,33 +417,29 @@
 	async function copyToClipboard() {
 		try {
 			// Get current text from editable div
-			let textToCopy = getEditedTranscript();
+			const textToCopy = getEditedTranscript();
 			
 			// Don't try to copy empty text
 			if (!textToCopy || textToCopy.trim() === '') {
 				console.log('📋 Nothing to copy - transcript is empty');
 				return;
 			}
-			
-			// Add simple attribution tag to the copied text
-			textToCopy += simpleAttributionTag;
 
 			// Update tooltip usage tracking - hide tooltip after button is used
 			hasUsedCopyButton = true;
 			showCopyTooltip = false;
 			
-			console.log('📋 Attempting to copy text with attribution');
-			// Simple tracking event
-			console.log('🔄 TRACKING: user_action=copy_transcript');
+			console.log('📋 Attempting to copy text:', textToCopy.substring(0, 20) + '...');
 
 			// Try using the modern clipboard API
 			try {
 				await navigator.clipboard.writeText(textToCopy);
 				console.log('📋 Successfully copied using Clipboard API');
-				clipboardSuccess = true;
 				
-				// Haptic feedback for successful copy - single quick pulse
-				vibrate(25);
+				// Haptic feedback for successful copy - short pulse
+				vibrate(30);
+				
+				clipboardSuccess = true;
 				
 				// Show toast message regardless of tooltip visibility
 				// This ensures mobile users who don't get tooltips still get feedback
@@ -562,9 +482,6 @@
 				console.log('📋 Transcript copied via execCommand fallback');
 				clipboardSuccess = true;
 				
-				// Haptic feedback for successful copy - single quick pulse
-				vibrate(25);
-				
 				// Update screen reader status
 				screenReaderStatus = 'Transcript copied to clipboard';
 				
@@ -585,9 +502,6 @@
 			}
 		} catch (err) {
 			console.error('❌ All clipboard methods failed:', err);
-			
-			// Error pattern haptic feedback - two short bursts for error
-			vibrate([20, 150, 20]);
 			
 			// Show user-friendly error message
 			clipboardSuccess = true; // Use the success toast but with error message
@@ -675,7 +589,7 @@
 	function vibrate(pattern) {
 		// Only vibrate if:
 		// 1. The navigator.vibrate API is available
-		// 2. We're likely on a mobile device (using viewport width as rough heuristic)
+		// 2. We're not on a desktop (likely to be a mobile device)
 		if (typeof window !== 'undefined' && 'vibrate' in navigator && window.innerWidth <= 768) {
 			try {
 				navigator.vibrate(pattern);
@@ -735,75 +649,6 @@
 	// Button label that changes based on state
 	let buttonLabel;
 	
-	// Function to share transcript using Web Share API
-	async function shareTranscript() {
-		try {
-			// Get the current text from the editable div
-			const textToShare = getEditedTranscript();
-			
-			// Don't share empty text
-			if (!textToShare || textToShare.trim() === '') {
-				console.log('📤 Nothing to share - transcript is empty');
-				return;
-			}
-			
-			// Add viral attribution tag with preview to shared text
-			const textWithAttribution = textToShare + getViralAttribution(textToShare);
-			
-			// Simple tracking event
-			console.log('🔄 TRACKING: user_action=share_transcript');
-			
-			// Check if Web Share API is supported
-			if (isWebShareSupported()) {
-				try {
-					await navigator.share({
-						title: 'Share Transcript',
-						text: getViralAttribution(textToShare).trim()
-					});
-					
-					console.log('📤 Successfully shared transcript');
-					
-					// Show success toast (reuse the clipboard success toast)
-					clipboardSuccess = true;
-					screenReaderStatus = 'Transcript shared successfully';
-					
-					// Haptic feedback for successful share
-					vibrate([30, 50, 30]);
-					
-					// Auto-hide the success message after 3 seconds
-					if (clipboardTimer) clearTimeout(clipboardTimer);
-					clipboardTimer = setTimeout(() => {
-						clipboardSuccess = false;
-					}, 3000);
-				} catch (err) {
-					console.error('❌ Share API error:', err);
-					// User might have cancelled - don't show error
-				}
-			} else {
-				// Fallback to clipboard if Web Share API is not supported
-				console.log('📤 Web Share API not supported, falling back to clipboard');
-				await navigator.clipboard.writeText(getViralAttribution(textToShare).trim());
-				
-				// Show success toast
-				clipboardSuccess = true;
-				screenReaderStatus = 'Transcript copied to clipboard (sharing not supported)';
-				
-				// Auto-hide the message after 3 seconds
-				if (clipboardTimer) clearTimeout(clipboardTimer);
-				clipboardTimer = setTimeout(() => {
-					clipboardSuccess = false;
-				}, 3000);
-			}
-		} catch (err) {
-			console.error('❌ Error sharing transcript:', err);
-			// Show error in toast
-			errorMessage = 'Error sharing transcript. Please try copying instead.';
-			
-			// Error vibration pattern
-			vibrate([20, 150, 20]);
-		}
-	}
-	
 	// We've simplified the CTA rotation to happen directly in the toggleRecording function
 	// This reactive block is just for logging changes to the CTA
 	$: {
@@ -837,7 +682,6 @@
 				{#if transcribing}
 					<!-- Progress bar (transforms the button) - adjusted height for mobile -->
 					<div
-						bind:this={progressContainerElement}
 						class="progress-container relative h-[72px] w-full overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[66px] max-w-[500px]"
 						role="progressbar"
 						aria-label="Transcription progress"
@@ -853,11 +697,9 @@
 				{:else}
 					<!-- Recording button - improved for mobile and accessibility -->
 					<button
-						bind:this={recordButtonElement}
 						class="record-button w-[90%] sm:w-full rounded-full bg-amber-400 px-6 py-6 text-xl font-bold text-black shadow-md transition-all duration-150 ease-in-out hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 max-w-[500px] mx-auto text-center {!recording && buttonLabel === 'Start Recording' ? 'pulse-subtle' : ''}"
 						style="min-width: 300px; min-height: 72px; transform-origin: center center;"
 						on:click={toggleRecording}
-						on:mouseenter={preloadSpeechModel}
 						on:keydown={handleKeyDown}
 						disabled={transcribing}
 						aria-label={recording ? 'Stop Recording' : 'Start Recording'}
@@ -935,7 +777,6 @@
 									{/if}
 								</button>
 								
-								
 								<!-- Editable transcript box with controlled scrolling -->
 								<div
 									class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5 max-w-[90vw] box-border mx-auto my-4 transition-all duration-300 max-h-[60vh] overflow-y-auto scrollbar-thin"
@@ -958,20 +799,6 @@
 									</div>
 									<!-- Subtle gradient mask to indicate scrollable content -->
 									<div class="scroll-indicator-bottom absolute bottom-0 left-0 right-0 h-6 pointer-events-none bg-gradient-to-t from-white/90 to-transparent rounded-b-[2rem]"></div>
-									
-									<!-- Simple share button at bottom middle - only visible when Web Share API is supported -->
-									{#if isWebShareSupported()}
-										<div class="flex justify-center w-full absolute bottom-4 left-0 right-0 z-[200]">
-											<button
-												class="share-btn-text px-4 py-1.5 bg-gradient-to-r from-indigo-50 to-purple-100 text-indigo-600 text-sm font-medium rounded-full shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2"
-												on:click|preventDefault={shareTranscript}
-												aria-label="Share transcript"
-											>
-												Share
-											</button>
-										</div>
-									{/if}
-									
 									<!-- Hidden instructions for screen readers -->
 									<div id="transcript-instructions" class="sr-only">
 										Editable transcript. You can modify the text if needed.
@@ -994,7 +821,7 @@
 </div>
 
 <!-- Screen reader only status announcements -->
-<div role="status" aria-live="polite" aria-atomic="true" class="sr-only">
+<div aria-live="polite" aria-atomic="true" class="sr-only">
 	{#if screenReaderStatus}
 		{screenReaderStatus}
 	{/if}
@@ -1002,8 +829,8 @@
 
 <!-- Floating success toast - positioned fixed and independently from content -->
 {#if clipboardSuccess}
-	<div class="toast-container flex w-full justify-center" role="status" aria-live="polite">
-		<div class="clipboard-toast {!document.hasFocus() ? 'focus-warning' : ''} w-[calc(100%-2rem)] max-w-[360px]">
+	<div class="toast-container flex w-full justify-center">
+		<div class="clipboard-toast {!document.hasFocus() ? 'focus-warning' : ''} w-[calc(100%-2rem)] max-w-[360px]" aria-live="polite">
 			<!-- Ghost icon to match app theme -->
 			<div class="toast-ghost">
 				<svg viewBox="0 0 24 24" class="h-5 w-5 sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg">
@@ -1020,49 +847,6 @@
 			</div>
 			<!-- Message with fun emojis -->
 			<span>{document.hasFocus() ? getRandomCopyMessage() : focusRecoveryMessage}</span>
-		</div>
-	</div>
-{/if}
-
-<!-- Permission error modal -->
-{#if showPermissionError}
-	<div class="permission-error-container flex w-full justify-center" on:click={() => showPermissionError = false} role="alertdialog" aria-labelledby="permission_error_title" aria-describedby="permission_error_description" aria-live="assertive">
-		<div class="permission-error-modal">
-			<!-- Icon and title -->
-			<div class="modal-header">
-				<div class="error-icon">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
-						<circle cx="12" cy="12" r="10"></circle>
-						<line x1="12" y1="8" x2="12" y2="12"></line>
-						<line x1="12" y1="16" x2="12.01" y2="16"></line>
-					</svg>
-				</div>
-				<h3 id="permission_error_title">Microphone Access Denied</h3>
-			</div>
-			
-			<!-- Permission error message -->
-			<p id="permission_error_description">TalkType needs microphone access to transcribe your speech. Please update your browser settings to allow microphone access.</p>
-			
-			<!-- Solution steps -->
-			<div class="error-steps">
-				<div class="step">
-					<div class="step-number">1</div>
-					<p>Click the microphone or lock icon in your address bar</p>
-				</div>
-				<div class="step">
-					<div class="step-number">2</div>
-					<p>Select "Allow" for microphone access</p>
-				</div>
-				<div class="step">
-					<div class="step-number">3</div>
-					<p>Refresh the page and try again</p>
-				</div>
-			</div>
-			
-			<!-- Dismiss button -->
-			<button class="dismiss-btn" on:click|stopPropagation={() => showPermissionError = false}>
-				Got it
-			</button>
 		</div>
 	</div>
 {/if}
@@ -1217,19 +1001,6 @@
 		}
 	}
 
-	/* Override for icon-layers in AudioToText component */
-	:global(.recording .icon-layers) {
-		overflow: visible !important;
-		position: relative;
-		z-index: 2;
-	}
-	
-	/* Make sure the outline is visible on top of the gradient */
-	:global(.recording .icon-bg),
-	:global(.recording .icon-base) {
-		filter: brightness(1.05);
-	}
-	
 	/* Transcript box styling */
 	.transcript-box {
 		box-shadow:
@@ -1343,33 +1114,6 @@
 		transform: translateY(1px) scale(0.95);
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.5), 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
-	
-	/* Share button styling */
-	.share-btn {
-		opacity: 0.95;
-		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-		filter: drop-shadow(0 4px 6px rgba(168, 173, 249, 0.25));
-		animation: gentle-float 3s ease-in-out infinite;
-		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(168, 173, 249, 0.25), 0 4px 6px rgba(0, 0, 0, 0.05);
-		isolation: isolate;
-		backdrop-filter: none !important;
-		background-color: rgba(255, 255, 255, 0.95);
-		/* Slight delay in animation to be offset from copy button */
-		animation-delay: 0.4s;
-	}
-	
-	.share-btn:hover {
-		opacity: 1;
-		filter: drop-shadow(0 6px 12px rgba(168, 173, 249, 0.4));
-		transform: translateY(-1px) scale(1.05);
-		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(168, 173, 249, 0.4), 0 8px 16px rgba(168, 173, 249, 0.15);
-		background-color: rgba(255, 255, 255, 0.9);
-	}
-	
-	.share-btn:active {
-		transform: translateY(1px) scale(0.95);
-		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(168, 173, 249, 0.5), 0 2px 4px rgba(0, 0, 0, 0.1);
-	}
 
 	/* Tooltip styling */
 	.copy-tooltip {
@@ -1425,21 +1169,6 @@
 		}
 		45%, 95% {
 			transform: scaleY(0);
-		}
-	}
-	
-	/* Sad eyes animation for permission errors */
-	.eyes-sad {
-		animation: eyes-sad-animation 2s ease-in-out forwards !important;
-		transform-origin: center center;
-	}
-	
-	@keyframes eyes-sad-animation {
-		0%, 100% {
-			transform: scaleY(0.7) translateY(2px);
-		}
-		30%, 70% {
-			transform: scaleY(0.5) translateY(3px);
 		}
 	}
 
@@ -1650,148 +1379,6 @@
 			opacity: 0;
 		}
 	}
-	
-	/* Permission Error Modal Styling */
-	.permission-error-container {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.5);
-		z-index: 1000;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 1rem;
-		animation: fade-in 0.3s ease-out;
-	}
-	
-	.permission-error-modal {
-		background: linear-gradient(to bottom right, #fff, #fefcff);
-		border-radius: 1rem;
-		box-shadow: 
-			0 10px 25px -5px rgba(249, 168, 212, 0.4),
-			0 8px 10px -6px rgba(249, 168, 212, 0.2),
-			0 0 0 1px rgba(249, 168, 212, 0.3) inset;
-		padding: 1.5rem;
-		max-width: 90%;
-		width: 400px;
-		color: #4b5563;
-		position: relative;
-		animation: slide-up 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-		text-align: center;
-	}
-	
-	.modal-header {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 0.75rem;
-		margin-bottom: 1rem;
-		flex-direction: column;
-	}
-	
-	.error-icon {
-		width: 3rem;
-		height: 3rem;
-		border-radius: 50%;
-		background-color: rgba(239, 68, 68, 0.1);
-		color: #ef4444;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		margin-bottom: 0.5rem;
-	}
-	
-	.modal-header h3 {
-		color: #111827;
-		font-weight: 700;
-		font-size: 1.25rem;
-		margin: 0;
-	}
-	
-	.permission-error-modal p {
-		margin: 0.75rem 0;
-		line-height: 1.6;
-		font-size: 0.95rem;
-	}
-	
-	.error-steps {
-		background-color: rgba(249, 168, 212, 0.08);
-		border-radius: 0.75rem;
-		padding: 1rem;
-		margin: 1.25rem 0;
-		text-align: left;
-	}
-	
-	.step {
-		display: flex;
-		gap: 0.75rem;
-		margin-bottom: 0.75rem;
-		align-items: flex-start;
-	}
-	
-	.step:last-child {
-		margin-bottom: 0;
-	}
-	
-	.step-number {
-		width: 1.5rem;
-		height: 1.5rem;
-		background-color: rgba(249, 168, 212, 0.3);
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-weight: 600;
-		font-size: 0.875rem;
-		color: #be185d;
-		flex-shrink: 0;
-	}
-	
-	.step p {
-		margin: 0;
-		font-size: 0.875rem;
-	}
-	
-	.dismiss-btn {
-		background-color: #be185d;
-		color: white;
-		border: none;
-		border-radius: 9999px;
-		padding: 0.75rem 2rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		margin-top: 0.75rem;
-		font-size: 1rem;
-	}
-	
-	.dismiss-btn:hover {
-		background-color: #9d174d;
-		transform: translateY(-1px);
-	}
-	
-	.dismiss-btn:active {
-		transform: translateY(1px);
-	}
-	
-	@keyframes fade-in {
-		from { opacity: 0; }
-		to { opacity: 1; }
-	}
-	
-	@keyframes slide-up {
-		from { 
-			opacity: 0; 
-			transform: translateY(20px); 
-		}
-		to { 
-			opacity: 1; 
-			transform: translateY(0); 
-		}
-	}
 
 	/* Ghost icon animations - defined globally */
 	@keyframes ghost-pulse {
@@ -1859,8 +1446,6 @@
 	:global(.ghost-wobble-right) {
 		animation: ghost-wobble-right 0.6s ease-in-out;
 	}
-	
-	/* Recording state glow effect is now handled in +page.svelte */
 
 	/* Button animations */
 	.button-press {
@@ -1944,14 +1529,6 @@
 			top: -12px; /* Better positioned for mobile */
 			right: -8px; /* Better positioned for mobile */
 		}
-		
-		/* Better sizing for share button on mobile */
-		.share-btn {
-			height: 38px; /* Larger touch target */
-			width: 38px; /* Larger touch target */
-			top: -12px; /* Better positioned for mobile */
-			right: 36px; /* Position next to copy button */
-		}
 
 		/* Button width cleanup for mobile */
 		.record-button {
@@ -2026,13 +1603,6 @@
 			right: -6px;
 			height: 34px;
 			width: 34px;
-		}
-		
-		/* Adjust share button style for very small screens */
-		.share-btn-text {
-			font-size: 0.8rem;
-			padding: 0.25rem 0.75rem;
-			margin-bottom: 1rem;
 		}
 
 		/* Ensure transcript text is readable and responsive */
@@ -2114,20 +1684,17 @@
 		}
 	}
 	
-	/* Enhanced breathing glow for button - more noticeable and smoother */
+	/* Simple breathing glow for button */
 	.pulse-subtle {
-		animation: button-breathe 3.5s ease-in-out infinite;
-		transform-origin: center;
+		animation: button-breathe 3s ease-in-out infinite;
 	}
 	
 	@keyframes button-breathe {
 		0%, 100% {
-			box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.35);
-			transform: scale(1);
+			box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.3);
 		}
 		50% {
-			box-shadow: 0 0 20px 6px rgba(251, 191, 36, 0.5);
-			transform: scale(1.02);
+			box-shadow: 0 0 20px 5px rgba(251, 191, 36, 0.45);
 		}
 	}
 </style>

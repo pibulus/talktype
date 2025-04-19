@@ -22,6 +22,17 @@
 - **Documentation**: Include JSDoc comments for functions
 - **Reactivity**: Use Svelte's reactive declarations and statements properly
 
+## Workflow - Use Taskmaster
+Howto: src/docs/taskmaster-guide.md
+When implementing a feature, use the following TaskMaster workflow:
+
+parse-prd: Generate initial tasks from the feature spec
+analyze-complexity: Identify complex tasks that need breakdown
+expand: Break down complex tasks into smaller subtasks
+next: Determine the next task to work on
+set-status: Update task status as you progress
+validate-dependencies: Ensure proper task dependencies before marking complete
+
 ## Text Animation System
 
 The TalkType app uses subtle text animations for improved user experience:
