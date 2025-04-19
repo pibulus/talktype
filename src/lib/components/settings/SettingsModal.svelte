@@ -64,19 +64,7 @@
     }
   ];
   
-  // Prompt style mapping for display names
-  const promptStyleNames = {
-    'standard': 'Standard',
-    'surlyPirate': 'Surly Pirate',
-    'corporate': 'Corporate'
-  };
-  
-  // Icons for prompt styles
-  const promptStyleIcons = {
-    'standard': '💬',
-    'surlyPirate': '🏴‍☠️',
-    'corporate': '💼'
-  };
+  // Prompt styles are now directly defined in the UI components below
   
   // Set up event listeners for the modal on component mount
   onMount(() => {
