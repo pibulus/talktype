@@ -50,28 +50,22 @@
       // Start tracking mouse movement for eye position
       document.addEventListener('mousemove', trackMousePosition, { passive: true });
       
-      // Listen for wobble events from AudioToText start recording button
-      document.addEventListener('ghost-wobble', () => {
+      // Function reference for ghost-wobble event
+      const handleGhostWobble = () => {
         console.log('Ghost received wobble event from AudioToText');
-        // Trigger wobble animation
-        isWobbling = true;
-        
-        // Clear any existing wobble timer
-        clearTimeout(wobbleTimeoutId);
-        
-        // Schedule the wobble to end after animation completes
-        wobbleTimeoutId = setTimeout(() => {
-          isWobbling = false;
-        }, 600);
-      });
+        forceWobble();
+      };
       
       // Start special animation detection (easter egg)
       maybeDoSpecialAnimation();
       
+      // Add the event listener with the named function
+      document.addEventListener('ghost-wobble', handleGhostWobble);
+      
       return () => {
         observer.disconnect();
         document.removeEventListener('mousemove', trackMousePosition);
-        document.removeEventListener('ghost-wobble', () => {});
+        document.removeEventListener('ghost-wobble', handleGhostWobble);
         clearTimeout(specialAnimationTimeoutId);
         clearTimeout(wobbleTimeoutId);
       };
@@ -272,23 +266,41 @@
   
   // Dispatch toggle recording event when clicked
   function handleClick() {
-    // IMPORTANT: We must wobble here directly when clicked
-    // This ensures immediate visual feedback regardless of state update timing
-    isWobbling = true;
-    
-    // Clear any existing wobble timer
-    clearTimeout(wobbleTimeoutId);
-    
-    // Schedule the wobble to end after animation completes
-    wobbleTimeoutId = setTimeout(() => {
-      isWobbling = false;
-    }, 600);
+    // Directly apply wobble class without relying on reactive statements
+    // This is absolutely critical for it to work consistently
+    forceWobble();
     
     // Dispatch event to let page know to toggle recording
     if (typeof document !== 'undefined') {
       const event = new CustomEvent('togglerecording');
       document.dispatchEvent(event);
     }
+  }
+  
+  // Separate function to force wobble animation that can be called from anywhere
+  function forceWobble() {
+    console.log('🪄 FORCE WOBBLE triggered - DEBUG: isWobbling before=', isWobbling);
+    
+    // Force animation restart by setting to false first
+    isWobbling = false;
+    
+    // Force a browser reflow to ensure the animation gets reapplied
+    if (ghostElement) {
+      void ghostElement.offsetWidth;
+    }
+    
+    // Now set to true to start animation
+    isWobbling = true;
+    console.log('🪄 FORCE WOBBLE - DEBUG: isWobbling after=', isWobbling);
+    
+    // Clear any existing wobble timer
+    clearTimeout(wobbleTimeoutId);
+    
+    // Schedule the wobble to end after animation completes
+    wobbleTimeoutId = setTimeout(() => {
+      console.log('🪄 FORCE WOBBLE ended');
+      isWobbling = false;
+    }, 600);
   }
   
   // Track previous state to detect actual changes
@@ -304,14 +316,8 @@
       // Only wobble when STARTING recording (not just any state update)
       if (isRecording && !wasRecording && typeof window !== 'undefined') {
         console.log('Ghost wobble: START recording detected');
-        // Clear any existing wobble timer
-        clearTimeout(wobbleTimeoutId);
-        
-        // Start recording wobble
-        isWobbling = true;
-        wobbleTimeoutId = setTimeout(() => {
-          isWobbling = false;
-        }, 600);
+        // Use the same reusable function
+        forceWobble();
       }
     } 
     // Restart blinking when finished recording/processing
@@ -319,14 +325,8 @@
       // Add wobble only when STOPPING recording
       if (wasRecording && typeof window !== 'undefined') {
         console.log('Ghost wobble: STOP recording detected');
-        // Clear any existing wobble timer
-        clearTimeout(wobbleTimeoutId);
-        
-        // Stop recording wobble
-        isWobbling = true;
-        wobbleTimeoutId = setTimeout(() => {
-          isWobbling = false;
-        }, 600);
+        // Use the same reusable function
+        forceWobble();
       }
       
       // Restart blinking after a delay
