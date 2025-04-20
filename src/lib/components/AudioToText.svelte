@@ -94,59 +94,23 @@
 			   typeof navigator.share === 'function';
 	}
 
-	// Ghost expression functions - add personality through blinking
-	// We're being careful with these to prevent unwanted animations
+	// IMPORTANT: All ghost animation functions have been completely removed
+	// to prevent conflicts with page-level animation handling.
+	// These are now empty functions that do nothing.
+	
 	function ghostThinkingHard() {
-		// Only apply if we're in a recording or transcribing state
-		if (!recording && !transcribing) return;
-		
-		// Try using the element from the parent component first
-		if (parentEyesElement) {
-			parentEyesElement.classList.add('blink-thinking-hard');
-		} else if (eyesElement) {
-			eyesElement.classList.add('blink-thinking-hard');
-		}
+		// Intentionally empty - no animation manipulation
+		return;
 	}
 
 	function ghostStopThinking() {
-		// Silent removal - no transitions or animations
-		if (parentEyesElement && parentEyesElement.classList.contains('blink-thinking-hard')) {
-			parentEyesElement.classList.remove('blink-thinking-hard');
-		} else if (eyesElement && eyesElement.classList.contains('blink-thinking-hard')) {
-			eyesElement.classList.remove('blink-thinking-hard');
-		}
+		// Intentionally empty - no animation manipulation
+		return;
 	}
 
-	// Disabled for now to prevent unwanted blinking animations when recording stops
 	function ghostReactToTranscript(textLength = 0) {
-		// This function is intentionally disabled to prevent any eye animations
-		// when recording stops or when the transcript appears
+		// Intentionally empty - no animation manipulation
 		return;
-		
-		/* Original implementation - commented out
-		const eyes = eyesElement || parentEyesElement;
-		if (!eyes) return;
-
-		// Use a more efficient approach with fewer setTimeout calls
-		if (textLength > 20) {
-			// For longer transcripts, do a "satisfied" double blink with fewer nested timeouts
-			const blink = () => {
-				eyes.classList.add('blink-once');
-				setTimeout(() => eyes.classList.remove('blink-once'), 150);
-			};
-			
-			setTimeout(() => {
-				blink();
-				setTimeout(blink, 300); // Second blink after first one completes
-			}, 200);
-		} else if (textLength > 0) {
-			// For short transcripts, just do a single blink
-			setTimeout(() => {
-				eyes.classList.add('blink-once');
-				setTimeout(() => eyes.classList.remove('blink-once'), 200);
-			}, 200);
-		}
-		*/
 	}
 
 	// Export recording state and functions for external components
@@ -383,14 +347,10 @@
 			};
 
 			mediaRecorder.onstop = async () => {
-				// Add wobble animation to ghost when recording stops
+				// ONLY add wobble animation to ghost when recording stops - NO EYE ANIMATIONS
 				const ghostIcon = ghostIconElement || parentGhostIconElement;
-				const eyes = eyesElement || parentEyesElement;
 				
-				// IMPORTANT: First remove ALL possible eye animation classes to prevent unwanted blinking
-				if (eyes) {
-					eyes.classList.remove('blink-once', 'blink-thinking-hard');
-				}
+				// DO NOT manipulate eye classes at all - leave it to page-level control
 				
 				if (ghostIcon) {
 					// Force a reflow to ensure clean animation state
@@ -561,13 +521,7 @@
 				} finally {
 					recording = false;
 					
-					// Don't call ghostStopThinking() since it can cause visual flicker
-					// Instead, directly check and remove the class if needed without animation
-					if (parentEyesElement && parentEyesElement.classList.contains('blink-thinking-hard')) {
-						parentEyesElement.classList.remove('blink-thinking-hard');
-					} else if (eyesElement && eyesElement.classList.contains('blink-thinking-hard')) {
-						eyesElement.classList.remove('blink-thinking-hard');
-					}
+					// DO NOT manipulate any eye animations - leave all animation to page level
 					
 					// We don't need to set shouldUpdateCta here since we're
 					// using immediate rotation in the toggleRecording function
@@ -620,11 +574,7 @@
 
 	function stopRecording() {
 		if (mediaRecorder && mediaRecorder.state === 'recording') {
-			// First ensure we remove any blinking classes immediately to prevent unwanted animations
-			const eyes = eyesElement || parentEyesElement;
-			if (eyes) {
-				eyes.classList.remove('blink-once', 'blink-thinking-hard');
-			}
+			// DO NOT manipulate eye animations here - leave all animation to the page level
 			
 			mediaRecorder.stop();
 			console.log('🛑 Stop recording');
