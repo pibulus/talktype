@@ -25,15 +25,12 @@
 	let deferredInstallPrompt = null; // Stores the beforeinstallprompt event
 	let showPwaInstallPrompt = false; // Controls visibility of the PWA install prompt
 
-	// --- New Ghost State Variables ---
-	let eyesClosed = false;
-	let isWobbling = false;
-	let isRecording = false; // Tracks recording state for the Ghost component
-	let isProcessing = false; // Tracks processing state for the Ghost component
-
-	let blinkTimeoutId = null;
-	let wobbleTimeoutId = null;
-	// --- End New Ghost State Variables ---
+	// --- Minimal Ghost State Variables ---
+	// The Ghost component now handles all its own animation internally
+	// We just pass the recording/processing state
+	let isRecording = false;
+	let isProcessing = false;
+	// --- End Minimal Ghost State Variables ---
 
 	// Create a reusable Svelte action for handling clicks outside an element
 	// (Keeping this as it might be used by modals, although DaisyUI might handle it)
@@ -70,103 +67,35 @@
 	let titleAnimationComplete = false;
 	let subtitleAnimationComplete = false;
 
-	// --- RESTORED AWESOME BLINKING SYSTEM ---
-	// IMPORTANT: Ghost.svelte has NO conditional eye classes - all animation happens via this state only!
-	const scheduleBlink = () => {
-		// Clear any existing scheduled blink
-		clearTimeout(blinkTimeoutId);
-		
-		// Don't blink if recording or processing
-		if (isRecording || isProcessing) {
-			eyesClosed = false; // Ensure eyes are open
-			return;
-		}
-		
-		// Random delay for next blink (4-8 seconds)
-		const delay = 4000 + Math.random() * 4000;
-		
-		blinkTimeoutId = setTimeout(() => {
-			// Do a single blink
-			eyesClosed = true;
-			
-			// Eyes open after 150ms
-			setTimeout(() => {
-				eyesClosed = false;
-				
-				// 25% chance for double blink
-				if (Math.random() < 0.25) {
-					setTimeout(() => {
-						eyesClosed = true;
-						setTimeout(() => {
-							eyesClosed = false;
-							scheduleBlink(); // Schedule next regular blink
-						}, 150);
-					}, 200);
-				} else {
-					// Schedule the next blink
-					scheduleBlink();
-				}
-			}, 150);
-		}, delay);
-	};
-	// --- End RESTORED AWESOME BLINKING SYSTEM ---
+	// --- NO ANIMATION CODE IN PAGE ---
+	// All animations are now fully encapsulated in the Ghost component
+	// This file no longer needs to handle any animation logic!
+	// --- End NO ANIMATION CODE IN PAGE ---
 
 
-	// --- RESTORED Event Handlers with CLEAR BOUNDARIES ---
+	// --- MINIMAL Event Handlers - Just State Updates ---
 	function handleRecordingStart() {
-		// Update state
+		// Just update state for Ghost component to react to
 		isRecording = true;
 		isProcessing = false;
-		isWobbling = false;
-		eyesClosed = false;
-		
-		// Clear any existing timeouts
-		clearTimeout(blinkTimeoutId);
-		clearTimeout(wobbleTimeoutId);
-		
-		// Important: no direct animation class manipulation!
-		// All animations happen via state variables only
 	}
 
 	function handleRecordingStop() {
-		// Update recording state
+		// Just update state for Ghost component to react to
 		isRecording = false;
-		
-		// Do a wobble
-		isWobbling = true;
-		wobbleTimeoutId = setTimeout(() => {
-			isWobbling = false;
-			
-			// Wait 2 seconds before restarting ambient blinking
-			// This ensures no weird blinks immediately after recording
-			if (!isProcessing) {
-				setTimeout(() => {
-					scheduleBlink();
-				}, 2000);
-			}
-		}, 600);
 	}
 
 	function handleProcessingStart() {
-		// Update state
+		// Just update state for Ghost component to react to
 		isProcessing = true;
 		isRecording = false;
-		eyesClosed = false;
-		
-		// Stop any blinking
-		clearTimeout(blinkTimeoutId);
 	}
 
 	function handleProcessingEnd() {
-		// Update state
+		// Just update state for Ghost component to react to
 		isProcessing = false;
-		
-		// Wait before restarting ambient blinking
-		setTimeout(() => {
-			scheduleBlink();
-		}, 1000);
 	}
-	// --- End RESTORED Event Handlers ---
+	// --- End MINIMAL Event Handlers ---
 
 
 	// Function to handle title animation complete
@@ -244,11 +173,7 @@
 
 	// Component lifecycle
 	onMount(() => {
-		// Start ambient blinking after a short delay on page load
-		setTimeout(() => {
-			// This is safe because Ghost.svelte has NO conditional classes
-			scheduleBlink();
-		}, 2000);
+		// No animation initialization needed - Ghost component handles it all
 
 		// Listen for toggle event from Ghost component
 		const handleToggleRecording = () => {

@@ -1,24 +1,26 @@
 <script>
-  // CRITICAL: This component NEVER adds conditional classes based on props!
-  // All animations MUST be controlled by page.svelte only, to prevent double animations
-  // DO NOT add any direct class conditionals to the eye element!
+  import { onMount, onDestroy } from 'svelte';
   
-  // State props - only control the corresponding Ghost.svelte CSS features
-  export let eyesClosed = false;  // True when eyes should be invisible
-  export let isWobbling = false;  // True during wobble animation
-  export let isRecording = false; // True during recording state
-  export let isProcessing = false; // True during processing state
+  // Props to communicate recording/processing state ONLY
+  // These don't control animation directly - just tell us when we can blink
+  export let isRecording = false;
+  export let isProcessing = false;
   
-  // Local variables for theme handling
-  import { onMount } from 'svelte';
+  // Local state
+  let blinkTimeoutId = null;
+  let wobbleTimeoutId = null;
+  let eyesClosed = false;
+  let isWobbling = false;
+  let isRainbow = false;
   let currentTheme = 'peach';
   let bgImageSrc = '/talktype-icon-bg-gradient.svg';
-  let isRainbow = false;
   
-  // Check for theme on mount and update accordingly
+  // --- Theme handling ---
   onMount(() => {
+    // Update theme on mount
     if (typeof document !== 'undefined') {
       updateTheme();
+      
       // Listen for theme changes
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
@@ -33,16 +35,91 @@
         attributeFilter: ['data-theme']
       });
       
+      // Start greeting animation
+      setTimeout(() => {
+        greetingAnimation();
+      }, 1500);
+      
       return () => observer.disconnect();
     }
   });
   
-  // Update the theme based on document attribute
+  // Clean up on destroy
+  onDestroy(() => {
+    clearTimeout(blinkTimeoutId);
+    clearTimeout(wobbleTimeoutId);
+  });
+  
+  // --- Animation Functions ---
+  
+  // Greeting animation
+  function greetingAnimation() {
+    // Do a gentle wobble
+    isWobbling = true;
+    
+    setTimeout(() => {
+      isWobbling = false;
+      
+      // Do a double blink
+      eyesClosed = true;
+      setTimeout(() => {
+        eyesClosed = false;
+        setTimeout(() => {
+          eyesClosed = true;
+          setTimeout(() => {
+            eyesClosed = false;
+            
+            // Start ambient blinking
+            scheduleBlink();
+          }, 150);
+        }, 200);
+      }, 150);
+    }, 1000);
+  }
+  
+  // Regular ambient blinking
+  function scheduleBlink() {
+    clearTimeout(blinkTimeoutId);
+    
+    // Don't blink during recording or processing
+    if (isRecording || isProcessing) {
+      return;
+    }
+    
+    // Random delay between blinks (4-8 seconds)
+    const delay = 4000 + Math.random() * 4000;
+    
+    blinkTimeoutId = setTimeout(() => {
+      // Single or double blink
+      if (Math.random() < 0.25) {
+        // Double blink (25% chance)
+        eyesClosed = true;
+        setTimeout(() => {
+          eyesClosed = false;
+          setTimeout(() => {
+            eyesClosed = true;
+            setTimeout(() => {
+              eyesClosed = false;
+              scheduleBlink(); // Schedule next blink
+            }, 150);
+          }, 200);
+        }, 150);
+      } else {
+        // Single blink (75% chance)
+        eyesClosed = true;
+        setTimeout(() => {
+          eyesClosed = false;
+          scheduleBlink(); // Schedule next blink
+        }, 150);
+      }
+    }, delay);
+  }
+  
+  // Update theme based on document attribute
   function updateTheme() {
     currentTheme = document.documentElement.getAttribute('data-theme') || 'peach';
     isRainbow = currentTheme === 'rainbow';
     
-    // Set the appropriate gradient SVG based on theme
     switch(currentTheme) {
       case 'mint':
         bgImageSrc = '/talktype-icon-bg-gradient-mint.svg';
@@ -59,11 +136,28 @@
     }
   }
   
-  // Event handler for click events
+  // Dispatch toggle recording event when clicked
   function handleClick() {
-    // Dispatch event to parent component
+    // Do a wobble
+    isWobbling = true;
+    setTimeout(() => {
+      isWobbling = false;
+    }, 600);
+    
+    // Dispatch event to let page know to toggle recording
     const event = new CustomEvent('togglerecording');
     document.dispatchEvent(event);
+  }
+  
+  // Watch for changes in recording/processing state
+  $: if (isRecording || isProcessing) {
+    // Cancel any scheduled blinks when recording/processing starts
+    clearTimeout(blinkTimeoutId);
+  } else if (!isRecording && !isProcessing) {
+    // Wait a moment before restarting ambient blinking
+    setTimeout(() => {
+      scheduleBlink();
+    }, 2000);
   }
 </script>
 
@@ -71,9 +165,8 @@
   class="icon-container {isRecording ? 'recording' : ''} {isWobbling ? 'ghost-wobble' : ''}"
   on:click={handleClick}
   on:keydown={(e) => {
-    // Trigger on Enter or Spacebar
     if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault(); // Prevent page scroll on Spacebar
+      e.preventDefault();
       handleClick();
     }
   }}
@@ -87,11 +180,12 @@
     <!-- Base ghost image -->
     <img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" />
     
-    <!-- Eyes - NO blinking, just static -->
+    <!-- Eyes - controlled by local state -->
     <img 
       src="/assets/talktype-icon-eyes.svg" 
       alt="" 
-      class="icon-eyes" 
+      class="icon-eyes"
+      style={eyesClosed ? 'opacity: 0;' : 'opacity: 1;'}
     />
   </div>
 </button>
@@ -171,26 +265,9 @@
     animation-delay: 0s;
   }
   
-  /* Recording state for ghost eyes */
-  .recording .icon-eyes {
-    transform-origin: center center;
-  }
-  
   /* Wobble animation */
   .ghost-wobble {
     animation: ghost-wobble-left 0.6s ease-in-out forwards !important;
-  }
-  
-  /* Blinking - proper scale transform */
-  .blink-once {
-    animation: blink-once 0.18s forwards !important;
-    transform-origin: center center;
-  }
-  
-  /* Processing/thinking animation */
-  .eyes-thinking {
-    animation: blink-thinking-hard 1.5s infinite !important;
-    transform-origin: center center;
   }
   
   /* Rainbow animation for ghost svg */
@@ -246,29 +323,6 @@
     50% { transform: rotate(3deg) scale(1.01); }
     75% { transform: rotate(-2deg) scale(1.01); }
     100% { transform: rotate(0deg) scale(1); }
-  }
-  
-  @keyframes blink-once {
-    0%, 100% {
-      transform: scaleY(1);
-      opacity: 1;
-    }
-    50% {
-      transform: scaleY(0.15);
-      opacity: 0.9;
-    }
-  }
-  
-  @keyframes blink-thinking-hard {
-    0%, 10%, 50%, 60%, 100% {
-      transform: scaleY(1);
-    }
-    12%, 48% {
-      transform: scaleY(0);
-    }
-    90% {
-      transform: scaleY(0.2);
-    }
   }
   
   @keyframes rainbowFlow {
