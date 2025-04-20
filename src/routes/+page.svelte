@@ -728,14 +728,14 @@
 			// Blink once to acknowledge stop
 			setTimeout(() => {
 				debug('Performing stop acknowledgment blink');
-				blink(); // Use new blink function
+				blink(); // Use new blink function (verified single blink)
 
 				// Resume ambient blinking after a pause
 				setTimeout(() => {
 					debug('Attempting to resume ambient blinking after stop');
 					startAmbientBlinking();
 				}, 1000);
-			}, 100);
+			}, 100); // Short delay after wobble starts
 
 			// Stop the recording in the component
 			try {
@@ -1607,6 +1607,8 @@
 		-webkit-touch-callout: none; /* Disables callout */
 		border: none !important; /* Ensures no border */
 		animation: gentle-float 3s ease-in-out infinite;
+		animation-delay: 2.5s; /* FIX #1: Delay float animation to avoid initial jump */
+		transform: translateY(0); /* Ensure initial position is stable */
 		/* Ensure it's focusable for accessibility if needed, but remove visual outline */
 		/* tabindex="0" can be added if it's not inherently focusable like a button */
 	}
@@ -1676,8 +1678,8 @@
 			opacity: 1;
 		}
 		50% { /* Fully closed mid-way */
-			transform: scaleY(0.05);
-			opacity: 0.8; /* Slightly fade when closed */
+			transform: scaleY(0.15); /* FIX #2: Less extreme close, eyes still visible */
+			opacity: 0.9; /* Slightly fade when closed */
 		}
 	}
 
@@ -1714,7 +1716,9 @@
 			drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
 		/* Keep hover animation subtle */
 		/* transform: scale(1.01); */
+		/* Apply hover animation immediately, overriding the base delay */
 		animation: gentle-float 3s ease-in-out infinite, ghost-hover 1.2s ease-in-out infinite alternate;
+		animation-delay: 0s, 0s; /* Reset delay on hover */
 	}
 
 	.icon-container.recording {
@@ -1722,6 +1726,7 @@
 		animation: recording-glow 1.5s infinite;
 		/* Keep scale consistent or slightly larger */
 		transform: scale(1.03); /* Slightly larger when recording */
+		animation-delay: 0s; /* Ensure recording glow starts immediately */
 	}
 
 	@media (min-width: 768px) {
@@ -1958,11 +1963,11 @@
 
 	/* Gentle floating animation for ghost icon */
 	@keyframes gentle-float {
-		0%, 100% {
+		0%, 10%, 90%, 100% {
 			transform: translateY(0);
 		}
 		50% {
-			transform: translateY(-5px);
+			transform: translateY(-3px); /* Reduced movement for subtlety */
 		}
 	}
 
