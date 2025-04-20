@@ -9,11 +9,18 @@
   // Local state
   let blinkTimeoutId = null;
   let wobbleTimeoutId = null;
+  let specialAnimationTimeoutId = null;
   let eyesClosed = false;
   let isWobbling = false;
   let isRainbow = false;
+  let eyePositionX = 0; // For horizontal eye tracking: -1 to 1
+  let eyePositionY = 0; // For vertical eye tracking: -1 to 1
+  let doingSpecialAnimation = false; // For rare spin animation (easter egg)
   let currentTheme = 'peach';
   let bgImageSrc = '/talktype-icon-bg-gradient.svg';
+  
+  // Mouse tracking
+  let ghostElement = null; // Reference to the container element
   
   // --- Theme handling ---
   onMount(() => {
@@ -40,7 +47,18 @@
         greetingAnimation();
       }, 1500);
       
-      return () => observer.disconnect();
+      // Start tracking mouse movement for eye position
+      document.addEventListener('mousemove', trackMousePosition, { passive: true });
+      
+      // Start special animation detection (easter egg)
+      maybeDoSpecialAnimation();
+      
+      return () => {
+        observer.disconnect();
+        document.removeEventListener('mousemove', trackMousePosition);
+        clearTimeout(specialAnimationTimeoutId);
+        clearTimeout(wobbleTimeoutId);
+      };
     }
   });
   
@@ -48,6 +66,7 @@
   onDestroy(() => {
     clearTimeout(blinkTimeoutId);
     clearTimeout(wobbleTimeoutId);
+    clearTimeout(specialAnimationTimeoutId);
   });
   
   // --- Animation Functions ---
@@ -114,11 +133,45 @@
     }, delay);
   }
   
+  // Theme-specific glow colors - extra saturated with morning dew vibe
+  let glowColors = {
+    peach: {
+      // Extra vibrant peachy pink with sunrise glow
+      primary: 'rgba(255, 120, 170, 0.95)',    // More saturated peachy pink (main)
+      secondary: 'rgba(255, 180, 215, 0.9)',   // Brighter pink highlight 
+      tertiary: 'rgba(255, 220, 235, 0.8)'     // Intense morning light glow
+    },
+    mint: {
+      // Super fresh mint with dewy glow
+      primary: 'rgba(50, 245, 175, 0.95)',     // More saturated bright mint (main)
+      secondary: 'rgba(110, 255, 200, 0.9)',   // Brighter mint highlight
+      tertiary: 'rgba(180, 255, 225, 0.8)'     // Intense dewy glow layer
+    },
+    bubblegum: {
+      // Purple-blue bubblegum theme (completely different color)
+      primary: 'rgba(170, 120, 255, 0.95)',    // Purple-blue main color
+      secondary: 'rgba(200, 160, 255, 0.9)',   // Softer purple highlight
+      tertiary: 'rgba(230, 200, 255, 0.8)'     // Soft purple glow
+    },
+    rainbow: {
+      // Rainbow now uses a special CSS gradient approach
+      primary: 'var(--rainbow-primary, rgba(255, 0, 128, 0.95))',
+      secondary: 'var(--rainbow-secondary, rgba(255, 140, 200, 0.9))', 
+      tertiary: 'var(--rainbow-tertiary, rgba(255, 200, 230, 0.8))'
+    }
+  };
+  
+  // Current theme's glow colors
+  let currentGlowColors = glowColors.peach;
+  
   // Update theme based on document attribute
   function updateTheme() {
     if (typeof document !== 'undefined') {
       currentTheme = document.documentElement.getAttribute('data-theme') || 'peach';
       isRainbow = currentTheme === 'rainbow';
+      
+      // Update glow colors based on theme
+      currentGlowColors = glowColors[currentTheme] || glowColors.peach;
       
       switch(currentTheme) {
         case 'mint':
@@ -134,6 +187,70 @@
           bgImageSrc = '/talktype-icon-bg-gradient.svg';
           break;
       }
+    }
+  }
+  
+  // Special animations that rarely happen (easter egg)
+  function maybeDoSpecialAnimation() {
+    if (typeof window === 'undefined') return;
+    
+    clearTimeout(specialAnimationTimeoutId);
+    
+    // Very rare animation (5% chance when conditions are right)
+    if (Math.random() < 0.05 && !isRecording && !isProcessing && 
+        !doingSpecialAnimation && !eyesClosed) {
+      
+      doingSpecialAnimation = true;
+      
+      // Do a special animation (full spin)
+      // We'll handle this with CSS animation classes
+      
+      // Return to normal after animation
+      setTimeout(() => {
+        doingSpecialAnimation = false;
+      }, 2000);
+    }
+    
+    // Schedule next check
+    specialAnimationTimeoutId = setTimeout(maybeDoSpecialAnimation, 45000); // Check every 45 seconds
+  }
+  
+  // Track mouse movement to move eyes
+  function trackMousePosition(event) {
+    if (typeof window === 'undefined' || !ghostElement || 
+        eyesClosed) return; // Allow tracking during recording for better tactility
+    
+    // Get ghost element bounding box
+    const ghostRect = ghostElement.getBoundingClientRect();
+    const ghostCenterX = ghostRect.left + (ghostRect.width / 2);
+    const ghostCenterY = ghostRect.top + (ghostRect.height / 2);
+    
+    // Calculate mouse position relative to ghost center
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+    const distanceX = mouseX - ghostCenterX;
+    const distanceY = mouseY - ghostCenterY;
+    
+    // Normalize to values between -1 and 1
+    const maxDistanceX = window.innerWidth / 3; // More responsive horizontal tracking
+    const maxDistanceY = window.innerHeight / 3; // Vertical tracking
+    const normalizedX = Math.max(-1, Math.min(1, distanceX / maxDistanceX));
+    const normalizedY = Math.max(-1, Math.min(1, distanceY / maxDistanceY));
+    
+    // Add smaller dead zone for more responsiveness
+    if (Math.abs(normalizedX) < 0.05) {
+      eyePositionX = 0;
+    } else {
+      // Apply faster smoothing for better tactility - 20% toward target
+      eyePositionX = eyePositionX + (normalizedX - eyePositionX) * 0.2;
+    }
+    
+    // Vertical tracking with smaller movement range
+    if (Math.abs(normalizedY) < 0.05) {
+      eyePositionY = 0;
+    } else {
+      // Apply faster smoothing for better tactility - 20% toward target
+      eyePositionY = eyePositionY + (normalizedY - eyePositionY) * 0.2;
     }
   }
   
@@ -220,6 +337,10 @@
       src="/assets/talktype-icon-eyes.svg" 
       alt="" 
       class="icon-eyes {eyesClosed ? 'eyes-closed' : ''}"
+      style={
+        eyesClosed ? 'transform: scaleY(0.05);' : 
+        `transform: translate(${eyePositionX * 4}px, ${eyePositionY * 2}px);`
+      }
     />
   </div>
 </button>
@@ -282,6 +403,8 @@
     z-index: 3; /* Top layer */
     transform-origin: center center;
     transition: transform 0.08s ease-out; /* More natural blink timing */
+    will-change: transform; /* GPU acceleration hint */
+    transform: translateZ(0); /* Force GPU rendering */
   }
   
   /* Hover effects */
