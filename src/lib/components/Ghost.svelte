@@ -54,20 +54,26 @@
   
   // Greeting animation
   function greetingAnimation() {
-    // Skip wobble completely on page load, just do a double blink
-    eyesClosed = true;
-    setTimeout(() => {
-      eyesClosed = false;
+    // Add a quick greeting wobble with faster, snappier blinks
+    isWobbling = true;
+    wobbleTimeoutId = setTimeout(() => {
+      isWobbling = false;
+      
+      // Snappy double blink with attitude
+      eyesClosed = true;
       setTimeout(() => {
-        eyesClosed = true;
+        eyesClosed = false;
         setTimeout(() => {
-          eyesClosed = false;
-          
-          // Start ambient blinking
-          scheduleBlink();
-        }, 150);
-      }, 200);
-    }, 150);
+          eyesClosed = true;
+          setTimeout(() => {
+            eyesClosed = false;
+            
+            // Start ambient blinking
+            scheduleBlink();
+          }, 100); // Faster close time
+        }, 120); // Quicker between blinks
+      }, 100); // Faster open time
+    }, 600); // Short initial wobble
   }
   
   // Regular ambient blinking
@@ -83,9 +89,9 @@
     const delay = 4000 + Math.random() * 4000;
     
     blinkTimeoutId = setTimeout(() => {
-      // Single or double blink
+      // Single or double blink with more attitude
       if (Math.random() < 0.25) {
-        // Double blink (25% chance)
+        // Double blink (25% chance) - snappier with attitude
         eyesClosed = true;
         setTimeout(() => {
           eyesClosed = false;
@@ -94,16 +100,16 @@
             setTimeout(() => {
               eyesClosed = false;
               scheduleBlink(); // Schedule next blink
-            }, 150);
-          }, 200);
-        }, 150);
+            }, 100); // Faster close
+          }, 120); // Quicker between blinks
+        }, 100); // Faster open
       } else {
-        // Single blink (75% chance)
+        // Single blink (75% chance) - quicker and with attitude
         eyesClosed = true;
         setTimeout(() => {
           eyesClosed = false;
           scheduleBlink(); // Schedule next blink
-        }, 150);
+        }, 100); // Faster for more 'tude
       }
     }, delay);
   }
@@ -277,7 +283,7 @@
   .icon-eyes {
     z-index: 3; /* Top layer */
     transform-origin: center center;
-    transition: transform 0.08s ease-out; /* Fast transition for snappy blinks */
+    transition: transform 0.05s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Ultra snappy blinks with attitude */
   }
   
   /* Hover effects */
@@ -305,10 +311,10 @@
     animation: ghost-wobble-right 0.6s ease-in-out forwards !important;
   }
   
-  /* Eyes closed state - transform-based for snappy blinks */
+  /* Eyes closed state - transform-based for ultra snappy blinks with attitude */
   .eyes-closed {
-    transform: scaleY(0.05) !important;
-    transition: transform 0.08s ease-out !important;
+    transform: scaleY(0.03) !important; /* More closed for attitude */
+    transition: transform 0.05s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; /* Snappy curve with bounce */
   }
   
   /* Rainbow animation for ghost svg */
