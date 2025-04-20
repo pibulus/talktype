@@ -9,18 +9,11 @@
   // Local state
   let blinkTimeoutId = null;
   let wobbleTimeoutId = null;
-  let specialAnimationTimeoutId = null;
   let eyesClosed = false;
   let isWobbling = false;
   let isRainbow = false;
-  let eyePositionX = 0; // For horizontal eye tracking: -1 to 1
-  let eyePositionY = 0; // For vertical eye tracking: -1 to 1
-  let doingSpecialAnimation = false; // For rare spin animation (easter egg)
   let currentTheme = 'peach';
   let bgImageSrc = '/talktype-icon-bg-gradient.svg';
-  
-  // Mouse tracking
-  let ghostElement = null; // Reference to the container element
   
   // --- Theme handling ---
   onMount(() => {
@@ -47,20 +40,7 @@
         greetingAnimation();
       }, 1500);
       
-      // Start tracking mouse movement for eye position
-      document.addEventListener('mousemove', trackMousePosition, { passive: true });
-      
-      // No need for additional listeners, the click handler handles wobble directly
-      
-      // Start special animation detection (easter egg)
-      maybeDoSpecialAnimation();
-      
-      return () => {
-        observer.disconnect();
-        document.removeEventListener('mousemove', trackMousePosition);
-        clearTimeout(specialAnimationTimeoutId);
-        clearTimeout(wobbleTimeoutId);
-      };
+      return () => observer.disconnect();
     }
   });
   
@@ -68,7 +48,6 @@
   onDestroy(() => {
     clearTimeout(blinkTimeoutId);
     clearTimeout(wobbleTimeoutId);
-    clearTimeout(specialAnimationTimeoutId);
   });
   
   // --- Animation Functions ---
@@ -135,45 +114,11 @@
     }, delay);
   }
   
-  // Theme-specific glow colors - extra saturated with morning dew vibe
-  let glowColors = {
-    peach: {
-      // Extra vibrant peachy pink with sunrise glow
-      primary: 'rgba(255, 120, 170, 0.95)',    // More saturated peachy pink (main)
-      secondary: 'rgba(255, 180, 215, 0.9)',   // Brighter pink highlight 
-      tertiary: 'rgba(255, 220, 235, 0.8)'     // Intense morning light glow
-    },
-    mint: {
-      // Super fresh mint with dewy glow
-      primary: 'rgba(50, 245, 175, 0.95)',     // More saturated bright mint (main)
-      secondary: 'rgba(110, 255, 200, 0.9)',   // Brighter mint highlight
-      tertiary: 'rgba(180, 255, 225, 0.8)'     // Intense dewy glow layer
-    },
-    bubblegum: {
-      // Purple-blue bubblegum theme (completely different color)
-      primary: 'rgba(170, 120, 255, 0.95)',    // Purple-blue main color
-      secondary: 'rgba(200, 160, 255, 0.9)',   // Softer purple highlight
-      tertiary: 'rgba(230, 200, 255, 0.8)'     // Soft purple glow
-    },
-    rainbow: {
-      // Rainbow now uses a special CSS gradient approach
-      primary: 'var(--rainbow-primary, rgba(255, 0, 128, 0.95))',
-      secondary: 'var(--rainbow-secondary, rgba(255, 140, 200, 0.9))', 
-      tertiary: 'var(--rainbow-tertiary, rgba(255, 200, 230, 0.8))'
-    }
-  };
-  
-  // Current theme's glow colors
-  let currentGlowColors = glowColors.peach;
-  
   // Update theme based on document attribute
   function updateTheme() {
     if (typeof document !== 'undefined') {
       currentTheme = document.documentElement.getAttribute('data-theme') || 'peach';
       isRainbow = currentTheme === 'rainbow';
-      
-      // Update glow colors based on theme
-      currentGlowColors = glowColors[currentTheme] || glowColors.peach;
       
       switch(currentTheme) {
         case 'mint':
@@ -192,80 +137,10 @@
     }
   }
   
-  // Special animations that rarely happen (easter egg)
-  function maybeDoSpecialAnimation() {
-    if (typeof window === 'undefined') return;
-    
-    clearTimeout(specialAnimationTimeoutId);
-    
-    // Very rare animation (5% chance when conditions are right)
-    if (Math.random() < 0.05 && !isRecording && !isProcessing && 
-        !doingSpecialAnimation && !eyesClosed) {
-      
-      doingSpecialAnimation = true;
-      
-      // Do a special animation (full spin)
-      // We'll handle this with CSS animation classes
-      
-      // Return to normal after animation
-      setTimeout(() => {
-        doingSpecialAnimation = false;
-      }, 2000);
-    }
-    
-    // Schedule next check
-    specialAnimationTimeoutId = setTimeout(maybeDoSpecialAnimation, 45000); // Check every 45 seconds
-  }
-  
-  // Track mouse movement to move eyes
-  function trackMousePosition(event) {
-    if (typeof window === 'undefined' || !ghostElement || 
-        eyesClosed) return; // Allow tracking during recording for better tactility
-    
-    // Get ghost element bounding box
-    const ghostRect = ghostElement.getBoundingClientRect();
-    const ghostCenterX = ghostRect.left + (ghostRect.width / 2);
-    const ghostCenterY = ghostRect.top + (ghostRect.height / 2);
-    
-    // Calculate mouse position relative to ghost center
-    const mouseX = event.clientX;
-    const mouseY = event.clientY;
-    const distanceX = mouseX - ghostCenterX;
-    const distanceY = mouseY - ghostCenterY;
-    
-    // Normalize to values between -1 and 1
-    const maxDistanceX = window.innerWidth / 3; // More responsive horizontal tracking
-    const maxDistanceY = window.innerHeight / 3; // Vertical tracking
-    const normalizedX = Math.max(-1, Math.min(1, distanceX / maxDistanceX));
-    const normalizedY = Math.max(-1, Math.min(1, distanceY / maxDistanceY));
-    
-    // Add smaller dead zone for more responsiveness
-    if (Math.abs(normalizedX) < 0.05) {
-      eyePositionX = 0;
-    } else {
-      // Apply faster smoothing for better tactility - 20% toward target
-      eyePositionX = eyePositionX + (normalizedX - eyePositionX) * 0.2;
-    }
-    
-    // Vertical tracking with smaller movement range
-    if (Math.abs(normalizedY) < 0.05) {
-      eyePositionY = 0;
-    } else {
-      // Apply faster smoothing for better tactility - 20% toward target
-      eyePositionY = eyePositionY + (normalizedY - eyePositionY) * 0.2;
-    }
-  }
-  
   // Dispatch toggle recording event when clicked
-  function handleClick(event) {
-    // Don't wobble on click - let the reactive block handle wobbles
-    // based on state changes - this prevents animation conflicts
-    
-    // Make the eyes "look at" where they were clicked briefly
-    if (!eyesClosed && typeof window !== 'undefined' && ghostElement) {
-      // Use the click coordinates to update eye position
-      trackMousePosition(event);
-    }
+  function handleClick() {
+    // Don't wobble on click - the reactive block will handle wobbles 
+    // based on state changes - this eliminates double wobbles
     
     // Dispatch event to let page know to toggle recording
     if (typeof document !== 'undefined') {
@@ -289,13 +164,11 @@
         // Clear any existing wobble timer
         clearTimeout(wobbleTimeoutId);
         
-        // Start recording wobble - WITH A SMALL DELAY to ensure proper animation timing
-        setTimeout(() => {
-          isWobbling = true;
-          wobbleTimeoutId = setTimeout(() => {
-            isWobbling = false;
-          }, 600);
-        }, 10);
+        // Start recording wobble
+        isWobbling = true;
+        wobbleTimeoutId = setTimeout(() => {
+          isWobbling = false;
+        }, 600);
       }
     } 
     // Restart blinking when finished recording/processing
@@ -305,13 +178,11 @@
         // Clear any existing wobble timer
         clearTimeout(wobbleTimeoutId);
         
-        // Stop recording wobble - WITH A SMALL DELAY to ensure proper animation timing
-        setTimeout(() => {
-          isWobbling = true;
-          wobbleTimeoutId = setTimeout(() => {
-            isWobbling = false;
-          }, 600);
-        }, 10);
+        // Stop recording wobble
+        isWobbling = true;
+        wobbleTimeoutId = setTimeout(() => {
+          isWobbling = false;
+        }, 600);
       }
       
       // Restart blinking after a delay
@@ -327,9 +198,8 @@
 </script>
 
 <button
-  bind:this={ghostElement}
-  class="icon-container theme-{currentTheme} {isRecording ? 'recording' : ''} {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''} {doingSpecialAnimation ? 'do-special-animation' : ''}"
-  style={isRecording ? `filter: drop-shadow(0 0 25px ${currentGlowColors.primary}) drop-shadow(0 0 35px ${currentGlowColors.secondary}) drop-shadow(0 0 45px ${currentGlowColors.tertiary}) !important;` : ''}
+  class="icon-container {isRecording ? 'recording' : ''} {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''}"
+  style={isRecording ? 'filter: drop-shadow(0 0 25px rgba(255, 100, 243, 0.9)) drop-shadow(0 0 35px rgba(255, 120, 170, 0.7)) drop-shadow(0 0 45px rgba(249, 168, 212, 0.6)) !important;' : ''}
   on:click={handleClick}
   on:keydown={(e) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -347,15 +217,11 @@
     <!-- Base ghost image -->
     <img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" />
     
-    <!-- Eyes - controlled by local state with transform-based blinking and 2D mouse-following -->
+    <!-- Eyes - controlled by local state with transform-based blinking -->
     <img 
       src="/assets/talktype-icon-eyes.svg" 
       alt="" 
       class="icon-eyes {eyesClosed ? 'eyes-closed' : ''}"
-      style={
-        eyesClosed ? 'transform: scaleY(0.05);' : 
-        `transform: translate(${eyePositionX * 4}px, ${eyePositionY * 2}px);`
-      }
     />
   </div>
 </button>
@@ -423,63 +289,17 @@
   /* Hover effects */
   .icon-container:hover,
   .icon-container:active {
+    filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45))
+      drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
     animation: gentle-float 3s ease-in-out infinite, ghost-hover 1.2s ease-in-out infinite alternate;
     animation-delay: 0s, 0s;
   }
   
-  /* Theme-specific hover glow effects */
-  .icon-container:hover, /* Default theme is peach */
-  .icon-container.theme-peach:hover {
-    filter: drop-shadow(0 0 18px rgba(252, 231, 243, 0.45))
-      drop-shadow(0 0 30px rgba(255, 184, 208, 0.3));
-  }
-  
-  .icon-container.theme-mint:hover {
-    filter: drop-shadow(0 0 18px rgba(110, 231, 183, 0.45))
-      drop-shadow(0 0 30px rgba(52, 211, 153, 0.3));
-  }
-  
-  .icon-container.theme-bubblegum:hover {
-    filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45))
-      drop-shadow(0 0 30px rgba(244, 114, 182, 0.3));
-  }
-  
-  .icon-container.theme-rainbow:hover {
-    animation: rainbow-hover-glow 6s ease-in-out infinite !important;
-  }
-  
-  @keyframes rainbow-hover-glow {
-    0% { filter: drop-shadow(0 0 15px rgba(255, 102, 204, 0.3)) drop-shadow(0 0 25px rgba(255, 153, 204, 0.2)); }
-    25% { filter: drop-shadow(0 0 15px rgba(153, 102, 255, 0.3)) drop-shadow(0 0 25px rgba(204, 153, 255, 0.2)); }
-    50% { filter: drop-shadow(0 0 15px rgba(102, 153, 255, 0.3)) drop-shadow(0 0 25px rgba(153, 204, 255, 0.2)); }
-    75% { filter: drop-shadow(0 0 15px rgba(153, 204, 255, 0.3)) drop-shadow(0 0 25px rgba(153, 255, 204, 0.2)); }
-    100% { filter: drop-shadow(0 0 15px rgba(255, 102, 204, 0.3)) drop-shadow(0 0 25px rgba(255, 153, 204, 0.2)); }
-  }
-  
-  /* Recording state - base styles shared across themes */
+  /* Recording state - both animation and direct filter for reliability */
   .recording {
+    animation: recording-glow 1.5s infinite !important;
     transform: scale(1.03);
-    animation-delay: 0s, 0s;
-    will-change: filter, transform; /* GPU hint for smooth filter animations */
-    animation: gentle-float 3s ease-in-out infinite !important; /* Always keep gentle floating */
-  }
-  
-  /* Theme-specific recording glow animations - stronger pulsing effect */
-  .recording.theme-peach {
-    animation: recording-glow-peach 2s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
-  }
-  
-  .recording.theme-mint {
-    animation: recording-glow-mint 2s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
-  }
-  
-  .recording.theme-bubblegum {
-    animation: recording-glow-bubblegum 2s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
-  }
-  
-  .recording.theme-rainbow {
-    /* Rainbow uses different animation with actual color cycling */
-    animation: rainbow-color-cycle 5s linear infinite, recording-glow-pulse 2s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
+    animation-delay: 0s;
   }
   
   /* Wobble animations */
@@ -491,46 +311,10 @@
     animation: ghost-wobble-right 0.6s ease-in-out forwards !important;
   }
   
-  /* Eyes - now transition handles both blink and movement */
-  .icon-eyes {
-    transition: transform 0.08s ease-out !important; /* For blinking */
-    will-change: transform; /* GPU acceleration hint */
-    transform: translateZ(0); /* Force GPU rendering */
-  }
-  
-  /* Eyes closed state is handled via inline style for better coordination with movement */
+  /* Eyes closed state - transform-based with natural feel */
   .eyes-closed {
+    transform: scaleY(0.05) !important; /* Not too extreme closure */
     transition: transform 0.08s ease-out !important; /* Smoother, more natural close */
-  }
-  
-  /* Special animation (easter egg) */
-  .do-special-animation {
-    animation: do-spin 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
-  }
-  
-  /* Theme-specific special animation glow */
-  .do-special-animation.theme-peach {
-    filter: drop-shadow(0 0 20px rgba(255, 184, 208, 0.7)) !important;
-  }
-  
-  .do-special-animation.theme-mint {
-    filter: drop-shadow(0 0 20px rgba(52, 211, 153, 0.7)) !important;
-  }
-  
-  .do-special-animation.theme-bubblegum {
-    filter: drop-shadow(0 0 20px rgba(244, 114, 182, 0.7)) !important;
-  }
-  
-  .do-special-animation.theme-rainbow {
-    animation: rainbow-special-glow 5s ease-in-out infinite !important;
-  }
-  
-  @keyframes rainbow-special-glow {
-    0% { filter: drop-shadow(0 0 20px rgba(255, 102, 204, 0.6)) !important; }
-    25% { filter: drop-shadow(0 0 20px rgba(153, 102, 255, 0.6)) !important; }
-    50% { filter: drop-shadow(0 0 20px rgba(102, 153, 255, 0.6)) !important; }
-    75% { filter: drop-shadow(0 0 20px rgba(102, 204, 255, 0.6)) !important; }
-    100% { filter: drop-shadow(0 0 20px rgba(255, 102, 204, 0.6)) !important; }
   }
   
   /* Rainbow animation for ghost svg */
@@ -565,81 +349,19 @@
   }
   
   /* Vibrant recording glow animation */
-  /* Each theme has its own recording glow animation class */
-  @keyframes recording-glow-peach {
-    /* Extra saturated sunrise glow with THREE VISIBLY DISTINCT COLORS */
-    0%, 5%, 95%, 100% {
-      filter: drop-shadow(0 0 15px rgba(255, 80, 150, 1.0)) /* Bright hot pink - most visible */
-        drop-shadow(0 0 35px rgba(255, 150, 100, 0.9)) /* Orange accent - second layer */
-        drop-shadow(0 0 55px rgba(255, 240, 200, 0.8)); /* Pale yellow glow - outer layer */
+  @keyframes recording-glow {
+    0% {
+      filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5))
+        drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
     }
     50% {
-      filter: drop-shadow(0 0 25px rgba(255, 80, 150, 1.0)) /* Bright hot pink intensified */
-        drop-shadow(0 0 60px rgba(255, 150, 100, 0.95)) /* Orange accent expanded */
-        drop-shadow(0 0 90px rgba(255, 240, 200, 0.9)); /* Pale yellow expanded */
+      filter: drop-shadow(0 0 25px rgba(255, 100, 243, 0.8))
+        drop-shadow(0 0 35px rgba(255, 120, 170, 0.5))
+        drop-shadow(0 0 40px rgba(249, 168, 212, 0.4));
     }
-  }
-  
-  @keyframes recording-glow-mint {
-    /* Fresh mint with THREE VISIBLY DISTINCT COLORS */
-    0%, 5%, 95%, 100% {
-      filter: drop-shadow(0 0 15px rgba(0, 220, 150, 1.0)) /* Bright teal/mint - most visible */
-        drop-shadow(0 0 35px rgba(100, 255, 210, 0.9)) /* Lighter mint green - second layer */
-        drop-shadow(0 0 55px rgba(160, 255, 230, 0.8)); /* Very pale mint - outer layer */
-    }
-    50% {
-      filter: drop-shadow(0 0 25px rgba(0, 220, 150, 1.0)) /* Bright teal/mint intensified */
-        drop-shadow(0 0 60px rgba(100, 255, 210, 0.95)) /* Lighter mint expanded */
-        drop-shadow(0 0 90px rgba(160, 255, 230, 0.9)); /* Pale mint expanded */
-    }
-  }
-  
-  @keyframes recording-glow-bubblegum {
-    /* New purple-blue with THREE VISIBLY DISTINCT COLORS */
-    0%, 5%, 95%, 100% {
-      filter: drop-shadow(0 0 15px rgba(140, 80, 255, 1.0)) /* Rich purple - most visible */
-        drop-shadow(0 0 35px rgba(180, 120, 255, 0.9)) /* Medium purple - second layer */
-        drop-shadow(0 0 55px rgba(210, 180, 255, 0.8)); /* Pale lilac - outer layer */
-    }
-    50% {
-      filter: drop-shadow(0 0 25px rgba(140, 80, 255, 1.0)) /* Rich purple intensified */
-        drop-shadow(0 0 60px rgba(180, 120, 255, 0.95)) /* Medium purple expanded */
-        drop-shadow(0 0 90px rgba(210, 180, 255, 0.9)); /* Pale lilac expanded */
-    }
-  }
-  
-  /* New animation that ACTUALLY cycles through rainbow colors */
-  @keyframes rainbow-color-cycle {
-    0%, 100% {
-      filter: drop-shadow(0 0 20px rgba(255, 50, 150, 1.0)); /* Pink/magenta */
-    }
-    16.6% {
-      filter: drop-shadow(0 0 20px rgba(255, 90, 90, 1.0)); /* Red */
-    }
-    33.3% {
-      filter: drop-shadow(0 0 20px rgba(255, 180, 80, 1.0)); /* Orange */
-    }
-    50% {
-      filter: drop-shadow(0 0 20px rgba(255, 230, 100, 1.0)); /* Yellow */
-    }
-    66.6% {
-      filter: drop-shadow(0 0 20px rgba(80, 220, 120, 1.0)); /* Green */
-    }
-    83.3% {
-      filter: drop-shadow(0 0 20px rgba(80, 160, 255, 1.0)); /* Blue */
-    }
-  }
-  
-  /* Separate pulsing animation for rainbow theme */
-  @keyframes recording-glow-pulse {
-    0%, 5%, 95%, 100% {
-      filter: drop-shadow(0 0 25px currentColor)
-             drop-shadow(0 0 40px currentColor);
-    }
-    50% {
-      filter: drop-shadow(0 0 35px currentColor)
-             drop-shadow(0 0 60px currentColor)
-             drop-shadow(0 0 90px currentColor);
+    100% {
+      filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5))
+        drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
     }
   }
   
@@ -669,14 +391,6 @@
     25% { filter: drop-shadow(0 0 6px rgba(255, 141, 60, 0.8)) drop-shadow(0 0 10px rgba(255, 249, 73, 0.7)); }
     50% { filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 9px rgba(53, 222, 255, 0.7)); }
     75% { filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.8)) drop-shadow(0 0 9px rgba(255, 61, 127, 0.6)); }
-  }
-  
-  @keyframes do-spin {
-    0% { transform: rotate(0deg) scale(1); }
-    25% { transform: rotate(90deg) scale(1.05); }
-    50% { transform: rotate(180deg) scale(1.08); }
-    75% { transform: rotate(270deg) scale(1.05); }
-    100% { transform: rotate(360deg) scale(1); }
   }
   
   /* Media queries for larger screens */

@@ -403,7 +403,7 @@
 
 	// Extension modal template (Keep as is)
 	const extensionModalTemplate = `
-	<dialog id="extension_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden\!important;" role="dialog" aria-labelledby="extension_modal_title" aria-modal="true">
+	<dialog id="extension_modal" class="modal modal-bottom sm:modal-middle overflow-hidden fixed z-50" style="overflow-y: hidden!important;" role="dialog" aria-labelledby="extension_modal_title" aria-modal="true">
 		<div class="modal-box bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl border border-pink-200 rounded-2xl overflow-y-auto max-h-[80vh]">
 			<form method="dialog">
 				<button
@@ -414,18 +414,17 @@
 
 			<div class="animate-fadeUp space-y-4">
 				<div class="flex items-center gap-3 mb-1">
-					<div class="w-9 h-9 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
-						<div class="relative w-7 h-7">
-							<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
-							<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
-							<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
-						</div>
+					<div class="w-9 h-9 bg-gradient-to-br from-white to-purple-50 rounded-full flex items-center justify-center shadow-sm border border-purple-200/60">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-purple-600">
+							<path d="M6 2l.01 6L10 12l-4 4 .01 6H20V2H6zm7 11a1 1 0 110-2 1 1 0 010 2zm-1-9a1 1 0 000 2h5a1 1 0 100-2h-5z" />
+						</svg>
 					</div>
 					<h3 id="extension_modal_title" class="font-black text-xl text-gray-800 tracking-tight">Chrome Extension</h3>
 				</div>
+
 				<div class="bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 rounded-lg border border-pink-200/60 shadow-sm">
 					<p class="text-sm leading-relaxed text-gray-700">
-						Use TalkType everywhere on the web\! Our Chrome extension lets you transcribe directly into any text field.
+						Use TalkType everywhere on the web! Our Chrome extension lets you transcribe directly into any text field.
 						Perfect for emails, social media, messaging apps, or anywhere else you need to type.
 					</p>
 				</div>
@@ -461,6 +460,7 @@
 		</div>
 		<div class="modal-backdrop bg-black/40"></div>
 	</dialog>`;
+
 	// Shared modal opening logic (Keep as is)
 	function openModalSharedLogic(modalId) {
 		debug(`Attempting to open modal: ${modalId}`);
