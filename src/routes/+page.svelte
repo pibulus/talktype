@@ -50,8 +50,9 @@
 	let audioToTextComponent;
 	let showIntroModal = false;
 
-	// Brian Eno-inspired ambient blinking system with proper state tracking
-	let blinkTimeouts = [];
+	// Brian Eno-inspired ambient blinking system with proper state tracking - SIMPLIFIED
+	let blinkTimeout = null; // Single timeout for blink management
+	let ambientBlinkTimeout = null; // Separate timeout for ambient scheduling
 	let isRecording = false;
 	let eyesElement = null;
 	let iconBgElement = null; // Reference to the background gradient
@@ -74,100 +75,37 @@
 		return null;
 	}
 
-	// Single blink using CSS classes
-	function performSingleBlink() {
+	// Single blink using CSS classes - simplified and faster (from best practices)
+	function blink() {
 		const eyes = getEyesElement();
 		if (!eyes) return;
 
 		debug('Performing single blink');
 
-		// Add class then remove it after animation completes
+		// Clear any existing blink animation timeout first
+		if (blinkTimeout) {
+			clearTimeout(blinkTimeout);
+		}
+
+		// Apply blink animation
 		eyes.classList.add('blink-once');
 
-		const timeout = setTimeout(() => {
-			eyes.classList.remove('blink-once');
-		}, 400);
-
-		blinkTimeouts.push(timeout);
+		// Remove class after animation completes (faster animation)
+		blinkTimeout = setTimeout(() => {
+			if (eyes) { // Check if eyes still exist
+				eyes.classList.remove('blink-once');
+			}
+			blinkTimeout = null; // Clear the timeout reference
+		}, 180); // Match CSS animation duration
 	}
 
-	// Double blink using CSS classes and timeouts
-	function performDoubleBlink() {
-		const eyes = getEyesElement();
-		if (!eyes) return;
-
-		debug('Performing double blink');
-
-		// First blink
-		eyes.classList.add('blink-once');
-
-		const timeout1 = setTimeout(() => {
-			eyes.classList.remove('blink-once');
-
-			// Short pause between blinks
-			const timeout2 = setTimeout(() => {
-				// Second blink
-				eyes.classList.add('blink-once');
-
-				const timeout3 = setTimeout(() => {
-					eyes.classList.remove('blink-once');
-				}, 300);
-
-				blinkTimeouts.push(timeout3);
-			}, 180);
-
-			blinkTimeouts.push(timeout2);
-		}, 300);
-
-		blinkTimeouts.push(timeout1);
+	// For a double blink, use sequential timeouts (from best practices)
+	function doubleClick() {
+		blink(); // First blink
+		setTimeout(() => blink(), 200); // Second blink after a short pause
 	}
 
-	// Triple blink pattern
-	function performTripleBlink() {
-		const eyes = getEyesElement();
-		if (!eyes) return;
-
-		debug('Performing triple blink');
-
-		// First blink
-		eyes.classList.add('blink-once');
-
-		const timeout1 = setTimeout(() => {
-			eyes.classList.remove('blink-once');
-
-			// Short pause between blinks
-			const timeout2 = setTimeout(() => {
-				// Second blink
-				eyes.classList.add('blink-once');
-
-				const timeout3 = setTimeout(() => {
-					eyes.classList.remove('blink-once');
-
-					// Another short pause
-					const timeout4 = setTimeout(() => {
-						// Third blink
-						eyes.classList.add('blink-once');
-
-						const timeout5 = setTimeout(() => {
-							eyes.classList.remove('blink-once');
-						}, 250);
-
-						blinkTimeouts.push(timeout5);
-					}, 150);
-
-					blinkTimeouts.push(timeout4);
-				}, 250);
-
-				blinkTimeouts.push(timeout3);
-			}, 150);
-
-			blinkTimeouts.push(timeout2);
-		}, 250);
-
-		blinkTimeouts.push(timeout1);
-	}
-
-	// Generative ambient blinking system - Brian Eno style
+	// Generative ambient blinking system - Brian Eno style - SIMPLIFIED
 	function startAmbientBlinking() {
 		debug('Starting ambient blinking system');
 
@@ -184,8 +122,10 @@
 			return;
 		}
 
-		// Clear any existing timeouts to avoid conflicts
-		clearAllBlinkTimeouts();
+		// Clear any existing ambient schedule timeout
+		clearAmbientBlinkTimeout();
+		// Also clear any active blink animation timeout
+		clearBlinkTimeout();
 
 		// Don't run ambient blinks if recording
 		if (isRecording) {
@@ -193,71 +133,67 @@
 			return;
 		}
 
-		// Parameters for generative system - Brian Eno style (more frequent now)
-		const minGap = 4000; // Minimum time between blinks (4s - was 7s)
-		const maxGap = 9000; // Maximum time between blinks (9s - was 16s)
+		// Parameters for generative system - Brian Eno style (using best practice timings)
+		const minGap = 4000; // Minimum time between blinks (4s)
+		const maxGap = 9000; // Maximum time between blinks (9s)
 
-		// Blink type probabilities
-		const blinkTypes = [
-			{ type: 'single', probability: 0.6 }, // 60%
-			{ type: 'double', probability: 0.3 }, // 30%
-			{ type: 'triple', probability: 0.1 } // 10%
-		];
+		// Blink type probabilities (simplified)
+		const doubleBlinkProbability = 0.25; // 25% chance of double blink
 
 		// Schedule the next blink recursively
 		function scheduleNextBlink() {
-			// Random time interval with Brian Eno-like indeterminacy
+			// Random time interval
 			const nextInterval = Math.floor(minGap + Math.random() * (maxGap - minGap));
 
-			debug(`Next blink in ${nextInterval}ms`);
+			debug(`Next ambient blink in ${nextInterval}ms`);
 
-			const timeout = setTimeout(() => {
+			ambientBlinkTimeout = setTimeout(() => {
 				// Exit if we've switched to recording state
 				if (isRecording) {
-					debug('Recording active, skipping scheduled blink');
+					debug('Recording active, skipping scheduled ambient blink');
 					return;
 				}
 
-				// Choose blink type based on probability distribution
+				// Choose blink type based on probability
 				const rand = Math.random();
-				let cumulativeProbability = 0;
-				let selectedType = 'single'; // Default
-
-				for (const blink of blinkTypes) {
-					cumulativeProbability += blink.probability;
-					if (rand <= cumulativeProbability) {
-						selectedType = blink.type;
-						break;
-					}
-				}
-
-				debug(`Selected ${selectedType} blink`);
-
-				// Execute the selected blink pattern
-				if (selectedType === 'single') {
-					performSingleBlink();
-				} else if (selectedType === 'double') {
-					performDoubleBlink();
+				if (rand < doubleBlinkProbability) {
+					debug('Selected double blink (ambient)');
+					doubleClick();
 				} else {
-					performTripleBlink();
+					debug('Selected single blink (ambient)');
+					blink();
 				}
 
 				// Schedule the next blink
 				scheduleNextBlink();
 			}, nextInterval);
-
-			blinkTimeouts.push(timeout);
 		}
 
 		// Start with a slight delay
-		setTimeout(scheduleNextBlink, 1000);
+		setTimeout(scheduleNextBlink, 1500); // Slightly longer initial delay
 	}
 
-	// Helper function to clear all scheduled blinks
-	function clearAllBlinkTimeouts() {
-		debug(`Clearing ${blinkTimeouts.length} blink timeouts`);
-		blinkTimeouts.forEach((timeout) => clearTimeout(timeout));
-		blinkTimeouts = [];
+	// Helper function to clear the active blink animation timeout
+	function clearBlinkTimeout() {
+		if (blinkTimeout) {
+			clearTimeout(blinkTimeout);
+			blinkTimeout = null;
+			// Ensure class is removed if timeout is cleared mid-animation
+			const eyes = getEyesElement();
+			if (eyes) {
+				eyes.classList.remove('blink-once');
+			}
+			debug('Cleared active blink timeout');
+		}
+	}
+
+	// Helper function to clear the ambient scheduling timeout
+	function clearAmbientBlinkTimeout() {
+		if (ambientBlinkTimeout) {
+			clearTimeout(ambientBlinkTimeout);
+			ambientBlinkTimeout = null;
+			debug('Cleared ambient blink schedule timeout');
+		}
 	}
 
 	// Greeting blink on page load
@@ -284,14 +220,16 @@
 
 				// Remove class after animation completes
 				setTimeout(() => {
-					iconContainer.classList.remove(wobbleClass);
+					if (iconContainer) { // Check if element still exists
+						iconContainer.classList.remove(wobbleClass);
+					}
 				}, 1000);
 			}, 1000); // Start the wobble after the text starts animating
 		}
 
 		// Do a friendly double-blink after animations complete
 		setTimeout(() => {
-			performDoubleBlink();
+			doubleClick(); // Use the new doubleClick function
 
 			// Start ambient blinking system after greeting
 			setTimeout(startAmbientBlinking, 1000);
@@ -433,10 +371,11 @@
 					if (iconContainer) {
 						// Start recording immediately with minimal animation
 						if (eyesElement) {
-							clearAllBlinkTimeouts(); // Clear any existing animations
+							clearAmbientBlinkTimeout(); // Stop ambient blinking
+							clearBlinkTimeout(); // Stop any active blink
 
 							// Quick single blink and start recording immediately
-							eyesElement.classList.add('blink-once');
+							blink(); // Use the new blink function
 
 							// Start recording immediately
 							audioToTextComponent.startRecording();
@@ -447,10 +386,6 @@
 							// Also update the local recording state variable
 							isRecording = true;
 
-							// Remove blink class after a short delay
-							setTimeout(() => {
-								eyesElement.classList.remove('blink-once');
-							}, 100);
 						} else {
 							// Fallback if eyes element not found
 							audioToTextComponent.startRecording();
@@ -527,7 +462,8 @@
 
 		return () => {
 			debug('Component unmounting, clearing timeouts and event listeners');
-			clearAllBlinkTimeouts();
+			clearBlinkTimeout();
+			clearAmbientBlinkTimeout();
 
 			// Clean up the mouseenter event listener
 			if (ghostIconEventCleanup) {
@@ -593,7 +529,7 @@
 		const eyes = getEyesElement();
 		if (!eyes) {
 			debug('Eyes element not found during click handler');
-			return;
+			// Don't return here, we might still need to stop recording
 		}
 
 		if (!audioToTextComponent) {
@@ -612,8 +548,12 @@
 			// Update recording state
 			isRecording = false;
 
-			// Reset all animation state
-			eyes.style.animation = 'none';
+			// Reset any eye animation state if eyes exist
+			if (eyes) {
+				eyes.style.animation = 'none'; // Remove CSS animations like blink-thinking
+				eyes.classList.remove('blink-once', 'blink-thinking-hard'); // Remove animation classes
+			}
+			clearBlinkTimeout(); // Clear any programmatic blink
 
 			// Remove the recording class
 			currentIconContainer.classList.remove('recording');
@@ -632,13 +572,15 @@
 			console.log('Current classes:', currentIconContainer.className);
 			setTimeout(() => {
 				debug(`Removing class: ${wobbleClass}`);
-				currentIconContainer.classList.remove(wobbleClass);
+				if (currentIconContainer) { // Check element exists
+					currentIconContainer.classList.remove(wobbleClass);
+				}
 			}, 600);
 
 			// Blink once to acknowledge stop
 			setTimeout(() => {
 				debug('Performing stop acknowledgment blink');
-				performSingleBlink();
+				blink(); // Use new blink function
 
 				// Resume ambient blinking after a pause
 				setTimeout(() => {
@@ -660,10 +602,14 @@
 
 			// Update recording state and stop ambient system
 			isRecording = true;
-			clearAllBlinkTimeouts();
+			clearAmbientBlinkTimeout();
+			clearBlinkTimeout();
 
-			// Reset any existing animations
-			eyes.style.animation = 'none';
+			// Reset any existing eye animations if eyes exist
+			if (eyes) {
+				eyes.style.animation = 'none';
+				eyes.classList.remove('blink-once', 'blink-thinking-hard');
+			}
 
 			// Add wobble animation when starting from ghost click
 			debug('Applying wobble animation to ghost icon on start');
@@ -679,7 +625,9 @@
 			console.log('Current classes:', currentIconContainer.className);
 			setTimeout(() => {
 				debug(`Removing class: ${wobbleClass}`);
-				currentIconContainer.classList.remove(wobbleClass);
+				if (currentIconContainer) { // Check element exists
+					currentIconContainer.classList.remove(wobbleClass);
+				}
 			}, 600);
 
 			// Give a tiny delay to ensure animation reset
@@ -687,32 +635,32 @@
 				// Random chance for different start behaviors
 				const startBehavior = Math.random();
 
-				if (startBehavior < 0.7) {
-					// 70% chance: Standard quick blink
+				if (startBehavior < 0.8) {
+					// 80% chance: Standard quick blink
 					debug('Performing standard start blink');
-					performSingleBlink();
-				} else if (startBehavior < 0.9) {
+					blink();
+				} else {
 					// 20% chance: Double blink (excited)
 					debug('Performing excited double start blink');
-					performDoubleBlink();
-				} else {
-					// 10% chance: Triple blink (super attentive)
-					debug('Performing attentive triple start blink');
-					performTripleBlink();
+					doubleClick();
 				}
+				// Removed triple blink for simplicity
 
 				// Add recording class after the blink animation completes
+				// Use a slightly longer delay to account for double blink possibility
 				setTimeout(() => {
 					debug('Adding recording class');
-					currentIconContainer.classList.add('recording');
-				}, 600);
+					if (currentIconContainer) { // Check element exists
+						currentIconContainer.classList.add('recording');
+					}
+				}, 400); // Adjusted delay
 
 				// Start recording
 				try {
 					audioToTextComponent.startRecording();
 					debug('Called startRecording() on component');
 				} catch (err) {
-					debug(`Error stopping recording: ${err.message}`);
+					debug(`Error starting recording: ${err.message}`);
 				}
 			}, 50);
 		}
@@ -1061,12 +1009,12 @@
 			!showPwaInstallPrompt // Don't show if already showing
 		) {
 			console.log('⭐ Conditions met for showing PWA install prompt.');
-			
+
 			// Lazy load the PWA install prompt component if needed
 			if (!PwaInstallPrompt && !loadingPwaPrompt) {
 				loadingPwaPrompt = true;
 				console.log('📱 Lazy loading PWA install prompt component...');
-				
+
 				try {
 					// Import the component dynamically
 					const module = await import('$lib/components/pwa/PwaInstallPrompt.svelte');
@@ -1077,10 +1025,10 @@
 					loadingPwaPrompt = false;
 					return;
 				}
-				
+
 				loadingPwaPrompt = false;
 			}
-			
+
 			// Show the prompt
 			showPwaInstallPrompt = true;
 		} else {
@@ -1143,6 +1091,7 @@
 						aria-hidden="true"
 					/>
 				{:else}
+					<!-- Fallback for SSR or if browser check fails -->
 					<img bind:this={iconBgElement} src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
 				{/if}
 				<!-- Outline without eyes (middle layer) -->
@@ -1467,52 +1416,37 @@
 
 	.icon-eyes {
 		z-index: 3; /* Top layer */
-		animation: blink 6s infinite; /* More frequent ambient blinking (was 10s) */
+		/* Removed ambient blink animation - now controlled by JS */
 		transform-origin: center center; /* Squinch exactly in the middle */
-	}
-
-	/* Simple quick snappy ambient blinking animation */
-	@keyframes blink {
-		0%,
-		96.5%,
-		100% {
-			transform: scaleY(1);
-		}
-		97.5% {
-			transform: scaleY(0); /* Quick blink - just closed and open */
-		}
-		98.5% {
-			transform: scaleY(1);
-		}
 	}
 
 	/* "Thinking" animation when recording is active */
 	.icon-container.recording .icon-eyes {
-		animation: blink-thinking 4s infinite; /* Slightly slower - more deliberate */
+		/* Use a dedicated thinking animation or rely on programmatic blinks */
+		/* animation: blink-thinking 4s infinite; */ /* Optional: Keep a subtle CSS thinking animation */
 		transform-origin: center center; /* Squinch exactly in the middle */
 	}
 
-	/* Quick snappy blink animation for programmatic use */
+	/* Quick blink animation for programmatic use - faster (from best practices) */
 	.icon-eyes.blink-once {
-		animation: blink-once 0.2s forwards !important;
+		animation: blink-once 0.18s forwards !important;
 		transform-origin: center center;
 	}
 
 	@keyframes blink-once {
-		0%,
-		30% {
+		0%, 20% {
 			transform: scaleY(1);
 		}
 		50% {
-			transform: scaleY(0);
-		} /* Closed eyes */
-		65%,
-		100% {
+			transform: scaleY(0.05); /* Sharper close */
+		}
+		80%, 100% {
 			transform: scaleY(1);
-		} /* Quick snappy open */
+		}
 	}
 
 	/* Special animation for when the ghost is thinking hard (transcribing) */
+	/* This can still be triggered programmatically if needed */
 	.icon-eyes.blink-thinking-hard {
 		animation: blink-thinking-hard 1.5s infinite !important;
 		transform-origin: center center;
@@ -1535,48 +1469,7 @@
 		}
 	}
 
-	@keyframes blink-thinking {
-		/* First quick blink */
-		0%,
-		23%,
-		100% {
-			transform: scaleY(1);
-		}
-		3% {
-			transform: scaleY(0); /* Fast blink */
-		}
-		4% {
-			transform: scaleY(1); /* Very snappy */
-		}
-
-		/* Second blink - thinking pattern */
-		40% {
-			transform: scaleY(1);
-		}
-		42% {
-			transform: scaleY(0); /* First close */
-		}
-		43% {
-			transform: scaleY(0.2); /* Short peek */
-		}
-		46% {
-			transform: scaleY(0); /* Second close (squinty thinking) */
-		}
-		48% {
-			transform: scaleY(1); /* Open again */
-		}
-
-		/* Third quick blink */
-		80% {
-			transform: scaleY(1);
-		}
-		82% {
-			transform: scaleY(0); /* Fast blink */
-		}
-		83% {
-			transform: scaleY(1); /* Snappy */
-		}
-	}
+	/* Removed old blink-thinking keyframes as it's complex and replaced by programmatic */
 
 	.icon-container:hover,
 	.icon-container:active {
@@ -1950,29 +1843,38 @@
 		}
 	}
 
-	/* Rainbow animation for ghost svg with sparkle effect */
+	/* Rainbow animation for ghost svg with sparkle effect (from best practices) */
 	.rainbow-animated {
-		animation: hueShift 5s ease-in-out infinite;
-		filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
-		transform-origin: center center;
+		animation: rainbowFlow 7s linear infinite;
+		filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
+		transform-origin: center center; /* Added transform-origin */
 	}
 
-	/* Special rainbow sparkle effect when hovered */
+	/* Special rainbow sparkle effect when hovered (from best practices) */
 	.icon-container:hover .rainbow-animated {
-		animation: hueShift 4s ease-in-out infinite, sparkle 3s ease-in-out infinite;
-		filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.7));
+		animation: rainbowFlow 4.5s linear infinite, sparkle 2s ease-in-out infinite;
+		filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
 	}
 
+	/* New rainbowFlow keyframes using filter (from best practices) */
+	@keyframes rainbowFlow {
+		0% { filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); }
+		100% { filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); }
+	}
+
+	/* New sparkle keyframes (from best practices) */
 	@keyframes sparkle {
-		0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 8px rgba(255, 61, 127, 0.5)); transform: scale(1.01); }
-		25% { filter: drop-shadow(0 0 7px rgba(255, 141, 60, 0.7)) drop-shadow(0 0 10px rgba(255, 249, 73, 0.6)); transform: scale(1.015); }
-		50% { filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 12px rgba(53, 222, 255, 0.6)); transform: scale(1.02); }
-		75% { filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.7)) drop-shadow(0 0 10px rgba(255, 61, 127, 0.6)); transform: scale(1.015); }
+		0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 8px rgba(255, 61, 127, 0.6)); }
+		25% { filter: drop-shadow(0 0 6px rgba(255, 141, 60, 0.8)) drop-shadow(0 0 10px rgba(255, 249, 73, 0.7)); }
+		50% { filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 9px rgba(53, 222, 255, 0.7)); }
+		75% { filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.8)) drop-shadow(0 0 9px rgba(255, 61, 127, 0.6)); }
 	}
 
+	/* Removed old hueShift keyframes */
+	
 	/* Theme-based visualizer styling using data-theme attribute */
 	:global([data-theme="rainbow"] .history-bar) {
-		animation: hueShift 7s ease-in-out infinite, rainbowBars 3s ease-in-out infinite;
+		animation: rainbowFlow 7s linear infinite, rainbowBars 3s ease-in-out infinite;
 		background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
 		background-size: 100% 600%;
 		box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 61, 127, 0.1);
@@ -1983,29 +1885,6 @@
 		0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 61, 127, 0.3)); }
 		33% { filter: drop-shadow(0 0 4px rgba(255, 249, 73, 0.4)); }
 		66% { filter: drop-shadow(0 0 4px rgba(53, 222, 255, 0.4)); }
-	}
-
-	@keyframes hueShift {
-		0% {
-			background-position: 0% 0%;
-			filter: saturate(1.3) brightness(1.1);
-		}
-		25% {
-			background-position: 0% 33%;
-			filter: saturate(1.4) brightness(1.15);
-		}
-		50% {
-			background-position: 0% 66%;
-			filter: saturate(1.5) brightness(1.2);
-		}
-		75% {
-			background-position: 0% 100%;
-			filter: saturate(1.4) brightness(1.15);
-		}
-		100% {
-			background-position: 0% 0%;
-			filter: saturate(1.3) brightness(1.1);
-		}
 	}
 
 	/* Media queries for mobile optimization */
