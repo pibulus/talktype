@@ -54,27 +54,20 @@
   
   // Greeting animation
   function greetingAnimation() {
-    // Do a gentle wobble
-    isWobbling = true;
-    
+    // Skip wobble completely on page load, just do a double blink
+    eyesClosed = true;
     setTimeout(() => {
-      isWobbling = false;
-      
-      // Do a double blink
-      eyesClosed = true;
+      eyesClosed = false;
       setTimeout(() => {
-        eyesClosed = false;
+        eyesClosed = true;
         setTimeout(() => {
-          eyesClosed = true;
-          setTimeout(() => {
-            eyesClosed = false;
-            
-            // Start ambient blinking
-            scheduleBlink();
-          }, 150);
-        }, 200);
-      }, 150);
-    }, 1000);
+          eyesClosed = false;
+          
+          // Start ambient blinking
+          scheduleBlink();
+        }, 150);
+      }, 200);
+    }, 150);
   }
   
   // Regular ambient blinking
@@ -140,11 +133,8 @@
   
   // Dispatch toggle recording event when clicked
   function handleClick() {
-    // Do a wobble - randomize direction for visual variety
-    isWobbling = true;
-    setTimeout(() => {
-      isWobbling = false;
-    }, 600);
+    // Don't wobble on click - the reactive block will handle wobbles 
+    // based on state changes - this eliminates double wobbles
     
     // Dispatch event to let page know to toggle recording
     if (typeof document !== 'undefined') {
@@ -153,33 +143,51 @@
     }
   }
   
+  // Track previous state to detect actual changes
+  let wasRecording = false;
+  let wasProcessing = false;
+  
   // Watch for changes in recording/processing state
-  $: if (isRecording || isProcessing) {
-    // Cancel any scheduled blinks when recording/processing starts
-    clearTimeout(blinkTimeoutId);
-    
-    // Add wobble when starting recording
-    if (isRecording && typeof window !== 'undefined') {
-      // Only try to use DOM in browser context
-      isWobbling = true;
+  $: {
+    // Cancel any scheduled blinks during recording/processing
+    if (isRecording || isProcessing) {
+      clearTimeout(blinkTimeoutId);
       
+      // Only wobble when STARTING recording (not just any state update)
+      if (isRecording && !wasRecording && typeof window !== 'undefined') {
+        // Clear any existing wobble timer
+        clearTimeout(wobbleTimeoutId);
+        
+        // Start recording wobble
+        isWobbling = true;
+        wobbleTimeoutId = setTimeout(() => {
+          isWobbling = false;
+        }, 600);
+      }
+    } 
+    // Restart blinking when finished recording/processing
+    else if ((wasRecording || wasProcessing) && !isRecording && !isProcessing) {
+      // Add wobble only when STOPPING recording
+      if (wasRecording && typeof window !== 'undefined') {
+        // Clear any existing wobble timer
+        clearTimeout(wobbleTimeoutId);
+        
+        // Stop recording wobble
+        isWobbling = true;
+        wobbleTimeoutId = setTimeout(() => {
+          isWobbling = false;
+        }, 600);
+      }
+      
+      // Restart blinking after a delay
       setTimeout(() => {
-        isWobbling = false;
-      }, 600);
-    }
-  } else if (!isRecording && !isProcessing) {
-    // Add wobble when stopping recording
-    if (typeof window !== 'undefined') {
-      isWobbling = true;
-      setTimeout(() => {
-        isWobbling = false;
-      }, 600);
+        scheduleBlink();
+      }, 2000);
     }
     
-    // Restart blinking after a delay
-    setTimeout(() => {
-      scheduleBlink();
-    }, 2000);
+    // Update previous state for next comparison
+    wasRecording = isRecording;
+    wasProcessing = isProcessing;
   }
 </script>
 
