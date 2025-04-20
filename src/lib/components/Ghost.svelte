@@ -208,19 +208,12 @@
     // Make sure to reset inactivity timer on interaction
     resetInactivity();
     
-    // ALWAYS force wobble immediately on click
-    // Force reset first to ensure the animation triggers even if already wobbling
-    isWobbling = false;
-    // Force browser reflow to ensure animation triggers even if already wobbling
-    if (typeof document !== 'undefined') {
-      void document.body.offsetHeight;
-    }
-    // Now start wobble
-    isWobbling = true;
+    // ALWAYS wobble immediately on click - super simple approach
     clearTimeout(wobbleTimeoutId);
+    isWobbling = true;
     wobbleTimeoutId = setTimeout(() => {
       isWobbling = false;
-    }, 600);
+    }, 800); // Gentle wobble
     
     // Make the eyes "look at" where they were clicked briefly
     if (!eyesClosed && typeof window !== 'undefined' && ghostElement) {
@@ -337,36 +330,40 @@
       // Reset inactivity on state change
       resetInactivity();
       
-      // Only wobble when STARTING recording (not just any state update)
-      if (isRecording && !wasRecording && typeof window !== 'undefined') {
+      // IMPORTANT: This is the case when recording STARTS
+      if (isRecording && !wasRecording) {
         // Record start time for wobble duration check on stop
         wasRecordingTimestamp = Date.now();
         
-        // Clear any existing wobble timer
+        // SIMPLE WOBBLE LOGIC - THE SAME AS USED IN STOP RECORDING
+        // Clear any existing wobble timer first
         clearTimeout(wobbleTimeoutId);
         
-        // Start recording wobble
+        // Set wobble state
         isWobbling = true;
+        
+        // Schedule wobble end
         wobbleTimeoutId = setTimeout(() => {
           isWobbling = false;
-        }, 600);
+        }, 800); // Longer, gentler wobble
       }
     } 
     // Restart blinking when finished recording/processing
     else if ((wasRecording || wasProcessing) && !isRecording && !isProcessing) {
-      // Only wobble on STOPPING recording IF it's been recording for at least 1 second
-      // This prevents wobbles on quick click-release actions
-      if (wasRecording && typeof window !== 'undefined' && wasRecordingTimestamp && 
+      // This is the case when recording STOPS
+      if (wasRecording && wasRecordingTimestamp && 
           (Date.now() - wasRecordingTimestamp > 1000)) {
         
         // Clear any existing wobble timer
         clearTimeout(wobbleTimeoutId);
         
-        // Stop recording wobble
+        // Set wobble state
         isWobbling = true;
+        
+        // Schedule wobble end
         wobbleTimeoutId = setTimeout(() => {
           isWobbling = false;
-        }, 600);
+        }, 800); // Longer, gentler wobble
       }
       
       // Restart blinking after a delay
@@ -545,13 +542,13 @@
     animation: recording-glow-rainbow 8s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
   }
   
-  /* Wobble animations */
+  /* Wobble animations - simple and sweet */
   .ghost-wobble-left {
-    animation: ghost-wobble-left 0.6s ease-in-out forwards !important;
+    animation: ghost-wobble-left 0.8s ease-in-out forwards !important;
   }
   
   .ghost-wobble-right {
-    animation: ghost-wobble-right 0.6s ease-in-out forwards !important;
+    animation: ghost-wobble-right 0.8s ease-in-out forwards !important;
   }
   
   /* Eyes closed state is now handled via inline style for better coordination with movement */
@@ -740,17 +737,17 @@
   
   @keyframes ghost-wobble-left {
     0% { transform: rotate(0deg) scale(1); }
-    25% { transform: rotate(-5deg) scale(1.02); }
-    50% { transform: rotate(3deg) scale(1.01); }
-    75% { transform: rotate(-2deg) scale(1.01); }
+    25% { transform: rotate(-4deg) scale(1.025); }
+    50% { transform: rotate(2deg) scale(1.01); }
+    75% { transform: rotate(-1deg) scale(1.005); }
     100% { transform: rotate(0deg) scale(1); }
   }
   
   @keyframes ghost-wobble-right {
     0% { transform: rotate(0deg) scale(1); }
-    25% { transform: rotate(5deg) scale(1.02); }
-    50% { transform: rotate(-3deg) scale(1.01); }
-    75% { transform: rotate(2deg) scale(1.01); }
+    25% { transform: rotate(4deg) scale(1.025); }
+    50% { transform: rotate(-2deg) scale(1.01); }
+    75% { transform: rotate(1deg) scale(1.005); }
     100% { transform: rotate(0deg) scale(1); }
   }
   
