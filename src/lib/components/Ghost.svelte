@@ -9,11 +9,13 @@
   // Local state
   let blinkTimeoutId = null;
   let wobbleTimeoutId = null;
+  let specialAnimationTimeoutId = null;
   let eyesClosed = false;
   let isWobbling = false;
   let isRainbow = false;
   let eyePositionX = 0; // For horizontal eye tracking: -1 to 1
   let eyePositionY = 0; // For vertical eye tracking: -1 to 1
+  let doingSpecialAnimation = false; // For rare spin animation (easter egg)
   let currentTheme = 'peach';
   let bgImageSrc = '/talktype-icon-bg-gradient.svg';
   
@@ -48,9 +50,13 @@
       // Start tracking mouse movement for eye position
       document.addEventListener('mousemove', trackMousePosition, { passive: true });
       
+      // Start special animation detection (easter egg)
+      maybeDoSpecialAnimation();
+      
       return () => {
         observer.disconnect();
         document.removeEventListener('mousemove', trackMousePosition);
+        clearTimeout(specialAnimationTimeoutId);
       };
     }
   });
@@ -59,6 +65,7 @@
   onDestroy(() => {
     clearTimeout(blinkTimeoutId);
     clearTimeout(wobbleTimeoutId);
+    clearTimeout(specialAnimationTimeoutId);
   });
   
   // --- Animation Functions ---
@@ -179,6 +186,31 @@
     }
   }
   
+  // Special animations that rarely happen (easter egg)
+  function maybeDoSpecialAnimation() {
+    if (typeof window === 'undefined') return;
+    
+    clearTimeout(specialAnimationTimeoutId);
+    
+    // Very rare animation (5% chance when conditions are right)
+    if (Math.random() < 0.05 && !isRecording && !isProcessing && 
+        !doingSpecialAnimation && !eyesClosed) {
+      
+      doingSpecialAnimation = true;
+      
+      // Do a special animation (full spin)
+      // We'll handle this with CSS animation classes
+      
+      // Return to normal after animation
+      setTimeout(() => {
+        doingSpecialAnimation = false;
+      }, 2000);
+    }
+    
+    // Schedule next check
+    specialAnimationTimeoutId = setTimeout(maybeDoSpecialAnimation, 45000); // Check every 45 seconds
+  }
+  
   // Track mouse movement to move eyes
   function trackMousePosition(event) {
     if (typeof window === 'undefined' || !ghostElement || 
@@ -295,7 +327,7 @@
 
 <button
   bind:this={ghostElement}
-  class="icon-container theme-{currentTheme} {isRecording ? 'recording' : ''} {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''}"
+  class="icon-container theme-{currentTheme} {isRecording ? 'recording' : ''} {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''} {doingSpecialAnimation ? 'do-special-animation' : ''}"
   style={isRecording ? `filter: drop-shadow(0 0 25px ${currentGlowColors.primary}) drop-shadow(0 0 35px ${currentGlowColors.secondary}) drop-shadow(0 0 45px ${currentGlowColors.tertiary}) !important;` : ''}
   on:click={handleClick}
   on:keydown={(e) => {
@@ -469,6 +501,36 @@
     transition: transform 0.08s ease-out !important; /* Smoother, more natural close */
   }
   
+  /* Special animation (easter egg) */
+  .do-special-animation {
+    animation: do-spin 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+  }
+  
+  /* Theme-specific special animation glow */
+  .do-special-animation.theme-peach {
+    filter: drop-shadow(0 0 20px rgba(255, 184, 208, 0.7)) !important;
+  }
+  
+  .do-special-animation.theme-mint {
+    filter: drop-shadow(0 0 20px rgba(52, 211, 153, 0.7)) !important;
+  }
+  
+  .do-special-animation.theme-bubblegum {
+    filter: drop-shadow(0 0 20px rgba(244, 114, 182, 0.7)) !important;
+  }
+  
+  .do-special-animation.theme-rainbow {
+    animation: rainbow-special-glow 5s ease-in-out infinite !important;
+  }
+  
+  @keyframes rainbow-special-glow {
+    0% { filter: drop-shadow(0 0 20px rgba(255, 102, 204, 0.6)) !important; }
+    25% { filter: drop-shadow(0 0 20px rgba(153, 102, 255, 0.6)) !important; }
+    50% { filter: drop-shadow(0 0 20px rgba(102, 153, 255, 0.6)) !important; }
+    75% { filter: drop-shadow(0 0 20px rgba(102, 204, 255, 0.6)) !important; }
+    100% { filter: drop-shadow(0 0 20px rgba(255, 102, 204, 0.6)) !important; }
+  }
+  
   /* Rainbow animation for ghost svg */
   .rainbow-animated {
     animation: rainbowFlow 7s linear infinite;
@@ -616,6 +678,14 @@
     25% { filter: drop-shadow(0 0 6px rgba(255, 141, 60, 0.8)) drop-shadow(0 0 10px rgba(255, 249, 73, 0.7)); }
     50% { filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 9px rgba(53, 222, 255, 0.7)); }
     75% { filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.8)) drop-shadow(0 0 9px rgba(255, 61, 127, 0.6)); }
+  }
+  
+  @keyframes do-spin {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(90deg) scale(1.05); }
+    50% { transform: rotate(180deg) scale(1.08); }
+    75% { transform: rotate(270deg) scale(1.05); }
+    100% { transform: rotate(360deg) scale(1); }
   }
   
   /* Media queries for larger screens */
