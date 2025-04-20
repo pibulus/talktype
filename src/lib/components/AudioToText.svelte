@@ -27,22 +27,15 @@
 	let showPermissionError = false;
 	let permissionErrorTimer;
 
-	// DOM element references
-	let eyesElement;
-	let ghostIconElement;
-	let copyEyesElement;
-	let recordButtonElement;
-	let progressContainerElement;
+	// DOM element references (Removed animation-related ones)
+	let copyButtonRef; // Reference to the copy button
 
-	// These will be set from the parent component
-	export let parentEyesElement = null;
-	export let parentGhostIconElement = null;
+	// These will be set from the parent component (Removed animation-related ones)
 	export let isModelPreloaded = false;
 	export let onPreloadRequest = null;
 
 	// Accessibility state management
 	let screenReaderStatus = ''; // For ARIA announcements
-	let copyButtonRef; // Reference to the copy button
 
 	// Smart tooltip management
 	let showCopyTooltip = false;
@@ -94,30 +87,13 @@
 			   typeof navigator.share === 'function';
 	}
 
-	// IMPORTANT: All ghost animation functions have been completely removed
-	// to prevent conflicts with page-level animation handling.
-	// These are now empty functions that do nothing.
-	
-	function ghostThinkingHard() {
-		// Intentionally empty - no animation manipulation
-		return;
-	}
-
-	function ghostStopThinking() {
-		// Intentionally empty - no animation manipulation
-		return;
-	}
-
-	function ghostReactToTranscript(textLength = 0) {
-		// Intentionally empty - no animation manipulation
-		return;
-	}
+	// IMPORTANT: All ghost animation functions have been completely removed.
 
 	// Export recording state and functions for external components
-	export { 
-		recording, 
-		stopRecording, 
-		startRecording, 
+	export {
+		recording,
+		stopRecording,
+		startRecording,
 		// PWA installation state functions
 		shouldShowPWAPrompt,
 		recordPWAPromptShown,
@@ -190,56 +166,56 @@
 		if (!browser) {
 			return false; // Not in browser, cannot check installation state
 		}
-		
+
 		try {
 			// Check if the app is already installed as a PWA
 			const isInstalled = localStorage.getItem(PWA_INSTALLED_KEY) === 'true';
 			if (isInstalled) {
 				return false; // Don't show prompt if already installed
 			}
-			
+
 			// Get the transcription count
 			const transcriptionCount = getTranscriptionCount();
-			
+
 			// Check if we've shown the prompt before
 			const hasShownPrompt = localStorage.getItem(PWA_PROMPT_SHOWN_KEY) === 'true';
-			
+
 			// Get how many times we've shown the prompt
 			const promptCount = parseInt(localStorage.getItem(PWA_PROMPT_COUNT_KEY) || '0', 10);
-			
+
 			// Get the date when we last showed the prompt
 			const lastPromptDate = localStorage.getItem(PWA_LAST_PROMPT_DATE_KEY);
-			
+
 			// If we've never shown the prompt before, show it after 3 transcriptions
 			if (!hasShownPrompt && transcriptionCount >= 3) {
 				return true;
 			}
-			
+
 			// If we've shown the prompt 1-2 times before, check if enough time has passed
 			// and enough new transcriptions have happened
 			if (hasShownPrompt && promptCount < 3) {
-				const daysSinceLastPrompt = lastPromptDate 
-					? Math.floor((Date.now() - new Date(lastPromptDate).getTime()) / (1000 * 60 * 60 * 24)) 
+				const daysSinceLastPrompt = lastPromptDate
+					? Math.floor((Date.now() - new Date(lastPromptDate).getTime()) / (1000 * 60 * 60 * 24))
 					: 0;
-					
+
 				// Show again after at least 3 days and 5 more transcriptions
 				if (daysSinceLastPrompt >= 3 && transcriptionCount >= 5) {
 					return true;
 				}
 			}
-			
+
 			// If we've shown the prompt 3 or more times, be more conservative
 			if (promptCount >= 3) {
-				const daysSinceLastPrompt = lastPromptDate 
-					? Math.floor((Date.now() - new Date(lastPromptDate).getTime()) / (1000 * 60 * 60 * 24)) 
+				const daysSinceLastPrompt = lastPromptDate
+					? Math.floor((Date.now() - new Date(lastPromptDate).getTime()) / (1000 * 60 * 60 * 24))
 					: 0;
-					
+
 				// Show again after at least 14 days (2 weeks) and 10 more transcriptions
 				if (daysSinceLastPrompt >= 14 && transcriptionCount >= 10) {
 					return true;
 				}
 			}
-			
+
 			return false;
 		} catch (error) {
 			console.error('Error checking if PWA prompt should be shown:', error);
@@ -255,18 +231,18 @@
 		if (!browser) {
 			return;
 		}
-		
+
 		try {
 			// Mark that we've shown the prompt
 			localStorage.setItem(PWA_PROMPT_SHOWN_KEY, 'true');
-			
+
 			// Get and increment the prompt count
 			const promptCount = parseInt(localStorage.getItem(PWA_PROMPT_COUNT_KEY) || '0', 10);
 			localStorage.setItem(PWA_PROMPT_COUNT_KEY, (promptCount + 1).toString());
-			
+
 			// Record the current date
 			localStorage.setItem(PWA_LAST_PROMPT_DATE_KEY, new Date().toISOString());
-			
+
 			console.log(`📱 PWA installation prompt shown (count: ${promptCount + 1})`);
 		} catch (error) {
 			console.error('Error recording PWA prompt shown:', error);
@@ -281,7 +257,7 @@
 		if (!browser) {
 			return;
 		}
-		
+
 		try {
 			localStorage.setItem(PWA_INSTALLED_KEY, 'true');
 			console.log('📱 PWA marked as installed');
@@ -298,7 +274,7 @@
 		if (!browser) {
 			return false;
 		}
-		
+
 		try {
 			// Different ways to detect if running as PWA
 			const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -306,12 +282,12 @@
 			const isMinimalUi = window.matchMedia('(display-mode: minimal-ui)').matches;
 			const isInPWA = navigator.standalone || // iOS
 				isStandalone || isFullscreen || isMinimalUi;
-				
+
 			// If we detect it's a PWA, also mark it in localStorage
 			if (isInPWA) {
 				markPWAAsInstalled();
 			}
-			
+
 			return isInPWA;
 		} catch (error) {
 			console.error('Error checking if running as PWA:', error);
@@ -331,6 +307,7 @@
 		errorMessage = '';
 		// Don't clear transcript here - we do it in toggleRecording for better control of CTA rotation
 		recording = true;
+		dispatch('recordingstart'); // Dispatch recording start event
 		audioChunks = [];
 		clipboardSuccess = false;
 		transcriptionProgress = 0;
@@ -347,24 +324,9 @@
 			};
 
 			mediaRecorder.onstop = async () => {
-				// ONLY add wobble animation to ghost when recording stops - NO EYE ANIMATIONS
-				const ghostIcon = ghostIconElement || parentGhostIconElement;
-				
-				// DO NOT manipulate eye classes at all - leave it to page-level control
-				
-				if (ghostIcon) {
-					// Force a reflow to ensure clean animation state
-					void ghostIcon.offsetWidth;
-					
-					// Add slight randomness to the wobble
-					const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
-					ghostIcon.classList.add(wobbleClass);
-					setTimeout(() => {
-						ghostIcon.classList.remove(wobbleClass);
-					}, 600);
-				}
-
+				dispatch('recordingstop'); // Dispatch recording stop event (from onstop)
 				transcribing = true;
+				dispatch('processingstart'); // Dispatch processing start event
 				const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
 
 				// Reset progress
@@ -389,10 +351,9 @@
 
 				animate();
 
+				let transcriptionError = null; // To store potential error for dispatching
 				try {
 					console.log('🤖 Transcription started');
-					// Make the ghost look like it's thinking hard
-					ghostThinkingHard();
 					transcript = await geminiService.transcribeAudio(audioBlob);
 
 					// Complete the progress bar smoothly
@@ -407,7 +368,7 @@
 								// We've reached the end
 								transcriptionProgress = 100;
 
-								// Add a slight delay for the completion glow effect
+								// Add a slight delay for the completion effect (if any visual feedback is desired outside this component)
 								setTimeout(handleCompletionEffects, 200);
 							} else {
 								// Continue the animation
@@ -418,30 +379,13 @@
 
 					// Handle the completion effects (extracted for clarity)
 					function handleCompletionEffects() {
-						if (!progressContainerElement) return;
-						
-						// Add class for animation
-						progressContainerElement.classList.add('completion-pulse');
-
-						// Pre-check transcript length to avoid expensive operations when not needed
-						const shouldShowConfetti = 
-							transcript && 
-							transcript.length > 20 && 
-							Math.floor(Math.random() * 7) === 0;
-							
 						// Batch operations with requestAnimationFrame for better performance
 						requestAnimationFrame(() => {
-							// Only run confetti celebration if conditions are met
-							if (shouldShowConfetti) {
-								showConfettiCelebration();
-							}
-							
 							// Clean up after animation finishes
 							setTimeout(() => {
-								progressContainerElement.classList.remove('completion-pulse');
 								transcribing = false;
 								transcriptionProgress = 0;
-							}, 600);
+							}, 600); // Reduced timeout as confetti is removed
 						});
 					}
 
@@ -515,16 +459,17 @@
 				} catch (error) {
 					console.error('❌ Transcription error:', error);
 					errorMessage = error.message;
+					transcriptionError = error; // Store error
 					transcript = '';
 					cancelAnimationFrame(animationFrameId);
 					transcribing = false;
 				} finally {
 					recording = false;
-					
-					// DO NOT manipulate any eye animations - leave all animation to page level
-					
-					// We don't need to set shouldUpdateCta here since we're
-					// using immediate rotation in the toggleRecording function
+					// Dispatch processing end event with transcript and error status
+					dispatch('processingend', {
+						transcript: transcript,
+						error: transcriptionError
+					});
 				}
 			};
 
@@ -544,16 +489,6 @@
 			if (isPermissionDenied) {
 				// Show the permission error modal
 				showPermissionError = true;
-				vibrate([20, 100, 20, 100, 20]); // Triple vibration pattern for error
-
-				// Animate ghost to look sad/disappointed
-				const eyes = eyesElement || parentEyesElement;
-				if (eyes) {
-					eyes.classList.add('eyes-sad');
-					setTimeout(() => {
-						eyes.classList.remove('eyes-sad');
-					}, 2000);
-				}
 
 				// Auto-hide the modal after a while
 				if (permissionErrorTimer) clearTimeout(permissionErrorTimer);
@@ -569,54 +504,28 @@
 			}
 
 			recording = false;
+			// Dispatch recording stop event if start failed
+			dispatch('recordingstop', { error: err });
 		}
 	}
 
 	function stopRecording() {
 		if (mediaRecorder && mediaRecorder.state === 'recording') {
-			// DO NOT manipulate eye animations here - leave all animation to the page level
-			
 			mediaRecorder.stop();
+			// Note: 'recordingstop' is also dispatched in mediaRecorder.onstop for consistency
+			// Dispatching here ensures it fires even if onstop doesn't for some reason.
+			dispatch('recordingstop');
 			console.log('🛑 Stop recording');
 		}
 	}
 
-	// Handle button press animation with classes - optimized for performance
-	function animateButtonPress() {
-		if (!recordButtonElement) return;
-
-		// Use requestAnimationFrame for smoother performance and better synchronization with render cycle
-		requestAnimationFrame(() => {
-			// Remove any existing animation classes and force a reflow
-			recordButtonElement.classList.remove('button-press');
-			void recordButtonElement.offsetWidth; // Force reflow
-
-			// Apply the animation
-			recordButtonElement.classList.add('button-press');
-			
-			// Use a single timeout for cleanup, and make it a little shorter for better perceived performance
-			setTimeout(() => {
-				requestAnimationFrame(() => {
-					recordButtonElement.classList.remove('button-press');
-				});
-			}, 390);
-		});
-	}
 	function toggleRecording(event) {
-		// Animate button press
-		animateButtonPress();
-
 		try {
 			if (recording) {
-				// Haptic feedback for stop - single pulse
-				vibrate(50);
-
 				stopRecording();
 				// Screen reader announcement
 				screenReaderStatus = 'Recording stopped.';
 			} else {
-				// Haptic feedback for start - double pulse
-				vibrate([40, 60, 40]);
 				// When using "New Recording" button, rotate to next phrase immediately
 				if (transcript) {
 					console.log('🧹 Clearing transcript for new recording');
@@ -635,14 +544,6 @@
 					transcript = '';
 				}
 
-				// Subtle pulse ghost icon when starting a new recording
-				const icon = ghostIconElement || parentGhostIconElement;
-				if (icon) {
-					icon.classList.add('ghost-pulse');
-					setTimeout(() => {
-						icon.classList.remove('ghost-pulse');
-					}, 500);
-				}
 				startRecording();
 				// Screen reader announcement
 				screenReaderStatus = 'Recording started. Speak now.';
@@ -652,9 +553,6 @@
 
 			// Show error message using existing toast system
 			errorMessage = `Recording error: ${err.message || 'Unknown error'}`;
-
-			// Haptic feedback for error
-			vibrate([20, 150, 20]);
 
 			// Reset recording state if needed
 			recording = false;
@@ -675,10 +573,6 @@
 
 	// Cleanup
 	onMount(() => {
-		// Set local references using parent elements if available
-		eyesElement = parentEyesElement;
-		ghostIconElement = parentGhostIconElement;
-
 		// Check if the app is running as a PWA on component mount
 		if (browser) {
 			// Short delay to ensure window.matchMedia is available
@@ -697,28 +591,6 @@
 			if (permissionErrorTimer) clearTimeout(permissionErrorTimer);
 		};
 	});
-
-	// Add/remove recording class on ghost icon when recording state changes - optimized for performance
-	$: if (browser) {
-		// Batch DOM updates on next animation frame for better performance
-		if (ghostIconElement) {
-			requestAnimationFrame(() => {
-				if (recording) {
-					ghostIconElement.classList.add('recording');
-				} else {
-					ghostIconElement.classList.remove('recording');
-				}
-			});
-		} else if (parentGhostIconElement) {
-			requestAnimationFrame(() => {
-				if (recording) {
-					parentGhostIconElement.classList.add('recording');
-				} else {
-					parentGhostIconElement.classList.remove('recording');
-				}
-			});
-		}
-	}
 
 	// Get the latest content from the editable div
 	function getEditedTranscript() {
@@ -758,9 +630,6 @@
 				await navigator.clipboard.writeText(textToCopy);
 				console.log('📋 Successfully copied using Clipboard API');
 				clipboardSuccess = true;
-
-				// Haptic feedback for successful copy - single quick pulse
-				vibrate(25);
 
 				// Show toast message regardless of tooltip visibility
 				// This ensures mobile users who don't get tooltips still get feedback
@@ -803,9 +672,6 @@
 				console.log('📋 Transcript copied via execCommand fallback');
 				clipboardSuccess = true;
 
-				// Haptic feedback for successful copy - single quick pulse
-				vibrate(25);
-
 				// Update screen reader status
 				screenReaderStatus = 'Transcript copied to clipboard';
 
@@ -827,9 +693,6 @@
 		} catch (err) {
 			console.error('❌ All clipboard methods failed:', err);
 
-			// Error pattern haptic feedback - two short bursts for error
-			vibrate([20, 150, 20]);
-
 			// Show user-friendly error message
 			clipboardSuccess = true; // Use the success toast but with error message
 			screenReaderStatus = 'Unable to copy. Please try clicking in the window first.';
@@ -841,127 +704,20 @@
 		}
 	}
 
-	// Confetti celebration effect for successful transcription
-	function showConfettiCelebration() {
-		// Only run in browser environment
-		if (!browser) return;
-
-		// Create a container for the confetti
-		const container = document.createElement('div');
-		container.className = 'confetti-container';
-		document.body.appendChild(container);
-
-		// Number of confetti pieces (reduced from 70 to 50 for better performance)
-		const confettiCount = 50;
-		const colors = ['#ff9cef', '#fde68a', '#a78bfa', '#f472b6', '#60a5fa'];
-		const fragment = document.createDocumentFragment(); // Use fragment for better performance
-
-		// Create and animate confetti pieces in batches
-		const createConfetti = (startIdx, batchSize) => {
-			const endIdx = Math.min(startIdx + batchSize, confettiCount);
-			
-			for (let i = startIdx; i < endIdx; i++) {
-				const confetti = document.createElement('div');
-				confetti.className = 'confetti-piece';
-
-				// Random styling
-				const size = Math.random() * 10 + 6; // Size between 6-16px
-				const color = colors[Math.floor(Math.random() * colors.length)];
-
-				// Simplified shape selection (improves performance)
-				const shapeRand = Math.random();
-				const shape = shapeRand > 0.66 ? 'circle' : shapeRand > 0.33 ? 'triangle' : 'square';
-
-				// Set styles
-				confetti.style.width = `${size}px`;
-				confetti.style.height = `${size}px`;
-				confetti.style.background = color;
-				confetti.style.borderRadius = shape === 'circle' ? '50%' : shape === 'triangle' ? '0' : '2px';
-				if (shape === 'triangle') {
-					confetti.style.background = 'transparent';
-					confetti.style.borderBottom = `${size}px solid ${color}`;
-					confetti.style.borderLeft = `${size / 2}px solid transparent`;
-					confetti.style.borderRight = `${size / 2}px solid transparent`;
-					confetti.style.width = '0';
-					confetti.style.height = '0';
-				}
-
-				// Random position and animation duration
-				const startPos = Math.random() * 100; // Position 0-100%
-				const delay = Math.random() * 0.5; // Reduced delay variation (0-0.5s)
-				const duration = Math.random() * 1.5 + 2; // Animation duration (2-3.5s)
-				const rotation = Math.random() * 720 - 360; // Rotation -360 to +360 degrees
-
-				// Apply positions and animation styles
-				const horizontalPos = Math.random() * 10 - 5; // Small horizontal variation
-				confetti.style.left = `calc(${startPos}% + ${horizontalPos}px)`;
-				const startOffset = Math.random() * 15 - 7.5; // Starting y-position variation
-				confetti.style.top = `${startOffset}px`;
-				confetti.style.animationDelay = `${delay}s`;
-				confetti.style.animationDuration = `${duration}s`;
-
-				// Simplified easing function selection (improves performance)
-				const easingRand = Math.random();
-				const easing = easingRand > 0.7 
-					? 'cubic-bezier(0.25, 0.1, 0.25, 1)' 
-					: easingRand > 0.4 
-						? 'cubic-bezier(0.42, 0, 0.58, 1)' 
-						: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-				confetti.style.animationTimingFunction = easing;
-				confetti.style.transform = `rotate(${rotation}deg)`;
-
-				// Add to fragment instead of directly to container
-				fragment.appendChild(confetti);
-			}
-			
-			// After batch is complete, append to container
-			if (endIdx < confettiCount) {
-				// Schedule next batch with requestAnimationFrame for better performance
-				requestAnimationFrame(() => createConfetti(endIdx, batchSize));
-			}
-		};
-		
-		// Start creating confetti in batches of 10
-		createConfetti(0, 10);
-		container.appendChild(fragment);
-
-		// Remove container after animation completes
-		setTimeout(() => {
-			if (document.body.contains(container)) {
-				document.body.removeChild(container);
-			}
-		}, 2500); // Slightly longer than the longest animation
-	}
-
-	// Helper for haptic feedback on mobile devices
-	function vibrate(pattern) {
-		// Only vibrate if:
-		// 1. The navigator.vibrate API is available
-		// 2. We're likely on a mobile device (using viewport width as rough heuristic)
-		if (typeof window !== 'undefined' && 'vibrate' in navigator && window.innerWidth <= 768) {
-			try {
-				navigator.vibrate(pattern);
-			} catch (e) {
-				// Silent fail - vibration not critical for app function
-				console.log(`Vibration failed: ${e.message}`);
-			}
-		}
-	}
-
 	// Function to calculate responsive font size based on transcript length and device
 	// Optimized for performance with memoization and cached viewport checks
 	const fontSizeCache = new Map();
 	let isMobileDevice = false;
 	let viewportChecked = false;
-	
+
 	function getResponsiveFontSize(text) {
 		if (!text) return 'text-base'; // Default size
-		
+
 		// Check viewport size once and cache the result
 		if (!viewportChecked && browser) {
 			isMobileDevice = window.innerWidth < 640;
 			viewportChecked = true;
-			
+
 			// Reset the check on resize, but throttle for performance
 			let resizeTimeout;
 			window.addEventListener('resize', () => {
@@ -975,11 +731,11 @@
 		// Length-based caching for better performance
 		const length = text.length;
 		const cacheKey = `${length}-${isMobileDevice ? 'mobile' : 'desktop'}`;
-		
+
 		if (fontSizeCache.has(cacheKey)) {
 			return fontSizeCache.get(cacheKey);
 		}
-		
+
 		// Calculate the font size class
 		let result;
 		if (length < 50) {
@@ -993,7 +749,7 @@
 		} else {
 			result = isMobileDevice ? 'text-xs sm:text-sm' : 'text-sm md:text-base'; // Long text
 		}
-		
+
 		// Store in cache and return
 		fontSizeCache.set(cacheKey, result);
 		return result;
@@ -1064,9 +820,6 @@
 					clipboardSuccess = true;
 					screenReaderStatus = 'Transcript shared successfully';
 
-					// Haptic feedback for successful share
-					vibrate([30, 50, 30]);
-
 					// Auto-hide the success message after 3 seconds
 					if (clipboardTimer) clearTimeout(clipboardTimer);
 					clipboardTimer = setTimeout(() => {
@@ -1095,9 +848,6 @@
 			console.error('❌ Error sharing transcript:', err);
 			// Show error in toast
 			errorMessage = 'Error sharing transcript. Please try copying instead.';
-
-			// Error vibration pattern
-			vibrate([20, 150, 20]);
 		}
 	}
 
@@ -1134,7 +884,6 @@
 				{#if transcribing}
 					<!-- Progress bar (transforms the button) - adjusted height for mobile -->
 					<div
-						bind:this={progressContainerElement}
 						class="progress-container relative h-[72px] w-full overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[66px] max-w-[500px]"
 						role="progressbar"
 						aria-label="Transcription progress"
@@ -1150,8 +899,7 @@
 				{:else}
 					<!-- Recording button - improved for mobile and accessibility -->
 					<button
-						bind:this={recordButtonElement}
-						class="record-button w-[90%] sm:w-full rounded-full transition-all duration-400 ease-out {clipboardSuccess ? 'bg-purple-50 border-purple-200 border text-black' : 'bg-amber-400 text-black'} px-6 py-6 text-xl font-bold shadow-md hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 max-w-[500px] mx-auto text-center {!recording && buttonLabel === 'Start Recording' && !clipboardSuccess ? 'pulse-subtle' : ''} {clipboardSuccess ? 'notification-pulse' : ''}"
+						class="record-button w-[90%] sm:w-full rounded-full transition-all duration-400 ease-out {clipboardSuccess ? 'bg-purple-50 border-purple-200 border text-black' : 'bg-amber-400 text-black'} px-6 py-6 text-xl font-bold shadow-md hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 max-w-[500px] mx-auto text-center"
 						style="min-width: 300px; min-height: 72px; transform-origin: center center;"
 						on:click={toggleRecording}
 						on:mouseenter={preloadSpeechModel}
@@ -1194,7 +942,7 @@
 					<div class="visualizer-container absolute left-0 top-0 flex w-full justify-center">
 						<div class="wrapper-container flex w-full justify-center">
 							<div
-								class="visualizer-wrapper mx-auto w-[90%] sm:w-full max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md"
+								class="visualizer-wrapper mx-auto w-[90%] sm:w-full max-w-[500px] rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md"
 								style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
 							>
 								<AudioVisualizer />
@@ -1205,7 +953,7 @@
 
 				<!-- Transcript output - only visible when not recording and has transcript -->
 				{#if transcript && !recording}
-					<div class="transcript-wrapper w-full animate-fadeIn-from-top">
+					<div class="transcript-wrapper w-full">
 						<!-- Speech bubble with transcript -->
 						<div class="wrapper-container flex w-full justify-center">
 							<div class="transcript-box-wrapper relative mx-auto w-[90%] sm:w-full max-w-[500px] px-2 sm:px-3 md:px-0">
@@ -1251,10 +999,10 @@
 
 								<!-- Editable transcript box with controlled scrolling -->
 								<div
-									class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5 max-w-[90vw] box-border mx-auto my-4 transition-all duration-300 max-h-[60vh] overflow-y-auto scrollbar-thin"
+									class="transcript-box relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5 max-w-[90vw] box-border mx-auto my-4 transition-all duration-300 max-h-[60vh] overflow-y-auto scrollbar-thin"
 								>
 									<div
-										class={`transcript-text ${responsiveFontSize} animate-text-appear`}
+										class={`transcript-text ${responsiveFontSize}`}
 										contenteditable="true"
 										role="textbox"
 										aria-label="Transcript editor"
@@ -1402,126 +1150,9 @@
 		z-index: 10;
 	}
 
-	/* Common animation for fading elements in */
-	.animate-fadeIn {
-		animation: localFadeIn 0.8s ease-out forwards;
-	}
-
-	.animate-fadeIn-from-top {
-		animation: fadeInFromTop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
-		transform-origin: center top;
-		will-change: transform, opacity;
-		animation-fill-mode: forwards;
-	}
-
-	@keyframes localFadeIn {
-		from {
-			opacity: 0;
-			transform: translateY(10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	@keyframes fadeInFromTop {
-		0% {
-			opacity: 0;
-			transform: translateY(-15px) scale(0.98);
-		}
-		60% {
-			transform: translateY(3px) scale(1.01);
-		}
-		80% {
-			transform: translateY(-2px) scale(1);
-		}
-		100% {
-			opacity: 1;
-			transform: translateY(0) scale(1);
-		}
-	}
-
-	.animate-text-appear {
-		animation: textAppear 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-		will-change: opacity, transform;
-	}
-
-	@keyframes textAppear {
-		0% {
-			opacity: 0;
-			transform: translateY(5px);
-		}
-		70% {
-			opacity: 0.9;
-			transform: translateY(-2px);
-		}
-		100% {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	.animate-shadow-appear {
-		animation: shadowAppear 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
-		will-change: transform, opacity;
-	}
-
-	@keyframes shadowAppear {
-		0% {
-			opacity: 0.9;
-			transform: scale(0.995);
-		}
-		100% {
-			opacity: 1;
-			transform: scale(1);
-		}
-	}
-
-	/* Progress bar animations */
+	/* Progress bar styling (non-animated) */
 	.progress-bar {
-		animation: pulse-glow 1.5s infinite ease-in-out;
-	}
-
-	:global(.completion-pulse) {
-		animation: completion-glow 0.6s ease-in-out;
-	}
-
-	@keyframes pulse-glow {
-		0% {
-			box-shadow: inset 0 0 5px rgba(255, 190, 60, 0.5);
-		}
-		50% {
-			box-shadow: inset 0 0 15px rgba(255, 190, 60, 0.8);
-		}
-		100% {
-			box-shadow: inset 0 0 5px rgba(255, 190, 60, 0.5);
-		}
-	}
-
-	@keyframes completion-glow {
-		0% {
-			box-shadow: 0 0 0px rgba(255, 120, 170, 0.1);
-		}
-		50% {
-			box-shadow: 0 0 30px rgba(255, 120, 170, 0.8);
-		}
-		100% {
-			box-shadow: 0 0 0px rgba(255, 120, 170, 0.1);
-		}
-	}
-
-	/* Override for icon-layers in AudioToText component */
-	:global(.recording .icon-layers) {
-		overflow: visible !important;
-		position: relative;
-		z-index: 2;
-	}
-
-	/* Make sure the outline is visible on top of the gradient */
-	:global(.recording .icon-bg),
-	:global(.recording .icon-base) {
-		filter: brightness(1.05);
+		/* Basic styling, animation removed */
 	}
 
 	/* Transcript box styling */
@@ -1614,7 +1245,6 @@
 		opacity: 0.95;
 		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 		filter: drop-shadow(0 4px 6px rgba(249, 168, 212, 0.25));
-		animation: gentle-float 3s ease-in-out infinite;
 		/* Ring effect to anchor the button visually to the text box */
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.25), 0 4px 6px rgba(0, 0, 0, 0.05);
 		/* Isolation to prevent inheriting filter effects from parents */
@@ -1643,13 +1273,10 @@
 		opacity: 0.95;
 		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 		filter: drop-shadow(0 4px 6px rgba(168, 173, 249, 0.25));
-		animation: gentle-float 3s ease-in-out infinite;
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(168, 173, 249, 0.25), 0 4px 6px rgba(0, 0, 0, 0.05);
 		isolation: isolate;
 		backdrop-filter: none !important;
 		background-color: rgba(255, 255, 255, 0.95);
-		/* Slight delay in animation to be offset from copy button */
-		animation-delay: 0.4s;
 	}
 
 	.share-btn:hover {
@@ -1667,74 +1294,11 @@
 
 	/* Tooltip styling */
 	.copy-tooltip {
-		animation: tooltip-appear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+		/* Basic styling, animation removed */
 		border: 1px solid rgba(249, 168, 212, 0.3);
 		box-shadow: 0 4px 8px -2px rgba(249, 168, 212, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
 		z-index: 250; /* Higher z-index to ensure it's above visualizer */
 		pointer-events: none;
-	}
-
-	@keyframes tooltip-appear {
-		0% {
-			opacity: 0;
-			transform: translateY(5px) scale(0.95);
-		}
-		100% {
-			opacity: 1;
-			transform: translateY(0) scale(1);
-		}
-	}
-
-	/* Special animation for the copy button ghost eyes */
-	.copy-eyes {
-		animation: copy-ghost-blink 8s infinite;
-	}
-
-	.copy-btn:hover .copy-eyes {
-		animation: copy-ghost-blink-excited 2s infinite;
-	}
-
-	@keyframes gentle-float {
-		0%, 100% {
-			transform: translateY(0);
-		}
-		50% {
-			transform: translateY(-3px);
-		}
-	}
-
-	/* Ghost eyes blinking animations for copy button */
-	@keyframes copy-ghost-blink {
-		0%, 95%, 100% {
-			transform: scaleY(1);
-		}
-		96%, 99% {
-			transform: scaleY(0);
-		}
-	}
-
-	@keyframes copy-ghost-blink-excited {
-		0%, 40%, 50%, 90%, 100% {
-			transform: scaleY(1);
-		}
-		45%, 95% {
-			transform: scaleY(0);
-		}
-	}
-
-	/* Sad eyes animation for permission errors */
-	.eyes-sad {
-		animation: eyes-sad-animation 2s ease-in-out forwards !important;
-		transform-origin: center center;
-	}
-
-	@keyframes eyes-sad-animation {
-		0%, 100% {
-			transform: scaleY(0.7) translateY(2px);
-		}
-		30%, 70% {
-			transform: scaleY(0.5) translateY(3px);
-		}
 	}
 
 	/* Screen reader only class */
@@ -1805,7 +1369,7 @@
 		}
 	}
 
-	/* Toast notification - enhanced to be more noticeable */
+	/* Toast notification - basic styling, animations removed */
 	.clipboard-toast {
 		position: relative;
 		background: linear-gradient(to right, #fff8fa, #faf5ff);
@@ -1821,10 +1385,6 @@
 			0 0 0 1px rgba(255, 232, 242, 0.7) inset,
 			0 0 25px rgba(249, 168, 212, 0.3);
 		backdrop-filter: blur(8px);
-		animation:
-			toast-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-			toast-pulse 2s ease-in-out infinite,
-			toast-fade 4s ease-in-out forwards;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -1837,24 +1397,8 @@
 		text-align: center;
 		will-change: transform, opacity, box-shadow;
 		margin: 0 auto; /* Center horizontally */
-	}
-
-	/* Add toast pulse animation for better visibility */
-	@keyframes toast-pulse {
-		0%, 100% {
-			box-shadow:
-				0 12px 20px -5px rgba(212, 180, 241, 0.35),
-				0 5px 12px -3px rgba(254, 205, 211, 0.25),
-				0 0 0 1px rgba(255, 232, 242, 0.7) inset,
-				0 0 25px rgba(249, 168, 212, 0.3);
-		}
-		50% {
-			box-shadow:
-				0 12px 25px -5px rgba(212, 180, 241, 0.45),
-				0 5px 15px -3px rgba(254, 205, 211, 0.35),
-				0 0 0 1px rgba(255, 232, 242, 0.8) inset,
-				0 0 35px rgba(249, 168, 212, 0.4);
-		}
+		/* Basic visibility transition */
+		transition: opacity 0.3s ease;
 	}
 
 	@media (min-width: 768px) {
@@ -1874,28 +1418,6 @@
 			0 5px 12px -3px rgba(254, 215, 170, 0.25),
 			0 0 0 1px rgba(255, 237, 213, 0.7) inset,
 			0 0 25px rgba(251, 191, 36, 0.3);
-		animation:
-			toast-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-			toast-pulse-warning 2s ease-in-out infinite,
-			toast-fade 4.5s ease-in-out forwards;
-	}
-
-	/* Warning toast special pulse */
-	@keyframes toast-pulse-warning {
-		0%, 100% {
-			box-shadow:
-				0 12px 20px -5px rgba(251, 211, 141, 0.3),
-				0 5px 12px -3px rgba(254, 215, 170, 0.2),
-				0 0 0 1px rgba(255, 237, 213, 0.7) inset,
-				0 0 25px rgba(251, 191, 36, 0.3);
-		}
-		50% {
-			box-shadow:
-				0 12px 25px -5px rgba(251, 211, 141, 0.4),
-				0 5px 15px -3px rgba(254, 215, 170, 0.3),
-				0 0 0 1px rgba(255, 237, 213, 0.8) inset,
-				0 0 35px rgba(251, 191, 36, 0.4);
-		}
 	}
 
 	/* Ghost icon in toast */
@@ -1905,46 +1427,6 @@
 		justify-content: center;
 		color: #9061c2; /* Softer purple */
 		filter: drop-shadow(0 1px 2px rgba(255, 156, 243, 0.2));
-		animation: ghost-float 2.5s ease-in-out infinite;
-	}
-
-	@keyframes ghost-float {
-		0%,
-		100% {
-			transform: translateY(0) rotate(-2deg);
-		}
-		50% {
-			transform: translateY(-4px) rotate(2deg);
-		}
-	}
-
-	@keyframes toast-bounce {
-		0% {
-			transform: scale(0.95);
-			opacity: 0;
-		}
-		60% {
-			transform: scale(1.05);
-			opacity: 1;
-		}
-		100% {
-			transform: scale(1);
-			opacity: 1;
-		}
-	}
-
-	@keyframes toast-fade {
-		0%,
-		5% {
-			opacity: 0;
-		}
-		15%,
-		85% {
-			opacity: 1;
-		}
-		100% {
-			opacity: 0;
-		}
 	}
 
 	/* Permission Error Modal Styling */
@@ -1960,7 +1442,9 @@
 		align-items: center;
 		justify-content: center;
 		padding: 1rem;
-		animation: fade-in 0.3s ease-out;
+		/* Basic fade-in */
+		opacity: 1;
+		transition: opacity 0.3s ease-out;
 	}
 
 	.permission-error-modal {
@@ -1975,8 +1459,11 @@
 		width: 400px;
 		color: #4b5563;
 		position: relative;
-		animation: slide-up 0.4s cubic-bezier(0.19, 1, 0.22, 1);
 		text-align: center;
+		/* Basic slide-up */
+		transform: translateY(0);
+		opacity: 1;
+		transition: transform 0.4s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.3s ease-out;
 	}
 
 	.modal-header {
@@ -2071,115 +1558,6 @@
 
 	.dismiss-btn:active {
 		transform: translateY(1px);
-	}
-
-	@keyframes fade-in {
-		from { opacity: 0; }
-		to { opacity: 1; }
-	}
-
-	@keyframes slide-up {
-		from {
-			opacity: 0;
-			transform: translateY(20px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	/* Ghost icon animations - defined globally */
-	@keyframes ghost-pulse {
-		0% {
-			opacity: 1;
-			transform: scale(1);
-			filter: brightness(1);
-		}
-		50% {
-			opacity: 0.8;
-			transform: scale(1.03);
-			filter: brightness(1.1);
-		}
-		100% {
-			opacity: 1;
-			transform: scale(1);
-			filter: brightness(1);
-		}
-	}
-
-	@keyframes ghost-wobble-left {
-		0% {
-			transform: rotate(0deg);
-		}
-		25% {
-			transform: rotate(-5deg);
-		}
-		50% {
-			transform: rotate(3deg);
-		}
-		75% {
-			transform: rotate(-2deg);
-		}
-		100% {
-			transform: rotate(0deg);
-		}
-	}
-
-	@keyframes ghost-wobble-right {
-		0% {
-			transform: rotate(0deg);
-		}
-		25% {
-			transform: rotate(5deg);
-		}
-		50% {
-			transform: rotate(-3deg);
-		}
-		75% {
-			transform: rotate(2deg);
-		}
-		100% {
-			transform: rotate(0deg);
-		}
-	}
-
-	:global(.ghost-pulse) {
-		animation: ghost-pulse 0.4s ease-in-out;
-	}
-
-	:global(.ghost-wobble-left) {
-		animation: ghost-wobble-left 0.6s ease-in-out;
-	}
-
-	:global(.ghost-wobble-right) {
-		animation: ghost-wobble-right 0.6s ease-in-out;
-	}
-
-	/* Recording state glow effect is now handled in +page.svelte */
-
-	/* Button animations */
-	.button-press {
-		animation: button-press 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
-	}
-
-	@keyframes button-press {
-		0% {
-			transform: scale3d(1, 1, 1); /* Use scale3d for better GPU acceleration */
-		}
-		35% {
-			transform: scale3d(0.98, 0.98, 1);
-			background-color: #f59e0b;
-			box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-		}
-		75% {
-			transform: scale3d(1.01, 1.01, 1);
-			background-color: #fbbf24;
-		}
-		100% {
-			transform: scale3d(1, 1, 1);
-			background-color: #fbbf24;
-		}
 	}
 
 	/* Visualizer wrapper styling to match transcript box */
@@ -2360,107 +1738,6 @@
 		}
 	}
 
-	/* Confetti celebration animation styles */
-	:global(.confetti-container) {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100vh;
-		overflow: hidden;
-		z-index: 9000;
-		pointer-events: none;
-	}
+	/* Removed all animation keyframes and related styles */
 
-	:global(.confetti-piece) {
-		position: absolute;
-		animation: confetti-fall 3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-		opacity: 0.9;
-		will-change: transform, opacity;
-	}
-
-	@keyframes confetti-fall {
-		0% {
-			transform: translateY(-10px) rotate(0deg) scale(0.7);
-			opacity: 0;
-		}
-		5% {
-			opacity: 0.7;
-		}
-		15% {
-			opacity: 1;
-			transform: translateY(10vh) translateX(10px) rotate(45deg) scale(0.9);
-		}
-		35% {
-			transform: translateY(30vh) translateX(15px) rotate(90deg) scale(1);
-		}
-		50% {
-			transform: translateY(50vh) translateX(-10px) rotate(180deg) scale(0.95);
-		}
-		65% {
-			transform: translateY(65vh) translateX(5px) rotate(240deg) scale(0.9);
-		}
-		85% {
-			transform: translateY(85vh) translateX(-5px) rotate(320deg) scale(0.85);
-			opacity: 0.7;
-		}
-		100% {
-			transform: translateY(105vh) translateX(-10px) rotate(360deg) scale(0.8);
-			opacity: 0;
-		}
-	}
-
-	/* Enhanced breathing glow for button - more noticeable and smoother */
-	.pulse-subtle {
-		animation: button-breathe 3.5s ease-in-out infinite;
-		transform-origin: center;
-	}
-
-	@keyframes button-breathe {
-		0%, 100% {
-			box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.35);
-			transform: scale(1);
-		}
-		50% {
-			box-shadow: 0 0 20px 6px rgba(251, 191, 36, 0.5);
-			transform: scale(1.02);
-		}
-	}
-
-	/* Notification pulse animation for when the button shows a notification */
-	.notification-pulse {
-		animation: notification-glow 2.5s ease-in-out infinite;
-		transform-origin: center;
-		box-shadow:
-			0 0 10px 2px rgba(139, 92, 246, 0.15),
-			0 0 3px 1px rgba(139, 92, 246, 0.08);
-	}
-
-	@keyframes notification-glow {
-		0%, 100% {
-			box-shadow:
-				0 0 6px 1px rgba(139, 92, 246, 0.1),
-				0 0 2px 0px rgba(139, 92, 246, 0.05);
-			transform: scale(1);
-		}
-		50% {
-			box-shadow:
-				0 0 12px 3px rgba(139, 92, 246, 0.2),
-				0 0 4px 1px rgba(139, 92, 246, 0.1);
-			transform: scale(1.002);
-		}
-	}
-
-	/* Wiggle animation for the ghost icon in notifications */
-	@keyframes tada {
-		0% { transform: scale(1); }
-		10%, 20% { transform: scale(0.9) rotate(-3deg); }
-		30%, 50%, 70%, 90% { transform: scale(1.1) rotate(3deg); }
-		40%, 60%, 80% { transform: scale(1.1) rotate(-3deg); }
-		100% { transform: scale(1) rotate(0); }
-	}
-
-	.animate-tada {
-		animation: tada 1.5s ease infinite;
-	}
 </style>
