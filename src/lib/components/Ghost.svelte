@@ -487,6 +487,8 @@
   .icon-container:active {
     animation: gentle-float 3s ease-in-out infinite, ghost-hover 1.2s ease-in-out infinite alternate;
     animation-delay: 0s, 0s;
+    filter: drop-shadow(0 0 18px rgba(252, 231, 243, 0.45))
+      drop-shadow(0 0 30px rgba(255, 184, 208, 0.3));
   }
   
   /* Theme-specific hover glow effects */
@@ -507,17 +509,15 @@
   }
   
   .icon-container.theme-rainbow:hover {
-    animation: rainbow-hover-glow 3s linear infinite !important;
+    animation: rainbow-hover-glow 6s ease-in-out infinite !important;
   }
   
   @keyframes rainbow-hover-glow {
-    0% { filter: drop-shadow(0 0 18px rgba(255, 0, 0, 0.45)) drop-shadow(0 0 30px rgba(255, 165, 0, 0.3)); }
-    16.6% { filter: drop-shadow(0 0 18px rgba(255, 165, 0, 0.45)) drop-shadow(0 0 30px rgba(255, 255, 0, 0.3)); } 
-    33.3% { filter: drop-shadow(0 0 18px rgba(255, 255, 0, 0.45)) drop-shadow(0 0 30px rgba(0, 255, 0, 0.3)); }
-    50% { filter: drop-shadow(0 0 18px rgba(0, 255, 0, 0.45)) drop-shadow(0 0 30px rgba(0, 255, 255, 0.3)); } 
-    66.6% { filter: drop-shadow(0 0 18px rgba(0, 255, 255, 0.45)) drop-shadow(0 0 30px rgba(0, 0, 255, 0.3)); }
-    83.3% { filter: drop-shadow(0 0 18px rgba(0, 0, 255, 0.45)) drop-shadow(0 0 30px rgba(255, 0, 255, 0.3)); }
-    100% { filter: drop-shadow(0 0 18px rgba(255, 0, 255, 0.45)) drop-shadow(0 0 30px rgba(255, 0, 0, 0.3)); }
+    0% { filter: drop-shadow(0 0 15px rgba(255, 102, 204, 0.3)) drop-shadow(0 0 25px rgba(255, 153, 204, 0.2)); }
+    25% { filter: drop-shadow(0 0 15px rgba(153, 102, 255, 0.3)) drop-shadow(0 0 25px rgba(204, 153, 255, 0.2)); }
+    50% { filter: drop-shadow(0 0 15px rgba(102, 153, 255, 0.3)) drop-shadow(0 0 25px rgba(153, 204, 255, 0.2)); }
+    75% { filter: drop-shadow(0 0 15px rgba(153, 204, 255, 0.3)) drop-shadow(0 0 25px rgba(153, 255, 204, 0.2)); }
+    100% { filter: drop-shadow(0 0 15px rgba(255, 102, 204, 0.3)) drop-shadow(0 0 25px rgba(255, 153, 204, 0.2)); }
   }
   
   /* Recording state - base styles shared across themes */
@@ -542,7 +542,7 @@
   }
   
   .recording.theme-rainbow {
-    animation: recording-glow-rainbow 5s linear infinite, gentle-float 3s ease-in-out infinite !important;
+    animation: recording-glow-rainbow 8s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
   }
   
   /* Wobble animations */
@@ -590,17 +590,15 @@
   }
   
   .do-special-animation.theme-rainbow {
-    animation: rainbow-special-glow 2s linear infinite !important;
+    animation: rainbow-special-glow 5s ease-in-out infinite !important;
   }
   
   @keyframes rainbow-special-glow {
-    0% { filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.7)) !important; }
-    16.6% { filter: drop-shadow(0 0 20px rgba(255, 165, 0, 0.7)) !important; }
-    33.3% { filter: drop-shadow(0 0 20px rgba(255, 255, 0, 0.7)) !important; }
-    50% { filter: drop-shadow(0 0 20px rgba(0, 255, 0, 0.7)) !important; }
-    66.6% { filter: drop-shadow(0 0 20px rgba(0, 0, 255, 0.7)) !important; }
-    83.3% { filter: drop-shadow(0 0 20px rgba(255, 0, 255, 0.7)) !important; }
-    100% { filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.7)) !important; }
+    0% { filter: drop-shadow(0 0 20px rgba(255, 102, 204, 0.6)) !important; }
+    25% { filter: drop-shadow(0 0 20px rgba(153, 102, 255, 0.6)) !important; }
+    50% { filter: drop-shadow(0 0 20px rgba(102, 153, 255, 0.6)) !important; }
+    75% { filter: drop-shadow(0 0 20px rgba(102, 204, 255, 0.6)) !important; }
+    100% { filter: drop-shadow(0 0 20px rgba(255, 102, 204, 0.6)) !important; }
   }
   
   /* Rainbow animation for ghost svg */
@@ -702,47 +700,39 @@
   
   @keyframes recording-glow-rainbow {
     0% {
-      --rainbow-primary: rgba(255, 0, 0, 0.9); /* Red */
-      --rainbow-secondary: rgba(255, 105, 180, 0.7); /* Pink */
-      --rainbow-tertiary: rgba(255, 165, 0, 0.5); /* Orange */
+      --rainbow-primary: rgba(255, 102, 204, 0.7); /* Pink-purple */
+      --rainbow-secondary: rgba(204, 102, 255, 0.5); /* Light purple */
+      --rainbow-tertiary: rgba(153, 102, 255, 0.3); /* Purple */
       filter: drop-shadow(0 0 15px var(--rainbow-primary))
         drop-shadow(0 0 25px var(--rainbow-tertiary));
     }
-    16% {
-      --rainbow-primary: rgba(255, 165, 0, 0.9); /* Orange */
-      --rainbow-secondary: rgba(255, 0, 0, 0.7); /* Red */
-      --rainbow-tertiary: rgba(255, 255, 0, 0.5); /* Yellow */
-    }
-    33% {
-      --rainbow-primary: rgba(255, 255, 0, 0.9); /* Yellow */
-      --rainbow-secondary: rgba(255, 165, 0, 0.7); /* Orange */
-      --rainbow-tertiary: rgba(0, 255, 0, 0.5); /* Green */
-      filter: drop-shadow(0 0 25px var(--rainbow-primary))
-        drop-shadow(0 0 35px var(--rainbow-secondary))
-        drop-shadow(0 0 40px var(--rainbow-tertiary));
-    }
-    50% {
-      --rainbow-primary: rgba(0, 255, 0, 0.9); /* Green */
-      --rainbow-secondary: rgba(255, 255, 0, 0.7); /* Yellow */
-      --rainbow-tertiary: rgba(0, 255, 255, 0.5); /* Cyan */
-    }
-    66% {
-      --rainbow-primary: rgba(0, 255, 255, 0.9); /* Cyan */
-      --rainbow-secondary: rgba(0, 255, 0, 0.7); /* Green */
-      --rainbow-tertiary: rgba(0, 0, 255, 0.5); /* Blue */
+    25% {
+      --rainbow-primary: rgba(153, 102, 255, 0.7); /* Purple */
+      --rainbow-secondary: rgba(102, 153, 255, 0.5); /* Purple-blue */
+      --rainbow-tertiary: rgba(102, 204, 255, 0.3); /* Light blue */
       filter: drop-shadow(0 0 20px var(--rainbow-primary))
         drop-shadow(0 0 30px var(--rainbow-secondary))
-        drop-shadow(0 0 45px var(--rainbow-tertiary));
+        drop-shadow(0 0 35px var(--rainbow-tertiary));
     }
-    83% {
-      --rainbow-primary: rgba(0, 0, 255, 0.9); /* Blue */
-      --rainbow-secondary: rgba(0, 255, 255, 0.7); /* Cyan */
-      --rainbow-tertiary: rgba(255, 0, 255, 0.5); /* Magenta */
+    50% {
+      --rainbow-primary: rgba(102, 153, 255, 0.7); /* Blue */
+      --rainbow-secondary: rgba(102, 204, 255, 0.5); /* Light blue */
+      --rainbow-tertiary: rgba(102, 255, 204, 0.3); /* Blue-green */
+      filter: drop-shadow(0 0 15px var(--rainbow-primary))
+        drop-shadow(0 0 25px var(--rainbow-tertiary));
+    }
+    75% {
+      --rainbow-primary: rgba(102, 204, 255, 0.7); /* Light blue */
+      --rainbow-secondary: rgba(153, 255, 204, 0.5); /* Blue-green */
+      --rainbow-tertiary: rgba(204, 153, 255, 0.3); /* Light purple */
+      filter: drop-shadow(0 0 20px var(--rainbow-primary))
+        drop-shadow(0 0 30px var(--rainbow-secondary))
+        drop-shadow(0 0 35px var(--rainbow-tertiary));
     }
     100% {
-      --rainbow-primary: rgba(255, 0, 255, 0.9); /* Magenta */
-      --rainbow-secondary: rgba(0, 0, 255, 0.7); /* Blue */
-      --rainbow-tertiary: rgba(255, 0, 0, 0.5); /* Back to red */
+      --rainbow-primary: rgba(255, 102, 204, 0.7); /* Pink-purple */
+      --rainbow-secondary: rgba(204, 102, 255, 0.5); /* Light purple */
+      --rainbow-tertiary: rgba(153, 102, 255, 0.3); /* Purple */
       filter: drop-shadow(0 0 15px var(--rainbow-primary))
         drop-shadow(0 0 25px var(--rainbow-tertiary));
     }
