@@ -725,26 +725,17 @@
 				}
 			}, 600); // Wobble duration
 
-			// Stop the recording in the component
+			// Stop the recording in the component - SIMPLIFIED with no blinks at all
 			try {
 				audioToTextComponent.stopRecording();
 				debug('Called stopRecording() on component');
-
-				// REMOVED: Squint animation call
-				// debug('Performing stop acknowledgment squint');
-				// squint();
-
-				// --- NEW: Resume ambient blinking after wobble animation finishes ---
-				// Wobble is 600ms, add a buffer
-				setTimeout(() => {
-					debug('Attempting to resume ambient blinking after stop/wobble');
-					startAmbientBlinking();
-				}, 800); // Increased delay to ensure wobble completes
-
+				
+				// IMPORTANT: Completely removed all ambient blinking after stopping
+				// We'll reinitialize ambient blinking on the next recording start instead
+				
 			} catch (err) {
 				debug(`Error stopping recording via component: ${err.message}`);
-				// If stopping fails, maybe restart ambient blinking immediately?
-				startAmbientBlinking();
+				// No recovery or blinking needed
 			}
 
 		} else {
