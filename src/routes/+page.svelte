@@ -758,8 +758,6 @@
 		<!-- Ghost Icon using the new component -->
 		<div class="ghost-icon-wrapper mb-4 h-36 w-36 sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64">
 			<Ghost
-				{eyesClosed}
-				{isWobbling}
 				{isRecording}
 				{isProcessing}
 			/>
