@@ -15,7 +15,8 @@
   let eyesClosed = false;
   let isWobbling = false;
   let isRainbow = false;
-  let eyePosition = 0; // For eye tracking: -1 to 1 value representing position
+  let eyePositionX = 0; // For horizontal eye tracking: -1 to 1
+  let eyePositionY = 0; // For vertical eye tracking: -1 to 1
   let isAwake = true; // For sleep state
   let doingSpecialAnimation = false; // For rare animations
   
@@ -172,9 +173,20 @@
   }
   
   // Dispatch toggle recording event when clicked
-  function handleClick() {
+  function handleClick(event) {
     // Make sure to reset inactivity timer on interaction
     resetInactivity();
+    
+    // Make the eyes "look at" where they were clicked briefly
+    if (!eyesClosed && typeof window !== 'undefined' && ghostElement) {
+      // Use the click coordinates to update eye position
+      trackMousePosition(event);
+      
+      // Hold the eyes in this position briefly
+      setTimeout(() => {
+        // Then gradually return to tracking
+      }, 300);
+    }
     
     // Don't wobble on click - the reactive block will handle wobbles 
     // based on state changes - this eliminates double wobbles
@@ -189,31 +201,44 @@
   // Track previous state to detect actual changes
   let wasRecording = false;
   let wasProcessing = false;
+  let wasRecordingTimestamp = null; // Track when recording started
   
   // Track mouse movement to move eyes
   function trackMousePosition(event) {
     if (typeof window === 'undefined' || !ghostElement || !isAwake || 
-        isRecording || isProcessing || eyesClosed) return;
+        eyesClosed) return; // Allow tracking during recording for better tactility
     
     // Get ghost element bounding box
     const ghostRect = ghostElement.getBoundingClientRect();
     const ghostCenterX = ghostRect.left + (ghostRect.width / 2);
+    const ghostCenterY = ghostRect.top + (ghostRect.height / 2);
     
     // Calculate mouse position relative to ghost center
     const mouseX = event.clientX;
-    const distanceFromCenter = mouseX - ghostCenterX;
+    const mouseY = event.clientY;
+    const distanceX = mouseX - ghostCenterX;
+    const distanceY = mouseY - ghostCenterY;
     
-    // Normalize to a value between -1 and 1 with a dead zone in the middle
-    // and limit maximum movement
-    const maxDistance = window.innerWidth / 4; // 1/4 of screen width is max distance
-    const normalizedPosition = Math.max(-1, Math.min(1, distanceFromCenter / maxDistance));
+    // Normalize to values between -1 and 1
+    const maxDistanceX = window.innerWidth / 3; // More responsive horizontal tracking
+    const maxDistanceY = window.innerHeight / 3; // Vertical tracking
+    const normalizedX = Math.max(-1, Math.min(1, distanceX / maxDistanceX));
+    const normalizedY = Math.max(-1, Math.min(1, distanceY / maxDistanceY));
     
-    // Add small dead zone in center
-    if (Math.abs(normalizedPosition) < 0.1) {
-      eyePosition = 0;
+    // Add smaller dead zone for more responsiveness
+    if (Math.abs(normalizedX) < 0.05) {
+      eyePositionX = 0;
     } else {
-      // Apply smoothing - only move 10% of the way to target position
-      eyePosition = eyePosition + (normalizedPosition - eyePosition) * 0.1;
+      // Apply faster smoothing for better tactility - 20% toward target
+      eyePositionX = eyePositionX + (normalizedX - eyePositionX) * 0.2;
+    }
+    
+    // Vertical tracking with smaller movement range
+    if (Math.abs(normalizedY) < 0.05) {
+      eyePositionY = 0;
+    } else {
+      // Apply faster smoothing for better tactility - 20% toward target
+      eyePositionY = eyePositionY + (normalizedY - eyePositionY) * 0.2;
     }
   }
   
@@ -272,6 +297,9 @@
       
       // Only wobble when STARTING recording (not just any state update)
       if (isRecording && !wasRecording && typeof window !== 'undefined') {
+        // Record start time for wobble duration check on stop
+        wasRecordingTimestamp = Date.now();
+        
         // Clear any existing wobble timer
         clearTimeout(wobbleTimeoutId);
         
@@ -280,15 +308,15 @@
         wobbleTimeoutId = setTimeout(() => {
           isWobbling = false;
         }, 600);
-        
-        // Cancel any eye movement during recording
-        lookDirection = null;
       }
     } 
     // Restart blinking when finished recording/processing
     else if ((wasRecording || wasProcessing) && !isRecording && !isProcessing) {
-      // Add wobble only when STOPPING recording
-      if (wasRecording && typeof window !== 'undefined') {
+      // Only wobble on STOPPING recording IF it's been recording for at least 1 second
+      // This prevents wobbles on quick click-release actions
+      if (wasRecording && typeof window !== 'undefined' && wasRecordingTimestamp && 
+          (Date.now() - wasRecordingTimestamp > 1000)) {
+        
         // Clear any existing wobble timer
         clearTimeout(wobbleTimeoutId);
         
@@ -335,12 +363,16 @@
     <!-- Base ghost image -->
     <img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" />
     
-    <!-- Eyes - controlled by local state with transform-based blinking and mouse-following -->
+    <!-- Eyes - controlled by local state with transform-based blinking and 2D mouse-following -->
     <img 
       src="/assets/talktype-icon-eyes.svg" 
       alt="" 
       class="icon-eyes {eyesClosed ? 'eyes-closed' : ''} {!isAwake ? 'sleepy-eyes' : ''}"
-      style={!eyesClosed && eyePosition !== 0 ? `transform: translateX(${eyePosition * 3}px);` : ''}
+      style={
+        eyesClosed ? 'transform: scaleY(0.05);' : 
+        !isAwake ? `transform: translate(${eyePositionX * 3}px, ${eyePositionY * 1.5}px) scaleY(0.3);` :
+        `transform: translate(${eyePositionX * 4}px, ${eyePositionY * 2}px);`
+      }
     />
   </div>
 </button>
@@ -433,16 +465,14 @@
     animation: ghost-wobble-right 0.6s ease-in-out forwards !important;
   }
   
-  /* Eyes closed state - transform-based with natural feel */
+  /* Eyes closed state is now handled via inline style for better coordination with movement */
   .eyes-closed {
-    transform: scaleY(0.05) !important; /* Not too extreme closure */
     transition: transform 0.08s ease-out !important; /* Smoother, more natural close */
   }
   
-  /* Sleepy eyes state */
+  /* Sleepy eyes state - now coordinated with inline style */
   .sleepy-eyes {
-    transform: scaleY(0.3) !important; /* Half-lidded eyes */
-    opacity: 0.8; /* Sleepy state */
+    opacity: 0.8 !important; /* Sleepy state */
     transition: transform 0.5s ease, opacity 0.5s ease !important;
   }
   
