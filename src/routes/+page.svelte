@@ -70,83 +70,75 @@
 	let titleAnimationComplete = false;
 	let subtitleAnimationComplete = false;
 
-	// --- Simplified Ambient Blinking System ---
+	// --- ULTRA-SIMPLE Blinking System ---
+	// Just one timeout for ambient blinking
 	const scheduleBlink = () => {
-		clearTimeout(blinkTimeoutId); // Clear any existing scheduled blink
-
-		// Don't blink if recording or processing
-		if (isRecording || isProcessing) {
-			eyesClosed = false; // Ensure eyes are open
-			debug('Blinking paused (recording/processing)');
-			return;
-		}
-
-		// Random delay for next blink (2-7 seconds)
-		const delay = Math.random() * 5000 + 2000;
-		debug(`Scheduling next blink in ${delay.toFixed(0)}ms`);
-
+		// Clear any existing timeouts to avoid stacking
+		clearTimeout(blinkTimeoutId);
+		
+		// Don't blink during recording or processing
+		if (isRecording || isProcessing) return;
+		
+		// Schedule next blink in 4-8 seconds
+		const delay = 4000 + Math.random() * 4000;
 		blinkTimeoutId = setTimeout(() => {
-			debug('Blink!');
+			// Do a single blink
 			eyesClosed = true;
-			// Blink duration (150ms)
 			setTimeout(() => {
 				eyesClosed = false;
-				scheduleBlink(); // Schedule the next blink
+				// Schedule the next one
+				scheduleBlink();
 			}, 150);
 		}, delay);
 	};
-	// --- End Simplified Ambient Blinking System ---
+	// --- End ULTRA-SIMPLE Blinking System ---
 
 
-	// --- Event Handlers for AudioToText Component ---
+	// --- MINIMAL Event Handlers ---
 	function handleRecordingStart() {
-		debug('Page: Recording Started');
 		isRecording = true;
 		isProcessing = false;
-		isWobbling = false; // Ensure wobble stops
-		eyesClosed = false; // Ensure eyes are open
-		clearTimeout(blinkTimeoutId); // Stop blinking
-		clearTimeout(wobbleTimeoutId); // Stop any pending wobble removal
+		isWobbling = false;
+		eyesClosed = false;
+		clearTimeout(blinkTimeoutId);
+		clearTimeout(wobbleTimeoutId);
 	}
 
 	function handleRecordingStop() {
-		debug('Page: Recording Stopped');
 		isRecording = false;
-		// Trigger wobble
+		
+		// Just do a wobble with absolutely no eye animation
 		isWobbling = true;
+		clearTimeout(blinkTimeoutId); // Ensure NO blinks
+		
 		wobbleTimeoutId = setTimeout(() => {
 			isWobbling = false;
-			debug('Page: Wobble ended');
 			
-			// Only restart ambient blinking AFTER wobble animation completes
-			// AND if we're not in processing state
+			// Wait a LONG time before considering ambient blinks again
 			if (!isProcessing) {
-				debug('Page: Restarting blink after wobble (no processing)');
-				scheduleBlink();
+				setTimeout(() => {
+					if (!isRecording && !isProcessing) scheduleBlink();
+				}, 5000); // Wait 5 full seconds
 			}
-		}, 500); // Duration of wobble animation
+		}, 600);
 	}
 
 	function handleProcessingStart() {
-		debug('Page: Processing Started');
 		isProcessing = true;
-		isRecording = false; // Ensure recording state is false
-		eyesClosed = false; // Ensure eyes are open
-		clearTimeout(blinkTimeoutId); // Stop blinking during processing
+		isRecording = false;
+		eyesClosed = false;
+		clearTimeout(blinkTimeoutId);
 	}
 
 	function handleProcessingEnd() {
-		debug('Page: Processing Ended');
 		isProcessing = false;
 		
-		// Add a slight delay before restarting ambient blinking
-		// to avoid any weird blinks just after processing finishes
+		// Wait a LONG time before considering ambient blinks again
 		setTimeout(() => {
-			debug('Page: Restarting blink after processing end (with delay)');
-			scheduleBlink();
-		}, 500);
+			if (!isRecording && !isProcessing) scheduleBlink();
+		}, 5000);
 	}
-	// --- End Event Handlers ---
+	// --- End MINIMAL Event Handlers ---
 
 
 	// Function to handle title animation complete
@@ -224,12 +216,8 @@
 
 	// Component lifecycle
 	onMount(() => {
-		debug('Component mounted');
-
-		// Start ambient blinking with a delay to avoid immediate blinks
-		setTimeout(() => {
-			scheduleBlink();
-		}, 2000); // Wait 2 seconds before first blink
+		// Super-simple - start ambient blinking after a long delay
+		setTimeout(scheduleBlink, 5000); // Wait 5 seconds before first blink
 
 		// Listen for toggle event from Ghost component
 		const handleToggleRecording = () => {
