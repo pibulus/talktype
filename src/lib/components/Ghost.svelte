@@ -295,11 +295,11 @@
     animation-delay: 0s, 0s;
   }
   
-  /* Recording state - both animation and direct filter for reliability */
+  /* Recording state - keep gentle floating while adding glow */
   .recording {
-    animation: recording-glow 1.5s infinite !important;
+    animation: recording-glow 1.5s infinite, gentle-float 3s ease-in-out infinite !important;
     transform: scale(1.03);
-    animation-delay: 0s;
+    animation-delay: 0s, 0s;
   }
   
   /* Wobble animations */
