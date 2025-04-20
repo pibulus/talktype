@@ -83,11 +83,11 @@
     <!-- Base ghost image -->
     <img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" />
     
-    <!-- Eyes that blink -->
+    <!-- Eyes - NO blinking, just static -->
     <img 
       src="/assets/talktype-icon-eyes.svg" 
       alt="" 
-      class="icon-eyes {eyesClosed ? 'blink-once' : ''} {isProcessing ? 'eyes-thinking' : ''}" 
+      class="icon-eyes" 
     />
   </div>
 </button>
