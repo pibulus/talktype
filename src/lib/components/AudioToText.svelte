@@ -114,29 +114,26 @@
 	}
 
 	function ghostReactToTranscript(textLength = 0) {
-		if (!eyesElement) return;
+		const eyes = eyesElement || parentEyesElement;
+		if (!eyes) return;
 
+		// Use a more efficient approach with fewer setTimeout calls
 		if (textLength > 20) {
-			// For longer transcripts, do a "satisfied" double blink
+			// For longer transcripts, do a "satisfied" double blink with fewer nested timeouts
+			const blink = () => {
+				eyes.classList.add('blink-once');
+				setTimeout(() => eyes.classList.remove('blink-once'), 150);
+			};
+			
 			setTimeout(() => {
-				eyesElement.classList.add('blink-once');
-				setTimeout(() => {
-					eyesElement.classList.remove('blink-once');
-					setTimeout(() => {
-						eyesElement.classList.add('blink-once');
-						setTimeout(() => {
-							eyesElement.classList.remove('blink-once');
-						}, 150);
-					}, 150);
-				}, 150);
+				blink();
+				setTimeout(blink, 300); // Second blink after first one completes
 			}, 200);
 		} else if (textLength > 0) {
 			// For short transcripts, just do a single blink
 			setTimeout(() => {
-				eyesElement.classList.add('blink-once');
-				setTimeout(() => {
-					eyesElement.classList.remove('blink-once');
-				}, 200);
+				eyes.classList.add('blink-once');
+				setTimeout(() => eyes.classList.remove('blink-once'), 200);
 			}, 200);
 		}
 	}
@@ -440,32 +437,48 @@
 
 					// Handle the completion effects (extracted for clarity)
 					function handleCompletionEffects() {
-						if (progressContainerElement) {
-							progressContainerElement.classList.add('completion-pulse');
+						if (!progressContainerElement) return;
+						
+						// Add class for animation
+						progressContainerElement.classList.add('completion-pulse');
 
-							// Add confetti celebration for successful transcription (randomly 1/7 times)
-							if (transcript && transcript.length > 20 && Math.floor(Math.random() * 7) === 0) {
+						// Pre-check transcript length to avoid expensive operations when not needed
+						const shouldShowConfetti = 
+							transcript && 
+							transcript.length > 20 && 
+							Math.floor(Math.random() * 7) === 0;
+							
+						// Batch operations with requestAnimationFrame for better performance
+						requestAnimationFrame(() => {
+							// Only run confetti celebration if conditions are met
+							if (shouldShowConfetti) {
 								showConfettiCelebration();
 							}
-
+							
 							// Clean up after animation finishes
 							setTimeout(() => {
 								progressContainerElement.classList.remove('completion-pulse');
 								transcribing = false;
 								transcriptionProgress = 0;
 							}, 600);
-						}
+						});
 					}
 
 					completeProgress();
 
-					// Brief delay before showing the transcript - just enough for a smooth transition
-					await new Promise((resolve) => setTimeout(resolve, 650));
+					// Brief delay before showing the transcript - optimized for smoother performance
+					await new Promise((resolve) => {
+						requestAnimationFrame(() => setTimeout(resolve, 500));
+					});
 
-					// Automatically copy to clipboard and increment count when transcription finishes
+					// Increment the count early to avoid delaying the user experience
 					if (transcript) {
-						// Increment the transcription count on success
-						incrementTranscriptionCount(); // <<< Call the increment function HERE
+						// Use requestIdleCallback if available, or fallback to setTimeout
+						if (browser && 'requestIdleCallback' in window) {
+							window.requestIdleCallback(() => incrementTranscriptionCount());
+						} else {
+							setTimeout(incrementTranscriptionCount, 0);
+						}
 
 						try {
 							// Focus check - document must be focused for clipboard operations
@@ -583,19 +596,26 @@
 		}
 	}
 
-	// Handle button press animation with classes
+	// Handle button press animation with classes - optimized for performance
 	function animateButtonPress() {
-		if (recordButtonElement) {
+		if (!recordButtonElement) return;
+
+		// Use requestAnimationFrame for smoother performance and better synchronization with render cycle
+		requestAnimationFrame(() => {
 			// Remove any existing animation classes and force a reflow
 			recordButtonElement.classList.remove('button-press');
 			void recordButtonElement.offsetWidth; // Force reflow
 
-			// Apply the smoother press animation
+			// Apply the animation
 			recordButtonElement.classList.add('button-press');
+			
+			// Use a single timeout for cleanup, and make it a little shorter for better perceived performance
 			setTimeout(() => {
-				recordButtonElement.classList.remove('button-press');
-			}, 400);
-		}
+				requestAnimationFrame(() => {
+					recordButtonElement.classList.remove('button-press');
+				});
+			}, 390);
+		});
 	}
 	function toggleRecording(event) {
 		// Animate button press
@@ -693,14 +713,25 @@
 		};
 	});
 
-	// Add/remove recording class on ghost icon when recording state changes
-	$: {
-		if (typeof window !== 'undefined' && ghostIconElement) {
-			if (recording) {
-				ghostIconElement.classList.add('recording');
-			} else {
-				ghostIconElement.classList.remove('recording');
-			}
+	// Add/remove recording class on ghost icon when recording state changes - optimized for performance
+	$: if (browser) {
+		// Batch DOM updates on next animation frame for better performance
+		if (ghostIconElement) {
+			requestAnimationFrame(() => {
+				if (recording) {
+					ghostIconElement.classList.add('recording');
+				} else {
+					ghostIconElement.classList.remove('recording');
+				}
+			});
+		} else if (parentGhostIconElement) {
+			requestAnimationFrame(() => {
+				if (recording) {
+					parentGhostIconElement.classList.add('recording');
+				} else {
+					parentGhostIconElement.classList.remove('recording');
+				}
+			});
 		}
 	}
 
@@ -835,67 +866,85 @@
 		container.className = 'confetti-container';
 		document.body.appendChild(container);
 
-		// Number of confetti pieces
-		const confettiCount = 70;
+		// Number of confetti pieces (reduced from 70 to 50 for better performance)
+		const confettiCount = 50;
 		const colors = ['#ff9cef', '#fde68a', '#a78bfa', '#f472b6', '#60a5fa'];
+		const fragment = document.createDocumentFragment(); // Use fragment for better performance
 
-		// Create and animate confetti pieces
-		for (let i = 0; i < confettiCount; i++) {
-			const confetti = document.createElement('div');
-			confetti.className = 'confetti-piece';
+		// Create and animate confetti pieces in batches
+		const createConfetti = (startIdx, batchSize) => {
+			const endIdx = Math.min(startIdx + batchSize, confettiCount);
+			
+			for (let i = startIdx; i < endIdx; i++) {
+				const confetti = document.createElement('div');
+				confetti.className = 'confetti-piece';
 
-			// Random styling
-			const size = Math.random() * 10 + 6; // Size between 6-16px
-			const color = colors[Math.floor(Math.random() * colors.length)];
+				// Random styling
+				const size = Math.random() * 10 + 6; // Size between 6-16px
+				const color = colors[Math.floor(Math.random() * colors.length)];
 
-			// Shape variety (circle, square, triangle)
-			const shape = Math.random() > 0.66 ? 'circle' : Math.random() > 0.33 ? 'triangle' : 'square';
+				// Simplified shape selection (improves performance)
+				const shapeRand = Math.random();
+				const shape = shapeRand > 0.66 ? 'circle' : shapeRand > 0.33 ? 'triangle' : 'square';
 
-			// Set styles
-			confetti.style.width = `${size}px`;
-			confetti.style.height = `${size}px`;
-			confetti.style.background = color;
-			confetti.style.borderRadius = shape === 'circle' ? '50%' : shape === 'triangle' ? '0' : '2px';
-			if (shape === 'triangle') {
-				confetti.style.background = 'transparent';
-				confetti.style.borderBottom = `${size}px solid ${color}`;
-				confetti.style.borderLeft = `${size / 2}px solid transparent`;
-				confetti.style.borderRight = `${size / 2}px solid transparent`;
-				confetti.style.width = '0';
-				confetti.style.height = '0';
-			}
+				// Set styles
+				confetti.style.width = `${size}px`;
+				confetti.style.height = `${size}px`;
+				confetti.style.background = color;
+				confetti.style.borderRadius = shape === 'circle' ? '50%' : shape === 'triangle' ? '0' : '2px';
+				if (shape === 'triangle') {
+					confetti.style.background = 'transparent';
+					confetti.style.borderBottom = `${size}px solid ${color}`;
+					confetti.style.borderLeft = `${size / 2}px solid transparent`;
+					confetti.style.borderRight = `${size / 2}px solid transparent`;
+					confetti.style.width = '0';
+					confetti.style.height = '0';
+				}
 
-			// Random position and animation duration
-			const startPos = Math.random() * 100; // Position 0-100%
-			const delay = Math.random() * 0.8; // Delay variation (0-0.8s)
-			const duration = Math.random() * 2 + 2; // Animation duration (2-4s)
-			const rotation = Math.random() * 720 - 360; // Rotation -360 to +360 degrees
+				// Random position and animation duration
+				const startPos = Math.random() * 100; // Position 0-100%
+				const delay = Math.random() * 0.5; // Reduced delay variation (0-0.5s)
+				const duration = Math.random() * 1.5 + 2; // Animation duration (2-3.5s)
+				const rotation = Math.random() * 720 - 360; // Rotation -360 to +360 degrees
 
-			// Apply positions and animation styles
-			const horizontalPos = Math.random() * 10 - 5; // Small horizontal variation
-			confetti.style.left = `calc(${startPos}% + ${horizontalPos}px)`;
-			const startOffset = Math.random() * 15 - 7.5; // Starting y-position variation
-			confetti.style.top = `${startOffset}px`;
-			confetti.style.animationDelay = `${delay}s`;
-			confetti.style.animationDuration = `${duration}s`;
+				// Apply positions and animation styles
+				const horizontalPos = Math.random() * 10 - 5; // Small horizontal variation
+				confetti.style.left = `calc(${startPos}% + ${horizontalPos}px)`;
+				const startOffset = Math.random() * 15 - 7.5; // Starting y-position variation
+				confetti.style.top = `${startOffset}px`;
+				confetti.style.animationDelay = `${delay}s`;
+				confetti.style.animationDuration = `${duration}s`;
 
-			// Choose a random easing function for variety
-			const easing =
-				Math.random() > 0.7
-					? 'cubic-bezier(0.25, 0.1, 0.25, 1)'
-					: Math.random() > 0.5
-						? 'cubic-bezier(0.42, 0, 0.58, 1)'
+				// Simplified easing function selection (improves performance)
+				const easingRand = Math.random();
+				const easing = easingRand > 0.7 
+					? 'cubic-bezier(0.25, 0.1, 0.25, 1)' 
+					: easingRand > 0.4 
+						? 'cubic-bezier(0.42, 0, 0.58, 1)' 
 						: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-			confetti.style.animationTimingFunction = easing;
-			confetti.style.transform = `rotate(${rotation}deg)`;
+				confetti.style.animationTimingFunction = easing;
+				confetti.style.transform = `rotate(${rotation}deg)`;
 
-			// Add to container
-			container.appendChild(confetti);
-		}
+				// Add to fragment instead of directly to container
+				fragment.appendChild(confetti);
+			}
+			
+			// After batch is complete, append to container
+			if (endIdx < confettiCount) {
+				// Schedule next batch with requestAnimationFrame for better performance
+				requestAnimationFrame(() => createConfetti(endIdx, batchSize));
+			}
+		};
+		
+		// Start creating confetti in batches of 10
+		createConfetti(0, 10);
+		container.appendChild(fragment);
 
 		// Remove container after animation completes
 		setTimeout(() => {
-			document.body.removeChild(container);
+			if (document.body.contains(container)) {
+				document.body.removeChild(container);
+			}
 		}, 2500); // Slightly longer than the longest animation
 	}
 
@@ -915,24 +964,54 @@
 	}
 
 	// Function to calculate responsive font size based on transcript length and device
+	// Optimized for performance with memoization and cached viewport checks
+	const fontSizeCache = new Map();
+	let isMobileDevice = false;
+	let viewportChecked = false;
+	
 	function getResponsiveFontSize(text) {
 		if (!text) return 'text-base'; // Default size
-
-		// Get viewport width for more responsive sizing
-		let viewportWidth = 0;
-		if (typeof window !== 'undefined') {
-			viewportWidth = window.innerWidth;
+		
+		// Check viewport size once and cache the result
+		if (!viewportChecked && browser) {
+			isMobileDevice = window.innerWidth < 640;
+			viewportChecked = true;
+			
+			// Reset the check on resize, but throttle for performance
+			let resizeTimeout;
+			window.addEventListener('resize', () => {
+				if (resizeTimeout) clearTimeout(resizeTimeout);
+				resizeTimeout = setTimeout(() => {
+					isMobileDevice = window.innerWidth < 640;
+				}, 200);
+			});
 		}
 
-		// Smaller base sizes for mobile
-		const isMobile = viewportWidth > 0 && viewportWidth < 640;
-
+		// Length-based caching for better performance
 		const length = text.length;
-		if (length < 50) return isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl'; // Very short text
-		if (length < 150) return isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl'; // Short text
-		if (length < 300) return isMobile ? 'text-sm sm:text-base md:text-lg' : 'text-base md:text-lg'; // Medium text
-		if (length < 500) return isMobile ? 'text-xs sm:text-sm md:text-base' : 'text-sm md:text-base'; // Medium-long text
-		return isMobile ? 'text-xs sm:text-sm' : 'text-sm md:text-base'; // Long text
+		const cacheKey = `${length}-${isMobileDevice ? 'mobile' : 'desktop'}`;
+		
+		if (fontSizeCache.has(cacheKey)) {
+			return fontSizeCache.get(cacheKey);
+		}
+		
+		// Calculate the font size class
+		let result;
+		if (length < 50) {
+			result = isMobileDevice ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl'; // Very short text
+		} else if (length < 150) {
+			result = isMobileDevice ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl'; // Short text
+		} else if (length < 300) {
+			result = isMobileDevice ? 'text-sm sm:text-base md:text-lg' : 'text-base md:text-lg'; // Medium text
+		} else if (length < 500) {
+			result = isMobileDevice ? 'text-xs sm:text-sm md:text-base' : 'text-sm md:text-base'; // Medium-long text
+		} else {
+			result = isMobileDevice ? 'text-xs sm:text-sm' : 'text-sm md:text-base'; // Long text
+		}
+		
+		// Store in cache and return
+		fontSizeCache.set(cacheKey, result);
+		return result;
 	}
 
 	// Reactive font size based on transcript length
@@ -2101,19 +2180,19 @@
 
 	@keyframes button-press {
 		0% {
-			transform: scale(1);
+			transform: scale3d(1, 1, 1); /* Use scale3d for better GPU acceleration */
 		}
 		35% {
-			transform: scale(0.98);
+			transform: scale3d(0.98, 0.98, 1);
 			background-color: #f59e0b;
 			box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 		}
 		75% {
-			transform: scale(1.01);
+			transform: scale3d(1.01, 1.01, 1);
 			background-color: #fbbf24;
 		}
 		100% {
-			transform: scale(1);
+			transform: scale3d(1, 1, 1);
 			background-color: #fbbf24;
 		}
 	}
