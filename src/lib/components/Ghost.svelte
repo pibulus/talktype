@@ -12,8 +12,13 @@
   let eyesClosed = false;
   let isWobbling = false;
   let isRainbow = false;
+  let eyePositionX = 0; // For horizontal eye tracking: -1 to 1
+  let eyePositionY = 0; // For vertical eye tracking: -1 to 1
   let currentTheme = 'peach';
   let bgImageSrc = '/talktype-icon-bg-gradient.svg';
+  
+  // Mouse tracking
+  let ghostElement = null; // Reference to the container element
   
   // --- Theme handling ---
   onMount(() => {
@@ -40,7 +45,13 @@
         greetingAnimation();
       }, 1500);
       
-      return () => observer.disconnect();
+      // Start tracking mouse movement for eye position
+      document.addEventListener('mousemove', trackMousePosition, { passive: true });
+      
+      return () => {
+        observer.disconnect();
+        document.removeEventListener('mousemove', trackMousePosition);
+      };
     }
   });
   
@@ -168,10 +179,60 @@
     }
   }
   
+  // Track mouse movement to move eyes
+  function trackMousePosition(event) {
+    if (typeof window === 'undefined' || !ghostElement || 
+        eyesClosed) return; // Allow tracking during recording for better tactility
+    
+    // Get ghost element bounding box
+    const ghostRect = ghostElement.getBoundingClientRect();
+    const ghostCenterX = ghostRect.left + (ghostRect.width / 2);
+    const ghostCenterY = ghostRect.top + (ghostRect.height / 2);
+    
+    // Calculate mouse position relative to ghost center
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+    const distanceX = mouseX - ghostCenterX;
+    const distanceY = mouseY - ghostCenterY;
+    
+    // Normalize to values between -1 and 1
+    const maxDistanceX = window.innerWidth / 3; // More responsive horizontal tracking
+    const maxDistanceY = window.innerHeight / 3; // Vertical tracking
+    const normalizedX = Math.max(-1, Math.min(1, distanceX / maxDistanceX));
+    const normalizedY = Math.max(-1, Math.min(1, distanceY / maxDistanceY));
+    
+    // Add smaller dead zone for more responsiveness
+    if (Math.abs(normalizedX) < 0.05) {
+      eyePositionX = 0;
+    } else {
+      // Apply faster smoothing for better tactility - 20% toward target
+      eyePositionX = eyePositionX + (normalizedX - eyePositionX) * 0.2;
+    }
+    
+    // Vertical tracking with smaller movement range
+    if (Math.abs(normalizedY) < 0.05) {
+      eyePositionY = 0;
+    } else {
+      // Apply faster smoothing for better tactility - 20% toward target
+      eyePositionY = eyePositionY + (normalizedY - eyePositionY) * 0.2;
+    }
+  }
+  
   // Dispatch toggle recording event when clicked
-  function handleClick() {
+  function handleClick(event) {
     // Don't wobble on click - let the reactive block handle wobbles
     // based on state changes - this prevents animation conflicts
+    
+    // Make the eyes "look at" where they were clicked briefly
+    if (!eyesClosed && typeof window !== 'undefined' && ghostElement) {
+      // Use the click coordinates to update eye position
+      trackMousePosition(event);
+      
+      // Hold the eyes in this position briefly
+      setTimeout(() => {
+        // Then gradually return to tracking
+      }, 300);
+    }
     
     // Dispatch event to let page know to toggle recording
     if (typeof document !== 'undefined') {
@@ -233,6 +294,7 @@
 </script>
 
 <button
+  bind:this={ghostElement}
   class="icon-container theme-{currentTheme} {isRecording ? 'recording' : ''} {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''}"
   style={isRecording ? `filter: drop-shadow(0 0 25px ${currentGlowColors.primary}) drop-shadow(0 0 35px ${currentGlowColors.secondary}) drop-shadow(0 0 45px ${currentGlowColors.tertiary}) !important;` : ''}
   on:click={handleClick}
@@ -252,11 +314,15 @@
     <!-- Base ghost image -->
     <img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" />
     
-    <!-- Eyes - controlled by local state with transform-based blinking -->
+    <!-- Eyes - controlled by local state with transform-based blinking and 2D mouse-following -->
     <img 
       src="/assets/talktype-icon-eyes.svg" 
       alt="" 
       class="icon-eyes {eyesClosed ? 'eyes-closed' : ''}"
+      style={
+        eyesClosed ? 'transform: scaleY(0.05);' : 
+        `transform: translate(${eyePositionX * 4}px, ${eyePositionY * 2}px);`
+      }
     />
   </div>
 </button>
@@ -391,9 +457,15 @@
     animation: ghost-wobble-right 0.6s ease-in-out forwards !important;
   }
   
-  /* Eyes closed state - transform-based with natural feel */
+  /* Eyes - now transition handles both blink and movement */
+  .icon-eyes {
+    transition: transform 0.08s ease-out !important; /* For blinking */
+    will-change: transform; /* GPU acceleration hint */
+    transform: translateZ(0); /* Force GPU rendering */
+  }
+  
+  /* Eyes closed state is handled via inline style for better coordination with movement */
   .eyes-closed {
-    transform: scaleY(0.05) !important; /* Not too extreme closure */
     transition: transform 0.08s ease-out !important; /* Smoother, more natural close */
   }
   
