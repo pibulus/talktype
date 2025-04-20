@@ -9,16 +9,18 @@
   // Local state
   let blinkTimeoutId = null;
   let wobbleTimeoutId = null;
-  let lookAroundTimeoutId = null;
   let inactivityTimeoutId = null;
   let specialAnimationTimeoutId = null;
   
   let eyesClosed = false;
   let isWobbling = false;
   let isRainbow = false;
-  let lookDirection = null; // For eye movement: 'left', 'right', or null
+  let eyePosition = 0; // For eye tracking: -1 to 1 value representing position
   let isAwake = true; // For sleep state
   let doingSpecialAnimation = false; // For rare animations
+  
+  // Mouse tracking
+  let ghostElement = null; // Reference to the container element
   
   let currentTheme = 'peach';
   let bgImageSrc = '/talktype-icon-bg-gradient.svg';
@@ -48,8 +50,8 @@
         greetingAnimation();
       }, 1500);
       
-      // Start occasional eye movement
-      occasionallyLookAround();
+      // Start tracking mouse movement for eye position
+      document.addEventListener('mousemove', trackMousePosition, { passive: true });
       
       // Start inactivity detection
       resetInactivity();
@@ -59,12 +61,11 @@
       
       // Set up event listeners for activity
       document.addEventListener('mousemove', resetInactivity);
-      document.addEventListener('keydown', resetInactivity);
       
       return () => {
         observer.disconnect();
+        document.removeEventListener('mousemove', trackMousePosition);
         document.removeEventListener('mousemove', resetInactivity);
-        document.removeEventListener('keydown', resetInactivity);
       };
     }
   });
@@ -73,14 +74,13 @@
   onDestroy(() => {
     clearTimeout(blinkTimeoutId);
     clearTimeout(wobbleTimeoutId);
-    clearTimeout(lookAroundTimeoutId);
     clearTimeout(inactivityTimeoutId);
     clearTimeout(specialAnimationTimeoutId);
     
     // Clean up document event listeners if they exist
     if (typeof document !== 'undefined') {
+      document.removeEventListener('mousemove', trackMousePosition);
       document.removeEventListener('mousemove', resetInactivity);
-      document.removeEventListener('keydown', resetInactivity);
     }
   });
   
@@ -190,30 +190,31 @@
   let wasRecording = false;
   let wasProcessing = false;
   
-  // Occasional random looking around
-  function occasionallyLookAround() {
-    if (typeof window === 'undefined') return;
+  // Track mouse movement to move eyes
+  function trackMousePosition(event) {
+    if (typeof window === 'undefined' || !ghostElement || !isAwake || 
+        isRecording || isProcessing || eyesClosed) return;
     
-    // Clear any existing timeout
-    clearTimeout(lookAroundTimeoutId);
+    // Get ghost element bounding box
+    const ghostRect = ghostElement.getBoundingClientRect();
+    const ghostCenterX = ghostRect.left + (ghostRect.width / 2);
     
-    // Only look around when idle and awake
-    if (Math.random() < 0.3 && !isRecording && !isProcessing && isAwake) { // 30% chance when idle
-      // Don't look around during blinks
-      if (!eyesClosed) {
-        const direction = Math.random() > 0.5 ? 'left' : 'right';
-        lookDirection = direction;
-        
-        // Look back to center after a moment
-        setTimeout(() => {
-          lookDirection = null;
-        }, 800);
-      }
+    // Calculate mouse position relative to ghost center
+    const mouseX = event.clientX;
+    const distanceFromCenter = mouseX - ghostCenterX;
+    
+    // Normalize to a value between -1 and 1 with a dead zone in the middle
+    // and limit maximum movement
+    const maxDistance = window.innerWidth / 4; // 1/4 of screen width is max distance
+    const normalizedPosition = Math.max(-1, Math.min(1, distanceFromCenter / maxDistance));
+    
+    // Add small dead zone in center
+    if (Math.abs(normalizedPosition) < 0.1) {
+      eyePosition = 0;
+    } else {
+      // Apply smoothing - only move 10% of the way to target position
+      eyePosition = eyePosition + (normalizedPosition - eyePosition) * 0.1;
     }
-    
-    // Schedule next check with random interval
-    const nextCheck = 3000 + Math.random() * 5000; // Between 3-8 seconds
-    lookAroundTimeoutId = setTimeout(occasionallyLookAround, nextCheck);
   }
   
   // Reset inactivity timer
@@ -311,6 +312,7 @@
 </script>
 
 <button
+  bind:this={ghostElement}
   class="icon-container {isRecording ? 'recording' : ''} 
                 {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''} 
                 {!isAwake ? 'sleeping' : ''}
@@ -333,12 +335,12 @@
     <!-- Base ghost image -->
     <img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" />
     
-    <!-- Eyes - controlled by local state with transform-based blinking and movement -->
+    <!-- Eyes - controlled by local state with transform-based blinking and mouse-following -->
     <img 
       src="/assets/talktype-icon-eyes.svg" 
       alt="" 
       class="icon-eyes {eyesClosed ? 'eyes-closed' : ''} {!isAwake ? 'sleepy-eyes' : ''}"
-      style={!eyesClosed && lookDirection ? `transform: translateX(${lookDirection === 'left' ? -2 : 2}px);` : ''}
+      style={!eyesClosed && eyePosition !== 0 ? `transform: translateX(${eyePosition * 3}px);` : ''}
     />
   </div>
 </button>
