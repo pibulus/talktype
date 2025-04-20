@@ -208,25 +208,12 @@
     // Make sure to reset inactivity timer on interaction
     resetInactivity();
     
-    // Extra debug
-    console.log('CLICK HANDLER: Forcing wobble NOW');
-    
-    // GUARANTEED wobble on click - forcing class change
-    document.querySelectorAll('.ghost-wobble-left, .ghost-wobble-right').forEach(el => {
-      el.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
-    });
-    
-    // Force browser reflow to ensure animation triggers
-    if (ghostElement) {
-      void ghostElement.offsetHeight;
-    }
-    
-    // Now start wobble
+    // ALWAYS wobble on click directly - don't wait for state change
     clearTimeout(wobbleTimeoutId);
     isWobbling = true;
     wobbleTimeoutId = setTimeout(() => {
       isWobbling = false;
-    }, 800); // Gentle wobble
+    }, 600);
     
     // Make the eyes "look at" where they were clicked briefly
     if (!eyesClosed && typeof window !== 'undefined' && ghostElement) {
@@ -240,14 +227,10 @@
     }
     
     // Dispatch event to let page know to toggle recording
-    // Important: Add a small delay here to reduce conflict with the click wobble
-    setTimeout(() => {
-      if (typeof document !== 'undefined') {
-        console.log('Dispatching togglerecording event');
-        const event = new CustomEvent('togglerecording');
-        document.dispatchEvent(event);
-      }
-    }, 20);
+    if (typeof document !== 'undefined') {
+      const event = new CustomEvent('togglerecording');
+      document.dispatchEvent(event);
+    }
   }
   
   // Track previous state to detect actual changes
@@ -347,71 +330,30 @@
       // Reset inactivity on state change
       resetInactivity();
       
-      // IMPORTANT: This is the case when recording STARTS
-      if (isRecording && !wasRecording) {
-        // Record start time for wobble duration check on stop
-        wasRecordingTimestamp = Date.now();
-        
-        // Extra debug log
-        console.log('RECORDING START DETECTED: Forcing wobble NOW');
-        
-        // GUARANTEED wobble on recording start - directly manipulate DOM
-        document.querySelectorAll('.ghost-wobble-left, .ghost-wobble-right').forEach(el => {
-          el.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
-        });
-        
-        // Force browser reflow to ensure animation triggers
-        if (ghostElement) {
-          void ghostElement.offsetHeight;
-        }
-        
-        // Clear existing timer
+      // Only wobble when STARTING recording (not just any state update)
+      if (isRecording && !wasRecording && typeof window !== 'undefined') {
+        // Clear any existing wobble timer
         clearTimeout(wobbleTimeoutId);
         
-        // Set wobble state with a small delay to ensure DOM has updated
-        setTimeout(() => {
-          console.log('Setting isWobbling = true');
-          isWobbling = true;
-          
-          // Schedule wobble end
-          wobbleTimeoutId = setTimeout(() => {
-            isWobbling = false;
-          }, 800); // Longer, gentler wobble
-        }, 10);
+        // Start recording wobble
+        isWobbling = true;
+        wobbleTimeoutId = setTimeout(() => {
+          isWobbling = false;
+        }, 600);
       }
     } 
     // Restart blinking when finished recording/processing
     else if ((wasRecording || wasProcessing) && !isRecording && !isProcessing) {
-      // This is the case when recording STOPS
-      if (wasRecording && wasRecordingTimestamp && 
-          (Date.now() - wasRecordingTimestamp > 1000)) {
-        
-        // Extra debug log
-        console.log('RECORDING STOP DETECTED: Forcing wobble NOW');
-        
-        // GUARANTEED wobble on recording stop - directly manipulate DOM
-        document.querySelectorAll('.ghost-wobble-left, .ghost-wobble-right').forEach(el => {
-          el.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
-        });
-        
-        // Force browser reflow to ensure animation triggers
-        if (ghostElement) {
-          void ghostElement.offsetHeight;
-        }
-        
-        // Clear existing timer
+      // Add wobble only when STOPPING recording
+      if (wasRecording && typeof window !== 'undefined') {
+        // Clear any existing wobble timer
         clearTimeout(wobbleTimeoutId);
         
-        // Set wobble state with a small delay to ensure DOM has updated
-        setTimeout(() => {
-          console.log('Setting isWobbling = true on stop');
-          isWobbling = true;
-          
-          // Schedule wobble end
-          wobbleTimeoutId = setTimeout(() => {
-            isWobbling = false;
-          }, 800); // Longer, gentler wobble
-        }, 10);
+        // Stop recording wobble
+        isWobbling = true;
+        wobbleTimeoutId = setTimeout(() => {
+          isWobbling = false;
+        }, 600);
       }
       
       // Restart blinking after a delay
@@ -430,7 +372,7 @@
   bind:this={ghostElement}
   class="icon-container theme-{currentTheme}
          {isRecording ? 'recording' : ''}
-         {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') + '-' + Date.now() : ''} 
+         {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''} 
          {!isAwake ? 'sleeping' : ''}
          {doingSpecialAnimation ? 'do-special-animation' : ''}"
   style={isRecording ? `filter: drop-shadow(0 0 25px ${currentGlowColors.primary}) drop-shadow(0 0 35px ${currentGlowColors.secondary}) drop-shadow(0 0 45px ${currentGlowColors.tertiary}) !important;` : ''}
@@ -590,14 +532,14 @@
     animation: recording-glow-rainbow 8s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
   }
   
-  /* Wobble animations - with wildcards to catch any ghost-wobble-X-TIMESTAMP classes */
-  [class*="ghost-wobble-left"] {
-    animation: ghost-wobble-left 0.8s ease-in-out forwards !important;
+  /* Wobble animations - simple direct class matching */
+  .ghost-wobble-left {
+    animation: ghost-wobble-left 0.6s ease-in-out forwards !important;
     will-change: transform; /* Hint for browser optimization */
   }
   
-  [class*="ghost-wobble-right"] {
-    animation: ghost-wobble-right 0.8s ease-in-out forwards !important;
+  .ghost-wobble-right {
+    animation: ghost-wobble-right 0.6s ease-in-out forwards !important;
     will-change: transform; /* Hint for browser optimization */
   }
   
@@ -787,17 +729,17 @@
   
   @keyframes ghost-wobble-left {
     0% { transform: rotate(0deg) scale(1); }
-    25% { transform: rotate(-4deg) scale(1.025); }
-    50% { transform: rotate(2deg) scale(1.01); }
-    75% { transform: rotate(-1deg) scale(1.005); }
+    25% { transform: rotate(-5deg) scale(1.02); }
+    50% { transform: rotate(3deg) scale(1.01); }
+    75% { transform: rotate(-2deg) scale(1.01); }
     100% { transform: rotate(0deg) scale(1); }
   }
   
   @keyframes ghost-wobble-right {
     0% { transform: rotate(0deg) scale(1); }
-    25% { transform: rotate(4deg) scale(1.025); }
-    50% { transform: rotate(-2deg) scale(1.01); }
-    75% { transform: rotate(1deg) scale(1.005); }
+    25% { transform: rotate(5deg) scale(1.02); }
+    50% { transform: rotate(-3deg) scale(1.01); }
+    75% { transform: rotate(2deg) scale(1.01); }
     100% { transform: rotate(0deg) scale(1); }
   }
   
