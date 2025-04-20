@@ -308,6 +308,14 @@
 		// Don't clear transcript here - we do it in toggleRecording for better control of CTA rotation
 		recording = true;
 		dispatch('recordingstart'); // Dispatch recording start event
+		
+		// Trigger ghost wobble by dispatching event for ghost animation
+		if (typeof document !== 'undefined') {
+			console.log('🎮 Dispatching ghost-wobble event from Start Recording');
+			const ghostEvent = new CustomEvent('ghost-wobble');
+			document.dispatchEvent(ghostEvent);
+		}
+		
 		audioChunks = [];
 		clipboardSuccess = false;
 		transcriptionProgress = 0;

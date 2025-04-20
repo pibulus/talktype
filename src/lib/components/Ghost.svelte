@@ -50,12 +50,28 @@
       // Start tracking mouse movement for eye position
       document.addEventListener('mousemove', trackMousePosition, { passive: true });
       
+      // Listen for wobble events from AudioToText start recording button
+      document.addEventListener('ghost-wobble', () => {
+        console.log('Ghost received wobble event from AudioToText');
+        // Trigger wobble animation
+        isWobbling = true;
+        
+        // Clear any existing wobble timer
+        clearTimeout(wobbleTimeoutId);
+        
+        // Schedule the wobble to end after animation completes
+        wobbleTimeoutId = setTimeout(() => {
+          isWobbling = false;
+        }, 600);
+      });
+      
       // Start special animation detection (easter egg)
       maybeDoSpecialAnimation();
       
       return () => {
         observer.disconnect();
         document.removeEventListener('mousemove', trackMousePosition);
+        document.removeEventListener('ghost-wobble', () => {});
         clearTimeout(specialAnimationTimeoutId);
         clearTimeout(wobbleTimeoutId);
       };
@@ -281,14 +297,28 @@
   
   // Watch for changes in recording/processing state
   $: {
-    // Handle blinking schedule based on recording state
     if (isRecording || isProcessing) {
+      // Clear any scheduled blinks during recording/processing
       clearTimeout(blinkTimeoutId);
+      
+      // Only wobble when STARTING recording (not just any state update)
+      if (isRecording && !wasRecording && typeof window !== 'undefined') {
+        console.log('Ghost wobble: START recording detected');
+        // Clear any existing wobble timer
+        clearTimeout(wobbleTimeoutId);
+        
+        // Start recording wobble
+        isWobbling = true;
+        wobbleTimeoutId = setTimeout(() => {
+          isWobbling = false;
+        }, 600);
+      }
     } 
     // Restart blinking when finished recording/processing
     else if ((wasRecording || wasProcessing) && !isRecording && !isProcessing) {
       // Add wobble only when STOPPING recording
       if (wasRecording && typeof window !== 'undefined') {
+        console.log('Ghost wobble: STOP recording detected');
         // Clear any existing wobble timer
         clearTimeout(wobbleTimeoutId);
         
@@ -416,11 +446,26 @@
     animation-delay: 0s, 0s;
   }
   
-  /* Recording state - both animation and direct filter for reliability */
-  .recording {
-    animation: recording-glow 1.5s infinite !important;
+  /* Recording state - theme-specific animations with bobbing */
+  .recording.theme-peach {
+    animation: recording-glow-peach 2s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
     transform: scale(1.03);
-    animation-delay: 0s;
+  }
+  
+  .recording.theme-mint {
+    animation: recording-glow-mint 2s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
+    transform: scale(1.03);
+  }
+  
+  .recording.theme-bubblegum {
+    animation: recording-glow-bubblegum 2s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
+    transform: scale(1.03);
+  }
+  
+  .recording.theme-rainbow {
+    /* Rainbow uses different animation with actual color cycling */
+    animation: rainbow-color-cycle 5s linear infinite, recording-glow-pulse 2s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
+    transform: scale(1.03);
   }
   
   /* Wobble animations */
@@ -469,20 +514,81 @@
     }
   }
   
-  /* Vibrant recording glow animation */
-  @keyframes recording-glow {
-    0% {
-      filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5))
-        drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
+  /* Theme-specific recording glow animations */
+  @keyframes recording-glow-peach {
+    /* Extra saturated sunrise glow with THREE VISIBLY DISTINCT COLORS */
+    0%, 5%, 95%, 100% {
+      filter: drop-shadow(0 0 15px rgba(255, 80, 150, 1.0)) /* Bright hot pink - most visible */
+        drop-shadow(0 0 35px rgba(255, 150, 100, 0.9)) /* Orange accent - second layer */
+        drop-shadow(0 0 55px rgba(255, 240, 200, 0.8)); /* Pale yellow glow - outer layer */
     }
     50% {
-      filter: drop-shadow(0 0 25px rgba(255, 100, 243, 0.8))
-        drop-shadow(0 0 35px rgba(255, 120, 170, 0.5))
-        drop-shadow(0 0 40px rgba(249, 168, 212, 0.4));
+      filter: drop-shadow(0 0 25px rgba(255, 80, 150, 1.0)) /* Bright hot pink intensified */
+        drop-shadow(0 0 60px rgba(255, 150, 100, 0.95)) /* Orange accent expanded */
+        drop-shadow(0 0 90px rgba(255, 240, 200, 0.9)); /* Pale yellow expanded */
     }
-    100% {
-      filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5))
-        drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
+  }
+  
+  @keyframes recording-glow-mint {
+    /* Fresh mint with THREE VISIBLY DISTINCT COLORS */
+    0%, 5%, 95%, 100% {
+      filter: drop-shadow(0 0 15px rgba(0, 220, 150, 1.0)) /* Bright teal/mint - most visible */
+        drop-shadow(0 0 35px rgba(100, 255, 210, 0.9)) /* Lighter mint green - second layer */
+        drop-shadow(0 0 55px rgba(160, 255, 230, 0.8)); /* Very pale mint - outer layer */
+    }
+    50% {
+      filter: drop-shadow(0 0 25px rgba(0, 220, 150, 1.0)) /* Bright teal/mint intensified */
+        drop-shadow(0 0 60px rgba(100, 255, 210, 0.95)) /* Lighter mint expanded */
+        drop-shadow(0 0 90px rgba(160, 255, 230, 0.9)); /* Pale mint expanded */
+    }
+  }
+  
+  @keyframes recording-glow-bubblegum {
+    /* New purple-blue with THREE VISIBLY DISTINCT COLORS */
+    0%, 5%, 95%, 100% {
+      filter: drop-shadow(0 0 15px rgba(140, 80, 255, 1.0)) /* Rich purple - most visible */
+        drop-shadow(0 0 35px rgba(180, 120, 255, 0.9)) /* Medium purple - second layer */
+        drop-shadow(0 0 55px rgba(210, 180, 255, 0.8)); /* Pale lilac - outer layer */
+    }
+    50% {
+      filter: drop-shadow(0 0 25px rgba(140, 80, 255, 1.0)) /* Rich purple intensified */
+        drop-shadow(0 0 60px rgba(180, 120, 255, 0.95)) /* Medium purple expanded */
+        drop-shadow(0 0 90px rgba(210, 180, 255, 0.9)); /* Pale lilac expanded */
+    }
+  }
+  
+  /* New animation that ACTUALLY cycles through rainbow colors */
+  @keyframes rainbow-color-cycle {
+    0%, 100% {
+      filter: drop-shadow(0 0 20px rgba(255, 50, 150, 1.0)); /* Pink/magenta */
+    }
+    16.6% {
+      filter: drop-shadow(0 0 20px rgba(255, 90, 90, 1.0)); /* Red */
+    }
+    33.3% {
+      filter: drop-shadow(0 0 20px rgba(255, 180, 80, 1.0)); /* Orange */
+    }
+    50% {
+      filter: drop-shadow(0 0 20px rgba(255, 230, 100, 1.0)); /* Yellow */
+    }
+    66.6% {
+      filter: drop-shadow(0 0 20px rgba(80, 220, 120, 1.0)); /* Green */
+    }
+    83.3% {
+      filter: drop-shadow(0 0 20px rgba(80, 160, 255, 1.0)); /* Blue */
+    }
+  }
+  
+  /* Separate pulsing animation for rainbow theme */
+  @keyframes recording-glow-pulse {
+    0%, 5%, 95%, 100% {
+      filter: drop-shadow(0 0 25px currentColor)
+             drop-shadow(0 0 40px currentColor);
+    }
+    50% {
+      filter: drop-shadow(0 0 35px currentColor)
+             drop-shadow(0 0 60px currentColor)
+             drop-shadow(0 0 90px currentColor);
     }
   }
   
