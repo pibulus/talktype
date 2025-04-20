@@ -89,12 +89,12 @@
   
   // Greeting animation
   function greetingAnimation() {
-    // Add a quick greeting wobble with faster, snappier blinks
+    // Add a quicker, snappier wobble and blinks
     isWobbling = true;
     wobbleTimeoutId = setTimeout(() => {
       isWobbling = false;
       
-      // Natural double blink with good vibe
+      // Snappier double blink for greeting
       eyesClosed = true;
       setTimeout(() => {
         eyesClosed = false;
@@ -105,10 +105,10 @@
             
             // Start ambient blinking
             scheduleBlink();
-          }, 150); // More natural close time
-        }, 180); // Better pause between blinks
-      }, 150); // More natural open time
-    }, 600); // Short initial wobble
+          }, 100); // Faster close
+        }, 120); // Faster between blinks
+      }, 100); // Faster open
+    }, 400); // Shorter initial wobble (was 600ms)
   }
   
   // Regular ambient blinking
@@ -167,9 +167,10 @@
       tertiary: 'rgba(249, 168, 212, 0.6)'   // Light bubblegum
     },
     rainbow: {
-      primary: 'rgba(124, 58, 237, 0.9)',    // Bright purple
-      secondary: 'rgba(67, 56, 202, 0.7)',   // Medium blue
-      tertiary: 'rgba(79, 70, 229, 0.6)'     // Light indigo
+      // Use dynamic colors with CSS variables to allow animation
+      primary: 'var(--rainbow-primary, rgba(124, 58, 237, 0.9))',
+      secondary: 'var(--rainbow-secondary, rgba(67, 56, 202, 0.7))',
+      tertiary: 'var(--rainbow-tertiary, rgba(79, 70, 229, 0.6))'
     }
   };
   
@@ -506,8 +507,17 @@
   }
   
   .icon-container.theme-rainbow:hover {
-    filter: drop-shadow(0 0 18px rgba(79, 70, 229, 0.45))
-      drop-shadow(0 0 30px rgba(124, 58, 237, 0.3));
+    animation: rainbow-hover-glow 3s linear infinite !important;
+  }
+  
+  @keyframes rainbow-hover-glow {
+    0% { filter: drop-shadow(0 0 18px rgba(255, 0, 0, 0.45)) drop-shadow(0 0 30px rgba(255, 165, 0, 0.3)); }
+    16.6% { filter: drop-shadow(0 0 18px rgba(255, 165, 0, 0.45)) drop-shadow(0 0 30px rgba(255, 255, 0, 0.3)); } 
+    33.3% { filter: drop-shadow(0 0 18px rgba(255, 255, 0, 0.45)) drop-shadow(0 0 30px rgba(0, 255, 0, 0.3)); }
+    50% { filter: drop-shadow(0 0 18px rgba(0, 255, 0, 0.45)) drop-shadow(0 0 30px rgba(0, 255, 255, 0.3)); } 
+    66.6% { filter: drop-shadow(0 0 18px rgba(0, 255, 255, 0.45)) drop-shadow(0 0 30px rgba(0, 0, 255, 0.3)); }
+    83.3% { filter: drop-shadow(0 0 18px rgba(0, 0, 255, 0.45)) drop-shadow(0 0 30px rgba(255, 0, 255, 0.3)); }
+    100% { filter: drop-shadow(0 0 18px rgba(255, 0, 255, 0.45)) drop-shadow(0 0 30px rgba(255, 0, 0, 0.3)); }
   }
   
   /* Recording state - base styles shared across themes */
@@ -532,7 +542,7 @@
   }
   
   .recording.theme-rainbow {
-    animation: recording-glow-rainbow 1.5s infinite, gentle-float 3s ease-in-out infinite !important;
+    animation: recording-glow-rainbow 5s linear infinite, gentle-float 3s ease-in-out infinite !important;
   }
   
   /* Wobble animations */
@@ -580,7 +590,17 @@
   }
   
   .do-special-animation.theme-rainbow {
-    filter: drop-shadow(0 0 20px rgba(124, 58, 237, 0.7)) !important;
+    animation: rainbow-special-glow 2s linear infinite !important;
+  }
+  
+  @keyframes rainbow-special-glow {
+    0% { filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.7)) !important; }
+    16.6% { filter: drop-shadow(0 0 20px rgba(255, 165, 0, 0.7)) !important; }
+    33.3% { filter: drop-shadow(0 0 20px rgba(255, 255, 0, 0.7)) !important; }
+    50% { filter: drop-shadow(0 0 20px rgba(0, 255, 0, 0.7)) !important; }
+    66.6% { filter: drop-shadow(0 0 20px rgba(0, 0, 255, 0.7)) !important; }
+    83.3% { filter: drop-shadow(0 0 20px rgba(255, 0, 255, 0.7)) !important; }
+    100% { filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.7)) !important; }
   }
   
   /* Rainbow animation for ghost svg */
@@ -682,17 +702,49 @@
   
   @keyframes recording-glow-rainbow {
     0% {
-      filter: drop-shadow(0 0 15px rgba(124, 58, 237, 0.5))
-        drop-shadow(0 0 25px rgba(79, 70, 229, 0.4));
+      --rainbow-primary: rgba(255, 0, 0, 0.9); /* Red */
+      --rainbow-secondary: rgba(255, 105, 180, 0.7); /* Pink */
+      --rainbow-tertiary: rgba(255, 165, 0, 0.5); /* Orange */
+      filter: drop-shadow(0 0 15px var(--rainbow-primary))
+        drop-shadow(0 0 25px var(--rainbow-tertiary));
+    }
+    16% {
+      --rainbow-primary: rgba(255, 165, 0, 0.9); /* Orange */
+      --rainbow-secondary: rgba(255, 0, 0, 0.7); /* Red */
+      --rainbow-tertiary: rgba(255, 255, 0, 0.5); /* Yellow */
+    }
+    33% {
+      --rainbow-primary: rgba(255, 255, 0, 0.9); /* Yellow */
+      --rainbow-secondary: rgba(255, 165, 0, 0.7); /* Orange */
+      --rainbow-tertiary: rgba(0, 255, 0, 0.5); /* Green */
+      filter: drop-shadow(0 0 25px var(--rainbow-primary))
+        drop-shadow(0 0 35px var(--rainbow-secondary))
+        drop-shadow(0 0 40px var(--rainbow-tertiary));
     }
     50% {
-      filter: drop-shadow(0 0 25px rgba(124, 58, 237, 0.8))
-        drop-shadow(0 0 35px rgba(67, 56, 202, 0.5))
-        drop-shadow(0 0 40px rgba(79, 70, 229, 0.4));
+      --rainbow-primary: rgba(0, 255, 0, 0.9); /* Green */
+      --rainbow-secondary: rgba(255, 255, 0, 0.7); /* Yellow */
+      --rainbow-tertiary: rgba(0, 255, 255, 0.5); /* Cyan */
+    }
+    66% {
+      --rainbow-primary: rgba(0, 255, 255, 0.9); /* Cyan */
+      --rainbow-secondary: rgba(0, 255, 0, 0.7); /* Green */
+      --rainbow-tertiary: rgba(0, 0, 255, 0.5); /* Blue */
+      filter: drop-shadow(0 0 20px var(--rainbow-primary))
+        drop-shadow(0 0 30px var(--rainbow-secondary))
+        drop-shadow(0 0 45px var(--rainbow-tertiary));
+    }
+    83% {
+      --rainbow-primary: rgba(0, 0, 255, 0.9); /* Blue */
+      --rainbow-secondary: rgba(0, 255, 255, 0.7); /* Cyan */
+      --rainbow-tertiary: rgba(255, 0, 255, 0.5); /* Magenta */
     }
     100% {
-      filter: drop-shadow(0 0 15px rgba(124, 58, 237, 0.5))
-        drop-shadow(0 0 25px rgba(79, 70, 229, 0.4));
+      --rainbow-primary: rgba(255, 0, 255, 0.9); /* Magenta */
+      --rainbow-secondary: rgba(0, 0, 255, 0.7); /* Blue */
+      --rainbow-tertiary: rgba(255, 0, 0, 0.5); /* Back to red */
+      filter: drop-shadow(0 0 15px var(--rainbow-primary))
+        drop-shadow(0 0 25px var(--rainbow-tertiary));
     }
   }
   
