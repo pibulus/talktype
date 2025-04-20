@@ -258,23 +258,14 @@
   
   // Dispatch toggle recording event when clicked
   function handleClick(event) {
-    // IMPORTANT: We must wobble here directly when clicked
-    // This ensures consistent wobble on start/stop recording
-    isWobbling = true;
-    
-    // Clear any existing wobble timer
-    clearTimeout(wobbleTimeoutId);
+    // Don't wobble on click - let the reactive block handle wobbles
+    // based on state changes - this prevents animation conflicts
     
     // Make the eyes "look at" where they were clicked briefly
     if (!eyesClosed && typeof window !== 'undefined' && ghostElement) {
       // Use the click coordinates to update eye position
       trackMousePosition(event);
     }
-    
-    // Schedule the wobble to end after animation completes
-    wobbleTimeoutId = setTimeout(() => {
-      isWobbling = false;
-    }, 600);
     
     // Dispatch event to let page know to toggle recording
     if (typeof document !== 'undefined') {
@@ -289,28 +280,40 @@
   
   // Watch for changes in recording/processing state
   $: {
-    // Handle wobble animation when recording state changes
-    if ((isRecording && !wasRecording) || (!isRecording && wasRecording)) {
-      // Trigger wobble animation with a small delay for transitions
-      setTimeout(() => {
-        isWobbling = true;
-        
+    // Cancel any scheduled blinks during recording/processing
+    if (isRecording || isProcessing) {
+      clearTimeout(blinkTimeoutId);
+      
+      // Only wobble when STARTING recording (not just any state update)
+      if (isRecording && !wasRecording && typeof window !== 'undefined') {
         // Clear any existing wobble timer
         clearTimeout(wobbleTimeoutId);
         
-        // Schedule the wobble to end after animation completes
-        wobbleTimeoutId = setTimeout(() => {
-          isWobbling = false;
-        }, 600);
-      }, 10);  // Small delay to ensure proper animation
-    }
-
-    // Handle blinking schedule
-    if (isRecording || isProcessing) {
-      clearTimeout(blinkTimeoutId);
+        // Start recording wobble - WITH A SMALL DELAY to ensure proper animation timing
+        setTimeout(() => {
+          isWobbling = true;
+          wobbleTimeoutId = setTimeout(() => {
+            isWobbling = false;
+          }, 600);
+        }, 10);
+      }
     } 
     // Restart blinking when finished recording/processing
-    else if ((wasRecording || wasProcessing) && !isRecording && !isProcessing) {      
+    else if ((wasRecording || wasProcessing) && !isRecording && !isProcessing) {
+      // Add wobble only when STOPPING recording
+      if (wasRecording && typeof window !== 'undefined') {
+        // Clear any existing wobble timer
+        clearTimeout(wobbleTimeoutId);
+        
+        // Stop recording wobble - WITH A SMALL DELAY to ensure proper animation timing
+        setTimeout(() => {
+          isWobbling = true;
+          wobbleTimeoutId = setTimeout(() => {
+            isWobbling = false;
+          }, 600);
+        }, 10);
+      }
+      
       // Restart blinking after a delay
       setTimeout(() => {
         scheduleBlink();
