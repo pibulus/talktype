@@ -117,15 +117,14 @@
 		wobbleTimeoutId = setTimeout(() => {
 			isWobbling = false;
 			debug('Page: Wobble ended');
+			
+			// Only restart ambient blinking AFTER wobble animation completes
+			// AND if we're not in processing state
+			if (!isProcessing) {
+				debug('Page: Restarting blink after wobble (no processing)');
+				scheduleBlink();
+			}
 		}, 500); // Duration of wobble animation
-
-		// Restart blinking ONLY if not immediately processing
-		if (!isProcessing) {
-			debug('Page: Restarting blink after stop (no processing)');
-			scheduleBlink();
-		} else {
-			debug('Page: Not restarting blink (processing started)');
-		}
 	}
 
 	function handleProcessingStart() {
@@ -139,9 +138,13 @@
 	function handleProcessingEnd() {
 		debug('Page: Processing Ended');
 		isProcessing = false;
-		// Restart blinking now that processing is done
-		debug('Page: Restarting blink after processing end');
-		scheduleBlink();
+		
+		// Add a slight delay before restarting ambient blinking
+		// to avoid any weird blinks just after processing finishes
+		setTimeout(() => {
+			debug('Page: Restarting blink after processing end (with delay)');
+			scheduleBlink();
+		}, 500);
 	}
 	// --- End Event Handlers ---
 
@@ -223,8 +226,10 @@
 	onMount(() => {
 		debug('Component mounted');
 
-		// Start ambient blinking
-		scheduleBlink();
+		// Start ambient blinking with a delay to avoid immediate blinks
+		setTimeout(() => {
+			scheduleBlink();
+		}, 2000); // Wait 2 seconds before first blink
 
 		// Listen for toggle event from Ghost component
 		const handleToggleRecording = () => {
