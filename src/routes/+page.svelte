@@ -807,7 +807,7 @@
 		class="mx-auto flex w-full max-w-md flex-col items-center pt-4 sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
 	>
 		<!-- Ghost Icon using the new component -->
-		<div class="mb-4 h-36 w-36 sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64">
+		<div class="ghost-icon-wrapper mb-4 h-36 w-36 sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64">
 			<Ghost
 				{eyesClosed}
 				{isWobbling}
@@ -1093,36 +1093,19 @@
 		background-attachment: fixed;
 	}
 
-	/* --- Removed Old Ghost Icon CSS --- */
-	/* .icon-container { ... } */
-	/* .icon-container:focus, .icon-container:active, .icon-container:focus-visible { ... } */
-	/* .icon-layers { ... } */
-	/* .icon-bg, .icon-base, .icon-eyes { ... } */
-	/* .icon-bg { ... } */
-	/* .icon-base { ... } */
-	/* .icon-eyes { ... } */
-	/* .icon-container.recording .icon-eyes { ... } */
-	/* .icon-eyes.blink-once { ... } */
-	/* @keyframes blink-once { ... } */
-	/* .icon-eyes.blink-thinking-hard { ... } */
-	/* @keyframes blink-thinking-hard { ... } */
-	/* .icon-container:hover, .icon-container:active { ... } */
-	/* .icon-container.recording { ... } */
-	/* @media (min-width: 768px) { ... } */
-	/* @keyframes recording-glow { ... } */
-	/* @keyframes ghost-wobble-left { ... } */
-	/* @keyframes ghost-wobble-right { ... } */
-	/* .ghost-wobble-left { ... } */
-	/* .ghost-wobble-right { ... } */
-	/* @keyframes ghost-wobble-greeting { ... } */
-	/* .ghost-wobble-greeting { ... } */
-	/* @keyframes gentle-float { ... } */
-	/* @keyframes ghost-hover { ... } */
-	/* .rainbow-animated { ... } */
-	/* .icon-container:hover .rainbow-animated { ... } */
-	/* @keyframes rainbowFlow { ... } */
-	/* @keyframes sparkle { ... } */
-	/* --- End Removed Old Ghost Icon CSS --- */
+	/* Ghost icon wrapper styling */
+	.ghost-icon-wrapper {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		position: relative;
+	}
+	
+	@media (min-width: 768px) {
+		.ghost-icon-wrapper {
+			margin-bottom: 1.5rem;
+		}
+	}
 
 
 	/* Staggered text animation for title - more reliable approach */
