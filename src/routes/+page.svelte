@@ -58,10 +58,12 @@
 	let iconBgElement = null; // Reference to the background gradient
 	let iconContainer = null; // Reference to the icon container
 	let domReady = false;
+	let ambientBlinkingActive = false; // Track if ambient blinking is supposed to be running
 
 	// Debug Helper that won't pollute console in production but helps during development
 	function debug(message) {
-		console.log(`[Ghost Eyes] ${message}`);
+		// Uncomment the line below during development for verbose logging
+		// console.log(`[Ghost Eyes] ${message}`);
 	}
 
 	// Animation state variables
@@ -70,30 +72,41 @@
 
 	// Get eyes element safely - now using bind:this
 	function getEyesElement() {
+		// No need for debug here, it's called frequently
 		if (eyesElement) return eyesElement;
-		debug('Eyes element not found yet');
 		return null;
 	}
 
 	// Single blink using CSS classes - simplified and faster (from best practices)
 	function blink() {
 		const eyes = getEyesElement();
-		if (!eyes) return;
+		if (!eyes) {
+			debug('Blink failed: Eyes element not found');
+			return;
+		}
 
 		debug('Performing single blink');
 
 		// Clear any existing blink animation timeout first
 		if (blinkTimeout) {
+			debug('Clearing existing blink timeout before new blink');
 			clearTimeout(blinkTimeout);
+			// Ensure class is removed if timeout is cleared mid-animation
+			eyes.classList.remove('blink-once');
 		}
 
 		// Apply blink animation
 		eyes.classList.add('blink-once');
+		debug('Added blink-once class');
 
 		// Remove class after animation completes (faster animation)
 		blinkTimeout = setTimeout(() => {
-			if (eyes) { // Check if eyes still exist
-				eyes.classList.remove('blink-once');
+			const currentEyes = getEyesElement(); // Re-check element
+			if (currentEyes) {
+				currentEyes.classList.remove('blink-once');
+				debug('Removed blink-once class after animation');
+			} else {
+				debug('Eyes element gone before blink-once class removal');
 			}
 			blinkTimeout = null; // Clear the timeout reference
 		}, 180); // Match CSS animation duration
@@ -101,37 +114,49 @@
 
 	// For a double blink, use sequential timeouts (from best practices)
 	function doubleClick() {
+		debug('Performing double blink');
 		blink(); // First blink
 		setTimeout(() => blink(), 200); // Second blink after a short pause
 	}
 
 	// Generative ambient blinking system - Brian Eno style - SIMPLIFIED
 	function startAmbientBlinking() {
-		debug('Starting ambient blinking system');
+		debug('Attempting to start ambient blinking system...');
+
+		// Prevent multiple concurrent ambient systems
+		if (ambientBlinkingActive) {
+			debug('Ambient blinking already active, skipping start request.');
+			return;
+		}
 
 		if (!domReady) {
-			debug('DOM not ready, delaying ambient blinking');
+			debug('DOM not ready, delaying ambient blinking start');
+			// Retry after a short delay
 			setTimeout(startAmbientBlinking, 500);
 			return;
 		}
 
 		const eyes = getEyesElement();
 		if (!eyes) {
-			debug('Eyes element not found, delaying ambient blinking');
+			debug('Eyes element not found, delaying ambient blinking start');
+			// Retry after a short delay
 			setTimeout(startAmbientBlinking, 500);
 			return;
 		}
+
+		// Don't run ambient blinks if recording
+		if (isRecording) {
+			debug('Recording active, cannot start ambient blinks now.');
+			return;
+		}
+
+		debug('>>> Starting ambient blinking system NOW <<<');
+		ambientBlinkingActive = true; // Mark as active
 
 		// Clear any existing ambient schedule timeout
 		clearAmbientBlinkTimeout();
 		// Also clear any active blink animation timeout
 		clearBlinkTimeout();
-
-		// Don't run ambient blinks if recording
-		if (isRecording) {
-			debug('Recording active, skipping ambient blinks');
-			return;
-		}
 
 		// Parameters for generative system - Brian Eno style (using best practice timings)
 		const minGap = 4000; // Minimum time between blinks (4s)
@@ -142,15 +167,32 @@
 
 		// Schedule the next blink recursively
 		function scheduleNextBlink() {
+			// Clear any previous ambient timeout before setting a new one
+			clearAmbientBlinkTimeout();
+
 			// Random time interval
 			const nextInterval = Math.floor(minGap + Math.random() * (maxGap - minGap));
 
-			debug(`Next ambient blink in ${nextInterval}ms`);
+			debug(`Scheduling next ambient blink in ${nextInterval}ms`);
 
 			ambientBlinkTimeout = setTimeout(() => {
+				// Ensure ambient blinking is still supposed to be active
+				if (!ambientBlinkingActive) {
+					debug('Ambient blinking was stopped, cancelling scheduled blink.');
+					return;
+				}
 				// Exit if we've switched to recording state
 				if (isRecording) {
 					debug('Recording active, skipping scheduled ambient blink');
+					// We don't reschedule here; startAmbientBlinking needs to be called again when recording stops.
+					ambientBlinkingActive = false; // Mark as inactive as recording interrupted it
+					return;
+				}
+				// Check if eyes element still exists
+				const currentEyes = getEyesElement();
+				if (!currentEyes) {
+					debug('Eyes element disappeared, stopping ambient blinking.');
+					ambientBlinkingActive = false; // Mark as inactive
 					return;
 				}
 
@@ -164,14 +206,29 @@
 					blink();
 				}
 
-				// Schedule the next blink
-				scheduleNextBlink();
+				// Schedule the *next* blink only if still active
+				if (ambientBlinkingActive) {
+					scheduleNextBlink();
+				} else {
+					debug('Not rescheduling next blink as ambient blinking is no longer active.');
+				}
 			}, nextInterval);
 		}
 
-		// Start with a slight delay
+		// Start the first blink after a short delay
+		debug('Scheduling first ambient blink');
 		setTimeout(scheduleNextBlink, 1500); // Slightly longer initial delay
 	}
+
+	// Function to explicitly stop ambient blinking
+	function stopAmbientBlinking() {
+		debug('>>> Stopping ambient blinking system <<<');
+		ambientBlinkingActive = false;
+		clearAmbientBlinkTimeout();
+		// Optionally clear any active blink animation as well
+		// clearBlinkTimeout();
+	}
+
 
 	// Helper function to clear the active blink animation timeout
 	function clearBlinkTimeout() {
@@ -198,15 +255,16 @@
 
 	// Greeting blink on page load
 	function greetingBlink() {
+		debug('Attempting greeting blink...');
 		const eyes = getEyesElement();
 		if (!eyes) {
 			// Retry if eyes not found yet
-			debug('Eyes not found for greeting, retrying');
+			debug('Eyes not found for greeting, retrying in 300ms');
 			setTimeout(greetingBlink, 300);
 			return;
 		}
 
-		debug('Performing greeting blink');
+		debug('Performing greeting blink sequence');
 
 		// First apply a gentle wobble to the ghost icon
 		if (iconContainer) {
@@ -225,14 +283,21 @@
 					}
 				}, 1000);
 			}, 1000); // Start the wobble after the text starts animating
+		} else {
+			debug('Icon container not found for greeting wobble');
 		}
 
 		// Do a friendly double-blink after animations complete
 		setTimeout(() => {
+			debug('Performing greeting double blink');
 			doubleClick(); // Use the new doubleClick function
 
-			// Start ambient blinking system after greeting
-			setTimeout(startAmbientBlinking, 1000);
+			// Start ambient blinking system after greeting blink finishes
+			// Add a small delay after the double blink completes (~400ms)
+			setTimeout(() => {
+				debug('Attempting to start ambient blinking after greeting');
+				startAmbientBlinking();
+			}, 500);
 		}, 2000); // Delay long enough for text animations
 	}
 
@@ -242,36 +307,56 @@
 
 		// We now use bind:this instead of querySelector
 		if (eyesElement) {
-			debug('Eyes element found immediately');
+			debug('Eyes element found immediately via bind:this');
 			domReady = true;
-			greetingBlink();
+			greetingBlink(); // Start the greeting sequence which includes starting ambient blinking
 			return;
 		}
 
-		// If not found, set up observer to watch for it
-		const observer = new MutationObserver((mutations, obs) => {
+		// If not found yet, wait a bit using setTimeout as bind:this might take a cycle
+		debug('Eyes element not immediately available via bind:this, will check again shortly.');
+		setTimeout(() => {
 			if (eyesElement) {
-				debug('Eyes element found via bind:this');
+				debug('Eyes element found after short delay via bind:this');
+				domReady = true;
+				greetingBlink();
+			} else {
+				debug('Eyes element still not found after delay. Ambient blinking might be delayed.');
+				// Consider adding a fallback or error message if this happens consistently
+			}
+		}, 100); // Check after 100ms
+
+		// We might not need the MutationObserver if bind:this is reliable enough,
+		// but keeping it as a fallback for complex scenarios.
+		const observer = new MutationObserver((mutations, obs) => {
+			if (eyesElement && !domReady) { // Check !domReady to avoid running twice
+				debug('Eyes element found via MutationObserver');
 				domReady = true;
 				greetingBlink();
 				obs.disconnect(); // Stop observing once we've found it
+				debug('Disconnected MutationObserver');
 			}
 		});
 
-		// Start observing
+		// Start observing the body
 		observer.observe(document.body, {
 			childList: true,
 			subtree: true
 		});
+		debug('MutationObserver started');
 
-		// Fallback in case observer doesn't trigger
+		// Fallback timeout in case observer fails or bind:this is slow
 		setTimeout(() => {
 			if (!domReady && eyesElement) {
-				debug('Fallback DOM ready check');
+				debug('Fallback DOM ready check triggered');
 				domReady = true;
 				greetingBlink();
+				observer.disconnect(); // Disconnect observer if fallback triggers
+				debug('Disconnected MutationObserver via fallback');
+			} else if (!domReady && !eyesElement) {
+				debug('Fallback DOM ready check: Eyes element still not found.');
 			}
-		}, 1000);
+		}, 1500); // Increased fallback timeout
 	}
 
 	// Function to handle title animation complete
@@ -291,25 +376,28 @@
 		if (!browser) return;
 
 		// Check if user has seen the intro before
-		const hasSeenIntro = localStorage.getItem('hasSeenTalkTypeIntro');
+		const hasSeenTalkTypeIntro = localStorage.getItem('hasSeenTalkTypeIntro');
 
-		if (!hasSeenIntro) {
+		if (!hasSeenTalkTypeIntro) {
 			// First visit, show intro modal after a brief delay
 			setTimeout(() => {
 				const modal = document.getElementById('intro_modal');
 				if (modal) {
-					console.log('Opening intro modal on first visit');
+					debug('Opening intro modal on first visit');
 					modal.showModal();
 
 					// Set up event listener to handle modal close event from any source
 					modal.addEventListener('close', () => {
-						console.log('Modal closed, marking intro as seen');
+						debug('Intro modal closed, marking intro as seen');
 						markIntroAsSeen();
-					});
+					}, { once: true }); // Use once: true to auto-cleanup listener
 				} else {
 					console.error('Intro modal element not found');
+					debug('Intro modal element not found');
 				}
 			}, 500);
+		} else {
+			debug('User has seen intro before, skipping modal.');
 		}
 	}
 
@@ -317,20 +405,27 @@
 	function markIntroAsSeen() {
 		if (!browser) return;
 		localStorage.setItem('hasSeenTalkTypeIntro', 'true');
+		debug('Marked intro as seen in localStorage');
 	}
 
 	// Function to preload speech model for faster initial response
 	function preloadSpeechModel() {
 		if (!speechModelPreloaded && browser) {
-			debug('Preloading speech model for faster response');
-			speechModelPreloaded = true;
+			debug('Preloading speech model triggered');
+			speechModelPreloaded = true; // Assume success initially
 			geminiService.preloadModel()
+				.then(() => {
+					debug('Speech model preloaded successfully.');
+				})
 				.catch(err => {
 					// Just log the error, don't block UI
 					console.error('Error preloading speech model:', err);
+					debug(`Error preloading speech model: ${err.message}`);
 					// Reset so we can try again
 					speechModelPreloaded = false;
 				});
+		} else if (speechModelPreloaded) {
+			debug('Speech model already preloaded or preloading.');
 		}
 	}
 
@@ -340,24 +435,30 @@
 	// Component lifecycle
 	onMount(() => {
 		debug('Component mounted');
+		// Start DOM observation and initial animations/blinks
 		setupDomObserver();
 
 		// Add mouseenter event listener to the ghost icon for model preloading
 		if (browser) {
-			// Wait for the DOM to be ready
+			// Wait slightly longer for the DOM element to be reliably available
 			setTimeout(() => {
-				const ghostIcon = document.querySelector('.icon-container');
-				if (ghostIcon) {
-					ghostIcon.addEventListener('mouseenter', preloadSpeechModel);
+				// Re-select inside timeout to ensure it exists
+				const ghostIconForListener = document.querySelector('.icon-container');
+				if (ghostIconForListener) {
+					ghostIconForListener.addEventListener('mouseenter', preloadSpeechModel);
 					debug('Added mouseenter event listener to ghost icon for model preloading');
 
 					// Store cleanup function
 					ghostIconEventCleanup = () => {
-						ghostIcon.removeEventListener('mouseenter', preloadSpeechModel);
-						debug('Removed mouseenter event listener from ghost icon');
+						if (ghostIconForListener) { // Check again before removing
+							ghostIconForListener.removeEventListener('mouseenter', preloadSpeechModel);
+							debug('Removed mouseenter event listener from ghost icon');
+						}
 					};
+				} else {
+					debug('Could not find ghost icon to attach mouseenter listener after delay.');
 				}
-			}, 500);
+			}, 600); // Increased delay slightly
 		}
 
 		// Check for auto-record setting and start recording if enabled
@@ -365,50 +466,74 @@
 			// Wait minimal time for component initialization
 			setTimeout(() => {
 				if (audioToTextComponent && !audioToTextComponent.recording) {
-					debug('Auto-record enabled, starting recording immediately');
+					debug('Auto-record enabled, attempting to start recording immediately');
 
 					// Make ghost do a quick animation and start recording immediately
-					if (iconContainer) {
+					const currentIconContainer = iconContainer; // Use bound variable
+					if (currentIconContainer) {
 						// Start recording immediately with minimal animation
-						if (eyesElement) {
-							clearAmbientBlinkTimeout(); // Stop ambient blinking
+						const currentEyes = getEyesElement();
+						if (currentEyes) {
+							debug('Auto-record: Stopping ambient blinking and performing start blink.');
+							stopAmbientBlinking(); // Explicitly stop ambient
 							clearBlinkTimeout(); // Stop any active blink
 
 							// Quick single blink and start recording immediately
 							blink(); // Use the new blink function
 
 							// Start recording immediately
-							audioToTextComponent.startRecording();
-
-							// Update UI state
-							iconContainer.classList.add('recording');
-
-							// Also update the local recording state variable
-							isRecording = true;
+							try {
+								audioToTextComponent.startRecording();
+								debug('Auto-record: Called startRecording()');
+								// Update UI state
+								currentIconContainer.classList.add('recording');
+								// Also update the local recording state variable
+								isRecording = true;
+								debug('Auto-record: UI and state updated to recording.');
+							} catch (err) {
+								debug(`Auto-record: Error starting recording: ${err.message}`);
+							}
 
 						} else {
 							// Fallback if eyes element not found
-							audioToTextComponent.startRecording();
-							iconContainer.classList.add('recording');
-							isRecording = true;
+							debug('Auto-record: Eyes element not found, starting recording without blink.');
+							try {
+								audioToTextComponent.startRecording();
+								currentIconContainer.classList.add('recording');
+								isRecording = true;
+								debug('Auto-record: Started recording (no eyes fallback).');
+							} catch (err) {
+								debug(`Auto-record: Error starting recording (no eyes fallback): ${err.message}`);
+							}
 						}
 					} else {
 						// Fallback if ghost icon not found
-						audioToTextComponent.startRecording();
-						isRecording = true;
+						debug('Auto-record: Icon container not found, attempting direct start.');
+						try {
+							audioToTextComponent.startRecording();
+							isRecording = true; // Update state even if UI fails
+							debug('Auto-record: Started recording (no icon container fallback).');
+						} catch (err) {
+							debug(`Auto-record: Error starting recording (no icon container fallback): ${err.message}`);
+						}
 					}
+				} else {
+					debug('Auto-record: Conditions not met (no component or already recording).');
 				}
 			}, 500); // Reduced delay - just enough for component initialization
+		} else {
+			debug('Auto-record not enabled or not in browser.');
 		}
 
 		// Listen for settings changes
 		if (browser) {
 			window.addEventListener('talktype-setting-changed', (event) => {
 				if (event.detail && event.detail.setting === 'autoRecord') {
-					debug('Auto-record setting changed:', event.detail.value);
-					// No immediate action needed, setting will apply on next page load
+					debug(`Setting changed event: autoRecord = ${event.detail.value}`);
+					// No immediate action needed, setting will apply on next page load/refresh
 				}
 			});
+			debug('Added listener for settings changes.');
 		}
 
 		// Check if first visit to show intro
@@ -423,10 +548,12 @@
 			const savedVibe = localStorage.getItem("talktype-vibe");
 			if (!savedVibe) {
 				// First visit - set default theme in localStorage
+				debug('First visit: Setting default theme (peach)');
 				localStorage.setItem("talktype-vibe", "peach");
 				document.documentElement.setAttribute('data-theme', 'peach');
 			} else {
 				// Apply theme to document element for consistent CSS targeting
+				debug(`Applying saved theme: ${savedVibe}`);
 				document.documentElement.setAttribute('data-theme', savedVibe);
 			}
 		}
@@ -445,25 +572,34 @@
 				e.preventDefault();
 				// Stash the event so it can be triggered later.
 				deferredInstallPrompt = e;
-				console.log('✅ `beforeinstallprompt` event captured.');
+				debug('✅ `beforeinstallprompt` event captured.');
 				// Optionally, update UI to notify the user they can install the PWA
 				// We will do this based on transcription count later
 			});
 
 			window.addEventListener('appinstalled', () => {
 				// Log install to analytics or clear install prompt UI
-				console.log('✅ TalkType PWA installed successfully!');
+				debug('✅ TalkType PWA installed successfully!');
 				deferredInstallPrompt = null; // Clear the stored event
 				showPwaInstallPrompt = false; // Hide prompt if it was somehow visible
 			});
+			debug('Added PWA install event listeners.');
 		}
 		// --- End PWA Install Prompt Listener ---
+
+		// **Direct call to start ambient blinking as a safety measure**
+		// This ensures it starts even if the greetingBlink path has issues.
+		// Delay it enough to allow the greeting blink to potentially finish first.
+		setTimeout(() => {
+			debug('Attempting direct start of ambient blinking (safety check)');
+			startAmbientBlinking();
+		}, 3500); // 3.5 seconds delay
 
 
 		return () => {
 			debug('Component unmounting, clearing timeouts and event listeners');
-			clearBlinkTimeout();
-			clearAmbientBlinkTimeout();
+			stopAmbientBlinking(); // Explicitly stop ambient blinking
+			clearBlinkTimeout(); // Clear any active blink animation
 
 			// Clean up the mouseenter event listener
 			if (ghostIconEventCleanup) {
@@ -472,11 +608,13 @@
 			// Remove PWA listeners if needed (though usually they persist for the session)
 			// window.removeEventListener('beforeinstallprompt', ...);
 			// window.removeEventListener('appinstalled', ...);
+			// Remove settings listener? Maybe not necessary if app lifetime matches listener lifetime.
 		};
 	});
 
 	// Apply theme/vibe function for initial load
 	function applyTheme(vibeId) {
+		debug(`Applying theme: ${vibeId}`);
 		// Store in localStorage
 		localStorage.setItem("talktype-vibe", vibeId);
 
@@ -484,29 +622,33 @@
 		document.documentElement.setAttribute('data-theme', vibeId);
 
 		// Update ghost icon by swapping the SVG file
-		if (iconBgElement) {
+		const currentIconBgElement = getEyesElement(); // Re-check element
+		if (currentIconBgElement) {
+			debug(`Updating icon background SVG for theme: ${vibeId}`);
 			// Set the appropriate gradient SVG based on theme
 			switch(vibeId) {
 				case 'mint':
-					iconBgElement.src = '/talktype-icon-bg-gradient-mint.svg';
-					iconBgElement.classList.remove('rainbow-animated');
+					currentIconBgElement.src = '/talktype-icon-bg-gradient-mint.svg';
+					currentIconBgElement.classList.remove('rainbow-animated');
 					break;
 				case 'bubblegum':
-					iconBgElement.src = '/talktype-icon-bg-gradient-bubblegum.svg';
-					iconBgElement.classList.remove('rainbow-animated');
+					currentIconBgElement.src = '/talktype-icon-bg-gradient-bubblegum.svg';
+					currentIconBgElement.classList.remove('rainbow-animated');
 					break;
 				case 'rainbow':
-					iconBgElement.src = '/talktype-icon-bg-gradient-rainbow.svg';
-					iconBgElement.classList.add('rainbow-animated');
+					currentIconBgElement.src = '/talktype-icon-bg-gradient-rainbow.svg';
+					currentIconBgElement.classList.add('rainbow-animated');
 					break;
 				default: // Default to peach
-					iconBgElement.src = '/talktype-icon-bg-gradient.svg';
-					iconBgElement.classList.remove('rainbow-animated');
+					currentIconBgElement.src = '/talktype-icon-bg-gradient.svg';
+					currentIconBgElement.classList.remove('rainbow-animated');
 					break;
 			}
 
 			// Force a reflow to ensure the gradient is visible
-			void iconBgElement.offsetWidth;
+			void currentIconBgElement.offsetWidth;
+		} else {
+			debug('Cannot update icon background SVG: iconBgElement not found.');
 		}
 	}
 
@@ -517,46 +659,52 @@
 		event.preventDefault();
 
 		// Debug current state
-		debug(`Ghost clicked! Recording state: ${audioToTextComponent?.recording}`);
+		debug(`Ghost clicked! Current recording state (isRecording var): ${isRecording}`);
 
 		// Get DOM elements with error checking
 		const currentIconContainer = event.currentTarget;
 		if (!currentIconContainer) {
-			debug('No icon container found during click handler');
+			debug('Ghost click failed: No icon container found');
 			return;
 		}
 
 		const eyes = getEyesElement();
 		if (!eyes) {
-			debug('Eyes element not found during click handler');
+			debug('Ghost click warning: Eyes element not found');
 			// Don't return here, we might still need to stop recording
 		}
 
 		if (!audioToTextComponent) {
-			debug('No audioToTextComponent found');
+			debug('Ghost click failed: No audioToTextComponent found');
 			return;
 		}
 
-		// Use DOM class as source of truth (reliable)
-		const hasRecordingClass = currentIconContainer.classList.contains('recording');
-		debug(`DOM state: has 'recording' class = ${hasRecordingClass}`);
+		// Use component's state as a reliable source, fallback to classList if needed
+		const isCurrentlyRecording = audioToTextComponent.recording;
+		debug(`Component recording state: ${isCurrentlyRecording}`);
+		// const hasRecordingClass = currentIconContainer.classList.contains('recording');
+		// debug(`DOM state: has 'recording' class = ${hasRecordingClass}`);
 
-		if (hasRecordingClass) {
-			// STOPPING RECORDING
-			debug('Stopping recording');
+		if (isCurrentlyRecording) {
+			// === STOPPING RECORDING ===
+			debug('Action: Stopping recording');
 
-			// Update recording state
+			// Update recording state FIRST
 			isRecording = false;
 
+			// Stop ambient blinking if it was somehow active (shouldn't be)
+			stopAmbientBlinking();
 			// Reset any eye animation state if eyes exist
 			if (eyes) {
 				eyes.style.animation = 'none'; // Remove CSS animations like blink-thinking
 				eyes.classList.remove('blink-once', 'blink-thinking-hard'); // Remove animation classes
+				debug('Cleared eye animations');
 			}
 			clearBlinkTimeout(); // Clear any programmatic blink
 
-			// Remove the recording class
+			// Remove the recording class from UI
 			currentIconContainer.classList.remove('recording');
+			debug('Removed recording class from icon container');
 
 			// Add wobble animation when stopping from ghost click
 			debug('Applying wobble animation to ghost icon on stop');
@@ -567,11 +715,11 @@
 			currentIconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
 
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
-			debug(`Adding class: ${wobbleClass}`);
+			debug(`Adding wobble class: ${wobbleClass}`);
 			currentIconContainer.classList.add(wobbleClass);
-			console.log('Current classes:', currentIconContainer.className);
+			// console.log('Current classes:', currentIconContainer.className); // Less noisy debug
 			setTimeout(() => {
-				debug(`Removing class: ${wobbleClass}`);
+				debug(`Removing wobble class: ${wobbleClass}`);
 				if (currentIconContainer) { // Check element exists
 					currentIconContainer.classList.remove(wobbleClass);
 				}
@@ -584,31 +732,32 @@
 
 				// Resume ambient blinking after a pause
 				setTimeout(() => {
-					debug('Resuming ambient blinking');
+					debug('Attempting to resume ambient blinking after stop');
 					startAmbientBlinking();
 				}, 1000);
 			}, 100);
 
-			// Stop the recording
+			// Stop the recording in the component
 			try {
 				audioToTextComponent.stopRecording();
 				debug('Called stopRecording() on component');
 			} catch (err) {
-				debug(`Error stopping recording: ${err.message}`);
+				debug(`Error stopping recording via component: ${err.message}`);
 			}
 		} else {
-			// STARTING RECORDING
-			debug('Starting recording');
+			// === STARTING RECORDING ===
+			debug('Action: Starting recording');
 
-			// Update recording state and stop ambient system
+			// Update recording state FIRST and stop ambient system
 			isRecording = true;
-			clearAmbientBlinkTimeout();
-			clearBlinkTimeout();
+			stopAmbientBlinking(); // Stop ambient blinking explicitly
+			clearBlinkTimeout(); // Clear any active blink animation
 
 			// Reset any existing eye animations if eyes exist
 			if (eyes) {
 				eyes.style.animation = 'none';
 				eyes.classList.remove('blink-once', 'blink-thinking-hard');
+				debug('Cleared eye animations before start');
 			}
 
 			// Add wobble animation when starting from ghost click
@@ -620,17 +769,17 @@
 			currentIconContainer.classList.remove('ghost-wobble-left', 'ghost-wobble-right');
 
 			const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
-			debug(`Adding class: ${wobbleClass}`);
+			debug(`Adding wobble class: ${wobbleClass}`);
 			currentIconContainer.classList.add(wobbleClass);
-			console.log('Current classes:', currentIconContainer.className);
+			// console.log('Current classes:', currentIconContainer.className); // Less noisy debug
 			setTimeout(() => {
-				debug(`Removing class: ${wobbleClass}`);
+				debug(`Removing wobble class: ${wobbleClass}`);
 				if (currentIconContainer) { // Check element exists
 					currentIconContainer.classList.remove(wobbleClass);
 				}
 			}, 600);
 
-			// Give a tiny delay to ensure animation reset
+			// Give a tiny delay to ensure animation reset before blinking/recording
 			setTimeout(() => {
 				// Random chance for different start behaviors
 				const startBehavior = Math.random();
@@ -649,20 +798,25 @@
 				// Add recording class after the blink animation completes
 				// Use a slightly longer delay to account for double blink possibility
 				setTimeout(() => {
-					debug('Adding recording class');
+					debug('Adding recording class to icon container');
 					if (currentIconContainer) { // Check element exists
 						currentIconContainer.classList.add('recording');
 					}
 				}, 400); // Adjusted delay
 
-				// Start recording
+				// Start recording in the component
 				try {
 					audioToTextComponent.startRecording();
 					debug('Called startRecording() on component');
 				} catch (err) {
-					debug(`Error starting recording: ${err.message}`);
+					debug(`Error starting recording via component: ${err.message}`);
+					// If starting fails, revert state
+					isRecording = false;
+					if (currentIconContainer) currentIconContainer.classList.remove('recording');
+					// Maybe restart ambient blinking?
+					startAmbientBlinking();
 				}
-			}, 50);
+			}, 50); // Short delay after wobble starts
 		}
 	}
 
@@ -673,7 +827,11 @@
 	// Function to create and add a modal to the document using template strings
 	function createModalFromTemplate(modalId, templateHtml) {
 		// Check if the modal already exists
-		if (document.getElementById(modalId)) return;
+		if (document.getElementById(modalId)) {
+			debug(`Modal ${modalId} already exists.`);
+			return document.getElementById(modalId);
+		}
+		debug(`Creating modal ${modalId} from template.`);
 
 		// Create a temporary container
 		const container = document.createElement('div');
@@ -681,9 +839,14 @@
 
 		// Append the first element (the modal)
 		const modal = container.firstElementChild;
-		document.body.appendChild(modal);
-
-		return modal;
+		if (modal) {
+			document.body.appendChild(modal);
+			debug(`Appended modal ${modalId} to body.`);
+			return modal;
+		} else {
+			debug(`Failed to create modal ${modalId} from template HTML.`);
+			return null;
+		}
 	}
 
 	// About modal template
@@ -812,94 +975,97 @@
 		<div class="modal-backdrop bg-black/40"></div>
 	</dialog>`;
 
-	// Function to show the About modal - lazy loaded via DOM
-	function showAboutModal() {
-		// Create the modal if it doesn't exist
-		createModalFromTemplate('about_modal', aboutModalTemplate);
-
-		// Setup close handlers
-		if (window && !window.closeModal) {
-			window.closeModal = closeModal;
+	// Shared modal opening logic
+	function openModalSharedLogic(modalId) {
+		debug(`Attempting to open modal: ${modalId}`);
+		// Setup close handlers globally if not present
+		if (browser && window && !window.closeModal) {
+			debug('Assigning global closeModal function.');
+			window.closeModal = closeModal; // Assign the Svelte component's closeModal
 		}
 
-		// Add click handler to backdrop
-		const modal = document.getElementById('about_modal');
-		if (modal) {
-			const backdrop = modal.querySelector('.modal-backdrop');
-			if (backdrop) {
-				backdrop.onclick = () => {
-					modal.close();
-					setTimeout(closeModal, 50);
-				};
-			}
+		const modal = document.getElementById(modalId);
+		if (!modal) {
+			debug(`Modal ${modalId} element not found in DOM.`);
+			return;
 		}
 
-		// Radical approach to prevent scrollbar issues
+		// Add click handler to backdrop for closing
+		const backdrop = modal.querySelector('.modal-backdrop');
+		if (backdrop) {
+			// Remove any existing listener first to prevent duplicates
+			backdrop.onclick = null;
+			backdrop.onclick = () => {
+				debug(`Backdrop clicked for modal ${modalId}, closing.`);
+				// modal.close(); // DaisyUI handles this via form method="dialog" or direct close()
+				closeModal(); // Use our function to handle scroll restoration etc.
+			};
+			debug(`Attached backdrop click listener for ${modalId}.`);
+		} else {
+			debug(`Backdrop element not found for modal ${modalId}.`);
+		}
+
+		// Prevent body scroll
 		scrollPosition = window.scrollY;
-		const width = document.body.clientWidth;
+		const width = document.body.clientWidth; // Get width before changing styles
 		modalOpen = true;
 
-		// Lock the body in place exactly where it was
+		debug(`Locking body scroll at position ${scrollPosition}px, width ${width}px.`);
 		document.body.style.position = 'fixed';
 		document.body.style.top = `-${scrollPosition}px`;
-		document.body.style.width = `${width}px`;
+		document.body.style.width = `${width}px`; // Use captured width
 		document.body.style.overflow = 'hidden';
+		// document.body.style.height = '100%'; // Avoid setting height, can cause issues
 
-		// Now show the modal
-		if (modal) modal.showModal();
+		// Show the modal using its native showModal method
+		if (typeof modal.showModal === 'function') {
+			modal.showModal();
+			debug(`Called showModal() for ${modalId}.`);
+		} else {
+			debug(`Modal ${modalId} does not have a showModal method.`);
+			// Fallback or error handling needed? DaisyUI modals should have it.
+		}
+	}
+
+	// Function to show the About modal - lazy loaded via DOM
+	function showAboutModal() {
+		debug('showAboutModal called');
+		// Create the modal if it doesn't exist
+		createModalFromTemplate('about_modal', aboutModalTemplate);
+		// Open it using shared logic
+		openModalSharedLogic('about_modal');
 	}
 
 	// Function to show the Extension modal - lazy loaded via DOM
 	function showExtensionModal() {
+		debug('showExtensionModal called');
 		// Create the modal if it doesn't exist
 		createModalFromTemplate('extension_modal', extensionModalTemplate);
-
-		// Setup close handlers
-		if (window && !window.closeModal) {
-			window.closeModal = closeModal;
-		}
-
-		// Add click handler to backdrop
-		const modal = document.getElementById('extension_modal');
-		if (modal) {
-			const backdrop = modal.querySelector('.modal-backdrop');
-			if (backdrop) {
-				backdrop.onclick = () => {
-					modal.close();
-					setTimeout(closeModal, 50);
-				};
-			}
-		}
-
-		// Radical approach to prevent scrollbar issues
-		scrollPosition = window.scrollY;
-		const width = document.body.clientWidth;
-		modalOpen = true;
-
-		// Lock the body in place exactly where it was
-		document.body.style.position = 'fixed';
-		document.body.style.top = `-${scrollPosition}px`;
-		document.body.style.width = `${width}px`;
-		document.body.style.overflow = 'hidden';
-
-		// Now show the modal
-		if (modal) modal.showModal();
+		// Open it using shared logic
+		openModalSharedLogic('extension_modal');
 	}
 
 	// Function to show the Settings modal - now with lazy loading
 	async function openSettingsModal() {
+		debug('openSettingsModal called');
 		// First, ensure any open dialogs are closed and scroll is restored
 		if (modalOpen) {
+			debug('Another modal was open, closing it first.');
 			closeModal();
+			// Add a tiny delay to allow the browser to process the closing
+			await new Promise(resolve => setTimeout(resolve, 50));
 		}
 
 		// Check if we're already loading the modal
-		if (loadingSettingsModal) return;
+		if (loadingSettingsModal) {
+			debug('SettingsModal is already loading, aborting.');
+			return;
+		}
 
 		// Dynamically import the SettingsModal component if not already loaded
 		if (!SettingsModal) {
 			loadingSettingsModal = true;
-			debug('Lazy loading SettingsModal component');
+			debug('Lazy loading SettingsModal component...');
 
 			try {
 				// Import the component dynamically
@@ -908,82 +1074,111 @@
 				debug('SettingsModal component loaded successfully');
 			} catch (err) {
 				console.error('Error loading SettingsModal:', err);
+				debug(`Error loading SettingsModal: ${err.message}`);
 				loadingSettingsModal = false;
-				return;
+				return; // Don't proceed if loading failed
+			} finally {
+				loadingSettingsModal = false; // Ensure this is always reset
 			}
-
-			loadingSettingsModal = false;
 		}
 
-		// Get current scroll position and body dimensions
+		// Use shared logic to lock scroll and prepare for modal display
 		scrollPosition = window.scrollY;
 		const width = document.body.clientWidth;
 		modalOpen = true;
 
-		// Lock the body in place exactly where it was
+		debug(`Locking body scroll at position ${scrollPosition}px, width ${width}px for Settings.`);
 		document.body.style.position = 'fixed';
 		document.body.style.top = `-${scrollPosition}px`;
 		document.body.style.width = `${width}px`;
 		document.body.style.overflow = 'hidden';
-		document.body.style.height = '100%';
+		// document.body.style.height = '100%';
 
-		// Show the settings modal directly
+		// Show the settings modal directly (it's rendered by Svelte now)
+		// Need to ensure the component is rendered before finding the element
+		// Use a reactive variable or wait a tick if necessary
+		// Assuming SettingsModal component renders a <dialog id="settings_modal">
+		// Wait a tick for Svelte to render the component if it was just loaded
+		await new Promise(resolve => setTimeout(resolve, 0));
+
 		const modal = document.getElementById('settings_modal');
 		if (modal) {
-			// If the modal is already open, just close it
+			debug('Found settings_modal element.');
+			// If the modal is already open (e.g., double click), maybe close it? Or do nothing.
 			if (modal.hasAttribute('open')) {
-				modal.close();
-				setTimeout(() => {
-					closeModal();
-				}, 50);
+				debug('Settings modal is already open. Closing it instead.');
+				modal.close(); // Let the component handle its internal state
+				closeModal(); // Restore scroll etc.
 				return;
 			}
 
-			// Dispatch a custom event that will be caught in the SettingsModal component
-			const event = new Event('beforeshow');
-			modal.dispatchEvent(event);
+			// Dispatch a custom event that can be caught in the SettingsModal component if needed
+			// const event = new Event('beforeshow');
+			// modal.dispatchEvent(event);
+			// debug('Dispatched beforeshow event to settings_modal.');
 
 			// Show the modal
-			modal.showModal();
+			if (typeof modal.showModal === 'function') {
+				modal.showModal();
+				debug('Called showModal() for settings_modal.');
+			} else {
+				debug('settings_modal does not have showModal method.');
+			}
+		} else {
+			debug('settings_modal element not found after lazy load and tick.');
+			// If modal not found, need to restore scroll
+			closeModal(); // Call cleanup
 		}
 	}
 
-	// Function to close the Settings modal
+	// Function to close the Settings modal (called from SettingsModal component)
 	function closeSettingsModal() {
-		// Close modal and restore scroll
+		debug('closeSettingsModal called (likely from component event)');
+		// Close modal and restore scroll using the shared function
 		closeModal();
 	}
 
-	// Function to restore scroll position when modal closes
+	// Centralized function to close any modal and restore scroll
 	function closeModal() {
-		if (!modalOpen) return;
+		if (!modalOpen) {
+			// debug('closeModal called but no modal was tracked as open.');
+			return; // Avoid unnecessary operations
+		}
+		debug('closeModal called. Restoring body scroll and closing dialogs.');
 
-		// Ensure any open dialogs are properly closed
+		// Ensure any open dialogs are properly closed using their method
 		document.querySelectorAll('dialog[open]').forEach(dialog => {
 			if (dialog && typeof dialog.close === 'function') {
+				debug(`Closing dialog: #${dialog.id || 'unknown'}`);
 				dialog.close();
 			}
 		});
 
-		// Restore body styles
+		// Restore body styles reliably
 		document.body.style.position = '';
 		document.body.style.top = '';
 		document.body.style.width = '';
 		document.body.style.overflow = '';
-		document.body.style.height = '';
+		document.body.style.height = ''; // Ensure height is cleared too
 
-		// Remove any potentially problematic classes
-		document.body.classList.remove('overflow-hidden', 'fixed', 'modal-open');
+		// Remove any potentially problematic classes added by libraries (like DaisyUI)
+		// document.body.classList.remove('overflow-hidden', 'fixed', 'modal-open');
+		// It's safer to reset styles directly as above.
 
-		// Restore scroll position
+		// Restore scroll position AFTER resetting styles
 		window.scrollTo(0, scrollPosition);
-		modalOpen = false;
+		debug(`Restored scroll position to ${scrollPosition}px.`);
+
+		modalOpen = false; // Mark modal as closed
 	}
+
 
 	// Function is no longer needed with DaisyUI modal
 	// Keeping a minimal version to maintain existing references
 	function closeIntroModal() {
+		debug('closeIntroModal called (likely from button click)');
 		markIntroAsSeen();
+		// closeModal(); // Let the dialog's form method handle closing, closeModal handles scroll restoration
 	}
 
 	// --- PWA Install Prompt Logic ---
@@ -996,7 +1191,7 @@
 		if (!browser) return;
 
 		const newCount = event.detail.count;
-		console.log(`🔔 Transcription completed event received. Count: ${newCount}`);
+		debug(`🔔 Transcription completed event received. Count: ${newCount}`);
 
 		// Check if the app is already installed (standalone mode)
 		const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
@@ -1008,31 +1203,33 @@
 			!isStandalone &&
 			!showPwaInstallPrompt // Don't show if already showing
 		) {
-			console.log('⭐ Conditions met for showing PWA install prompt.');
+			debug('⭐ Conditions met for showing PWA install prompt.');
 
 			// Lazy load the PWA install prompt component if needed
 			if (!PwaInstallPrompt && !loadingPwaPrompt) {
 				loadingPwaPrompt = true;
-				console.log('📱 Lazy loading PWA install prompt component...');
+				debug('📱 Lazy loading PWA install prompt component...');
 
 				try {
 					// Import the component dynamically
 					const module = await import('$lib/components/pwa/PwaInstallPrompt.svelte');
 					PwaInstallPrompt = module.default;
-					console.log('📱 PWA install prompt component loaded successfully');
+					debug('📱 PWA install prompt component loaded successfully');
 				} catch (err) {
 					console.error('Error loading PWA install prompt:', err);
+					debug(`Error loading PWA install prompt: ${err.message}`);
 					loadingPwaPrompt = false;
-					return;
+					return; // Don't proceed if loading failed
+				} finally {
+					loadingPwaPrompt = false; // Ensure this is always reset
 				}
-
-				loadingPwaPrompt = false;
 			}
 
-			// Show the prompt
+			// Show the prompt by setting the reactive variable
+			debug('Setting showPwaInstallPrompt = true');
 			showPwaInstallPrompt = true;
 		} else {
-			console.log('Conditions not met for PWA prompt:', {
+			debug('Conditions not met for PWA prompt:', {
 				count: newCount,
 				threshold: PWA_INSTALL_PROMPT_THRESHOLD,
 				promptAvailable: !!deferredInstallPrompt,
@@ -1046,14 +1243,28 @@
 	 * Closes the PWA install prompt.
 	 */
 	function closePwaInstallPrompt() {
+		debug('ℹ️ PWA install prompt dismissed.');
 		showPwaInstallPrompt = false;
 		// Optionally, store preference to not show again for a while
 		// localStorage.setItem('talktype-pwa-prompt-dismissed', Date.now().toString());
-		console.log('ℹ️ PWA install prompt dismissed.');
 	}
 	// --- End PWA Install Prompt Logic ---
 
 </script>
+
+<svelte:head>
+	<title>TalkType | Spooky Good Voice-to-Text</title>
+	<meta name="description" content="TalkType turns your voice into text. Clean, simple, and freaky fast voice typing. Free forever. Tap the ghost and start talking!" />
+	<!-- Add other meta tags like Open Graph, Twitter Cards etc. here -->
+	<link rel="preload" href="/assets/talktype-icon-base.svg" as="image">
+	<link rel="preload" href="/assets/talktype-icon-eyes.svg" as="image">
+	<link rel="preload" href="/talktype-icon-bg-gradient.svg" as="image">
+	<!-- Preload other theme gradients if desired -->
+	<!-- <link rel="preload" href="/talktype-icon-bg-gradient-mint.svg" as="image"> -->
+	<!-- <link rel="preload" href="/talktype-icon-bg-gradient-bubblegum.svg" as="image"> -->
+	<!-- <link rel="preload" href="/talktype-icon-bg-gradient-rainbow.svg" as="image"> -->
+</svelte:head>
+
 
 <section
 	class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-center px-4 py-8 pb-28 pt-[10vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-32"
@@ -1062,42 +1273,51 @@
 		class="mx-auto flex w-full max-w-md flex-col items-center pt-4 sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
 	>
 		<!-- Ghost Icon - Mobile: tight, Desktop: chunky -->
+		<!-- Ensure tabindex="0" for keyboard focusability if needed, though button element handles this -->
 		<button
 				bind:this={iconContainer}
-				class="icon-container mb-4 h-36 w-36 cursor-pointer sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64 appearance-none border-0 bg-transparent p-0"
+				class="icon-container mb-4 h-36 w-36 cursor-pointer sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64 appearance-none border-0 bg-transparent p-0 focus:outline-none focus-visible:outline-none"
 				style="outline: none; -webkit-tap-highlight-color: transparent;"
-				on:click|preventDefault|stopPropagation={startRecordingFromGhost}
+				on:click={startRecordingFromGhost}
 				on:keydown={(e) => {
+					// Trigger on Enter or Spacebar
 					if (e.key === "Enter" || e.key === " ") {
-						e.preventDefault();
+						e.preventDefault(); // Prevent page scroll on Spacebar
 						startRecordingFromGhost(e);
 					}
 				}}
 				aria-label="Toggle Recording"
-				aria-pressed={isRecording}
+				aria-pressed={isRecording.toString()}
 		>
 			<!-- Layered approach with gradient background and blinking eyes -->
 			<div class="icon-layers">
 				<!-- Gradient background (bottom layer) - load based on data-theme -->
 				{#if browser}
+					<!-- Use a variable to hold the theme for cleaner code -->
+					{@const currentTheme = document.documentElement.getAttribute('data-theme') || 'peach'}
+					{@const bgImageSrc =
+						currentTheme === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' :
+						currentTheme === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
+						currentTheme === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
+						'/talktype-icon-bg-gradient.svg'
+					}
+					{@const bgImageClass = currentTheme === 'rainbow' ? 'icon-bg rainbow-animated' : 'icon-bg'}
 					<img
 						bind:this={iconBgElement}
-						src={document.documentElement.getAttribute('data-theme') === 'mint' ? '/talktype-icon-bg-gradient-mint.svg' :
-							document.documentElement.getAttribute('data-theme') === 'bubblegum' ? '/talktype-icon-bg-gradient-bubblegum.svg' :
-							document.documentElement.getAttribute('data-theme') === 'rainbow' ? '/talktype-icon-bg-gradient-rainbow.svg' :
-							'/talktype-icon-bg-gradient.svg'}
-						class={document.documentElement.getAttribute('data-theme') === 'rainbow' ? 'icon-bg rainbow-animated' : 'icon-bg'}
+						src={bgImageSrc}
+						class={bgImageClass}
 						alt=""
 						aria-hidden="true"
+						loading="lazy"
 					/>
 				{:else}
 					<!-- Fallback for SSR or if browser check fails -->
-					<img bind:this={iconBgElement} src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
+					<img bind:this={iconBgElement} src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" loading="lazy" />
 				{/if}
 				<!-- Outline without eyes (middle layer) -->
-				<img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" aria-hidden="true" />
+				<img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" aria-hidden="true" loading="lazy" />
 				<!-- Just the eyes (top layer - for blinking) -->
-				<img bind:this={eyesElement} src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
+				<img bind:this={eyesElement} src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon Eyes" class="icon-eyes" loading="lazy" />
 			</div>
 		</button>
 
@@ -1105,12 +1325,14 @@
 		<h1
 			class="staggered-text mb-2 text-center text-5xl font-black tracking-tight cursor-default select-none sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
 			style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal; font-variation-settings: 'wght' 900, 'opsz' 32;"
+			aria-label="TalkType"
 		>
-			<span class="stagger-letter mr-[-0.06em]">T</span><span class="stagger-letter ml-[-0.04em]">a</span><span
-				class="stagger-letter">l</span
-			><span class="stagger-letter">k</span><span class="stagger-letter mr-[-0.04em]">T</span><span
-				class="stagger-letter ml-[-0.03em]">y</span
-			><span class="stagger-letter">p</span><span class="stagger-letter">e</span>
+			<!-- Use aria-hidden for spans if H1 has aria-label -->
+			<span class="stagger-letter mr-[-0.06em]" aria-hidden="true">T</span><span class="stagger-letter ml-[-0.04em]" aria-hidden="true">a</span><span
+				class="stagger-letter" aria-hidden="true">l</span
+			><span class="stagger-letter" aria-hidden="true">k</span><span class="stagger-letter mr-[-0.04em]" aria-hidden="true">T</span><span
+				class="stagger-letter ml-[-0.03em]" aria-hidden="true">y</span
+			><span class="stagger-letter" aria-hidden="true">p</span><span class="stagger-letter" aria-hidden="true">e</span>
 		</h1>
 
 		<!-- Updated subheadline with improved typography and brand voice -->
@@ -1136,7 +1358,7 @@
 
 	<!-- Footer section with attribution and Chrome extension info -->
 	<footer
-		class="fixed bottom-0 left-0 right-0 border-t border-pink-200/80 bg-gradient-to-r from-[#fff6e6] via-[#ffead8] to-[#fff1df] px-4 py-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[2px] sm:py-5 box-border"
+		class="fixed bottom-0 left-0 right-0 border-t border-pink-200/80 bg-gradient-to-r from-[#fff6e6]/90 via-[#ffead8]/90 to-[#fff1df]/90 px-4 py-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[3px] sm:py-5 box-border z-10"
 	>
 		<div class="container mx-auto flex flex-col items-center justify-between gap-2 sm:gap-3 sm:flex-row flex-wrap">
 			<div class="copyright flex items-center flex-wrap justify-center">
@@ -1148,6 +1370,7 @@
 					>Made with
 					<span
 						class="mx-0.5 inline-block transform animate-pulse text-pink-500 transition-transform duration-300 hover:scale-110"
+						aria-label="love"
 						>❤️</span
 					>
 					by Dennis & Pablo
@@ -1181,39 +1404,34 @@
 
 	<!-- Settings Modal - lazy loaded -->
 	{#if SettingsModal}
-		<svelte:component this={SettingsModal} open={showSettingsModal} closeModal={closeSettingsModal} />
+		<!-- Pass the close function down to the component -->
+		<svelte:component this={SettingsModal} on:close={closeSettingsModal} />
 	{/if}
 
 	<!-- First-time Intro Modal (DaisyUI version) -->
-	<dialog id="intro_modal" class="modal" role="dialog" aria-labelledby="intro_modal_title" aria-modal="true">
+	<dialog id="intro_modal" class="modal modal-bottom sm:modal-middle" role="dialog" aria-labelledby="intro_modal_title" aria-modal="true">
 		<!-- Modal content with clickOutside Svelte action for reliable backdrop clicking -->
+		<!-- Removed clickOutside action as DaisyUI handles backdrop clicks via form method="dialog" on backdrop -->
 		<div class="modal-box relative bg-[#fff9ed] rounded-3xl p-6 sm:p-8 md:p-10 w-[95%] max-w-[90vw] sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto border-0"
-			style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
-			use:clickOutside={{ enabled: true, callback: () => {
-				const modal = document.getElementById('intro_modal');
-				if (modal) {
-					modal.close();
-					markIntroAsSeen();
-				}
-			}}}>
+			style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);">
 
 			<!-- Close button -->
 			<form method="dialog">
-				<button class="btn btn-sm btn-circle absolute right-4 top-4 bg-[#fff9ed]/80 border-0 text-neutral-400 hover:bg-[#fff6e6] hover:text-neutral-700 shadow-sm">✕</button>
+				<button class="btn btn-sm btn-circle absolute right-4 top-4 bg-[#fff9ed]/80 border-0 text-neutral-400 hover:bg-[#fff6e6] hover:text-neutral-700 shadow-sm" aria-label="Close Intro">✕</button>
 			</form>
 
 			<div class="space-y-5 sm:space-y-6 md:space-y-7 animate-fadeIn">
 				<!-- Animated ghost icon -->
 				<div class="flex justify-center mb-4">
 					<div class="relative w-16 h-16 animate-pulse-slow">
-						<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
-						<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
-						<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full intro-eyes" />
+						<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" loading="lazy" />
+						<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" loading="lazy" />
+						<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full intro-eyes" loading="lazy" />
 					</div>
 				</div>
 
 				<!-- Main heading - ultra chunky -->
-				<h1 class="text-center text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-gray-900">
+				<h1 id="intro_modal_title" class="text-center text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-gray-900">
 					TalkType's the best. <br> Kick out the rest.
 				</h1>
 
@@ -1237,14 +1455,21 @@
 				<button
 					class="w-full bg-gradient-to-r from-amber-100 to-amber-200 px-4 py-3 sm:px-5 sm:py-4 rounded-xl text-center text-sm sm:text-base md:text-lg text-gray-800 font-bold shadow-md border border-amber-300/50 hover:shadow-lg hover:bg-gradient-to-r hover:from-amber-200 hover:to-amber-300 hover:text-gray-900 active:scale-[0.98] transition-all duration-300 cursor-pointer relative"
 					on:click={() => {
+						debug('Intro modal quote button clicked');
 						// First close the modal
-						document.getElementById('intro_modal').close();
-						markIntroAsSeen();
+						const modal = document.getElementById('intro_modal');
+						if (modal) modal.close(); // Close the dialog
+						markIntroAsSeen(); // Mark as seen
 
 						// Then after a brief delay, start recording
 						setTimeout(() => {
+							debug('Triggering ghost click after intro modal close');
 							const ghostBtn = document.querySelector('.icon-container');
-							if (ghostBtn) ghostBtn.click();
+							if (ghostBtn instanceof HTMLElement) {
+								ghostBtn.click();
+							} else {
+								debug('Could not find ghost button to click after intro');
+							}
 						}, 300);
 					}}
 				>
@@ -1267,8 +1492,10 @@
 				</form>
 			</div>
 		</div>
-		<!-- Modal backdrop - for styling only, actual click handling is done by our custom Svelte action -->
-		<div class="modal-backdrop"></div>
+		<!-- Modal backdrop - DaisyUI handles clicks via form method="dialog" -->
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
 	</dialog>
 
 	<!-- PWA Install Prompt -->
@@ -1350,9 +1577,14 @@
 		background-image: radial-gradient(circle at center, var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to));
 	}
 
+	/* Remove focus outline globally for simplicity, rely on other indicators */
 	:global(*:focus) {
 		outline: none !important;
 	}
+	:global(*:focus-visible) {
+		outline: none !important; /* Also remove focus-visible */
+	}
+
 
 	/* Subtle cream background with just enough texture/noise */
 	:global(.bg-gradient-mesh) {
@@ -1375,16 +1607,18 @@
 		-webkit-touch-callout: none; /* Disables callout */
 		border: none !important; /* Ensures no border */
 		animation: gentle-float 3s ease-in-out infinite;
+		/* Ensure it's focusable for accessibility if needed, but remove visual outline */
+		/* tabindex="0" can be added if it's not inherently focusable like a button */
 	}
 
 	/* Remove focus outline and any other focus indicators */
 	.icon-container:focus, .icon-container:active, .icon-container:focus-visible {
 		outline: none !important;
 		outline-offset: 0 !important;
-		box-shadow: none !important;
-		-webkit-appearance: none !important;
-		-moz-appearance: none !important;
+		box-shadow: none !important; /* Remove potential focus box-shadow */
 		border: none !important;
+		/* Optionally add a subtle custom focus indicator if needed for accessibility */
+		/* filter: drop-shadow(0 0 10px rgba(0, 100, 255, 0.5)); */
 	}
 
 	/* Layered icon styling */
@@ -1403,6 +1637,8 @@
 		width: 100%;
 		height: 100%;
 		transition: all 0.3s ease;
+		user-select: none; /* Prevent image selection */
+		-webkit-user-drag: none; /* Prevent image dragging */
 	}
 
 	/* Stack the layers correctly */
@@ -1416,7 +1652,7 @@
 
 	.icon-eyes {
 		z-index: 3; /* Top layer */
-		/* Removed ambient blink animation - now controlled by JS */
+		/* NO ambient blink animation here - controlled by JS */
 		transform-origin: center center; /* Squinch exactly in the middle */
 	}
 
@@ -1429,21 +1665,22 @@
 
 	/* Quick blink animation for programmatic use - faster (from best practices) */
 	.icon-eyes.blink-once {
+		/* Use !important carefully, ensure it doesn't conflict badly */
 		animation: blink-once 0.18s forwards !important;
 		transform-origin: center center;
 	}
 
 	@keyframes blink-once {
-		0%, 20% {
+		0%, 100% { /* Start and end open */
 			transform: scaleY(1);
+			opacity: 1;
 		}
-		50% {
-			transform: scaleY(0.05); /* Sharper close */
-		}
-		80%, 100% {
-			transform: scaleY(1);
+		50% { /* Fully closed mid-way */
+			transform: scaleY(0.05);
+			opacity: 0.8; /* Slightly fade when closed */
 		}
 	}
+
 
 	/* Special animation for when the ghost is thinking hard (transcribing) */
 	/* This can still be triggered programmatically if needed */
@@ -1456,15 +1693,15 @@
 		0%,
 		10%,
 		50%,
-		60% {
+		60%,
+		100% { /* Ensure it returns to normal */
 			transform: scaleY(1);
 		}
 		12%,
 		48% {
 			transform: scaleY(0); /* Closed eyes - concentrating */
 		}
-		90%,
-		100% {
+		90% {
 			transform: scaleY(0.2); /* Squinting - thinking hard */
 		}
 	}
@@ -1475,13 +1712,16 @@
 	.icon-container:active {
 		filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45))
 			drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
-		transform: scale(1.01);
-		animation: ghost-hover 1.2s ease-in-out infinite alternate;
+		/* Keep hover animation subtle */
+		/* transform: scale(1.01); */
+		animation: gentle-float 3s ease-in-out infinite, ghost-hover 1.2s ease-in-out infinite alternate;
 	}
 
 	.icon-container.recording {
+		/* Apply recording glow animation and potentially stop float */
 		animation: recording-glow 1.5s infinite;
-		transform: scale(1.05);
+		/* Keep scale consistent or slightly larger */
+		transform: scale(1.03); /* Slightly larger when recording */
 	}
 
 	@media (min-width: 768px) {
@@ -1496,20 +1736,7 @@
 		}
 	}
 
-	@keyframes gentle-pulse {
-		0% {
-			filter: drop-shadow(0 0 15px rgba(249, 168, 212, 0.4))
-				drop-shadow(0 0 20px rgba(255, 156, 243, 0.25));
-		}
-		50% {
-			filter: drop-shadow(0 0 25px rgba(249, 168, 212, 0.55))
-				drop-shadow(0 0 30px rgba(255, 156, 243, 0.35));
-		}
-		100% {
-			filter: drop-shadow(0 0 15px rgba(249, 168, 212, 0.4))
-				drop-shadow(0 0 20px rgba(255, 156, 243, 0.25));
-		}
-	}
+	/* Removed gentle-pulse keyframes as gentle-float covers similar ground */
 
 	/* Glowing animation for active recording state */
 	@keyframes recording-glow {
@@ -1530,52 +1757,34 @@
 
 	/* Ghost wobble animations */
 	@keyframes ghost-wobble-left {
-		0% {
-			transform: rotate(0deg);
-		}
-		25% {
-			transform: rotate(-5deg);
-		}
-		50% {
-			transform: rotate(3deg);
-		}
-		75% {
-			transform: rotate(-2deg);
-		}
-		100% {
-			transform: rotate(0deg);
-		}
+		0% { transform: rotate(0deg) scale(1); }
+		25% { transform: rotate(-5deg) scale(1.02); }
+		50% { transform: rotate(3deg) scale(1.01); }
+		75% { transform: rotate(-2deg) scale(1.01); }
+		100% { transform: rotate(0deg) scale(1); }
 	}
 
 	@keyframes ghost-wobble-right {
-		0% {
-			transform: rotate(0deg);
-		}
-		25% {
-			transform: rotate(5deg);
-		}
-		50% {
-			transform: rotate(-3deg);
-		}
-		75% {
-			transform: rotate(2deg);
-		}
-		100% {
-			transform: rotate(0deg);
-		}
+		0% { transform: rotate(0deg) scale(1); }
+		25% { transform: rotate(5deg) scale(1.02); }
+		50% { transform: rotate(-3deg) scale(1.01); }
+		75% { transform: rotate(2deg) scale(1.01); }
+		100% { transform: rotate(0deg) scale(1); }
 	}
 
-	:global(.ghost-wobble-left) {
-		animation: ghost-wobble-left 0.6s ease-in-out !important;
+	/* Use :global only if absolutely necessary, prefer direct class targeting */
+	.ghost-wobble-left {
+		/* Use !important carefully, only if overriding other animations */
+		animation: ghost-wobble-left 0.6s ease-in-out forwards !important;
 	}
 
-	:global(.ghost-wobble-right) {
-		animation: ghost-wobble-right 0.6s ease-in-out !important;
+	.ghost-wobble-right {
+		animation: ghost-wobble-right 0.6s ease-in-out forwards !important;
 	}
 
 	/* Staggered text animation for title - more reliable approach */
 	.staggered-text {
-		animation: none; /* Reset any existing animations */
+		/* animation: none; */ /* Reset any existing animations */
 		opacity: 1; /* Default to visible */
 		font-feature-settings: "kern" 1; /* Enable kerning */
 		font-kerning: normal; /* Normalize kerning */
@@ -1592,30 +1801,14 @@
 	}
 
 	/* Apply different delays to each letter */
-	.stagger-letter:nth-child(1) {
-		animation-delay: 0.05s;
-	}
-	.stagger-letter:nth-child(2) {
-		animation-delay: 0.1s;
-	}
-	.stagger-letter:nth-child(3) {
-		animation-delay: 0.15s;
-	}
-	.stagger-letter:nth-child(4) {
-		animation-delay: 0.2s;
-	}
-	.stagger-letter:nth-child(5) {
-		animation-delay: 0.25s;
-	}
-	.stagger-letter:nth-child(6) {
-		animation-delay: 0.3s;
-	}
-	.stagger-letter:nth-child(7) {
-		animation-delay: 0.35s;
-	}
-	.stagger-letter:nth-child(8) {
-		animation-delay: 0.4s;
-	}
+	.stagger-letter:nth-child(1) { animation-delay: 0.05s; }
+	.stagger-letter:nth-child(2) { animation-delay: 0.1s; }
+	.stagger-letter:nth-child(3) { animation-delay: 0.15s; }
+	.stagger-letter:nth-child(4) { animation-delay: 0.2s; }
+	.stagger-letter:nth-child(5) { animation-delay: 0.25s; }
+	.stagger-letter:nth-child(6) { animation-delay: 0.3s; }
+	.stagger-letter:nth-child(7) { animation-delay: 0.35s; }
+	.stagger-letter:nth-child(8) { animation-delay: 0.4s; }
 
 	@keyframes staggerFadeIn {
 		0% {
@@ -1654,7 +1847,7 @@
 		}
 	}
 
-	/* Title shimmer effect */
+	/* Title shimmer effect - keep if desired */
 	.title-shimmer {
 		position: relative;
 		overflow: hidden;
@@ -1668,16 +1861,12 @@
 		width: 50%;
 		height: 100%;
 		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-		animation: shimmer 3s ease-out 2.5s;
+		animation: shimmer 3s ease-out 2.5s; /* Delay start */
 	}
 
 	@keyframes shimmer {
-		0% {
-			left: -100%;
-		}
-		100% {
-			left: 200%;
-		}
+		0% { left: -100%; }
+		100% { left: 200%; }
 	}
 
 	/* Subtle hover effect for paragraphs */
@@ -1699,24 +1888,12 @@
 
 	/* Greeting wobble animation for ghost icon */
 	@keyframes ghost-wobble-greeting {
-		0% {
-			transform: rotate(0deg);
-		}
-		20% {
-			transform: rotate(-3deg) scale(1.02);
-		}
-		40% {
-			transform: rotate(2deg) scale(1.04);
-		}
-		60% {
-			transform: rotate(-1deg) scale(1.02);
-		}
-		80% {
-			transform: rotate(1deg) scale(1.01);
-		}
-		100% {
-			transform: rotate(0deg) scale(1);
-		}
+		0% { transform: rotate(0deg) scale(1); }
+		20% { transform: rotate(-3deg) scale(1.02); }
+		40% { transform: rotate(2deg) scale(1.04); }
+		60% { transform: rotate(-1deg) scale(1.02); }
+		80% { transform: rotate(1deg) scale(1.01); }
+		100% { transform: rotate(0deg) scale(1); }
 	}
 
 	.ghost-wobble-greeting {
@@ -1756,57 +1933,12 @@
 	}
 
 	/* TalkType Logo Typography Fixes - Simplified and Stabilized */
-	.talktype-logo {
-		/* Font smoothing for better rendering */
-		-webkit-font-smoothing: antialiased;
-		-moz-osx-font-smoothing: grayscale;
-		text-rendering: optimizeLegibility;
-		/* Ensure proper vertical spacing and prevent y descender clipping */
-		line-height: 1.3; /* Increased line height for better descender handling */
-		padding-bottom: 6px; /* Increased padding to prevent descender clipping */
-		/* Subtle letter-spacing for better visual balance */
-		letter-spacing: 0.01em;
-		/* Ensure the container has enough height and doesn't clip */
-		overflow: visible;
-		/* Make sure the element is a block for stable animations */
-		display: inline-block;
-		/* Smooth transition for hover */
-		transition: all 0.2s ease;
-	}
+	/* These seem to be applied via inline styles now, so CSS might be redundant */
+	/* .talktype-logo { ... } */
+	/* .talktype-logo:hover { ... } */
+	/* .talktype-logo .letter-t1 { ... } */
+	/* ... etc ... */
 
-	/* Simple, cohesive hover effect that treats the wordmark as one unit */
-	.talktype-logo:hover {
-		letter-spacing: 0.02em;
-		transform: translateY(-1px);
-	}
-
-	/* Custom kerning for specific letter pairs */
-	.talktype-logo .letter-t1 {
-		margin-right: -0.05em; /* Tighten spacing between T and a */
-	}
-
-	/* Tighter kerning for "a" - pull it closer to "T" */
-	.talktype-logo .letter-a1 {
-		margin-left: -0.06em; /* Pull "a" closer to "T" */
-	}
-
-	.talktype-logo .letter-k {
-		margin-right: -0.02em; /* Adjust k-T spacing */
-	}
-
-	.talktype-logo .letter-t2 {
-		margin-right: -0.02em; /* Adjust T-y spacing */
-	}
-
-	/* Fix for the 'y' descender to prevent clipping */
-	.talktype-logo .letter-y {
-		/* Ensure the y descender is fully visible */
-		display: inline-block;
-		position: relative;
-		margin-bottom: 3px; /* Increased margin to prevent descender clipping */
-	}
-
-	/* No complicated per-letter animations - removed for stability */
 
 	/* Animation for intro modal content */
 	@keyframes fadeIn {
@@ -1834,12 +1966,13 @@
 		}
 	}
 
+	/* Hover animation combined with float */
 	@keyframes ghost-hover {
 		0% {
-			transform: scale(1.005) translateY(0);
+			transform: scale(1.005) translateY(0); /* Match float start */
 		}
 		100% {
-			transform: scale(1.015) translateY(-3px);
+			transform: scale(1.015) translateY(-3px); /* Subtle lift */
 		}
 	}
 
@@ -1871,8 +2004,9 @@
 	}
 
 	/* Removed old hueShift keyframes */
-	
+
 	/* Theme-based visualizer styling using data-theme attribute */
+	/* Ensure this targets the correct element within AudioToText component if needed */
 	:global([data-theme="rainbow"] .history-bar) {
 		animation: rainbowFlow 7s linear infinite, rainbowBars 3s ease-in-out infinite;
 		background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
@@ -1891,45 +2025,69 @@
 	@media (max-width: 640px) {
 		section {
 			padding-top: 8vh !important;
-			min-height: 100vh;
+			min-height: 100vh; /* Ensure it takes full height */
 			display: flex;
 			flex-direction: column;
-			justify-content: flex-start;
+			justify-content: flex-start; /* Align content to top */
 		}
 
 		.icon-container {
-			height: 9rem !important;
-			width: 9rem !important;
-			margin-bottom: 1rem !important; /* 4 units on 8px grid */
+			height: 9rem !important; /* 144px */
+			width: 9rem !important; /* 144px */
+			margin-bottom: 1rem !important; /* 16px */
+		}
+
+		h1.staggered-text {
+			font-size: 3rem; /* Adjust title size for smaller screens */
+			line-height: 1.1;
 		}
 
 		.slide-in-subtitle {
 			max-width: 28ch !important;
-			margin-top: 0.5rem !important; /* 2 units on 8px grid */
-			margin-bottom: 1rem !important; /* 4 units on 8px grid */
+			margin-top: 0.5rem !important; /* 8px */
+			margin-bottom: 1rem !important; /* 16px */
+			font-size: 1.125rem; /* Adjust subtitle size */
 		}
 
-		/* Button section spacing */
-		.button-section {
-			margin-top: 1rem !important; /* 4 units on 8px grid */
+		/* Adjust spacing for the AudioToText component container */
+		.w-full.max-w-xl { /* Target the container div */
+			margin-top: 1rem !important; /* Add some space above audio component */
 		}
 
-		/* Position wrapper adjustments */
-		.position-wrapper {
-			margin-top: 1.5rem !important; /* 6 units on 8px grid */
+
+		footer {
+			padding-top: 0.75rem; /* 12px */
+			padding-bottom: 0.75rem; /* 12px */
+		}
+
+		footer .container {
+			gap: 0.5rem; /* Reduce gap in footer */
 		}
 
 		footer button {
-			min-height: 2.5rem;
-			padding-top: 0.5rem;
-			padding-bottom: 0.5rem;
-			padding-left: 0.75rem;
-			padding-right: 0.75rem;
-		}
-
-		footer {
-			padding-top: 1rem;
-			padding-bottom: 1rem;
+			min-height: 2.25rem; /* 36px */
+			padding: 0.375rem 0.75rem; /* Adjust padding */
+			font-size: 0.75rem; /* Smaller text */
 		}
 	}
+
+	/* DaisyUI Modal Adjustments */
+	:global(dialog.modal) {
+		/* Ensure modals don't prevent background interaction if needed, though usually desired */
+		/* pointer-events: none; */
+	}
+	:global(dialog.modal[open]) {
+		/* pointer-events: auto; */
+	}
+	:global(dialog.modal .modal-box) {
+		/* pointer-events: auto; */ /* Ensure box is interactive */
+		max-height: 90vh; /* Prevent overly tall modals */
+		overflow-y: auto; /* Allow scrolling within the box */
+	}
+	:global(dialog.modal .modal-backdrop) {
+		/* Ensure backdrop covers screen and has correct background */
+		background-color: rgba(0, 0, 0, 0.4);
+		/* pointer-events: auto; */ /* Allow backdrop clicks if using form method */
+	}
+
 </style>
