@@ -152,9 +152,9 @@
   // Theme-specific glow colors
   let glowColors = {
     peach: {
-      primary: 'rgba(255, 162, 110, 0.9)',   // Bright peach/orange
-      secondary: 'rgba(255, 138, 76, 0.7)',  // Medium peach
-      tertiary: 'rgba(254, 178, 126, 0.6)'   // Light peach
+      primary: 'rgba(255, 184, 208, 0.9)',   // Soft pink/peach
+      secondary: 'rgba(253, 164, 175, 0.7)', // Light peachy pink
+      tertiary: 'rgba(252, 231, 243, 0.6)'   // Very soft pink glow
     },
     mint: {
       primary: 'rgba(52, 211, 153, 0.9)',    // Bright mint green
@@ -207,7 +207,14 @@
     // Make sure to reset inactivity timer on interaction
     resetInactivity();
     
-    // ALWAYS wobble immediately on click for tactile feedback
+    // ALWAYS force wobble immediately on click
+    // Force reset first to ensure the animation triggers even if already wobbling
+    isWobbling = false;
+    // Force browser reflow to ensure animation triggers even if already wobbling
+    if (typeof document !== 'undefined') {
+      void document.body.offsetHeight;
+    }
+    // Now start wobble
     isWobbling = true;
     clearTimeout(wobbleTimeoutId);
     wobbleTimeoutId = setTimeout(() => {
@@ -484,8 +491,8 @@
   /* Theme-specific hover glow effects */
   .icon-container:hover, /* Default theme is peach */
   .icon-container.theme-peach:hover {
-    filter: drop-shadow(0 0 18px rgba(254, 178, 126, 0.45))
-      drop-shadow(0 0 30px rgba(255, 162, 110, 0.3));
+    filter: drop-shadow(0 0 18px rgba(252, 231, 243, 0.45))
+      drop-shadow(0 0 30px rgba(255, 184, 208, 0.3));
   }
   
   .icon-container.theme-mint:hover {
@@ -561,7 +568,7 @@
   
   /* Theme-specific special animation glow */
   .do-special-animation.theme-peach {
-    filter: drop-shadow(0 0 20px rgba(255, 162, 110, 0.7)) !important;
+    filter: drop-shadow(0 0 20px rgba(255, 184, 208, 0.7)) !important;
   }
   
   .do-special-animation.theme-mint {
@@ -627,17 +634,17 @@
   /* Each theme has its own recording glow animation class */
   @keyframes recording-glow-peach {
     0% {
-      filter: drop-shadow(0 0 15px rgba(255, 162, 110, 0.5))
-        drop-shadow(0 0 25px rgba(254, 178, 126, 0.4));
+      filter: drop-shadow(0 0 15px rgba(255, 184, 208, 0.5))
+        drop-shadow(0 0 25px rgba(252, 231, 243, 0.4));
     }
     50% {
-      filter: drop-shadow(0 0 25px rgba(255, 162, 110, 0.8))
-        drop-shadow(0 0 35px rgba(255, 138, 76, 0.5))
-        drop-shadow(0 0 40px rgba(254, 178, 126, 0.4));
+      filter: drop-shadow(0 0 25px rgba(255, 184, 208, 0.8))
+        drop-shadow(0 0 35px rgba(253, 164, 175, 0.5))
+        drop-shadow(0 0 40px rgba(252, 231, 243, 0.4));
     }
     100% {
-      filter: drop-shadow(0 0 15px rgba(255, 162, 110, 0.5))
-        drop-shadow(0 0 25px rgba(254, 178, 126, 0.4));
+      filter: drop-shadow(0 0 15px rgba(255, 184, 208, 0.5))
+        drop-shadow(0 0 25px rgba(252, 231, 243, 0.4));
     }
   }
   
