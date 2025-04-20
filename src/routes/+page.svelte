@@ -70,75 +70,46 @@
 	let titleAnimationComplete = false;
 	let subtitleAnimationComplete = false;
 
-	// --- ULTRA-SIMPLE Blinking System ---
-	// Just one timeout for ambient blinking
+	// --- NO BLINKING SYSTEM ---
+	// Completely disabled ambient blinking - too many issues
 	const scheduleBlink = () => {
-		// Clear any existing timeouts to avoid stacking
-		clearTimeout(blinkTimeoutId);
-		
-		// Don't blink during recording or processing
-		if (isRecording || isProcessing) return;
-		
-		// Schedule next blink in 4-8 seconds
-		const delay = 4000 + Math.random() * 4000;
-		blinkTimeoutId = setTimeout(() => {
-			// Do a single blink
-			eyesClosed = true;
-			setTimeout(() => {
-				eyesClosed = false;
-				// Schedule the next one
-				scheduleBlink();
-			}, 150);
-		}, delay);
+		// Do absolutely nothing
+		return;
 	};
-	// --- End ULTRA-SIMPLE Blinking System ---
+	// --- End NO BLINKING SYSTEM ---
 
 
-	// --- MINIMAL Event Handlers ---
+	// --- NUCLEAR OPTION Event Handlers ---
 	function handleRecordingStart() {
 		isRecording = true;
 		isProcessing = false;
 		isWobbling = false;
-		eyesClosed = false;
-		clearTimeout(blinkTimeoutId);
-		clearTimeout(wobbleTimeoutId);
+		eyesClosed = false; // ALWAYS EYES OPEN
 	}
 
 	function handleRecordingStop() {
 		isRecording = false;
 		
-		// Just do a wobble with absolutely no eye animation
+		// JUST DO THE WOBBLE, NOTHING ELSE
 		isWobbling = true;
-		clearTimeout(blinkTimeoutId); // Ensure NO blinks
 		
-		wobbleTimeoutId = setTimeout(() => {
+		// Remove wobble after animation completes
+		setTimeout(() => {
 			isWobbling = false;
-			
-			// Wait a LONG time before considering ambient blinks again
-			if (!isProcessing) {
-				setTimeout(() => {
-					if (!isRecording && !isProcessing) scheduleBlink();
-				}, 5000); // Wait 5 full seconds
-			}
 		}, 600);
 	}
 
 	function handleProcessingStart() {
 		isProcessing = true;
 		isRecording = false;
-		eyesClosed = false;
-		clearTimeout(blinkTimeoutId);
+		eyesClosed = false; // ALWAYS EYES OPEN
 	}
 
 	function handleProcessingEnd() {
 		isProcessing = false;
-		
-		// Wait a LONG time before considering ambient blinks again
-		setTimeout(() => {
-			if (!isRecording && !isProcessing) scheduleBlink();
-		}, 5000);
+		eyesClosed = false; // ALWAYS EYES OPEN
 	}
-	// --- End MINIMAL Event Handlers ---
+	// --- End NUCLEAR OPTION Event Handlers ---
 
 
 	// Function to handle title animation complete
@@ -216,8 +187,8 @@
 
 	// Component lifecycle
 	onMount(() => {
-		// Super-simple - start ambient blinking after a long delay
-		setTimeout(scheduleBlink, 5000); // Wait 5 seconds before first blink
+		// NO BLINKING AT ALL
+		eyesClosed = false;
 
 		// Listen for toggle event from Ghost component
 		const handleToggleRecording = () => {
