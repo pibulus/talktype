@@ -59,7 +59,7 @@
     wobbleTimeoutId = setTimeout(() => {
       isWobbling = false;
       
-      // Snappy double blink with attitude
+      // Natural double blink with good vibe
       eyesClosed = true;
       setTimeout(() => {
         eyesClosed = false;
@@ -70,9 +70,9 @@
             
             // Start ambient blinking
             scheduleBlink();
-          }, 100); // Faster close time
-        }, 120); // Quicker between blinks
-      }, 100); // Faster open time
+          }, 150); // More natural close time
+        }, 180); // Better pause between blinks
+      }, 150); // More natural open time
     }, 600); // Short initial wobble
   }
   
@@ -89,9 +89,9 @@
     const delay = 4000 + Math.random() * 4000;
     
     blinkTimeoutId = setTimeout(() => {
-      // Single or double blink with more attitude
+      // Single or double blink with good vibe from old commits
       if (Math.random() < 0.25) {
-        // Double blink (25% chance) - snappier with attitude
+        // Double blink (25% chance) - natural feel
         eyesClosed = true;
         setTimeout(() => {
           eyesClosed = false;
@@ -100,16 +100,16 @@
             setTimeout(() => {
               eyesClosed = false;
               scheduleBlink(); // Schedule next blink
-            }, 100); // Faster close
-          }, 120); // Quicker between blinks
-        }, 100); // Faster open
+            }, 150); // Original timing
+          }, 180); // Smoother between blinks
+        }, 150); // Original timing
       } else {
-        // Single blink (75% chance) - quicker and with attitude
+        // Single blink (75% chance) - natural timing
         eyesClosed = true;
         setTimeout(() => {
           eyesClosed = false;
           scheduleBlink(); // Schedule next blink
-        }, 100); // Faster for more 'tude
+        }, 150); // Original timing
       }
     }, delay);
   }
@@ -283,7 +283,7 @@
   .icon-eyes {
     z-index: 3; /* Top layer */
     transform-origin: center center;
-    transition: transform 0.05s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Ultra snappy blinks with attitude */
+    transition: transform 0.08s ease-out; /* More natural blink timing */
   }
   
   /* Hover effects */
@@ -311,10 +311,10 @@
     animation: ghost-wobble-right 0.6s ease-in-out forwards !important;
   }
   
-  /* Eyes closed state - transform-based for ultra snappy blinks with attitude */
+  /* Eyes closed state - transform-based with natural feel */
   .eyes-closed {
-    transform: scaleY(0.03) !important; /* More closed for attitude */
-    transition: transform 0.05s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; /* Snappy curve with bounce */
+    transform: scaleY(0.05) !important; /* Not too extreme closure */
+    transition: transform 0.08s ease-out !important; /* Smoother, more natural close */
   }
   
   /* Rainbow animation for ghost svg */
