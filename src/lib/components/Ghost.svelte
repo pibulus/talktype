@@ -132,31 +132,31 @@
     }, delay);
   }
   
-  // Theme-specific glow colors with complementary accents
+  // Theme-specific glow colors with lighter, cuter complementary accents
   let glowColors = {
     peach: {
-      // Peach with complementary soft teal accents
-      primary: 'rgba(255, 184, 208, 0.9)',   // Soft pink/peach (main)
-      secondary: 'rgba(139, 236, 236, 0.65)', // Complementary soft teal
-      tertiary: 'rgba(252, 231, 243, 0.55)'   // Very soft pink glow (blend)
+      // Soft peachy pink with pastel teal accents
+      primary: 'rgba(255, 196, 214, 0.85)',   // Lighter peachy pink (main)
+      secondary: 'rgba(166, 243, 243, 0.6)', // Pastel teal accent
+      tertiary: 'rgba(255, 241, 246, 0.5)'   // Very soft pink glow (blend)
     },
     mint: {
-      // Mint with complementary soft magenta accents
-      primary: 'rgba(52, 211, 153, 0.85)',    // Bright mint green (main)
-      secondary: 'rgba(211, 52, 168, 0.5)',  // Complementary soft magenta
-      tertiary: 'rgba(110, 231, 183, 0.6)'   // Light mint (blend)
+      // Pastel mint with soft lavender accents
+      primary: 'rgba(130, 236, 192, 0.8)',    // Pastel mint green (main)
+      secondary: 'rgba(232, 141, 208, 0.5)',  // Soft lavender/pink accent
+      tertiary: 'rgba(186, 245, 215, 0.55)'   // Very light mint (blend)
     },
     bubblegum: {
-      // Bubblegum with complementary soft green accents
-      primary: 'rgba(244, 114, 182, 0.85)',   // Bright bubblegum (main)
-      secondary: 'rgba(114, 244, 176, 0.55)',  // Complementary soft green
-      tertiary: 'rgba(249, 168, 212, 0.6)'   // Light bubblegum (blend)
+      // Softer bubblegum with cute mint accents
+      primary: 'rgba(255, 153, 204, 0.8)',   // Softer bubblegum (main)
+      secondary: 'rgba(153, 255, 204, 0.5)',  // Pastel mint accent
+      tertiary: 'rgba(255, 204, 229, 0.55)'   // Very light bubblegum (blend)
     },
     rainbow: {
       // Rainbow uses animated variables defined in the keyframes
-      primary: 'var(--rainbow-primary, rgba(124, 58, 237, 0.85))',
-      secondary: 'var(--rainbow-secondary, rgba(237, 124, 58, 0.5))', // Complementary
-      tertiary: 'var(--rainbow-tertiary, rgba(79, 70, 229, 0.6))' // Blend
+      primary: 'var(--rainbow-primary, rgba(186, 130, 245, 0.8))',
+      secondary: 'var(--rainbow-secondary, rgba(245, 186, 130, 0.5))', // Complementary
+      tertiary: 'var(--rainbow-tertiary, rgba(206, 186, 245, 0.55))' // Blend
     }
   };
   
@@ -568,80 +568,80 @@
   /* Vibrant recording glow animation */
   /* Each theme has its own recording glow animation class */
   @keyframes recording-glow-peach {
-    /* Subtle pulse with 80/20 rule - mostly stable with gentle pulse */
+    /* Softer, cuter glow with subtle pulse - 80/20 rule */
     0%, 10%, 90%, 100% {
-      filter: drop-shadow(0 0 18px rgba(255, 184, 208, 0.6))
-        drop-shadow(0 0 28px rgba(139, 236, 236, 0.4))
-        drop-shadow(0 0 36px rgba(252, 231, 243, 0.3));
+      filter: drop-shadow(0 0 18px rgba(255, 196, 214, 0.65))
+        drop-shadow(0 0 30px rgba(166, 243, 243, 0.45))
+        drop-shadow(0 0 40px rgba(255, 241, 246, 0.35));
     }
     50% {
-      filter: drop-shadow(0 0 22px rgba(255, 184, 208, 0.7))
-        drop-shadow(0 0 32px rgba(139, 236, 236, 0.5))
-        drop-shadow(0 0 40px rgba(252, 231, 243, 0.4));
+      filter: drop-shadow(0 0 22px rgba(255, 196, 214, 0.75))
+        drop-shadow(0 0 35px rgba(166, 243, 243, 0.55))
+        drop-shadow(0 0 45px rgba(255, 241, 246, 0.45));
     }
   }
   
   @keyframes recording-glow-mint {
-    /* Subtle pulse with 80/20 rule - mostly stable with gentle pulse */
+    /* Softer, cuter glow with subtle pulse - 80/20 rule */
     0%, 10%, 90%, 100% {
-      filter: drop-shadow(0 0 18px rgba(52, 211, 153, 0.6))
-        drop-shadow(0 0 28px rgba(211, 52, 168, 0.4))
-        drop-shadow(0 0 36px rgba(110, 231, 183, 0.3));
+      filter: drop-shadow(0 0 18px rgba(130, 236, 192, 0.65))
+        drop-shadow(0 0 30px rgba(232, 141, 208, 0.45))
+        drop-shadow(0 0 40px rgba(186, 245, 215, 0.35));
     }
     50% {
-      filter: drop-shadow(0 0 22px rgba(52, 211, 153, 0.7))
-        drop-shadow(0 0 32px rgba(211, 52, 168, 0.5))
-        drop-shadow(0 0 40px rgba(110, 231, 183, 0.4));
+      filter: drop-shadow(0 0 22px rgba(130, 236, 192, 0.75))
+        drop-shadow(0 0 35px rgba(232, 141, 208, 0.55))
+        drop-shadow(0 0 45px rgba(186, 245, 215, 0.45));
     }
   }
   
   @keyframes recording-glow-bubblegum {
-    /* Subtle pulse with 80/20 rule - mostly stable with gentle pulse */
+    /* Softer, cuter glow with subtle pulse - 80/20 rule */
     0%, 10%, 90%, 100% {
-      filter: drop-shadow(0 0 18px rgba(244, 114, 182, 0.6))
-        drop-shadow(0 0 28px rgba(114, 244, 176, 0.4))
-        drop-shadow(0 0 36px rgba(249, 168, 212, 0.3));
+      filter: drop-shadow(0 0 18px rgba(255, 153, 204, 0.65))
+        drop-shadow(0 0 30px rgba(153, 255, 204, 0.45))
+        drop-shadow(0 0 40px rgba(255, 204, 229, 0.35));
     }
     50% {
-      filter: drop-shadow(0 0 22px rgba(244, 114, 182, 0.7))
-        drop-shadow(0 0 32px rgba(114, 244, 176, 0.5))
-        drop-shadow(0 0 40px rgba(249, 168, 212, 0.4));
+      filter: drop-shadow(0 0 22px rgba(255, 153, 204, 0.75))
+        drop-shadow(0 0 35px rgba(153, 255, 204, 0.55))
+        drop-shadow(0 0 45px rgba(255, 204, 229, 0.45));
     }
   }
   
   @keyframes recording-glow-rainbow {
-    /* Rainbow flow with complementary color pairs - more stable with subtle pulse */
+    /* Pastel rainbow flow with complementary color pairs - softer, cuter glow */
     0%, 100% {
-      --rainbow-primary: rgba(255, 102, 204, 0.7); /* Pink-purple primary */
-      --rainbow-secondary: rgba(102, 255, 152, 0.5); /* Complementary green */
-      --rainbow-tertiary: rgba(226, 170, 255, 0.3); /* Soft blend */
-      filter: drop-shadow(0 0 18px var(--rainbow-primary))
-        drop-shadow(0 0 28px var(--rainbow-secondary))
-        drop-shadow(0 0 36px var(--rainbow-tertiary));
+      --rainbow-primary: rgba(255, 153, 220, 0.65); /* Pastel pink primary */
+      --rainbow-secondary: rgba(153, 255, 187, 0.5); /* Pastel green */
+      --rainbow-tertiary: rgba(238, 204, 255, 0.4); /* Soft pastel blend */
+      filter: drop-shadow(0 0 20px var(--rainbow-primary))
+        drop-shadow(0 0 32px var(--rainbow-secondary))
+        drop-shadow(0 0 45px var(--rainbow-tertiary));
     }
     25% {
-      --rainbow-primary: rgba(153, 102, 255, 0.7); /* Purple primary */
-      --rainbow-secondary: rgba(204, 255, 102, 0.5); /* Complementary chartreuse */
-      --rainbow-tertiary: rgba(175, 130, 255, 0.4); /* Soft blend */
-      filter: drop-shadow(0 0 20px var(--rainbow-primary))
-        drop-shadow(0 0 30px var(--rainbow-secondary))
-        drop-shadow(0 0 38px var(--rainbow-tertiary));
+      --rainbow-primary: rgba(187, 153, 255, 0.65); /* Pastel purple primary */
+      --rainbow-secondary: rgba(230, 255, 153, 0.5); /* Pastel yellow */
+      --rainbow-tertiary: rgba(204, 178, 255, 0.4); /* Soft pastel blend */
+      filter: drop-shadow(0 0 22px var(--rainbow-primary))
+        drop-shadow(0 0 34px var(--rainbow-secondary))
+        drop-shadow(0 0 48px var(--rainbow-tertiary));
     }
     50% {
-      --rainbow-primary: rgba(102, 153, 255, 0.7); /* Blue primary */
-      --rainbow-secondary: rgba(255, 204, 102, 0.5); /* Complementary orange */
-      --rainbow-tertiary: rgba(130, 175, 255, 0.4); /* Soft blend */
-      filter: drop-shadow(0 0 22px var(--rainbow-primary))
-        drop-shadow(0 0 32px var(--rainbow-secondary))
-        drop-shadow(0 0 40px var(--rainbow-tertiary));
+      --rainbow-primary: rgba(153, 187, 255, 0.65); /* Pastel blue primary */
+      --rainbow-secondary: rgba(255, 221, 153, 0.5); /* Pastel orange */
+      --rainbow-tertiary: rgba(178, 204, 255, 0.4); /* Soft pastel blend */
+      filter: drop-shadow(0 0 24px var(--rainbow-primary))
+        drop-shadow(0 0 36px var(--rainbow-secondary))
+        drop-shadow(0 0 50px var(--rainbow-tertiary));
     }
     75% {
-      --rainbow-primary: rgba(102, 204, 255, 0.7); /* Light blue primary */
-      --rainbow-secondary: rgba(255, 153, 102, 0.5); /* Complementary peach */
-      --rainbow-tertiary: rgba(153, 193, 255, 0.4); /* Soft blend */
-      filter: drop-shadow(0 0 20px var(--rainbow-primary))
-        drop-shadow(0 0 30px var(--rainbow-secondary))
-        drop-shadow(0 0 38px var(--rainbow-tertiary));
+      --rainbow-primary: rgba(153, 221, 255, 0.65); /* Pastel light blue primary */
+      --rainbow-secondary: rgba(255, 187, 153, 0.5); /* Pastel peach */
+      --rainbow-tertiary: rgba(187, 221, 255, 0.4); /* Soft pastel blend */
+      filter: drop-shadow(0 0 22px var(--rainbow-primary))
+        drop-shadow(0 0 34px var(--rainbow-secondary))
+        drop-shadow(0 0 48px var(--rainbow-tertiary));
     }
   }
   
