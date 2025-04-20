@@ -149,11 +149,41 @@
     }, delay);
   }
   
+  // Theme-specific glow colors
+  let glowColors = {
+    peach: {
+      primary: 'rgba(255, 100, 243, 0.9)',   // Bright pink
+      secondary: 'rgba(255, 120, 170, 0.7)', // Medium pink
+      tertiary: 'rgba(249, 168, 212, 0.6)'   // Light pink
+    },
+    mint: {
+      primary: 'rgba(52, 211, 153, 0.9)',    // Bright mint green
+      secondary: 'rgba(16, 185, 129, 0.7)',  // Medium mint
+      tertiary: 'rgba(110, 231, 183, 0.6)'   // Light mint
+    },
+    bubblegum: {
+      primary: 'rgba(244, 114, 182, 0.9)',   // Bright bubblegum
+      secondary: 'rgba(236, 72, 153, 0.7)',  // Medium bubblegum
+      tertiary: 'rgba(249, 168, 212, 0.6)'   // Light bubblegum
+    },
+    rainbow: {
+      primary: 'rgba(124, 58, 237, 0.9)',    // Bright purple
+      secondary: 'rgba(67, 56, 202, 0.7)',   // Medium blue
+      tertiary: 'rgba(79, 70, 229, 0.6)'     // Light indigo
+    }
+  };
+  
+  // Current theme's glow colors
+  let currentGlowColors = glowColors.peach;
+  
   // Update theme based on document attribute
   function updateTheme() {
     if (typeof document !== 'undefined') {
       currentTheme = document.documentElement.getAttribute('data-theme') || 'peach';
       isRainbow = currentTheme === 'rainbow';
+      
+      // Update glow colors based on theme
+      currentGlowColors = glowColors[currentTheme] || glowColors.peach;
       
       switch(currentTheme) {
         case 'mint':
@@ -341,11 +371,12 @@
 
 <button
   bind:this={ghostElement}
-  class="icon-container {isRecording ? 'recording' : ''} 
-                {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''} 
-                {!isAwake ? 'sleeping' : ''}
-                {doingSpecialAnimation ? 'do-special-animation' : ''}"
-  style={isRecording ? 'filter: drop-shadow(0 0 25px rgba(255, 100, 243, 0.9)) drop-shadow(0 0 35px rgba(255, 120, 170, 0.7)) drop-shadow(0 0 45px rgba(249, 168, 212, 0.6)) !important;' : ''}
+  class="icon-container theme-{currentTheme}
+         {isRecording ? 'recording' : ''}
+         {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''} 
+         {!isAwake ? 'sleeping' : ''}
+         {doingSpecialAnimation ? 'do-special-animation' : ''}"
+  style={isRecording ? `filter: drop-shadow(0 0 25px ${currentGlowColors.primary}) drop-shadow(0 0 35px ${currentGlowColors.secondary}) drop-shadow(0 0 45px ${currentGlowColors.tertiary}) !important;` : ''}
   on:click={handleClick}
   on:keydown={(e) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -439,21 +470,58 @@
     transform: translateZ(0); /* Force GPU rendering */
   }
   
-  /* Hover effects */
+  /* Base hover effects */
   .icon-container:hover,
   .icon-container:active {
-    filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45))
-      drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
     animation: gentle-float 3s ease-in-out infinite, ghost-hover 1.2s ease-in-out infinite alternate;
     animation-delay: 0s, 0s;
   }
   
-  /* Recording state - keep gentle floating while adding glow */
+  /* Theme-specific hover glow effects */
+  .icon-container:hover, /* Default theme is peach */
+  .icon-container.theme-peach:hover {
+    filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45))
+      drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
+  }
+  
+  .icon-container.theme-mint:hover {
+    filter: drop-shadow(0 0 18px rgba(110, 231, 183, 0.45))
+      drop-shadow(0 0 30px rgba(52, 211, 153, 0.3));
+  }
+  
+  .icon-container.theme-bubblegum:hover {
+    filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45))
+      drop-shadow(0 0 30px rgba(244, 114, 182, 0.3));
+  }
+  
+  .icon-container.theme-rainbow:hover {
+    filter: drop-shadow(0 0 18px rgba(79, 70, 229, 0.45))
+      drop-shadow(0 0 30px rgba(124, 58, 237, 0.3));
+  }
+  
+  /* Recording state - base styles shared across themes */
   .recording {
-    animation: recording-glow 1.5s infinite, gentle-float 3s ease-in-out infinite !important;
     transform: scale(1.03);
     animation-delay: 0s, 0s;
     will-change: filter, transform; /* GPU hint for smooth filter animations */
+    animation: gentle-float 3s ease-in-out infinite !important; /* Always keep gentle floating */
+  }
+  
+  /* Theme-specific recording glow animations */
+  .recording.theme-peach {
+    animation: recording-glow-peach 1.5s infinite, gentle-float 3s ease-in-out infinite !important;
+  }
+  
+  .recording.theme-mint {
+    animation: recording-glow-mint 1.5s infinite, gentle-float 3s ease-in-out infinite !important;
+  }
+  
+  .recording.theme-bubblegum {
+    animation: recording-glow-bubblegum 1.5s infinite, gentle-float 3s ease-in-out infinite !important;
+  }
+  
+  .recording.theme-rainbow {
+    animation: recording-glow-rainbow 1.5s infinite, gentle-float 3s ease-in-out infinite !important;
   }
   
   /* Wobble animations */
@@ -482,10 +550,26 @@
     filter: saturate(0.8) brightness(0.95) !important;
   }
   
-  /* Special animation class */
+  /* Special animation base class */
   .do-special-animation {
     animation: do-spin 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+  }
+  
+  /* Theme-specific special animation glow */
+  .do-special-animation.theme-peach {
     filter: drop-shadow(0 0 20px rgba(255, 100, 243, 0.7)) !important;
+  }
+  
+  .do-special-animation.theme-mint {
+    filter: drop-shadow(0 0 20px rgba(52, 211, 153, 0.7)) !important;
+  }
+  
+  .do-special-animation.theme-bubblegum {
+    filter: drop-shadow(0 0 20px rgba(244, 114, 182, 0.7)) !important;
+  }
+  
+  .do-special-animation.theme-rainbow {
+    filter: drop-shadow(0 0 20px rgba(124, 58, 237, 0.7)) !important;
   }
   
   /* Rainbow animation for ghost svg */
@@ -536,8 +620,8 @@
     }
   }
   
-  /* Vibrant recording glow animation */
-  @keyframes recording-glow {
+  /* Each theme has its own recording glow animation class */
+  @keyframes recording-glow-peach {
     0% {
       filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5))
         drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
@@ -550,6 +634,54 @@
     100% {
       filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5))
         drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
+    }
+  }
+  
+  @keyframes recording-glow-mint {
+    0% {
+      filter: drop-shadow(0 0 15px rgba(52, 211, 153, 0.5))
+        drop-shadow(0 0 25px rgba(110, 231, 183, 0.4));
+    }
+    50% {
+      filter: drop-shadow(0 0 25px rgba(52, 211, 153, 0.8))
+        drop-shadow(0 0 35px rgba(16, 185, 129, 0.5))
+        drop-shadow(0 0 40px rgba(110, 231, 183, 0.4));
+    }
+    100% {
+      filter: drop-shadow(0 0 15px rgba(52, 211, 153, 0.5))
+        drop-shadow(0 0 25px rgba(110, 231, 183, 0.4));
+    }
+  }
+  
+  @keyframes recording-glow-bubblegum {
+    0% {
+      filter: drop-shadow(0 0 15px rgba(244, 114, 182, 0.5))
+        drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
+    }
+    50% {
+      filter: drop-shadow(0 0 25px rgba(244, 114, 182, 0.8))
+        drop-shadow(0 0 35px rgba(236, 72, 153, 0.5))
+        drop-shadow(0 0 40px rgba(249, 168, 212, 0.4));
+    }
+    100% {
+      filter: drop-shadow(0 0 15px rgba(244, 114, 182, 0.5))
+        drop-shadow(0 0 25px rgba(249, 168, 212, 0.4));
+    }
+  }
+  
+  @keyframes recording-glow-rainbow {
+    0% {
+      filter: drop-shadow(0 0 15px rgba(124, 58, 237, 0.5))
+        drop-shadow(0 0 25px rgba(79, 70, 229, 0.4));
+    }
+    50% {
+      filter: drop-shadow(0 0 25px rgba(124, 58, 237, 0.8))
+        drop-shadow(0 0 35px rgba(67, 56, 202, 0.5))
+        drop-shadow(0 0 40px rgba(79, 70, 229, 0.4));
+    }
+    100% {
+      filter: drop-shadow(0 0 15px rgba(124, 58, 237, 0.5))
+        drop-shadow(0 0 25px rgba(79, 70, 229, 0.4));
     }
   }
   
