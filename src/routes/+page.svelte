@@ -70,46 +70,103 @@
 	let titleAnimationComplete = false;
 	let subtitleAnimationComplete = false;
 
-	// --- NO BLINKING SYSTEM ---
-	// Completely disabled ambient blinking - too many issues
+	// --- RESTORED AWESOME BLINKING SYSTEM ---
+	// IMPORTANT: Ghost.svelte has NO conditional eye classes - all animation happens via this state only!
 	const scheduleBlink = () => {
-		// Do absolutely nothing
-		return;
+		// Clear any existing scheduled blink
+		clearTimeout(blinkTimeoutId);
+		
+		// Don't blink if recording or processing
+		if (isRecording || isProcessing) {
+			eyesClosed = false; // Ensure eyes are open
+			return;
+		}
+		
+		// Random delay for next blink (4-8 seconds)
+		const delay = 4000 + Math.random() * 4000;
+		
+		blinkTimeoutId = setTimeout(() => {
+			// Do a single blink
+			eyesClosed = true;
+			
+			// Eyes open after 150ms
+			setTimeout(() => {
+				eyesClosed = false;
+				
+				// 25% chance for double blink
+				if (Math.random() < 0.25) {
+					setTimeout(() => {
+						eyesClosed = true;
+						setTimeout(() => {
+							eyesClosed = false;
+							scheduleBlink(); // Schedule next regular blink
+						}, 150);
+					}, 200);
+				} else {
+					// Schedule the next blink
+					scheduleBlink();
+				}
+			}, 150);
+		}, delay);
 	};
-	// --- End NO BLINKING SYSTEM ---
+	// --- End RESTORED AWESOME BLINKING SYSTEM ---
 
 
-	// --- NUCLEAR OPTION Event Handlers ---
+	// --- RESTORED Event Handlers with CLEAR BOUNDARIES ---
 	function handleRecordingStart() {
+		// Update state
 		isRecording = true;
 		isProcessing = false;
 		isWobbling = false;
-		eyesClosed = false; // ALWAYS EYES OPEN
+		eyesClosed = false;
+		
+		// Clear any existing timeouts
+		clearTimeout(blinkTimeoutId);
+		clearTimeout(wobbleTimeoutId);
+		
+		// Important: no direct animation class manipulation!
+		// All animations happen via state variables only
 	}
 
 	function handleRecordingStop() {
+		// Update recording state
 		isRecording = false;
 		
-		// JUST DO THE WOBBLE, NOTHING ELSE
+		// Do a wobble
 		isWobbling = true;
-		
-		// Remove wobble after animation completes
-		setTimeout(() => {
+		wobbleTimeoutId = setTimeout(() => {
 			isWobbling = false;
+			
+			// Wait 2 seconds before restarting ambient blinking
+			// This ensures no weird blinks immediately after recording
+			if (!isProcessing) {
+				setTimeout(() => {
+					scheduleBlink();
+				}, 2000);
+			}
 		}, 600);
 	}
 
 	function handleProcessingStart() {
+		// Update state
 		isProcessing = true;
 		isRecording = false;
-		eyesClosed = false; // ALWAYS EYES OPEN
+		eyesClosed = false;
+		
+		// Stop any blinking
+		clearTimeout(blinkTimeoutId);
 	}
 
 	function handleProcessingEnd() {
+		// Update state
 		isProcessing = false;
-		eyesClosed = false; // ALWAYS EYES OPEN
+		
+		// Wait before restarting ambient blinking
+		setTimeout(() => {
+			scheduleBlink();
+		}, 1000);
 	}
-	// --- End NUCLEAR OPTION Event Handlers ---
+	// --- End RESTORED Event Handlers ---
 
 
 	// Function to handle title animation complete
@@ -187,8 +244,11 @@
 
 	// Component lifecycle
 	onMount(() => {
-		// NO BLINKING AT ALL
-		eyesClosed = false;
+		// Start ambient blinking after a short delay on page load
+		setTimeout(() => {
+			// This is safe because Ghost.svelte has NO conditional classes
+			scheduleBlink();
+		}, 2000);
 
 		// Listen for toggle event from Ghost component
 		const handleToggleRecording = () => {

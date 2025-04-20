@@ -1,9 +1,13 @@
 <script>
-  // State props
-  export let eyesClosed = false;
-  export let isWobbling = false;
-  export let isRecording = false;
-  export let isProcessing = false;
+  // CRITICAL: This component NEVER adds conditional classes based on props!
+  // All animations MUST be controlled by page.svelte only, to prevent double animations
+  // DO NOT add any direct class conditionals to the eye element!
+  
+  // State props - only control the corresponding Ghost.svelte CSS features
+  export let eyesClosed = false;  // True when eyes should be invisible
+  export let isWobbling = false;  // True during wobble animation
+  export let isRecording = false; // True during recording state
+  export let isProcessing = false; // True during processing state
   
   // Local variables for theme handling
   import { onMount } from 'svelte';
