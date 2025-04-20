@@ -92,7 +92,7 @@
 			debug('Clearing existing blink timeout before new blink');
 			clearTimeout(blinkTimeout);
 			// Ensure class is removed if timeout is cleared mid-animation
-			eyes.classList.remove('blink-once');
+			eyes.classList.remove('blink-once', 'squint-once'); // Also remove squint
 		}
 
 		// Apply blink animation
@@ -111,6 +111,41 @@
 			blinkTimeout = null; // Clear the timeout reference
 		}, 180); // Match CSS animation duration
 	}
+
+	// Function to perform the quick squint animation
+	function squint() {
+		const eyes = getEyesElement();
+		if (!eyes) {
+			debug('Squint failed: Eyes element not found');
+			return;
+		}
+
+		debug('Performing single squint');
+
+		// Clear any existing blink/squint animation timeout first
+		if (blinkTimeout) {
+			debug('Clearing existing blink/squint timeout before new squint');
+			clearTimeout(blinkTimeout);
+			eyes.classList.remove('blink-once', 'squint-once');
+		}
+
+		// Apply squint animation
+		eyes.classList.add('squint-once');
+		debug('Added squint-once class');
+
+		// Remove class after animation completes
+		blinkTimeout = setTimeout(() => {
+			const currentEyes = getEyesElement(); // Re-check element
+			if (currentEyes) {
+				currentEyes.classList.remove('squint-once');
+				debug('Removed squint-once class after animation');
+			} else {
+				debug('Eyes element gone before squint-once class removal');
+			}
+			blinkTimeout = null; // Clear the timeout reference
+		}, 250); // Match CSS animation duration for squint
+	}
+
 
 	// For a double blink, use sequential timeouts (from best practices)
 	function doubleClick() {
@@ -238,9 +273,9 @@
 			// Ensure class is removed if timeout is cleared mid-animation
 			const eyes = getEyesElement();
 			if (eyes) {
-				eyes.classList.remove('blink-once');
+				eyes.classList.remove('blink-once', 'squint-once'); // Ensure both are removed
 			}
-			debug('Cleared active blink timeout');
+			debug('Cleared active blink/squint timeout');
 		}
 	}
 
@@ -697,10 +732,10 @@
 			// Reset any eye animation state if eyes exist
 			if (eyes) {
 				eyes.style.animation = 'none'; // Remove CSS animations like blink-thinking
-				eyes.classList.remove('blink-once', 'blink-thinking-hard'); // Remove animation classes
+				eyes.classList.remove('blink-once', 'squint-once', 'blink-thinking-hard'); // Remove animation classes
 				debug('Cleared eye animations');
 			}
-			clearBlinkTimeout(); // Clear any programmatic blink
+			clearBlinkTimeout(); // Clear any programmatic blink/squint
 
 			// Remove the recording class from UI
 			currentIconContainer.classList.remove('recording');
@@ -725,25 +760,27 @@
 				}
 			}, 600);
 
-			// Blink once to acknowledge stop
-			setTimeout(() => {
-				debug('Performing stop acknowledgment blink');
-				blink(); // Use new blink function (verified single blink)
-
-				// Resume ambient blinking after a pause
-				setTimeout(() => {
-					debug('Attempting to resume ambient blinking after stop');
-					startAmbientBlinking();
-				}, 1000);
-			}, 100); // Short delay after wobble starts
-
 			// Stop the recording in the component
 			try {
 				audioToTextComponent.stopRecording();
 				debug('Called stopRecording() on component');
+
+				// --- NEW: Trigger squint animation immediately after stopping ---
+				debug('Performing stop acknowledgment squint');
+				squint(); // Use the new squint function
+
+				// --- NEW: Resume ambient blinking after squint animation finishes ---
+				setTimeout(() => {
+					debug('Attempting to resume ambient blinking after stop/squint');
+					startAmbientBlinking();
+				}, 300); // Delay slightly longer than squint duration (250ms)
+
 			} catch (err) {
 				debug(`Error stopping recording via component: ${err.message}`);
+				// If stopping fails, maybe restart ambient blinking immediately?
+				startAmbientBlinking();
 			}
+
 		} else {
 			// === STARTING RECORDING ===
 			debug('Action: Starting recording');
@@ -756,7 +793,7 @@
 			// Reset any existing eye animations if eyes exist
 			if (eyes) {
 				eyes.style.animation = 'none';
-				eyes.classList.remove('blink-once', 'blink-thinking-hard');
+				eyes.classList.remove('blink-once', 'squint-once', 'blink-thinking-hard');
 				debug('Cleared eye animations before start');
 			}
 
@@ -1682,6 +1719,32 @@
 			opacity: 0.9; /* Slightly fade when closed */
 		}
 	}
+
+	/* --- NEW: Quick SQUINT animation --- */
+	.icon-eyes.squint-once {
+		animation: squint-once 0.25s ease-in-out forwards !important;
+		transform-origin: center center;
+	}
+
+	@keyframes squint-once {
+		0% { /* Start open */
+			transform: scaleY(1);
+			opacity: 1;
+		}
+		40% { /* Quickly close to a slit */
+			transform: scaleY(0.1);
+			opacity: 0.95;
+		}
+		70% { /* Hold the slit briefly */
+			transform: scaleY(0.1);
+			opacity: 0.95;
+		}
+		100% { /* Quickly open back up */
+			transform: scaleY(1);
+			opacity: 1;
+		}
+	}
+	/* --- END NEW --- */
 
 
 	/* Special animation for when the ghost is thinking hard (transcribing) */
