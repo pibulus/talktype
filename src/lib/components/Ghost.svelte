@@ -132,31 +132,31 @@
     }, delay);
   }
   
-  // Theme-specific glow colors - vibrant but soft like morning dew
+  // Theme-specific glow colors - extra saturated with morning dew vibe
   let glowColors = {
     peach: {
-      // Bright peachy pink with sunrise glow
-      primary: 'rgba(255, 143, 179, 0.9)',   // Vibrant peachy pink (main)
-      secondary: 'rgba(255, 204, 229, 0.85)', // Soft pink highlight 
-      tertiary: 'rgba(255, 229, 240, 0.7)'    // Morning light glow
+      // Extra vibrant peachy pink with sunrise glow
+      primary: 'rgba(255, 120, 170, 0.95)',    // More saturated peachy pink (main)
+      secondary: 'rgba(255, 180, 215, 0.9)',   // Brighter pink highlight 
+      tertiary: 'rgba(255, 220, 235, 0.8)'     // Intense morning light glow
     },
     mint: {
-      // Vibrant mint with dewy glow
-      primary: 'rgba(72, 240, 185, 0.9)',     // Fresh bright mint (main)
-      secondary: 'rgba(131, 250, 209, 0.85)', // Lighter mint highlight
-      tertiary: 'rgba(200, 255, 234, 0.7)'    // Dewy glow layer
+      // Super fresh mint with dewy glow
+      primary: 'rgba(50, 245, 175, 0.95)',     // More saturated bright mint (main)
+      secondary: 'rgba(110, 255, 200, 0.9)',   // Brighter mint highlight
+      tertiary: 'rgba(180, 255, 225, 0.8)'     // Intense dewy glow layer
     },
     bubblegum: {
-      // Rich bubblegum with soft glow
-      primary: 'rgba(255, 102, 178, 0.9)',   // Vibrant bubblegum (main)
-      secondary: 'rgba(255, 153, 204, 0.85)', // Softer highlight
-      tertiary: 'rgba(255, 204, 229, 0.7)'    // Sweet glow layer
+      // Purple-blue bubblegum theme (completely different color)
+      primary: 'rgba(170, 120, 255, 0.95)',    // Purple-blue main color
+      secondary: 'rgba(200, 160, 255, 0.9)',   // Softer purple highlight
+      tertiary: 'rgba(230, 200, 255, 0.8)'     // Soft purple glow
     },
     rainbow: {
-      // Rainbow uses animated variables defined in the keyframes
-      primary: 'var(--rainbow-primary, rgba(210, 102, 255, 0.9))',
-      secondary: 'var(--rainbow-secondary, rgba(240, 150, 255, 0.85))', 
-      tertiary: 'var(--rainbow-tertiary, rgba(230, 200, 255, 0.7))'
+      // Rainbow now uses a special CSS gradient approach
+      primary: 'var(--rainbow-primary, rgba(255, 0, 128, 0.95))',
+      secondary: 'var(--rainbow-secondary, rgba(255, 140, 200, 0.9))', 
+      tertiary: 'var(--rainbow-tertiary, rgba(255, 200, 230, 0.8))'
     }
   };
   
@@ -568,80 +568,68 @@
   /* Vibrant recording glow animation */
   /* Each theme has its own recording glow animation class */
   @keyframes recording-glow-peach {
-    /* Vibrant morning sunrise glow with 80/20 rule */
-    0%, 10%, 90%, 100% {
-      filter: drop-shadow(0 0 15px rgba(255, 143, 179, 0.95))
-        drop-shadow(0 0 30px rgba(255, 204, 229, 0.8))
-        drop-shadow(0 0 45px rgba(255, 229, 240, 0.7));
+    /* Extra saturated sunrise glow with enhanced 80/20 pulse */
+    0%, 5%, 95%, 100% {
+      filter: drop-shadow(0 0 15px rgba(255, 120, 170, 0.95))
+        drop-shadow(0 0 30px rgba(255, 180, 215, 0.9))
+        drop-shadow(0 0 45px rgba(255, 220, 235, 0.8));
     }
     50% {
-      filter: drop-shadow(0 0 20px rgba(255, 143, 179, 1.0))
-        drop-shadow(0 0 40px rgba(255, 204, 229, 0.9))
-        drop-shadow(0 0 60px rgba(255, 229, 240, 0.8));
+      filter: drop-shadow(0 0 25px rgba(255, 120, 170, 1.0))
+        drop-shadow(0 0 50px rgba(255, 180, 215, 0.95))
+        drop-shadow(0 0 75px rgba(255, 220, 235, 0.9));
     }
   }
   
   @keyframes recording-glow-mint {
-    /* Vibrant dewy mint glow with 80/20 rule */
-    0%, 10%, 90%, 100% {
-      filter: drop-shadow(0 0 15px rgba(72, 240, 185, 0.95))
-        drop-shadow(0 0 30px rgba(131, 250, 209, 0.8))
-        drop-shadow(0 0 45px rgba(200, 255, 234, 0.7));
+    /* Super fresh mint glow with enhanced 80/20 pulse */
+    0%, 5%, 95%, 100% {
+      filter: drop-shadow(0 0 15px rgba(50, 245, 175, 0.95))
+        drop-shadow(0 0 30px rgba(110, 255, 200, 0.9))
+        drop-shadow(0 0 45px rgba(180, 255, 225, 0.8));
     }
     50% {
-      filter: drop-shadow(0 0 20px rgba(72, 240, 185, 1.0))
-        drop-shadow(0 0 40px rgba(131, 250, 209, 0.9))
-        drop-shadow(0 0 60px rgba(200, 255, 234, 0.8));
+      filter: drop-shadow(0 0 25px rgba(50, 245, 175, 1.0))
+        drop-shadow(0 0 50px rgba(110, 255, 200, 0.95))
+        drop-shadow(0 0 75px rgba(180, 255, 225, 0.9));
     }
   }
   
   @keyframes recording-glow-bubblegum {
-    /* Vibrant bubblegum glow with 80/20 rule */
-    0%, 10%, 90%, 100% {
-      filter: drop-shadow(0 0 15px rgba(255, 102, 178, 0.95))
-        drop-shadow(0 0 30px rgba(255, 153, 204, 0.8))
-        drop-shadow(0 0 45px rgba(255, 204, 229, 0.7));
+    /* New purple-blue glow with enhanced 80/20 pulse */
+    0%, 5%, 95%, 100% {
+      filter: drop-shadow(0 0 15px rgba(170, 120, 255, 0.95))
+        drop-shadow(0 0 30px rgba(200, 160, 255, 0.9))
+        drop-shadow(0 0 45px rgba(230, 200, 255, 0.8));
     }
     50% {
-      filter: drop-shadow(0 0 20px rgba(255, 102, 178, 1.0))
-        drop-shadow(0 0 40px rgba(255, 153, 204, 0.9))
-        drop-shadow(0 0 60px rgba(255, 204, 229, 0.8));
+      filter: drop-shadow(0 0 25px rgba(170, 120, 255, 1.0))
+        drop-shadow(0 0 50px rgba(200, 160, 255, 0.95))
+        drop-shadow(0 0 75px rgba(230, 200, 255, 0.9));
     }
   }
   
   @keyframes recording-glow-rainbow {
-    /* Vibrant rainbow flow with 80/20 rule - "morning dew sunrise" inspired */
-    0%, 100% {
-      --rainbow-primary: rgba(255, 102, 204, 0.95); /* Vibrant pink */
-      --rainbow-secondary: rgba(255, 153, 224, 0.8); /* Softer pink */
-      --rainbow-tertiary: rgba(255, 204, 244, 0.7); /* Light pink glow */
-      filter: drop-shadow(0 0 15px var(--rainbow-primary))
-        drop-shadow(0 0 30px var(--rainbow-secondary))
-        drop-shadow(0 0 45px var(--rainbow-tertiary));
-    }
-    25% {
-      --rainbow-primary: rgba(179, 102, 255, 0.95); /* Vibrant purple */
-      --rainbow-secondary: rgba(204, 153, 255, 0.8); /* Softer purple */
-      --rainbow-tertiary: rgba(229, 204, 255, 0.7); /* Light purple glow */
-      filter: drop-shadow(0 0 17px var(--rainbow-primary))
-        drop-shadow(0 0 34px var(--rainbow-secondary))
-        drop-shadow(0 0 50px var(--rainbow-tertiary));
+    /* True rainbow gradient glow with enhanced 80/20 pulse effect */
+    0%, 5%, 95%, 100% {
+      /* Base state - uses multiple gradient-colored drop shadows to create rainbow effect */
+      filter: 
+        drop-shadow(0 0 15px rgba(255, 50, 150, 0.95)) /* Pink */
+        drop-shadow(0 0 18px rgba(255, 100, 100, 0.9)) /* Red-orange */
+        drop-shadow(0 0 20px rgba(255, 180, 80, 0.9)) /* Orange-yellow */
+        drop-shadow(0 0 25px rgba(100, 220, 120, 0.9)) /* Green */
+        drop-shadow(0 0 30px rgba(80, 180, 255, 0.85)) /* Blue */
+        drop-shadow(0 0 35px rgba(180, 120, 255, 0.85)); /* Purple */
     }
     50% {
-      --rainbow-primary: rgba(102, 179, 255, 0.95); /* Vibrant blue */
-      --rainbow-secondary: rgba(153, 204, 255, 0.8); /* Softer blue */
-      --rainbow-tertiary: rgba(204, 229, 255, 0.7); /* Light blue glow */
-      filter: drop-shadow(0 0 20px var(--rainbow-primary))
-        drop-shadow(0 0 40px var(--rainbow-secondary))
-        drop-shadow(0 0 60px var(--rainbow-tertiary));
-    }
-    75% {
-      --rainbow-primary: rgba(102, 255, 204, 0.95); /* Vibrant teal */
-      --rainbow-secondary: rgba(153, 255, 229, 0.8); /* Softer teal */
-      --rainbow-tertiary: rgba(204, 255, 242, 0.7); /* Light teal glow */
-      filter: drop-shadow(0 0 17px var(--rainbow-primary))
-        drop-shadow(0 0 34px var(--rainbow-secondary))
-        drop-shadow(0 0 50px var(--rainbow-tertiary));
+      /* Pulse effect - intensifies all rainbow colors simultaneously */
+      filter: 
+        drop-shadow(0 0 20px rgba(255, 50, 150, 1.0)) /* Pink */
+        drop-shadow(0 0 25px rgba(255, 100, 100, 0.95)) /* Red-orange */
+        drop-shadow(0 0 30px rgba(255, 180, 80, 0.95)) /* Orange-yellow */
+        drop-shadow(0 0 40px rgba(100, 220, 120, 0.95)) /* Green */
+        drop-shadow(0 0 50px rgba(80, 180, 255, 0.9)) /* Blue */
+        drop-shadow(0 0 60px rgba(180, 120, 255, 0.9)); /* Purple */
     }
   }
   
