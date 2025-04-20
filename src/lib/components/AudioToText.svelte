@@ -331,25 +331,15 @@
 
 				// Reset progress
 				transcriptionProgress = 0;
-
-				// Create a smooth animation that completes in roughly the expected time
-				// This is purely for UI feedback and doesn't reflect actual progress
-				const animateDuration = 3000; // 3 seconds total animation
-				const startTime = Date.now();
-
-				const animate = () => {
-					const elapsedTime = Date.now() - startTime;
-					const progress = Math.min(95, (elapsedTime / animateDuration) * 100);
-
-					// Use smooth easing
-					transcriptionProgress = progress;
-
-					if (progress < 95) {
-						animationFrameId = requestAnimationFrame(animate);
-					}
-				};
-
-				animate();
+				
+				// Use a simpler animation approach with fewer frames
+				// Show immediate feedback
+				setTimeout(() => { transcriptionProgress = 10; }, 10);
+				
+				// Then use setTimeouts for fewer updates (better performance than requestAnimationFrame loop)
+				setTimeout(() => { transcriptionProgress = 30; }, 500);
+				setTimeout(() => { transcriptionProgress = 60; }, 1500);
+				setTimeout(() => { transcriptionProgress = 90; }, 2500);
 
 				let transcriptionError = null; // To store potential error for dispatching
 				try {
@@ -357,44 +347,26 @@
 					transcript = await geminiService.transcribeAudio(audioBlob);
 
 					// Complete the progress bar smoothly
-					cancelAnimationFrame(animationFrameId);
+					// Cancel any existing animation timeouts
+					clearTimeout(animationFrameId);
 
-					// Animate to 100% smoothly
-					const completeProgress = () => {
-						if (transcriptionProgress < 100) {
-							transcriptionProgress += (100 - transcriptionProgress) * 0.2;
+					// Simplified completion animation - go directly to 95% then 100%
+					transcriptionProgress = 95;
+					
+					// Use a single timeout to complete the animation and handle effects
+					setTimeout(() => {
+						// Reach 100%
+						transcriptionProgress = 100;
+						
+						// Brief delay before cleanup
+						setTimeout(() => {
+							transcribing = false;
+							transcriptionProgress = 0;
+						}, 600);
+					}, 300);
 
-							if (transcriptionProgress > 99.5) {
-								// We've reached the end
-								transcriptionProgress = 100;
-
-								// Add a slight delay for the completion effect (if any visual feedback is desired outside this component)
-								setTimeout(handleCompletionEffects, 200);
-							} else {
-								// Continue the animation
-								animationFrameId = requestAnimationFrame(completeProgress);
-							}
-						}
-					};
-
-					// Handle the completion effects (extracted for clarity)
-					function handleCompletionEffects() {
-						// Batch operations with requestAnimationFrame for better performance
-						requestAnimationFrame(() => {
-							// Clean up after animation finishes
-							setTimeout(() => {
-								transcribing = false;
-								transcriptionProgress = 0;
-							}, 600); // Reduced timeout as confetti is removed
-						});
-					}
-
-					completeProgress();
-
-					// Brief delay before showing the transcript - optimized for smoother performance
-					await new Promise((resolve) => {
-						requestAnimationFrame(() => setTimeout(resolve, 500));
-					});
+					// Brief delay before showing the transcript - simplified
+					await new Promise(resolve => setTimeout(resolve, 500));
 
 					// Increment the count early to avoid delaying the user experience
 					if (transcript) {
@@ -573,9 +545,23 @@
 
 	// Cleanup
 	onMount(() => {
-		// Check if the app is running as a PWA on component mount
+		// Cache DOM references
 		if (browser) {
-			// Short delay to ensure window.matchMedia is available
+			// Initialize viewport check for responsive font sizing
+			isMobileDevice = window.innerWidth < 640;
+			
+			// Add resize listener (once, with throttling)
+			let resizeTimeout;
+			window.addEventListener('resize', () => {
+				if (resizeTimeout) clearTimeout(resizeTimeout);
+				resizeTimeout = setTimeout(() => {
+					isMobileDevice = window.innerWidth < 640;
+					// Clear the cache when viewport size changes
+					fontSizeCache.clear();
+				}, 200);
+			});
+
+			// Check if the app is running as a PWA
 			setTimeout(() => {
 				// Check if running as PWA and mark if true
 				const isPWA = isRunningAsPWA();
@@ -586,6 +572,7 @@
 		}
 
 		return () => {
+			// Clean up all timeouts and listeners
 			if (animationFrameId) cancelAnimationFrame(animationFrameId);
 			if (clipboardTimer) clearTimeout(clipboardTimer);
 			if (permissionErrorTimer) clearTimeout(permissionErrorTimer);
@@ -705,28 +692,12 @@
 	}
 
 	// Function to calculate responsive font size based on transcript length and device
-	// Optimized for performance with memoization and cached viewport checks
+	// Optimized for performance with memoization and cached viewport check (set in onMount)
 	const fontSizeCache = new Map();
-	let isMobileDevice = false;
-	let viewportChecked = false;
+	let isMobileDevice = false; // This will be set in onMount
 
 	function getResponsiveFontSize(text) {
 		if (!text) return 'text-base'; // Default size
-
-		// Check viewport size once and cache the result
-		if (!viewportChecked && browser) {
-			isMobileDevice = window.innerWidth < 640;
-			viewportChecked = true;
-
-			// Reset the check on resize, but throttle for performance
-			let resizeTimeout;
-			window.addEventListener('resize', () => {
-				if (resizeTimeout) clearTimeout(resizeTimeout);
-				resizeTimeout = setTimeout(() => {
-					isMobileDevice = window.innerWidth < 640;
-				}, 200);
-			});
-		}
 
 		// Length-based caching for better performance
 		const length = text.length;
@@ -1245,6 +1216,7 @@
 		opacity: 0.95;
 		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 		filter: drop-shadow(0 4px 6px rgba(249, 168, 212, 0.25));
+		animation: gentle-float 3s ease-in-out infinite;
 		/* Ring effect to anchor the button visually to the text box */
 		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.25), 0 4px 6px rgba(0, 0, 0, 0.05);
 		/* Isolation to prevent inheriting filter effects from parents */
@@ -1253,6 +1225,15 @@
 		backdrop-filter: none !important;
 		/* Add background color to ensure opacity */
 		background-color: rgba(255, 255, 255, 0.95);
+	}
+	
+	@keyframes gentle-float {
+		0%, 100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-3px);
+		}
 	}
 
 	.copy-btn:hover {
@@ -1294,11 +1275,50 @@
 
 	/* Tooltip styling */
 	.copy-tooltip {
-		/* Basic styling, animation removed */
 		border: 1px solid rgba(249, 168, 212, 0.3);
 		box-shadow: 0 4px 8px -2px rgba(249, 168, 212, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
 		z-index: 250; /* Higher z-index to ensure it's above visualizer */
 		pointer-events: none;
+		animation: tooltip-appear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+	
+	@keyframes tooltip-appear {
+		0% {
+			opacity: 0;
+			transform: translateY(5px) scale(0.95);
+		}
+		100% {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+	
+	/* Special animation for the copy button ghost eyes */
+	.copy-eyes {
+		animation: copy-ghost-blink 8s infinite;
+	}
+
+	.copy-btn:hover .copy-eyes {
+		animation: copy-ghost-blink-excited 2s infinite;
+	}
+	
+	/* Ghost eyes blinking animations for copy button */
+	@keyframes copy-ghost-blink {
+		0%, 95%, 100% {
+			transform: scaleY(1);
+		}
+		96%, 99% {
+			transform: scaleY(0);
+		}
+	}
+
+	@keyframes copy-ghost-blink-excited {
+		0%, 40%, 50%, 90%, 100% {
+			transform: scaleY(1);
+		}
+		45%, 95% {
+			transform: scaleY(0);
+		}
 	}
 
 	/* Screen reader only class */
