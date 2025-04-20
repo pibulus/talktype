@@ -117,44 +117,66 @@
   
   // Update theme based on document attribute
   function updateTheme() {
-    currentTheme = document.documentElement.getAttribute('data-theme') || 'peach';
-    isRainbow = currentTheme === 'rainbow';
-    
-    switch(currentTheme) {
-      case 'mint':
-        bgImageSrc = '/talktype-icon-bg-gradient-mint.svg';
-        break;
-      case 'bubblegum':
-        bgImageSrc = '/talktype-icon-bg-gradient-bubblegum.svg';
-        break;
-      case 'rainbow':
-        bgImageSrc = '/talktype-icon-bg-gradient-rainbow.svg';
-        break;
-      default: // Default to peach
-        bgImageSrc = '/talktype-icon-bg-gradient.svg';
-        break;
+    if (typeof document !== 'undefined') {
+      currentTheme = document.documentElement.getAttribute('data-theme') || 'peach';
+      isRainbow = currentTheme === 'rainbow';
+      
+      switch(currentTheme) {
+        case 'mint':
+          bgImageSrc = '/talktype-icon-bg-gradient-mint.svg';
+          break;
+        case 'bubblegum':
+          bgImageSrc = '/talktype-icon-bg-gradient-bubblegum.svg';
+          break;
+        case 'rainbow':
+          bgImageSrc = '/talktype-icon-bg-gradient-rainbow.svg';
+          break;
+        default: // Default to peach
+          bgImageSrc = '/talktype-icon-bg-gradient.svg';
+          break;
+      }
     }
   }
   
   // Dispatch toggle recording event when clicked
   function handleClick() {
-    // Do a wobble
+    // Do a wobble - randomize direction for visual variety
     isWobbling = true;
     setTimeout(() => {
       isWobbling = false;
     }, 600);
     
     // Dispatch event to let page know to toggle recording
-    const event = new CustomEvent('togglerecording');
-    document.dispatchEvent(event);
+    if (typeof document !== 'undefined') {
+      const event = new CustomEvent('togglerecording');
+      document.dispatchEvent(event);
+    }
   }
   
   // Watch for changes in recording/processing state
   $: if (isRecording || isProcessing) {
     // Cancel any scheduled blinks when recording/processing starts
     clearTimeout(blinkTimeoutId);
+    
+    // Add wobble when starting recording
+    if (isRecording && typeof window !== 'undefined') {
+      // Only try to use DOM in browser context
+      isWobbling = true;
+      
+      setTimeout(() => {
+        isWobbling = false;
+      }, 600);
+    }
   } else if (!isRecording && !isProcessing) {
-    // Wait a moment before restarting ambient blinking
+    // Add wobble when stopping recording
+    if (typeof window !== 'undefined') {
+      isWobbling = true;
+      setTimeout(() => {
+        isWobbling = false;
+      }, 600);
+    }
+    
+    // Restart blinking after a delay
     setTimeout(() => {
       scheduleBlink();
     }, 2000);
@@ -162,7 +184,8 @@
 </script>
 
 <button
-  class="icon-container {isRecording ? 'recording' : ''} {isWobbling ? 'ghost-wobble' : ''}"
+  class="icon-container {isRecording ? 'recording' : ''} {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''}"
+  style={isRecording ? 'filter: drop-shadow(0 0 25px rgba(255, 100, 243, 0.9)) drop-shadow(0 0 35px rgba(255, 120, 170, 0.7)) drop-shadow(0 0 45px rgba(249, 168, 212, 0.6)) !important;' : ''}
   on:click={handleClick}
   on:keydown={(e) => {
     if (e.key === "Enter" || e.key === " ") {
@@ -180,12 +203,11 @@
     <!-- Base ghost image -->
     <img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" />
     
-    <!-- Eyes - controlled by local state -->
+    <!-- Eyes - controlled by local state with transform-based blinking -->
     <img 
       src="/assets/talktype-icon-eyes.svg" 
       alt="" 
-      class="icon-eyes"
-      style={eyesClosed ? 'opacity: 0;' : 'opacity: 1;'}
+      class="icon-eyes {eyesClosed ? 'eyes-closed' : ''}"
     />
   </div>
 </button>
@@ -247,6 +269,7 @@
   .icon-eyes {
     z-index: 3; /* Top layer */
     transform-origin: center center;
+    transition: transform 0.08s ease-out; /* Fast transition for snappy blinks */
   }
   
   /* Hover effects */
@@ -258,16 +281,26 @@
     animation-delay: 0s, 0s;
   }
   
-  /* Recording state */
+  /* Recording state - both animation and direct filter for reliability */
   .recording {
     animation: recording-glow 1.5s infinite !important;
     transform: scale(1.03);
     animation-delay: 0s;
   }
   
-  /* Wobble animation */
-  .ghost-wobble {
+  /* Wobble animations */
+  .ghost-wobble-left {
     animation: ghost-wobble-left 0.6s ease-in-out forwards !important;
+  }
+  
+  .ghost-wobble-right {
+    animation: ghost-wobble-right 0.6s ease-in-out forwards !important;
+  }
+  
+  /* Eyes closed state - transform-based for snappy blinks */
+  .eyes-closed {
+    transform: scaleY(0.05) !important;
+    transition: transform 0.08s ease-out !important;
   }
   
   /* Rainbow animation for ghost svg */
@@ -301,6 +334,7 @@
     }
   }
   
+  /* Vibrant recording glow animation */
   @keyframes recording-glow {
     0% {
       filter: drop-shadow(0 0 15px rgba(255, 100, 243, 0.5))
@@ -322,6 +356,14 @@
     25% { transform: rotate(-5deg) scale(1.02); }
     50% { transform: rotate(3deg) scale(1.01); }
     75% { transform: rotate(-2deg) scale(1.01); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+  
+  @keyframes ghost-wobble-right {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(5deg) scale(1.02); }
+    50% { transform: rotate(-3deg) scale(1.01); }
+    75% { transform: rotate(2deg) scale(1.01); }
     100% { transform: rotate(0deg) scale(1); }
   }
   
