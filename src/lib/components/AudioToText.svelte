@@ -95,7 +95,11 @@
 	}
 
 	// Ghost expression functions - add personality through blinking
+	// We're being careful with these to prevent unwanted animations
 	function ghostThinkingHard() {
+		// Only apply if we're in a recording or transcribing state
+		if (!recording && !transcribing) return;
+		
 		// Try using the element from the parent component first
 		if (parentEyesElement) {
 			parentEyesElement.classList.add('blink-thinking-hard');
@@ -105,15 +109,21 @@
 	}
 
 	function ghostStopThinking() {
-		// Try using the element from the parent component first
-		if (parentEyesElement) {
+		// Silent removal - no transitions or animations
+		if (parentEyesElement && parentEyesElement.classList.contains('blink-thinking-hard')) {
 			parentEyesElement.classList.remove('blink-thinking-hard');
-		} else if (eyesElement) {
+		} else if (eyesElement && eyesElement.classList.contains('blink-thinking-hard')) {
 			eyesElement.classList.remove('blink-thinking-hard');
 		}
 	}
 
+	// Disabled for now to prevent unwanted blinking animations when recording stops
 	function ghostReactToTranscript(textLength = 0) {
+		// This function is intentionally disabled to prevent any eye animations
+		// when recording stops or when the transcript appears
+		return;
+		
+		/* Original implementation - commented out
 		const eyes = eyesElement || parentEyesElement;
 		if (!eyes) return;
 
@@ -136,6 +146,7 @@
 				setTimeout(() => eyes.classList.remove('blink-once'), 200);
 			}, 200);
 		}
+		*/
 	}
 
 	// Export recording state and functions for external components
@@ -374,7 +385,17 @@
 			mediaRecorder.onstop = async () => {
 				// Add wobble animation to ghost when recording stops
 				const ghostIcon = ghostIconElement || parentGhostIconElement;
+				const eyes = eyesElement || parentEyesElement;
+				
+				// IMPORTANT: First remove ALL possible eye animation classes to prevent unwanted blinking
+				if (eyes) {
+					eyes.classList.remove('blink-once', 'blink-thinking-hard');
+				}
+				
 				if (ghostIcon) {
+					// Force a reflow to ensure clean animation state
+					void ghostIcon.offsetWidth;
+					
 					// Add slight randomness to the wobble
 					const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
 					ghostIcon.classList.add(wobbleClass);
@@ -539,7 +560,15 @@
 					transcribing = false;
 				} finally {
 					recording = false;
-					ghostStopThinking(); // Ensure ghost stops thinking even if there's an error after transcription
+					
+					// Don't call ghostStopThinking() since it can cause visual flicker
+					// Instead, directly check and remove the class if needed without animation
+					if (parentEyesElement && parentEyesElement.classList.contains('blink-thinking-hard')) {
+						parentEyesElement.classList.remove('blink-thinking-hard');
+					} else if (eyesElement && eyesElement.classList.contains('blink-thinking-hard')) {
+						eyesElement.classList.remove('blink-thinking-hard');
+					}
+					
 					// We don't need to set shouldUpdateCta here since we're
 					// using immediate rotation in the toggleRecording function
 				}
@@ -591,6 +620,12 @@
 
 	function stopRecording() {
 		if (mediaRecorder && mediaRecorder.state === 'recording') {
+			// First ensure we remove any blinking classes immediately to prevent unwanted animations
+			const eyes = eyesElement || parentEyesElement;
+			if (eyes) {
+				eyes.classList.remove('blink-once', 'blink-thinking-hard');
+			}
+			
 			mediaRecorder.stop();
 			console.log('🛑 Stop recording');
 		}
