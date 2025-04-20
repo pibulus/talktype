@@ -9,9 +9,17 @@
   // Local state
   let blinkTimeoutId = null;
   let wobbleTimeoutId = null;
+  let lookAroundTimeoutId = null;
+  let inactivityTimeoutId = null;
+  let specialAnimationTimeoutId = null;
+  
   let eyesClosed = false;
   let isWobbling = false;
   let isRainbow = false;
+  let lookDirection = null; // For eye movement: 'left', 'right', or null
+  let isAwake = true; // For sleep state
+  let doingSpecialAnimation = false; // For rare animations
+  
   let currentTheme = 'peach';
   let bgImageSrc = '/talktype-icon-bg-gradient.svg';
   
@@ -40,7 +48,24 @@
         greetingAnimation();
       }, 1500);
       
-      return () => observer.disconnect();
+      // Start occasional eye movement
+      occasionallyLookAround();
+      
+      // Start inactivity detection
+      resetInactivity();
+      
+      // Start special animation detection
+      maybeDoSpecialAnimation();
+      
+      // Set up event listeners for activity
+      document.addEventListener('mousemove', resetInactivity);
+      document.addEventListener('keydown', resetInactivity);
+      
+      return () => {
+        observer.disconnect();
+        document.removeEventListener('mousemove', resetInactivity);
+        document.removeEventListener('keydown', resetInactivity);
+      };
     }
   });
   
@@ -48,6 +73,15 @@
   onDestroy(() => {
     clearTimeout(blinkTimeoutId);
     clearTimeout(wobbleTimeoutId);
+    clearTimeout(lookAroundTimeoutId);
+    clearTimeout(inactivityTimeoutId);
+    clearTimeout(specialAnimationTimeoutId);
+    
+    // Clean up document event listeners if they exist
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('mousemove', resetInactivity);
+      document.removeEventListener('keydown', resetInactivity);
+    }
   });
   
   // --- Animation Functions ---
@@ -139,6 +173,9 @@
   
   // Dispatch toggle recording event when clicked
   function handleClick() {
+    // Make sure to reset inactivity timer on interaction
+    resetInactivity();
+    
     // Don't wobble on click - the reactive block will handle wobbles 
     // based on state changes - this eliminates double wobbles
     
@@ -153,11 +190,84 @@
   let wasRecording = false;
   let wasProcessing = false;
   
+  // Occasional random looking around
+  function occasionallyLookAround() {
+    if (typeof window === 'undefined') return;
+    
+    // Clear any existing timeout
+    clearTimeout(lookAroundTimeoutId);
+    
+    // Only look around when idle and awake
+    if (Math.random() < 0.3 && !isRecording && !isProcessing && isAwake) { // 30% chance when idle
+      // Don't look around during blinks
+      if (!eyesClosed) {
+        const direction = Math.random() > 0.5 ? 'left' : 'right';
+        lookDirection = direction;
+        
+        // Look back to center after a moment
+        setTimeout(() => {
+          lookDirection = null;
+        }, 800);
+      }
+    }
+    
+    // Schedule next check with random interval
+    const nextCheck = 3000 + Math.random() * 5000; // Between 3-8 seconds
+    lookAroundTimeoutId = setTimeout(occasionallyLookAround, nextCheck);
+  }
+  
+  // Reset inactivity timer
+  function resetInactivity() {
+    if (typeof window === 'undefined') return;
+    
+    clearTimeout(inactivityTimeoutId);
+    
+    // Wake up if sleeping
+    if (!isAwake) {
+      isAwake = true;
+    }
+    
+    // Set timer for sleep state
+    inactivityTimeoutId = setTimeout(() => {
+      if (!isRecording && !isProcessing) {
+        isAwake = false;
+      }
+    }, 60000); // Sleep after 1 minute of inactivity
+  }
+  
+  // Special animations that rarely happen
+  function maybeDoSpecialAnimation() {
+    if (typeof window === 'undefined') return;
+    
+    clearTimeout(specialAnimationTimeoutId);
+    
+    // Very rare animation (5% chance when conditions are right)
+    if (Math.random() < 0.05 && !isRecording && !isProcessing && 
+        !doingSpecialAnimation && isAwake && !eyesClosed) {
+      
+      doingSpecialAnimation = true;
+      
+      // Do a special animation (full spin)
+      // We'll handle this with CSS animation classes
+      
+      // Return to normal after animation
+      setTimeout(() => {
+        doingSpecialAnimation = false;
+      }, 2000);
+    }
+    
+    // Schedule next check
+    specialAnimationTimeoutId = setTimeout(maybeDoSpecialAnimation, 45000); // Check every 45 seconds
+  }
+  
   // Watch for changes in recording/processing state
   $: {
     // Cancel any scheduled blinks during recording/processing
     if (isRecording || isProcessing) {
       clearTimeout(blinkTimeoutId);
+      
+      // Reset inactivity on state change
+      resetInactivity();
       
       // Only wobble when STARTING recording (not just any state update)
       if (isRecording && !wasRecording && typeof window !== 'undefined') {
@@ -169,6 +279,9 @@
         wobbleTimeoutId = setTimeout(() => {
           isWobbling = false;
         }, 600);
+        
+        // Cancel any eye movement during recording
+        lookDirection = null;
       }
     } 
     // Restart blinking when finished recording/processing
@@ -198,7 +311,10 @@
 </script>
 
 <button
-  class="icon-container {isRecording ? 'recording' : ''} {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''}"
+  class="icon-container {isRecording ? 'recording' : ''} 
+                {isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''} 
+                {!isAwake ? 'sleeping' : ''}
+                {doingSpecialAnimation ? 'do-special-animation' : ''}"
   style={isRecording ? 'filter: drop-shadow(0 0 25px rgba(255, 100, 243, 0.9)) drop-shadow(0 0 35px rgba(255, 120, 170, 0.7)) drop-shadow(0 0 45px rgba(249, 168, 212, 0.6)) !important;' : ''}
   on:click={handleClick}
   on:keydown={(e) => {
@@ -217,11 +333,12 @@
     <!-- Base ghost image -->
     <img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" />
     
-    <!-- Eyes - controlled by local state with transform-based blinking -->
+    <!-- Eyes - controlled by local state with transform-based blinking and movement -->
     <img 
       src="/assets/talktype-icon-eyes.svg" 
       alt="" 
-      class="icon-eyes {eyesClosed ? 'eyes-closed' : ''}"
+      class="icon-eyes {eyesClosed ? 'eyes-closed' : ''} {!isAwake ? 'sleepy-eyes' : ''}"
+      style={!eyesClosed && lookDirection ? `transform: translateX(${lookDirection === 'left' ? -2 : 2}px);` : ''}
     />
   </div>
 </button>
@@ -284,6 +401,8 @@
     z-index: 3; /* Top layer */
     transform-origin: center center;
     transition: transform 0.08s ease-out; /* More natural blink timing */
+    will-change: transform; /* GPU acceleration hint */
+    transform: translateZ(0); /* Force GPU rendering */
   }
   
   /* Hover effects */
@@ -300,6 +419,7 @@
     animation: recording-glow 1.5s infinite, gentle-float 3s ease-in-out infinite !important;
     transform: scale(1.03);
     animation-delay: 0s, 0s;
+    will-change: filter, transform; /* GPU hint for smooth filter animations */
   }
   
   /* Wobble animations */
@@ -317,6 +437,25 @@
     transition: transform 0.08s ease-out !important; /* Smoother, more natural close */
   }
   
+  /* Sleepy eyes state */
+  .sleepy-eyes {
+    transform: scaleY(0.3) !important; /* Half-lidded eyes */
+    opacity: 0.8; /* Sleepy state */
+    transition: transform 0.5s ease, opacity 0.5s ease !important;
+  }
+  
+  /* Sleeping state for whole ghost */
+  .sleeping {
+    animation: gentle-sleep 4s ease-in-out infinite !important;
+    filter: saturate(0.8) brightness(0.95) !important;
+  }
+  
+  /* Special animation class */
+  .do-special-animation {
+    animation: do-spin 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+    filter: drop-shadow(0 0 20px rgba(255, 100, 243, 0.7)) !important;
+  }
+  
   /* Rainbow animation for ghost svg */
   .rainbow-animated {
     animation: rainbowFlow 7s linear infinite;
@@ -332,11 +471,28 @@
   /* Animation keyframes */
   @keyframes gentle-float {
     0%, 10%, 90%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-3px) rotate(0.5deg);
+    }
+  }
+  
+  @keyframes gentle-sleep {
+    0%, 100% {
       transform: translateY(0);
     }
     50% {
-      transform: translateY(-3px);
+      transform: translateY(2px); /* Sleepy bob is down, not up */
     }
+  }
+  
+  @keyframes do-spin {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(90deg) scale(1.05); }
+    50% { transform: rotate(180deg) scale(1.08); }
+    75% { transform: rotate(270deg) scale(1.05); }
+    100% { transform: rotate(360deg) scale(1); }
   }
   
   @keyframes ghost-hover {
