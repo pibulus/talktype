@@ -308,14 +308,11 @@
 		// Don't clear transcript here - we do it in toggleRecording for better control of CTA rotation
 		recording = true;
 		dispatch('recordingstart'); // Dispatch recording start event
-		
-		// Trigger ghost wobble by dispatching event for ghost animation
-		if (typeof document !== 'undefined') {
-			console.log('🎮 Dispatching ghost-wobble event from Start Recording');
-			const ghostEvent = new CustomEvent('ghost-wobble');
-			document.dispatchEvent(ghostEvent);
-		}
-		
+
+		// --- REMOVED ghost-wobble event dispatch ---
+		// The Ghost component will wobble based on the isRecording prop change.
+		// --- END REMOVAL ---
+
 		audioChunks = [];
 		clipboardSuccess = false;
 		transcriptionProgress = 0;
@@ -339,11 +336,11 @@
 
 				// Reset progress
 				transcriptionProgress = 0;
-				
+
 				// Use a simpler animation approach with fewer frames
 				// Show immediate feedback
 				setTimeout(() => { transcriptionProgress = 10; }, 10);
-				
+
 				// Then use setTimeouts for fewer updates (better performance than requestAnimationFrame loop)
 				setTimeout(() => { transcriptionProgress = 30; }, 500);
 				setTimeout(() => { transcriptionProgress = 60; }, 1500);
@@ -360,12 +357,12 @@
 
 					// Simplified completion animation - go directly to 95% then 100%
 					transcriptionProgress = 95;
-					
+
 					// Use a single timeout to complete the animation and handle effects
 					setTimeout(() => {
 						// Reach 100%
 						transcriptionProgress = 100;
-						
+
 						// Brief delay before cleanup
 						setTimeout(() => {
 							transcribing = false;
@@ -553,25 +550,32 @@
 
 	// Cleanup
 	onMount(() => {
-		// Cache DOM references
+		let resizeTimeout;
+		let handleResize; // Declare handleResize function variable
+
 		if (browser) {
 			// Initialize viewport check for responsive font sizing
 			isMobileDevice = window.innerWidth < 640;
-			
-			// Add resize listener (once, with throttling)
-			let resizeTimeout;
-			window.addEventListener('resize', () => {
+
+			// Define the resize handler function
+			handleResize = () => {
 				if (resizeTimeout) clearTimeout(resizeTimeout);
 				resizeTimeout = setTimeout(() => {
-					isMobileDevice = window.innerWidth < 640;
-					// Clear the cache when viewport size changes
-					fontSizeCache.clear();
-				}, 200);
-			});
+					const newIsMobile = window.innerWidth < 640;
+					if (newIsMobile !== isMobileDevice) {
+						isMobileDevice = newIsMobile;
+						// Clear the cache when viewport size changes significantly (mobile/desktop breakpoint)
+						fontSizeCache.clear();
+						console.log(`Viewport changed. Mobile: ${isMobileDevice}. Font size cache cleared.`);
+					}
+				}, 200); // Throttle resize events
+			};
 
-			// Check if the app is running as a PWA
+			// Add resize listener
+			window.addEventListener('resize', handleResize);
+
+			// Check if the app is running as a PWA after a short delay
 			setTimeout(() => {
-				// Check if running as PWA and mark if true
 				const isPWA = isRunningAsPWA();
 				if (isPWA) {
 					console.log('📱 App is running as PWA');
@@ -579,11 +583,20 @@
 			}, 100);
 		}
 
+		// Return the cleanup function
 		return () => {
-			// Clean up all timeouts and listeners
+			// Clean up timeouts
+			if (resizeTimeout) clearTimeout(resizeTimeout);
 			if (animationFrameId) cancelAnimationFrame(animationFrameId);
 			if (clipboardTimer) clearTimeout(clipboardTimer);
 			if (permissionErrorTimer) clearTimeout(permissionErrorTimer);
+
+			// --- FIX: Remove the resize event listener using the correct function reference ---
+			if (browser && handleResize) {
+				window.removeEventListener('resize', handleResize);
+				console.log('🧹 Resize listener removed');
+			}
+			// --- End FIX ---
 		};
 	});
 
@@ -1234,7 +1247,7 @@
 		/* Add background color to ensure opacity */
 		background-color: rgba(255, 255, 255, 0.95);
 	}
-	
+
 	@keyframes gentle-float {
 		0%, 100% {
 			transform: translateY(0);
@@ -1289,7 +1302,7 @@
 		pointer-events: none;
 		animation: tooltip-appear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
-	
+
 	@keyframes tooltip-appear {
 		0% {
 			opacity: 0;
@@ -1300,7 +1313,7 @@
 			transform: translateY(0) scale(1);
 		}
 	}
-	
+
 	/* Special animation for the copy button ghost eyes */
 	.copy-eyes {
 		animation: copy-ghost-blink 8s infinite;
@@ -1309,7 +1322,7 @@
 	.copy-btn:hover .copy-eyes {
 		animation: copy-ghost-blink-excited 2s infinite;
 	}
-	
+
 	/* Ghost eyes blinking animations for copy button */
 	@keyframes copy-ghost-blink {
 		0%, 95%, 100% {
