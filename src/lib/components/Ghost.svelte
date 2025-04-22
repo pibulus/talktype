@@ -276,6 +276,9 @@
 
   // Separate function to force wobble animation that can be called from anywhere
   function forceWobble() {
+    // Only run in browser context
+    if (typeof window === 'undefined') return;
+
     console.log('🪄 FORCE WOBBLE triggered - DEBUG: isWobbling before=', isWobbling);
 
     // Force animation restart by setting to false first
@@ -297,44 +300,51 @@
     wobbleTimeoutId = setTimeout(() => {
       console.log('🪄 FORCE WOBBLE ended');
       isWobbling = false;
-    }, 600);
+    }, 600); // Duration matches CSS animation
   }
 
   // Track previous state to detect actual changes
   let wasRecording = false;
   let wasProcessing = false;
 
-  // Watch for changes in recording/processing state
+  // Watch for changes ONLY in isRecording for wobble triggers,
+  // and combined state for blink logic.
   $: {
-    if (isRecording || isProcessing) {
-      // Clear any scheduled blinks during recording/processing
-      clearTimeout(blinkTimeoutId);
+    // Check browser context for safety, although reactive blocks usually run client-side
+    if (typeof window !== 'undefined') {
 
-      // Only wobble when STARTING recording (not just any state update)
-      if (isRecording && !wasRecording && typeof window !== 'undefined') {
+      // --- Wobble Logic ---
+      // START Recording Wobble: Triggered when isRecording goes from false to true
+      if (isRecording && !wasRecording) {
         console.log('Ghost wobble: START recording detected (via prop change)');
-        // Use the same reusable function
         forceWobble();
       }
-    }
-    // Restart blinking when finished recording/processing
-    else if ((wasRecording || wasProcessing) && !isRecording && !isProcessing) {
-      // Add wobble only when STOPPING recording
-      if (wasRecording && typeof window !== 'undefined') {
+      // STOP Recording Wobble: Triggered when isRecording goes from true to false
+      else if (!isRecording && wasRecording) {
         console.log('Ghost wobble: STOP recording detected (via prop change)');
-        // Use the same reusable function
         forceWobble();
       }
 
-      // Restart blinking after a delay
-      setTimeout(() => {
-        scheduleBlink();
-      }, 2000);
-    }
+      // --- Blink Logic ---
+      // Pause blinking if recording OR processing starts
+      if (isRecording || isProcessing) {
+        clearTimeout(blinkTimeoutId); // Stop blinking
+      }
+      // Resume blinking ONLY if we just stopped recording/processing AND are not currently in either state
+      else if (wasRecording || wasProcessing) { // Check if previous state was active
+         // Ensure we are truly idle before resuming blinking
+         if (!isRecording && !isProcessing) {
+             // Use a timeout to delay resuming blinking slightly after stopping
+             setTimeout(() => {
+                 scheduleBlink();
+             }, 1000); // Delay blinking resumption (e.g., 1 second)
+         }
+      }
 
-    // Update previous state for next comparison
-    wasRecording = isRecording;
-    wasProcessing = isProcessing;
+      // Update previous states for the next reactive cycle
+      wasRecording = isRecording;
+      wasProcessing = isProcessing;
+    }
   }
 </script>
 
