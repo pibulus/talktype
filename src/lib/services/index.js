@@ -3,11 +3,15 @@ import { eventBus as eventBusInstance } from './infrastructure/eventBus';
 import { hapticService as hapticServiceInstance } from './infrastructure/hapticService';
 import { audioService as audioServiceInstance } from './audio/audioService';
 import { transcriptionService as transcriptionServiceInstance } from './transcription/transcriptionService';
+import { themeService as themeServiceInstance } from './theme/themeService';
+import { modalService as modalServiceInstance } from './modals/modalService';
 import { resetStores } from './infrastructure/stores';
 
 // Re-export services for external usage
 export { eventBus } from './infrastructure/eventBus';
 export { hapticService } from './infrastructure/hapticService';
+export { themeService } from './theme/themeService';
+export { modalService } from './modals/modalService';
 
 // Audio services
 export { AudioStates } from './audio/audioStates';
@@ -59,6 +63,8 @@ export function initializeServices(options = {}) {
     eventBus: eventBusInstance,
     audioService: audioServiceInstance,
     transcriptionService: transcriptionServiceInstance,
-    hapticService: hapticServiceInstance
+    hapticService: hapticServiceInstance,
+    themeService: themeServiceInstance,
+    modalService: modalServiceInstance
   };
 }

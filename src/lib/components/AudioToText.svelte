@@ -379,14 +379,18 @@
     try {
       if ($isRecording) {
         // Haptic feedback for stop - single pulse
-        services.hapticService.stopRecording();
+        if (services && services.hapticService) {
+          services.hapticService.stopRecording();
+        }
 
         stopRecording();
         // Screen reader announcement
         uiActions.setScreenReaderMessage('Recording stopped.');
       } else {
         // Haptic feedback for start - double pulse
-        services.hapticService.startRecording();
+        if (services && services.hapticService) {
+          services.hapticService.startRecording();
+        }
 
         // When using "New Recording" button, rotate to next phrase immediately
         if ($transcriptionText) {
@@ -416,8 +420,10 @@
       // Show error message using existing toast system
       uiActions.setErrorMessage(`Recording error: ${err.message || 'Unknown error'}`);
 
-      // Haptic feedback for error
-      services.hapticService.error();
+      // Haptic feedback for error - with null check
+      if (services && services.hapticService) {
+        services.hapticService.error();
+      }
 
       // Update screen reader status
       uiActions.setScreenReaderMessage('Recording failed. Please try again.');
