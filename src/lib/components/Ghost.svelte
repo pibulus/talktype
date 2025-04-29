@@ -1,11 +1,11 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-
+  
   // Props to communicate recording/processing state ONLY
   // These don't control animation directly - just tell us when we can blink
   export let isRecording = false;
   export let isProcessing = false;
-
+  
   // Local state
   let blinkTimeoutId = null;
   let wobbleTimeoutId = null;
@@ -18,16 +18,16 @@
   let doingSpecialAnimation = false; // For rare spin animation (easter egg)
   let currentTheme = 'peach';
   let bgImageSrc = '/talktype-icon-bg-gradient.svg';
-
+  
   // Mouse tracking
   let ghostElement = null; // Reference to the container element
-
+  
   // --- Theme handling ---
   onMount(() => {
     // Update theme on mount
     if (typeof document !== 'undefined') {
       updateTheme();
-
+      
       // Listen for theme changes
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
@@ -36,55 +36,48 @@
           }
         });
       });
-
+      
       observer.observe(document.documentElement, {
         attributes: true,
         attributeFilter: ['data-theme']
       });
-
+      
       // Start greeting animation
       setTimeout(() => {
         greetingAnimation();
       }, 1500);
-
+      
       // Start tracking mouse movement for eye position
       document.addEventListener('mousemove', trackMousePosition, { passive: true });
-
-      // --- REMOVED ghost-wobble event listener setup ---
-      // --- END REMOVAL ---
-
+      
       // Start special animation detection (easter egg)
       maybeDoSpecialAnimation();
-
+      
       return () => {
         observer.disconnect();
         document.removeEventListener('mousemove', trackMousePosition);
-        // --- REMOVED ghost-wobble event listener cleanup ---
-        // --- END REMOVAL ---
         clearTimeout(specialAnimationTimeoutId);
         clearTimeout(wobbleTimeoutId);
-        // Note: blinkTimeoutId is cleared in onDestroy and scheduleBlink
       };
     }
   });
-
+  
   // Clean up on destroy
   onDestroy(() => {
     clearTimeout(blinkTimeoutId);
     clearTimeout(wobbleTimeoutId);
     clearTimeout(specialAnimationTimeoutId);
-    // Note: Other listeners/observers cleaned up in onMount return function
   });
-
+  
   // --- Animation Functions ---
-
+  
   // Greeting animation
   function greetingAnimation() {
     // Add a quick greeting wobble with faster, snappier blinks
     isWobbling = true;
     wobbleTimeoutId = setTimeout(() => {
       isWobbling = false;
-
+      
       // Natural double blink with good vibe
       eyesClosed = true;
       setTimeout(() => {
@@ -93,7 +86,7 @@
           eyesClosed = true;
           setTimeout(() => {
             eyesClosed = false;
-
+            
             // Start ambient blinking
             scheduleBlink();
           }, 150); // More natural close time
@@ -101,19 +94,19 @@
       }, 150); // More natural open time
     }, 600); // Short initial wobble
   }
-
+  
   // Regular ambient blinking
   function scheduleBlink() {
     clearTimeout(blinkTimeoutId);
-
+    
     // Don't blink during recording or processing
     if (isRecording || isProcessing) {
       return;
     }
-
+    
     // Random delay between blinks (4-8 seconds)
     const delay = 4000 + Math.random() * 4000;
-
+    
     blinkTimeoutId = setTimeout(() => {
       // Single or double blink with good vibe from old commits
       if (Math.random() < 0.25) {
@@ -139,13 +132,13 @@
       }
     }, delay);
   }
-
+  
   // Theme-specific glow colors - extra saturated with morning dew vibe
   let glowColors = {
     peach: {
       // Extra vibrant peachy pink with sunrise glow
       primary: 'rgba(255, 120, 170, 0.95)',    // More saturated peachy pink (main)
-      secondary: 'rgba(255, 180, 215, 0.9)',   // Brighter pink highlight
+      secondary: 'rgba(255, 180, 215, 0.9)',   // Brighter pink highlight 
       tertiary: 'rgba(255, 220, 235, 0.8)'     // Intense morning light glow
     },
     mint: {
@@ -163,23 +156,23 @@
     rainbow: {
       // Rainbow now uses a special CSS gradient approach
       primary: 'var(--rainbow-primary, rgba(255, 0, 128, 0.95))',
-      secondary: 'var(--rainbow-secondary, rgba(255, 140, 200, 0.9))',
+      secondary: 'var(--rainbow-secondary, rgba(255, 140, 200, 0.9))', 
       tertiary: 'var(--rainbow-tertiary, rgba(255, 200, 230, 0.8))'
     }
   };
-
+  
   // Current theme's glow colors
   let currentGlowColors = glowColors.peach;
-
+  
   // Update theme based on document attribute
   function updateTheme() {
     if (typeof document !== 'undefined') {
       currentTheme = document.documentElement.getAttribute('data-theme') || 'peach';
       isRainbow = currentTheme === 'rainbow';
-
+      
       // Update glow colors based on theme
       currentGlowColors = glowColors[currentTheme] || glowColors.peach;
-
+      
       switch(currentTheme) {
         case 'mint':
           bgImageSrc = '/talktype-icon-bg-gradient-mint.svg';
@@ -196,54 +189,54 @@
       }
     }
   }
-
+  
   // Special animations that rarely happen (easter egg)
   function maybeDoSpecialAnimation() {
     if (typeof window === 'undefined') return;
-
+    
     clearTimeout(specialAnimationTimeoutId);
-
+    
     // Very rare animation (5% chance when conditions are right)
-    if (Math.random() < 0.05 && !isRecording && !isProcessing &&
+    if (Math.random() < 0.05 && !isRecording && !isProcessing && 
         !doingSpecialAnimation && !eyesClosed) {
-
+      
       doingSpecialAnimation = true;
-
+      
       // Do a special animation (full spin)
       // We'll handle this with CSS animation classes
-
+      
       // Return to normal after animation
       setTimeout(() => {
         doingSpecialAnimation = false;
       }, 2000);
     }
-
+    
     // Schedule next check
     specialAnimationTimeoutId = setTimeout(maybeDoSpecialAnimation, 45000); // Check every 45 seconds
   }
-
+  
   // Track mouse movement to move eyes
   function trackMousePosition(event) {
-    if (typeof window === 'undefined' || !ghostElement ||
+    if (typeof window === 'undefined' || !ghostElement || 
         eyesClosed) return; // Allow tracking during recording for better tactility
-
+    
     // Get ghost element bounding box
     const ghostRect = ghostElement.getBoundingClientRect();
     const ghostCenterX = ghostRect.left + (ghostRect.width / 2);
     const ghostCenterY = ghostRect.top + (ghostRect.height / 2);
-
+    
     // Calculate mouse position relative to ghost center
     const mouseX = event.clientX;
     const mouseY = event.clientY;
     const distanceX = mouseX - ghostCenterX;
     const distanceY = mouseY - ghostCenterY;
-
+    
     // Normalize to values between -1 and 1
     const maxDistanceX = window.innerWidth / 3; // More responsive horizontal tracking
     const maxDistanceY = window.innerHeight / 3; // Vertical tracking
     const normalizedX = Math.max(-1, Math.min(1, distanceX / maxDistanceX));
     const normalizedY = Math.max(-1, Math.min(1, distanceY / maxDistanceY));
-
+    
     // Add smaller dead zone for more responsiveness
     if (Math.abs(normalizedX) < 0.05) {
       eyePositionX = 0;
@@ -251,7 +244,7 @@
       // Apply faster smoothing for better tactility - 20% toward target
       eyePositionX = eyePositionX + (normalizedX - eyePositionX) * 0.2;
     }
-
+    
     // Vertical tracking with smaller movement range
     if (Math.abs(normalizedY) < 0.05) {
       eyePositionY = 0;
@@ -260,91 +253,82 @@
       eyePositionY = eyePositionY + (normalizedY - eyePositionY) * 0.2;
     }
   }
-
+  
   // Dispatch toggle recording event when clicked
   function handleClick() {
     // Directly apply wobble class without relying on reactive statements
     // This is absolutely critical for it to work consistently
     forceWobble();
-
+    
     // Dispatch event to let page know to toggle recording
     if (typeof document !== 'undefined') {
+      console.log('👻 Ghost clicked - dispatching togglerecording event');
       const event = new CustomEvent('togglerecording');
       document.dispatchEvent(event);
     }
   }
-
+  
   // Separate function to force wobble animation that can be called from anywhere
   function forceWobble() {
-    // Only run in browser context
+    // Make sure we're in browser context
     if (typeof window === 'undefined') return;
-
-    console.log('🪄 FORCE WOBBLE triggered - DEBUG: isWobbling before=', isWobbling);
-
+    
+    console.log('👻 FORCE WOBBLE triggered');
+    
     // Force animation restart by setting to false first
     isWobbling = false;
-
+    
     // Force a browser reflow to ensure the animation gets reapplied
     if (ghostElement) {
       void ghostElement.offsetWidth;
     }
-
+    
     // Now set to true to start animation
     isWobbling = true;
-    console.log('🪄 FORCE WOBBLE - DEBUG: isWobbling after=', isWobbling);
-
+    
     // Clear any existing wobble timer
     clearTimeout(wobbleTimeoutId);
-
+    
     // Schedule the wobble to end after animation completes
     wobbleTimeoutId = setTimeout(() => {
-      console.log('🪄 FORCE WOBBLE ended');
       isWobbling = false;
-    }, 600); // Duration matches CSS animation
+    }, 600);
   }
-
+  
   // Track previous state to detect actual changes
   let wasRecording = false;
   let wasProcessing = false;
-
-  // Watch for changes ONLY in isRecording for wobble triggers,
-  // and combined state for blink logic.
+  
+  // Watch for changes in recording/processing state
   $: {
-    // Check browser context for safety, although reactive blocks usually run client-side
-    if (typeof window !== 'undefined') {
-
-      // --- Wobble Logic ---
-      // START Recording Wobble: Triggered when isRecording goes from false to true
-      if (isRecording && !wasRecording) {
-        console.log('Ghost wobble: START recording detected (via prop change)');
-        forceWobble();
-      }
-      // STOP Recording Wobble: Triggered when isRecording goes from true to false
-      else if (!isRecording && wasRecording) {
-        console.log('Ghost wobble: STOP recording detected (via prop change)');
-        forceWobble();
-      }
-
-      // --- Blink Logic ---
-      // Pause blinking if recording OR processing starts
-      if (isRecording || isProcessing) {
-        clearTimeout(blinkTimeoutId); // Stop blinking
-      }
-      // Resume blinking ONLY if we just stopped recording/processing AND are not currently in either state
-      else if (wasRecording || wasProcessing) { // Check if previous state was active
-         // Ensure we are truly idle before resuming blinking
-         if (!isRecording && !isProcessing) {
-             // Use a timeout to delay resuming blinking slightly after stopping
-             setTimeout(() => {
-                 scheduleBlink();
-             }, 1000); // Delay blinking resumption (e.g., 1 second)
-         }
-      }
-
-      // Update previous states for the next reactive cycle
-      wasRecording = isRecording;
-      wasProcessing = isProcessing;
+    // Note: Add console logging for debugging
+    console.log(`👻 State change: isRecording=${isRecording}, wasRecording=${wasRecording}`);
+    
+    // Wobble handling
+    if (isRecording && !wasRecording) {
+      // START wobble
+      console.log('👻 START recording state change detected');
+      forceWobble();
+    } else if (!isRecording && wasRecording) {
+      // STOP wobble  
+      console.log('👻 STOP recording state change detected');
+      forceWobble();
     }
+    
+    // Blink handling
+    if (isRecording || isProcessing) {
+      // Clear any scheduled blinks during recording/processing
+      clearTimeout(blinkTimeoutId);
+    } else if ((wasRecording || wasProcessing) && !isRecording && !isProcessing) {
+      // Restart blinking after a delay when we're fully stopped
+      setTimeout(() => {
+        scheduleBlink();
+      }, 1000);
+    }
+    
+    // Update previous state for next comparison
+    wasRecording = isRecording;
+    wasProcessing = isProcessing;
   }
 </script>
 
@@ -365,17 +349,17 @@
   <div class="icon-layers">
     <!-- Background gradient -->
     <img src={bgImageSrc} alt="" class="icon-bg {isRainbow ? 'rainbow-animated' : ''}" />
-
+    
     <!-- Base ghost image -->
     <img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" />
-
+    
     <!-- Eyes - controlled by local state with transform-based blinking -->
-    <img
-      src="/assets/talktype-icon-eyes.svg"
-      alt=""
+    <img 
+      src="/assets/talktype-icon-eyes.svg" 
+      alt="" 
       class="icon-eyes {eyesClosed ? 'eyes-closed' : ''}"
       style={
-        eyesClosed ? 'transform: scaleY(0.05);' :
+        eyesClosed ? 'transform: scaleY(0.05);' : 
         `transform: translate(${eyePositionX * 4}px, ${eyePositionY * 2}px);`
       }
     />
@@ -398,24 +382,24 @@
     animation-delay: 2.5s;
     transform: translateY(0);
   }
-
-  .icon-container:focus,
-  .icon-container:active,
+  
+  .icon-container:focus, 
+  .icon-container:active, 
   .icon-container:focus-visible {
     outline: none !important;
     outline-offset: 0 !important;
     box-shadow: none !important;
     border: none !important;
   }
-
+  
   .icon-layers {
     position: relative;
     width: 100%;
     height: 100%;
   }
-
-  .icon-bg,
-  .icon-base,
+  
+  .icon-bg, 
+  .icon-base, 
   .icon-eyes {
     position: absolute;
     top: 0;
@@ -426,16 +410,16 @@
     user-select: none;
     -webkit-user-drag: none;
   }
-
+  
   /* Stack layers correctly */
   .icon-bg {
     z-index: 1; /* Bottom layer */
   }
-
+  
   .icon-base {
     z-index: 2; /* Middle layer */
   }
-
+  
   .icon-eyes {
     z-index: 3; /* Top layer */
     transform-origin: center center;
@@ -443,7 +427,7 @@
     will-change: transform; /* GPU acceleration hint */
     transform: translateZ(0); /* Force GPU rendering */
   }
-
+  
   /* Hover effects */
   .icon-container:hover,
   .icon-container:active {
@@ -452,56 +436,56 @@
     animation: gentle-float 3s ease-in-out infinite, ghost-hover 1.2s ease-in-out infinite alternate;
     animation-delay: 0s, 0s;
   }
-
+  
   /* Recording state - theme-specific animations with bobbing */
   .recording.theme-peach {
     animation: recording-glow-peach 2s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
     transform: scale(1.03);
   }
-
+  
   .recording.theme-mint {
     animation: recording-glow-mint 2s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
     transform: scale(1.03);
   }
-
+  
   .recording.theme-bubblegum {
     animation: recording-glow-bubblegum 2s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
     transform: scale(1.03);
   }
-
+  
   .recording.theme-rainbow {
     /* Rainbow uses different animation with actual color cycling */
     animation: rainbow-color-cycle 5s linear infinite, recording-glow-pulse 2s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
     transform: scale(1.03);
   }
-
+  
   /* Wobble animations */
   .ghost-wobble-left {
     animation: ghost-wobble-left 0.6s ease-in-out forwards !important;
   }
-
+  
   .ghost-wobble-right {
     animation: ghost-wobble-right 0.6s ease-in-out forwards !important;
   }
-
+  
   /* Eyes closed state - transform-based with natural feel */
   .eyes-closed {
     transform: scaleY(0.05) !important; /* Not too extreme closure */
     transition: transform 0.08s ease-out !important; /* Smoother, more natural close */
   }
-
+  
   /* Rainbow animation for ghost svg */
   .rainbow-animated {
     animation: rainbowFlow 7s linear infinite;
     filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
     transform-origin: center center;
   }
-
+  
   .icon-container:hover .rainbow-animated {
     animation: rainbowFlow 4.5s linear infinite, sparkle 2s ease-in-out infinite;
     filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
   }
-
+  
   /* Animation keyframes */
   @keyframes gentle-float {
     0%, 10%, 90%, 100% {
@@ -511,7 +495,7 @@
       transform: translateY(-3px);
     }
   }
-
+  
   @keyframes ghost-hover {
     0% {
       transform: scale(1.005) translateY(0);
@@ -520,7 +504,7 @@
       transform: scale(1.015) translateY(-3px);
     }
   }
-
+  
   /* Theme-specific recording glow animations */
   @keyframes recording-glow-peach {
     /* Extra saturated sunrise glow with THREE VISIBLY DISTINCT COLORS */
@@ -535,7 +519,7 @@
         drop-shadow(0 0 90px rgba(255, 240, 200, 0.9)); /* Pale yellow expanded */
     }
   }
-
+  
   @keyframes recording-glow-mint {
     /* Fresh mint with THREE VISIBLY DISTINCT COLORS */
     0%, 5%, 95%, 100% {
@@ -549,7 +533,7 @@
         drop-shadow(0 0 90px rgba(160, 255, 230, 0.9)); /* Pale mint expanded */
     }
   }
-
+  
   @keyframes recording-glow-bubblegum {
     /* New purple-blue with THREE VISIBLY DISTINCT COLORS */
     0%, 5%, 95%, 100% {
@@ -563,7 +547,7 @@
         drop-shadow(0 0 90px rgba(210, 180, 255, 0.9)); /* Pale lilac expanded */
     }
   }
-
+  
   /* New animation that ACTUALLY cycles through rainbow colors */
   @keyframes rainbow-color-cycle {
     0%, 100% {
@@ -585,7 +569,7 @@
       filter: drop-shadow(0 0 20px rgba(80, 160, 255, 1.0)); /* Blue */
     }
   }
-
+  
   /* Separate pulsing animation for rainbow theme */
   @keyframes recording-glow-pulse {
     0%, 5%, 95%, 100% {
@@ -598,7 +582,7 @@
              drop-shadow(0 0 90px currentColor);
     }
   }
-
+  
   @keyframes ghost-wobble-left {
     0% { transform: rotate(0deg) scale(1); }
     25% { transform: rotate(-5deg) scale(1.02); }
@@ -606,7 +590,7 @@
     75% { transform: rotate(-2deg) scale(1.01); }
     100% { transform: rotate(0deg) scale(1); }
   }
-
+  
   @keyframes ghost-wobble-right {
     0% { transform: rotate(0deg) scale(1); }
     25% { transform: rotate(5deg) scale(1.02); }
@@ -614,26 +598,26 @@
     75% { transform: rotate(2deg) scale(1.01); }
     100% { transform: rotate(0deg) scale(1); }
   }
-
+  
   @keyframes rainbowFlow {
     0% { filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); }
     100% { filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); }
   }
-
+  
   @keyframes sparkle {
     0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 8px rgba(255, 61, 127, 0.6)); }
     25% { filter: drop-shadow(0 0 6px rgba(255, 141, 60, 0.8)) drop-shadow(0 0 10px rgba(255, 249, 73, 0.7)); }
     50% { filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 9px rgba(53, 222, 255, 0.7)); }
     75% { filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.8)) drop-shadow(0 0 9px rgba(255, 61, 127, 0.6)); }
   }
-
+  
   /* Media queries for larger screens */
   @media (min-width: 768px) {
     .icon-container {
       filter: drop-shadow(0 0 12px rgba(249, 168, 212, 0.25))
         drop-shadow(0 0 15px rgba(255, 156, 243, 0.15));
     }
-
+    
     .icon-container:hover {
       filter: drop-shadow(0 0 25px rgba(249, 168, 212, 0.5))
         drop-shadow(0 0 35px rgba(255, 156, 243, 0.4));
