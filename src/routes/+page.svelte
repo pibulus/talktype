@@ -12,6 +12,7 @@
   import { PageLayout } from '$lib/components/layout';
   import { themeService } from '$lib/services/theme';
   import { modalService } from '$lib/services/modals';
+  import { firstVisitService, isFirstVisit } from '$lib/services/first-visit';
   
   // Import modals lazily
   import { AboutModal, ExtensionModal, IntroModal } from '$lib/components/modals';
@@ -58,7 +59,6 @@
   }
 
   let audioToTextComponent; // Still needed to trigger start/stop
-  let showIntroModal = false; // Keep intro modal logic
 
   // Debug Helper that won't pollute console in production but helps during development
   function debug(message) {
@@ -101,41 +101,12 @@
     subtitleAnimationComplete = true;
   }
 
-  // Check if this is the first visit to show intro modal
-  function checkFirstVisit() {
-    if (!browser) return;
-
-    // Check if user has seen the intro before
-    const hasSeenTalkTypeIntro = localStorage.getItem('hasSeenTalkTypeIntro');
-
-    if (!hasSeenTalkTypeIntro) {
-      // First visit, show intro modal after a brief delay
-      setTimeout(() => {
-        const modal = document.getElementById('intro_modal');
-        if (modal) {
-          debug('Opening intro modal on first visit');
-          modal.showModal();
-
-          // Set up event listener to handle modal close event from any source
-          modal.addEventListener('close', () => {
-            debug('Intro modal closed, marking intro as seen');
-            markIntroAsSeen();
-          }, { once: true }); // Use once: true to auto-cleanup listener
-        } else {
-          console.error('Intro modal element not found');
-          debug('Intro modal element not found');
-        }
-      }, 500);
-    } else {
-      debug('User has seen intro before, skipping modal.');
-    }
-  }
-
-  // Save that user has seen the intro
-  function markIntroAsSeen() {
-    if (!browser) return;
-    localStorage.setItem('hasSeenTalkTypeIntro', 'true');
-    debug('Marked intro as seen in localStorage');
+  // Function to trigger ghost click
+  function triggerGhostClick() {
+    debug('Triggering ghost click after intro modal close');
+    // Dispatch the event manually as if the ghost was clicked
+    const event = new CustomEvent('togglerecording');
+    document.dispatchEvent(event);
   }
 
   // Function to preload speech model for faster initial response
@@ -257,7 +228,7 @@
     }
 
     // Check if first visit to show intro
-    checkFirstVisit();
+    firstVisitService.showIntroModal();
     
     // --- PWA Install Prompt Listener ---
     if (browser) {
@@ -488,7 +459,7 @@
 <ExtensionModal closeModal={closeModal} />
 <IntroModal 
   closeModal={closeModal} 
-  markIntroAsSeen={markIntroAsSeen} 
+  markIntroAsSeen={() => firstVisitService.markIntroAsSeen()} 
   triggerGhostClick={triggerGhostClick} 
 />
 
