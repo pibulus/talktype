@@ -1,5 +1,7 @@
 import { geminiService as defaultGeminiService } from '$lib/services/geminiService';
-import { eventBus } from '../infrastructure/eventBus';
+import { transcriptionState, transcriptionActions, uiActions } from '../infrastructure/stores';
+import { COPY_MESSAGES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
+import { get } from 'svelte/store';
 
 export const TranscriptionEvents = {
   TRANSCRIPTION_STARTED: 'transcription:started',
@@ -13,11 +15,7 @@ export const TranscriptionEvents = {
 export class TranscriptionService {
   constructor(dependencies = {}) {
     this.geminiService = dependencies.geminiService || defaultGeminiService;
-    this.eventBus = dependencies.eventBus || eventBus;
-    
-    this.currentTranscript = '';
-    this.transcriptionInProgress = false;
-    
+    this.browser = typeof window !== 'undefined';
     this.lastTranscriptionTimestamp = null;
   }
   
@@ -27,14 +25,9 @@ export class TranscriptionService {
         throw new Error('Invalid audio data provided');
       }
       
-      this.transcriptionInProgress = true;
+      // Update transcription state to show in-progress
+      transcriptionActions.startTranscribing();
       this.lastTranscriptionTimestamp = Date.now();
-      
-      this.eventBus.emit(TranscriptionEvents.TRANSCRIPTION_STARTED, {
-        blobSize: audioBlob.size,
-        mimeType: audioBlob.type,
-        timestamp: this.lastTranscriptionTimestamp
-      });
       
       // Start progress animation
       this.startProgressAnimation();
@@ -42,30 +35,19 @@ export class TranscriptionService {
       // Transcribe using Gemini
       const transcriptText = await this.geminiService.transcribeAudio(audioBlob);
       
-      // Store the transcript
-      this.currentTranscript = transcriptText;
-      
       // Complete progress animation with smooth transition
       this.completeProgressAnimation();
       
-      // Emit completion event
-      this.eventBus.emit(TranscriptionEvents.TRANSCRIPTION_COMPLETED, {
-        text: transcriptText,
-        duration: Date.now() - this.lastTranscriptionTimestamp,
-        timestamp: Date.now()
-      });
+      // Update transcription state with completed text
+      transcriptionActions.completeTranscription(transcriptText);
       
-      this.transcriptionInProgress = false;
       return transcriptText;
       
     } catch (error) {
       console.error('Transcription error:', error);
-      this.transcriptionInProgress = false;
       
-      this.eventBus.emit(TranscriptionEvents.TRANSCRIPTION_ERROR, {
-        error: error.message || 'Unknown transcription error',
-        timestamp: Date.now()
-      });
+      // Update state to show error
+      transcriptionActions.setTranscriptionError(error.message || 'Unknown transcription error');
       
       throw error;
     }
@@ -74,15 +56,12 @@ export class TranscriptionService {
   startProgressAnimation() {
     let progress = 0;
     const animate = () => {
-      if (!this.transcriptionInProgress) return;
+      if (!get(transcriptionState).inProgress) return;
       
       progress = Math.min(95, progress + 1);
       
-      this.eventBus.emit(TranscriptionEvents.TRANSCRIPTION_PROGRESS, {
-        progress,
-        estimatedRemaining: 100 - progress,
-        timestamp: Date.now()
-      });
+      // Update store with current progress
+      transcriptionActions.updateProgress(progress);
       
       if (progress < 95) {
         setTimeout(animate, 50);
@@ -99,20 +78,13 @@ export class TranscriptionService {
     const complete = () => {
       progress = Math.min(100, progress + (100 - progress) * 0.2);
       
-      this.eventBus.emit(TranscriptionEvents.TRANSCRIPTION_PROGRESS, {
-        progress,
-        estimatedRemaining: 100 - progress,
-        timestamp: Date.now()
-      });
+      // Update store with current progress
+      transcriptionActions.updateProgress(progress);
       
       if (progress < 99.5) {
         requestAnimationFrame(complete);
       } else {
-        this.eventBus.emit(TranscriptionEvents.TRANSCRIPTION_PROGRESS, {
-          progress: 100,
-          estimatedRemaining: 0,
-          timestamp: Date.now()
-        });
+        transcriptionActions.updateProgress(100);
       }
     };
     
@@ -122,38 +94,52 @@ export class TranscriptionService {
   
   async copyToClipboard(text) {
     if (!text) {
-      text = this.currentTranscript;
+      text = get(transcriptionState).text;
     }
     
     if (!text || text.trim() === '') {
-      throw new Error('No text available to copy');
+      uiActions.setErrorMessage('No text available to copy');
+      return false;
     }
     
     try {
       // Add attribution
-      const textWithAttribution = `${text}\n\n𝘛𝘳𝘢𝘯𝘴𝘤𝘳𝘪𝘣𝘦𝘥 𝘣𝘺 𝘛𝘢𝘭𝘬𝘛𝘺𝘱𝘦 👻`;
+      const textWithAttribution = `${text}\n\n${ATTRIBUTION.SIMPLE_TAG}`;
       
-      // Copy to clipboard
-      await navigator.clipboard.writeText(textWithAttribution);
+      // Try the modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(textWithAttribution);
+        uiActions.showClipboardSuccess();
+        uiActions.setScreenReaderMessage('Transcript copied to clipboard');
+        return true;
+      }
       
-      // Emit copy event
-      this.eventBus.emit(TranscriptionEvents.TRANSCRIPTION_COPIED, {
-        text: textWithAttribution,
-        wasDocumentFocused: document.hasFocus(),
-        timestamp: Date.now()
-      });
+      // Fallback: Use document.execCommand (legacy method)
+      const textArea = document.createElement('textarea');
+      textArea.value = textWithAttribution;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
       
-      return true;
+      const success = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      if (success) {
+        uiActions.showClipboardSuccess();
+        uiActions.setScreenReaderMessage('Transcript copied to clipboard');
+      } else {
+        uiActions.setScreenReaderMessage('Unable to copy. Please try clicking in the window first.');
+      }
+      
+      return success;
       
     } catch (error) {
       console.error('Clipboard copy error:', error);
       
-      // Emit error event but don't throw
-      this.eventBus.emit(TranscriptionEvents.TRANSCRIPTION_ERROR, {
-        context: 'clipboard',
-        error: error.message || 'Unknown clipboard error',
-        timestamp: Date.now()
-      });
+      uiActions.setErrorMessage(`Copy failed: ${error.message || 'Unknown error'}`);
+      uiActions.setScreenReaderMessage('Unable to copy. Please try clicking in the window first.');
       
       return false;
     }
@@ -161,11 +147,12 @@ export class TranscriptionService {
   
   async shareTranscript(text) {
     if (!text) {
-      text = this.currentTranscript;
+      text = get(transcriptionState).text;
     }
     
     if (!text || text.trim() === '') {
-      throw new Error('No text available to share');
+      uiActions.setErrorMessage('No text available to share');
+      return false;
     }
     
     try {
@@ -175,18 +162,16 @@ export class TranscriptionService {
       }
       
       // Add attribution
-      const textWithAttribution = `${text}\n\n𝘛𝘳𝘢𝘯𝘴𝘤𝘳𝘪𝘣𝘦𝘥 𝘣𝘺 𝘛𝘢𝘭𝘬𝘛𝘺𝘱𝘦 👻`;
+      const textWithAttribution = `${text}${ATTRIBUTION.SHARE_POSTFIX}`;
       
       // Share using Web Share API
       await navigator.share({
+        title: 'TalkType Transcription',
         text: textWithAttribution
       });
       
-      // Emit share event
-      this.eventBus.emit(TranscriptionEvents.TRANSCRIPTION_SHARED, {
-        timestamp: Date.now()
-      });
-      
+      uiActions.showClipboardSuccess();
+      uiActions.setScreenReaderMessage('Transcript shared successfully');
       return true;
       
     } catch (error) {
@@ -202,48 +187,30 @@ export class TranscriptionService {
         return this.copyToClipboard(text);
       }
       
-      // Emit error event but don't throw
-      this.eventBus.emit(TranscriptionEvents.TRANSCRIPTION_ERROR, {
-        context: 'share',
-        error: error.message || 'Unknown sharing error',
-        timestamp: Date.now()
-      });
-      
+      uiActions.setErrorMessage(`Share failed: ${error.message || 'Unknown error'}`);
       return false;
     }
   }
   
+  isTranscribing() {
+    return get(transcriptionState).inProgress;
+  }
+  
   getCurrentTranscript() {
-    return this.currentTranscript;
+    return get(transcriptionState).text;
   }
   
   clearTranscript() {
-    this.currentTranscript = '';
-  }
-  
-  isTranscribing() {
-    return this.transcriptionInProgress;
+    transcriptionActions.completeTranscription('');
   }
   
   getRandomCopyMessage() {
-    const copyMessages = [
-      'Copied to clipboard! ✨',
-      'Boom! In your clipboard! 🎉',
-      'Text saved to clipboard! 👍',
-      'Snagged that for you! 🙌',
-      'All yours now! 💫',
-      'Copied and ready to paste! 📋',
-      'Captured in clipboard! ✅',
-      'Text copied successfully! 🌟',
-      'Got it! Ready to paste! 🚀',
-      'Your text is saved! 💖',
-      'Copied with magic! ✨',
-      'Text safely copied! 🔮',
-      'Copied and good to go! 🎯',
-      'Saved to clipboard! 🎊'
-    ];
-    
-    return copyMessages[Math.floor(Math.random() * copyMessages.length)];
+    return getRandomFromArray(COPY_MESSAGES);
+  }
+  
+  isShareSupported() {
+    return this.browser && typeof navigator !== 'undefined' && 
+           navigator.share && typeof navigator.share === 'function';
   }
 }
 

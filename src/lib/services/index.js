@@ -3,6 +3,7 @@ import { eventBus as eventBusInstance } from './infrastructure/eventBus';
 import { hapticService as hapticServiceInstance } from './infrastructure/hapticService';
 import { audioService as audioServiceInstance } from './audio/audioService';
 import { transcriptionService as transcriptionServiceInstance } from './transcription/transcriptionService';
+import { resetStores } from './infrastructure/stores';
 
 // Re-export services for external usage
 export { eventBus } from './infrastructure/eventBus';
@@ -15,9 +16,32 @@ export { audioService, AudioEvents } from './audio/audioService';
 // Transcription services
 export { transcriptionService, TranscriptionEvents } from './transcription/transcriptionService';
 
+// Store exports
+export { 
+  audioState, 
+  recordingState, 
+  transcriptionState, 
+  uiState, 
+  userPreferences,
+  isRecording,
+  isTranscribing,
+  transcriptionProgress,
+  transcriptionText,
+  errorMessage,
+  waveformData,
+  hasPermissionError,
+  recordingDuration,
+  audioActions,
+  transcriptionActions,
+  uiActions
+} from './infrastructure/stores';
+
 // Convenience function to initialize all services
 export function initializeServices(options = {}) {
   const { debug = false, haptic = true } = options;
+  
+  // Reset stores to initial state
+  resetStores();
   
   // Enable debugging if requested
   if (debug) {
@@ -29,7 +53,7 @@ export function initializeServices(options = {}) {
     hapticServiceInstance.disable();
   }
   
-  console.log('🚀 TalkType services initialized');
+  console.log('🚀 TalkType services initialized with Svelte stores');
   
   return {
     eventBus: eventBusInstance,

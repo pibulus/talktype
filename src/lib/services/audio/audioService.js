@@ -1,5 +1,6 @@
 import { AudioStateManager, AudioStates } from './audioStates';
-import { eventBus } from '../infrastructure/eventBus';
+import { audioState, audioActions, uiActions } from '../infrastructure/stores';
+import { get } from 'svelte/store';
 
 export const AudioEvents = {
   RECORDING_STARTED: 'audio:recordingStarted',
@@ -10,9 +11,7 @@ export const AudioEvents = {
 };
 
 export class AudioService {
-  constructor(dependencies = {}) {
-    this.eventBus = dependencies.eventBus || eventBus;
-    
+  constructor() {
     this.mediaRecorder = null;
     this.audioChunks = [];
     this.audioContext = null;
@@ -27,12 +26,8 @@ export class AudioService {
     this.stateManager.addListener(({ oldState, newState, error }) => {
       console.log(`Audio state changed: ${oldState} -> ${newState}`);
       
-      this.eventBus.emit(AudioEvents.STATE_CHANGED, {
-        previousState: oldState,
-        currentState: newState,
-        error: error || null,
-        timestamp: Date.now()
-      });
+      // Update the store instead of emitting event
+      audioActions.updateState(newState, error);
     });
   }
   
@@ -151,6 +146,7 @@ export class AudioService {
 
       if (!granted) {
         this.stateManager.setState(AudioStates.PERMISSION_DENIED);
+        uiActions.setPermissionError(true);
         throw error || new Error('Permission not granted');
       }
 
@@ -208,21 +204,18 @@ export class AudioService {
       this.mediaRecorder.start(1000);
       this.stateManager.setState(AudioStates.RECORDING);
       
-      this.eventBus.emit(AudioEvents.RECORDING_STARTED, {
-        mimeType: this.mediaRecorder.mimeType || 'audio/webm',
-        timestamp: Date.now()
-      });
+      // Update the store with mimeType
+      audioState.update(current => ({
+        ...current,
+        mimeType: this.mediaRecorder.mimeType || 'audio/webm'
+      }));
       
       return true;
     } catch (error) {
       console.error('Error starting recording:', error);
       this.stateManager.setState(AudioStates.ERROR, { error });
       
-      this.eventBus.emit(AudioEvents.RECORDING_ERROR, {
-        error: error.message,
-        phase: 'start',
-        timestamp: Date.now()
-      });
+      uiActions.setErrorMessage(`Recording error: ${error.message || 'Unknown error'}`);
       
       await this.cleanup();
       throw error;
@@ -242,10 +235,8 @@ export class AudioService {
       
       this.analyser.getByteFrequencyData(dataArray);
       
-      this.eventBus.emit(AudioEvents.WAVEFORM_DATA, {
-        dataArray: Array.from(dataArray),
-        timestamp: Date.now()
-      });
+      // Update store instead of emitting event
+      audioActions.setWaveformData(Array.from(dataArray));
       
       this.animationFrameId = requestAnimationFrame(updateWaveform);
     };
@@ -275,11 +266,8 @@ export class AudioService {
       this.mediaRecorder.onstop = () => {
         const audioBlob = new Blob(currentAudioChunks, { type: mimeType });
         
-        this.eventBus.emit(AudioEvents.RECORDING_STOPPED, {
-          blobSize: audioBlob.size,
-          mimeType: mimeType,
-          timestamp: Date.now()
-        });
+        // Update store with audio blob
+        audioActions.setAudioBlob(audioBlob, mimeType);
         
         // Immediately stop all tracks to ensure browser recording indicator is removed
         if (this.stream) {
