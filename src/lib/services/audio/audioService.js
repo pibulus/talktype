@@ -268,9 +268,12 @@ export class AudioService {
 
       this.stateManager.setState(AudioStates.STOPPING);
 
+      // Store the audio chunks for creating blob after recording stops
+      const currentAudioChunks = [...this.audioChunks];
+      const mimeType = this.mediaRecorder.mimeType || 'audio/webm';
+      
       this.mediaRecorder.onstop = () => {
-        const mimeType = this.mediaRecorder.mimeType || 'audio/webm';
-        const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+        const audioBlob = new Blob(currentAudioChunks, { type: mimeType });
         
         this.eventBus.emit(AudioEvents.RECORDING_STOPPED, {
           blobSize: audioBlob.size,
@@ -278,11 +281,36 @@ export class AudioService {
           timestamp: Date.now()
         });
         
+        // Immediately stop all tracks to ensure browser recording indicator is removed
+        if (this.stream) {
+          this.stream.getTracks().forEach(track => {
+            track.stop();
+          });
+          // Clear the stream reference
+          this.stream = null;
+        }
+        
         this.audioChunks = [];
+        this.mediaRecorder = null;
+        
         resolve(audioBlob);
       };
 
-      this.mediaRecorder.stop();
+      try {
+        this.mediaRecorder.stop();
+      } catch (error) {
+        console.warn('Error stopping MediaRecorder:', error.message);
+        
+        // Ensure tracks are stopped even if MediaRecorder stop fails
+        if (this.stream) {
+          this.stream.getTracks().forEach(track => {
+            track.stop();
+          });
+          this.stream = null;
+        }
+        
+        resolve(null);
+      }
     });
   }
 

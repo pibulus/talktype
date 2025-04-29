@@ -58,13 +58,16 @@ export const ANIMATION = {
   // Button animations
   BUTTON: {
     PRESS_DURATION: 400,   // Duration of button press animation
-    HOVER_TRANSITION: 300  // Transition time for button hover effects
+    HOVER_TRANSITION: 300, // Transition time for button hover effects
+    NOTIFICATION_TIMER: 2500 // Time to display notification in button
   },
   
   // Ghost wobble/reactions
   GHOST: {
     WOBBLE_DURATION: 600,  // Duration of ghost wobble animation
-    PULSE_DURATION: 500    // Duration of ghost pulse animation
+    PULSE_DURATION: 500,   // Duration of ghost pulse animation
+    REACTION_DELAY: 200,   // Delay before ghost reacts
+    THINKING_BLINK_RATE: 150 // Time between blinks in thinking state
   },
   
   // Toast notifications
@@ -84,7 +87,25 @@ export const ANIMATION = {
     FREE_LIMIT: 30,          // Maximum recording time in seconds for free users
     PREMIUM_LIMIT: 600,      // Maximum recording time in seconds for premium users
     WARNING_THRESHOLD: 20,   // Seconds remaining when to start showing warning
-    DANGER_THRESHOLD: 5      // Seconds remaining when to start showing danger state
+    DANGER_THRESHOLD: 5,     // Seconds remaining when to start showing danger state
+    SCROLL_DELAY: 100,       // Delay before scrolling during recording
+    POST_RECORDING_SCROLL_DELAY: 650 // Delay after transcription to scroll
+  },
+  
+  // Copy functionality
+  COPY: {
+    TOOLTIP_MAX_COUNT: 3,  // Maximum number of times to show the copy tooltip
+    SUCCESS_TIMER: 2500,   // How long to show the success message
+    FOCUS_RETURN_DELAY: 100 // Delay before returning focus after copy
+  },
+  
+  // Confetti animation
+  CONFETTI: {
+    PIECE_COUNT: 70,       // Number of confetti pieces
+    MIN_SIZE: 6,           // Minimum confetti size in px
+    MAX_SIZE: 16,          // Maximum confetti size in px
+    ANIMATION_DURATION: 2500, // Duration of entire confetti animation
+    COLORS: ['#ff9cef', '#fde68a', '#a78bfa', '#f472b6', '#60a5fa'] // Confetti colors
   }
 };
 
@@ -107,6 +128,14 @@ export const SERVICE_EVENTS = {
     ERROR: 'transcription:error',
     COPIED: 'transcription:copied',
     SHARED: 'transcription:shared'
+  },
+  
+  // UI Component Events
+  UI: {
+    BUTTON_CLICKED: 'ui:buttonClicked',
+    TRANSCRIPT_EDITED: 'ui:transcriptEdited',
+    COPY_REQUESTED: 'ui:copyRequested',
+    SHARE_REQUESTED: 'ui:shareRequested'
   }
 };
 
@@ -143,6 +172,13 @@ export const COPY_MESSAGES = [
   'Saved to clipboard! 🎊'
 ];
 
+// Attribution Tags
+export const ATTRIBUTION = {
+  SIMPLE_TAG: '𝘛𝘳𝘢𝘯𝘴𝘤𝘳𝘪𝘣𝘦𝘥 𝘣𝘺 𝘛𝘢𝘭𝘬𝘛𝘺𝘱𝘦 👻',
+  SHARE_POSTFIX: '\n\n𝘛𝘳𝘢𝘯𝘴𝘤𝘳𝘪𝘣𝘦𝘥 𝘣𝘺 𝘛𝘢𝘭𝘬𝘛𝘺𝘱𝘦 👻',
+  FOCUS_RECOVERY_MESSAGE: 'Click in window first, then copy again! 🔍'
+};
+
 // Offline Haikus
 export const OFFLINE_HAIKUS = [
   `Connection is lost
@@ -169,6 +205,11 @@ Until we're online`
 // Random haiku picker
 export function getRandomHaiku() {
   return OFFLINE_HAIKUS[Math.floor(Math.random() * OFFLINE_HAIKUS.length)];
+}
+
+// Get a random element from any array
+export function getRandomFromArray(array) {
+  return array[Math.floor(Math.random() * array.length)];
 }
 
 // Vibration Patterns
