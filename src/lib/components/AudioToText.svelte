@@ -69,6 +69,200 @@
   export const recording = isRecording; // Export the isRecording store
   export { stopRecording, startRecording };
 
+  // PWA Installation State Tracking - Added from stable-working-version
+  const TRANSCRIPTION_COUNT_KEY = 'talktype-transcription-count';
+  const PWA_PROMPT_SHOWN_KEY = 'talktype-pwa-prompt-shown';
+  const PWA_PROMPT_COUNT_KEY = 'talktype-pwa-prompt-count';
+  const PWA_LAST_PROMPT_DATE_KEY = 'talktype-pwa-last-prompt-date';
+  const PWA_INSTALLED_KEY = 'talktype-pwa-installed';
+
+  // Export PWA installation state functions
+  export {
+    shouldShowPWAPrompt,
+    recordPWAPromptShown,
+    markPWAAsInstalled,
+    isRunningAsPWA
+  };
+
+  /**
+   * Retrieves the current transcription count from localStorage.
+   * Returns 0 if not found or not in a browser environment.
+   * @returns {number} The current transcription count.
+   */
+  function getTranscriptionCount() {
+    if (!browser) {
+      return 0; // Not in browser, cannot access localStorage
+    }
+    try {
+      const countStr = localStorage.getItem(TRANSCRIPTION_COUNT_KEY);
+      const count = parseInt(countStr || '0', 10);
+      return isNaN(count) ? 0 : count;
+    } catch (error) {
+      console.error('Error reading transcription count from localStorage:', error);
+      return 0; // Return 0 on error
+    }
+  }
+
+  /**
+   * Increments the transcription count in localStorage and dispatches an event.
+   * Only runs in a browser environment.
+   */
+  function incrementTranscriptionCount() {
+    if (!browser) {
+      return; // Not in browser, cannot access localStorage
+    }
+    try {
+      const currentCount = getTranscriptionCount();
+      const newCount = currentCount + 1;
+      localStorage.setItem(TRANSCRIPTION_COUNT_KEY, newCount.toString());
+      console.log(`📈 Transcription count incremented to: ${newCount}`);
+      
+      // Dispatch event to parent
+      dispatchEvent(new CustomEvent('transcriptionCompleted', { detail: { count: newCount }}));
+    } catch (error) {
+      console.error('Error incrementing transcription count in localStorage:', error);
+    }
+  }
+
+  /**
+   * Checks if the PWA installation prompt should be shown.
+   * Bases decision on transcription count, time since last prompt, and installation status.
+   * @returns {boolean} Whether the PWA installation prompt should be shown.
+   */
+  function shouldShowPWAPrompt() {
+    if (!browser) {
+      return false; // Not in browser, cannot check installation state
+    }
+
+    try {
+      // Check if the app is already installed as a PWA
+      const isInstalled = localStorage.getItem(PWA_INSTALLED_KEY) === 'true';
+      if (isInstalled) {
+        return false; // Don't show prompt if already installed
+      }
+
+      // Get the transcription count
+      const transcriptionCount = getTranscriptionCount();
+
+      // Check if we've shown the prompt before
+      const hasShownPrompt = localStorage.getItem(PWA_PROMPT_SHOWN_KEY) === 'true';
+
+      // Get how many times we've shown the prompt
+      const promptCount = parseInt(localStorage.getItem(PWA_PROMPT_COUNT_KEY) || '0', 10);
+
+      // Get the date when we last showed the prompt
+      const lastPromptDate = localStorage.getItem(PWA_LAST_PROMPT_DATE_KEY);
+
+      // If we've never shown the prompt before, show it after 3 transcriptions
+      if (!hasShownPrompt && transcriptionCount >= 3) {
+        return true;
+      }
+
+      // If we've shown the prompt 1-2 times before, check if enough time has passed
+      // and enough new transcriptions have happened
+      if (hasShownPrompt && promptCount < 3) {
+        const daysSinceLastPrompt = lastPromptDate
+          ? Math.floor((Date.now() - new Date(lastPromptDate).getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+
+        // Show again after at least 3 days and 5 more transcriptions
+        if (daysSinceLastPrompt >= 3 && transcriptionCount >= 5) {
+          return true;
+        }
+      }
+
+      // If we've shown the prompt 3 or more times, be more conservative
+      if (promptCount >= 3) {
+        const daysSinceLastPrompt = lastPromptDate
+          ? Math.floor((Date.now() - new Date(lastPromptDate).getTime()) / (1000 * 60 * 60 * 24))
+          : 0;
+
+        // Show again after at least 14 days (2 weeks) and 10 more transcriptions
+        if (daysSinceLastPrompt >= 14 && transcriptionCount >= 10) {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error checking if PWA prompt should be shown:', error);
+      return false; // Default to not showing on error
+    }
+  }
+
+  /**
+   * Records that the PWA installation prompt was shown.
+   * Updates the prompt count, shown status, and last prompt date.
+   */
+  function recordPWAPromptShown() {
+    if (!browser) {
+      return;
+    }
+
+    try {
+      // Mark that we've shown the prompt
+      localStorage.setItem(PWA_PROMPT_SHOWN_KEY, 'true');
+
+      // Get and increment the prompt count
+      const promptCount = parseInt(localStorage.getItem(PWA_PROMPT_COUNT_KEY) || '0', 10);
+      localStorage.setItem(PWA_PROMPT_COUNT_KEY, (promptCount + 1).toString());
+
+      // Record the current date
+      localStorage.setItem(PWA_LAST_PROMPT_DATE_KEY, new Date().toISOString());
+
+      console.log(`📱 PWA installation prompt shown (count: ${promptCount + 1})`);
+    } catch (error) {
+      console.error('Error recording PWA prompt shown:', error);
+    }
+  }
+
+  /**
+   * Marks the PWA as installed in localStorage.
+   * This prevents further installation prompts.
+   */
+  function markPWAAsInstalled() {
+    if (!browser) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(PWA_INSTALLED_KEY, 'true');
+      console.log('📱 PWA marked as installed');
+    } catch (error) {
+      console.error('Error marking PWA as installed:', error);
+    }
+  }
+
+  /**
+   * Checks if the app is running as an installed PWA.
+   * @returns {boolean} Whether the app is running as an installed PWA.
+   */
+  function isRunningAsPWA() {
+    if (!browser) {
+      return false;
+    }
+
+    try {
+      // Different ways to detect if running as PWA
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+      const isMinimalUi = window.matchMedia('(display-mode: minimal-ui)').matches;
+      const isInPWA = navigator.standalone || // iOS
+        isStandalone || isFullscreen || isMinimalUi;
+
+      // If we detect it's a PWA, also mark it in localStorage
+      if (isInPWA) {
+        markPWAAsInstalled();
+      }
+
+      return isInPWA;
+    } catch (error) {
+      console.error('Error checking if running as PWA:', error);
+      return false;
+    }
+  }
+  // End of PWA installation state tracking
+
   // Function to preload the speech model before recording starts
   function preloadSpeechModel() {
     if (onPreloadRequest) {
@@ -163,6 +357,13 @@
             });
           }
         }, ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY);
+        
+        // Increment the transcription count for PWA prompt
+        if (browser && 'requestIdleCallback' in window) {
+          window.requestIdleCallback(() => incrementTranscriptionCount());
+        } else {
+          setTimeout(incrementTranscriptionCount, 0);
+        }
       } else {
         // If no audio data, revert UI state
         transcriptionActions.updateProgress(0);
@@ -438,6 +639,16 @@
 
     // Add to unsubscribe list
     unsubscribers.push(transcriptUnsub, permissionUnsub);
+    
+    // Check if the app is running as a PWA after a short delay
+    if (browser) {
+      setTimeout(() => {
+        const isPWA = isRunningAsPWA();
+        if (isPWA) {
+          console.log('📱 App is running as PWA');
+        }
+      }, 100);
+    }
   });
 
   // Clean up subscriptions and services

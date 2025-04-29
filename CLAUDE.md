@@ -156,8 +156,15 @@ The ghost icon uses a layered SVG approach with animation:
 
 ### State Management
 
-- **DOM Class Source of Truth**: Uses `.recording` class to track recording state
+- **CRITICAL ANIMATION ARCHITECTURE**:
+  - Page.svelte MUST be the ONLY source of truth for all ghost animation state
+  - Ghost.svelte must NEVER have conditional classes that respond to props (prevents double animations)
+  - Animation triggers ONLY happen via state variables - NEVER direct DOM manipulation
+  - All timeouts must be properly cleared before setting new ones
+  - Always use large delays (1-2s) between different animation transitions
+
 - **State Transitions**:
+  - Use state variables (eyesClosed, isWobbling, isRecording, isProcessing)
   - Force browser reflow between animation changes with `void element.offsetWidth`
   - Clear timeouts on state changes to prevent animation conflicts
   - Separated ambient system from state-based animations

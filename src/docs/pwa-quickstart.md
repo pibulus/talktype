@@ -1,6 +1,53 @@
-# PWA Quick-Start Guide
+# TalkType PWA Guide
 
-A simplified checklist for adding PWA functionality to any web project.
+## What is a PWA?
+
+A Progressive Web App (PWA) lets you install TalkType on your device just like a regular app. This means:
+
+- 📱 TalkType icon on your home screen
+- 🚀 Faster loading and performance
+- 🔌 Works offline or with poor internet
+- 📺 Full-screen experience without browser UI
+
+## How to Install TalkType
+
+### On iPhone or iPad (iOS)
+
+1. Open TalkType in Safari
+2. Tap the Share button (📤) at the bottom of the screen
+3. Scroll down and tap "Add to Home Screen"
+4. Tap "Add" in the top right corner
+
+### On Android
+
+1. Open TalkType in Chrome
+2. Tap the menu button (⋮) in the top right
+3. Tap "Install app" or "Add to Home Screen"
+4. Follow the prompts to complete installation
+
+### On Desktop (Chrome, Edge, or other Chromium browser)
+
+1. Open TalkType in your browser
+2. Look for the install icon (➕) in the address bar
+3. Click it and follow the prompts to install
+
+## Features You'll Love
+
+- **Offline Support**: TalkType works without internet once installed
+- **Full Screen Mode**: No browser UI taking up space
+- **Fast Access**: Launch directly from your home screen
+- **Faster Loading**: Assets are cached for better performance
+- **Stays Updated**: Gets updates automatically
+
+## Smart Installation Prompt
+
+TalkType will show you an installation prompt after you've used it a few times. We'll only show this if:
+
+- You haven't installed the app yet
+- You've completed at least 3 transcriptions
+- Your device supports PWA installation
+
+## The Original Developer Guide
 
 ## Required Files
 
