@@ -20,7 +20,8 @@ export const STORAGE_KEYS = {
   THEME: 'talktype-vibe',
   FIRST_VISIT: 'hasSeenTalkTypeIntro',
   AUTO_RECORD: 'talktype-autoRecord',
-  PROMPT_STYLE: 'talktype-prompt-style'
+  PROMPT_STYLE: 'talktype-prompt-style',
+  DEBUG_MODE: 'talktype-debug-mode'
 };
 
 // Prompt Styles
@@ -84,6 +85,28 @@ export const ANIMATION = {
     PREMIUM_LIMIT: 600,      // Maximum recording time in seconds for premium users
     WARNING_THRESHOLD: 20,   // Seconds remaining when to start showing warning
     DANGER_THRESHOLD: 5      // Seconds remaining when to start showing danger state
+  }
+};
+
+// Service Events - shared event types for services
+export const SERVICE_EVENTS = {
+  // Audio Service Events
+  AUDIO: {
+    RECORDING_STARTED: 'audio:recordingStarted',
+    RECORDING_STOPPED: 'audio:recordingStopped',
+    RECORDING_ERROR: 'audio:recordingError',
+    STATE_CHANGED: 'audio:stateChanged',
+    WAVEFORM_DATA: 'audio:waveformData'
+  },
+  
+  // Transcription Service Events
+  TRANSCRIPTION: {
+    STARTED: 'transcription:started',
+    PROGRESS: 'transcription:progress',
+    COMPLETED: 'transcription:completed',
+    ERROR: 'transcription:error',
+    COPIED: 'transcription:copied',
+    SHARED: 'transcription:shared'
   }
 };
 
