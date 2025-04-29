@@ -4,10 +4,11 @@
 -->
 <script>
 	import { geminiService } from '$lib/services/geminiService';
-import { promptStyle } from '$lib';
+	import { promptStyle } from '$lib';
 	import { onMount } from 'svelte';
 	import AudioVisualizer from './AudioVisualizer.svelte';
-	
+	import { ANIMATION } from '$lib/constants';
+
 	// Helper variable to check if we're in a browser environment
 	const browser = typeof window !== 'undefined';
 
@@ -24,30 +25,33 @@ import { promptStyle } from '$lib';
 	let editableTranscript;
 	let showPermissionError = false;
 	let permissionErrorTimer;
-	
+	let recordingDuration = 0;
+	let recordingTimer;
+	let isPremiumUser = false; // Change this to true to enable premium features
+
 	// DOM element references
 	let eyesElement;
 	let ghostIconElement;
 	let copyEyesElement;
 	let recordButtonElement;
 	let progressContainerElement;
-	
+
 	// These will be set from the parent component
 	export let parentEyesElement = null;
 	export let parentGhostIconElement = null;
 	export let isModelPreloaded = false;
 	export let onPreloadRequest = null;
-	
+
 	// Prompt style subscription
 	let currentPromptStyle;
-	const unsubscribePromptStyle = promptStyle.subscribe(value => {
+	const unsubscribePromptStyle = promptStyle.subscribe((value) => {
 		currentPromptStyle = value;
 	});
 
 	// Accessibility state management
 	let screenReaderStatus = ''; // For ARIA announcements
 	let copyButtonRef; // Reference to the copy button
-	
+
 	// Smart tooltip management
 	let showCopyTooltip = false;
 	let tooltipHoverCount = 0;
@@ -74,10 +78,10 @@ import { promptStyle } from '$lib';
 
 	// Special message when document lost focus but was recovered
 	const focusRecoveryMessage = 'Click in window first, then copy again! 🔍';
-	
+
 	// Attribution tags for different contexts (using Unicode italic for discretion)
-	const simpleAttributionTag = "\n\n𝘛𝘳𝘢𝘯𝘴𝘤𝘳𝘪𝘣𝘦𝘥 𝘣𝘺 𝘛𝘢𝘭𝘬𝘛𝘺𝘱𝘦 👻";
-	
+	const simpleAttributionTag = '\n\n𝘛𝘳𝘢𝘯𝘴𝘤𝘳𝘪𝘣𝘦𝘥 𝘣𝘺 𝘛𝘢𝘭𝘬𝘛𝘺𝘱𝘦 👻';
+
 	// Function to generate viral attribution with preview
 	function getViralAttribution(text) {
 		// Cleaner format with just the text and a discreet credit line (smaller and italicized)
@@ -89,13 +93,15 @@ import { promptStyle } from '$lib';
 		// Simplified version that doesn't depend on browser APIs
 		return copyMessages[Math.floor(Math.random() * copyMessages.length)];
 	}
-	
+
 	// Check if Web Share API is available
 	function isWebShareSupported() {
-		return browser && 
-			   typeof navigator !== 'undefined' && 
-			   navigator.share && 
-			   typeof navigator.share === 'function';
+		return (
+			browser &&
+			typeof navigator !== 'undefined' &&
+			navigator.share &&
+			typeof navigator.share === 'function'
+		);
 	}
 
 	// Ghost expression functions - add personality through blinking
@@ -169,7 +175,24 @@ import { promptStyle } from '$lib';
 		audioChunks = [];
 		clipboardSuccess = false;
 		transcriptionProgress = 0;
-		
+
+		// Initialize recording timer
+		recordingDuration = 0;
+		if (recordingTimer) clearInterval(recordingTimer);
+		const startTime = Date.now();
+		recordingTimer = setInterval(() => {
+			const elapsed = Date.now() - startTime;
+			recordingDuration = Math.floor(elapsed / 1000);
+
+			// Auto-stop recording at time limit
+			const timeLimit = isPremiumUser
+				? ANIMATION.RECORDING.PREMIUM_LIMIT
+				: ANIMATION.RECORDING.FREE_LIMIT;
+			if (recordingDuration >= timeLimit) {
+				stopRecording();
+			}
+		}, 1000);
+
 		// Scroll to bottom when recording starts
 		setTimeout(() => {
 			if (typeof window !== 'undefined') {
@@ -233,7 +256,7 @@ import { promptStyle } from '$lib';
 					// Make the ghost look like it's thinking hard
 					ghostThinkingHard();
 					transcript = await geminiService.transcribeAudio(audioBlob);
-					
+
 					// Schedule a scroll to bottom when transcript is complete
 					setTimeout(() => {
 						if (typeof window !== 'undefined') {
@@ -251,11 +274,11 @@ import { promptStyle } from '$lib';
 					const completeProgress = () => {
 						if (transcriptionProgress < 100) {
 							transcriptionProgress += (100 - transcriptionProgress) * 0.2;
-							
+
 							if (transcriptionProgress > 99.5) {
 								// We've reached the end
 								transcriptionProgress = 100;
-								
+
 								// Add a slight delay for the completion glow effect
 								setTimeout(handleCompletionEffects, 200);
 							} else {
@@ -264,17 +287,17 @@ import { promptStyle } from '$lib';
 							}
 						}
 					};
-					
+
 					// Handle the completion effects (extracted for clarity)
 					function handleCompletionEffects() {
 						if (progressContainerElement) {
 							progressContainerElement.classList.add('completion-pulse');
-							
+
 							// Add confetti celebration for successful transcription (randomly 1/7 times)
 							if (transcript && transcript.length > 20 && Math.floor(Math.random() * 7) === 0) {
 								showConfettiCelebration();
 							}
-							
+
 							// Clean up after animation finishes
 							setTimeout(() => {
 								progressContainerElement.classList.remove('completion-pulse');
@@ -359,20 +382,23 @@ import { promptStyle } from '$lib';
 			console.log('✅ Recording started');
 		} catch (err) {
 			console.error('❌ Error accessing microphone:', err);
-			
+
 			// Check for specific permission errors
 			let isPermissionDenied = false;
 			if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
 				isPermissionDenied = true;
-			} else if (err.message && (err.message.includes('permission') || err.message.includes('denied'))) {
+			} else if (
+				err.message &&
+				(err.message.includes('permission') || err.message.includes('denied'))
+			) {
 				isPermissionDenied = true;
 			}
-			
+
 			if (isPermissionDenied) {
 				// Show the permission error modal
 				showPermissionError = true;
 				vibrate([20, 100, 20, 100, 20]); // Triple vibration pattern for error
-				
+
 				// Animate ghost to look sad/disappointed
 				const eyes = eyesElement || parentEyesElement;
 				if (eyes) {
@@ -381,20 +407,20 @@ import { promptStyle } from '$lib';
 						eyes.classList.remove('eyes-sad');
 					}, 2000);
 				}
-				
+
 				// Auto-hide the modal after a while
 				if (permissionErrorTimer) clearTimeout(permissionErrorTimer);
 				permissionErrorTimer = setTimeout(() => {
 					showPermissionError = false;
 				}, 8000); // Show for 8 seconds
-				
+
 				// Clear generic error message since we're showing a modal
 				errorMessage = '';
 			} else {
 				// Generic error handling
 				errorMessage = 'Error accessing microphone. Please check your device settings.';
 			}
-			
+
 			recording = false;
 		}
 	}
@@ -403,6 +429,12 @@ import { promptStyle } from '$lib';
 		if (mediaRecorder && mediaRecorder.state === 'recording') {
 			mediaRecorder.stop();
 			console.log('🛑 Stop recording');
+		}
+
+		// Clear recording timer
+		if (recordingTimer) {
+			clearInterval(recordingTimer);
+			recordingTimer = null;
 		}
 	}
 
@@ -428,7 +460,7 @@ import { promptStyle } from '$lib';
 			if (recording) {
 				// Haptic feedback for stop - single pulse
 				vibrate(50);
-				
+
 				stopRecording();
 				// Screen reader announcement
 				screenReaderStatus = 'Recording stopped.';
@@ -438,21 +470,21 @@ import { promptStyle } from '$lib';
 				// When using "New Recording" button, rotate to next phrase immediately
 				if (transcript) {
 					console.log('🧹 Clearing transcript for new recording');
-					
+
 					// Pick a random CTA phrase that's not the current one
 					let newIndex;
 					do {
 						newIndex = Math.floor(Math.random() * (ctaPhrases.length - 1)) + 1; // Skip first one (Start Recording)
 					} while (newIndex === currentCtaIndex);
-					
+
 					currentCtaIndex = newIndex;
 					currentCta = ctaPhrases[currentCtaIndex];
 					console.log(`🔥 Rotating to: "${currentCta}"`);
-					
+
 					// Then clear transcript
 					transcript = '';
 				}
-				
+
 				// Subtle pulse ghost icon when starting a new recording
 				const icon = ghostIconElement || parentGhostIconElement;
 				if (icon) {
@@ -467,16 +499,16 @@ import { promptStyle } from '$lib';
 			}
 		} catch (err) {
 			console.error('Recording operation failed:', err);
-			
+
 			// Show error message using existing toast system
 			errorMessage = `Recording error: ${err.message || 'Unknown error'}`;
-			
+
 			// Haptic feedback for error
 			vibrate([20, 150, 20]);
-			
+
 			// Reset recording state if needed
 			recording = false;
-			
+
 			// Update screen reader status
 			screenReaderStatus = 'Recording failed. Please try again.';
 		}
@@ -496,11 +528,12 @@ import { promptStyle } from '$lib';
 		// Set local references using parent elements if available
 		eyesElement = parentEyesElement;
 		ghostIconElement = parentGhostIconElement;
-		
+
 		return () => {
 			if (animationFrameId) cancelAnimationFrame(animationFrameId);
 			if (clipboardTimer) clearTimeout(clipboardTimer);
 			if (permissionErrorTimer) clearTimeout(permissionErrorTimer);
+			if (recordingTimer) clearInterval(recordingTimer);
 			if (unsubscribePromptStyle) unsubscribePromptStyle();
 		};
 	});
@@ -525,13 +558,13 @@ import { promptStyle } from '$lib';
 		try {
 			// Get current text from editable div
 			let textToCopy = getEditedTranscript();
-			
+
 			// Don't try to copy empty text
 			if (!textToCopy || textToCopy.trim() === '') {
 				console.log('📋 Nothing to copy - transcript is empty');
 				return;
 			}
-			
+
 			// Add simple attribution tag to the copied text
 			textToCopy += simpleAttributionTag;
 
@@ -544,7 +577,7 @@ import { promptStyle } from '$lib';
 			// Update tooltip usage tracking - hide tooltip after button is used
 			hasUsedCopyButton = true;
 			showCopyTooltip = false;
-			
+
 			console.log('📋 Attempting to copy text with attribution');
 			// Simple tracking event
 			console.log('🔄 TRACKING: user_action=copy_transcript');
@@ -554,29 +587,29 @@ import { promptStyle } from '$lib';
 				await navigator.clipboard.writeText(textToCopy);
 				console.log('📋 Successfully copied using Clipboard API');
 				clipboardSuccess = true;
-				
+
 				// Haptic feedback for successful copy - single quick pulse
 				vibrate(25);
-				
+
 				// Show toast message regardless of tooltip visibility
 				// This ensures mobile users who don't get tooltips still get feedback
-				
+
 				// Update screen reader status
 				screenReaderStatus = 'Transcript copied to clipboard';
-				
+
 				// Auto-hide the clipboard success message after 2.5 seconds for snappier response
 				if (clipboardTimer) clearTimeout(clipboardTimer);
 				clipboardTimer = setTimeout(() => {
 					clipboardSuccess = false;
 				}, 2500);
-				
+
 				// Return focus to the copy button after operation
 				if (copyButtonRef) {
 					setTimeout(() => {
 						copyButtonRef.focus();
 					}, 100);
 				}
-				
+
 				return;
 			} catch (clipboardError) {
 				console.error('❌ Clipboard API failed:', clipboardError);
@@ -587,30 +620,30 @@ import { promptStyle } from '$lib';
 			// or when the API fails (e.g., due to permissions)
 			const textarea = document.createElement('textarea');
 			textarea.value = textToCopy;
-			textarea.style.position = 'fixed';  // Prevent scrolling to bottom of page
+			textarea.style.position = 'fixed'; // Prevent scrolling to bottom of page
 			document.body.appendChild(textarea);
 			textarea.focus();
 			textarea.select();
-			
+
 			const successful = document.execCommand('copy');
 			document.body.removeChild(textarea);
-			
+
 			if (successful) {
 				console.log('📋 Transcript copied via execCommand fallback');
 				clipboardSuccess = true;
-				
+
 				// Haptic feedback for successful copy - single quick pulse
 				vibrate(25);
-				
+
 				// Update screen reader status
 				screenReaderStatus = 'Transcript copied to clipboard';
-				
+
 				// Auto-hide the clipboard success message after 2.5 seconds for snappier response
 				if (clipboardTimer) clearTimeout(clipboardTimer);
 				clipboardTimer = setTimeout(() => {
 					clipboardSuccess = false;
 				}, 2500);
-				
+
 				// Attempt to return focus to copy button
 				if (copyButtonRef) {
 					setTimeout(() => {
@@ -622,14 +655,14 @@ import { promptStyle } from '$lib';
 			}
 		} catch (err) {
 			console.error('❌ All clipboard methods failed:', err);
-			
+
 			// Error pattern haptic feedback - two short bursts for error
 			vibrate([20, 150, 20]);
-			
+
 			// Show user-friendly error message
 			clipboardSuccess = true; // Use the success toast but with error message
 			screenReaderStatus = 'Unable to copy. Please try clicking in the window first.';
-			
+
 			if (clipboardTimer) clearTimeout(clipboardTimer);
 			clipboardTimer = setTimeout(() => {
 				clipboardSuccess = false;
@@ -641,7 +674,7 @@ import { promptStyle } from '$lib';
 	function showConfettiCelebration() {
 		// Only run in browser environment
 		if (!browser) return;
-		
+
 		// Create a container for the confetti
 		const container = document.createElement('div');
 		container.className = 'confetti-container';
@@ -735,10 +768,10 @@ import { promptStyle } from '$lib';
 		if (typeof window !== 'undefined') {
 			viewportWidth = window.innerWidth;
 		}
-		
+
 		// Smaller base sizes for mobile
 		const isMobile = viewportWidth > 0 && viewportWidth < 640;
-		
+
 		const length = text.length;
 		if (length < 50) return isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl'; // Very short text
 		if (length < 150) return isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl'; // Short text
@@ -752,69 +785,69 @@ import { promptStyle } from '$lib';
 
 	// Array of fun CTA phrases for the button
 	const ctaPhrases = [
-		"Start Recording", // Always first
-		"Click & Speak",
-		"Talk Now",
-		"Transcribe Me Baby",
+		'Start Recording', // Always first
+		'Click & Speak',
+		'Talk Now',
+		'Transcribe Me Baby',
 		"Start Yer Yappin'",
-		"Say the Thing",
-		"Feed Words Now", 
-		"Just Say It",
-		"Speak Up Friend",
-		"Talk to Me",
-		"Ready When You Are"
+		'Say the Thing',
+		'Feed Words Now',
+		'Just Say It',
+		'Speak Up Friend',
+		'Talk to Me',
+		'Ready When You Are'
 	];
-	
+
 	// Always start with "Start Recording"
 	let currentCtaIndex = 0;
 	let currentCta = ctaPhrases[currentCtaIndex];
-	
+
 	// Track if we need to update CTA after transcription
 	let shouldUpdateCta = false;
-	
+
 	// Button label that changes based on state
 	let buttonLabel;
-	
+
 	// Function to share transcript using Web Share API
 	async function shareTranscript() {
 		try {
 			// Get the current text from the editable div
 			const textToShare = getEditedTranscript();
-			
+
 			// Don't share empty text
 			if (!textToShare || textToShare.trim() === '') {
 				console.log('📤 Nothing to share - transcript is empty');
 				return;
 			}
-			
+
 			// Skip share operations in non-browser environments
 			if (!browser) {
 				console.log('📤 Not in browser environment, skipping share operations');
 				return;
 			}
-			
+
 			// Add viral attribution tag with preview to shared text
 			const textWithAttribution = textToShare + getViralAttribution(textToShare);
-			
+
 			// Simple tracking event
 			console.log('🔄 TRACKING: user_action=share_transcript');
-			
+
 			// Check if Web Share API is supported
 			if (isWebShareSupported()) {
 				try {
 					await navigator.share({
 						text: getViralAttribution(textToShare).trim()
 					});
-					
+
 					console.log('📤 Successfully shared transcript');
-					
+
 					// Show success toast (reuse the clipboard success toast)
 					clipboardSuccess = true;
 					screenReaderStatus = 'Transcript shared successfully';
-					
+
 					// Haptic feedback for successful share
 					vibrate([30, 50, 30]);
-					
+
 					// Auto-hide the success message after 3 seconds
 					if (clipboardTimer) clearTimeout(clipboardTimer);
 					clipboardTimer = setTimeout(() => {
@@ -828,11 +861,11 @@ import { promptStyle } from '$lib';
 				// Fallback to clipboard if Web Share API is not supported
 				console.log('📤 Web Share API not supported, falling back to clipboard');
 				await navigator.clipboard.writeText(getViralAttribution(textToShare).trim());
-				
+
 				// Show success toast
 				clipboardSuccess = true;
 				screenReaderStatus = 'Transcript copied to clipboard (sharing not supported)';
-				
+
 				// Auto-hide the message after 3 seconds
 				if (clipboardTimer) clearTimeout(clipboardTimer);
 				clipboardTimer = setTimeout(() => {
@@ -843,12 +876,12 @@ import { promptStyle } from '$lib';
 			console.error('❌ Error sharing transcript:', err);
 			// Show error in toast
 			errorMessage = 'Error sharing transcript. Please try copying instead.';
-			
+
 			// Error vibration pattern
 			vibrate([20, 150, 20]);
 		}
 	}
-	
+
 	// We've simplified the CTA rotation to happen directly in the toggleRecording function
 	// This reactive block is just for logging changes to the CTA
 	$: {
@@ -856,7 +889,7 @@ import { promptStyle } from '$lib';
 			console.log(`🎯 Current CTA phrase: "${currentCta}"`);
 		}
 	}
-	
+
 	// Button label computation - fixed to show CTA phrases
 	$: {
 		// Only three states: Recording, Ready for New Recording, or Waiting for First Recording
@@ -873,17 +906,19 @@ import { promptStyle } from '$lib';
 </script>
 
 <!-- Main wrapper with proper containment to prevent layout issues -->
-<div class="main-wrapper mx-auto w-full box-border">
+<div class="box-border w-full mx-auto main-wrapper">
 	<!-- Shared container with proper centering for mobile -->
-	<div class="mobile-centered-container flex flex-col items-center justify-center w-full">
+	<div class="flex flex-col items-center justify-center w-full mobile-centered-container">
 		<!-- Recording button/progress bar section - sticky positioned for stability -->
-		<div class="button-section relative flex w-full justify-center sticky top-0 z-20 pt-2 pb-4 bg-transparent">
-			<div class="button-container w-full max-w-[500px] mx-auto flex justify-center">
+		<div
+			class="relative sticky top-0 z-20 flex justify-center w-full pt-2 pb-4 bg-transparent button-section"
+		>
+			<div class="button-container mx-auto flex w-full max-w-[500px] justify-center">
 				{#if transcribing}
 					<!-- Progress bar (transforms the button) - adjusted height for mobile -->
 					<div
 						bind:this={progressContainerElement}
-						class="progress-container relative h-[72px] w-full overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[66px] max-w-[500px]"
+						class="progress-container relative h-[72px] w-full max-w-[500px] overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[66px]"
 						role="progressbar"
 						aria-label="Transcription progress"
 						aria-valuenow={transcriptionProgress}
@@ -891,7 +926,7 @@ import { promptStyle } from '$lib';
 						aria-valuemax="100"
 					>
 						<div
-							class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
+							class="flex items-center justify-center h-full transition-all duration-300 progress-bar bg-gradient-to-r from-amber-400 to-rose-300"
 							style="width: {transcriptionProgress}%;"
 						></div>
 					</div>
@@ -899,7 +934,13 @@ import { promptStyle } from '$lib';
 					<!-- Recording button - improved for mobile and accessibility -->
 					<button
 						bind:this={recordButtonElement}
-						class="record-button w-[90%] sm:w-full rounded-full transition-all duration-400 ease-out {clipboardSuccess ? 'bg-purple-50 border-purple-200 border text-black' : 'bg-amber-400 text-black'} px-6 py-6 text-xl font-bold shadow-md hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 max-w-[500px] mx-auto text-center {!recording && buttonLabel === 'Start Recording' && !clipboardSuccess ? 'pulse-subtle' : ''} {clipboardSuccess ? 'notification-pulse' : ''}"
+						class="record-button duration-400 w-[90%] rounded-full transition-all ease-out sm:w-full {clipboardSuccess
+							? 'border border-purple-200 bg-purple-50 text-black'
+							: 'bg-amber-400 text-black'} mx-auto max-w-[500px] px-6 py-6 text-center text-xl font-bold shadow-md hover:scale-105 hover:bg-amber-300 focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 active:scale-95 active:bg-amber-500 active:shadow-inner sm:px-10 sm:py-5 {!recording &&
+						buttonLabel === 'Start Recording' &&
+						!clipboardSuccess
+							? 'pulse-subtle'
+							: ''} {clipboardSuccess ? 'notification-pulse' : ''}"
 						style="min-width: 300px; min-height: 72px; transform-origin: center center;"
 						on:click={toggleRecording}
 						on:mouseenter={preloadSpeechModel}
@@ -909,10 +950,21 @@ import { promptStyle } from '$lib';
 						aria-pressed={recording}
 						aria-busy={transcribing}
 					>
-						<span class="cta-text inline-block min-h-[28px] whitespace-nowrap transition-all duration-300 ease-out relative">
-							<span class="transition-all duration-300 ease-out absolute inset-0 flex items-center justify-center transform {clipboardSuccess ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}" style="visibility: {clipboardSuccess ? 'visible' : 'hidden'};">
-								<span class="flex items-center gap-1 justify-center">
-									<svg class="h-4 w-4 mr-1 text-purple-500" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<span
+							class="cta-text relative inline-block min-h-[28px] whitespace-nowrap transition-all duration-300 ease-out"
+						>
+							<span
+								class="absolute inset-0 flex transform items-center justify-center transition-all duration-300 ease-out {clipboardSuccess
+									? 'scale-100 opacity-100'
+									: 'scale-95 opacity-0'}"
+								style="visibility: {clipboardSuccess ? 'visible' : 'hidden'};"
+							>
+								<span class="flex items-center justify-center gap-1">
+									<svg
+										class="w-4 h-4 mr-1 text-purple-500"
+										viewBox="0 0 24 24"
+										xmlns="http://www.w3.org/2000/svg"
+									>
 										<path
 											d="M12,2 C7.6,2 4,5.6 4,10 L4,17 C4,18.1 4.9,19 6,19 L8,19 L8,21 C8,21.6 8.4,22 9,22 C9.3,22 9.5,21.9 9.7,21.7 L12.4,19 L18,19 C19.1,19 20,18.1 20,17 L20,10 C20,5.6 16.4,2 12,2 Z"
 											fill="currentColor"
@@ -924,33 +976,63 @@ import { promptStyle } from '$lib';
 									{getRandomCopyMessage()}
 								</span>
 							</span>
-							<span class="transition-all duration-300 ease-out transform {clipboardSuccess ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}" style="visibility: {clipboardSuccess ? 'hidden' : 'visible'};">
+							<span
+								class="transform transition-all duration-300 ease-out {clipboardSuccess
+									? 'scale-90 opacity-0'
+									: 'scale-100 opacity-100'}"
+								style="visibility: {clipboardSuccess ? 'hidden' : 'visible'};"
+							>
 								{buttonLabel}
 							</span>
 						</span>
 					</button>
+					<!-- Timer display only shows when recording -->
+					{#if recording}
+						<div class="mt-3 recording-timer-container">
+							<div
+								class="recording-timer-display {recordingDuration >=
+								ANIMATION.RECORDING.FREE_LIMIT - ANIMATION.RECORDING.WARNING_THRESHOLD
+									? 'warning'
+									: ''} {recordingDuration >=
+								ANIMATION.RECORDING.FREE_LIMIT - ANIMATION.RECORDING.DANGER_THRESHOLD
+									? 'danger'
+									: ''}"
+								role="timer"
+								aria-label="Recording time"
+							>
+								{Math.floor(recordingDuration / 60)}:{(recordingDuration % 60)
+									.toString()
+									.padStart(2, '0')}
+							</div>
+						</div>
+					{/if}
 				{/if}
 			</div>
 		</div>
 
 		<!-- Dynamic content area with smooth animation and proper containment -->
-		<div class="position-wrapper relative mb-20 mt-2 w-full flex flex-col items-center transition-all duration-300 ease-in-out">
+		<div
+			class="relative flex flex-col items-center w-full mt-2 mb-20 transition-all duration-300 ease-in-out position-wrapper"
+		>
 			<!-- Content container with controlled overflow -->
-			<div class="content-container w-full flex flex-col items-center">
+			<div class="flex flex-col items-center w-full content-container">
 				<!-- Audio visualizer - properly positioned -->
 				{#if recording}
-					<div class="visualizer-container absolute left-0 top-0 flex w-full justify-center" on:animationend={() => {
-						// Scroll to the bottom when visualizer appears
-						if (typeof window !== 'undefined') {
-							window.scrollTo({
-								top: document.body.scrollHeight,
-								behavior: 'smooth'
-							});
-						}
-					}}>
-						<div class="wrapper-container flex w-full justify-center">
+					<div
+						class="absolute top-0 left-0 flex justify-center w-full visualizer-container"
+						on:animationend={() => {
+							// Scroll to the bottom when visualizer appears
+							if (typeof window !== 'undefined') {
+								window.scrollTo({
+									top: document.body.scrollHeight,
+									behavior: 'smooth'
+								});
+							}
+						}}
+					>
+						<div class="flex justify-center w-full wrapper-container">
 							<div
-								class="visualizer-wrapper mx-auto w-[90%] sm:w-full max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md"
+								class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md sm:w-full"
 								style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
 							>
 								<AudioVisualizer />
@@ -961,7 +1043,9 @@ import { promptStyle } from '$lib';
 
 				<!-- Transcript output - only visible when not recording and has transcript -->
 				{#if transcript && !recording}
-					<div class="transcript-wrapper w-full animate-fadeIn-from-top" on:animationend={() => {
+					<div
+						class="w-full transcript-wrapper animate-fadeIn-from-top"
+						on:animationend={() => {
 							// Scroll to the bottom when transcript appears
 							if (typeof window !== 'undefined') {
 								window.scrollTo({
@@ -969,18 +1053,26 @@ import { promptStyle } from '$lib';
 									behavior: 'smooth'
 								});
 							}
-						}}>
+						}}
+					>
 						<!-- Speech bubble with transcript -->
-						<div class="wrapper-container flex w-full justify-center">
-							<div class="transcript-box-wrapper relative mx-auto w-[90%] sm:w-full max-w-[500px] px-2 sm:px-3 md:px-0">
+						<div class="flex justify-center w-full wrapper-container">
+							<div
+								class="transcript-box-wrapper relative mx-auto w-[90%] max-w-[500px] px-2 sm:w-full sm:px-3 md:px-0"
+							>
 								<!-- Ghost icon copy button positioned outside the transcript box -->
 								<button
-									class="copy-btn absolute -top-4 -right-4 z-[200] h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl active:scale-95 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2"
+									class="copy-btn absolute -right-4 -top-4 z-[200] h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95"
 									on:click|preventDefault={copyToClipboard}
 									on:mouseenter={() => {
-										// Only show tooltip if user hasn't used the button yet 
+										// Only show tooltip if user hasn't used the button yet
 										// or hasn't hovered too many times
-										if (typeof window !== "undefined" && window.innerWidth >= 640 && !hasUsedCopyButton && tooltipHoverCount < MAX_TOOLTIP_HOVER_COUNT) {
+										if (
+											typeof window !== 'undefined' &&
+											window.innerWidth >= 640 &&
+											!hasUsedCopyButton &&
+											tooltipHoverCount < MAX_TOOLTIP_HOVER_COUNT
+										) {
 											showCopyTooltip = true;
 											tooltipHoverCount++;
 										}
@@ -991,31 +1083,49 @@ import { promptStyle } from '$lib';
 									aria-label="Copy transcript to clipboard"
 									bind:this={copyButtonRef}
 								>
-									<div class="relative h-full w-full">
+									<div class="relative w-full h-full">
 										<!-- Ghost icon layers - same as main app icon but smaller -->
-										<div class="icon-layers absolute inset-0 h-full w-full">
+										<div class="absolute inset-0 w-full h-full icon-layers">
 											<!-- Gradient background (bottom layer) -->
-											<img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
+											<img
+												src="/talktype-icon-bg-gradient.svg"
+												alt=""
+												class="absolute inset-0 w-full h-full"
+												aria-hidden="true"
+											/>
 											<!-- Outline without eyes -->
-											<img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 h-full w-full" aria-hidden="true" />
+											<img
+												src="/assets/talktype-icon-base.svg"
+												alt=""
+												class="absolute inset-0 w-full h-full"
+												aria-hidden="true"
+											/>
 											<!-- Just the eyes (for blinking) -->
-											<img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 h-full w-full copy-eyes" aria-hidden="true" />
+											<img
+												src="/assets/talktype-icon-eyes.svg"
+												alt=""
+												class="absolute inset-0 w-full h-full copy-eyes"
+												aria-hidden="true"
+											/>
 										</div>
 									</div>
-									
+
 									<!-- Smart tooltip - only shows for first few hovers - positioned at top right to avoid clipping -->
 									{#if showCopyTooltip}
-										<div class="copy-tooltip absolute top-12 right-0 whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md z-[250]">
+										<div
+											class="copy-tooltip absolute right-0 top-12 z-[250] whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md"
+										>
 											Copy to clipboard
-											<div class="tooltip-arrow absolute -top-1.5 right-4 h-3 w-3 rotate-45 bg-white"></div>
+											<div
+												class="tooltip-arrow absolute -top-1.5 right-4 h-3 w-3 rotate-45 bg-white"
+											></div>
 										</div>
 									{/if}
 								</button>
-								
-								
+
 								<!-- Editable transcript box with controlled scrolling -->
 								<div
-									class="transcript-box animate-shadow-appear relative w-full whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl sm:px-6 sm:py-5 max-w-[90vw] box-border mx-auto my-4 transition-all duration-300 max-h-[60vh] overflow-y-auto scrollbar-thin"
+									class="transcript-box animate-shadow-appear scrollbar-thin relative mx-auto my-4 box-border max-h-[60vh] w-full max-w-[90vw] overflow-y-auto whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl transition-all duration-300 sm:px-6 sm:py-5"
 								>
 									<div
 										class={`transcript-text ${responsiveFontSize} animate-text-appear`}
@@ -1034,16 +1144,20 @@ import { promptStyle } from '$lib';
 										{transcript}
 									</div>
 									<!-- Subtle gradient mask to indicate scrollable content -->
-									<div class="scroll-indicator-bottom absolute bottom-0 left-0 right-0 h-6 pointer-events-none bg-gradient-to-t from-white/90 to-transparent rounded-b-[2rem]"></div>
-									
+									<div
+										class="scroll-indicator-bottom pointer-events-none absolute bottom-0 left-0 right-0 h-6 rounded-b-[2rem] bg-gradient-to-t from-white/90 to-transparent"
+									></div>
+
 									<!-- Add padding at the bottom of transcript for the share button -->
 									<div class="pb-16"></div>
-									
+
 									<!-- Simple share button at bottom middle - only visible when Web Share API is supported -->
 									{#if isWebShareSupported()}
-										<div class="flex justify-center w-full absolute bottom-6 left-0 right-0 z-[200]">
+										<div
+											class="absolute bottom-6 left-0 right-0 z-[200] flex w-full justify-center"
+										>
 											<button
-												class="share-btn-text px-5 py-2 bg-gradient-to-r from-indigo-50 to-purple-100 text-indigo-600 text-sm font-medium rounded-full shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2"
+												class="px-5 py-2 text-sm font-medium text-indigo-600 transition-all duration-200 rounded-full shadow-sm share-btn-text bg-gradient-to-r from-indigo-50 to-purple-100 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 active:scale-95"
 												on:click|preventDefault={shareTranscript}
 												aria-label="Share transcript"
 											>
@@ -1051,7 +1165,7 @@ import { promptStyle } from '$lib';
 											</button>
 										</div>
 									{/if}
-									
+
 									<!-- Hidden instructions for screen readers -->
 									<div id="transcript-instructions" class="sr-only">
 										Editable transcript. You can modify the text if needed.
@@ -1065,7 +1179,7 @@ import { promptStyle } from '$lib';
 
 			<!-- Error message -->
 			{#if errorMessage}
-				<p class="error-message mt-4 text-center font-medium text-red-500">
+				<p class="mt-4 font-medium text-center text-red-500 error-message">
 					{errorMessage}
 				</p>
 			{/if}
@@ -1084,12 +1198,28 @@ import { promptStyle } from '$lib';
 
 <!-- Permission error modal -->
 {#if showPermissionError}
-	<div class="permission-error-container flex w-full justify-center" on:click={() => showPermissionError = false} role="alertdialog" aria-labelledby="permission_error_title" aria-describedby="permission_error_description" aria-live="assertive">
+	<div
+		class="flex justify-center w-full permission-error-container"
+		on:click={() => (showPermissionError = false)}
+		role="alertdialog"
+		aria-labelledby="permission_error_title"
+		aria-describedby="permission_error_description"
+		aria-live="assertive"
+	>
 		<div class="permission-error-modal">
 			<!-- Icon and title -->
 			<div class="modal-header">
 				<div class="error-icon">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="w-6 h-6"
+					>
 						<circle cx="12" cy="12" r="10"></circle>
 						<line x1="12" y1="8" x2="12" y2="12"></line>
 						<line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -1097,10 +1227,13 @@ import { promptStyle } from '$lib';
 				</div>
 				<h3 id="permission_error_title">Microphone Access Denied</h3>
 			</div>
-			
+
 			<!-- Permission error message -->
-			<p id="permission_error_description">TalkType needs microphone access to transcribe your speech. Please update your browser settings to allow microphone access.</p>
-			
+			<p id="permission_error_description">
+				TalkType needs microphone access to transcribe your speech. Please update your browser
+				settings to allow microphone access.
+			</p>
+
 			<!-- Solution steps -->
 			<div class="error-steps">
 				<div class="step">
@@ -1116,9 +1249,9 @@ import { promptStyle } from '$lib';
 					<p>Refresh the page and try again</p>
 				</div>
 			</div>
-			
+
 			<!-- Dismiss button -->
-			<button class="dismiss-btn" on:click|stopPropagation={() => showPermissionError = false}>
+			<button class="dismiss-btn" on:click|stopPropagation={() => (showPermissionError = false)}>
 				Got it
 			</button>
 		</div>
@@ -1281,13 +1414,13 @@ import { promptStyle } from '$lib';
 		position: relative;
 		z-index: 2;
 	}
-	
+
 	/* Make sure the outline is visible on top of the gradient */
 	:global(.recording .icon-bg),
 	:global(.recording .icon-base) {
 		filter: brightness(1.05);
 	}
-	
+
 	/* Transcript box styling */
 	.transcript-box {
 		box-shadow:
@@ -1380,7 +1513,10 @@ import { promptStyle } from '$lib';
 		filter: drop-shadow(0 4px 6px rgba(249, 168, 212, 0.25));
 		animation: gentle-float 3s ease-in-out infinite;
 		/* Ring effect to anchor the button visually to the text box */
-		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.25), 0 4px 6px rgba(0, 0, 0, 0.05);
+		box-shadow:
+			0 0 0 3px white,
+			0 0 0 4px rgba(249, 168, 212, 0.25),
+			0 4px 6px rgba(0, 0, 0, 0.05);
 		/* Isolation to prevent inheriting filter effects from parents */
 		isolation: isolate;
 		/* Add backdrop filter to prevent button from being affected by blur */
@@ -1393,47 +1529,64 @@ import { promptStyle } from '$lib';
 		opacity: 1;
 		filter: drop-shadow(0 6px 12px rgba(249, 168, 212, 0.4));
 		transform: translateY(-1px) scale(1.05);
-		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.4), 0 8px 16px rgba(249, 168, 212, 0.15);
+		box-shadow:
+			0 0 0 3px white,
+			0 0 0 4px rgba(249, 168, 212, 0.4),
+			0 8px 16px rgba(249, 168, 212, 0.15);
 		background-color: rgba(255, 255, 255, 0.9);
 	}
-	
+
 	.copy-btn:active {
 		transform: translateY(1px) scale(0.95);
-		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(249, 168, 212, 0.5), 0 2px 4px rgba(0, 0, 0, 0.1);
+		box-shadow:
+			0 0 0 3px white,
+			0 0 0 4px rgba(249, 168, 212, 0.5),
+			0 2px 4px rgba(0, 0, 0, 0.1);
 	}
-	
+
 	/* Share button styling */
 	.share-btn {
 		opacity: 0.95;
 		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 		filter: drop-shadow(0 4px 6px rgba(168, 173, 249, 0.25));
 		animation: gentle-float 3s ease-in-out infinite;
-		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(168, 173, 249, 0.25), 0 4px 6px rgba(0, 0, 0, 0.05);
+		box-shadow:
+			0 0 0 3px white,
+			0 0 0 4px rgba(168, 173, 249, 0.25),
+			0 4px 6px rgba(0, 0, 0, 0.05);
 		isolation: isolate;
 		backdrop-filter: none !important;
 		background-color: rgba(255, 255, 255, 0.95);
 		/* Slight delay in animation to be offset from copy button */
 		animation-delay: 0.4s;
 	}
-	
+
 	.share-btn:hover {
 		opacity: 1;
 		filter: drop-shadow(0 6px 12px rgba(168, 173, 249, 0.4));
 		transform: translateY(-1px) scale(1.05);
-		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(168, 173, 249, 0.4), 0 8px 16px rgba(168, 173, 249, 0.15);
+		box-shadow:
+			0 0 0 3px white,
+			0 0 0 4px rgba(168, 173, 249, 0.4),
+			0 8px 16px rgba(168, 173, 249, 0.15);
 		background-color: rgba(255, 255, 255, 0.9);
 	}
-	
+
 	.share-btn:active {
 		transform: translateY(1px) scale(0.95);
-		box-shadow: 0 0 0 3px white, 0 0 0 4px rgba(168, 173, 249, 0.5), 0 2px 4px rgba(0, 0, 0, 0.1);
+		box-shadow:
+			0 0 0 3px white,
+			0 0 0 4px rgba(168, 173, 249, 0.5),
+			0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 
 	/* Tooltip styling */
 	.copy-tooltip {
 		animation: tooltip-appear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 		border: 1px solid rgba(249, 168, 212, 0.3);
-		box-shadow: 0 4px 8px -2px rgba(249, 168, 212, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+		box-shadow:
+			0 4px 8px -2px rgba(249, 168, 212, 0.2),
+			0 2px 4px -1px rgba(0, 0, 0, 0.05);
 		z-index: 250; /* Higher z-index to ensure it's above visualizer */
 		pointer-events: none;
 	}
@@ -1457,9 +1610,10 @@ import { promptStyle } from '$lib';
 	.copy-btn:hover .copy-eyes {
 		animation: copy-ghost-blink-excited 2s infinite;
 	}
-	
+
 	@keyframes gentle-float {
-		0%, 100% {
+		0%,
+		100% {
 			transform: translateY(0);
 		}
 		50% {
@@ -1469,34 +1623,44 @@ import { promptStyle } from '$lib';
 
 	/* Ghost eyes blinking animations for copy button */
 	@keyframes copy-ghost-blink {
-		0%, 95%, 100% {
+		0%,
+		95%,
+		100% {
 			transform: scaleY(1);
 		}
-		96%, 99% {
+		96%,
+		99% {
 			transform: scaleY(0);
 		}
 	}
 
 	@keyframes copy-ghost-blink-excited {
-		0%, 40%, 50%, 90%, 100% {
+		0%,
+		40%,
+		50%,
+		90%,
+		100% {
 			transform: scaleY(1);
 		}
-		45%, 95% {
+		45%,
+		95% {
 			transform: scaleY(0);
 		}
 	}
-	
+
 	/* Sad eyes animation for permission errors */
 	.eyes-sad {
 		animation: eyes-sad-animation 2s ease-in-out forwards !important;
 		transform-origin: center center;
 	}
-	
+
 	@keyframes eyes-sad-animation {
-		0%, 100% {
+		0%,
+		100% {
 			transform: scaleY(0.7) translateY(2px);
 		}
-		30%, 70% {
+		30%,
+		70% {
 			transform: scaleY(0.5) translateY(3px);
 		}
 	}
@@ -1540,7 +1704,7 @@ import { promptStyle } from '$lib';
 	* {
 		box-sizing: border-box;
 	}
-	
+
 	/* Mobile-centered container */
 	.mobile-centered-container {
 		width: 100%;
@@ -1605,7 +1769,8 @@ import { promptStyle } from '$lib';
 
 	/* Add toast pulse animation for better visibility */
 	@keyframes toast-pulse {
-		0%, 100% {
+		0%,
+		100% {
 			box-shadow:
 				0 12px 20px -5px rgba(212, 180, 241, 0.35),
 				0 5px 12px -3px rgba(254, 205, 211, 0.25),
@@ -1643,10 +1808,11 @@ import { promptStyle } from '$lib';
 			toast-pulse-warning 2s ease-in-out infinite,
 			toast-fade 4.5s ease-in-out forwards;
 	}
-	
+
 	/* Warning toast special pulse */
 	@keyframes toast-pulse-warning {
-		0%, 100% {
+		0%,
+		100% {
 			box-shadow:
 				0 12px 20px -5px rgba(251, 211, 141, 0.3),
 				0 5px 12px -3px rgba(254, 215, 170, 0.2),
@@ -1710,7 +1876,7 @@ import { promptStyle } from '$lib';
 			opacity: 0;
 		}
 	}
-	
+
 	/* Permission Error Modal Styling */
 	.permission-error-container {
 		position: fixed;
@@ -1726,11 +1892,11 @@ import { promptStyle } from '$lib';
 		padding: 1rem;
 		animation: fade-in 0.3s ease-out;
 	}
-	
+
 	.permission-error-modal {
 		background: linear-gradient(to bottom right, #fff, #fefcff);
 		border-radius: 1rem;
-		box-shadow: 
+		box-shadow:
 			0 10px 25px -5px rgba(249, 168, 212, 0.4),
 			0 8px 10px -6px rgba(249, 168, 212, 0.2),
 			0 0 0 1px rgba(249, 168, 212, 0.3) inset;
@@ -1742,7 +1908,7 @@ import { promptStyle } from '$lib';
 		animation: slide-up 0.4s cubic-bezier(0.19, 1, 0.22, 1);
 		text-align: center;
 	}
-	
+
 	.modal-header {
 		display: flex;
 		align-items: center;
@@ -1751,7 +1917,7 @@ import { promptStyle } from '$lib';
 		margin-bottom: 1rem;
 		flex-direction: column;
 	}
-	
+
 	.error-icon {
 		width: 3rem;
 		height: 3rem;
@@ -1763,20 +1929,20 @@ import { promptStyle } from '$lib';
 		justify-content: center;
 		margin-bottom: 0.5rem;
 	}
-	
+
 	.modal-header h3 {
 		color: #111827;
 		font-weight: 700;
 		font-size: 1.25rem;
 		margin: 0;
 	}
-	
+
 	.permission-error-modal p {
 		margin: 0.75rem 0;
 		line-height: 1.6;
 		font-size: 0.95rem;
 	}
-	
+
 	.error-steps {
 		background-color: rgba(249, 168, 212, 0.08);
 		border-radius: 0.75rem;
@@ -1784,18 +1950,18 @@ import { promptStyle } from '$lib';
 		margin: 1.25rem 0;
 		text-align: left;
 	}
-	
+
 	.step {
 		display: flex;
 		gap: 0.75rem;
 		margin-bottom: 0.75rem;
 		align-items: flex-start;
 	}
-	
+
 	.step:last-child {
 		margin-bottom: 0;
 	}
-	
+
 	.step-number {
 		width: 1.5rem;
 		height: 1.5rem;
@@ -1809,12 +1975,12 @@ import { promptStyle } from '$lib';
 		color: #be185d;
 		flex-shrink: 0;
 	}
-	
+
 	.step p {
 		margin: 0;
 		font-size: 0.875rem;
 	}
-	
+
 	.dismiss-btn {
 		background-color: #be185d;
 		color: white;
@@ -1827,29 +1993,33 @@ import { promptStyle } from '$lib';
 		margin-top: 0.75rem;
 		font-size: 1rem;
 	}
-	
+
 	.dismiss-btn:hover {
 		background-color: #9d174d;
 		transform: translateY(-1px);
 	}
-	
+
 	.dismiss-btn:active {
 		transform: translateY(1px);
 	}
-	
+
 	@keyframes fade-in {
-		from { opacity: 0; }
-		to { opacity: 1; }
-	}
-	
-	@keyframes slide-up {
-		from { 
-			opacity: 0; 
-			transform: translateY(20px); 
+		from {
+			opacity: 0;
 		}
-		to { 
-			opacity: 1; 
-			transform: translateY(0); 
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes slide-up {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
 		}
 	}
 
@@ -1919,7 +2089,7 @@ import { promptStyle } from '$lib';
 	:global(.ghost-wobble-right) {
 		animation: ghost-wobble-right 0.6s ease-in-out;
 	}
-	
+
 	/* Recording state glow effect is now handled in +page.svelte */
 
 	/* Button animations */
@@ -2004,7 +2174,7 @@ import { promptStyle } from '$lib';
 			top: -12px; /* Better positioned for mobile */
 			right: -8px; /* Better positioned for mobile */
 		}
-		
+
 		/* Better sizing for share button on mobile */
 		.share-btn {
 			height: 38px; /* Larger touch target */
@@ -2087,7 +2257,7 @@ import { promptStyle } from '$lib';
 			height: 34px;
 			width: 34px;
 		}
-		
+
 		/* Adjust share button style for very small screens */
 		.share-btn-text {
 			font-size: 0.8rem;
@@ -2097,7 +2267,7 @@ import { promptStyle } from '$lib';
 
 		/* Ensure transcript text is readable and responsive */
 		.transcript-text {
-			font-size: 0.95rem !important; 
+			font-size: 0.95rem !important;
 			line-height: 1.6;
 			transition: font-size 0.3s ease;
 		}
@@ -2173,15 +2343,16 @@ import { promptStyle } from '$lib';
 			opacity: 0;
 		}
 	}
-	
+
 	/* Enhanced breathing glow for button - more noticeable and smoother */
 	.pulse-subtle {
 		animation: button-breathe 3.5s ease-in-out infinite;
 		transform-origin: center;
 	}
-	
+
 	@keyframes button-breathe {
-		0%, 100% {
+		0%,
+		100% {
 			box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.35);
 			transform: scale(1);
 		}
@@ -2190,41 +2361,102 @@ import { promptStyle } from '$lib';
 			transform: scale(1.02);
 		}
 	}
-	
+
 	/* Notification pulse animation for when the button shows a notification */
 	.notification-pulse {
 		animation: notification-glow 2.5s ease-in-out infinite;
 		transform-origin: center;
-		box-shadow: 
+		box-shadow:
 			0 0 10px 2px rgba(139, 92, 246, 0.15),
 			0 0 3px 1px rgba(139, 92, 246, 0.08);
 	}
-	
+
 	@keyframes notification-glow {
-		0%, 100% {
-			box-shadow: 
+		0%,
+		100% {
+			box-shadow:
 				0 0 6px 1px rgba(139, 92, 246, 0.1),
 				0 0 2px 0px rgba(139, 92, 246, 0.05);
 			transform: scale(1);
 		}
 		50% {
-			box-shadow: 
+			box-shadow:
 				0 0 12px 3px rgba(139, 92, 246, 0.2),
 				0 0 4px 1px rgba(139, 92, 246, 0.1);
 			transform: scale(1.002);
 		}
 	}
-	
+
 	/* Wiggle animation for the ghost icon in notifications */
 	@keyframes tada {
-		0% { transform: scale(1); }
-		10%, 20% { transform: scale(0.9) rotate(-3deg); }
-		30%, 50%, 70%, 90% { transform: scale(1.1) rotate(3deg); }
-		40%, 60%, 80% { transform: scale(1.1) rotate(-3deg); }
-		100% { transform: scale(1) rotate(0); }
+		0% {
+			transform: scale(1);
+		}
+		10%,
+		20% {
+			transform: scale(0.9) rotate(-3deg);
+		}
+		30%,
+		50%,
+		70%,
+		90% {
+			transform: scale(1.1) rotate(3deg);
+		}
+		40%,
+		60%,
+		80% {
+			transform: scale(1.1) rotate(-3deg);
+		}
+		100% {
+			transform: scale(1) rotate(0);
+		}
 	}
-	
+
 	.animate-tada {
 		animation: tada 1.5s ease infinite;
+	}
+
+	/* Recording timer styles */
+	.recording-timer-container {
+		width: 100%;
+		display: flex;
+		justify-content: center;
+		margin-top: 0.75rem;
+	}
+
+	.recording-timer-display {
+		padding: 0.25rem 0.75rem;
+		border-radius: 9999px;
+		background-color: rgba(255, 255, 255, 0.9);
+		color: #374151;
+		font-weight: 500;
+		font-size: 0.95rem;
+		min-width: 70px;
+		text-align: center;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		transition: all 0.3s ease;
+	}
+
+	.recording-timer-display.warning {
+		color: #92400e;
+		background-color: rgba(251, 191, 36, 0.15);
+	}
+
+	.recording-timer-display.danger {
+		color: #b91c1c;
+		background-color: rgba(239, 68, 68, 0.2);
+		animation: timer-pulse 1.5s infinite ease-in-out;
+	}
+
+	@keyframes timer-pulse {
+		0%,
+		100% {
+			color: #b91c1c;
+			background-color: rgba(239, 68, 68, 0.2);
+		}
+		50% {
+			color: #7f1d1d;
+			background-color: rgba(239, 68, 68, 0.35);
+		}
 	}
 </style>

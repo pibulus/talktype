@@ -76,6 +76,14 @@ export const ANIMATION = {
   MODAL: {
     CLOSE_DELAY: 50,          // Delay before running closeModal function
     PERMISSION_ERROR_DURATION: 8000  // How long the permission error shows
+  },
+  
+  // Recording time limits
+  RECORDING: {
+    FREE_LIMIT: 30,          // Maximum recording time in seconds for free users
+    PREMIUM_LIMIT: 600,      // Maximum recording time in seconds for premium users
+    WARNING_THRESHOLD: 20,   // Seconds remaining when to start showing warning
+    DANGER_THRESHOLD: 5      // Seconds remaining when to start showing danger state
   }
 };
 
