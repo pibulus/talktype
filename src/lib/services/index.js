@@ -6,6 +6,7 @@ import { transcriptionService as transcriptionServiceInstance } from './transcri
 import { themeService as themeServiceInstance } from './theme/themeService';
 import { modalService as modalServiceInstance } from './modals/modalService';
 import { firstVisitService as firstVisitServiceInstance } from './first-visit/firstVisitService';
+import { pwaService as pwaServiceInstance } from './pwa/pwaService';
 import { resetStores } from './infrastructure/stores';
 
 // Re-export services for external usage
@@ -14,6 +15,14 @@ export { hapticService } from './infrastructure/hapticService';
 export { themeService } from './theme/themeService';
 export { modalService } from './modals/modalService';
 export { firstVisitService, isFirstVisit } from './first-visit/firstVisitService';
+export { 
+  pwaService, 
+  deferredInstallPrompt, 
+  transcriptionCount, 
+  showPwaInstallPrompt, 
+  isPwaInstalled,
+  shouldShowPrompt 
+} from './pwa/pwaService';
 
 // Audio services
 export { AudioStates } from './audio/audioStates';
@@ -68,6 +77,7 @@ export function initializeServices(options = {}) {
     hapticService: hapticServiceInstance,
     themeService: themeServiceInstance,
     modalService: modalServiceInstance,
-    firstVisitService: firstVisitServiceInstance
+    firstVisitService: firstVisitServiceInstance,
+    pwaService: pwaServiceInstance
   };
 }

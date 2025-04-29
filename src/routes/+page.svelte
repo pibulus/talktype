@@ -13,6 +13,11 @@
   import { themeService } from '$lib/services/theme';
   import { modalService } from '$lib/services/modals';
   import { firstVisitService, isFirstVisit } from '$lib/services/first-visit';
+  import { 
+    pwaService, 
+    deferredInstallPrompt, 
+    showPwaInstallPrompt 
+  } from '$lib/services/pwa';
   
   // Import modals lazily
   import { AboutModal, ExtensionModal, IntroModal } from '$lib/components/modals';
@@ -28,10 +33,7 @@
   // Track speech model preloading state
   let speechModelPreloaded = false;
 
-  // PWA Install Prompt Logic
-  const PWA_INSTALL_PROMPT_THRESHOLD = 5; // Show prompt after 5 successful transcriptions
-  let deferredInstallPrompt = null; // Stores the beforeinstallprompt event
-  let showPwaInstallPrompt = false; // Controls visibility of the PWA install prompt
+  // PWA Install Prompt Logic is now handled by pwaService
 
   // --- Minimal Ghost State Variables ---
   let isRecording = false;
@@ -230,27 +232,7 @@
     // Check if first visit to show intro
     firstVisitService.showIntroModal();
     
-    // --- PWA Install Prompt Listener ---
-    if (browser) {
-      window.addEventListener('beforeinstallprompt', (e) => {
-        // Prevent the mini-infobar from appearing on mobile
-        e.preventDefault();
-        // Stash the event so it can be triggered later.
-        deferredInstallPrompt = e;
-        debug('✅ `beforeinstallprompt` event captured.');
-        // Optionally, update UI to notify the user they can install the PWA
-        // We will do this based on transcription count later
-      });
-
-      window.addEventListener('appinstalled', () => {
-        // Log install to analytics or clear install prompt UI
-        debug('✅ TalkType PWA installed successfully!');
-        deferredInstallPrompt = null; // Clear the stored event
-        showPwaInstallPrompt = false; // Hide prompt if it was somehow visible
-      });
-      debug('Added PWA install event listeners.');
-    }
-    // --- End PWA Install Prompt Listener ---
+    // PWA initialization is now handled by the pwaService
 
     return () => {
       debug('Component unmounting, clearing timeouts and event listeners');
@@ -321,23 +303,14 @@
     modalService.closeModal();
   }
 
-  // Function to close modals
+  // Function to close modals (used by modal components)
   function closeModal() {
     modalService.closeModal();
   }
 
-  // Function to trigger ghost click
-  function triggerGhostClick() {
-    debug('Triggering ghost click after intro modal close');
-    // Dispatch the event manually as if the ghost was clicked
-    const event = new CustomEvent('togglerecording');
-    document.dispatchEvent(event);
-  }
-
-  // --- PWA Install Prompt Logic ---
   /**
    * Handles the transcriptionCompleted event from AudioToText.
-   * Checks if conditions are met to show the PWA install prompt.
+   * The actual PWA prompt logic is now handled by pwaService.
    * @param {CustomEvent<{count: number}>} event
    */
   async function handleTranscriptionCompleted(event) {
@@ -346,49 +319,22 @@
     const newCount = event.detail.count;
     debug(`🔔 Transcription completed event received. Count: ${newCount}`);
 
-    // Check if the app is already installed (standalone mode)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    // The PWA service handles most of the logic, but we need to lazy-load the component
+    if ($showPwaInstallPrompt && !PwaInstallPrompt) {
+      loadingPwaPrompt = true;
+      debug('📱 Lazy loading PWA install prompt component...');
 
-    // Check if we should show the prompt
-    if (
-      newCount >= PWA_INSTALL_PROMPT_THRESHOLD &&
-      deferredInstallPrompt &&
-      !isStandalone &&
-      !showPwaInstallPrompt // Don't show if already showing
-    ) {
-      debug('⭐ Conditions met for showing PWA install prompt.');
-
-      // Lazy load the PWA install prompt component if needed
-      if (!PwaInstallPrompt && !loadingPwaPrompt) {
-        loadingPwaPrompt = true;
-        debug('📱 Lazy loading PWA install prompt component...');
-
-        try {
-          // Import the component dynamically
-          const module = await import('$lib/components/pwa/PwaInstallPrompt.svelte');
-          PwaInstallPrompt = module.default;
-          debug('📱 PWA install prompt component loaded successfully');
-        } catch (err) {
-          console.error('Error loading PWA install prompt:', err);
-          debug(`Error loading PWA install prompt: ${err.message}`);
-          loadingPwaPrompt = false;
-          return; // Don't proceed if loading failed
-        } finally {
-          loadingPwaPrompt = false; // Ensure this is always reset
-        }
+      try {
+        // Import the component dynamically
+        const module = await import('$lib/components/pwa/PwaInstallPrompt.svelte');
+        PwaInstallPrompt = module.default;
+        debug('📱 PWA install prompt component loaded successfully');
+      } catch (err) {
+        console.error('Error loading PWA install prompt:', err);
+        debug(`Error loading PWA install prompt: ${err.message}`);
+      } finally {
+        loadingPwaPrompt = false;
       }
-
-      // Show the prompt by setting the reactive variable
-      debug('Setting showPwaInstallPrompt = true');
-      showPwaInstallPrompt = true;
-    } else {
-      debug('Conditions not met for PWA prompt:', {
-        count: newCount,
-        threshold: PWA_INSTALL_PROMPT_THRESHOLD,
-        promptAvailable: !!deferredInstallPrompt,
-        isStandalone: isStandalone,
-        alreadyShowing: showPwaInstallPrompt
-      });
     }
   }
 
@@ -397,7 +343,7 @@
    */
   function closePwaInstallPrompt() {
     debug('ℹ️ PWA install prompt dismissed.');
-    showPwaInstallPrompt = false;
+    pwaService.dismissPrompt();
   }
 </script>
 
@@ -470,10 +416,10 @@
 {/if}
 
 <!-- PWA Install Prompt -->
-{#if showPwaInstallPrompt && PwaInstallPrompt}
+{#if $showPwaInstallPrompt && PwaInstallPrompt}
   <svelte:component
     this={PwaInstallPrompt}
-    installPromptEvent={deferredInstallPrompt}
+    installPromptEvent={$deferredInstallPrompt}
     on:closeprompt={closePwaInstallPrompt}
   />
 {/if}

@@ -75,7 +75,7 @@
       <!-- Ghost icon copy button positioned outside the transcript box -->
       <button
         class="copy-btn absolute -right-4 -top-4 z-[200] h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95"
-        on:click|preventDefault={() => dispatch('copy')}
+        on:click|preventDefault={() => dispatch('copy', { text: getEditedTranscript() })}
         on:mouseenter={handleTooltipMouseEnter}
         on:mouseleave={() => { showCopyTooltip = false; }}
         aria-label="Copy transcript to clipboard"
@@ -158,7 +158,7 @@
           >
             <button
               class="px-5 py-2 text-sm font-medium text-indigo-600 transition-all duration-200 rounded-full shadow-sm share-btn-text bg-gradient-to-r from-indigo-50 to-purple-100 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 active:scale-95"
-              on:click|preventDefault={() => dispatch('share')}
+              on:click|preventDefault={() => dispatch('share', { text: getEditedTranscript() })}
               aria-label="Share transcript"
             >
               Share
