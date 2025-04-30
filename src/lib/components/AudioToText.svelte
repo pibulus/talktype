@@ -435,8 +435,9 @@
     
     // Check if the app is running as a PWA after a short delay
     if (browser) {
-      setTimeout(() => {
-        if (pwaService.checkIfRunningAsPwa()) {
+      setTimeout(async () => {
+        const isPwa = await pwaService.checkIfRunningAsPwa();
+        if (isPwa) {
           console.log('📱 App is running as PWA');
         }
       }, 100);

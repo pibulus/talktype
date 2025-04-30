@@ -19,6 +19,7 @@
     showPwaInstallPrompt 
   } from '$lib/services/pwa';
   import { isRecording as recordingStore } from '$lib/services';
+  import { fade } from 'svelte/transition';
   
   // Import modals lazily
   import { AboutModal, ExtensionModal, IntroModal } from '$lib/components/modals';
@@ -353,6 +354,7 @@
    */
   function closePwaInstallPrompt() {
     debug('ℹ️ PWA install prompt dismissed.');
+    // Update the store value through the service
     pwaService.dismissPrompt();
   }
 </script>
@@ -431,11 +433,13 @@
 
 <!-- PWA Install Prompt -->
 {#if $showPwaInstallPrompt && PwaInstallPrompt}
-  <svelte:component
-    this={PwaInstallPrompt}
-    installPromptEvent={$deferredInstallPrompt}
-    on:closeprompt={closePwaInstallPrompt}
-  />
+  <div transition:fade={{duration: 300}}>
+    <svelte:component
+      this={PwaInstallPrompt}
+      installPromptEvent={$deferredInstallPrompt}
+      on:closeprompt={closePwaInstallPrompt}
+    />
+  </div>
 {/if}
 
 <style>

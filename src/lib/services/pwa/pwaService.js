@@ -20,6 +20,24 @@ export const shouldShowPrompt = derived(
   [transcriptionCount, isPwaInstalled],
   ([$count, $isInstalled]) => {
     if (!browser || $isInstalled) return false;
+    
+    // Skip prompt in development environments
+    const isDevelopment = browser && (
+      window.location.hostname === 'localhost' || 
+      window.location.hostname === '127.0.0.1' ||
+      window.location.port === '5173' || 
+      window.location.port === '4173'
+    );
+    
+    if (isDevelopment) return false;
+    
+    // Check if on desktop - only show prompt on compatible platforms
+    const isMobile = browser ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) : false;
+    const isCompatibleDesktop = browser ? 
+      (/Chrome/.test(navigator.userAgent) && !/Edge|Edg/.test(navigator.userAgent)) : false;
+      
+    if (!isMobile && !isCompatibleDesktop) return false;
+    
     return $count >= PWA_INSTALL_PROMPT_THRESHOLD;
   }
 );
@@ -29,9 +47,21 @@ export class PwaService {
     this.debug = false;
     
     if (browser) {
+      // Check if we're in development mode
+      const isDevelopment = window.location.hostname === 'localhost' || 
+                            window.location.hostname === '127.0.0.1' ||
+                            window.location.port === '5173' || 
+                            window.location.port === '4173';
+      
+      // Always load stored values
       this.initializeFromStorage();
       this.setupEventListeners();
-      this.checkIfRunningAsPwa();
+      
+      // In development, don't auto-check for PWA status
+      if (!isDevelopment) {
+        // Defer PWA check slightly to ensure document is fully loaded
+        setTimeout(() => this.checkIfRunningAsPwa(), 500);
+      }
     }
   }
 
@@ -198,23 +228,61 @@ export class PwaService {
     }
   }
 
-  checkIfRunningAsPwa() {
+  async checkIfRunningAsPwa() {
     if (!browser) return false;
     
     try {
-      // Different ways to detect if running as PWA
+      // Skip PWA detection in development environments
+      const isDevelopment = window.location.hostname === 'localhost' || 
+                            window.location.hostname === '127.0.0.1' ||
+                            window.location.port === '5173' || 
+                            window.location.port === '4173';
+      
+      if (isDevelopment) {
+        this.log('Development environment detected, bypassing PWA detection');
+        return false;
+      }
+      
+      let confidenceScore = 0;
+      const confidenceThreshold = 2;
+      
+      // Display mode checks (less weight now)
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
       const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
       const isMinimalUi = window.matchMedia('(display-mode: minimal-ui)').matches;
-      const isInPWA = navigator.standalone || // iOS
-        isStandalone || isFullscreen || isMinimalUi;
-
-      // If we detect it's a PWA, mark it in localStorage
-      if (isInPWA) {
+      const iOSStandalone = navigator.standalone; // iOS specific
+      
+      if (isStandalone || iOSStandalone) confidenceScore += 1;
+      if (isFullscreen || isMinimalUi) confidenceScore += 0.5;
+      
+      // Web App Manifest check
+      const manifestLinks = document.querySelectorAll('link[rel="manifest"]');
+      if (manifestLinks.length > 0) confidenceScore += 0.5;
+      
+      // Service Worker check (strong indicator)
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        if (registrations.length > 0) confidenceScore += 1.5;
+      }
+      
+      // Check for installation event registration
+      if (localStorage.getItem(PWA_PROMPT_SHOWN_KEY) === 'true') {
+        confidenceScore += 0.5;
+      }
+      
+      // Check for device context (desktop needs more confidence)
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const requiredConfidence = isMobile ? confidenceThreshold - 0.5 : confidenceThreshold;
+      
+      const isPWA = confidenceScore >= requiredConfidence;
+      
+      this.log(`PWA detection: confidence=${confidenceScore}, threshold=${requiredConfidence}, isPWA=${isPWA}`);
+      
+      if (isPWA) {
         this.markAsInstalled();
       }
-
-      return isInPWA;
+      
+      return isPWA;
     } catch (error) {
       console.error('Error checking if running as PWA:', error);
       return false;
@@ -222,6 +290,7 @@ export class PwaService {
   }
 
   dismissPrompt() {
+    // Simply update the store value to control component visibility
     showPwaInstallPrompt.set(false);
   }
 }
