@@ -446,6 +446,7 @@
     animation: gentle-float 3s ease-in-out infinite;
     animation-delay: 2.5s;
     transform: translateY(0);
+    opacity: 1;
   }
   
   .icon-container:focus, 
@@ -474,15 +475,19 @@
     transition: all 0.3s ease;
     user-select: none;
     -webkit-user-drag: none;
+    animation: grow-ghost 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    transform-origin: center center;
   }
   
-  /* Stack layers correctly */
+  /* Stack layers correctly with staggered animations */
   .icon-bg {
     z-index: 1; /* Bottom layer */
+    animation-delay: 0s;
   }
   
   .icon-base {
     z-index: 2; /* Middle layer */
+    animation-delay: 0.15s;
   }
   
   .icon-eyes {
@@ -491,6 +496,7 @@
     transition: transform 0.08s ease-out; /* More natural blink timing */
     will-change: transform; /* GPU acceleration hint */
     transform: translateZ(0); /* Force GPU rendering */
+    animation-delay: 0.3s;
   }
   
   /* Hover effects */
@@ -704,6 +710,26 @@
     25% { filter: drop-shadow(0 0 6px rgba(255, 141, 60, 0.8)) drop-shadow(0 0 10px rgba(255, 249, 73, 0.7)); }
     50% { filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 9px rgba(53, 222, 255, 0.7)); }
     75% { filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.8)) drop-shadow(0 0 9px rgba(255, 61, 127, 0.6)); }
+  }
+  
+  @keyframes grow-ghost {
+    0% { 
+      transform: scale(0); 
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    70% {
+      transform: scale(1.1);
+    }
+    85% {
+      transform: scale(0.95);
+    }
+    100% { 
+      transform: scale(1);
+      opacity: 1;
+    }
   }
   
   /* Media queries for larger screens */
