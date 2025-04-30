@@ -21,7 +21,7 @@
 	let eyePositionY = 0; // For vertical eye tracking: -1 to 1
 	let doingSpecialAnimation = false; // For rare spin animation (easter egg)
 	let currentTheme = 'peach';
-	let bgImageSrc = '/assets/talktype-icon-bg-gradient.svg';
+	let bgImageSrc = '/talktype-icon-bg-gradient.svg';
 
 	// Mouse tracking
 	let ghostElement = null; // Reference to the container element
