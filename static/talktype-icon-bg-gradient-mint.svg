@@ -9,7 +9,7 @@
       <stop offset="100%" stop-color="#a3e635" />
     </linearGradient>
     <style>
-      /* Synchronize all animations to multiples of 5s for better alignment */
+      /* Synchronized with peach animations for consistency */
       @keyframes mintShimmer {
         0% { opacity: 1.0; }
         50% { opacity: 0.6; }
@@ -23,15 +23,15 @@
         }
         20% { 
           filter: hue-rotate(0deg) saturate(1.5) brightness(1.15);
-          transform: scale(1.01);
+          transform: scale(1.005);
         }
         50% { 
           filter: hue-rotate(15deg) saturate(1.8) brightness(1.2);
-          transform: scale(1.02);
+          transform: scale(1.012);
         }
         80% { 
           filter: hue-rotate(0deg) saturate(1.5) brightness(1.15);
-          transform: scale(1.01);
+          transform: scale(1.005);
         }
         100% { 
           filter: hue-rotate(-15deg) saturate(1.3) brightness(1);
@@ -123,22 +123,22 @@
           y2: 100%;
         }
         25% {
-          x1: 10%;
-          y1: 5%;
-          x2: 90%;
-          y2: 98%;
+          x1: 3%;
+          y1: 1%;
+          x2: 97%;
+          y2: 101%;
         }
         50% {
-          x1: 15%;
-          y1: 10%;
-          x2: 85%;
-          y2: 90%;
+          x1: 4%;
+          y1: 3%;
+          x2: 96%;
+          y2: 98%;
         }
         75% {
-          x1: 5%;
-          y1: 15%;
-          x2: 95%;
-          y2: 85%;
+          x1: 1%;
+          y1: 3%;
+          x2: 99%;
+          y2: 97%;
         }
         100% {
           x1: 0%;
@@ -149,13 +149,13 @@
       }
       
       #mintGradient {
-        animation: mintGradientShift 5s infinite ease-in-out;
+        animation: mintGradientShift 12s infinite ease-in-out;
       }
       
       #ghost-shape {
         animation: 
           mintShimmer 5s infinite ease-in-out,
-          mintFlow 5s infinite cubic-bezier(0.4, 0, 0.6, 1);
+          mintFlow 9s infinite cubic-bezier(0.4, 0, 0.6, 1);
         transform-origin: center bottom;
       }
       

@@ -9,31 +9,70 @@
       <stop offset="100%" stop-color="#FF3D7F" /> <!-- Back to Red/Pink -->
     </linearGradient>
     <style>
-      @keyframes rainbowPulse {
+      @keyframes shimmer {
+        0% { opacity: 1.0; }
+        50% { opacity: 0.88; }
+        100% { opacity: 1.0; }
+      }
+      
+      @keyframes rainbowFlow {
         0% { 
-          filter: saturate(1.4) brightness(1.15) drop-shadow(0 0 8px rgba(255, 61, 127, 0.4)); 
-          transform: scale(1.01);
+          filter: saturate(1.4) brightness(1.15);
+          transform: scale(1.0);
         }
         20% { 
-          filter: saturate(1.6) brightness(1.18) drop-shadow(0 0 12px rgba(255, 141, 60, 0.5)); 
-          transform: scale(1.015);
+          filter: saturate(1.6) brightness(1.18);
+          transform: scale(1.005);
         }
-        40% { 
-          filter: saturate(1.7) brightness(1.22) drop-shadow(0 0 15px rgba(255, 249, 73, 0.5)); 
-          transform: scale(1.02);
-        }
-        60% { 
-          filter: saturate(1.7) brightness(1.25) drop-shadow(0 0 12px rgba(77, 255, 96, 0.5)); 
-          transform: scale(1.025);
+        50% { 
+          filter: saturate(1.7) brightness(1.22);
+          transform: scale(1.012);
         }
         80% { 
-          filter: saturate(1.6) brightness(1.2) drop-shadow(0 0 15px rgba(53, 222, 255, 0.6)); 
-          transform: scale(1.02);
+          filter: saturate(1.6) brightness(1.2);
+          transform: scale(1.005);
         }
         100% { 
-          filter: saturate(1.4) brightness(1.15) drop-shadow(0 0 8px rgba(159, 122, 255, 0.5)); 
-          transform: scale(1.01);
+          filter: saturate(1.4) brightness(1.15);
+          transform: scale(1.0);
         }
+      }
+      
+      @keyframes gradientShift {
+        0% {
+          x1: 0%;
+          y1: 0%;
+          x2: 100%;
+          y2: 100%;
+        }
+        25% {
+          x1: 3%;
+          y1: 1%;
+          x2: 97%;
+          y2: 101%;
+        }
+        50% {
+          x1: 4%;
+          y1: 3%;
+          x2: 96%;
+          y2: 98%;
+        }
+        75% {
+          x1: 1%;
+          y1: 3%;
+          x2: 99%;
+          y2: 97%;
+        }
+        100% {
+          x1: 0%;
+          y1: 0%;
+          x2: 100%;
+          y2: 100%;
+        }
+      }
+      
+      #rainbowGradient {
+        animation: gradientShift 12s infinite ease-in-out;
       }
     </style>
   </defs>
