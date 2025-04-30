@@ -1,0 +1,80 @@
+/* GHOST THEME DEFINITIONS
+   This file contains all theme-specific variables for the ghost component.
+   Each theme has its own set of gradient colors and glow effects.
+*/
+
+/* Base ghost variables (shared across themes) */
+:root {
+  /* Animation timing variables */
+  --ghost-bg-delay: 0ms;
+  --ghost-outline-delay: 150ms;
+  --ghost-eyes-delay: 300ms;
+  
+  /* Base animation durations */
+  --ghost-entrance-duration: 1.8s;
+  --ghost-float-duration: 3s;
+  --ghost-wobble-duration: 0.6s;
+  
+  /* Transition settings */
+  --ghost-theme-transition: 0.3s ease;
+}
+
+/* Peach Theme (Default) */
+.theme-peach {
+  /* Gradient colors */
+  --ghost-peach-start: #ff60e0;
+  --ghost-peach-mid1: #ff82ca;
+  --ghost-peach-mid2: #ff9a85;
+  --ghost-peach-mid3: #ffb060;
+  --ghost-peach-end: #ffcf40;
+  
+  /* Glow effect colors */
+  --ghost-glow-primary: rgba(255, 120, 170, 0.95);
+  --ghost-glow-secondary: rgba(255, 180, 215, 0.9);
+  --ghost-glow-tertiary: rgba(255, 220, 235, 0.8);
+}
+
+/* Mint Theme */
+.theme-mint {
+  /* Gradient colors */
+  --ghost-mint-start: #0ac5ef;
+  --ghost-mint-mid1: #22d3ed;
+  --ghost-mint-mid2: #2dd4bf;
+  --ghost-mint-mid3: #4ade80;
+  --ghost-mint-end: #a3e635;
+  
+  /* Glow effect colors */
+  --ghost-glow-primary: rgba(0, 220, 150, 0.95);
+  --ghost-glow-secondary: rgba(100, 255, 210, 0.9);
+  --ghost-glow-tertiary: rgba(160, 255, 230, 0.8);
+}
+
+/* Bubblegum Theme */
+.theme-bubblegum {
+  /* Gradient colors */
+  --ghost-bubblegum-start: #c026d3;
+  --ghost-bubblegum-mid1: #a855f7;
+  --ghost-bubblegum-mid2: #8b5cf6;
+  --ghost-bubblegum-mid3: #6366f1;
+  --ghost-bubblegum-end: #3b82f6;
+  
+  /* Glow effect colors */
+  --ghost-glow-primary: rgba(140, 80, 255, 0.95);
+  --ghost-glow-secondary: rgba(180, 120, 255, 0.9);
+  --ghost-glow-tertiary: rgba(210, 180, 255, 0.8);
+}
+
+/* Rainbow Theme */
+.theme-rainbow {
+  /* Gradient base colors */
+  --ghost-rainbow-start: #ff0080;
+  --ghost-rainbow-mid1: #ff8c00;
+  --ghost-rainbow-mid2: #ffed00;
+  --ghost-rainbow-mid3: #00ff80;
+  --ghost-rainbow-end: #00bfff;
+  
+  /* Glow effect colors - these will be animated */
+  --ghost-glow-primary: var(--ghost-rainbow-start);
+  --ghost-glow-secondary: rgba(255, 140, 200, 0.9);
+  --ghost-glow-tertiary: rgba(255, 200, 230, 0.8);
+}
