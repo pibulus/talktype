@@ -21,7 +21,7 @@
   let eyePositionY = 0; // For vertical eye tracking: -1 to 1
   let doingSpecialAnimation = false; // For rare spin animation (easter egg)
   let currentTheme = 'peach';
-  let bgImageSrc = '/talktype-icon-bg-gradient.svg';
+  let bgImageSrc = '/assets/talktype-icon-bg-gradient.svg';
   
   // Mouse tracking
   let ghostElement = null; // Reference to the container element
@@ -32,19 +32,21 @@
     if (typeof document !== 'undefined') {
       updateTheme();
       
-      // Listen for theme changes
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.attributeName === 'data-theme') {
-            updateTheme();
-          }
+      // Listen for theme changes, but add a short delay for initialization
+      setTimeout(() => {
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'data-theme') {
+              updateTheme();
+            }
+          });
         });
-      });
-      
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['data-theme']
-      });
+        
+        observer.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['data-theme']
+        });
+      }, 50);
       
       // Start greeting animation
       setTimeout(() => {
@@ -178,16 +180,16 @@
       
       switch(currentTheme) {
         case 'mint':
-          bgImageSrc = '/talktype-icon-bg-gradient-mint.svg';
+          bgImageSrc = '/assets/talktype-icon-bg-gradient-mint.svg';
           break;
         case 'bubblegum':
-          bgImageSrc = '/talktype-icon-bg-gradient-bubblegum.svg';
+          bgImageSrc = '/assets/talktype-icon-bg-gradient-bubblegum.svg';
           break;
         case 'rainbow':
-          bgImageSrc = '/talktype-icon-bg-gradient-rainbow.svg';
+          bgImageSrc = '/assets/talktype-icon-bg-gradient-rainbow.svg';
           break;
         default: // Default to peach
-          bgImageSrc = '/talktype-icon-bg-gradient.svg';
+          bgImageSrc = '/assets/talktype-icon-bg-gradient.svg';
           break;
       }
     }

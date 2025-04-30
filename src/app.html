@@ -7,6 +7,14 @@
 		<link rel="icon" href="%sveltekit.assets%/favicon-light.png" media="(prefers-color-scheme: light)" />
 		<link rel="icon" href="%sveltekit.assets%/favicon-dark.png" media="(prefers-color-scheme: dark)" />
 		
+		<!-- Preload theme assets to prevent flashing -->
+		<link rel="preload" href="%sveltekit.assets%/assets/talktype-icon-bg-gradient.svg" as="image" type="image/svg+xml" />
+		<link rel="preload" href="%sveltekit.assets%/assets/talktype-icon-bg-gradient-mint.svg" as="image" type="image/svg+xml" />
+		<link rel="preload" href="%sveltekit.assets%/assets/talktype-icon-bg-gradient-bubblegum.svg" as="image" type="image/svg+xml" />
+		<link rel="preload" href="%sveltekit.assets%/assets/talktype-icon-bg-gradient-rainbow.svg" as="image" type="image/svg+xml" />
+		<link rel="preload" href="%sveltekit.assets%/assets/talktype-icon-base.svg" as="image" type="image/svg+xml" />
+		<link rel="preload" href="%sveltekit.assets%/assets/talktype-icon-eyes.svg" as="image" type="image/svg+xml" />
+		
 		<!-- Apple touch icons for all device sizes -->
 		<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
 		<link rel="apple-touch-icon" sizes="152x152" href="%sveltekit.assets%/icons/icon-152x152.png" />
@@ -63,6 +71,14 @@
 				} else {
 					// Default to peach if no theme is saved
 					document.documentElement.setAttribute('data-theme', 'peach');
+					localStorage.setItem('talktype-vibe', 'peach');
+				}
+				// Set initialization flag to prevent duplicate theme application
+				window.themeInitialized = true;
+				
+				// Force reflow to ensure theme is applied before content renders
+				if (typeof document !== 'undefined') {
+					void document.documentElement.offsetWidth;
 				}
 			}
 		</script>

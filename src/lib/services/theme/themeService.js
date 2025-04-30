@@ -4,6 +4,7 @@ export class ThemeService {
   constructor() {
     this.storageKey = 'talktype-vibe';
     this.defaultTheme = 'peach';
+    this.initialized = false;
   }
 
   getCurrentTheme() {
@@ -21,13 +22,33 @@ export class ThemeService {
   initializeTheme() {
     if (!browser) return;
     
+    // Check if theme was already initialized by the inline script
+    if (typeof window !== 'undefined' && window.themeInitialized) {
+      this.initialized = true;
+      return;
+    }
+    
+    // Only initialize if not already done
+    if (this.initialized) return;
+    
     const savedTheme = localStorage.getItem(this.storageKey);
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    
     if (!savedTheme) {
       localStorage.setItem(this.storageKey, this.defaultTheme);
-      document.documentElement.setAttribute('data-theme', this.defaultTheme);
-    } else {
+      if (currentTheme !== this.defaultTheme) {
+        document.documentElement.setAttribute('data-theme', this.defaultTheme);
+      }
+    } else if (currentTheme !== savedTheme) {
       document.documentElement.setAttribute('data-theme', savedTheme);
     }
+    
+    // Force browser reflow to ensure theme is applied immediately
+    if (typeof document !== 'undefined') {
+      void document.documentElement.offsetWidth;
+    }
+    
+    this.initialized = true;
   }
 }
 

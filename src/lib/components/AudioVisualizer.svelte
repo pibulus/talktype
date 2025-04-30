@@ -272,19 +272,6 @@
 
 	// ===== LIFECYCLE HOOKS =====
 	onMount(() => {
-		// Check if rainbow theme is active and apply the animation
-		if (typeof window !== 'undefined') {
-			// Check for theme in localStorage
-			const currentTheme = localStorage.getItem('talktype-vibe');
-			if (currentTheme) {
-				// Apply the theme attribute to the document root for CSS targeting
-				document.documentElement.setAttribute('data-theme', currentTheme);
-			} else {
-				// Default to peach theme if none is set
-				document.documentElement.setAttribute('data-theme', 'peach');
-				localStorage.setItem('talktype-vibe', 'peach');
-			}
-		}
 
 		// Initialize visualizer
 		if (useFallbackVisualizer) {

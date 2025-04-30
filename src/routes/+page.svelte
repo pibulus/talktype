@@ -186,9 +186,6 @@
 
   // Component lifecycle
   onMount(() => {
-    // Initialize theme
-    themeService.initializeTheme();
-
       // No longer need the document event listener as we now use Svelte events
 
     // Pre-load the SettingsModal component after a short delay
