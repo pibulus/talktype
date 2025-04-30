@@ -617,15 +617,18 @@
 
 	/* Rainbow animation for ghost svg */
 	.rainbow-animated {
-		animation: rainbowFlow 7s linear infinite;
+		animation: 
+			grow-ghost 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+			rainbowFlow 9s cubic-bezier(0.4, 0, 0.6, 1) 2s infinite;
 		filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
-		transform-origin: center center;
+		transform-origin: center bottom;
 	}
 
 	.icon-container:hover .rainbow-animated {
 		animation:
-			rainbowFlow 4.5s linear infinite,
-			sparkle 2s ease-in-out infinite;
+			grow-ghost 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+			rainbowFlow 6s cubic-bezier(0.4, 0, 0.6, 1) 2s infinite,
+			sparkle 2s ease-in-out 2s infinite;
 		filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
 	}
 
@@ -777,11 +780,25 @@
 	}
 
 	@keyframes rainbowFlow {
-		0% {
+		0% { 
 			filter: hue-rotate(0deg) saturate(1.4) brightness(1.15);
+			transform: scale(1.0);
 		}
-		100% {
-			filter: hue-rotate(360deg) saturate(1.5) brightness(1.2);
+		20% { 
+			filter: hue-rotate(72deg) saturate(1.6) brightness(1.18);
+			transform: scale(1.005);
+		}
+		50% { 
+			filter: hue-rotate(180deg) saturate(1.7) brightness(1.22);
+			transform: scale(1.012);
+		}
+		80% { 
+			filter: hue-rotate(288deg) saturate(1.6) brightness(1.2);
+			transform: scale(1.005);
+		}
+		100% { 
+			filter: hue-rotate(360deg) saturate(1.4) brightness(1.15);
+			transform: scale(1.0);
 		}
 	}
 
