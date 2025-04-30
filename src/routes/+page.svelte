@@ -18,6 +18,7 @@
     deferredInstallPrompt, 
     showPwaInstallPrompt 
   } from '$lib/services/pwa';
+  import { isRecording as recordingStore } from '$lib/services';
   
   // Import modals lazily
   import { AboutModal, ExtensionModal, IntroModal } from '$lib/components/modals';
@@ -35,9 +36,10 @@
 
   // PWA Install Prompt Logic is now handled by pwaService
 
-  // --- Minimal Ghost State Variables ---
-  let isRecording = false;
+  // --- Ghost State Variables ---
+  // Use the store value directly with $ prefix
   let isProcessing = false;
+  let ghostAnimationState = 'idle'; // Possible values: 'idle', 'wobble-start', 'wobble-stop'
 
   // Create a reusable Svelte action for handling clicks outside an element
   function clickOutside(node, { enabled = true, callback = () => {} }) {
@@ -74,17 +76,15 @@
 
   // --- MINIMAL Event Handlers - Just State Updates ---
   function handleRecordingStart() {
-    isRecording = true;
     isProcessing = false;
   }
 
   function handleRecordingStop() {
-    isRecording = false;
+    // No need to set isRecording - it's handled by the store
   }
 
   function handleProcessingStart() {
     isProcessing = true;
-    isRecording = false;
   }
 
   function handleProcessingEnd() {
@@ -106,9 +106,45 @@
   // Function to trigger ghost click
   function triggerGhostClick() {
     debug('Triggering ghost click after intro modal close');
-    // Dispatch the event manually as if the ghost was clicked
-    const event = new CustomEvent('togglerecording');
-    document.dispatchEvent(event);
+    // Simply call handleToggleRecording which will set animation state and handle recording
+    handleToggleRecording();
+  }
+  
+  // Handle the toggle recording action
+  function handleToggleRecording() {
+    debug('Toggle recording triggered by Ghost component');
+    
+    // Set animation state based on current recording state from the store
+    if ($recordingStore) {
+      // Set animation state to wobble-stop
+      ghostAnimationState = 'wobble-stop';
+      
+      // Call stopRecording if component is available
+      if (audioToTextComponent) {
+        debug('Calling stopRecording()');
+        audioToTextComponent.stopRecording();
+      } else {
+        debug('audioToTextComponent not available');
+      }
+    } else {
+      // Set animation state to wobble-start
+      ghostAnimationState = 'wobble-start';
+      
+      // Preload model and start recording if component is available
+      if (audioToTextComponent) {
+        // Preload model if user clicks before hovering
+        preloadSpeechModel();
+        debug('Calling startRecording()');
+        audioToTextComponent.startRecording();
+      } else {
+        debug('audioToTextComponent not available');
+      }
+    }
+    
+    // Reset animation state after a short delay
+    setTimeout(() => {
+      ghostAnimationState = 'idle';
+    }, 700); // Slightly longer than animation duration
   }
 
   // Function to preload speech model for faster initial response
@@ -144,36 +180,15 @@
     }
   }
 
-  // Variable to track the ghost icon event listener for cleanup (Now for document listener)
-  let toggleRecordingListenerCleanup = null;
+  // Reference to the Ghost component
+  let ghostComponent;
 
   // Component lifecycle
   onMount(() => {
     // Initialize theme
     themeService.initializeTheme();
 
-    // Listen for toggle event from Ghost component
-    const handleToggleRecording = () => {
-      debug('togglerecording event received from Ghost component');
-      if (audioToTextComponent) {
-        if (isRecording) {
-          debug('Listener: Calling stopRecording()');
-          audioToTextComponent.stopRecording();
-        } else {
-          // Preload model if user clicks before hovering
-          preloadSpeechModel();
-          debug('Listener: Calling startRecording()');
-          audioToTextComponent.startRecording();
-        }
-      } else {
-        debug('Listener: audioToTextComponent not available');
-      }
-    };
-    document.addEventListener('togglerecording', handleToggleRecording);
-    toggleRecordingListenerCleanup = () => {
-      debug('Cleaning up togglerecording listener');
-      document.removeEventListener('togglerecording', handleToggleRecording);
-    };
+      // No longer need the document event listener as we now use Svelte events
 
     // Pre-load the SettingsModal component after a short delay
     setTimeout(async () => {
@@ -236,11 +251,6 @@
 
     return () => {
       debug('Component unmounting, clearing timeouts and event listeners');
-      
-      // Clean up the document event listener
-      if (toggleRecordingListenerCleanup) {
-        toggleRecordingListenerCleanup();
-      }
     };
   });
 
@@ -351,8 +361,11 @@
   <!-- Ghost Icon using the component -->
   <div class="ghost-icon-wrapper mb-4 h-36 w-36 sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64">
     <Ghost
-      {isRecording}
+      bind:this={ghostComponent}
+      isRecording={$recordingStore}
       {isProcessing}
+      animationState={ghostAnimationState}
+      on:toggleRecording={handleToggleRecording}
     />
   </div>
 
@@ -367,6 +380,7 @@
       bind:this={audioToTextComponent}
       isModelPreloaded={speechModelPreloaded}
       onPreloadRequest={preloadSpeechModel}
+      ghostComponent={ghostComponent}
       on:transcriptionCompleted={handleTranscriptionCompleted}
       on:recordingstart={handleRecordingStart}
       on:recordingstop={handleRecordingStop}

@@ -25,6 +25,15 @@ export class AudioStateManager {
   setState(newState, options = {}) {
     const oldState = this.state;
     
+    // Special case for STOPPING state to force state transition
+    if (newState === AudioStates.STOPPING) {
+      // Force state change even if already stopping
+      this.state = newState;
+      this.error = options.error || null;
+      this.notifyListeners(oldState, newState, this.error);
+      return;
+    }
+    
     if (oldState === newState) {
       return;
     }
@@ -59,5 +68,10 @@ export class AudioStateManager {
         console.error('[AudioStateManager] Error in state change listener:', err);
       }
     });
+  }
+  
+  // Helper method to check if recording 
+  isRecording() {
+    return this.state === AudioStates.RECORDING;
   }
 }

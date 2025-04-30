@@ -246,18 +246,18 @@ export class AudioService {
 
   async stopRecording() {
     return new Promise((resolve) => {
-      if (this.stateManager.getState() !== AudioStates.RECORDING) {
-        resolve(null);
-        return;
-      }
+      // Force recording state update to ensure UI consistency
+      audioActions.updateState(AudioStates.STOPPING);
       
+      // Always notify store that recording is stopping regardless of internal state
+      audioActions.updateState(AudioStates.STOPPING);
+      
+      // Check recorder state - attempt to stop even if internal state doesn't match
       if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
         this.stateManager.setState(AudioStates.IDLE);
         resolve(null);
         return;
       }
-
-      this.stateManager.setState(AudioStates.STOPPING);
 
       // Store the audio chunks for creating blob after recording stops
       const currentAudioChunks = [...this.audioChunks];
@@ -281,6 +281,9 @@ export class AudioService {
         this.audioChunks = [];
         this.mediaRecorder = null;
         
+        // Ensure state is properly reset
+        this.stateManager.setState(AudioStates.IDLE);
+        
         resolve(audioBlob);
       };
 
@@ -297,6 +300,8 @@ export class AudioService {
           this.stream = null;
         }
         
+        // Force state reset on error
+        this.stateManager.setState(AudioStates.IDLE);
         resolve(null);
       }
     });

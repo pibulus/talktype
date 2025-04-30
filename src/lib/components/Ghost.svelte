@@ -1,10 +1,14 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
   
-  // Props to communicate recording/processing state ONLY
-  // These don't control animation directly - just tell us when we can blink
+  // Props to communicate state
   export let isRecording = false;
   export let isProcessing = false;
+  export let animationState = 'idle'; // 'idle', 'wobble-start', 'wobble-stop'
+  
+  // Custom events
+  import { createEventDispatcher } from 'svelte';
+  const dispatch = createEventDispatcher();
   
   // Local state
   let blinkTimeoutId = null;
@@ -73,12 +77,11 @@
   
   // Greeting animation
   function greetingAnimation() {
-    // Add a quick greeting wobble with faster, snappier blinks
-    isWobbling = true;
-    wobbleTimeoutId = setTimeout(() => {
-      isWobbling = false;
-      
-      // Natural double blink with good vibe
+    // Use the force wobble animation for greeting
+    forceWobble();
+    
+    // Then do natural double blink with good vibe after wobble completes
+    setTimeout(() => {
       eyesClosed = true;
       setTimeout(() => {
         eyesClosed = false;
@@ -92,7 +95,7 @@
           }, 150); // More natural close time
         }, 180); // Better pause between blinks
       }, 150); // More natural open time
-    }, 600); // Short initial wobble
+    }, 600); // Wait for wobble to complete
   }
   
   // Regular ambient blinking
@@ -256,24 +259,80 @@
   
   // Dispatch toggle recording event when clicked
   function handleClick() {
-    // Directly apply wobble class without relying on reactive statements
-    // This is absolutely critical for it to work consistently
-    forceWobble();
-    
-    // Dispatch event to let page know to toggle recording
-    if (typeof document !== 'undefined') {
-      console.log('👻 Ghost clicked - dispatching togglerecording event');
-      const event = new CustomEvent('togglerecording');
-      document.dispatchEvent(event);
+    // Only dispatch the event - parent will handle animation state
+    console.log('👻 Ghost clicked - dispatching toggleRecording event');
+    dispatch('toggleRecording');
+  }
+  
+  // Public methods to expose animation controls
+  export function pulse() {
+    // Add subtle pulse animation
+    if (ghostElement) {
+      ghostElement.classList.add('ghost-pulse');
+      setTimeout(() => {
+        ghostElement.classList.remove('ghost-pulse');
+      }, 600); // Pulse duration
     }
   }
   
-  // Separate function to force wobble animation that can be called from anywhere
-  function forceWobble() {
+  export function startThinking() {
+    // Add thinking hard animation for eyes
+    if (ghostElement) {
+      const eyes = ghostElement.querySelector('.icon-eyes');
+      if (eyes) {
+        eyes.classList.add('blink-thinking-hard');
+      }
+    }
+  }
+  
+  export function stopThinking() {
+    // Remove thinking hard animation
+    if (ghostElement) {
+      const eyes = ghostElement.querySelector('.icon-eyes');
+      if (eyes) {
+        eyes.classList.remove('blink-thinking-hard');
+      }
+    }
+  }
+  
+  export function reactToTranscript(textLength = 0) {
+    // Skip if no element
+    if (!ghostElement) return;
+    
+    const eyes = ghostElement.querySelector('.icon-eyes');
+    if (!eyes) return;
+    
+    if (textLength > 20) {
+      // For longer transcripts, do a "satisfied" double blink
+      setTimeout(() => {
+        eyes.classList.add('blink-once');
+        setTimeout(() => {
+          eyes.classList.remove('blink-once');
+          setTimeout(() => {
+            eyes.classList.add('blink-once');
+            setTimeout(() => {
+              eyes.classList.remove('blink-once');
+            }, 200); // Thinking blink rate
+          }, 200); // Thinking blink rate
+        }, 200); // Thinking blink rate
+      }, 500); // Reaction delay
+    } else if (textLength > 0) {
+      // For short transcripts, just do a single blink
+      setTimeout(() => {
+        eyes.classList.add('blink-once');
+        setTimeout(() => {
+          eyes.classList.remove('blink-once');
+        }, 300); // Single blink duration
+      }, 500); // Reaction delay
+    }
+  }
+  
+  // Function to force wobble animation - works with both direct calls and animation state
+  export function forceWobble(direction = '', isStartRecording = false) {
     // Make sure we're in browser context
     if (typeof window === 'undefined') return;
     
-    console.log('👻 FORCE WOBBLE triggered');
+    console.log('👻 FORCE WOBBLE triggered', isStartRecording ? '(start recording)' : '');
     
     // Force animation restart by setting to false first
     isWobbling = false;
@@ -283,7 +342,7 @@
       void ghostElement.offsetWidth;
     }
     
-    // Now set to true to start animation
+    // Now set to true to start animation 
     isWobbling = true;
     
     // Clear any existing wobble timer
@@ -299,27 +358,31 @@
   let wasRecording = false;
   let wasProcessing = false;
   
-  // Watch for changes in recording/processing state
+  // Watch for animation state changes
   $: {
-    // Note: Add console logging for debugging
-    console.log(`👻 State change: isRecording=${isRecording}, wasRecording=${wasRecording}`);
+    console.log(`👻 Animation state: ${animationState}`);
     
-    // Wobble handling
-    if (isRecording && !wasRecording) {
-      // START wobble
-      console.log('👻 START recording state change detected');
-      forceWobble();
-    } else if (!isRecording && wasRecording) {
-      // STOP wobble  
-      console.log('👻 STOP recording state change detected');
+    // Apply animations based on animation state
+    if (animationState === 'wobble-start') {
+      console.log('👻 START wobble animation');
+      forceWobble('', true);
+    } else if (animationState === 'wobble-stop') {
+      console.log('👻 STOP wobble animation');
       forceWobble();
     }
+  }
+  
+  // Watch for changes in recording/processing state - only for blinking
+  $: {
+    // Track previous state for blink management
+    const wasRecordingTemp = wasRecording;
+    const wasProcessingTemp = wasProcessing;
     
     // Blink handling
     if (isRecording || isProcessing) {
       // Clear any scheduled blinks during recording/processing
       clearTimeout(blinkTimeoutId);
-    } else if ((wasRecording || wasProcessing) && !isRecording && !isProcessing) {
+    } else if ((wasRecordingTemp || wasProcessingTemp) && !isRecording && !isProcessing) {
       // Restart blinking after a delay when we're fully stopped
       setTimeout(() => {
         scheduleBlink();
@@ -472,6 +535,36 @@
   .eyes-closed {
     transform: scaleY(0.05) !important; /* Not too extreme closure */
     transition: transform 0.08s ease-out !important; /* Smoother, more natural close */
+  }
+  
+  /* Single blink animation class */
+  .blink-once {
+    transform: scaleY(0.05) !important;
+    transition: transform 0.08s ease-out !important;
+  }
+  
+  /* Thinking hard animation */
+  .blink-thinking-hard {
+    animation: thinking-hard 1.5s ease-in-out infinite !important;
+  }
+  
+  /* Ghost pulse animation */
+  .ghost-pulse {
+    animation: ghost-pulse 0.6s ease-in-out forwards !important;
+  }
+  
+  @keyframes thinking-hard {
+    0%, 10%, 90%, 100% { transform: scaleY(1); }
+    20%, 25% { transform: scaleY(0.1); }
+    30%, 35% { transform: scaleY(1); }
+    40%, 45% { transform: scaleY(0.1); }
+    50%, 85% { transform: scaleY(1); }
+  }
+  
+  @keyframes ghost-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
   }
   
   /* Rainbow animation for ghost svg */

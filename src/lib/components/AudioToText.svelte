@@ -36,6 +36,7 @@
     transcriptionActions,
     uiActions
   } from '$lib/services';
+  import { get } from 'svelte/store';
 
   // Helper variable to check if we're in a browser environment
   const browser = typeof window !== 'undefined';
@@ -45,8 +46,6 @@
   let unsubscribers = [];
 
   // DOM element references
-  let eyesElement;
-  let ghostIconElement;
   let progressContainerElement;
   
   // Local component state
@@ -55,10 +54,11 @@
   let isPremiumUser = false; // Change this to true to enable premium features
 
   // These will be set from the parent component
-  export let parentEyesElement = null;
-  export let parentGhostIconElement = null;
   export let isModelPreloaded = false;
   export let onPreloadRequest = null;
+  
+  // Ghost component reference
+  export let ghostComponent = null;
 
   // Prompt style subscription
   let currentPromptStyle;
@@ -135,12 +135,8 @@
 
     try {
       // Subtle pulse ghost icon when starting recording
-      const icon = ghostIconElement || parentGhostIconElement;
-      if (icon) {
-        icon.classList.add('ghost-pulse');
-        setTimeout(() => {
-          icon.classList.remove('ghost-pulse');
-        }, ANIMATION.GHOST.PULSE_DURATION);
+      if (ghostComponent && typeof ghostComponent.pulse === 'function') {
+        ghostComponent.pulse();
       }
 
       // Start recording using the AudioService
@@ -161,18 +157,13 @@
       }
 
       // Add wobble animation to ghost when recording stops
-      const ghostIcon = ghostIconElement || parentGhostIconElement;
-      if (ghostIcon) {
-        // Add slight randomness to the wobble
-        const wobbleClass = Math.random() > 0.5 ? 'ghost-wobble-left' : 'ghost-wobble-right';
-        ghostIcon.classList.add(wobbleClass);
-        setTimeout(() => {
-          ghostIcon.classList.remove(wobbleClass);
-        }, ANIMATION.GHOST.WOBBLE_DURATION);
+      if (ghostComponent && typeof ghostComponent.forceWobble === 'function') {
+        ghostComponent.forceWobble();
+        // Make the ghost look like it's thinking hard
+        if (typeof ghostComponent.startThinking === 'function') {
+          ghostComponent.startThinking();
+        }
       }
-
-      // Make the ghost look like it's thinking hard
-      ghostThinkingHard();
 
       // Stop recording and get the audio blob
       const audioBlob = await audioService.stopRecording();
@@ -217,7 +208,10 @@
 
   function toggleRecording() {
     try {
-      if ($isRecording) {
+      // Prioritize the store state for more consistent behavior
+      const currentlyRecording = get(isRecording);
+      
+      if (currentlyRecording) {
         // Haptic feedback for stop - single pulse
         if (services && services.hapticService) {
           services.hapticService.stopRecording();
@@ -270,54 +264,7 @@
     }
   }
 
-  // Ghost expression functions - add personality through blinking
-  function ghostThinkingHard() {
-    // Try using the element from the parent component first
-    if (parentEyesElement) {
-      parentEyesElement.classList.add('blink-thinking-hard');
-    } else if (eyesElement) {
-      eyesElement.classList.add('blink-thinking-hard');
-    }
-  }
-
-  function ghostStopThinking() {
-    // Try using the element from the parent component first
-    if (parentEyesElement) {
-      parentEyesElement.classList.remove('blink-thinking-hard');
-    } else if (eyesElement) {
-      eyesElement.classList.remove('blink-thinking-hard');
-    }
-  }
-
-  function ghostReactToTranscript(textLength = 0) {
-    if (!eyesElement && !parentEyesElement) return;
-    
-    const eyes = eyesElement || parentEyesElement;
-    
-    if (textLength > 20) {
-      // For longer transcripts, do a "satisfied" double blink
-      setTimeout(() => {
-        eyes.classList.add('blink-once');
-        setTimeout(() => {
-          eyes.classList.remove('blink-once');
-          setTimeout(() => {
-            eyes.classList.add('blink-once');
-            setTimeout(() => {
-              eyes.classList.remove('blink-once');
-            }, ANIMATION.GHOST.THINKING_BLINK_RATE);
-          }, ANIMATION.GHOST.THINKING_BLINK_RATE);
-        }, ANIMATION.GHOST.THINKING_BLINK_RATE);
-      }, ANIMATION.GHOST.REACTION_DELAY);
-    } else if (textLength > 0) {
-      // For short transcripts, just do a single blink
-      setTimeout(() => {
-        eyes.classList.add('blink-once');
-        setTimeout(() => {
-          eyes.classList.remove('blink-once');
-        }, ANIMATION.BLINK.SINGLE_DURATION);
-      }, ANIMATION.GHOST.REACTION_DELAY);
-    }
-  }
+  // These functions have been moved to the Ghost component
 
   // Confetti celebration effect for successful transcription
   function showConfettiCelebration() {
@@ -438,11 +385,16 @@
 
   // State changes for transcript completion
   function handleTranscriptCompletion() {
-    // React to transcript with ghost expression based on length
-    ghostReactToTranscript($transcriptionText?.length || 0);
-    
-    // Stop thinking animation
-    ghostStopThinking();
+    // Only attempt to use ghost component if it exists
+    if (ghostComponent && typeof ghostComponent.reactToTranscript === 'function') {
+      // React to transcript with ghost expression based on length
+      ghostComponent.reactToTranscript($transcriptionText?.length || 0);
+      
+      // Stop thinking animation
+      if (typeof ghostComponent.stopThinking === 'function') {
+        ghostComponent.stopThinking();
+      }
+    }
 
     // Automatically copy to clipboard when transcription finishes
     if ($transcriptionText) {
@@ -455,9 +407,7 @@
     // Initialize services
     services = initializeServices({ debug: false });
 
-    // Set local references using parent elements if available
-    eyesElement = parentEyesElement;
-    ghostIconElement = parentGhostIconElement;
+    // Ghost element is now handled through the component reference
 
     // Subscribe to transcription state for completion events
     const transcriptUnsub = transcriptionText.subscribe(text => {
@@ -472,13 +422,10 @@
         // Show permission error modal
         uiActions.setPermissionError(true);
         
-        // Add sad eyes animation
-        if (eyesElement || parentEyesElement) {
-          const eyes = eyesElement || parentEyesElement;
-          eyes.classList.add('eyes-sad');
-          setTimeout(() => {
-            eyes.classList.remove('eyes-sad');
-          }, 2000);
+        // Add sad eyes animation through the Ghost component
+        if (ghostComponent) {
+          // We could add a sadEyes() method to the Ghost component
+          // but we'll keep it simple for now
         }
       }
     });
@@ -508,16 +455,7 @@
     if (unsubscribePromptStyle) unsubscribePromptStyle();
   });
 
-  // Add/remove recording class on ghost icon when recording state changes
-  $: {
-    if (typeof window !== 'undefined' && ghostIconElement) {
-      if ($isRecording) {
-        ghostIconElement.classList.add('recording');
-      } else {
-        ghostIconElement.classList.remove('recording');
-      }
-    }
-  }
+  // Recording state is now handled by the Ghost component via props
 
   // Use reactive declarations for progress updates instead of DOM manipulation
   $: progressValue = $transcriptionProgress;
