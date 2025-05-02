@@ -4,188 +4,379 @@
 
 /* Base animations */
 .ghost-svg {
-  transition: all 0.3s ease;
+	transition: all 0.3s ease;
 }
 
 /* Eye animations */
 .ghost-svg .ghost-eyes {
-  transition: transform 0.08s ease-out; /* More natural blink timing, matching Ghost.svelte */
-  will-change: transform; /* GPU acceleration hint */
-  transform-origin: center center;
+	transition: transform 0.08s ease-out; /* More natural blink timing, matching Ghost.svelte */
+	will-change: transform; /* GPU acceleration hint */
+	transform-origin: center center;
 }
 
 .ghost-svg .ghost-eyes.blinking {
-  transform: scaleY(0.05);
+	transform: scaleY(0.05);
 }
 
 .ghost-svg .ghost-eyes.looking-left {
-  transform: translateX(-4px);
+	transform: translateX(-4px);
 }
 
 .ghost-svg .ghost-eyes.looking-right {
-  transform: translateX(4px);
+	transform: translateX(4px);
 }
 
 .ghost-svg .ghost-eyes.looking-up {
-  transform: translateY(-2px);
+	transform: translateY(-2px);
 }
 
 .ghost-svg .ghost-eyes.looking-down {
-  transform: translateY(2px);
+	transform: translateY(2px);
 }
 
 /* Single and double blink animations */
 .ghost-svg .ghost-eyes.blink-single {
-  animation: blink-single 0.3s ease-out forwards;
+	animation: blink-single 0.3s ease-out forwards;
 }
 
 .ghost-svg .ghost-eyes.blink-double {
-  animation: blink-double 0.68s ease-out forwards;
+	animation: blink-double 0.68s ease-out forwards;
 }
 
 /* The simple blink animation is preserved for direct control */
 .ghost-svg .ghost-eyes.blink-once {
-  transform: scaleY(0.05);
+	transform: scaleY(0.05);
 }
 
 /* Thinking animation from original Ghost.svelte */
 .ghost-svg .ghost-eyes.blink-thinking-hard {
-  animation: thinking-hard 1.5s ease-in-out infinite;
+	animation: thinking-hard 1.5s ease-in-out infinite;
 }
 
 @keyframes blink-single {
-  0%, 100% {
-    transform: scaleY(1);
-  }
-  40%, 60% {
-    transform: scaleY(0.05);
-  }
+	0%,
+	100% {
+		transform: scaleY(1);
+	}
+	40%,
+	60% {
+		transform: scaleY(0.05);
+	}
 }
 
 @keyframes blink-double {
-  0%, 100% {
-    transform: scaleY(1);
-  }
-  20%, 35% {
-    transform: scaleY(0.05);
-  }
-  40%, 55% {
-    transform: scaleY(1);
-  }
-  60%, 75% {
-    transform: scaleY(0.05);
-  }
+	0%,
+	100% {
+		transform: scaleY(1);
+	}
+	20%,
+	35% {
+		transform: scaleY(0.05);
+	}
+	40%,
+	55% {
+		transform: scaleY(1);
+	}
+	60%,
+	75% {
+		transform: scaleY(0.05);
+	}
 }
 
 @keyframes thinking-hard {
-  0%, 10%, 90%, 100% {
-    transform: scaleY(1);
-  }
-  20%, 25% {
-    transform: scaleY(0.1);
-  }
-  30%, 35% {
-    transform: scaleY(1);
-  }
-  40%, 45% {
-    transform: scaleY(0.1);
-  }
-  50%, 85% {
-    transform: scaleY(1);
-  }
+	0%,
+	10%,
+	90%,
+	100% {
+		transform: scaleY(1);
+	}
+	20%,
+	25% {
+		transform: scaleY(0.1);
+	}
+	30%,
+	35% {
+		transform: scaleY(1);
+	}
+	40%,
+	45% {
+		transform: scaleY(0.1);
+	}
+	50%,
+	85% {
+		transform: scaleY(1);
+	}
 }
 
 /* Wobble animations */
 .ghost-svg.wobble-left {
-  animation: ghost-wobble-left 0.6s ease-in-out forwards;
+	animation: ghost-wobble-left 0.6s ease-in-out forwards;
 }
 
 .ghost-svg.wobble-right {
-  animation: ghost-wobble-right 0.6s ease-in-out forwards;
+	animation: ghost-wobble-right 0.6s ease-in-out forwards;
 }
 
 .ghost-svg.spin {
-  animation: ghost-spin 1.5s ease-in-out forwards;
+	animation: ghost-spin 1.5s ease-in-out forwards;
 }
 
 /* Pulse animation */
 .ghost-svg.ghost-pulse {
-  animation: ghost-pulse 0.6s ease-in-out forwards;
+	animation: ghost-pulse 0.6s ease-in-out forwards;
 }
 
 @keyframes ghost-wobble-left {
-  0% {
-    transform: rotate(0deg) scale(1);
-  }
-  25% {
-    transform: rotate(-5deg) scale(1.02);
-  }
-  50% {
-    transform: rotate(3deg) scale(1.01);
-  }
-  75% {
-    transform: rotate(-2deg) scale(1.01);
-  }
-  100% {
-    transform: rotate(0deg) scale(1);
-  }
+	0% {
+		transform: rotate(0deg) scale(1);
+	}
+	25% {
+		transform: rotate(-5deg) scale(1.02);
+	}
+	50% {
+		transform: rotate(3deg) scale(1.01);
+	}
+	75% {
+		transform: rotate(-2deg) scale(1.01);
+	}
+	100% {
+		transform: rotate(0deg) scale(1);
+	}
 }
 
 @keyframes ghost-wobble-right {
-  0% {
-    transform: rotate(0deg) scale(1);
-  }
-  25% {
-    transform: rotate(5deg) scale(1.02);
-  }
-  50% {
-    transform: rotate(-3deg) scale(1.01);
-  }
-  75% {
-    transform: rotate(2deg) scale(1.01);
-  }
-  100% {
-    transform: rotate(0deg) scale(1);
-  }
+	0% {
+		transform: rotate(0deg) scale(1);
+	}
+	25% {
+		transform: rotate(5deg) scale(1.02);
+	}
+	50% {
+		transform: rotate(-3deg) scale(1.01);
+	}
+	75% {
+		transform: rotate(2deg) scale(1.01);
+	}
+	100% {
+		transform: rotate(0deg) scale(1);
+	}
 }
 
 @keyframes ghost-spin {
-  0% {
-    transform: rotate(0deg) scale(1);
-  }
-  50% {
-    transform: rotate(180deg) scale(1.1);
-  }
-  100% {
-    transform: rotate(360deg) scale(1);
-  }
+	0% {
+		transform: rotate(0deg) scale(1);
+	}
+	50% {
+		transform: rotate(180deg) scale(1.1);
+	}
+	100% {
+		transform: rotate(360deg) scale(1);
+	}
 }
 
 @keyframes ghost-pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.05);
+	}
+	100% {
+		transform: scale(1);
+	}
 }
 
 /* Recording state animations */
 .ghost-svg.recording {
-  filter: drop-shadow(0 0 15px rgba(255, 80, 150, 1))
-          drop-shadow(0 0 35px rgba(255, 150, 100, 0.9))
-          drop-shadow(0 0 55px rgba(255, 240, 200, 0.8));
-  animation: recording-pulse 2s ease-in-out infinite;
+	filter: drop-shadow(0 0 15px rgba(255, 80, 150, 1)) drop-shadow(0 0 35px rgba(255, 150, 100, 0.9))
+		drop-shadow(0 0 55px rgba(255, 240, 200, 0.8));
+	animation: recording-pulse 2s ease-in-out infinite;
+}
+
+/* Theme-specific recording classes */
+.ghost-svg.recording.theme-peach {
+	animation: recording-glow-peach 2s ease-in-out infinite;
+}
+
+.ghost-svg.recording.theme-mint {
+	animation: recording-glow-mint 2s ease-in-out infinite;
+}
+
+.ghost-svg.recording.theme-bubblegum {
+	animation: recording-glow-bubblegum 2s ease-in-out infinite;
+}
+
+.ghost-svg.recording.theme-rainbow {
+	animation: rainbow-color-cycle 5s linear infinite;
+}
+
+/* Hover simulation class */
+.ghost-svg.hover-simulation {
+	animation: ghost-hover-sim 1.2s ease-in-out infinite alternate;
+}
+
+/* Rainbow sparkle effect */
+.ghost-svg.theme-rainbow.rainbow-sparkle {
+	animation:
+		sparkle 2s ease-in-out infinite,
+		rainbowFlow 9s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @keyframes recording-pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
+	0%,
+	100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.05);
+	}
+}
+
+/* Growth animation */
+@keyframes grow-ghost {
+	0% {
+		transform: scale(0);
+		opacity: 0;
+	}
+	30% {
+		opacity: 1;
+	}
+	70% {
+		transform: scale(1.1);
+	}
+	85% {
+		transform: scale(0.95);
+	}
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+/* Hover simulation animation */
+@keyframes ghost-hover-sim {
+	0% {
+		transform: scale(1.005) translateY(0);
+		filter: drop-shadow(0 0 8px rgba(249, 168, 212, 0.25));
+	}
+	100% {
+		transform: scale(1.015) translateY(-3px);
+		filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45));
+	}
+}
+
+/* Rainbow sparkle animation */
+@keyframes sparkle {
+	0%,
+	100% {
+		filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7))
+			drop-shadow(0 0 8px rgba(255, 61, 127, 0.6));
+	}
+	25% {
+		filter: drop-shadow(0 0 6px rgba(255, 141, 60, 0.8))
+			drop-shadow(0 0 10px rgba(255, 249, 73, 0.7));
+	}
+	50% {
+		filter: drop-shadow(0 0 6px rgba(77, 255, 96, 0.7)) drop-shadow(0 0 9px rgba(53, 222, 255, 0.7));
+	}
+	75% {
+		filter: drop-shadow(0 0 7px rgba(159, 122, 255, 0.8))
+			drop-shadow(0 0 9px rgba(255, 61, 127, 0.6));
+	}
+}
+
+/* Rainbow flow animation */
+@keyframes rainbowFlow {
+	0% {
+		filter: hue-rotate(0deg) saturate(1.4) brightness(1.15);
+	}
+	20% {
+		filter: hue-rotate(72deg) saturate(1.6) brightness(1.18);
+	}
+	50% {
+		filter: hue-rotate(180deg) saturate(1.7) brightness(1.22);
+	}
+	80% {
+		filter: hue-rotate(288deg) saturate(1.6) brightness(1.2);
+	}
+	100% {
+		filter: hue-rotate(360deg) saturate(1.4) brightness(1.15);
+	}
+}
+
+/* Theme-specific recording glow animations */
+@keyframes recording-glow-peach {
+	0%,
+	5%,
+	95%,
+	100% {
+		filter: drop-shadow(0 0 15px rgba(255, 80, 150, 1))
+			drop-shadow(0 0 35px rgba(255, 150, 100, 0.9)) drop-shadow(0 0 55px rgba(255, 240, 200, 0.8));
+		transform: scale(1);
+	}
+	50% {
+		filter: drop-shadow(0 0 25px rgba(255, 80, 150, 1))
+			drop-shadow(0 0 60px rgba(255, 150, 100, 0.95)) drop-shadow(0 0 90px rgba(255, 240, 200, 0.9));
+		transform: scale(1.05);
+	}
+}
+
+@keyframes recording-glow-mint {
+	0%,
+	5%,
+	95%,
+	100% {
+		filter: drop-shadow(0 0 15px rgba(0, 220, 150, 1))
+			drop-shadow(0 0 35px rgba(100, 255, 210, 0.9)) drop-shadow(0 0 55px rgba(160, 255, 230, 0.8));
+		transform: scale(1);
+	}
+	50% {
+		filter: drop-shadow(0 0 25px rgba(0, 220, 150, 1))
+			drop-shadow(0 0 60px rgba(100, 255, 210, 0.95)) drop-shadow(0 0 90px rgba(160, 255, 230, 0.9));
+		transform: scale(1.05);
+	}
+}
+
+@keyframes recording-glow-bubblegum {
+	0%,
+	5%,
+	95%,
+	100% {
+		filter: drop-shadow(0 0 15px rgba(140, 80, 255, 1))
+			drop-shadow(0 0 35px rgba(180, 120, 255, 0.9)) drop-shadow(0 0 55px rgba(210, 180, 255, 0.8));
+		transform: scale(1);
+	}
+	50% {
+		filter: drop-shadow(0 0 25px rgba(140, 80, 255, 1))
+			drop-shadow(0 0 60px rgba(180, 120, 255, 0.95)) drop-shadow(0 0 90px rgba(210, 180, 255, 0.9));
+		transform: scale(1.05);
+	}
+}
+
+@keyframes rainbow-color-cycle {
+	0%,
+	100% {
+		filter: drop-shadow(0 0 20px rgba(255, 50, 150, 1));
+		transform: scale(1);
+	}
+	16.6% {
+		filter: drop-shadow(0 0 20px rgba(255, 90, 90, 1));
+		transform: scale(1.01);
+	}
+	33.3% {
+		filter: drop-shadow(0 0 20px rgba(255, 180, 80, 1));
+		transform: scale(1.03);
+	}
+	50% {
+		filter: drop-shadow(0 0 20px rgba(255, 230, 100, 1));
+		transform: scale(1.05);
+	}
+	66.6% {
+		filter: drop-shadow(0 0 20px rgba(80, 220, 120, 1));
+		transform: scale(1.03);
+	}
+	83.3% {
+		filter: drop-shadow(0 0 20px rgba(80, 160, 255, 1));
+		transform: scale(1.01);
+	}
 }
