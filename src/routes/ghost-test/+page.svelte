@@ -575,14 +575,16 @@
 		isGeneratingAnimation = true;
 
 		try {
-			const animationData = await animationGenerationService.generateAnimation(animationDescription.trim());
-			
+			const animationData = await animationGenerationService.generateAnimation(
+				animationDescription.trim()
+			);
+
 			// Add to the animations list
 			customAnimations = [...customAnimations, animationData];
-			
+
 			// Clear the input field after successful generation
 			animationDescription = '';
-			
+
 			// Reset any error
 			animationError = '';
 		} catch (error) {
@@ -604,16 +606,16 @@
 		// Apply the new animation
 		try {
 			currentRemoveAnimation = animationGenerationService.applyAnimation(ghostSvg, animation);
-			
+
 			// Update state to reflect the current animation
 			currentAnimation = animation.name;
-			
+
 			// If animation is not infinite, reset after it completes
 			if (animation.iteration !== 'infinite') {
 				const durationMs = animation.duration * 1000;
 				const iterations = typeof animation.iteration === 'number' ? animation.iteration : 1;
 				const totalDuration = durationMs * iterations;
-				
+
 				animationTimeout = setTimeout(() => {
 					if (currentRemoveAnimation) {
 						currentRemoveAnimation();
@@ -763,8 +765,8 @@
 								rows="3"
 								disabled={isGeneratingAnimation}
 							></textarea>
-							<button 
-								on:click={generateAnimation} 
+							<button
+								on:click={generateAnimation}
 								disabled={isGeneratingAnimation || !animationDescription.trim()}
 								class="generate-button"
 							>
@@ -774,23 +776,59 @@
 								<p class="error-message">{animationError}</p>
 							{/if}
 						</div>
-						
+
 						<!-- Custom Animations List -->
 						{#if customAnimations.length > 0}
 							<div class="custom-animations">
 								<h3>Custom Animations</h3>
 								<div class="animation-list">
 									{#each customAnimations as animation}
-										<button 
-											class="animation-button {currentAnimation === animation.name ? 'active' : ''}" 
+										<button
+											class="animation-button {currentAnimation === animation.name ? 'active' : ''}"
 											on:click={() => applyCustomAnimation(animation)}
 										>
-											{animation.name} 
+											{animation.name}
 											<span class="animation-target">({animation.target})</span>
 											<span class="animation-desc">{animation.description}</span>
 										</button>
 									{/each}
 								</div>
+
+								<!-- Code Display Section -->
+								{#if currentAnimation !== 'none' && customAnimations.find((a) => a.name === currentAnimation)}
+									{@const activeAnimation = customAnimations.find(
+										(a) => a.name === currentAnimation
+									)}
+									<div class="animation-code-display">
+										<h4>Animation CSS Code</h4>
+										<div class="code-container">
+											<pre><code
+													>{`.${activeAnimation.name} {
+    animation: ${activeAnimation.name}-keyframes ${activeAnimation.duration}s ${activeAnimation.timing}
+  ${activeAnimation.iteration};
+  }
+
+  @keyframes ${activeAnimation.name}-keyframes {
+    ${activeAnimation.keyframes}
+  }`}</code
+												></pre>
+											<button
+												class="copy-button"
+												on:click={() => {
+													navigator.clipboard.writeText(`.${activeAnimation.name} {
+  animation: ${activeAnimation.name}-keyframes ${activeAnimation.duration}s ${activeAnimation.timing} ${activeAnimation.iteration};
+}
+
+@keyframes ${activeAnimation.name}-keyframes {
+  ${activeAnimation.keyframes}
+}`);
+												}}
+											>
+												Copy
+											</button>
+										</div>
+									</div>
+								{/if}
 							</div>
 						{/if}
 					</div>
@@ -1122,6 +1160,53 @@
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
+	}
+
+	.animation-code-display {
+		margin-top: 1rem;
+		background: #f8f8f8;
+		border-radius: 0.5rem;
+		padding: 1rem;
+		border: 1px solid #e0e0e0;
+	}
+
+	.animation-code-display h4 {
+		font-size: 0.9rem;
+		margin-bottom: 0.5rem;
+		color: #333;
+	}
+
+	.code-container {
+		position: relative;
+		background: #2d2d2d;
+		border-radius: 0.5rem;
+		padding: 1rem;
+		margin-top: 0.5rem;
+		overflow: auto;
+		max-height: 250px;
+	}
+
+	.code-container pre {
+		margin: 0;
+		font-family: 'Courier New', monospace;
+		color: #f8f8f8;
+		font-size: 0.85rem;
+		white-space: pre-wrap;
+	}
+
+	.copy-button {
+		position: absolute;
+		top: 0.5rem;
+		right: 0.5rem;
+		background: rgba(255, 255, 255, 0.1);
+		color: #f8f8f8;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		font-size: 0.75rem;
+		padding: 0.2rem 0.5rem;
+	}
+
+	.copy-button:hover {
+		background: rgba(255, 255, 255, 0.2);
 	}
 
 	.quick-actions {

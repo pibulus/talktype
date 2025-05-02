@@ -4,13 +4,19 @@ import { promptManager } from './promptManager';
 export const animationGenerationService = {
   // Helper function to clean markdown code blocks from response
   _cleanMarkdownResponse(text) {
-    // Check if the response is wrapped in a markdown code block
-    const markdownPattern = /^```(?:json)?\s*([\s\S]*?)```$/;
+    // Check if the response is wrapped in a markdown code block (more flexible pattern)
+    const markdownPattern = /```(?:json)?\s*([\s\S]*?)```/;
     const match = text.match(markdownPattern);
     
     if (match) {
       // Extract the content inside the code block
       return match[1].trim();
+    }
+    
+    // Try to find JSON object anywhere in the text if markdown pattern failed
+    const jsonMatch = text.match(/(\{[\s\S]*\})/);
+    if (jsonMatch) {
+      return jsonMatch[1].trim();
     }
     
     // If no markdown pattern found, return the original text
