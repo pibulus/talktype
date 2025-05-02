@@ -1,0 +1,191 @@
+/* GHOST ANIMATION DEFINITIONS
+   This file contains all animations for the ghost component.
+*/
+
+/* Base animations */
+.ghost-svg {
+  transition: all 0.3s ease;
+}
+
+/* Eye animations */
+.ghost-svg .ghost-eyes {
+  transition: transform 0.08s ease-out; /* More natural blink timing, matching Ghost.svelte */
+  will-change: transform; /* GPU acceleration hint */
+  transform-origin: center center;
+}
+
+.ghost-svg .ghost-eyes.blinking {
+  transform: scaleY(0.05);
+}
+
+.ghost-svg .ghost-eyes.looking-left {
+  transform: translateX(-4px);
+}
+
+.ghost-svg .ghost-eyes.looking-right {
+  transform: translateX(4px);
+}
+
+.ghost-svg .ghost-eyes.looking-up {
+  transform: translateY(-2px);
+}
+
+.ghost-svg .ghost-eyes.looking-down {
+  transform: translateY(2px);
+}
+
+/* Single and double blink animations */
+.ghost-svg .ghost-eyes.blink-single {
+  animation: blink-single 0.3s ease-out forwards;
+}
+
+.ghost-svg .ghost-eyes.blink-double {
+  animation: blink-double 0.68s ease-out forwards;
+}
+
+/* The simple blink animation is preserved for direct control */
+.ghost-svg .ghost-eyes.blink-once {
+  transform: scaleY(0.05);
+}
+
+/* Thinking animation from original Ghost.svelte */
+.ghost-svg .ghost-eyes.blink-thinking-hard {
+  animation: thinking-hard 1.5s ease-in-out infinite;
+}
+
+@keyframes blink-single {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  40%, 60% {
+    transform: scaleY(0.05);
+  }
+}
+
+@keyframes blink-double {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  20%, 35% {
+    transform: scaleY(0.05);
+  }
+  40%, 55% {
+    transform: scaleY(1);
+  }
+  60%, 75% {
+    transform: scaleY(0.05);
+  }
+}
+
+@keyframes thinking-hard {
+  0%, 10%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  20%, 25% {
+    transform: scaleY(0.1);
+  }
+  30%, 35% {
+    transform: scaleY(1);
+  }
+  40%, 45% {
+    transform: scaleY(0.1);
+  }
+  50%, 85% {
+    transform: scaleY(1);
+  }
+}
+
+/* Wobble animations */
+.ghost-svg.wobble-left {
+  animation: ghost-wobble-left 0.6s ease-in-out forwards;
+}
+
+.ghost-svg.wobble-right {
+  animation: ghost-wobble-right 0.6s ease-in-out forwards;
+}
+
+.ghost-svg.spin {
+  animation: ghost-spin 1.5s ease-in-out forwards;
+}
+
+/* Pulse animation */
+.ghost-svg.ghost-pulse {
+  animation: ghost-pulse 0.6s ease-in-out forwards;
+}
+
+@keyframes ghost-wobble-left {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-5deg) scale(1.02);
+  }
+  50% {
+    transform: rotate(3deg) scale(1.01);
+  }
+  75% {
+    transform: rotate(-2deg) scale(1.01);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes ghost-wobble-right {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(5deg) scale(1.02);
+  }
+  50% {
+    transform: rotate(-3deg) scale(1.01);
+  }
+  75% {
+    transform: rotate(2deg) scale(1.01);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes ghost-spin {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes ghost-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Recording state animations */
+.ghost-svg.recording {
+  filter: drop-shadow(0 0 15px rgba(255, 80, 150, 1))
+          drop-shadow(0 0 35px rgba(255, 150, 100, 0.9))
+          drop-shadow(0 0 55px rgba(255, 240, 200, 0.8));
+  animation: recording-pulse 2s ease-in-out infinite;
+}
+
+@keyframes recording-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
