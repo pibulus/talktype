@@ -138,31 +138,31 @@
 		}, delay);
 	}
 
-	// Theme-specific glow colors - extra saturated with morning dew vibe
+	// Theme-specific glow colors - enhanced with peachier and more vibrant colors
 	let glowColors = {
 		peach: {
-			// Extra vibrant peachy pink with sunrise glow
-			primary: 'rgba(255, 120, 170, 0.95)', // More saturated peachy pink (main)
-			secondary: 'rgba(255, 180, 215, 0.9)', // Brighter pink highlight
-			tertiary: 'rgba(255, 220, 235, 0.8)' // Intense morning light glow
+			// Extra peachy pink with warm sunset glow - more saturation
+			primary: 'rgba(255, 128, 170, 0.95)', // More saturated peachy pink (main)
+			secondary: 'rgba(255, 180, 128, 0.9)', // Warmer peach/orange secondary
+			tertiary: 'rgba(255, 210, 160, 0.8)' // Soft golden tertiary glow
 		},
 		mint: {
-			// Super fresh mint with dewy glow
-			primary: 'rgba(50, 245, 175, 0.95)', // More saturated bright mint (main)
-			secondary: 'rgba(110, 255, 200, 0.9)', // Brighter mint highlight
-			tertiary: 'rgba(180, 255, 225, 0.8)' // Intense dewy glow layer
+			// Super fresh candy mint with aqua undertone - more vivid
+			primary: 'rgba(70, 255, 180, 0.95)', // More candy-like mint (main)
+			secondary: 'rgba(120, 255, 210, 0.9)', // Brighter mint highlight
+			tertiary: 'rgba(180, 255, 235, 0.8)' // Aqua-tinted outer glow
 		},
 		bubblegum: {
-			// Purple-blue bubblegum theme (completely different color)
-			primary: 'rgba(170, 120, 255, 0.95)', // Purple-blue main color
-			secondary: 'rgba(200, 160, 255, 0.9)', // Softer purple highlight
-			tertiary: 'rgba(230, 200, 255, 0.8)' // Soft purple glow
+			// Enhanced cotton-candy purple with deeper saturation
+			primary: 'rgba(190, 130, 255, 0.95)', // More vibrant purple main color
+			secondary: 'rgba(220, 160, 255, 0.9)', // Softer purple highlight
+			tertiary: 'rgba(240, 200, 255, 0.8)' // Dreamy outer glow
 		},
 		rainbow: {
-			// Rainbow now uses a special CSS gradient approach
-			primary: 'var(--rainbow-primary, rgba(255, 0, 128, 0.95))',
-			secondary: 'var(--rainbow-secondary, rgba(255, 140, 200, 0.9))',
-			tertiary: 'var(--rainbow-tertiary, rgba(255, 200, 230, 0.8))'
+			// Rainbow gets special golden sparkle treatment
+			primary: 'rgba(255, 215, 0, 0.95)', // Gold/amber main color
+			secondary: 'rgba(255, 245, 200, 0.9)', // Soft gold highlight
+			tertiary: 'rgba(255, 255, 200, 0.8)' // Pale gold outer glow
 		}
 	};
 
@@ -821,6 +821,25 @@
 				drop-shadow(0 0 9px rgba(255, 61, 127, 0.6));
 		}
 	}
+	
+	@keyframes sparkle-effect {
+		0% {
+			filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.7))
+				drop-shadow(0 0 15px rgba(255, 245, 200, 0.5));
+		}
+		33% {
+			filter: drop-shadow(0 0 15px rgba(255, 230, 140, 0.8))
+				drop-shadow(0 0 25px rgba(255, 250, 220, 0.6));
+		}
+		66% {
+			filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9))
+				drop-shadow(0 0 30px rgba(255, 240, 180, 0.7));
+		}
+		100% {
+			filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.7))
+				drop-shadow(0 0 15px rgba(255, 245, 200, 0.5));
+		}
+	}
 
 	@keyframes grow-ghost {
 		0% {
@@ -849,9 +868,39 @@
 				drop-shadow(0 0 15px rgba(255, 156, 243, 0.15));
 		}
 
+		/* Basic hover for all themes */
 		.icon-container:hover {
 			filter: drop-shadow(0 0 25px rgba(249, 168, 212, 0.5))
 				drop-shadow(0 0 35px rgba(255, 156, 243, 0.4));
+		}
+		
+		/* Enhanced theme-specific hovers */
+		.theme-peach:hover {
+			filter: drop-shadow(0 0 20px rgba(255, 128, 170, 0.7))
+				drop-shadow(0 0 35px rgba(255, 180, 128, 0.6))
+				drop-shadow(0 0 50px rgba(255, 210, 160, 0.5)) !important;
+		}
+
+		.theme-mint:hover {
+			filter: drop-shadow(0 0 20px rgba(70, 255, 180, 0.7))
+				drop-shadow(0 0 35px rgba(120, 255, 210, 0.6))
+				drop-shadow(0 0 50px rgba(180, 255, 235, 0.5)) !important;
+		}
+
+		.theme-bubblegum:hover {
+			filter: drop-shadow(0 0 20px rgba(190, 130, 255, 0.7))
+				drop-shadow(0 0 35px rgba(220, 160, 255, 0.6))
+				drop-shadow(0 0 50px rgba(240, 200, 255, 0.5)) !important;
+		}
+
+		.theme-rainbow:hover {
+			filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.7)) 
+				drop-shadow(0 0 35px rgba(255, 245, 200, 0.6))
+				drop-shadow(0 0 50px rgba(255, 255, 200, 0.4)) !important;
+			animation:
+				gentle-float 3s ease-in-out infinite,
+				ghost-hover 1.2s ease-in-out infinite alternate,
+				sparkle-effect 2s infinite alternate !important;
 		}
 	}
 </style>
