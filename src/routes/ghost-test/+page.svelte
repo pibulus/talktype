@@ -1,5 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
+	import { animationGenerationService } from '$lib/services/animationGenerationService';
 
 	// Ghost state
 	let currentTheme = 'peach';
@@ -14,6 +15,13 @@
 	let isRainbowSparkle = false;
 	let useThemeSpecificRecording = true;
 	let eyeTrackingEnabled = false;
+
+	// Animation generation state
+	let animationDescription = '';
+	let isGeneratingAnimation = false;
+	let animationError = '';
+	let customAnimations = [];
+	let currentRemoveAnimation = null;
 
 	// Reference to SVG element
 	let ghostSvg;
@@ -63,6 +71,11 @@
 		// Clean up event listener if enabled
 		if (eyeTrackingEnabled) {
 			document.removeEventListener('mousemove', handleMouseMove);
+		}
+
+		// Clean up custom animations
+		if (currentRemoveAnimation) {
+			currentRemoveAnimation();
 		}
 	});
 
@@ -550,6 +563,70 @@
 			document.removeEventListener('mousemove', handleMouseMove);
 		}
 	}
+
+	// Generate AI animation based on user description
+	async function generateAnimation() {
+		if (!animationDescription.trim()) {
+			animationError = 'Please enter an animation description';
+			return;
+		}
+
+		animationError = '';
+		isGeneratingAnimation = true;
+
+		try {
+			const animationData = await animationGenerationService.generateAnimation(animationDescription.trim());
+			
+			// Add to the animations list
+			customAnimations = [...customAnimations, animationData];
+			
+			// Clear the input field after successful generation
+			animationDescription = '';
+			
+			// Reset any error
+			animationError = '';
+		} catch (error) {
+			console.error('Error generating animation:', error);
+			animationError = 'Failed to generate animation. Please try again.';
+		} finally {
+			isGeneratingAnimation = false;
+		}
+	}
+
+	// Apply a custom animation
+	function applyCustomAnimation(animation) {
+		// Remove any previous animations
+		if (currentRemoveAnimation) {
+			currentRemoveAnimation();
+			currentRemoveAnimation = null;
+		}
+
+		// Apply the new animation
+		try {
+			currentRemoveAnimation = animationGenerationService.applyAnimation(ghostSvg, animation);
+			
+			// Update state to reflect the current animation
+			currentAnimation = animation.name;
+			
+			// If animation is not infinite, reset after it completes
+			if (animation.iteration !== 'infinite') {
+				const durationMs = animation.duration * 1000;
+				const iterations = typeof animation.iteration === 'number' ? animation.iteration : 1;
+				const totalDuration = durationMs * iterations;
+				
+				animationTimeout = setTimeout(() => {
+					if (currentRemoveAnimation) {
+						currentRemoveAnimation();
+						currentRemoveAnimation = null;
+					}
+					currentAnimation = 'none';
+				}, totalDuration + 100); // Add a small buffer
+			}
+		} catch (error) {
+			console.error('Error applying animation:', error);
+			animationError = `Failed to apply animation: ${error.message}`;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -676,6 +753,48 @@
 			<div class="control-grid">
 				<!-- Left Column -->
 				<div class="column">
+					<!-- AI Animation Generator Panel -->
+					<div class="control-section ai-animation-generator">
+						<h2>Generate Custom Animation</h2>
+						<div class="input-container">
+							<textarea
+								bind:value={animationDescription}
+								placeholder="Describe the animation you want in natural language (e.g., 'make the ghost bounce up and down 3 times')"
+								rows="3"
+								disabled={isGeneratingAnimation}
+							></textarea>
+							<button 
+								on:click={generateAnimation} 
+								disabled={isGeneratingAnimation || !animationDescription.trim()}
+								class="generate-button"
+							>
+								{isGeneratingAnimation ? 'Generating...' : 'Generate Animation'}
+							</button>
+							{#if animationError}
+								<p class="error-message">{animationError}</p>
+							{/if}
+						</div>
+						
+						<!-- Custom Animations List -->
+						{#if customAnimations.length > 0}
+							<div class="custom-animations">
+								<h3>Custom Animations</h3>
+								<div class="animation-list">
+									{#each customAnimations as animation}
+										<button 
+											class="animation-button {currentAnimation === animation.name ? 'active' : ''}" 
+											on:click={() => applyCustomAnimation(animation)}
+										>
+											{animation.name} 
+											<span class="animation-target">({animation.target})</span>
+											<span class="animation-desc">{animation.description}</span>
+										</button>
+									{/each}
+								</div>
+							</div>
+						{/if}
+					</div>
+
 					<!-- Quick Actions Panel -->
 					<div class="control-section quick-actions">
 						<h2>Quick Actions</h2>
@@ -828,6 +947,363 @@
 			'Segoe UI',
 			Roboto,
 			sans-serif;
+	}
+
+	h1 {
+		text-align: center;
+		margin-bottom: 2rem;
+		color: #333;
+	}
+
+	.test-container {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		max-height: 95vh;
+	}
+
+	.top-section {
+		display: flex;
+		gap: 1.5rem;
+		position: sticky;
+		top: 0;
+		z-index: 10;
+	}
+
+	.ghost-display {
+		flex: 0 0 auto;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: #f9f9f9;
+		border-radius: 1rem;
+		padding: 2rem;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		width: 35%;
+		min-width: 280px;
+	}
+
+	.ghost-svg {
+		width: 100%;
+		max-width: 200px;
+		height: auto;
+	}
+
+	.state-panel {
+		flex: 1;
+		background: #f9f9f9;
+		border-radius: 1rem;
+		padding: 1.5rem;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		display: flex;
+		flex-direction: column;
+	}
+
+	.state-panel h2 {
+		margin-bottom: 1rem;
+		color: #444;
+		text-align: center;
+		border-bottom: 1px solid #eee;
+		padding-bottom: 0.5rem;
+	}
+
+	.control-panel {
+		background: #f0f0f0;
+		border-radius: 1rem;
+		padding: 1.5rem;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		overflow-y: auto;
+		max-height: 58vh;
+	}
+
+	.control-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1.5rem;
+	}
+
+	.ai-animation-generator {
+		grid-column: span 2;
+		background: #f5f5f5;
+		border-radius: 0.5rem;
+		padding: 1rem;
+		margin-bottom: 1rem;
+	}
+
+	.input-container {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+	}
+
+	textarea {
+		width: 100%;
+		padding: 0.75rem;
+		border: 1px solid #ddd;
+		border-radius: 0.5rem;
+		font-family: inherit;
+		resize: vertical;
+		min-height: 80px;
+	}
+
+	.generate-button {
+		align-self: flex-end;
+		background: #4f46e5;
+		color: white;
+		font-weight: 500;
+		padding: 0.6rem 1.2rem;
+	}
+
+	.generate-button:disabled {
+		background: #a5a5a5;
+		cursor: not-allowed;
+	}
+
+	.error-message {
+		color: #e53e3e;
+		font-size: 0.9rem;
+		margin-top: 0.5rem;
+	}
+
+	.custom-animations {
+		margin-top: 1rem;
+	}
+
+	.custom-animations h3 {
+		font-size: 1rem;
+		margin-bottom: 0.75rem;
+		color: #444;
+	}
+
+	.animation-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		max-height: 150px;
+		overflow-y: auto;
+		padding: 0.5rem;
+		background: rgba(255, 255, 255, 0.7);
+		border-radius: 0.5rem;
+	}
+
+	.animation-button {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 0.5rem 0.75rem;
+		font-size: 0.85rem;
+		background: white;
+		border: 1px solid #ddd;
+		flex: 1 0 calc(33% - 0.5rem);
+		min-width: 120px;
+		max-width: 180px;
+		text-align: center;
+	}
+
+	.animation-button.active {
+		background: #4f46e5;
+		color: white;
+		border-color: #4338ca;
+	}
+
+	.animation-target {
+		font-size: 0.7rem;
+		opacity: 0.7;
+		margin-top: 0.2rem;
+	}
+
+	.animation-desc {
+		font-size: 0.7rem;
+		margin-top: 0.3rem;
+		opacity: 0.8;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+	}
+
+	.quick-actions {
+		grid-column: span 2;
+	}
+
+	.quick-actions .animation-buttons {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+		gap: 0.5rem;
+	}
+
+	.control-section {
+		margin-bottom: 1.5rem;
+		padding-bottom: 1.5rem;
+		border-bottom: 1px solid #ddd;
+	}
+
+	.control-section:last-child {
+		border-bottom: none;
+		margin-bottom: 0;
+		padding-bottom: 0;
+	}
+
+	h2 {
+		font-size: 1.2rem;
+		margin-bottom: 1rem;
+		color: #444;
+	}
+
+	.theme-buttons,
+	.animation-buttons,
+	.eye-position-controls,
+	.blink-controls,
+	.state-controls {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-bottom: 1rem;
+	}
+
+	button {
+		background: #fff;
+		border: 1px solid #ddd;
+		border-radius: 0.5rem;
+		padding: 0.4rem 0.8rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		font-size: 0.9rem;
+	}
+
+	button:hover {
+		background: #f0f0f0;
+		transform: translateY(-1px);
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+
+	button.active {
+		background: #4f46e5;
+		color: white;
+		border-color: #4338ca;
+	}
+
+	.state-display {
+		background: #fff;
+		border-radius: 0.5rem;
+		padding: 1rem;
+	}
+
+	.state-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.5rem;
+	}
+
+	.state-display p {
+		margin: 0.25rem 0;
+		font-size: 0.9rem;
+	}
+
+	/* Scrollbar styling */
+	.control-panel::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	.control-panel::-webkit-scrollbar-track {
+		background: #f1f1f1;
+		border-radius: 4px;
+	}
+
+	.control-panel::-webkit-scrollbar-thumb {
+		background: #ccc;
+		border-radius: 4px;
+	}
+
+	.control-panel::-webkit-scrollbar-thumb:hover {
+		background: #aaa;
+	}
+
+	/* Responsive adjustments */
+	@media (min-width: 1100px) {
+		.test-container {
+			max-width: 85%;
+			margin: 0 auto;
+		}
+
+		.ghost-display {
+			padding: 2.5rem;
+		}
+
+		.ghost-svg {
+			max-width: 220px;
+		}
+	}
+
+	@media (max-width: 950px) {
+		.top-section {
+			flex-direction: column;
+			position: static;
+		}
+
+		.ghost-display {
+			width: 100%;
+			min-width: auto;
+			max-width: 350px;
+			margin: 0 auto;
+		}
+
+		.ghost-svg {
+			max-width: 200px;
+		}
+
+		.state-panel {
+			width: 100%;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.control-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.ai-animation-generator,
+		.quick-actions {
+			grid-column: span 1;
+		}
+
+		.state-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.control-panel {
+			max-height: none;
+			overflow-y: visible;
+		}
+	}
+
+	@media (max-width: 500px) {
+		.container {
+			padding: 1rem;
+		}
+
+		.ghost-display {
+			padding: 1.5rem;
+		}
+
+		.state-panel {
+			padding: 1rem;
+		}
+
+		.control-panel {
+			padding: 1rem;
+		}
+
+		button {
+			padding: 0.3rem 0.6rem;
+			font-size: 0.85rem;
+		}
+
+		h2 {
+			font-size: 1.1rem;
+		}
 	}
 
 	h1 {
