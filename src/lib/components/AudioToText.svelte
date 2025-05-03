@@ -545,5 +545,147 @@
 {/if}
 
 <style>
-	@import '$lib/styles/audioToText.css';
+	/* Main wrapper to ensure proper positioning */
+.main-wrapper {
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+/* Position wrapper to create a stable layout without shifts */
+.position-wrapper {
+	min-height: 150px; /* Ensure there's enough space for content */
+	max-height: calc(100vh - 240px); /* Control max height to prevent overflow */
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	position: relative; /* Ensure proper positioning context */
+	overflow-y: visible; /* Allow overflow without jumping */
+	transition: all 0.3s ease-in-out; /* Smooth transition when content changes */
+	contain: layout; /* Improve layout containment */
+}
+
+/* Content container for transcripts and visualizers */
+.content-container {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	position: relative; /* For absolute positioned children */
+}
+
+/* Wrapper container for consistent max-width across components */
+.wrapper-container {
+	width: 100%;
+}
+
+/* Visualizer container for absolute positioning */
+.visualizer-container {
+	z-index: 10;
+}
+
+/* Common animation for fading elements in */
+.animate-fadeIn {
+	animation: localFadeIn 0.8s ease-out forwards;
+}
+
+@keyframes localFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Screen reader only class */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}
+
+/* Improved focus styles for keyboard navigation */
+:focus-visible {
+	outline: 2px solid #f59e0b;
+	outline-offset: 2px;
+}
+
+/* Apply box-sizing to all elements for consistent layout */
+* {
+	box-sizing: border-box;
+}
+
+/* Mobile-centered container */
+.mobile-centered-container {
+	width: 100%;
+	max-width: 100vw;
+	margin: 0 auto;
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Make the button section sticky to prevent jumping */
+.button-section {
+	position: sticky;
+	top: 0;
+	z-index: 20;
+	padding-bottom: 0.75rem;
+	background: transparent;
+}
+
+/* Media queries for mobile responsiveness */
+@media (max-width: 768px) {
+	.button-container {
+		width: 90%;
+		max-width: 90vw; /* Prevent overflow */
+		margin: 0 auto; /* Center horizontally */
+	}
+
+	/* Adjust spacing for mobile */
+	.position-wrapper {
+		margin-top: 0.5rem;
+		margin-bottom: 5rem; /* More space for footer */
+		padding: 0 8px; /* Add side padding */
+		max-height: calc(100vh - 180px); /* Control height on mobile */
+	}
+
+	/* Make the visualizer more compact on mobile */
+	.visualizer-container {
+		top: -5px;
+		display: flex;
+		justify-content: center;
+		width: 100%;
+	}
+
+	/* Ensure minimum width even on very small screens */
+	.wrapper-container {
+		min-width: 280px;
+		display: flex;
+		justify-content: center;
+	}
+}
+
+/* Even smaller screens */
+@media (max-width: 380px) {
+	/* Ensure proper spacing on tiny screens */
+	.position-wrapper {
+		margin-top: 0.5rem;
+		margin-bottom: 1rem;
+		padding: 0 4px;
+		max-height: calc(100vh - 160px); /* More compact on very small screens */
+	}
+}
 </style>
