@@ -3,6 +3,7 @@
 	import { theme, autoRecord, showSettingsModal, applyTheme, promptStyle } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { PROMPT_STYLES } from '$lib/constants';
+	import TranscriptionStyleSelector from './TranscriptionStyleSelector.svelte';
 
 	// Props for the modal
 	export let closeModal = () => {};
@@ -331,70 +332,10 @@
 			</div>
 
 			<!-- Prompt Style Selection Section -->
-			<div class="mt-1">
-				<h4 class="mb-1 text-sm font-bold text-gray-700">Transcription Style</h4>
-
-				<div class="mb-2 grid grid-cols-3 gap-1.5">
-					{#if promptStyles && promptStyles.length > 0}
-						{#each promptStyles as style}
-							<button
-								class="flex h-full flex-col items-center justify-between rounded-lg border px-1 py-1.5 transition-all duration-200 hover:border-pink-200 {selectedPromptStyle ===
-								style
-									? 'border-pink-300 bg-pink-50/50 shadow-sm'
-									: 'border-pink-100 bg-[#fffdf5]'}"
-								on:click={() => changePromptStyle(style)}
-							>
-								<div class="flex flex-col items-center text-center">
-									<span class="text-sm font-medium leading-tight text-gray-700">
-										{#if style === 'standard'}
-											Refined
-										{:else if style === 'surlyPirate'}
-											Surly Pirate
-										{:else if style === 'leetSpeak'}
-											L33T Sp34k
-										{:else if style === 'sparklePop'}
-											Sparkle Pop
-										{:else if style === 'codeWhisperer'}
-											Code Whisperer
-										{:else if style === 'quillAndInk'}
-											Quill & Ink
-										{:else}
-											{style}
-										{/if}
-									</span>
-									<p class="text-2xs mt-0.5 leading-tight text-gray-500">
-										{#if style === 'standard'}
-											Elegant, professional tone
-										{:else if style === 'surlyPirate'}
-											Pirate lingo & swagger
-										{:else if style === 'leetSpeak'}
-											H4ck3r c0d35p34k
-										{:else if style === 'sparklePop'}
-											OMG!!! Teen vibes!!! 💖
-										{:else if style === 'codeWhisperer'}
-											Structured tech syntax
-										{:else if style === 'quillAndInk'}
-											Victorian literature
-										{:else}
-											Custom style
-										{/if}
-									</p>
-								</div>
-
-								{#if selectedPromptStyle === style}
-									<div
-										class="mt-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-400 text-xs text-white"
-									>
-										✓
-									</div>
-								{/if}
-							</button>
-						{/each}
-					{:else}
-						<div class="text-xs italic text-gray-500">Loading prompt styles...</div>
-					{/if}
-				</div>
-			</div>
+			<TranscriptionStyleSelector 
+					selectedPromptStyle={selectedPromptStyle}
+					changePromptStyle={changePromptStyle}
+				/>
 
 			<!-- Premium Features Section -->
 			<div
