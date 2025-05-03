@@ -1,5 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
+	import '../styles/animations/ghost-glows.css';
 
 	// Props to communicate state
 	export let isRecording = false;
@@ -402,12 +403,10 @@
 
 <button
 	bind:this={ghostElement}
-	class="icon-container theme-{currentTheme} {isRecording ? 'recording' : ''} {isWobbling
-		? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right')
-		: ''} {doingSpecialAnimation ? 'do-special-animation' : ''}"
-	style={isRecording
-		? `filter: drop-shadow(0 0 25px ${currentGlowColors.primary}) drop-shadow(0 0 35px ${currentGlowColors.secondary}) drop-shadow(0 0 45px ${currentGlowColors.tertiary}) !important;`
-		: ''}
+	class="icon-container theme-{currentTheme} 
+		{isRecording ? 'recording ghost-recording-glow-' + currentTheme : ''}
+		{isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''} 
+		{doingSpecialAnimation ? 'do-special-animation' : ''}"
 	on:click={handleClick}
 	on:keydown={(e) => {
 		if (e.key === 'Enter' || e.key === ' ') {
@@ -505,47 +504,16 @@
 		animation-delay: 0s; /* Synchronized with other layers */
 	}
 
-	/* Hover effects */
+	/* Hover effects - basic animation, theme-specific glow added via :hover selector in CSS file */
 	.icon-container:hover,
 	.icon-container:active {
-		filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45))
-			drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
 		animation:
 			gentle-float 3s ease-in-out infinite,
 			ghost-hover 1.2s ease-in-out infinite alternate;
 		animation-delay: 0s, 0s;
 	}
 
-	/* Recording state - theme-specific animations with bobbing */
-	.recording.theme-peach {
-		animation:
-			recording-glow-peach 2s ease-in-out infinite,
-			gentle-float 3s ease-in-out infinite !important;
-		transform: scale(1.03);
-	}
-
-	.recording.theme-mint {
-		animation:
-			recording-glow-mint 2s ease-in-out infinite,
-			gentle-float 3s ease-in-out infinite !important;
-		transform: scale(1.03);
-	}
-
-	.recording.theme-bubblegum {
-		animation:
-			recording-glow-bubblegum 2s ease-in-out infinite,
-			gentle-float 3s ease-in-out infinite !important;
-		transform: scale(1.03);
-	}
-
-	.recording.theme-rainbow {
-		/* Rainbow uses different animation with actual color cycling */
-		animation:
-			rainbow-color-cycle 5s linear infinite,
-			recording-glow-pulse 2s ease-in-out infinite,
-			gentle-float 3s ease-in-out infinite !important;
-		transform: scale(1.03);
-	}
+	/* Recording state styles managed in ghost-glows.css */
 
 	/* Wobble animations */
 	.ghost-wobble-left {
@@ -632,7 +600,7 @@
 		filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
 	}
 
-	/* Animation keyframes */
+	/* Base animations */
 	@keyframes gentle-float {
 		0%,
 		10%,
@@ -654,94 +622,7 @@
 		}
 	}
 
-	/* Theme-specific recording glow animations */
-	@keyframes recording-glow-peach {
-		/* Extra saturated sunrise glow with THREE VISIBLY DISTINCT COLORS */
-		0%,
-		5%,
-		95%,
-		100% {
-			filter: drop-shadow(0 0 15px rgba(255, 80, 150, 1)) /* Bright hot pink - most visible */
-				drop-shadow(0 0 35px rgba(255, 150, 100, 0.9)) /* Orange accent - second layer */
-				drop-shadow(0 0 55px rgba(255, 240, 200, 0.8)); /* Pale yellow glow - outer layer */
-		}
-		50% {
-			filter: drop-shadow(0 0 25px rgba(255, 80, 150, 1)) /* Bright hot pink intensified */
-				drop-shadow(0 0 60px rgba(255, 150, 100, 0.95)) /* Orange accent expanded */
-				drop-shadow(0 0 90px rgba(255, 240, 200, 0.9)); /* Pale yellow expanded */
-		}
-	}
-
-	@keyframes recording-glow-mint {
-		/* Fresh mint with THREE VISIBLY DISTINCT COLORS */
-		0%,
-		5%,
-		95%,
-		100% {
-			filter: drop-shadow(0 0 15px rgba(0, 220, 150, 1)) /* Bright teal/mint - most visible */
-				drop-shadow(0 0 35px rgba(100, 255, 210, 0.9)) /* Lighter mint green - second layer */
-				drop-shadow(0 0 55px rgba(160, 255, 230, 0.8)); /* Very pale mint - outer layer */
-		}
-		50% {
-			filter: drop-shadow(0 0 25px rgba(0, 220, 150, 1)) /* Bright teal/mint intensified */
-				drop-shadow(0 0 60px rgba(100, 255, 210, 0.95)) /* Lighter mint expanded */
-				drop-shadow(0 0 90px rgba(160, 255, 230, 0.9)); /* Pale mint expanded */
-		}
-	}
-
-	@keyframes recording-glow-bubblegum {
-		/* New purple-blue with THREE VISIBLY DISTINCT COLORS */
-		0%,
-		5%,
-		95%,
-		100% {
-			filter: drop-shadow(0 0 15px rgba(140, 80, 255, 1)) /* Rich purple - most visible */
-				drop-shadow(0 0 35px rgba(180, 120, 255, 0.9)) /* Medium purple - second layer */
-				drop-shadow(0 0 55px rgba(210, 180, 255, 0.8)); /* Pale lilac - outer layer */
-		}
-		50% {
-			filter: drop-shadow(0 0 25px rgba(140, 80, 255, 1)) /* Rich purple intensified */
-				drop-shadow(0 0 60px rgba(180, 120, 255, 0.95)) /* Medium purple expanded */
-				drop-shadow(0 0 90px rgba(210, 180, 255, 0.9)); /* Pale lilac expanded */
-		}
-	}
-
-	/* New animation that ACTUALLY cycles through rainbow colors */
-	@keyframes rainbow-color-cycle {
-		0%,
-		100% {
-			filter: drop-shadow(0 0 20px rgba(255, 50, 150, 1)); /* Pink/magenta */
-		}
-		16.6% {
-			filter: drop-shadow(0 0 20px rgba(255, 90, 90, 1)); /* Red */
-		}
-		33.3% {
-			filter: drop-shadow(0 0 20px rgba(255, 180, 80, 1)); /* Orange */
-		}
-		50% {
-			filter: drop-shadow(0 0 20px rgba(255, 230, 100, 1)); /* Yellow */
-		}
-		66.6% {
-			filter: drop-shadow(0 0 20px rgba(80, 220, 120, 1)); /* Green */
-		}
-		83.3% {
-			filter: drop-shadow(0 0 20px rgba(80, 160, 255, 1)); /* Blue */
-		}
-	}
-
-	/* Separate pulsing animation for rainbow theme */
-	@keyframes recording-glow-pulse {
-		0%,
-		5%,
-		95%,
-		100% {
-			filter: drop-shadow(0 0 25px currentColor) drop-shadow(0 0 40px currentColor);
-		}
-		50% {
-			filter: drop-shadow(0 0 35px currentColor) drop-shadow(0 0 60px currentColor)
-				drop-shadow(0 0 90px currentColor);
-		}
-	}
+	/* Pulsing scale animation moved to ghost-glows.css */
 
 	@keyframes ghost-wobble-left {
 		0% {
@@ -821,25 +702,6 @@
 				drop-shadow(0 0 9px rgba(255, 61, 127, 0.6));
 		}
 	}
-	
-	@keyframes sparkle-effect {
-		0% {
-			filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.7))
-				drop-shadow(0 0 15px rgba(255, 245, 200, 0.5));
-		}
-		33% {
-			filter: drop-shadow(0 0 15px rgba(255, 230, 140, 0.8))
-				drop-shadow(0 0 25px rgba(255, 250, 220, 0.6));
-		}
-		66% {
-			filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9))
-				drop-shadow(0 0 30px rgba(255, 240, 180, 0.7));
-		}
-		100% {
-			filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.7))
-				drop-shadow(0 0 15px rgba(255, 245, 200, 0.5));
-		}
-	}
 
 	@keyframes grow-ghost {
 		0% {
@@ -864,43 +726,8 @@
 	/* Media queries for larger screens */
 	@media (min-width: 768px) {
 		.icon-container {
-			filter: drop-shadow(0 0 12px rgba(249, 168, 212, 0.25))
-				drop-shadow(0 0 15px rgba(255, 156, 243, 0.15));
-		}
-
-		/* Basic hover for all themes */
-		.icon-container:hover {
-			filter: drop-shadow(0 0 25px rgba(249, 168, 212, 0.5))
-				drop-shadow(0 0 35px rgba(255, 156, 243, 0.4));
-		}
-		
-		/* Enhanced theme-specific hovers */
-		.theme-peach:hover {
-			filter: drop-shadow(0 0 20px rgba(255, 128, 170, 0.7))
-				drop-shadow(0 0 35px rgba(255, 180, 128, 0.6))
-				drop-shadow(0 0 50px rgba(255, 210, 160, 0.5)) !important;
-		}
-
-		.theme-mint:hover {
-			filter: drop-shadow(0 0 20px rgba(70, 255, 180, 0.7))
-				drop-shadow(0 0 35px rgba(120, 255, 210, 0.6))
-				drop-shadow(0 0 50px rgba(180, 255, 235, 0.5)) !important;
-		}
-
-		.theme-bubblegum:hover {
-			filter: drop-shadow(0 0 20px rgba(190, 130, 255, 0.7))
-				drop-shadow(0 0 35px rgba(220, 160, 255, 0.6))
-				drop-shadow(0 0 50px rgba(240, 200, 255, 0.5)) !important;
-		}
-
-		.theme-rainbow:hover {
-			filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.7)) 
-				drop-shadow(0 0 35px rgba(255, 245, 200, 0.6))
-				drop-shadow(0 0 50px rgba(255, 255, 200, 0.4)) !important;
-			animation:
-				gentle-float 3s ease-in-out infinite,
-				ghost-hover 1.2s ease-in-out infinite alternate,
-				sparkle-effect 2s infinite alternate !important;
+			filter: drop-shadow(0 0 8px rgba(249, 168, 212, 0.2))
+				drop-shadow(0 0 12px rgba(255, 156, 243, 0.1));
 		}
 	}
 </style>
