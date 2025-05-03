@@ -545,5 +545,5 @@
 {/if}
 
 <style>
-	@import '$lib/styles/AudioToText.css';
+	@import '$lib/styles/audioToText.css';
 </style>
