@@ -7,42 +7,16 @@
 	transition: all 0.3s ease;
 }
 
-/* Nested eye structure for separated transforms */
-
-/* Simple transitions for eye movements and blinking */
+/* Eye transitions are handled via inline styles now, properties only here */
 .ghost-svg .ghost-eyes {
-	transition: transform 0.15s ease-out; 
 	will-change: transform; 
 	transform-origin: center center;
 }
-
-/* Remove test animation - we'll use direct style manipulation instead */
 
 /* Debug styles (can be removed later) */
 .debug-eye-position {
 	outline: 1px solid red !important;
 }
-
-.ghost-svg .ghost-eyes.blinking {
-	--eye-scale-y: 0.05;
-}
-
-/* These classes are no longer needed as eye position is handled by the container */
-/* .ghost-svg .ghost-eyes.looking-left {
-	--eye-x: -4px;
-}
-
-.ghost-svg .ghost-eyes.looking-right {
-	--eye-x: 4px;
-}
-
-.ghost-svg .ghost-eyes.looking-up {
-	--eye-y: -2px;
-}
-
-.ghost-svg .ghost-eyes.looking-down {
-	--eye-y: 2px;
-} */
 
 /* Single and double blink animations */
 .ghost-svg .ghost-eyes.blink-single {
@@ -53,43 +27,36 @@
 	animation: blink-double 0.68s ease-out forwards;
 }
 
-/* The simple blink animation is preserved for direct control */
-.ghost-svg .ghost-eyes.blink-once {
-	--eye-scale-y: 0.05;
-}
-
-/* Thinking animation from original Ghost.svelte */
-.ghost-svg .ghost-eyes.blink-thinking-hard {
-	animation: thinking-hard 1.5s ease-in-out infinite;
-}
+/* Eye animations now handled directly via store and inline styles */
+/* Thinking states will be managed via the store and inline styles */
 
 @keyframes blink-single {
 	0%,
 	100% {
-		--eye-scale-y: 1;
+		transform: scaleY(1) translate(var(--eye-x, 0), var(--eye-y, 0));
 	}
 	40%,
 	60% {
-		--eye-scale-y: 0.05;
+		transform: scaleY(0.05) translate(var(--eye-x, 0), var(--eye-y, 0));
 	}
 }
 
 @keyframes blink-double {
 	0%,
 	100% {
-		--eye-scale-y: 1;
+		transform: scaleY(1) translate(var(--eye-x, 0), var(--eye-y, 0));
 	}
 	20%,
 	35% {
-		--eye-scale-y: 0.05;
+		transform: scaleY(0.05) translate(var(--eye-x, 0), var(--eye-y, 0));
 	}
 	40%,
 	55% {
-		--eye-scale-y: 1;
+		transform: scaleY(1) translate(var(--eye-x, 0), var(--eye-y, 0));
 	}
 	60%,
 	75% {
-		--eye-scale-y: 0.05;
+		transform: scaleY(0.05) translate(var(--eye-x, 0), var(--eye-y, 0));
 	}
 }
 
@@ -98,23 +65,23 @@
 	10%,
 	90%,
 	100% {
-		--eye-scale-y: 1;
+		transform: scaleY(1) translate(var(--eye-x, 0), var(--eye-y, 0));
 	}
 	20%,
 	25% {
-		--eye-scale-y: 0.1;
+		transform: scaleY(0.1) translate(var(--eye-x, 0), var(--eye-y, 0));
 	}
 	30%,
 	35% {
-		--eye-scale-y: 1;
+		transform: scaleY(1) translate(var(--eye-x, 0), var(--eye-y, 0));
 	}
 	40%,
 	45% {
-		--eye-scale-y: 0.1;
+		transform: scaleY(0.1) translate(var(--eye-x, 0), var(--eye-y, 0));
 	}
 	50%,
 	85% {
-		--eye-scale-y: 1;
+		transform: scaleY(1) translate(var(--eye-x, 0), var(--eye-y, 0));
 	}
 }
 
