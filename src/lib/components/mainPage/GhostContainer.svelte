@@ -2,13 +2,7 @@
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
   import { browser } from '$app/environment';
   import Ghost from '$lib/components/ghost/Ghost.svelte';
-  import { 
-    ghostAnimationStore, 
-    isGhostRecording, 
-    isGhostProcessing, 
-    ghostAnimationState 
-  } from '$lib/components/ghost/stores';
-
+  
   // Props passed from the parent
   export let isRecording = false;
   export let isProcessing = false;
@@ -18,15 +12,6 @@
 
   // Component references
   let ghostComponent;
-  
-  // Sync props with the store
-  $: if (isRecording !== $isGhostRecording) {
-    ghostAnimationStore.setRecording(isRecording);
-  }
-  
-  $: if (isProcessing !== $isGhostProcessing) {
-    ghostAnimationStore.setProcessing(isProcessing);
-  }
 
   // Debug helper
   function debug(message) {
@@ -46,34 +31,48 @@
     handleToggleRecording();
   }
   
-  // Public methods to control ghost animations using the store
+  // Public methods to control ghost animations - forwarded to Ghost component
   export function startWobbleAnimation() {
-    ghostAnimationStore.startWobbleAnimation();
+    if (ghostComponent) {
+      ghostComponent.forceWobble('wobble-left');
+    }
   }
   
   export function stopWobbleAnimation() {
-    ghostAnimationStore.stopWobbleAnimation();
+    if (ghostComponent) {
+      ghostComponent.forceWobble('wobble-right');
+    }
   }
   
-  // Ghost animation methods using the store
+  // Ghost animation methods forwarded to component
   export function pulse() {
-    ghostAnimationStore.pulse();
+    if (ghostComponent) {
+      ghostComponent.pulse();
+    }
   }
   
   export function startThinking() {
-    ghostAnimationStore.startThinking();
+    if (ghostComponent) {
+      ghostComponent.startThinking();
+    }
   }
   
   export function stopThinking() {
-    ghostAnimationStore.stopThinking();
+    if (ghostComponent) {
+      ghostComponent.stopThinking();
+    }
   }
   
   export function forceWobble(options) {
-    ghostAnimationStore.forceWobble(options);
+    if (ghostComponent) {
+      ghostComponent.forceWobble(options);
+    }
   }
   
   export function reactToTranscript(textLength) {
-    ghostAnimationStore.reactToTranscript(textLength);
+    if (ghostComponent) {
+      ghostComponent.reactToTranscript(textLength);
+    }
   }
 </script>
 
@@ -81,9 +80,9 @@
 <div class="ghost-icon-wrapper mb-4 h-36 w-36 sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64">
   <Ghost
     bind:this={ghostComponent}
-    isRecording={$isGhostRecording}
-    isProcessing={$isGhostProcessing}
-    animationState={$ghostAnimationState}
+    isRecording={isRecording}
+    isProcessing={isProcessing}
+    animationState={isRecording ? 'wobble-start' : isProcessing ? 'processing' : 'idle'}
     on:toggleRecording={handleToggleRecording}
   />
 </div>
