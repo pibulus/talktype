@@ -1,5 +1,10 @@
 # CLAUDE.md - Code Standards for TalkType
 
+## General Approach
+
+- **80/20 Rule**: Focus 80% of effort on the most impactful 20% of work
+- **Aider MCP**: Feel free to use Aider MCP for code generation tasks
+
 ## Build & Development
 
 - `npm run dev` - Start development server

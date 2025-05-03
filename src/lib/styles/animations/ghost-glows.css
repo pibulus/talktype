@@ -13,59 +13,86 @@
   }
 }
 
-/* Pulsing scale animation for all recording states - more dramatic */
+/* Pulsing scale animation for all recording states - more subtle */
 @keyframes recording-glow-pulse {
   0%, 100% {
-    transform: scale(1.03);
+    transform: scale(1.01);
   }
   50% {
-    transform: scale(1.12);
+    transform: scale(1.05);
   }
 }
 
 /* Base Variables */
 :root {
-  /* Peach Theme Colors */
-  --peach-primary: rgba(255, 130, 170, 1);
-  --peach-secondary: rgba(255, 160, 140, 1);
-  --peach-tertiary: rgba(255, 190, 120, 1);
-  --peach-quaternary: rgba(255, 220, 140, 1);
-  --peach-quinary: rgba(255, 160, 150, 1);
+  /* Peach Theme Colors - Refined split complementary palette */
+  --peach-primary: rgba(255, 140, 170, 1);      /* Main peachy pink */
+  --peach-secondary: rgba(255, 170, 140, 1);    /* Analogous coral */
+  --peach-tertiary: rgba(255, 200, 130, 1);     /* Analogous peach */
+  --peach-quaternary: rgba(240, 220, 160, 1);   /* Split complement light gold */
+  --peach-quinary: rgba(190, 230, 170, 1);      /* Split complement mint */
   
-  /* Mint Theme Colors */
-  --mint-primary: rgba(100, 230, 180, 1);
-  --mint-secondary: rgba(120, 240, 210, 1);
-  --mint-tertiary: rgba(80, 220, 230, 1);
-  --mint-quaternary: rgba(140, 255, 230, 1);
-  --mint-quinary: rgba(160, 255, 200, 1);
+  /* Mint Theme Colors - Refined analogous palette */
+  --mint-primary: rgba(100, 230, 180, 1);       /* Main mint */
+  --mint-secondary: rgba(130, 240, 200, 1);     /* Lighter mint */
+  --mint-tertiary: rgba(80, 220, 230, 1);       /* Analogous teal */
+  --mint-quaternary: rgba(100, 190, 235, 1);    /* Analogous blue */
+  --mint-quinary: rgba(150, 245, 160, 1);       /* Analogous green */
   
-  /* Bubblegum Theme Colors */
-  --bubblegum-primary: rgba(190, 140, 250, 1);
-  --bubblegum-secondary: rgba(220, 160, 255, 1);
-  --bubblegum-tertiary: rgba(240, 180, 255, 1);
-  --bubblegum-quaternary: rgba(255, 150, 220, 1);
-  --bubblegum-quinary: rgba(230, 165, 235, 1);
+  /* Bubblegum Theme Colors - Refined triadic palette */
+  --bubblegum-primary: rgba(200, 140, 255, 1);  /* Main purple */
+  --bubblegum-secondary: rgba(230, 150, 240, 1);/* Lighter purple */
+  --bubblegum-tertiary: rgba(255, 140, 200, 1); /* Triadic pink */
+  --bubblegum-quaternary: rgba(255, 180, 150, 1);/* Triadic peach */
+  --bubblegum-quinary: rgba(180, 200, 255, 1);  /* Analogous lavender */
   
-  /* Rainbow Theme Colors */
-  --rainbow-primary: rgba(255, 50, 150, 1);
-  --rainbow-secondary: rgba(255, 100, 100, 1);
-  --rainbow-tertiary: rgba(255, 180, 50, 1);
-  --rainbow-quaternary: rgba(70, 230, 120, 1);
-  --rainbow-quinary: rgba(50, 180, 255, 1);
-  --rainbow-senary: rgba(180, 100, 255, 1);
+  /* Rainbow Theme Colors - Refined true rainbow palette */
+  --rainbow-primary: rgba(255, 90, 140, 1);     /* Pink */
+  --rainbow-secondary: rgba(255, 120, 90, 1);   /* Red-orange */
+  --rainbow-tertiary: rgba(255, 200, 70, 1);    /* Yellow */
+  --rainbow-quaternary: rgba(90, 230, 130, 1);  /* Green */
+  --rainbow-quinary: rgba(70, 180, 255, 1);     /* Blue */
+  --rainbow-senary: rgba(180, 120, 255, 1);     /* Purple */
   
   /* Opacity levels */
-  --high-opacity: 0.95;
-  --med-opacity: 0.75;
-  --low-opacity: 0.5;
+  --high-opacity: 0.9;
+  --med-opacity: 0.6;
+  --low-opacity: 0.3;
+}
+
+/* ----- BASE GLOW EFFECTS ----- */
+
+/* Base glow for all ghosts - subtle ambient glow to prevent transition gaps */
+.theme-peach {
+  filter: drop-shadow(0 0 8px rgba(255, 140, 170, 0.2)) 
+          drop-shadow(0 0 15px rgba(255, 170, 140, 0.1));
+  transition: filter 0.3s ease-in-out;
+}
+
+.theme-mint {
+  filter: drop-shadow(0 0 8px rgba(100, 230, 180, 0.2))
+          drop-shadow(0 0 15px rgba(80, 220, 230, 0.1));
+  transition: filter 0.3s ease-in-out;
+}
+
+.theme-bubblegum {
+  filter: drop-shadow(0 0 8px rgba(200, 140, 255, 0.2))
+          drop-shadow(0 0 15px rgba(255, 140, 200, 0.1));
+  transition: filter 0.3s ease-in-out;
+}
+
+.theme-rainbow {
+  filter: drop-shadow(0 0 8px rgba(255, 90, 140, 0.2))
+          drop-shadow(0 0 15px rgba(180, 120, 255, 0.1));
+  transition: filter 0.3s ease-in-out;
 }
 
 /* ----- HOVER GLOW EFFECTS ----- */
 
 /* Default subtle hover for all themes */
 .ghost-hover-glow {
-  filter: drop-shadow(0 0 18px rgba(249, 168, 212, 0.45))
-          drop-shadow(0 0 30px rgba(255, 156, 243, 0.3));
+  filter: drop-shadow(0 0 12px rgba(249, 168, 212, 0.35))
+          drop-shadow(0 0 20px rgba(255, 156, 243, 0.2));
 }
 
 /* Peach theme hover glow - only applies on hover */
@@ -90,36 +117,36 @@
 
 /* ----- RECORDING GLOW EFFECTS ----- */
 
-/* Peach theme recording glow - enhanced intensity and complementary colors to peach theme */
+/* Peach theme recording glow - split complementary colors to peach theme */
 .recording.ghost-recording-glow-peach {
-  animation: peach-recording-glow 1.5s ease-in-out infinite, recording-glow-pulse 1.5s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
-  filter: drop-shadow(0 0 25px rgba(255, 130, 170, 1)) 
-          drop-shadow(0 0 55px rgba(255, 180, 150, 0.85))
-          drop-shadow(0 0 85px rgba(255, 220, 160, 0.7));
+  animation: peach-recording-glow 2s ease-in-out infinite, recording-glow-pulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite, gentle-float 3s ease-in-out infinite !important;
+  filter: drop-shadow(0 0 20px var(--peach-primary)) 
+          drop-shadow(0 0 40px rgba(255, 170, 140, 0.75))
+          drop-shadow(0 0 70px rgba(240, 220, 160, 0.6));
 }
 
-/* Mint theme recording glow - enhanced with complementary teal and seafoam */
+/* Mint theme recording glow - analogous teal and seafoam */
 .recording.ghost-recording-glow-mint {
-  animation: mint-recording-glow 1.5s ease-in-out infinite, recording-glow-pulse 1.5s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
-  filter: drop-shadow(0 0 25px rgba(100, 250, 180, 1)) 
-          drop-shadow(0 0 55px rgba(80, 230, 200, 0.85))
-          drop-shadow(0 0 85px rgba(150, 255, 220, 0.7));
+  animation: mint-recording-glow 2s ease-in-out infinite, recording-glow-pulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite, gentle-float 3s ease-in-out infinite !important;
+  filter: drop-shadow(0 0 20px var(--mint-primary)) 
+          drop-shadow(0 0 40px rgba(80, 220, 230, 0.75))
+          drop-shadow(0 0 70px rgba(150, 245, 160, 0.6));
 }
 
-/* Bubblegum theme recording glow - enhanced with complementary pinks and purples */
+/* Bubblegum theme recording glow - triadic palette with pinks and purples */
 .recording.ghost-recording-glow-bubblegum {
-  animation: bubblegum-recording-glow 1.5s ease-in-out infinite, recording-glow-pulse 1.5s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
-  filter: drop-shadow(0 0 25px rgba(210, 140, 255, 1)) 
-          drop-shadow(0 0 55px rgba(240, 160, 255, 0.85))
-          drop-shadow(0 0 85px rgba(255, 180, 240, 0.7));
+  animation: bubblegum-recording-glow 2s ease-in-out infinite, recording-glow-pulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite, gentle-float 3s ease-in-out infinite !important;
+  filter: drop-shadow(0 0 20px var(--bubblegum-primary)) 
+          drop-shadow(0 0 40px rgba(255, 140, 200, 0.75))
+          drop-shadow(0 0 70px rgba(180, 200, 255, 0.6));
 }
 
-/* Rainbow theme recording glow - softer pastel colors */
+/* Rainbow theme recording glow - true rainbow palette */
 .recording.ghost-recording-glow-rainbow {
-  animation: rainbow-recording-glow 3s linear infinite, recording-glow-pulse 1.5s ease-in-out infinite, gentle-float 3s ease-in-out infinite !important;
-  filter: drop-shadow(0 0 25px rgba(255, 130, 180, 1)) 
-          drop-shadow(0 0 55px rgba(255, 150, 200, 0.85))
-          drop-shadow(0 0 85px rgba(230, 180, 255, 0.7));
+  animation: rainbow-recording-glow 3s linear infinite, recording-glow-pulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite, gentle-float 3s ease-in-out infinite !important;
+  filter: drop-shadow(0 0 20px var(--rainbow-primary)) 
+          drop-shadow(0 0 40px rgba(255, 200, 70, 0.75))
+          drop-shadow(0 0 70px rgba(180, 120, 255, 0.6));
 }
 
 /* ----- KEYFRAME ANIMATIONS ----- */
@@ -127,183 +154,188 @@
 /* Peach theme glow animation - analogous color scheme with multiple transitions */
 @keyframes peach-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 20px var(--peach-primary)) 
-            drop-shadow(0 0 45px rgba(255, 130, 170, 0.75))
-            drop-shadow(0 0 70px rgba(255, 130, 170, 0.5));
+    filter: drop-shadow(0 0 12px var(--peach-primary)) 
+            drop-shadow(0 0 25px rgba(255, 130, 170, 0.45))
+            drop-shadow(0 0 40px rgba(255, 130, 170, 0.25));
   }
   20% {
-    filter: drop-shadow(0 0 22px var(--peach-secondary))
-            drop-shadow(0 0 50px rgba(255, 160, 140, 0.8))
-            drop-shadow(0 0 75px rgba(255, 160, 140, 0.55));
+    filter: drop-shadow(0 0 14px var(--peach-secondary))
+            drop-shadow(0 0 28px rgba(255, 160, 140, 0.5))
+            drop-shadow(0 0 45px rgba(255, 160, 140, 0.3));
   }
   40% {
-    filter: drop-shadow(0 0 24px var(--peach-tertiary))
-            drop-shadow(0 0 52px rgba(255, 190, 120, 0.8))
-            drop-shadow(0 0 80px rgba(255, 190, 120, 0.55));
+    filter: drop-shadow(0 0 15px var(--peach-tertiary))
+            drop-shadow(0 0 30px rgba(255, 190, 120, 0.5))
+            drop-shadow(0 0 50px rgba(255, 190, 120, 0.3));
   }
   60% {
-    filter: drop-shadow(0 0 26px var(--peach-quaternary))
-            drop-shadow(0 0 54px rgba(255, 220, 140, 0.8))
-            drop-shadow(0 0 85px rgba(255, 220, 140, 0.55));
+    filter: drop-shadow(0 0 16px var(--peach-quaternary))
+            drop-shadow(0 0 32px rgba(255, 220, 140, 0.5))
+            drop-shadow(0 0 55px rgba(255, 220, 140, 0.3));
   }
   80% {
-    filter: drop-shadow(0 0 24px var(--peach-quinary))
-            drop-shadow(0 0 52px rgba(255, 160, 150, 0.8))
-            drop-shadow(0 0 80px rgba(255, 160, 150, 0.55));
+    filter: drop-shadow(0 0 15px var(--peach-quinary))
+            drop-shadow(0 0 30px rgba(255, 160, 150, 0.5))
+            drop-shadow(0 0 50px rgba(255, 160, 150, 0.3));
   }
 }
 
 /* Mint theme glow animation - pastel colors with multiple transitions */
 @keyframes mint-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 20px var(--mint-primary)) 
-            drop-shadow(0 0 45px rgba(100, 230, 180, 0.75))
-            drop-shadow(0 0 70px rgba(100, 230, 180, 0.5));
+    filter: drop-shadow(0 0 12px var(--mint-primary)) 
+            drop-shadow(0 0 25px rgba(100, 230, 180, 0.45))
+            drop-shadow(0 0 40px rgba(100, 230, 180, 0.25));
   }
   20% {
-    filter: drop-shadow(0 0 22px var(--mint-secondary))
-            drop-shadow(0 0 50px rgba(120, 240, 210, 0.8))
-            drop-shadow(0 0 75px rgba(120, 240, 210, 0.55));
+    filter: drop-shadow(0 0 14px var(--mint-secondary))
+            drop-shadow(0 0 28px rgba(120, 240, 210, 0.5))
+            drop-shadow(0 0 45px rgba(120, 240, 210, 0.3));
   }
   40% {
-    filter: drop-shadow(0 0 24px var(--mint-tertiary))
-            drop-shadow(0 0 52px rgba(80, 220, 230, 0.8))
-            drop-shadow(0 0 80px rgba(80, 220, 230, 0.55));
+    filter: drop-shadow(0 0 15px var(--mint-tertiary))
+            drop-shadow(0 0 30px rgba(80, 220, 230, 0.5))
+            drop-shadow(0 0 50px rgba(80, 220, 230, 0.3));
   }
   60% {
-    filter: drop-shadow(0 0 26px var(--mint-quaternary))
-            drop-shadow(0 0 54px rgba(140, 255, 230, 0.8))
-            drop-shadow(0 0 85px rgba(140, 255, 230, 0.55));
+    filter: drop-shadow(0 0 16px var(--mint-quaternary))
+            drop-shadow(0 0 32px rgba(140, 255, 230, 0.5))
+            drop-shadow(0 0 55px rgba(140, 255, 230, 0.3));
   }
   80% {
-    filter: drop-shadow(0 0 24px var(--mint-quinary))
-            drop-shadow(0 0 52px rgba(160, 255, 200, 0.8))
-            drop-shadow(0 0 80px rgba(160, 255, 200, 0.55));
+    filter: drop-shadow(0 0 15px var(--mint-quinary))
+            drop-shadow(0 0 30px rgba(160, 255, 200, 0.5))
+            drop-shadow(0 0 50px rgba(160, 255, 200, 0.3));
   }
 }
 
 /* Bubblegum theme glow animation - pastel purple/pink cycle */
 @keyframes bubblegum-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 20px var(--bubblegum-primary)) 
-            drop-shadow(0 0 45px rgba(190, 140, 250, 0.75))
-            drop-shadow(0 0 70px rgba(190, 140, 250, 0.5));
+    filter: drop-shadow(0 0 12px var(--bubblegum-primary)) 
+            drop-shadow(0 0 25px rgba(190, 140, 250, 0.45))
+            drop-shadow(0 0 40px rgba(190, 140, 250, 0.25));
   }
   20% {
-    filter: drop-shadow(0 0 22px var(--bubblegum-secondary))
-            drop-shadow(0 0 50px rgba(220, 160, 255, 0.8))
-            drop-shadow(0 0 75px rgba(220, 160, 255, 0.55));
+    filter: drop-shadow(0 0 14px var(--bubblegum-secondary))
+            drop-shadow(0 0 28px rgba(220, 160, 255, 0.5))
+            drop-shadow(0 0 45px rgba(220, 160, 255, 0.3));
   }
   40% {
-    filter: drop-shadow(0 0 24px var(--bubblegum-tertiary))
-            drop-shadow(0 0 52px rgba(240, 180, 255, 0.8))
-            drop-shadow(0 0 80px rgba(240, 180, 255, 0.55));
+    filter: drop-shadow(0 0 15px var(--bubblegum-tertiary))
+            drop-shadow(0 0 30px rgba(240, 180, 255, 0.5))
+            drop-shadow(0 0 50px rgba(240, 180, 255, 0.3));
   }
   60% {
-    filter: drop-shadow(0 0 26px var(--bubblegum-quaternary))
-            drop-shadow(0 0 54px rgba(255, 150, 220, 0.8))
-            drop-shadow(0 0 85px rgba(255, 150, 220, 0.55));
+    filter: drop-shadow(0 0 16px var(--bubblegum-quaternary))
+            drop-shadow(0 0 32px rgba(255, 150, 220, 0.5))
+            drop-shadow(0 0 55px rgba(255, 150, 220, 0.3));
   }
   80% {
-    filter: drop-shadow(0 0 24px var(--bubblegum-quinary))
-            drop-shadow(0 0 52px rgba(230, 165, 235, 0.8))
-            drop-shadow(0 0 80px rgba(230, 165, 235, 0.55));
+    filter: drop-shadow(0 0 15px var(--bubblegum-quinary))
+            drop-shadow(0 0 30px rgba(230, 165, 235, 0.5))
+            drop-shadow(0 0 50px rgba(230, 165, 235, 0.3));
   }
 }
 
 /* Rainbow theme glow animation - softer pastel colors with fewer transitions */
 @keyframes rainbow-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 20px rgba(255, 150, 170, 1)) 
-            drop-shadow(0 0 45px rgba(255, 150, 170, 0.7))
-            drop-shadow(0 0 70px rgba(255, 150, 170, 0.4));
+    filter: drop-shadow(0 0 12px rgba(255, 150, 170, 0.9)) 
+            drop-shadow(0 0 25px rgba(255, 150, 170, 0.4))
+            drop-shadow(0 0 40px rgba(255, 150, 170, 0.2));
   }
   33% {
-    filter: drop-shadow(0 0 20px rgba(255, 200, 130, 1))
-            drop-shadow(0 0 45px rgba(255, 200, 130, 0.7))
-            drop-shadow(0 0 70px rgba(255, 200, 130, 0.4));
+    filter: drop-shadow(0 0 12px rgba(255, 200, 130, 0.9))
+            drop-shadow(0 0 25px rgba(255, 200, 130, 0.4))
+            drop-shadow(0 0 40px rgba(255, 200, 130, 0.2));
   }
   66% {
-    filter: drop-shadow(0 0 20px rgba(180, 220, 255, 1))
-            drop-shadow(0 0 45px rgba(180, 220, 255, 0.7))
-            drop-shadow(0 0 70px rgba(180, 220, 255, 0.4));
+    filter: drop-shadow(0 0 12px rgba(180, 220, 255, 0.9))
+            drop-shadow(0 0 25px rgba(180, 220, 255, 0.4))
+            drop-shadow(0 0 40px rgba(180, 220, 255, 0.2));
   }
 }
 
 /* ----- RECORDING GLOW KEYFRAMES ----- */
 
-/* Peach theme recording animation - more intense complementary colors */
+/* Peach theme recording animation - more intense split complementary colors */
 @keyframes peach-recording-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 30px rgba(255, 135, 175, 1)) 
-            drop-shadow(0 0 60px rgba(255, 135, 175, 0.85))
-            drop-shadow(0 0 90px rgba(255, 135, 175, 0.7));
+    filter: drop-shadow(0 0 25px var(--peach-primary)) 
+            drop-shadow(0 0 50px rgba(255, 140, 170, 0.75))
+            drop-shadow(0 0 75px rgba(255, 140, 170, 0.5));
   }
   33% {
-    filter: drop-shadow(0 0 35px rgba(255, 170, 140, 1))
-            drop-shadow(0 0 70px rgba(255, 170, 140, 0.85))
-            drop-shadow(0 0 100px rgba(255, 170, 140, 0.7));
+    filter: drop-shadow(0 0 25px var(--peach-secondary))
+            drop-shadow(0 0 50px rgba(255, 170, 140, 0.75))
+            drop-shadow(0 0 75px rgba(255, 170, 140, 0.5));
   }
   66% {
-    filter: drop-shadow(0 0 40px rgba(255, 210, 150, 1))
-            drop-shadow(0 0 80px rgba(255, 210, 150, 0.85))
-            drop-shadow(0 0 120px rgba(255, 210, 150, 0.7));
+    filter: drop-shadow(0 0 25px var(--peach-quaternary))
+            drop-shadow(0 0 50px rgba(240, 220, 160, 0.75))
+            drop-shadow(0 0 75px rgba(240, 220, 160, 0.5));
   }
 }
 
-/* Mint theme recording animation - more intense complementary colors */
+/* Mint theme recording animation - analogous colors */
 @keyframes mint-recording-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 30px rgba(100, 250, 180, 1)) 
-            drop-shadow(0 0 60px rgba(100, 250, 180, 0.85))
-            drop-shadow(0 0 90px rgba(100, 250, 180, 0.7));
+    filter: drop-shadow(0 0 25px var(--mint-primary)) 
+            drop-shadow(0 0 50px rgba(100, 230, 180, 0.75))
+            drop-shadow(0 0 75px rgba(100, 230, 180, 0.5));
   }
   33% {
-    filter: drop-shadow(0 0 35px rgba(80, 230, 200, 1))
-            drop-shadow(0 0 70px rgba(80, 230, 200, 0.85))
-            drop-shadow(0 0 100px rgba(80, 230, 200, 0.7));
+    filter: drop-shadow(0 0 25px var(--mint-tertiary))
+            drop-shadow(0 0 50px rgba(80, 220, 230, 0.75))
+            drop-shadow(0 0 75px rgba(80, 220, 230, 0.5));
   }
   66% {
-    filter: drop-shadow(0 0 40px rgba(150, 255, 220, 1))
-            drop-shadow(0 0 80px rgba(150, 255, 220, 0.85))
-            drop-shadow(0 0 120px rgba(150, 255, 220, 0.7));
+    filter: drop-shadow(0 0 25px var(--mint-quinary))
+            drop-shadow(0 0 50px rgba(150, 245, 160, 0.75))
+            drop-shadow(0 0 75px rgba(150, 245, 160, 0.5));
   }
 }
 
-/* Bubblegum theme recording animation - more intense complementary colors */
+/* Bubblegum theme recording animation - triadic colors */
 @keyframes bubblegum-recording-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 30px rgba(210, 140, 255, 1)) 
-            drop-shadow(0 0 60px rgba(210, 140, 255, 0.85))
-            drop-shadow(0 0 90px rgba(210, 140, 255, 0.7));
+    filter: drop-shadow(0 0 25px var(--bubblegum-primary)) 
+            drop-shadow(0 0 50px rgba(200, 140, 255, 0.75))
+            drop-shadow(0 0 75px rgba(200, 140, 255, 0.5));
   }
   33% {
-    filter: drop-shadow(0 0 35px rgba(240, 160, 255, 1))
-            drop-shadow(0 0 70px rgba(240, 160, 255, 0.85))
-            drop-shadow(0 0 100px rgba(240, 160, 255, 0.7));
+    filter: drop-shadow(0 0 25px var(--bubblegum-tertiary))
+            drop-shadow(0 0 50px rgba(255, 140, 200, 0.75))
+            drop-shadow(0 0 75px rgba(255, 140, 200, 0.5));
   }
   66% {
-    filter: drop-shadow(0 0 40px rgba(255, 180, 240, 1))
-            drop-shadow(0 0 80px rgba(255, 180, 240, 0.85))
-            drop-shadow(0 0 120px rgba(255, 180, 240, 0.7));
+    filter: drop-shadow(0 0 25px var(--bubblegum-quinary))
+            drop-shadow(0 0 50px rgba(180, 200, 255, 0.75))
+            drop-shadow(0 0 75px rgba(180, 200, 255, 0.5));
   }
 }
 
-/* Rainbow theme recording animation - softer pastel rainbow colors */
+/* Rainbow theme recording animation - true rainbow colors */
 @keyframes rainbow-recording-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 30px rgba(255, 180, 200, 1)) 
-           drop-shadow(0 0 60px rgba(255, 180, 200, 0.85))
-           drop-shadow(0 0 90px rgba(255, 180, 200, 0.7));
+    filter: drop-shadow(0 0 25px var(--rainbow-primary)) 
+           drop-shadow(0 0 50px rgba(255, 90, 140, 0.75))
+           drop-shadow(0 0 75px rgba(255, 90, 140, 0.5));
   }
-  33% {
-    filter: drop-shadow(0 0 35px rgba(255, 220, 170, 1))
-           drop-shadow(0 0 70px rgba(255, 220, 170, 0.85))
-           drop-shadow(0 0 100px rgba(255, 220, 170, 0.7));
+  25% {
+    filter: drop-shadow(0 0 25px var(--rainbow-tertiary))
+           drop-shadow(0 0 50px rgba(255, 200, 70, 0.75))
+           drop-shadow(0 0 75px rgba(255, 200, 70, 0.5));
   }
-  66% {
-    filter: drop-shadow(0 0 40px rgba(200, 220, 255, 1))
-           drop-shadow(0 0 80px rgba(200, 220, 255, 0.85))
-           drop-shadow(0 0 120px rgba(200, 220, 255, 0.7));
+  50% {
+    filter: drop-shadow(0 0 25px var(--rainbow-quaternary))
+           drop-shadow(0 0 50px rgba(90, 230, 130, 0.75))
+           drop-shadow(0 0 75px rgba(90, 230, 130, 0.5));
+  }
+  75% {
+    filter: drop-shadow(0 0 25px var(--rainbow-senary))
+           drop-shadow(0 0 50px rgba(180, 120, 255, 0.75))
+           drop-shadow(0 0 75px rgba(180, 120, 255, 0.5));
   }
 }
