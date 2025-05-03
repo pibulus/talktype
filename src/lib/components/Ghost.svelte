@@ -404,7 +404,7 @@
 <button
 	bind:this={ghostElement}
 	class="icon-container theme-{currentTheme} 
-		{isRecording ? 'recording ghost-recording-glow-' + currentTheme : ''}
+		{isRecording ? 'recording recording-theme-' + currentTheme + ' ghost-recording-glow-' + currentTheme : ''}
 		{isWobbling ? 'ghost-wobble-' + (Math.random() > 0.5 ? 'left' : 'right') : ''} 
 		{doingSpecialAnimation ? 'do-special-animation' : ''}"
 	on:click={handleClick}
@@ -446,7 +446,7 @@
 		border: none;
 		outline: none;
 		-webkit-tap-highlight-color: transparent;
-		filter: drop-shadow(0 0 8px rgba(255, 156, 243, 0.15));
+		/* Default filter removed to avoid conflicts with ghost-glows.css */
 		transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
 		animation: gentle-float 3s ease-in-out infinite;
 		animation-delay: 2.5s;
@@ -504,13 +504,12 @@
 		animation-delay: 0s; /* Synchronized with other layers */
 	}
 
-	/* Hover effects - basic animation, theme-specific glow added via :hover selector in CSS file */
+	/* Hover effects - just subtle movement, all glow comes from ghost-glows.css */
 	.icon-container:hover,
 	.icon-container:active {
-		animation:
-			gentle-float 3s ease-in-out infinite,
-			ghost-hover 1.2s ease-in-out infinite alternate;
-		animation-delay: 0s, 0s;
+		animation: ghost-hover 1.2s ease-in-out infinite alternate;
+		animation-delay: 0s;
+		/* No filters here - all glow effects come from ghost-glows.css */
 	}
 
 	/* Recording state styles managed in ghost-glows.css */
@@ -588,16 +587,15 @@
 		animation: 
 			grow-ghost 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
 			rainbowFlow 9s cubic-bezier(0.4, 0, 0.6, 1) 2s infinite;
-		filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
 		transform-origin: center bottom;
+		/* Filter removed to avoid conflicts with ghost-glows.css */
 	}
 
 	.icon-container:hover .rainbow-animated {
 		animation:
 			grow-ghost 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-			rainbowFlow 6s cubic-bezier(0.4, 0, 0.6, 1) 2s infinite,
-			sparkle 2s ease-in-out 2s infinite;
-		filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+			rainbowFlow 6s cubic-bezier(0.4, 0, 0.6, 1) 2s infinite;
+		/* Filter and sparkle animation removed to avoid conflicts with ghost-glows.css */
 	}
 
 	/* Base animations */
@@ -723,11 +721,10 @@
 		}
 	}
 
-	/* Media queries for larger screens */
+	/* Media queries for larger screens - filter removed to avoid conflicts */
 	@media (min-width: 768px) {
 		.icon-container {
-			filter: drop-shadow(0 0 8px rgba(249, 168, 212, 0.2))
-				drop-shadow(0 0 12px rgba(255, 156, 243, 0.1));
+			/* No filter here to avoid conflicts with ghost-glows.css */
 		}
 	}
 </style>

@@ -13,46 +13,48 @@
   }
 }
 
-/* Pulsing scale animation for all recording states - more subtle */
+/* Pulsing glow animation for recording states - more noticeable yet chill */
 @keyframes recording-glow-pulse {
   0%, 100% {
-    transform: scale(1.01);
+    transform: scale(1.0);
+    filter: brightness(0.95) saturate(0.95);
   }
   50% {
-    transform: scale(1.05);
+    transform: scale(1.08);
+    filter: brightness(1.25) saturate(1.35);
   }
 }
 
 /* Base Variables */
 :root {
-  /* Peach Theme Colors - Refined split complementary palette */
-  --peach-primary: rgba(255, 140, 170, 1);      /* Main peachy pink */
-  --peach-secondary: rgba(255, 170, 140, 1);    /* Analogous coral */
-  --peach-tertiary: rgba(255, 200, 130, 1);     /* Analogous peach */
-  --peach-quaternary: rgba(240, 220, 160, 1);   /* Split complement light gold */
-  --peach-quinary: rgba(190, 230, 170, 1);      /* Split complement mint */
+  /* Peach Theme Colors - Super cute saturated peach palette */
+  --peach-primary: rgba(255, 120, 160, 1);      /* Vibrant peachy pink */
+  --peach-secondary: rgba(255, 150, 120, 1);    /* Bright coral */
+  --peach-tertiary: rgba(255, 190, 110, 1);     /* Sunny peach */
+  --peach-quaternary: rgba(255, 210, 130, 1);   /* Warm gold */
+  --peach-quinary: rgba(200, 240, 150, 1);      /* Fresh mint accent */
   
-  /* Mint Theme Colors - Refined analogous palette */
-  --mint-primary: rgba(100, 230, 180, 1);       /* Main mint */
-  --mint-secondary: rgba(130, 240, 200, 1);     /* Lighter mint */
-  --mint-tertiary: rgba(80, 220, 230, 1);       /* Analogous teal */
-  --mint-quaternary: rgba(100, 190, 235, 1);    /* Analogous blue */
-  --mint-quinary: rgba(150, 245, 160, 1);       /* Analogous green */
+  /* Mint Theme Colors - Super fresh mint palette */
+  --mint-primary: rgba(80, 235, 170, 1);        /* Vibrant mint */
+  --mint-secondary: rgba(100, 250, 190, 1);     /* Electric mint */
+  --mint-tertiary: rgba(60, 220, 240, 1);       /* Bright teal */
+  --mint-quaternary: rgba(90, 200, 255, 1);     /* Sky blue */
+  --mint-quinary: rgba(130, 255, 140, 1);       /* Fresh lime */
   
-  /* Bubblegum Theme Colors - Refined triadic palette */
-  --bubblegum-primary: rgba(200, 140, 255, 1);  /* Main purple */
-  --bubblegum-secondary: rgba(230, 150, 240, 1);/* Lighter purple */
-  --bubblegum-tertiary: rgba(255, 140, 200, 1); /* Triadic pink */
-  --bubblegum-quaternary: rgba(255, 180, 150, 1);/* Triadic peach */
-  --bubblegum-quinary: rgba(180, 200, 255, 1);  /* Analogous lavender */
+  /* Bubblegum Theme Colors - Candy shop palette */
+  --bubblegum-primary: rgba(210, 120, 255, 1);  /* Sweet purple */
+  --bubblegum-secondary: rgba(240, 130, 230, 1);/* Electric pink */
+  --bubblegum-tertiary: rgba(255, 110, 180, 1); /* Hot pink */
+  --bubblegum-quaternary: rgba(255, 160, 130, 1);/* Cotton candy peach */
+  --bubblegum-quinary: rgba(170, 190, 255, 1);  /* Baby blue */
   
-  /* Rainbow Theme Colors - Refined true rainbow palette */
-  --rainbow-primary: rgba(255, 90, 140, 1);     /* Pink */
-  --rainbow-secondary: rgba(255, 120, 90, 1);   /* Red-orange */
-  --rainbow-tertiary: rgba(255, 200, 70, 1);    /* Yellow */
-  --rainbow-quaternary: rgba(90, 230, 130, 1);  /* Green */
-  --rainbow-quinary: rgba(70, 180, 255, 1);     /* Blue */
-  --rainbow-senary: rgba(180, 120, 255, 1);     /* Purple */
+  /* Rainbow Theme Colors - Candy shop rainbow palette */
+  --rainbow-primary: rgba(255, 110, 180, 1);    /* Hot pink */
+  --rainbow-secondary: rgba(255, 140, 110, 1);  /* Tangerine */
+  --rainbow-tertiary: rgba(255, 200, 100, 1);   /* Peach candy */
+  --rainbow-quaternary: rgba(200, 130, 255, 1); /* Purple candy */
+  --rainbow-quinary: rgba(130, 200, 255, 1);    /* Blue raspberry */
+  --rainbow-senary: rgba(255, 120, 220, 1);     /* Cotton candy pink */
   
   /* Opacity levels */
   --high-opacity: 0.9;
@@ -62,91 +64,150 @@
 
 /* ----- BASE GLOW EFFECTS ----- */
 
-/* Base glow for all ghosts - subtle ambient glow to prevent transition gaps */
+/* Base glow for all ghosts - more noticeable ambient glow to prevent transition gaps */
+.icon-container {
+  /* Universal transition properties for all filter changes to prevent gaps */
+  transition: filter 0.5s cubic-bezier(0.19, 1, 0.22, 1), 
+              transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  will-change: filter, transform;
+  
+  /* Baseline glow for all states to prevent complete disappearance */
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.25));
+}
+
 .theme-peach {
-  filter: drop-shadow(0 0 8px rgba(255, 140, 170, 0.2)) 
-          drop-shadow(0 0 15px rgba(255, 170, 140, 0.1));
-  transition: filter 0.3s ease-in-out;
+  filter: drop-shadow(0 0 10px rgba(255, 120, 160, 0.25)) 
+          drop-shadow(0 0 15px rgba(255, 150, 120, 0.15));
 }
 
 .theme-mint {
-  filter: drop-shadow(0 0 8px rgba(100, 230, 180, 0.2))
-          drop-shadow(0 0 15px rgba(80, 220, 230, 0.1));
-  transition: filter 0.3s ease-in-out;
+  filter: drop-shadow(0 0 10px rgba(80, 235, 170, 0.25))
+          drop-shadow(0 0 15px rgba(60, 220, 240, 0.15));
 }
 
 .theme-bubblegum {
-  filter: drop-shadow(0 0 8px rgba(200, 140, 255, 0.2))
-          drop-shadow(0 0 15px rgba(255, 140, 200, 0.1));
-  transition: filter 0.3s ease-in-out;
+  filter: drop-shadow(0 0 10px rgba(200, 140, 255, 0.25))
+          drop-shadow(0 0 15px rgba(255, 110, 180, 0.15));
 }
 
 .theme-rainbow {
-  filter: drop-shadow(0 0 8px rgba(255, 90, 140, 0.2))
-          drop-shadow(0 0 15px rgba(180, 120, 255, 0.1));
-  transition: filter 0.3s ease-in-out;
+  filter: drop-shadow(0 0 10px rgba(255, 170, 190, 0.25))
+          drop-shadow(0 0 15px rgba(210, 180, 255, 0.15))
+          drop-shadow(0 0 1px rgba(255, 255, 255, 0.5));
 }
 
 /* ----- HOVER GLOW EFFECTS ----- */
 
-/* Default subtle hover for all themes */
-.ghost-hover-glow {
-  filter: drop-shadow(0 0 12px rgba(249, 168, 212, 0.35))
-          drop-shadow(0 0 20px rgba(255, 156, 243, 0.2));
-}
-
-/* Peach theme hover glow - only applies on hover */
+/* Hover effects for all themes - MUCH stronger, wider, more saturated */
 .theme-peach:hover {
-  animation: peach-glow 3s linear infinite !important;
+  filter: drop-shadow(0 0 25px rgba(255, 130, 170, 1)) 
+          drop-shadow(0 0 40px rgba(255, 160, 180, 0.9))
+          drop-shadow(0 0 55px rgba(255, 180, 190, 0.7));
+  animation: peach-glow 5s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
 }
 
-/* Mint theme hover glow - only applies on hover */
 .theme-mint:hover {
-  animation: mint-glow 3s linear infinite !important;
+  filter: drop-shadow(0 0 25px rgba(80, 235, 170, 1))
+          drop-shadow(0 0 40px rgba(60, 220, 240, 0.85))
+          drop-shadow(0 0 55px rgba(130, 255, 140, 0.7));
+  animation: mint-glow 5s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
 }
 
-/* Bubblegum theme hover glow - only applies on hover */
 .theme-bubblegum:hover {
-  animation: bubblegum-glow 3s linear infinite !important;
+  filter: drop-shadow(0 0 25px rgba(210, 120, 255, 1))
+          drop-shadow(0 0 40px rgba(255, 110, 180, 0.85))
+          drop-shadow(0 0 55px rgba(170, 190, 255, 0.7));
+  animation: bubblegum-glow 5s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
 }
 
-/* Rainbow theme hover glow - only applies on hover */
 .theme-rainbow:hover {
-  animation: rainbow-glow 3s linear infinite !important;
+  filter: drop-shadow(0 0 25px rgba(180, 130, 255, 1))
+          drop-shadow(0 0 40px rgba(130, 160, 255, 0.9))
+          drop-shadow(0 0 60px rgba(140, 180, 255, 0.8))
+          drop-shadow(0 0 80px rgba(160, 220, 255, 0.7))
+          drop-shadow(0 0 6px rgba(255, 255, 255, 1));
+  animation: rainbow-glow 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
 }
 
 /* ----- RECORDING GLOW EFFECTS ----- */
 
-/* Peach theme recording glow - split complementary colors to peach theme */
-.recording.ghost-recording-glow-peach {
-  animation: peach-recording-glow 2s ease-in-out infinite, recording-glow-pulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite, gentle-float 3s ease-in-out infinite !important;
-  filter: drop-shadow(0 0 20px var(--peach-primary)) 
-          drop-shadow(0 0 40px rgba(255, 170, 140, 0.75))
-          drop-shadow(0 0 70px rgba(240, 220, 160, 0.6));
+/* Recording base styles - ensuring it always gets applied with pulsing */
+.recording, 
+.ghost-recording-glow-peach, 
+.ghost-recording-glow-mint, 
+.ghost-recording-glow-bubblegum, 
+.ghost-recording-glow-rainbow,
+.recording-theme-peach,
+.recording-theme-mint,
+.recording-theme-bubblegum,
+.recording-theme-rainbow {
+  animation: recording-glow-pulse 1.5s ease-in-out infinite !important;
+  transition: filter 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-/* Mint theme recording glow - analogous teal and seafoam */
-.recording.ghost-recording-glow-mint {
-  animation: mint-recording-glow 2s ease-in-out infinite, recording-glow-pulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite, gentle-float 3s ease-in-out infinite !important;
-  filter: drop-shadow(0 0 20px var(--mint-primary)) 
-          drop-shadow(0 0 40px rgba(80, 220, 230, 0.75))
-          drop-shadow(0 0 70px rgba(150, 245, 160, 0.6));
+/* Flash transition effect - applied when switching between states */
+@keyframes flash-transition {
+  0% {
+    filter: brightness(1);
+  }
+  25% {
+    filter: brightness(1.5);
+  }
+  100% {
+    filter: brightness(1);
+  }
 }
 
-/* Bubblegum theme recording glow - triadic palette with pinks and purples */
-.recording.ghost-recording-glow-bubblegum {
-  animation: bubblegum-recording-glow 2s ease-in-out infinite, recording-glow-pulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite, gentle-float 3s ease-in-out infinite !important;
-  filter: drop-shadow(0 0 20px var(--bubblegum-primary)) 
-          drop-shadow(0 0 40px rgba(255, 140, 200, 0.75))
-          drop-shadow(0 0 70px rgba(180, 200, 255, 0.6));
+/* Apply the flash animation when the recording state changes */
+.icon-container:active {
+  animation: flash-transition 0.3s ease-out forwards !important;
+  filter: brightness(1.3) !important; /* Immediate visual feedback */
 }
 
-/* Rainbow theme recording glow - true rainbow palette */
-.recording.ghost-recording-glow-rainbow {
-  animation: rainbow-recording-glow 3s linear infinite, recording-glow-pulse 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite, gentle-float 3s ease-in-out infinite !important;
-  filter: drop-shadow(0 0 20px var(--rainbow-primary)) 
-          drop-shadow(0 0 40px rgba(255, 200, 70, 0.75))
-          drop-shadow(0 0 70px rgba(180, 120, 255, 0.6));
+/* Peach theme recording glow - lighter and pinkier */
+.recording.ghost-recording-glow-peach, 
+.recording.theme-peach,
+.recording-theme-peach {
+  animation: recording-glow-pulse 1.5s ease-in-out infinite, 
+             peach-recording-glow 6s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  filter: drop-shadow(0 0 15px rgba(255, 140, 175, 1)) 
+          drop-shadow(0 0 25px rgba(255, 160, 180, 0.9)) 
+          drop-shadow(0 0 35px rgba(255, 180, 195, 0.8)) !important;
+}
+
+/* Mint theme recording glow - smaller size for better balance */
+.recording.ghost-recording-glow-mint,
+.recording.theme-mint,
+.recording-theme-mint {
+  animation: recording-glow-pulse 1.5s ease-in-out infinite,
+             mint-recording-glow 6s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  filter: drop-shadow(0 0 15px rgba(80, 235, 170, 1)) 
+          drop-shadow(0 0 25px rgba(60, 220, 240, 0.9)) 
+          drop-shadow(0 0 35px rgba(130, 255, 140, 0.8)) !important;
+}
+
+/* Bubblegum theme recording glow - smaller size for better balance */
+.recording.ghost-recording-glow-bubblegum,
+.recording.theme-bubblegum,
+.recording-theme-bubblegum {
+  animation: recording-glow-pulse 1.5s ease-in-out infinite,
+             bubblegum-recording-glow 6s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  filter: drop-shadow(0 0 15px rgba(210, 120, 255, 1)) 
+          drop-shadow(0 0 25px rgba(255, 110, 180, 0.9)) 
+          drop-shadow(0 0 35px rgba(170, 190, 255, 0.8)) !important;
+}
+
+/* Rainbow theme recording glow - more mystical and magical */
+.recording.ghost-recording-glow-rainbow,
+.recording.theme-rainbow,
+.recording-theme-rainbow {
+  animation: recording-glow-pulse 1.5s ease-in-out infinite,
+             rainbow-recording-glow 4s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  filter: drop-shadow(0 0 18px rgba(220, 130, 255, 1)) 
+          drop-shadow(0 0 30px rgba(160, 100, 255, 0.95)) 
+          drop-shadow(0 0 40px rgba(120, 180, 255, 0.9))
+          drop-shadow(0 0 50px rgba(200, 220, 255, 0.8))
+          drop-shadow(0 0 5px rgba(255, 255, 255, 1)) !important;
 }
 
 /* ----- KEYFRAME ANIMATIONS ----- */
@@ -154,188 +215,145 @@
 /* Peach theme glow animation - analogous color scheme with multiple transitions */
 @keyframes peach-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 12px var(--peach-primary)) 
-            drop-shadow(0 0 25px rgba(255, 130, 170, 0.45))
-            drop-shadow(0 0 40px rgba(255, 130, 170, 0.25));
+    filter: drop-shadow(0 0 10px rgba(255, 140, 170, 0.6)) 
+            drop-shadow(0 0 15px rgba(255, 130, 170, 0.4));
   }
-  20% {
-    filter: drop-shadow(0 0 14px var(--peach-secondary))
-            drop-shadow(0 0 28px rgba(255, 160, 140, 0.5))
-            drop-shadow(0 0 45px rgba(255, 160, 140, 0.3));
+  33% {
+    filter: drop-shadow(0 0 10px rgba(255, 170, 140, 0.6))
+            drop-shadow(0 0 15px rgba(255, 160, 140, 0.4));
   }
-  40% {
-    filter: drop-shadow(0 0 15px var(--peach-tertiary))
-            drop-shadow(0 0 30px rgba(255, 190, 120, 0.5))
-            drop-shadow(0 0 50px rgba(255, 190, 120, 0.3));
-  }
-  60% {
-    filter: drop-shadow(0 0 16px var(--peach-quaternary))
-            drop-shadow(0 0 32px rgba(255, 220, 140, 0.5))
-            drop-shadow(0 0 55px rgba(255, 220, 140, 0.3));
-  }
-  80% {
-    filter: drop-shadow(0 0 15px var(--peach-quinary))
-            drop-shadow(0 0 30px rgba(255, 160, 150, 0.5))
-            drop-shadow(0 0 50px rgba(255, 160, 150, 0.3));
+  66% {
+    filter: drop-shadow(0 0 10px rgba(255, 200, 130, 0.6))
+            drop-shadow(0 0 15px rgba(255, 190, 120, 0.4));
   }
 }
 
 /* Mint theme glow animation - pastel colors with multiple transitions */
 @keyframes mint-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 12px var(--mint-primary)) 
-            drop-shadow(0 0 25px rgba(100, 230, 180, 0.45))
-            drop-shadow(0 0 40px rgba(100, 230, 180, 0.25));
+    filter: drop-shadow(0 0 10px rgba(100, 230, 180, 0.6)) 
+            drop-shadow(0 0 15px rgba(100, 230, 180, 0.4));
   }
-  20% {
-    filter: drop-shadow(0 0 14px var(--mint-secondary))
-            drop-shadow(0 0 28px rgba(120, 240, 210, 0.5))
-            drop-shadow(0 0 45px rgba(120, 240, 210, 0.3));
+  33% {
+    filter: drop-shadow(0 0 10px rgba(80, 220, 230, 0.6))
+            drop-shadow(0 0 15px rgba(80, 220, 230, 0.4));
   }
-  40% {
-    filter: drop-shadow(0 0 15px var(--mint-tertiary))
-            drop-shadow(0 0 30px rgba(80, 220, 230, 0.5))
-            drop-shadow(0 0 50px rgba(80, 220, 230, 0.3));
-  }
-  60% {
-    filter: drop-shadow(0 0 16px var(--mint-quaternary))
-            drop-shadow(0 0 32px rgba(140, 255, 230, 0.5))
-            drop-shadow(0 0 55px rgba(140, 255, 230, 0.3));
-  }
-  80% {
-    filter: drop-shadow(0 0 15px var(--mint-quinary))
-            drop-shadow(0 0 30px rgba(160, 255, 200, 0.5))
-            drop-shadow(0 0 50px rgba(160, 255, 200, 0.3));
+  66% {
+    filter: drop-shadow(0 0 10px rgba(150, 245, 160, 0.6))
+            drop-shadow(0 0 15px rgba(150, 245, 160, 0.4));
   }
 }
 
 /* Bubblegum theme glow animation - pastel purple/pink cycle */
 @keyframes bubblegum-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 12px var(--bubblegum-primary)) 
-            drop-shadow(0 0 25px rgba(190, 140, 250, 0.45))
-            drop-shadow(0 0 40px rgba(190, 140, 250, 0.25));
+    filter: drop-shadow(0 0 10px rgba(200, 140, 255, 0.6)) 
+            drop-shadow(0 0 15px rgba(200, 140, 255, 0.4));
   }
-  20% {
-    filter: drop-shadow(0 0 14px var(--bubblegum-secondary))
-            drop-shadow(0 0 28px rgba(220, 160, 255, 0.5))
-            drop-shadow(0 0 45px rgba(220, 160, 255, 0.3));
+  33% {
+    filter: drop-shadow(0 0 10px rgba(255, 140, 200, 0.6))
+            drop-shadow(0 0 15px rgba(255, 140, 200, 0.4));
   }
-  40% {
-    filter: drop-shadow(0 0 15px var(--bubblegum-tertiary))
-            drop-shadow(0 0 30px rgba(240, 180, 255, 0.5))
-            drop-shadow(0 0 50px rgba(240, 180, 255, 0.3));
-  }
-  60% {
-    filter: drop-shadow(0 0 16px var(--bubblegum-quaternary))
-            drop-shadow(0 0 32px rgba(255, 150, 220, 0.5))
-            drop-shadow(0 0 55px rgba(255, 150, 220, 0.3));
-  }
-  80% {
-    filter: drop-shadow(0 0 15px var(--bubblegum-quinary))
-            drop-shadow(0 0 30px rgba(230, 165, 235, 0.5))
-            drop-shadow(0 0 50px rgba(230, 165, 235, 0.3));
+  66% {
+    filter: drop-shadow(0 0 10px rgba(180, 200, 255, 0.6))
+            drop-shadow(0 0 15px rgba(180, 200, 255, 0.4));
   }
 }
 
 /* Rainbow theme glow animation - softer pastel colors with fewer transitions */
 @keyframes rainbow-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 12px rgba(255, 150, 170, 0.9)) 
-            drop-shadow(0 0 25px rgba(255, 150, 170, 0.4))
-            drop-shadow(0 0 40px rgba(255, 150, 170, 0.2));
+    filter: drop-shadow(0 0 20px rgba(180, 130, 255, 0.95)) 
+            drop-shadow(0 0 40px rgba(180, 130, 255, 0.7))
+            drop-shadow(0 0 4px rgba(255, 255, 255, 1));
   }
-  33% {
-    filter: drop-shadow(0 0 12px rgba(255, 200, 130, 0.9))
-            drop-shadow(0 0 25px rgba(255, 200, 130, 0.4))
-            drop-shadow(0 0 40px rgba(255, 200, 130, 0.2));
+  25% {
+    filter: drop-shadow(0 0 20px rgba(130, 160, 255, 0.95))
+            drop-shadow(0 0 40px rgba(130, 160, 255, 0.7))
+            drop-shadow(0 0 4px rgba(240, 250, 255, 1));
   }
-  66% {
-    filter: drop-shadow(0 0 12px rgba(180, 220, 255, 0.9))
-            drop-shadow(0 0 25px rgba(180, 220, 255, 0.4))
-            drop-shadow(0 0 40px rgba(180, 220, 255, 0.2));
+  50% {
+    filter: drop-shadow(0 0 20px rgba(140, 180, 255, 0.95))
+            drop-shadow(0 0 40px rgba(140, 180, 255, 0.7))
+            drop-shadow(0 0 4px rgba(235, 255, 255, 1));
+  }
+  75% {
+    filter: drop-shadow(0 0 20px rgba(160, 220, 255, 0.95))
+            drop-shadow(0 0 40px rgba(160, 220, 255, 0.7))
+            drop-shadow(0 0 4px rgba(230, 255, 250, 1));
   }
 }
 
 /* ----- RECORDING GLOW KEYFRAMES ----- */
 
-/* Peach theme recording animation - more intense split complementary colors */
+/* Peach theme recording animation - much more visible */
 @keyframes peach-recording-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 25px var(--peach-primary)) 
-            drop-shadow(0 0 50px rgba(255, 140, 170, 0.75))
-            drop-shadow(0 0 75px rgba(255, 140, 170, 0.5));
+    filter: drop-shadow(0 0 15px rgba(255, 140, 170, 0.9)) 
+            drop-shadow(0 0 25px rgba(255, 140, 170, 0.65));
   }
   33% {
-    filter: drop-shadow(0 0 25px var(--peach-secondary))
-            drop-shadow(0 0 50px rgba(255, 170, 140, 0.75))
-            drop-shadow(0 0 75px rgba(255, 170, 140, 0.5));
+    filter: drop-shadow(0 0 15px rgba(255, 170, 140, 0.9))
+            drop-shadow(0 0 25px rgba(255, 170, 140, 0.65));
   }
   66% {
-    filter: drop-shadow(0 0 25px var(--peach-quaternary))
-            drop-shadow(0 0 50px rgba(240, 220, 160, 0.75))
-            drop-shadow(0 0 75px rgba(240, 220, 160, 0.5));
+    filter: drop-shadow(0 0 15px rgba(240, 220, 160, 0.9))
+            drop-shadow(0 0 25px rgba(240, 220, 160, 0.65));
   }
 }
 
-/* Mint theme recording animation - analogous colors */
+/* Mint theme recording animation - much more visible */
 @keyframes mint-recording-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 25px var(--mint-primary)) 
-            drop-shadow(0 0 50px rgba(100, 230, 180, 0.75))
-            drop-shadow(0 0 75px rgba(100, 230, 180, 0.5));
+    filter: drop-shadow(0 0 15px rgba(100, 230, 180, 0.9)) 
+            drop-shadow(0 0 25px rgba(100, 230, 180, 0.65));
   }
   33% {
-    filter: drop-shadow(0 0 25px var(--mint-tertiary))
-            drop-shadow(0 0 50px rgba(80, 220, 230, 0.75))
-            drop-shadow(0 0 75px rgba(80, 220, 230, 0.5));
+    filter: drop-shadow(0 0 15px rgba(80, 220, 230, 0.9))
+            drop-shadow(0 0 25px rgba(80, 220, 230, 0.65));
   }
   66% {
-    filter: drop-shadow(0 0 25px var(--mint-quinary))
-            drop-shadow(0 0 50px rgba(150, 245, 160, 0.75))
-            drop-shadow(0 0 75px rgba(150, 245, 160, 0.5));
+    filter: drop-shadow(0 0 15px rgba(150, 245, 160, 0.9))
+            drop-shadow(0 0 25px rgba(150, 245, 160, 0.65));
   }
 }
 
-/* Bubblegum theme recording animation - triadic colors */
+/* Bubblegum theme recording animation - much more visible */
 @keyframes bubblegum-recording-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 25px var(--bubblegum-primary)) 
-            drop-shadow(0 0 50px rgba(200, 140, 255, 0.75))
-            drop-shadow(0 0 75px rgba(200, 140, 255, 0.5));
+    filter: drop-shadow(0 0 15px rgba(200, 140, 255, 0.9)) 
+            drop-shadow(0 0 25px rgba(200, 140, 255, 0.65));
   }
   33% {
-    filter: drop-shadow(0 0 25px var(--bubblegum-tertiary))
-            drop-shadow(0 0 50px rgba(255, 140, 200, 0.75))
-            drop-shadow(0 0 75px rgba(255, 140, 200, 0.5));
+    filter: drop-shadow(0 0 15px rgba(255, 140, 200, 0.9))
+            drop-shadow(0 0 25px rgba(255, 140, 200, 0.65));
   }
   66% {
-    filter: drop-shadow(0 0 25px var(--bubblegum-quinary))
-            drop-shadow(0 0 50px rgba(180, 200, 255, 0.75))
-            drop-shadow(0 0 75px rgba(180, 200, 255, 0.5));
+    filter: drop-shadow(0 0 15px rgba(180, 200, 255, 0.9))
+            drop-shadow(0 0 25px rgba(180, 200, 255, 0.65));
   }
 }
 
-/* Rainbow theme recording animation - true rainbow colors */
+/* Rainbow theme recording animation - CANDY SHOP premium effect */
 @keyframes rainbow-recording-glow {
   0%, 100% {
-    filter: drop-shadow(0 0 25px var(--rainbow-primary)) 
-           drop-shadow(0 0 50px rgba(255, 90, 140, 0.75))
-           drop-shadow(0 0 75px rgba(255, 90, 140, 0.5));
+    filter: drop-shadow(0 0 18px rgba(220, 130, 255, 1)) 
+           drop-shadow(0 0 30px rgba(160, 100, 255, 0.9))
+           drop-shadow(0 0 5px rgba(255, 255, 255, 1));
   }
   25% {
-    filter: drop-shadow(0 0 25px var(--rainbow-tertiary))
-           drop-shadow(0 0 50px rgba(255, 200, 70, 0.75))
-           drop-shadow(0 0 75px rgba(255, 200, 70, 0.5));
+    filter: drop-shadow(0 0 18px rgba(120, 180, 255, 1))
+           drop-shadow(0 0 30px rgba(100, 140, 255, 0.9))
+           drop-shadow(0 0 5px rgba(235, 255, 255, 1));
   }
   50% {
-    filter: drop-shadow(0 0 25px var(--rainbow-quaternary))
-           drop-shadow(0 0 50px rgba(90, 230, 130, 0.75))
-           drop-shadow(0 0 75px rgba(90, 230, 130, 0.5));
+    filter: drop-shadow(0 0 18px rgba(180, 130, 255, 1))
+           drop-shadow(0 0 30px rgba(130, 160, 255, 0.9))
+           drop-shadow(0 0 5px rgba(255, 250, 255, 1));
   }
   75% {
-    filter: drop-shadow(0 0 25px var(--rainbow-senary))
-           drop-shadow(0 0 50px rgba(180, 120, 255, 0.75))
-           drop-shadow(0 0 75px rgba(180, 120, 255, 0.5));
+    filter: drop-shadow(0 0 18px rgba(160, 150, 255, 1))
+           drop-shadow(0 0 30px rgba(180, 160, 255, 0.9))
+           drop-shadow(0 0 5px rgba(240, 250, 255, 1));
   }
 }
