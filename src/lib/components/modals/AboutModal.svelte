@@ -1,4 +1,6 @@
 <script>
+  import Ghost from '$lib/components/ghost/Ghost.svelte';
+  import { theme } from '$lib';
   export let closeModal;
 </script>
 
@@ -14,11 +16,13 @@
     <div class="animate-fadeUp space-y-4">
       <div class="flex items-center gap-3 mb-1">
         <div class="w-9 h-9 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
-          <div class="relative w-7 h-7">
-            <img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" />
-            <img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" />
-            <img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full" />
-          </div>
+          <Ghost 
+            width="28px" 
+            height="28px" 
+            externalTheme={theme}
+            clickable={false}
+            seed={12345}
+          />
         </div>
         <h3 id="about_modal_title" class="font-black text-xl text-gray-800 tracking-tight">About TalkType</h3>
       </div>

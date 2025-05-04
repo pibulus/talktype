@@ -2,6 +2,7 @@
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
   import { browser } from '$app/environment';
   import Ghost from '$lib/components/ghost/Ghost.svelte';
+  import { theme as appTheme } from '$lib';
   
   // Props passed from the parent
   export let isRecording = false;
@@ -83,6 +84,7 @@
     isRecording={isRecording}
     isProcessing={isProcessing}
     animationState={isRecording ? 'wobble-start' : isProcessing ? 'processing' : 'idle'}
+    externalTheme={appTheme}
     on:toggleRecording={handleToggleRecording}
   />
 </div>

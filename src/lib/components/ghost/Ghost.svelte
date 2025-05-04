@@ -20,7 +20,7 @@
 		injectAnimationVariables
 	} from './animationConfig';
 	import { THEMES } from '$lib/constants.js';
-	import { theme, cssVariables, setTheme } from './themeStore';
+	import { theme as localTheme, cssVariables, setTheme } from './themeStore';
 
 	// Props to communicate state
 	export let isRecording = false;
@@ -28,6 +28,15 @@
 	export let animationState = 'idle'; // 'idle', 'wobble-start', 'wobble-stop'
 	export let debug = false; // General debug mode
 	export let debugAnim = false; // Animation debug mode - shows animation config
+	export let seed = 0; // Seed for randomizing animations, allows multiple ghosts to have unsynchronized animations
+	export let externalTheme = null; // Optional external theme store for integration with app-level theme
+	
+	// Style props for flexible sizing and appearance
+	export let width = '100%';
+	export let height = '100%';
+	export let opacity = 1;
+	export let scale = 1;
+	export let clickable = true; // Whether the ghost responds to clicks
 
 	// DOM element references
 	let ghostSvg;
@@ -45,11 +54,31 @@
 	let eyePositionX = 0; // For horizontal eye tracking: -1 to 1
 	let eyePositionY = 0; // For vertical eye tracking: -1 to 1
 	let doingSpecialAnimation = false; // For rare spin animation (easter egg)
+	let blinkCounter = 0; // Counter for advancing the seeded random generation
 	
-	// Theme state from store
+	// Use either external or local theme store
 	let currentTheme;
-	theme.subscribe(value => {
-		currentTheme = value;
+	let themeStore = externalTheme || localTheme;
+	let unsubscribeTheme;
+	
+	// Watch for changes to externalTheme prop
+	$: {
+		// Clean up previous subscription if it exists
+		if (unsubscribeTheme) unsubscribeTheme();
+		
+		// Update the theme store reference
+		themeStore = externalTheme || localTheme;
+		
+		// Create new subscription
+		unsubscribeTheme = themeStore.subscribe(value => {
+			currentTheme = value;
+			if (debug) console.log(`Ghost theme updated to: ${value} (using ${externalTheme ? 'external' : 'local'} store)`);
+		});
+	}
+	
+	// Clean up subscription on component destroy
+	onDestroy(() => {
+		if (unsubscribeTheme) unsubscribeTheme();
 	});
 
 	// Event dispatcher
@@ -66,14 +95,14 @@
 		// Get the SVG element
 		const svgElement = ghostSvg.querySelector('svg');
 		if (svgElement) {
-			// Reset any animations by forcing reflow
-			void svgElement.offsetWidth;
+			// Force a reflow to ensure CSS transitions apply correctly
+			forceReflow(svgElement);
 
 			// Get the shape element
 			const shapeElem = svgElement.querySelector('#ghost-shape');
 			if (shapeElem) {
 				// Force shape animation restart
-				void shapeElem.offsetWidth;
+				forceReflow(shapeElem);
 			}
 
 			// Clean up previous gradient animations and initialize new ones
@@ -82,6 +111,11 @@
 			
 			// Update dynamic styles
 			initDynamicStyles();
+			
+			// Log theme change if in debug mode
+			if (debug) {
+				console.log(`Ghost theme updated to: ${currentTheme}`);
+			}
 		}
 	}
 
@@ -179,7 +213,15 @@
 		}, BLINK_CONFIG.SINGLE_DURATION);
 	}
 
-	// Regular ambient blinking
+	// Seeded random number generator for deterministic but unique animations
+	function seedRandom(min, max) {
+		// Simple seeded random number generator based on sine function
+		const x = Math.sin(seed + blinkCounter++) * 10000;
+		const random = x - Math.floor(x);
+		return min + random * (max - min);
+	}
+
+	// Regular ambient blinking with seed-based randomization
 	function scheduleBlink() {
 		clearTimeout(blinkTimeoutId);
 
@@ -188,13 +230,13 @@
 			return;
 		}
 
-		// Random delay between blinks using config settings
+		// Random delay between blinks using config settings and seed
 		const delay =
-			BLINK_CONFIG.MIN_GAP + Math.random() * (BLINK_CONFIG.MAX_GAP - BLINK_CONFIG.MIN_GAP);
+			BLINK_CONFIG.MIN_GAP + seedRandom(0, 1) * (BLINK_CONFIG.MAX_GAP - BLINK_CONFIG.MIN_GAP);
 
 		blinkTimeoutId = setTimeout(() => {
 			// Chance of double blink based on config
-			if (Math.random() < BLINK_CONFIG.DOUBLE_CHANCE) {
+			if (seedRandom(0, 1) < BLINK_CONFIG.DOUBLE_CHANCE) {
 				performDoubleBlink(() => scheduleBlink());
 			} else {
 				performSingleBlink(() => scheduleBlink());
@@ -331,15 +373,15 @@
 		}
 	}
 
-	// Special animations that rarely happen (easter egg)
+	// Special animations that rarely happen (easter egg) with seeded randomization
 	function maybeDoSpecialAnimation() {
 		if (typeof window === 'undefined') return;
 
 		clearTimeout(specialAnimationTimeoutId);
 
-		// Special animation with configurable chance
+		// Special animation with configurable chance using seeded random
 		if (
-			Math.random() < SPECIAL_CONFIG.CHANCE &&
+			seedRandom(0, 1) < SPECIAL_CONFIG.CHANCE &&
 			!isRecording &&
 			!isProcessing &&
 			!doingSpecialAnimation &&
@@ -361,8 +403,9 @@
 			}, SPECIAL_CONFIG.DURATION);
 		}
 
-		// Schedule next check using config interval
-		specialAnimationTimeoutId = setTimeout(maybeDoSpecialAnimation, SPECIAL_CONFIG.CHECK_INTERVAL);
+		// Schedule next check using config interval with slight variation based on seed
+		const checkInterval = SPECIAL_CONFIG.CHECK_INTERVAL + seedRandom(-5000, 5000);
+		specialAnimationTimeoutId = setTimeout(maybeDoSpecialAnimation, checkInterval);
 	}
 
 	// Public methods to expose animation controls
@@ -449,10 +492,10 @@
 			forceReflow(ghostSvg);
 		}
 
-		// Choose direction
+		// Choose direction using seeded random for deterministic but unique wobbles
 		const wobbleDirection =
 			direction ||
-			(Math.random() < WOBBLE_CONFIG.LEFT_CHANCE
+			(seedRandom(0, 1) < WOBBLE_CONFIG.LEFT_CHANCE
 				? CSS_CLASSES.WOBBLE_LEFT
 				: CSS_CLASSES.WOBBLE_RIGHT);
 
@@ -471,13 +514,14 @@
 		// Clear any existing wobble timer
 		clearTimeout(wobbleTimeoutId);
 
-		// Schedule the wobble to end after animation completes
+		// Schedule the wobble to end after animation completes with slight variation based on seed
+		const duration = WOBBLE_CONFIG.DURATION + seedRandom(-50, 50);
 		wobbleTimeoutId = setTimeout(() => {
 			if (svgElement) {
 				svgElement.classList.remove(CSS_CLASSES.WOBBLE_LEFT, CSS_CLASSES.WOBBLE_RIGHT);
 			}
 			isWobbling = false;
-		}, WOBBLE_CONFIG.DURATION);
+		}, duration);
 	}
 
 	// Track previous state to detect actual changes
@@ -527,16 +571,19 @@
       {isWobbling
 		? `ghost-wobble-${Math.random() < WOBBLE_CONFIG.LEFT_CHANCE ? 'left' : 'right'}`
 		: ''} 
-      {doingSpecialAnimation ? 'do-special-animation' : ''}"
-	on:click={handleClick}
+      {doingSpecialAnimation ? 'do-special-animation' : ''}
+      {!clickable ? 'ghost-non-clickable' : ''}"
+	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
+	on:click={clickable ? handleClick : undefined}
 	on:keydown={(e) => {
-		if (e.key === 'Enter' || e.key === ' ') {
+		if (clickable && (e.key === 'Enter' || e.key === ' ')) {
 			e.preventDefault();
 			handleClick();
 		}
 	}}
-	aria-label="Toggle Recording"
-	aria-pressed={isRecording.toString()}
+	aria-label={clickable ? "Toggle Recording" : "Ghost"}
+	aria-pressed={clickable ? isRecording.toString() : undefined}
+	tabindex={clickable ? "0" : "-1"}
 >
 	<svg
 		viewBox="0 0 1024 1024"
@@ -641,6 +688,11 @@
 		outline-offset: 0 !important;
 		box-shadow: none !important;
 		border: none !important;
+	}
+	
+	.ghost-non-clickable {
+		cursor: default;
+		pointer-events: none;
 	}
 
 	.ghost-svg {

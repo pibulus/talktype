@@ -3,6 +3,8 @@
 	import { theme, autoRecord, showSettingsModal, applyTheme, promptStyle } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { PROMPT_STYLES } from '$lib/constants';
+	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
+	import Ghost from '$lib/components/ghost/Ghost.svelte';
 
 	// Props for the modal
 	export let closeModal = () => {};
@@ -196,23 +198,13 @@
 				<div
 					class="flex h-8 w-8 items-center justify-center rounded-full border border-pink-200/60 bg-gradient-to-br from-white to-pink-50 shadow-sm"
 				>
-					<div class="relative h-6 w-6">
-						<img
-							src="/talktype-icon-bg-gradient.svg"
-							alt=""
-							class="absolute inset-0 h-full w-full"
-						/>
-						<img
-							src="/assets/talktype-icon-base.svg"
-							alt=""
-							class="absolute inset-0 h-full w-full"
-						/>
-						<img
-							src="/assets/talktype-icon-eyes.svg"
-							alt=""
-							class="absolute inset-0 h-full w-full"
-						/>
-					</div>
+					<Ghost
+						width="24px"
+						height="24px"
+						externalTheme={theme}
+						clickable={false}
+						seed={54321}
+					/>
 				</div>
 				<h3 id="settings_modal_title" class="text-xl font-black tracking-tight text-gray-800">
 					Settings
@@ -259,7 +251,7 @@
 				<h4 class="text-sm font-bold text-gray-700">Choose Your Vibe</h4>
 
 				<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-					{#each vibeOptions as vibe}
+					{#each vibeOptions as vibe, index}
 						<button
 							class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {selectedVibe ===
 							vibe.id
@@ -269,39 +261,13 @@
 							on:click={() => changeVibe(vibe.id)}
 						>
 							<div class="preview-container mb-1">
-								<!-- Ghost preview -->
+								<!-- Ghost preview using DisplayGhost component -->
 								<div class="preview-ghost-wrapper relative h-10 w-10">
-									<div class="preview-icon-layers relative h-full w-full">
-										<!-- Gradient background (bottom layer) with proper theme-specific path -->
-										<img
-											src={vibe.id === 'mint'
-												? '/talktype-icon-bg-gradient-mint.svg'
-												: vibe.id === 'bubblegum'
-													? '/talktype-icon-bg-gradient-bubblegum.svg'
-													: vibe.id === 'rainbow'
-														? '/talktype-icon-bg-gradient-rainbow.svg'
-														: '/talktype-icon-bg-gradient.svg'}
-											class={vibe.id === 'rainbow'
-												? 'rainbow-animated absolute inset-0 h-full w-full'
-												: 'absolute inset-0 h-full w-full'}
-											alt=""
-											aria-hidden="true"
-										/>
-										<!-- Outline without eyes -->
-										<img
-											src="/assets/talktype-icon-base.svg"
-											alt=""
-											class="absolute inset-0 h-full w-full"
-											aria-hidden="true"
-										/>
-										<!-- Just the eyes (with the blink animation) -->
-										<img
-											src="/assets/talktype-icon-eyes.svg"
-											alt=""
-											class="preview-eyes absolute inset-0 h-full w-full"
-											aria-hidden="true"
-										/>
-									</div>
+									<DisplayGhost 
+										theme={vibe.id} 
+										size="100%" 
+										seed={10000 + index * 777}
+									/>
 								</div>
 
 								<!-- Visualizer preview -->
@@ -687,7 +653,7 @@
 	}
 
 	/* Each theme preview has a slightly different blink timing 
-     to create an organic, non-synchronized effect */
+	   to create an organic, non-synchronized effect */
 	.vibe-option:nth-child(1) .preview-eyes {
 		animation-duration: 6.7s;
 		animation-delay: 0.4s;
