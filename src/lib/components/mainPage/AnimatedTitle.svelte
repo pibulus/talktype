@@ -9,7 +9,7 @@
   export let subtitle = "Voice-to-text that doesn't suck. Spooky good, freaky fast, always free.";
   export let showAppSuffix = true;
   export let suffixColor = "inherit"; // Inherit color from parent title
-  export let suffixSize = "65%"; // 65% of parent size
+  export let suffixSize = "55%"; // 55% of parent size
   
   onMount(() => {
     // Set up animation sequence timing (for title/subtitle)
@@ -44,7 +44,7 @@
         <AppSuffix 
           color={suffixColor}
           size={suffixSize}
-          offsetY="0.15em"
+          offsetY="0.2em"
           wiggleOnHover={true}
           customClass="title-suffix"
         />
@@ -138,7 +138,6 @@
   .talktype-main-word {
     display: inline-block;
     position: relative;
-    margin-right: calc(0.3em * 0.6); /* Offset the extra space caused by the suffix to maintain visual centering */
   }
   
   /* App suffix container styling */
@@ -151,9 +150,8 @@
   
   /* Styles applied to the AppSuffix component */
   :global(.title-suffix) {
-    font-weight: 500;
     letter-spacing: -0.01em;
-    font-variation-settings: 'wght' 500, 'opsz' 32;
+    font-variation-settings: inherit;
     opacity: 0.85; /* Slightly less prominent than the main title */
   }
   

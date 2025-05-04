@@ -9,9 +9,9 @@
   
   // Props with defaults
   export let color = "inherit"; // Default: inherit from parent
-  export let size = "60%"; // Default: 60% of parent size
+  export let size = "55%"; // Default: 55% of parent size (reduced from 60%)
   export let customClass = ""; // Optional additional classes
-  export let offsetY = "0.15em"; // Default vertical offset from baseline
+  export let offsetY = "0.2em"; // Default vertical offset from baseline (increased from 0.15em)
   export let wiggleOnHover = true; // Whether to add wiggle effect on hover
 </script>
 
@@ -26,22 +26,24 @@
   .app-suffix {
     display: inline-block;
     color: var(--suffix-color, inherit);
-    font-size: var(--suffix-size, 60%);
-    font-weight: 500;
-    margin-left: 0.3em;
+    font-size: var(--suffix-size, 55%);
+    font-weight: inherit;
+    margin-left: 0.25em;
     line-height: 1;
     letter-spacing: -0.01em;
     font-kerning: normal;
     vertical-align: baseline;
-    position: relative;
-    bottom: var(--offset-y, 0.15em);
-    font-variation-settings: 'wght' 500;
+    position: absolute;
+    bottom: var(--offset-y, 0.2em);
+    right: -1.5em;
+    font-variation-settings: inherit;
     transform: rotate(-2deg);
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
+    opacity: 0.85;
   }
   
   .wiggle-on-hover:hover {
-    animation: wiggle 0.5s ease-in-out;
+    transform: translateY(-1px) rotate(-2deg) scale(1.02);
   }
   
   @keyframes wiggle {
