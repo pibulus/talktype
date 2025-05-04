@@ -1,5 +1,6 @@
 <script>
   import { browser } from '$app/environment';
+  import Ghost from '$lib/components/ghost/Ghost.svelte';
   
   export let closeModal;
   export let markIntroAsSeen;
@@ -26,10 +27,8 @@
 
     <div class="space-y-5 sm:space-y-6 md:space-y-7 animate-fadeIn">
       <div class="flex justify-center mb-4">
-        <div class="relative w-16 h-16 animate-pulse-slow">
-          <img src="/talktype-icon-bg-gradient.svg" alt="" class="absolute inset-0 w-full h-full" loading="lazy" />
-          <img src="/assets/talktype-icon-base.svg" alt="" class="absolute inset-0 w-full h-full" loading="lazy" />
-          <img src="/assets/talktype-icon-eyes.svg" alt="" class="absolute inset-0 w-full h-full intro-eyes" loading="lazy" />
+        <div class="w-16 h-16 animate-pulse-slow">
+          <Ghost size="100%" clickable={false} class="intro-ghost" seed={12345} />
         </div>
       </div>
 
@@ -107,19 +106,16 @@
     }
   }
 
-  :global(.intro-eyes) {
-    animation: intro-blink 3s infinite;
+  :global(.intro-ghost) {
+    animation: intro-pulse 3s ease-in-out infinite;
   }
 
-  @keyframes intro-blink {
-    0%, 30%, 33%, 69%, 100% {
-      transform: scaleY(1);
+  @keyframes intro-pulse {
+    0%, 100% {
+      filter: brightness(1) saturate(1);
     }
-    31%, 32% {
-      transform: scaleY(0);
-    }
-    70%, 71% {
-      transform: scaleY(0);
+    50% {
+      filter: brightness(1.1) saturate(1.1);
     }
   }
 </style>

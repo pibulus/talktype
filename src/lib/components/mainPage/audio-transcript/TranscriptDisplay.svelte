@@ -1,6 +1,7 @@
 <script>
   import { ANIMATION, ATTRIBUTION } from '$lib/constants';
   import { createEventDispatcher, onMount } from 'svelte';
+  import Ghost from '$lib/components/ghost/Ghost.svelte';
   
   // Props
   export let transcript = '';
@@ -81,31 +82,13 @@
         aria-label="Copy transcript to clipboard"
         bind:this={copyButtonRef}
       >
-        <div class="relative w-full h-full">
-          <!-- Ghost icon layers - same as main app icon but smaller -->
-          <div class="absolute inset-0 w-full h-full icon-layers">
-            <!-- Gradient background (bottom layer) -->
-            <img
-              src="/talktype-icon-bg-gradient.svg"
-              alt=""
-              class="absolute inset-0 w-full h-full"
-              aria-hidden="true"
-            />
-            <!-- Outline without eyes -->
-            <img
-              src="/assets/talktype-icon-base.svg"
-              alt=""
-              class="absolute inset-0 w-full h-full"
-              aria-hidden="true"
-            />
-            <!-- Just the eyes (for blinking) -->
-            <img
-              src="/assets/talktype-icon-eyes.svg"
-              alt=""
-              class="absolute inset-0 w-full h-full copy-eyes"
-              aria-hidden="true"
-            />
-          </div>
+        <div class="w-full h-full">
+          <Ghost 
+            size="100%" 
+            clickable={false} 
+            class="copy-ghost"
+            seed={42} 
+          />
         </div>
 
         <!-- Smart tooltip - only shows for first few hovers -->

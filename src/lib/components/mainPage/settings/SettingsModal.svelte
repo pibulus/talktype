@@ -34,26 +34,23 @@
 		selectedPromptStyle = value;
 	});
 
-	// Theme options with gradient SVG files for ghost and CSS gradients for visualizer
+	// Theme options with CSS gradients for visualizer
 	const vibeOptions = [
 		{
 			id: 'peach',
 			name: 'Peach',
-			ghostGradientSrc: '/talktype-icon-bg-gradient.svg',
 			visualizerGradient: 'linear-gradient(to top, #ffa573, #ff9f9a, #ff7fcd, #ffb6f3)',
 			previewGradient: 'linear-gradient(135deg, #ffa573, #ff8f9a, #ff7fcd, #ffb6f3)'
 		},
 		{
 			id: 'mint',
 			name: 'Mint',
-			ghostGradientSrc: '/talktype-icon-bg-gradient-mint.svg',
 			visualizerGradient: 'linear-gradient(to top, #86efac, #5eead4, #67e8f9)',
 			previewGradient: 'linear-gradient(135deg, #86efac, #5eead4, #67e8f9)'
 		},
 		{
 			id: 'bubblegum',
 			name: 'Bubblegum',
-			ghostGradientSrc: '/talktype-icon-bg-gradient-bubblegum.svg',
 			visualizerGradient:
 				'linear-gradient(to top, #20c5ff, #4d7bff, #c85aff, #ee45f0, #ff3ba0, #ff1a8d)',
 			previewGradient: 'linear-gradient(135deg, #20c5ff, #4d7bff, #c85aff, #ee45f0, #ff1a8d)'
@@ -61,7 +58,6 @@
 		{
 			id: 'rainbow',
 			name: 'Rainbow',
-			ghostGradientSrc: '/talktype-icon-bg-gradient-rainbow.svg',
 			visualizerGradient: 'rainbow-gradient' /* Special identifier for rainbow animation */,
 			previewGradient: 'rainbow',
 			animated: true
