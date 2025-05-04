@@ -14,8 +14,9 @@ The Ghost component system consists of several interconnected files:
 ├── ghost-animations.css   # Animation keyframes and behaviors
 ├── ghost-themes.css       # Color definitions and theme variables
 ├── ghost-paths.svg        # SVG path definitions for the ghost shape
+├── animationConfig.js     # Animation parameters and timing configuration
 ├── gradientAnimator.js    # JS animation logic for gradients
-├── gradientConfig.js      # Animation behavior configuration
+├── gradientConfig.js      # Gradient animation behavior configuration
 ├── ghostStore.js          # State management (if applicable)
 └── services/
     └── eyeTracking.js     # Eye movement and tracking service
@@ -120,7 +121,51 @@ The JavaScript-based animations provide enhanced control over gradient behaviors
 
 ## Configuration System
 
-Animation behaviors are configured in `gradientConfig.js`, which serves as a centralized configuration system:
+The ghost component uses a centralized configuration approach with two main configuration files:
+
+### Animation Configuration
+
+Animation behaviors are configured in `animationConfig.js`, which provides a centralized system for all animation parameters:
+
+```javascript
+// Ghost Animation Configuration
+export const BLINK_CONFIG = {
+  MIN_GAP: 4000,         // Minimum time between ambient blinks (ms)
+  MAX_GAP: 9000,         // Maximum time between ambient blinks (ms)
+  SINGLE_DURATION: 300,  // Duration of a single blink (ms)
+  DOUBLE_PAUSE: 200,     // Pause between blinks in a double-blink (ms)
+  TRIPLE_PAUSE: 150,     // Pause between blinks in a triple-blink (ms)
+  DOUBLE_CHANCE: 0.25,   // Probability (0-1) of double blink vs single
+  THINKING_RATE: 150,    // Time between blinks in thinking state (ms)
+  THINKING_INTERVAL: 1000, // Interval for thinking blink pattern (ms)
+  RESUME_DELAY: 500      // Delay before resuming blinks after state change (ms)
+};
+
+export const EYE_CONFIG = {
+  CLOSED_SCALE: 0.05,    // Scale factor when eyes are closed
+  X_MULTIPLIER: 4,       // Horizontal movement multiplier for eyes
+  Y_MULTIPLIER: 2,       // Vertical movement multiplier for eyes
+  X_DIVISOR: 3,          // Divisor for max horizontal tracking distance
+  Y_DIVISOR: 3,          // Divisor for max vertical tracking distance
+  DEAD_ZONE: 0.05,       // Dead zone for eye movement (0-1)
+  SMOOTHING: 0.2,        // Smoothing factor for eye movement (0-1)
+  REACT_DELAY: 500,      // Delay before reacting to transcript (ms)
+  TEXT_THRESHOLD: 20     // Threshold for "long" transcript reactions
+};
+
+// CSS class names for consistent reference
+export const CSS_CLASSES = {
+  WOBBLE_LEFT: 'wobble-left',
+  WOBBLE_RIGHT: 'wobble-right',
+  SPIN: 'spin',
+  PULSE: 'ghost-pulse',
+  INITIAL_LOAD: 'initial-load'
+};
+```
+
+### Gradient Configuration
+
+Gradient behaviors are configured in `gradientConfig.js`:
 
 ```javascript
 // Animation timing parameters
@@ -145,7 +190,14 @@ export const shapeAnimations = {
 };
 ```
 
-These configurations control animation timing, easing, scaling, and other behaviors separately from the actual color definitions.
+These configurations control all animation aspects:
+- Timing parameters (durations, delays, intervals)
+- Animation probabilities and thresholds
+- Visual behavior values (scale factors, movement multipliers)
+- CSS class names for consistent reference
+- Gradient animation behaviors
+
+This centralized approach makes it easy to tweak all ghost animations from one place without modifying component logic.
 
 ## Animation CSS Structure
 
@@ -310,10 +362,12 @@ When working with the Ghost component:
 1. Always use ID selectors for direct element targeting
 2. Ensure each animation has a clear purpose and doesn't conflict with others
 3. Maintain separation between theme definitions and animation behaviors
-4. Use CSS variables for all color values
-5. Clear timeouts properly to avoid animation conflicts
-6. Force browser reflow when needed to ensure clean animation transitions
-7. Use transform-origin consistently across related animations
+4. Keep animation timing parameters in animationConfig.js for easy adjustment
+5. Use CSS variables for all color values
+6. Clear timeouts properly to avoid animation conflicts
+7. Force browser reflow when needed to ensure clean animation transitions
+8. Use transform-origin consistently across related animations
+9. Use the CSS_CLASSES constants for consistent class name references
 
 ## Troubleshooting
 

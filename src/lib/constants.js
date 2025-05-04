@@ -46,28 +46,11 @@ export const APP_CONFIG = {
 
 // Animation Timing (in ms)
 export const ANIMATION = {
-  // Ghost blinking
-  BLINK: {
-    MIN_GAP: 4000,         // Minimum time between ambient blinks
-    MAX_GAP: 9000,         // Maximum time between ambient blinks
-    SINGLE_DURATION: 300,  // Duration of a single blink
-    DOUBLE_PAUSE: 200,     // Pause between blinks in a double-blink
-    TRIPLE_PAUSE: 150      // Pause between blinks in a triple-blink
-  },
-  
   // Button animations
   BUTTON: {
     PRESS_DURATION: 400,   // Duration of button press animation
     HOVER_TRANSITION: 300, // Transition time for button hover effects
     NOTIFICATION_TIMER: 2500 // Time to display notification in button
-  },
-  
-  // Ghost wobble/reactions
-  GHOST: {
-    WOBBLE_DURATION: 600,  // Duration of ghost wobble animation
-    PULSE_DURATION: 500,   // Duration of ghost pulse animation
-    REACTION_DELAY: 200,   // Delay before ghost reacts
-    THINKING_BLINK_RATE: 150 // Time between blinks in thinking state
   },
   
   // Toast notifications

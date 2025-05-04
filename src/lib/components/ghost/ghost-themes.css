@@ -1,13 +1,11 @@
 /* GHOST THEME DEFINITIONS
-   Contains ALL color definitions and theme-specific styles.
+   Contains ONLY color definitions and theme-specific styles.
    This is the single source of truth for all ghost theme colors.
+   Animation parameters are in animationConfig.js.
 */
 
 /* Base ghost variables (shared across themes) */
 :root {
-  /* Global theme transition timing */
-  --ghost-transition: 0.3s ease;
-  
   /* ==========================================
      THEME COLOR DEFINITIONS
      ========================================== */
@@ -103,109 +101,6 @@
   --ghost-rainbow-shadow-color-brighter: rgba(180, 255, 100, 0.45);
   --ghost-rainbow-shadow-color-brightest: rgba(100, 200, 255, 0.5);
   --ghost-rainbow-shadow-color-bright-alt: rgba(150, 100, 255, 0.4);
-  
-  /* ==========================================
-     ANIMATION PARAMETERS - Base values only
-     ========================================== */
-  /* These parameters control how animations behave but don't define colors */
-  
-  /* Global animation parameters */
-  --ghost-shimmer-opacity-min: 0.88;
-  --ghost-shimmer-opacity-max: 1.0;
-  --ghost-gradient-shift-magnitude: 4%;
-  
-  /* Peach theme animation parameters */
-  --ghost-peach-hue-rotate-min: -7deg;
-  --ghost-peach-hue-rotate-max: 9deg;
-  --ghost-peach-saturate-min: 1.15;
-  --ghost-peach-saturate-max: 1.4;
-  --ghost-peach-brightness-min: 1;
-  --ghost-peach-brightness-max: 1.07;
-  --ghost-peach-scale-min: 1.0;
-  --ghost-peach-scale-mid: 1.012;
-  --ghost-peach-scale-steps: 1.005;
-  --ghost-peach-transform-y-min: 0px;
-  --ghost-peach-transform-y-max: -2px;
-  --ghost-peach-position-speed: 0.1;
-  --ghost-peach-position-amplitude: 4%;
-  
-  /* Mint theme animation parameters */
-  --ghost-mint-hue-rotate-min: -2deg;
-  --ghost-mint-hue-rotate-max: 5deg;
-  --ghost-mint-saturate-min: 1.2;
-  --ghost-mint-saturate-max: 1.5;
-  --ghost-mint-brightness-min: 1.05;
-  --ghost-mint-brightness-max: 1.15;
-  --ghost-mint-scale-min: 1.0;
-  --ghost-mint-scale-mid: 1.015;
-  --ghost-mint-scale-steps: 1.008;
-  --ghost-mint-transform-y-min: 0px;
-  --ghost-mint-transform-y-max: -2px;
-  --ghost-mint-position-speed: 0.08;
-  --ghost-mint-position-amplitude: 4%;
-  
-  /* Bubblegum theme animation parameters */
-  --ghost-bubblegum-hue-rotate-min: -8deg;
-  --ghost-bubblegum-hue-rotate-max: 8deg;
-  --ghost-bubblegum-saturate-min: 1.3;
-  --ghost-bubblegum-saturate-max: 1.7;
-  --ghost-bubblegum-brightness-min: 1.05;
-  --ghost-bubblegum-brightness-max: 1.15;
-  --ghost-bubblegum-scale-min: 1.0;
-  --ghost-bubblegum-scale-mid: 1.012;
-  --ghost-bubblegum-scale-steps: 1.006;
-  --ghost-bubblegum-transform-y-min: 0px;
-  --ghost-bubblegum-transform-y-max: -2px;
-  --ghost-bubblegum-position-speed: 0.06;
-  --ghost-bubblegum-position-amplitude: 5%;
-  
-  /* Rainbow theme animation parameters */
-  --ghost-rainbow-hue-rotate-min: 0deg;
-  --ghost-rainbow-hue-rotate-max: 360deg;
-  --ghost-rainbow-hue-rotate-full-cycle: true;
-  --ghost-rainbow-saturate-min: 1.4;
-  --ghost-rainbow-saturate-max: 1.7;
-  --ghost-rainbow-brightness-min: 1.15;
-  --ghost-rainbow-brightness-max: 1.22;
-  --ghost-rainbow-scale-min: 1.0;
-  --ghost-rainbow-scale-mid: 1.012;
-  --ghost-rainbow-scale-steps: 1.006;
-  --ghost-rainbow-rotation-min: 0deg;
-  --ghost-rainbow-rotation-max: 0.6deg;
-  --ghost-rainbow-shadow-radius-min: 8px;
-  --ghost-rainbow-shadow-radius-max: 20px;
-  --ghost-rainbow-shadow-opacity-min: 0.35;
-  --ghost-rainbow-shadow-opacity-max: 0.5;
-  --ghost-rainbow-position-speed: 0.12;
-  --ghost-rainbow-position-amplitude: 6%;
-  
-  /* Animation timing parameters */
-  --ghost-shimmer-duration: 5s;
-  --ghost-shimmer-ease: ease-in-out;
-  
-  --ghost-gradientshift-duration: 12s;
-  --ghost-gradientshift-ease: ease-in-out;
-  
-  --ghost-colorpulse-duration: 5s;
-  --ghost-colorpulse-ease: ease-in-out;
-  --ghost-colorpulse-stagger: 0.5s;
-  
-  /* Color pulse opacity ranges */
-  --ghost-colorpulse-start-opacity-min: 0.9;
-  --ghost-colorpulse-start-opacity-max: 1.0;
-  --ghost-colorpulse-mid-opacity-min: 0.8;
-  --ghost-colorpulse-mid-opacity-max: 0.9;
-  --ghost-colorpulse-end-opacity-min: 0.85;
-  --ghost-colorpulse-end-opacity-max: 0.95;
-  
-  /* Flow animation durations */
-  --ghost-peach-flow-duration: 9s;
-  --ghost-mint-flow-duration: 10s;
-  --ghost-bubblegum-flow-duration: 12s;
-  --ghost-rainbow-flow-duration: 9s;
-  
-  /* Flow animation easing */
-  --ghost-flow-ease: cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 /* ==========================================
@@ -227,27 +122,4 @@
 
 .ghost-svg.theme-rainbow #ghost-shape {
   fill: url(#rainbowGradient);
-}
-
-/* Recording state theming */
-.ghost-svg.recording.theme-peach {
-  filter: drop-shadow(0 0 15px var(--ghost-peach-glow-primary)) 
-          drop-shadow(0 0 35px var(--ghost-peach-glow-secondary)) 
-          drop-shadow(0 0 55px var(--ghost-peach-glow-tertiary));
-}
-
-.ghost-svg.recording.theme-mint {
-  filter: drop-shadow(0 0 15px var(--ghost-mint-glow-primary)) 
-          drop-shadow(0 0 35px var(--ghost-mint-glow-secondary)) 
-          drop-shadow(0 0 55px var(--ghost-mint-glow-tertiary));
-}
-
-.ghost-svg.recording.theme-bubblegum {
-  filter: drop-shadow(0 0 15px var(--ghost-bubblegum-glow-primary)) 
-          drop-shadow(0 0 35px var(--ghost-bubblegum-glow-secondary)) 
-          drop-shadow(0 0 55px var(--ghost-bubblegum-glow-tertiary));
-}
-
-.ghost-svg.recording.theme-rainbow {
-  filter: drop-shadow(0 0 20px var(--ghost-rainbow-glow-primary));
 }

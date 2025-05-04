@@ -209,21 +209,6 @@ export function getThemeParameter(theme, param, fallback) {
 	return getCssVariable(`ghost-${theme}-${param}`, fallback);
 }
 
-/**
- * For use by Ghost.svelte when new theme behavior is added
- * Not to be used for overriding theme colors - those come from CSS
- * @param {Object} config - Animation configuration
- * @returns {null} No return value required
- */
-export function generateCssVariables() {
-	// This function is deprecated and no longer needed
-	// All CSS variables are now defined in ghost-themes.css
-	console.warn(
-		'generateCssVariables() is deprecated. CSS variables are now defined in ghost-themes.css'
-	);
-	return '';
-}
-
 // Export the module for debugging/console access
 export default {
 	animationTiming,

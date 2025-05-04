@@ -82,18 +82,28 @@
 /* Theme-specific recording animations */
 .ghost-svg.recording.theme-peach {
 	animation: recording-glow-peach 2s ease-in-out infinite;
+	filter: drop-shadow(0 0 15px var(--ghost-peach-glow-primary)) 
+	        drop-shadow(0 0 35px var(--ghost-peach-glow-secondary)) 
+	        drop-shadow(0 0 55px var(--ghost-peach-glow-tertiary));
 }
 
 .ghost-svg.recording.theme-mint {
 	animation: recording-glow-mint 2s ease-in-out infinite;
+	filter: drop-shadow(0 0 15px var(--ghost-mint-glow-primary)) 
+	        drop-shadow(0 0 35px var(--ghost-mint-glow-secondary)) 
+	        drop-shadow(0 0 55px var(--ghost-mint-glow-tertiary));
 }
 
 .ghost-svg.recording.theme-bubblegum {
 	animation: recording-glow-bubblegum 2s ease-in-out infinite;
+	filter: drop-shadow(0 0 15px var(--ghost-bubblegum-glow-primary)) 
+	        drop-shadow(0 0 35px var(--ghost-bubblegum-glow-secondary)) 
+	        drop-shadow(0 0 55px var(--ghost-bubblegum-glow-tertiary));
 }
 
 .ghost-svg.recording.theme-rainbow {
 	animation: rainbow-color-cycle 5s linear infinite;
+	filter: drop-shadow(0 0 20px var(--ghost-rainbow-glow-primary));
 }
 
 /* Shape element animations per theme */
