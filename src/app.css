@@ -13,9 +13,9 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Global scroll behavior improvement - with subtle overscroll */
+/* Global scroll behavior improvement - more subtle */
 html, body {
-  overscroll-behavior: contain; /* Allow some overscroll but contain it */
+  overscroll-behavior: none; /* Disable bounce/glow on over-scroll for the main page */
   -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
 }
 

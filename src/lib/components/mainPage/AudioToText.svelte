@@ -329,7 +329,7 @@
 		}, ANIMATION.CONFETTI.ANIMATION_DURATION);
 	}
 
-	// Function to calculate responsive font size based on transcript length and device
+	// Function to calculate responsive font size based on transcript length, word count, and device
 	function getResponsiveFontSize(text) {
 		if (!text) return 'text-base'; // Default size
 
@@ -342,12 +342,37 @@
 		// Smaller base sizes for mobile
 		const isMobile = viewportWidth > 0 && viewportWidth < 640;
 
-		const length = text.length;
-		if (length < 50) return isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl'; // Very short text
-		if (length < 150) return isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl'; // Short text
-		if (length < 300) return isMobile ? 'text-sm sm:text-base md:text-lg' : 'text-base md:text-lg'; // Medium text
-		if (length < 500) return isMobile ? 'text-xs sm:text-sm md:text-base' : 'text-sm md:text-base'; // Medium-long text
-		return isMobile ? 'text-xs sm:text-sm' : 'text-sm md:text-base'; // Long text
+		// Calculate both character length and word count
+		const charLength = text.length;
+		const wordCount = text.trim().split(/\s+/).length;
+		
+		// Typography best practices suggest that readability is impacted by both 
+		// total length and average word length
+		const avgWordLength = charLength / (wordCount || 1); // Avoid division by zero
+		
+		// Very short text: 1-10 words or under 50 chars
+		if (wordCount < 10 || charLength < 50) {
+			return isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl';
+		}
+		
+		// Short text: 11-25 words or under 150 chars with normal word length
+		if ((wordCount < 25 || charLength < 150) && avgWordLength < 8) {
+			return isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl';
+		}
+		
+		// Medium text: 26-50 words or under 300 chars
+		if (wordCount < 50 || charLength < 300) {
+			return isMobile ? 'text-sm sm:text-base md:text-lg' : 'text-base md:text-lg';
+		}
+		
+		// Medium-long text: 51-100 words or under 500 chars
+		if (wordCount < 100 || charLength < 500) {
+			return isMobile ? 'text-xs sm:text-sm md:text-base' : 'text-sm md:text-base';
+		}
+		
+		// Long text: Over 100 words or 500+ chars
+		// Use smaller text for better readability on longer content
+		return isMobile ? 'text-xs sm:text-sm' : 'text-sm md:text-base';
 	}
 
 	// Reactive font size based on transcript length

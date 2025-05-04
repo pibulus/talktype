@@ -189,28 +189,69 @@
     display: flex;
     flex-direction: column;
     overflow: hidden; /* Contain all scrolling internally */
+    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: subtle-breathe 10s infinite ease-in-out alternate;
   }
   
-  /* Enhanced transcript text styling */
-  .custom-transcript-text {
-    font-size: 17px;
-    line-height: 1.65;
-    text-align: left;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  }
-  
-  @media (min-width: 768px) {
-    .custom-transcript-text {
-      font-size: 18px;
+  /* Subtle breathing animation - 80/20 rule applied for subtlety */
+  @keyframes subtle-breathe {
+    0% {
+      box-shadow: 0 8px 28px rgba(249, 168, 212, 0.2);
+      border-color: rgba(252, 231, 243, 0.7);
+    }
+    50% {
+      box-shadow: 0 9px 29px rgba(249, 168, 212, 0.23);
+      border-color: rgba(252, 231, 243, 0.75);
+    }
+    100% {
+      box-shadow: 0 10px 30px rgba(249, 168, 212, 0.25);
+      border-color: rgba(252, 231, 243, 0.8);
     }
   }
   
-  /* Content area scrolling */
+  /* Elegant hover effect - extremely subtle */
+  .transcript-box:hover {
+    box-shadow: 0 10px 30px rgba(249, 168, 212, 0.28);
+    border-color: rgba(249, 168, 212, 0.4);
+    transform: translateY(-0.5px) scale(1.001);
+  }
+  
+  /* Enhanced transcript text styling - dynamic sizing based on content */
+  .custom-transcript-text {
+    text-align: left;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    transition: background-color 0.4s ease, font-size 0.5s ease-out;
+    /* Base text size now handled by responsiveFontSize classes */
+  }
+  
+  /* Optimize line-height based on font size for better readability */
+  .text-xs, .text-sm {
+    line-height: 1.6; /* Better for smaller text */
+  }
+  
+  .text-base, .text-lg {
+    line-height: 1.65; /* Optimal for medium text */
+  }
+  
+  .text-xl, .text-2xl {
+    line-height: 1.5; /* Better for larger text */
+    letter-spacing: -0.01em; /* Slightly tighter tracking for large text */
+  }
+  
+  /* Subtle highlight when clicked/editing */
+  .custom-transcript-text:focus {
+    background-color: rgba(253, 242, 248, 0.6); /* Very light pink background */
+    outline: none;
+  }
+  
+  /* Content area scrolling - more refined */
   .transcript-content-area {
     scrollbar-width: thin;
     scrollbar-color: rgba(249, 168, 212, 0.5) transparent;
-    overscroll-behavior: auto; /* Allow natural overscroll within this container */
+    overscroll-behavior: contain; /* More controlled overscroll */
     -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
+    scroll-behavior: smooth; /* Smoother scrolling */
+    transition: all 0.3s ease-out; /* Smooth transitions */
   }
   
   /* Custom scrollbar styles for WebKit browsers */
