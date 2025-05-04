@@ -21,7 +21,7 @@
 
 <!-- Typography with improved kerning and weight using font-variation-settings -->
 <h1
-  class="staggered-text mb-2 text-center text-5xl font-black tracking-tight cursor-default select-none sm:mb-2 sm:text-6xl md:mb-2 md:text-7xl lg:text-8xl xl:text-9xl"
+  class="staggered-text mb-1 text-center text-5xl font-black tracking-tight cursor-default select-none sm:mb-1 sm:text-6xl md:mb-1 md:text-7xl lg:text-8xl xl:text-9xl"
   style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal; font-variation-settings: 'wght' 900, 'opsz' 32;"
   aria-label={title}
 >
@@ -35,7 +35,7 @@
 
 <!-- Updated subheadline with improved typography and brand voice -->
 <p
-  class="slide-in-subtitle mx-auto mt-2 mb-4 max-w-prose text-xl text-center text-gray-700/85 cursor-default select-none sm:mt-6 sm:mb-8 md:mt-6 md:mb-8"
+  class="slide-in-subtitle mx-auto mt-2 mb-2 max-w-prose text-xl text-center text-gray-700/85 cursor-default select-none sm:mt-6 sm:mb-4 md:mt-6 md:mb-4"
   style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.6; max-width: 35ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 >
   {subtitle}
@@ -116,7 +116,7 @@
     .slide-in-subtitle {
       max-width: 28ch !important;
       margin-top: 0.5rem !important;
-      margin-bottom: 1rem !important;
+      margin-bottom: 0.75rem !important;
       font-size: 1.125rem;
     }
   }

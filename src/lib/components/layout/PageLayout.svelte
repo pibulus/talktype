@@ -11,7 +11,7 @@
 </svelte:head>
 
 <section
-  class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-center px-4 py-8 pb-28 pt-[10vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-32"
+  class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-center px-4 py-8 pb-20 pt-[10vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-24"
 >
   <div
     class="mx-auto flex w-full max-w-md flex-col items-center pt-4 sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
@@ -63,6 +63,7 @@
   @media (max-width: 640px) {
     section {
       padding-top: 8vh !important;
+      padding-bottom: 16vh !important;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
