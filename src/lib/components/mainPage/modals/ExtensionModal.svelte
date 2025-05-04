@@ -11,10 +11,8 @@
 
     <div class="animate-fadeUp space-y-4">
       <div class="flex items-center gap-3 mb-1">
-        <div class="w-9 h-9 bg-gradient-to-br from-white to-purple-50 rounded-full flex items-center justify-center shadow-sm border border-purple-200/60">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5 text-purple-600">
-            <path d="M6 2l.01 6L10 12l-4 4 .01 6H20V2H6zm7 11a1 1 0 110-2 1 1 0 010 2zm-1-9a1 1 0 000 2h5a1 1 0 100-2h-5z" />
-          </svg>
+        <div class="w-9 h-9 rounded-full flex items-center justify-center shadow-sm border border-purple-200/60 overflow-hidden">
+          <img src="/icons/icon-96x96.png" alt="TalkType Chrome Extension" class="w-full h-full object-cover" />
         </div>
         <h3 id="extension_modal_title" class="font-black text-xl text-gray-800 tracking-tight">Chrome Extension</h3>
       </div>
