@@ -69,8 +69,9 @@ export const ANIMATION = {
   RECORDING: {
     FREE_LIMIT: 30,          // Maximum recording time in seconds for free users
     PREMIUM_LIMIT: 600,      // Maximum recording time in seconds for premium users
-    WARNING_THRESHOLD: 20,   // Seconds remaining when to start showing warning
-    DANGER_THRESHOLD: 5,     // Seconds remaining when to start showing danger state
+    WARNING_THRESHOLD: 15,   // Seconds remaining when to start showing warning
+    DANGER_THRESHOLD: 8,     // Seconds remaining when to start showing danger state
+    ALMOST_DONE_THRESHOLD: 3, // Seconds remaining for final warning flash
     SCROLL_DELAY: 100,       // Delay before scrolling during recording
     POST_RECORDING_SCROLL_DELAY: 650 // Delay after transcription to scroll
   },

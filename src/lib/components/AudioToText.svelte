@@ -7,7 +7,7 @@
 	import { promptStyle } from '$lib';
 	import { onMount, onDestroy } from 'svelte';
 	import AudioVisualizer from './AudioVisualizer.svelte';
-	import RecordButton from './RecordButton.svelte';
+	import RecordButtonWithTimer from './RecordButtonWithTimer.svelte';
 	import TranscriptDisplay from './TranscriptDisplay.svelte';
 	import PermissionError from './PermissionError.svelte';
 	import { ANIMATION, CTA_PHRASES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
@@ -391,7 +391,11 @@
 
 		// Automatically copy to clipboard when transcription finishes
 		if ($transcriptionText) {
-			transcriptionService.copyToClipboard($transcriptionText);
+			// Add a small delay to ensure the UI has updated
+			setTimeout(() => {
+				transcriptionService.copyToClipboard($transcriptionText);
+				console.log("Auto-copying transcript to clipboard");
+			}, 300);
 		}
 	}
 
@@ -423,8 +427,22 @@
 			}
 		});
 
+		// Subscribe to time limit reached event
+		const audioStateUnsub = audioState.subscribe((state) => {
+			if (state.timeLimit === true) {
+				console.log('🔴 Time limit reached, stopping recording automatically');
+				// Auto-stop recording when time limit is reached
+				if (get(isRecording)) {
+					// Small timeout to let the UI update first
+					setTimeout(() => {
+						stopRecording();
+					}, 100);
+				}
+			}
+		});
+
 		// Add to unsubscribe list
-		unsubscribers.push(transcriptUnsub, permissionUnsub);
+		unsubscribers.push(transcriptUnsub, permissionUnsub, audioStateUnsub);
 
 		// Check if the app is running as a PWA after a short delay
 		if (browser) {
@@ -464,7 +482,7 @@
 			class="button-section relative sticky top-0 z-20 flex w-full justify-center bg-transparent pb-4 pt-2"
 		>
 			<div class="button-container mx-auto flex w-full max-w-[500px] justify-center">
-				<RecordButton
+				<RecordButtonWithTimer
 					recording={$isRecording}
 					transcribing={$isTranscribing}
 					clipboardSuccess={$uiState.clipboardSuccess}

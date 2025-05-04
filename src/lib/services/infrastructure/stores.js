@@ -138,24 +138,25 @@ export const audioActions = {
     
     this.recordingTimer = setInterval(() => {
       const elapsed = Date.now() - this.startTime;
-      const duration = Math.floor(elapsed / 1000);
+      // Use float for more precise duration - will appear smoother in UI
+      const duration = elapsed / 1000;
       
       recordingState.update(current => ({ 
         ...current, 
         duration 
       }));
       
-      // Check if we've reached the time limit
+      // Check if we've reached the time limit (still use integer for the limit check)
       const isPremium = get(userPreferences).isPremiumUser;
       const timeLimit = isPremium 
         ? ANIMATION.RECORDING.PREMIUM_LIMIT 
         : ANIMATION.RECORDING.FREE_LIMIT;
         
-      if (duration >= timeLimit) {
+      if (Math.floor(duration) >= timeLimit) {
         // Signal that recording should stop due to time limit
         this.recordingTimeLimitReached();
       }
-    }, 1000);
+    }, 50); // Update 20 times per second for ultra-smooth animation
   },
   
   stopRecordingTimer() {
@@ -171,6 +172,10 @@ export const audioActions = {
       ...current,
       timeLimit: true
     }));
+    
+    // For reliable auto-stop, we also immediately update the recording state 
+    // so that subscribers can react to it
+    console.log('⏱️ Recording time limit reached, signaling automatic stop');
   }
 };
 
