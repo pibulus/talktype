@@ -18,6 +18,7 @@
 <span 
   class="app-suffix {wiggleOnHover ? 'wiggle-on-hover' : ''} {customClass}" 
   style="--suffix-color: {color}; --suffix-size: {size}; --offset-y: {offsetY};"
+  aria-hidden="true"
 >
   .app
 </span>
@@ -28,22 +29,22 @@
     color: var(--suffix-color, inherit);
     font-size: var(--suffix-size, 55%);
     font-weight: inherit;
-    margin-left: 0.25em;
     line-height: 1;
     letter-spacing: -0.01em;
     font-kerning: normal;
-    vertical-align: baseline;
     position: absolute;
     bottom: var(--offset-y, 0.2em);
-    right: -1.5em;
+    right: -2.2em;
     font-variation-settings: inherit;
-    transform: rotate(-2deg);
+    transform: rotate(-3deg);
     transition: all 0.3s ease;
     opacity: 0.85;
+    z-index: 1;
+    text-shadow: 0 0.5px 0 rgba(255,255,255,0.4);
   }
   
   .wiggle-on-hover:hover {
-    transform: translateY(-1px) rotate(-2deg) scale(1.02);
+    transform: translateY(-1px) rotate(-5deg) scale(1.04);
   }
   
   @keyframes wiggle {
@@ -58,6 +59,22 @@
   @media (max-width: 640px) {
     .app-suffix {
       font-size: calc(var(--suffix-size) * 0.95);
+      right: -2em;
+      bottom: 0.15em;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .app-suffix {
+      right: -1.8em;
+      bottom: 0.1em;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .app-suffix {
+      right: -2.4em;
+      bottom: 0.25em;
     }
   }
 </style>

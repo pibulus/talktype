@@ -146,6 +146,8 @@
     align-items: baseline;
     line-height: inherit;
     position: relative;
+    width: 0;
+    overflow: visible;
   }
   
   /* Styles applied to the AppSuffix component */
