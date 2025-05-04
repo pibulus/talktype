@@ -1,7 +1,7 @@
 <script>
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
-  import AudioToText from '$lib/components/AudioToText.svelte';
-  import AnimatedTitle from '$lib/components/AnimatedTitle.svelte';
+  import AudioToText from './audio-transcript/AudioToText.svelte';
+  import AnimatedTitle from './AnimatedTitle.svelte';
 
   // Props passed from the parent
   export let ghostComponent = null;

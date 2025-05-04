@@ -18,7 +18,7 @@
   import { fade } from 'svelte/transition';
   
   // Import modals lazily
-  import { AboutModal, ExtensionModal, IntroModal } from '$lib/components/modals';
+  import { AboutModal, ExtensionModal, IntroModal } from './modals';
 
   // Lazy load settings modal - only import when needed
   let SettingsModal;
@@ -74,7 +74,7 @@
 
       try {
         // Import the component dynamically
-        const module = await import('$lib/components/settings/SettingsModal.svelte');
+        const module = await import('./settings/SettingsModal.svelte');
         SettingsModal = module.default;
         debug('SettingsModal component loaded successfully');
       } catch (err) {
@@ -184,7 +184,7 @@
 
       try {
         // Import the component dynamically
-        const module = await import('$lib/components/pwa/PwaInstallPrompt.svelte');
+        const module = await import('./pwa/PwaInstallPrompt.svelte');
         PwaInstallPrompt = module.default;
         debug('📱 PWA install prompt component loaded successfully');
       } catch (err) {
@@ -215,7 +215,7 @@
         try {
           loadingSettingsModal = true;
           debug('Pre-loading SettingsModal component');
-          const module = await import('$lib/components/settings/SettingsModal.svelte');
+          const module = await import('./settings/SettingsModal.svelte');
           SettingsModal = module.default;
           loadingSettingsModal = false;
           debug('SettingsModal component pre-loaded successfully');
