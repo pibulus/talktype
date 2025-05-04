@@ -5,6 +5,7 @@
 	import { PROMPT_STYLES } from '$lib/constants';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import Ghost from '$lib/components/ghost/Ghost.svelte';
+	import TranscriptionStyleSelector from './TranscriptionStyleSelector.svelte';
 
 	// Props for the modal
 	export let closeModal = () => {};
@@ -198,13 +199,7 @@
 				<div
 					class="flex h-8 w-8 items-center justify-center rounded-full border border-pink-200/60 bg-gradient-to-br from-white to-pink-50 shadow-sm"
 				>
-					<Ghost
-						width="24px"
-						height="24px"
-						externalTheme={theme}
-						clickable={false}
-						seed={54321}
-					/>
+					<Ghost width="24px" height="24px" externalTheme={theme} clickable={false} seed={54321} />
 				</div>
 				<h3 id="settings_modal_title" class="text-xl font-black tracking-tight text-gray-800">
 					Settings
@@ -263,11 +258,7 @@
 							<div class="preview-container mb-1">
 								<!-- Ghost preview using DisplayGhost component -->
 								<div class="preview-ghost-wrapper relative h-10 w-10">
-									<DisplayGhost 
-										theme={vibe.id} 
-										size="100%" 
-										seed={10000 + index * 777}
-									/>
+									<DisplayGhost theme={vibe.id} size="100%" seed={10000 + index * 777} />
 								</div>
 
 								<!-- Visualizer preview -->
@@ -297,70 +288,7 @@
 			</div>
 
 			<!-- Prompt Style Selection Section -->
-			<div class="mt-1">
-				<h4 class="mb-1 text-sm font-bold text-gray-700">Transcription Style</h4>
-
-				<div class="mb-2 grid grid-cols-3 gap-1.5">
-					{#if promptStyles && promptStyles.length > 0}
-						{#each promptStyles as style}
-							<button
-								class="flex h-full flex-col items-center justify-between rounded-lg border px-1 py-1.5 transition-all duration-200 hover:border-pink-200 {selectedPromptStyle ===
-								style
-									? 'border-pink-300 bg-pink-50/50 shadow-sm'
-									: 'border-pink-100 bg-[#fffdf5]'}"
-								on:click={() => changePromptStyle(style)}
-							>
-								<div class="flex flex-col items-center text-center">
-									<span class="text-sm font-medium leading-tight text-gray-700">
-										{#if style === 'standard'}
-											Refined
-										{:else if style === 'surlyPirate'}
-											Surly Pirate
-										{:else if style === 'leetSpeak'}
-											L33T Sp34k
-										{:else if style === 'sparklePop'}
-											Sparkle Pop
-										{:else if style === 'codeWhisperer'}
-											Code Whisperer
-										{:else if style === 'quillAndInk'}
-											Quill & Ink
-										{:else}
-											{style}
-										{/if}
-									</span>
-									<p class="text-2xs mt-0.5 leading-tight text-gray-500">
-										{#if style === 'standard'}
-											Elegant, professional tone
-										{:else if style === 'surlyPirate'}
-											Pirate lingo & swagger
-										{:else if style === 'leetSpeak'}
-											H4ck3r c0d35p34k
-										{:else if style === 'sparklePop'}
-											OMG!!! Teen vibes!!! 💖
-										{:else if style === 'codeWhisperer'}
-											Structured tech syntax
-										{:else if style === 'quillAndInk'}
-											Victorian literature
-										{:else}
-											Custom style
-										{/if}
-									</p>
-								</div>
-
-								{#if selectedPromptStyle === style}
-									<div
-										class="mt-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-400 text-xs text-white"
-									>
-										✓
-									</div>
-								{/if}
-							</button>
-						{/each}
-					{:else}
-						<div class="text-xs italic text-gray-500">Loading prompt styles...</div>
-					{/if}
-				</div>
-			</div>
+			<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
 
 			<!-- Premium Features Section -->
 			<div
@@ -554,15 +482,15 @@
 		animation: rainbowFlow 8.3s linear infinite;
 		filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
 	}
-	
+
 	.peach-animated {
 		animation: peachFlow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 	}
-	
+
 	.mint-animated {
 		animation: mintFlow 10s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 	}
-	
+
 	.bubblegum-animated {
 		animation: bubblegumFlow 12s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 	}
@@ -575,27 +503,53 @@
 			filter: hue-rotate(360deg) saturate(1.5) brightness(1.2);
 		}
 	}
-	
+
 	@keyframes peachFlow {
-		0% { filter: saturate(1) brightness(1) contrast(1); }
-		30% { filter: saturate(1.3) brightness(1.1) contrast(1.05); }
-		60% { filter: saturate(1.5) brightness(1.15) contrast(1.08); }
-		100% { filter: saturate(1) brightness(1) contrast(1); }
+		0% {
+			filter: saturate(1) brightness(1) contrast(1);
+		}
+		30% {
+			filter: saturate(1.3) brightness(1.1) contrast(1.05);
+		}
+		60% {
+			filter: saturate(1.5) brightness(1.15) contrast(1.08);
+		}
+		100% {
+			filter: saturate(1) brightness(1) contrast(1);
+		}
 	}
-	
+
 	@keyframes mintFlow {
-		0% { filter: saturate(1) brightness(1) contrast(1); }
-		25% { filter: saturate(1.2) brightness(1.1) contrast(1.02) hue-rotate(5deg); }
-		50% { filter: saturate(1.4) brightness(1.2) contrast(1.05) hue-rotate(-5deg); }
-		75% { filter: saturate(1.2) brightness(1.15) contrast(1.03) hue-rotate(2deg); }
-		100% { filter: saturate(1) brightness(1) contrast(1) hue-rotate(0deg); }
+		0% {
+			filter: saturate(1) brightness(1) contrast(1);
+		}
+		25% {
+			filter: saturate(1.2) brightness(1.1) contrast(1.02) hue-rotate(5deg);
+		}
+		50% {
+			filter: saturate(1.4) brightness(1.2) contrast(1.05) hue-rotate(-5deg);
+		}
+		75% {
+			filter: saturate(1.2) brightness(1.15) contrast(1.03) hue-rotate(2deg);
+		}
+		100% {
+			filter: saturate(1) brightness(1) contrast(1) hue-rotate(0deg);
+		}
 	}
-	
+
 	@keyframes bubblegumFlow {
-		0% { filter: saturate(1) brightness(1) contrast(1); }
-		33% { filter: saturate(1.3) brightness(1.05) contrast(1.1) hue-rotate(-8deg); }
-		66% { filter: saturate(1.6) brightness(1.1) contrast(1.15) hue-rotate(8deg); }
-		100% { filter: saturate(1) brightness(1) contrast(1) hue-rotate(0deg); }
+		0% {
+			filter: saturate(1) brightness(1) contrast(1);
+		}
+		33% {
+			filter: saturate(1.3) brightness(1.05) contrast(1.1) hue-rotate(-8deg);
+		}
+		66% {
+			filter: saturate(1.6) brightness(1.1) contrast(1.15) hue-rotate(8deg);
+		}
+		100% {
+			filter: saturate(1) brightness(1) contrast(1) hue-rotate(0deg);
+		}
 	}
 
 	/* Add extra sparkle when previewing the rainbow theme */
