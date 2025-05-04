@@ -498,7 +498,7 @@
 
 		<!-- Dynamic content area with smooth animation and proper containment -->
 		<div
-			class="position-wrapper relative mb-16 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
+			class="position-wrapper relative mb-8 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
 		>
 			<!-- Content container with controlled overflow -->
 			<div class="content-container flex w-full flex-col items-center">
@@ -573,8 +573,8 @@
 
 /* Position wrapper to create a stable layout without shifts */
 .position-wrapper {
-	min-height: 150px; /* Ensure there's enough space for content */
-	max-height: calc(100vh - 240px); /* Control max height to prevent overflow */
+	min-height: 120px; /* Ensure there's enough space for content */
+	max-height: calc(100vh - 280px); /* Control max height to prevent overflow */
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -675,9 +675,9 @@
 	/* Adjust spacing for mobile */
 	.position-wrapper {
 		margin-top: 0.75rem;
-		margin-bottom: 3.5rem; /* More space (56px) for footer on mobile */
+		margin-bottom: 2.5rem; /* More space (40px) for footer on mobile */
 		padding: 0 8px; /* Add side padding */
-		max-height: calc(100vh - 180px); /* Control height on mobile */
+		max-height: calc(100vh - 220px); /* Control height on mobile */
 	}
 
 	/* Make the visualizer more compact on mobile */
@@ -700,10 +700,10 @@
 @media (max-width: 380px) {
 	/* Ensure proper spacing on tiny screens */
 	.position-wrapper {
-		margin-top: 0.75rem;
-		margin-bottom: 2.5rem;
+		margin-top: 0.5rem;
+		margin-bottom: 2rem;
 		padding: 0 4px;
-		max-height: calc(100vh - 160px); /* More compact on very small screens */
+		max-height: calc(100vh - 200px); /* More compact on very small screens */
 	}
 }
 </style>

@@ -78,7 +78,7 @@
 </script>
 
 <!-- Ghost Icon -->
-<div class="ghost-icon-wrapper mb-5 h-36 w-36 sm:h-40 sm:w-40 md:mb-6 md:h-52 md:w-52 lg:h-60 lg:w-60">
+<div class="ghost-icon-wrapper mb-4 h-32 w-32 sm:h-36 sm:w-36 md:mb-4 md:h-48 md:w-48 lg:h-56 lg:w-56">
   <Ghost
     bind:this={ghostComponent}
     isRecording={isRecording}
@@ -100,13 +100,13 @@
   
   @media (min-width: 768px) {
     .ghost-icon-wrapper {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
   }
   
   @media (max-width: 640px) {
     .ghost-icon-wrapper {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
   }
 </style>
