@@ -124,7 +124,7 @@
       >
         <!-- Content Area - scrollable -->
         <div 
-          class="transcript-content-area w-full max-h-[320px] overflow-y-auto px-6 pt-5 pb-1 sm:px-8 sm:pt-6 sm:pb-2"
+          class="transcript-content-area w-full max-h-[320px] overflow-y-auto px-6 pt-5 pb-1 sm:px-8 sm:pt-6 sm:pb-2 relative z-10"
           bind:this={transcriptBoxRef}
         >
           <div
@@ -160,7 +160,7 @@
         
         <!-- Share button area - integrated with content -->
         {#if isWebShareSupported()}
-          <div class="transcript-button-area w-full py-3 pb-5">
+          <div class="transcript-button-area w-full py-3 pb-5 relative z-10">
             <div class="flex w-full justify-center">
               <button
                 class="px-5 py-2 text-sm font-medium text-indigo-600 transition-all duration-200 rounded-full shadow-sm share-btn-text bg-gradient-to-r from-indigo-50 to-purple-100 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 active:scale-95"
@@ -191,6 +191,27 @@
     overflow: hidden; /* Contain all scrolling internally */
     transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
     animation: subtle-breathe 10s infinite ease-in-out alternate;
+    position: relative; /* For the pseudo-element highlight */
+  }
+  
+  /* Extremely subtle mouseover highlight effect */
+  .transcript-box::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 2rem;
+    background: radial-gradient(circle at 50% 50%, rgba(249, 168, 212, 0.04), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.6s ease-in-out;
+    pointer-events: none; /* Allow clicks to pass through */
+    z-index: 1;
+  }
+  
+  .transcript-box:hover::before {
+    opacity: 1;
   }
   
   /* Subtle breathing animation - 80/20 rule applied for subtlety */
@@ -238,10 +259,14 @@
     letter-spacing: -0.01em; /* Slightly tighter tracking for large text */
   }
   
-  /* Subtle highlight when clicked/editing */
+  /* Elegant highlight when clicked/editing */
   .custom-transcript-text:focus {
     background-color: rgba(253, 242, 248, 0.6); /* Very light pink background */
     outline: none;
+    border-radius: 0.75rem; /* Rounded corners */
+    padding: 0.5rem; /* Subtle padding */
+    margin: -0.5rem; /* Compensate for padding to maintain layout */
+    box-shadow: inset 0 0 0 1px rgba(249, 168, 212, 0.15); /* Extremely subtle inner border */
   }
   
   /* Content area scrolling - more refined */
