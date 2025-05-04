@@ -124,7 +124,7 @@
       >
         <!-- Content Area - scrollable -->
         <div 
-          class="transcript-content-area w-full max-h-[320px] overflow-y-auto px-6 pt-5 pb-1 sm:px-8 sm:pt-6 sm:pb-2 relative z-10"
+          class="transcript-content-area w-full max-h-[320px] overflow-y-auto px-7 pt-5 pb-1 sm:px-10 sm:pt-6 sm:pb-2 relative z-10"
           bind:this={transcriptBoxRef}
         >
           <div
@@ -242,20 +242,21 @@
     text-align: left;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     transition: background-color 0.4s ease, font-size 0.5s ease-out;
+    line-height: 1.6; /* Consistent comfortable line height */
     /* Base text size now handled by responsiveFontSize classes */
   }
   
-  /* Optimize line-height based on font size for better readability */
+  /* Optimize spacing based on font size for better readability */
   .text-xs, .text-sm {
-    line-height: 1.6; /* Better for smaller text */
+    letter-spacing: 0.01em; /* Slightly open tracking for smaller text */
   }
   
   .text-base, .text-lg {
-    line-height: 1.65; /* Optimal for medium text */
+    letter-spacing: 0; /* Normal tracking for medium text */
   }
   
-  .text-xl, .text-2xl {
-    line-height: 1.5; /* Better for larger text */
+  .text-xl, .text-2xl, .text-3xl, .text-4xl {
+    line-height: 1.5; /* Slightly tighter for larger text */
     letter-spacing: -0.01em; /* Slightly tighter tracking for large text */
   }
   
@@ -294,28 +295,41 @@
     border: 2px solid transparent;
   }
   
-  /* Visual indicator for scrollable content */
+  /* Elegant scroll indicator for content overflow */
   .scroll-indicator-bottom {
-    height: 24px;
-    background: linear-gradient(to top, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0) 100%);
-    box-shadow: 0 -6px 12px -6px rgba(249, 168, 212, 0.12);
+    height: 40px; /* Taller gradient for more presence */
+    background: linear-gradient(to top, 
+                rgba(255, 255, 255, 0.98) 0%, 
+                rgba(253, 242, 248, 0.9) 15%,
+                rgba(253, 242, 248, 0.5) 40%,
+                rgba(253, 242, 248, 0.1) 75%,
+                rgba(255, 255, 255, 0) 100%);
+    box-shadow: 0 -6px 12px -6px rgba(249, 168, 212, 0.15);
     border-bottom-left-radius: 2rem;
     border-bottom-right-radius: 2rem;
+    pointer-events: none; /* Ensures text behind it is selectable */
+    opacity: 0.95; /* Slight transparency */
   }
   
   /* Mobile optimization */
   @media (max-width: 600px) {
     .transcript-content-area {
       max-height: 280px; /* Slightly smaller on mobile */
-      padding: 1.25rem;
+      padding: 1.5rem;
+      scrollbar-width: none; /* Hide scrollbar on Firefox */
     }
     
     .transcript-content-area::-webkit-scrollbar {
-      width: 3px;
+      display: none; /* Hide scrollbar on Webkit browsers */
     }
     
     .transcript-wrapper {
       margin-top: 24px; /* Smaller gap on mobile */
+    }
+    
+    /* Slightly taller scroll indicator on mobile */
+    .scroll-indicator-bottom {
+      height: 48px;
     }
   }
   
