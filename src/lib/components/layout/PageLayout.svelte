@@ -21,7 +21,7 @@
 
   <!-- Footer section with attribution and Chrome extension info -->
   <footer
-    class="fixed bottom-0 left-0 right-0 border-t border-pink-200/80 bg-gradient-to-r from-[#fff6e6]/90 via-[#ffead8]/90 to-[#fff1df]/90 py-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[3px] sm:py-5 box-border z-10"
+    class="fixed bottom-0 left-0 right-0 border-t border-pink-200/80 bg-gradient-to-r from-[#fff6e6]/90 via-[#ffead8]/90 to-[#fff1df]/90 pt-5 pb-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[3px] sm:pt-5 sm:pb-5 box-border z-10"
   >
     <div class="container mx-auto flex flex-col items-center justify-between gap-2 sm:gap-3 sm:flex-row flex-wrap">
       <div class="copyright flex items-center flex-wrap justify-center ml-4 sm:ml-6 md:ml-8">
@@ -69,12 +69,12 @@
       flex-direction: column;
       justify-content: center;
     }
-
+    
     footer {
       padding-top: 0.75rem;
       padding-bottom: 0.75rem;
     }
-
+    
     footer .container {
       gap: 0.75rem;
     }
@@ -85,6 +85,17 @@
     
     footer .container > div:last-child {
       margin-right: 1rem;
+    }
+  }
+  
+  /* Desktop vertical centering */
+  @media (min-width: 1024px) {
+    section {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: calc(50vh - 360px) !important;
+      padding-bottom: calc(50vh - 240px) !important;
     }
   }
 </style>

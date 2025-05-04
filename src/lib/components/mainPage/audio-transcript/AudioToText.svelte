@@ -674,8 +674,8 @@
 
 	/* Adjust spacing for mobile */
 	.position-wrapper {
-		margin-top: 0.5rem;
-		margin-bottom: 3rem; /* More space (48px) for footer on mobile */
+		margin-top: 0.75rem;
+		margin-bottom: 3.5rem; /* More space (56px) for footer on mobile */
 		padding: 0 8px; /* Add side padding */
 		max-height: calc(100vh - 180px); /* Control height on mobile */
 	}
@@ -700,8 +700,8 @@
 @media (max-width: 380px) {
 	/* Ensure proper spacing on tiny screens */
 	.position-wrapper {
-		margin-top: 0.5rem;
-		margin-bottom: 2rem;
+		margin-top: 0.75rem;
+		margin-bottom: 2.5rem;
 		padding: 0 4px;
 		max-height: calc(100vh - 160px); /* More compact on very small screens */
 	}
