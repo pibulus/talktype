@@ -1,5 +1,5 @@
 import Ghost from './Ghost.svelte';
-import { createEyeTracking } from './services/eyeTracking';
+import { createEyeTracking } from './eyeTracking';
 import { AnimationDebugger } from './debug';
 import { 
   ghostAnimationStore, 

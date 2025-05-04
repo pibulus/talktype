@@ -18,8 +18,8 @@ The Ghost component system consists of several interconnected files:
 ├── gradientAnimator.js    # JS animation logic for gradients
 ├── gradientConfig.js      # Gradient animation behavior configuration
 ├── ghostStore.js          # State management (if applicable)
-└── services/
-    └── eyeTracking.js     # Eye movement and tracking service
+├── eyeTracking.js         # Eye movement and tracking service
+└── themeStore.js          # Theme state management
 ```
 
 ### SVG Structure
