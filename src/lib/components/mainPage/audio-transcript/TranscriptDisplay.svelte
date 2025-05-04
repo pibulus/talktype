@@ -106,10 +106,10 @@
 
       <!-- Editable transcript box with controlled scrolling -->
       <div
-        class="transcript-box animate-shadow-appear scrollbar-thin relative mx-auto my-4 box-border max-h-[60vh] w-full max-w-[90vw] overflow-y-auto whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-4 py-4 font-mono leading-relaxed text-gray-800 shadow-xl transition-all duration-300 sm:px-6 sm:py-5"
+        class="transcript-box animate-shadow-appear relative mx-auto my-4 box-border max-h-[320px] w-full max-w-[90vw] overflow-y-auto whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-6 py-5 font-mono text-gray-800 shadow-xl transition-all duration-300 sm:px-8 sm:py-6 md:max-w-[580px]"
       >
         <div
-          class={`transcript-text ${responsiveFontSize} animate-text-appear`}
+          class={`transcript-text ${responsiveFontSize} animate-text-appear text-left custom-transcript-text`}
           contenteditable="true"
           role="textbox"
           aria-label="Transcript editor"
@@ -126,9 +126,9 @@
           {transcript}
         </div>
         
-        <!-- Subtle gradient mask to indicate scrollable content -->
+        <!-- Enhanced gradient mask to indicate scrollable content -->
         <div
-          class="scroll-indicator-bottom pointer-events-none absolute bottom-0 left-0 right-0 h-6 rounded-b-[2rem] bg-gradient-to-t from-white/90 to-transparent"
+          class="scroll-indicator-bottom pointer-events-none absolute bottom-0 left-0 right-0 rounded-b-[2rem]"
         ></div>
 
         <!-- Add padding at the bottom of transcript for the share button -->
@@ -157,3 +157,69 @@
     </div>
   </div>
 </div>
+
+<style>
+  .custom-transcript-text {
+    font-size: 17px;
+    line-height: 1.65;
+    text-align: left;
+  }
+  
+  @media (min-width: 768px) {
+    .custom-transcript-text {
+      font-size: 18px;
+    }
+  }
+  
+  /* Enhanced transcript box styles */
+  .transcript-box {
+    line-height: 1.6;
+    box-shadow: 0 8px 30px rgba(249, 168, 212, 0.25);
+    /* Cleaner scrollbar appearance */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(249, 168, 212, 0.5) transparent;
+  }
+  
+  /* Custom scrollbar styles for WebKit browsers */
+  .transcript-box::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .transcript-box::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .transcript-box::-webkit-scrollbar-thumb {
+    background-color: rgba(249, 168, 212, 0.5);
+    border-radius: 20px;
+    border: 2px solid transparent;
+  }
+  
+  /* Add a visual indicator for scrollable content */
+  .scroll-indicator-bottom {
+    height: 28px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 100%);
+    box-shadow: 0 -8px 16px -8px rgba(249, 168, 212, 0.15);
+  }
+  
+  /* Scale the width on smaller screens */
+  @media (max-width: 600px) {
+    .transcript-box {
+      width: 90% !important;
+      max-width: 90% !important;
+      padding: 1.25rem !important;
+      max-height: 280px !important; /* Slightly smaller on mobile */
+    }
+    
+    /* Hide standard scrollbar on mobile for cleaner look */
+    .transcript-box::-webkit-scrollbar {
+      width: 3px;
+    }
+  }
+  
+  /* Ensure Share button stays centered despite text alignment */
+  :global(.share-btn-text) {
+    display: inline-block;
+    text-align: center;
+  }
+</style>

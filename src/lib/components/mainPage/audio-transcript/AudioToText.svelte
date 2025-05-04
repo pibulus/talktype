@@ -479,7 +479,7 @@
 	<div class="mobile-centered-container flex w-full flex-col items-center justify-center">
 		<!-- Recording button/progress bar section - sticky positioned for stability -->
 		<div
-			class="button-section relative sticky top-0 z-20 flex w-full justify-center bg-transparent pb-4 pt-2"
+			class="button-section relative sticky top-0 z-20 flex w-full justify-center bg-transparent pb-6 pt-2 sm:pb-7 md:pb-8"
 		>
 			<div class="button-container mx-auto flex w-full max-w-[500px] justify-center">
 				<RecordButtonWithTimer
