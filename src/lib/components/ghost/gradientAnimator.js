@@ -6,7 +6,8 @@
  * Uses CSS variables from ghost-themes.css for color values.
  */
 
-import { gradientAnimations, animationTiming, getThemeColor } from './gradientConfig';
+import { gradientAnimations, animationTiming } from './gradientConfig';
+import { getThemeColor } from './themeStore';
 
 // Animation state
 let animationFrames = {};

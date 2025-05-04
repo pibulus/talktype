@@ -17,11 +17,10 @@
 		EYE_CONFIG,
 		ANIMATION_TIMING,
 		CSS_CLASSES,
-		injectAnimationVariables,
-		generateAnimationCssVariables
+		injectAnimationVariables
 	} from './animationConfig';
 	import { THEMES } from '$lib/constants.js';
-	import { gradientAnimations, getThemeColor } from './gradientConfig';
+	import { theme, cssVariables, setTheme } from './themeStore';
 
 	// Props to communicate state
 	export let isRecording = false;
@@ -46,7 +45,12 @@
 	let eyePositionX = 0; // For horizontal eye tracking: -1 to 1
 	let eyePositionY = 0; // For vertical eye tracking: -1 to 1
 	let doingSpecialAnimation = false; // For rare spin animation (easter egg)
-	let currentTheme = 'peach';
+	
+	// Theme state from store
+	let currentTheme;
+	theme.subscribe(value => {
+		currentTheme = value;
+	});
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher();
@@ -57,40 +61,27 @@
 		void element.offsetWidth;
 	}
 
-	// Update theme based on document attribute
-	function updateTheme() {
-		if (typeof document !== 'undefined') {
-			// Get the previous theme to clean up its animations
-			const previousTheme = currentTheme;
+	// Apply theme changes when theme store updates
+	$: if (currentTheme && ghostSvg) {
+		// Get the SVG element
+		const svgElement = ghostSvg.querySelector('svg');
+		if (svgElement) {
+			// Reset any animations by forcing reflow
+			void svgElement.offsetWidth;
 
-			// Update current theme
-			currentTheme = document.documentElement.getAttribute('data-theme') || 'peach';
-
-			// Regenerate dynamic CSS variables for new theme
-			initDynamicStyles();
-
-			// Apply theme animation after theme update
-			if (ghostSvg) {
-				const svgElement = ghostSvg.querySelector('svg');
-				if (svgElement) {
-					// Reset any animations by forcing reflow
-					void svgElement.offsetWidth;
-
-					// Get the shape element
-					const shapeElem = svgElement.querySelector('#ghost-shape');
-
-					if (shapeElem) {
-						// Force shape animation restart
-						void shapeElem.offsetWidth;
-					}
-
-					// Clean up previous gradient animation
-					cleanupAnimation(previousTheme);
-
-					// Initialize new gradient animation
-					initGradientAnimation(currentTheme, svgElement);
-				}
+			// Get the shape element
+			const shapeElem = svgElement.querySelector('#ghost-shape');
+			if (shapeElem) {
+				// Force shape animation restart
+				void shapeElem.offsetWidth;
 			}
+
+			// Clean up previous gradient animations and initialize new ones
+			cleanupAllAnimations();
+			initGradientAnimation(currentTheme, svgElement);
+			
+			// Update dynamic styles
+			initDynamicStyles();
 		}
 	}
 
@@ -216,51 +207,7 @@
 		dispatch('toggleRecording');
 	}
 
-	/**
-	 * Generate CSS variables for gradient colors
-	 * Creates CSS variables for all themes and their color stops
-	 */
-	function generateCssVariables() {
-		let cssVars = '';
-
-		// Available themes
-		const themes = ['peach', 'mint', 'bubblegum', 'rainbow'];
-
-		// Add CSS variables for each theme's gradient colors
-		themes.forEach((theme) => {
-			if (!gradientAnimations[theme]) return;
-
-			// Get stop positions from gradient config
-			const positions = gradientAnimations[theme].stopPositions || [
-				'start',
-				'mid1',
-				'mid2',
-				'mid3',
-				'end'
-			];
-
-			// Add variables for each color stop in both regular and bright variants
-			positions.forEach((position) => {
-				// Regular color
-				const colorValue = getThemeColor(theme, position, false);
-				cssVars += `--ghost-${theme}-${position}-color: ${colorValue};\n`;
-
-				// Bright variant
-				const brightColorValue = getThemeColor(theme, position, true);
-				cssVars += `--ghost-${theme}-${position}-color-bright: ${brightColorValue};\n`;
-			});
-
-			// Add animation speed variables
-			if (gradientAnimations[theme].position) {
-				cssVars += `--ghost-${theme}-position-speed: ${gradientAnimations[theme].position.speed};\n`;
-				cssVars += `--ghost-${theme}-position-amplitude: ${gradientAnimations[theme].position.amplitude}%;\n`;
-			}
-		});
-
-		return cssVars;
-	}
-
-	// Initialize dynamic CSS variables
+	// Initialize dynamic CSS variables using the centralized store
 	function initDynamicStyles() {
 		if (typeof document === 'undefined') return;
 
@@ -271,8 +218,8 @@
 			document.head.appendChild(ghostStyleElement);
 		}
 
-		// Generate and inject gradient CSS variables
-		const gradientVars = generateCssVariables();
+		// Get CSS variables from the store
+		const gradientVars = $cssVariables;
 		ghostStyleElement.textContent = `:root {\n  ${gradientVars}\n}`;
 
 		// Inject animation variables from animationConfig.js
@@ -292,11 +239,8 @@
 		// Initialize dynamic CSS variables
 		initDynamicStyles();
 
-		// Update theme on mount
 		if (typeof document !== 'undefined') {
-			updateTheme();
-
-			// Initialize gradient animations
+			// Initialize gradient animations (store subscription will handle updates)
 			if (ghostSvg) {
 				const svgElement = ghostSvg.querySelector('svg');
 				if (svgElement) {
@@ -334,22 +278,6 @@
 				}
 			}, ANIMATION_TIMING.INITIAL_LOAD_DURATION);
 
-			// Listen for theme changes
-			setTimeout(() => {
-				const observer = new MutationObserver((mutations) => {
-					mutations.forEach((mutation) => {
-						if (mutation.attributeName === 'data-theme') {
-							updateTheme();
-						}
-					});
-				});
-
-				observer.observe(document.documentElement, {
-					attributes: true,
-					attributeFilter: ['data-theme']
-				});
-			}, ANIMATION_TIMING.OBSERVER_SETUP_DELAY);
-
 			// Start tracking mouse movement for eye position
 			document.addEventListener('mousemove', handleMouseMove, { passive: true });
 
@@ -357,7 +285,6 @@
 			maybeDoSpecialAnimation();
 
 			return () => {
-				observer.disconnect();
 				document.removeEventListener('mousemove', handleMouseMove);
 				clearTimeout(specialAnimationTimeoutId);
 				clearTimeout(wobbleTimeoutId);
@@ -398,7 +325,7 @@
 				// Reinitialize with new settings
 				initGradientAnimation(themeId, svgElement);
 
-				// Regenerate CSS variables
+				// Update dynamic styles
 				initDynamicStyles();
 			}
 		}
