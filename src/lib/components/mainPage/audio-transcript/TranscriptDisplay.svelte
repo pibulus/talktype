@@ -268,13 +268,11 @@
     letter-spacing: -0.01em; /* Slightly tighter tracking for large text */
   }
   
-  /* Elegant highlight when clicked/editing */
+  /* Elegant highlight when clicked/editing - without changing dimensions */
   .custom-transcript-text:focus {
     background-color: rgba(253, 242, 248, 0.6); /* Very light pink background */
     outline: none;
     border-radius: 0.75rem; /* Rounded corners */
-    padding: 0.5rem; /* Subtle padding */
-    margin: -0.5rem; /* Compensate for padding to maintain layout */
     box-shadow: inset 0 0 0 1px rgba(249, 168, 212, 0.15); /* Extremely subtle inner border */
   }
   
