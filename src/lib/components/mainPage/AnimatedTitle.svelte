@@ -1,11 +1,15 @@
 <script>
   import { onMount } from 'svelte';
   import { createEventDispatcher } from 'svelte';
+  import { AppSuffix } from '$lib/components/ui';
 
   const dispatch = createEventDispatcher();
   
   export let title = 'TalkType';
   export let subtitle = "Voice-to-text that doesn't suck. Spooky good, freaky fast, always free.";
+  export let showAppSuffix = true;
+  export let suffixColor = "inherit"; // Inherit color from parent title
+  export let suffixSize = "65%"; // 65% of parent size
   
   onMount(() => {
     // Set up animation sequence timing (for title/subtitle)
@@ -20,18 +24,34 @@
 </script>
 
 <!-- Typography with improved kerning and weight using font-variation-settings -->
-<h1
-  class="staggered-text mb-2 text-center text-5xl font-black tracking-tight cursor-default select-none sm:mb-3 md:mb-3 sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
-  style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal; font-variation-settings: 'wght' 900, 'opsz' 32;"
-  aria-label={title}
->
-  <!-- Use aria-hidden for spans if H1 has aria-label -->
-  <span class="stagger-letter mr-[-0.06em]" aria-hidden="true">T</span><span class="stagger-letter ml-[-0.04em]" aria-hidden="true">a</span><span
-    class="stagger-letter" aria-hidden="true">l</span
-  ><span class="stagger-letter" aria-hidden="true">k</span><span class="stagger-letter mr-[-0.04em]" aria-hidden="true">T</span><span
-    class="stagger-letter ml-[-0.03em]" aria-hidden="true">y</span
-  ><span class="stagger-letter" aria-hidden="true">p</span><span class="stagger-letter" aria-hidden="true">e</span>
-</h1>
+<div class="title-container relative">
+  <h1
+    class="staggered-text mb-2 text-center text-5xl font-black tracking-tight cursor-default select-none sm:mb-3 md:mb-3 sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
+    style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal; font-variation-settings: 'wght' 900, 'opsz' 32;"
+    aria-label={title}
+  >
+    <!-- Use aria-hidden for spans if H1 has aria-label -->
+    <span class="talktype-main-word">
+      <span class="stagger-letter mr-[-0.06em]" aria-hidden="true">T</span><span class="stagger-letter ml-[-0.04em]" aria-hidden="true">a</span><span
+        class="stagger-letter" aria-hidden="true">l</span
+      ><span class="stagger-letter" aria-hidden="true">k</span><span class="stagger-letter mr-[-0.04em]" aria-hidden="true">T</span><span
+        class="stagger-letter ml-[-0.03em]" aria-hidden="true">y</span
+      ><span class="stagger-letter" aria-hidden="true">p</span><span class="stagger-letter" aria-hidden="true">e</span>
+    </span>
+    
+    {#if showAppSuffix}
+      <span class="app-suffix-container stagger-letter" style="animation-delay: 0.45s;">
+        <AppSuffix 
+          color={suffixColor}
+          size={suffixSize}
+          offsetY="0.15em"
+          wiggleOnHover={true}
+          customClass="title-suffix"
+        />
+      </span>
+    {/if}
+  </h1>
+</div>
 
 <!-- Updated subheadline with improved typography and brand voice -->
 <p
@@ -106,6 +126,37 @@
     }
   }
 
+  /* Main container for title to help with centering */
+  .title-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+  
+  /* Container to visually center the main "TalkType" word */
+  .talktype-main-word {
+    display: inline-block;
+    position: relative;
+    margin-right: calc(0.3em * 0.6); /* Offset the extra space caused by the suffix to maintain visual centering */
+  }
+  
+  /* App suffix container styling */
+  .app-suffix-container {
+    display: inline-flex;
+    align-items: baseline;
+    line-height: inherit;
+    position: relative;
+  }
+  
+  /* Styles applied to the AppSuffix component */
+  :global(.title-suffix) {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    font-variation-settings: 'wght' 500, 'opsz' 32;
+    opacity: 0.85; /* Slightly less prominent than the main title */
+  }
+  
   /* Media queries for mobile optimization */
   @media (max-width: 640px) {
     h1.staggered-text {
@@ -119,6 +170,10 @@
       margin-bottom: 2.5rem !important; /* ~40px on mobile */
       font-size: 1rem; /* 16px on mobile as requested */
       line-height: 1.6;
+    }
+    
+    .badge-container {
+      bottom: 0.3em;
     }
   }
 </style>
