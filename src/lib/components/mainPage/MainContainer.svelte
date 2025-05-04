@@ -16,6 +16,8 @@
   import { isRecording as recordingStore } from '$lib/services';
   import { PageLayout } from '$lib/components/layout';
   import { fade } from 'svelte/transition';
+  import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
+  import { STORAGE_KEYS } from '$lib/constants';
   
   // Import modals lazily
   import { AboutModal, ExtensionModal, IntroModal } from './modals';
@@ -107,10 +109,12 @@
       speechModelPreloaded = true; // Assume success initially
       
       // Make sure the current prompt style is set before preloading
-      if (browser && localStorage.getItem('talktype-prompt-style')) {
-        const savedStyle = localStorage.getItem('talktype-prompt-style');
-        debug(`Setting prompt style from localStorage: ${savedStyle}`);
-        geminiService.setPromptStyle(savedStyle);
+      if (browser) {
+        const savedStyle = StorageUtils.getItem(STORAGE_KEYS.PROMPT_STYLE);
+        if (savedStyle) {
+          debug(`Setting prompt style from localStorage: ${savedStyle}`);
+          geminiService.setPromptStyle(savedStyle);
+        }
       }
       
       // Log available prompt styles
@@ -227,7 +231,7 @@
     }, 1000);
 
     // Check for auto-record setting and start recording if enabled
-    if (browser && localStorage.getItem('talktype-autoRecord') === 'true') {
+    if (browser && StorageUtils.getBooleanItem(STORAGE_KEYS.AUTO_RECORD, false)) {
       // Wait minimal time for component initialization
       setTimeout(() => {
         if (contentContainer && !$recordingStore) {

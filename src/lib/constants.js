@@ -17,11 +17,19 @@ export const DEFAULT_THEME = THEMES.PEACH;
 
 // Local Storage Keys
 export const STORAGE_KEYS = {
+  // Application Settings
   THEME: 'talktype-vibe',
   FIRST_VISIT: 'hasSeenTalkTypeIntro',
   AUTO_RECORD: 'talktype-autoRecord',
   PROMPT_STYLE: 'talktype-prompt-style',
-  DEBUG_MODE: 'talktype-debug-mode'
+  DEBUG_MODE: 'talktype-debug-mode',
+  
+  // PWA Related
+  TRANSCRIPTION_COUNT: 'talktype-transcription-count',
+  PWA_PROMPT_SHOWN: 'talktype-pwa-prompt-shown',
+  PWA_PROMPT_COUNT: 'talktype-pwa-prompt-count',
+  PWA_LAST_PROMPT_DATE: 'talktype-pwa-last-prompt-date',
+  PWA_INSTALLED: 'talktype-pwa-installed'
 };
 
 // Prompt Styles

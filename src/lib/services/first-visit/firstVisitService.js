@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
-
-const SEEN_INTRO_KEY = 'hasSeenTalkTypeIntro';
+import { StorageUtils } from '../infrastructure/storageUtils';
+import { STORAGE_KEYS } from '../../constants';
 
 // Store to track first visit status
 export const isFirstVisit = writable(false);
@@ -24,7 +24,7 @@ export class FirstVisitService {
   checkFirstVisit() {
     if (!browser) return false;
 
-    const hasSeenIntro = localStorage.getItem(SEEN_INTRO_KEY);
+    const hasSeenIntro = StorageUtils.getItem(STORAGE_KEYS.FIRST_VISIT);
     const firstVisit = !hasSeenIntro;
     
     this.log(`Checking first visit: ${firstVisit}`);
@@ -36,7 +36,7 @@ export class FirstVisitService {
   markIntroAsSeen() {
     if (!browser) return;
     
-    localStorage.setItem(SEEN_INTRO_KEY, 'true');
+    StorageUtils.setItem(STORAGE_KEYS.FIRST_VISIT, 'true');
     isFirstVisit.set(false);
     this.log('Marked intro as seen in localStorage');
   }

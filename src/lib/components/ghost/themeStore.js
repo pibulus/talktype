@@ -1,6 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
 import { THEMES, STORAGE_KEYS } from '$lib/constants';
+import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
 import { gradientAnimations } from './gradientConfig';
 import { shapeAnimations } from './gradientConfig';
 
@@ -90,13 +91,8 @@ const themeColors = {
 function getInitialTheme() {
 	if (!browser) return THEMES.PEACH;
 
-	try {
-		const storedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
-		return storedTheme && Object.values(THEMES).includes(storedTheme) ? storedTheme : THEMES.PEACH;
-	} catch (e) {
-		console.warn('Could not access localStorage for theme preference:', e);
-		return THEMES.PEACH;
-	}
+	const storedTheme = StorageUtils.getItem(STORAGE_KEYS.THEME);
+	return storedTheme && Object.values(THEMES).includes(storedTheme) ? storedTheme : THEMES.PEACH;
 }
 
 // Create the main theme store
@@ -105,13 +101,9 @@ const theme = writable(getInitialTheme());
 // Save theme changes to localStorage
 if (browser) {
 	theme.subscribe((value) => {
-		try {
-			if (value) {
-				localStorage.setItem(STORAGE_KEYS.THEME, value);
-				document.documentElement.setAttribute('data-theme', value);
-			}
-		} catch (e) {
-			console.warn('Could not save theme preference to localStorage', e);
+		if (value) {
+			StorageUtils.setItem(STORAGE_KEYS.THEME, value);
+			document.documentElement.setAttribute('data-theme', value);
 		}
 	});
 }

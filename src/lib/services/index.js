@@ -1,6 +1,6 @@
 // Import services for local usage in initialization function
-import { eventBus as eventBusInstance } from './infrastructure/eventBus';
-import { hapticService as hapticServiceInstance } from './infrastructure/hapticService';
+import { eventBus as eventBusInstance } from './infrastructure/index';
+import { hapticService as hapticServiceInstance } from './infrastructure/index';
 import { audioService as audioServiceInstance } from './audio/audioService';
 import { transcriptionService as transcriptionServiceInstance } from './transcription/transcriptionService';
 import { themeService as themeServiceInstance } from './theme/themeService';
@@ -10,8 +10,7 @@ import { pwaService as pwaServiceInstance } from './pwa/pwaService';
 import { resetStores } from './infrastructure/stores';
 
 // Re-export services for external usage
-export { eventBus } from './infrastructure/eventBus';
-export { hapticService } from './infrastructure/hapticService';
+export { eventBus, hapticService, StorageUtils } from './infrastructure/index';
 export { themeService } from './theme/themeService';
 export { modalService } from './modals/modalService';
 export { firstVisitService, isFirstVisit } from './first-visit/firstVisitService';

@@ -153,22 +153,48 @@
 
 		<script>
 			// Apply saved theme immediately to prevent flash of default theme
-			if (typeof localStorage !== 'undefined') {
-				const savedTheme = localStorage.getItem('talktype-vibe');
-				if (savedTheme) {
-					document.documentElement.setAttribute('data-theme', savedTheme);
-				} else {
-					// Default to peach if no theme is saved
-					document.documentElement.setAttribute('data-theme', 'peach');
-					localStorage.setItem('talktype-vibe', 'peach');
+			// StorageUtils inline helpers
+			function getStorageItem(key, defaultValue) {
+				if (typeof localStorage === 'undefined') return defaultValue;
+				
+				try {
+					const item = localStorage.getItem(key);
+					return item !== null ? item : defaultValue;
+				} catch (e) {
+					console.warn(`Error reading ${key} from localStorage:`, e);
+					return defaultValue;
 				}
-				// Set initialization flag to prevent duplicate theme application
-				window.themeInitialized = true;
+			}
+			
+			function setStorageItem(key, value) {
+				if (typeof localStorage === 'undefined') return false;
+				
+				try {
+					localStorage.setItem(key, value);
+					return true;
+				} catch (e) {
+					console.warn(`Error saving ${key} to localStorage:`, e);
+					return false;
+				}
+			}
+			
+			// Apply theme using storage helpers
+			const THEME_KEY = 'talktype-vibe';
+			const DEFAULT_THEME = 'peach';
+			
+			const savedTheme = getStorageItem(THEME_KEY, DEFAULT_THEME);
+			document.documentElement.setAttribute('data-theme', savedTheme);
+			
+			if (savedTheme === DEFAULT_THEME) {
+				setStorageItem(THEME_KEY, DEFAULT_THEME);
+			}
+			
+			// Set initialization flag to prevent duplicate theme application
+			window.themeInitialized = true;
 
-				// Force reflow to ensure theme is applied before content renders
-				if (typeof document !== 'undefined') {
-					void document.documentElement.offsetWidth;
-				}
+			// Force reflow to ensure theme is applied before content renders
+			if (typeof document !== 'undefined') {
+				void document.documentElement.offsetWidth;
 			}
 		</script>
 

@@ -1,13 +1,10 @@
 import { browser } from '$app/environment';
 import { writable, derived } from 'svelte/store';
+import { StorageUtils } from '../infrastructure/storageUtils';
+import { STORAGE_KEYS } from '../../constants';
 
-// PWA state keys
+// PWA state configuration
 const PWA_INSTALL_PROMPT_THRESHOLD = 5;
-const TRANSCRIPTION_COUNT_KEY = 'talktype-transcription-count';
-const PWA_PROMPT_SHOWN_KEY = 'talktype-pwa-prompt-shown';
-const PWA_PROMPT_COUNT_KEY = 'talktype-pwa-prompt-count';
-const PWA_LAST_PROMPT_DATE_KEY = 'talktype-pwa-last-prompt-date';
-const PWA_INSTALLED_KEY = 'talktype-pwa-installed';
 
 // PWA stores
 export const deferredInstallPrompt = writable(null);
@@ -81,7 +78,7 @@ export class PwaService {
     transcriptionCount.set(count);
     
     // Check if installed
-    const isInstalled = localStorage.getItem(PWA_INSTALLED_KEY) === 'true';
+    const isInstalled = StorageUtils.getBooleanItem(STORAGE_KEYS.PWA_INSTALLED, false);
     isPwaInstalled.set(isInstalled);
     
     this.log(`Initialized: count=${count}, installed=${isInstalled}`);
@@ -108,16 +105,7 @@ export class PwaService {
   }
 
   getTranscriptionCount() {
-    if (!browser) return 0;
-    
-    try {
-      const countStr = localStorage.getItem(TRANSCRIPTION_COUNT_KEY);
-      const count = parseInt(countStr || '0', 10);
-      return isNaN(count) ? 0 : count;
-    } catch (error) {
-      console.error('Error reading transcription count:', error);
-      return 0;
-    }
+    return StorageUtils.getNumberItem(STORAGE_KEYS.TRANSCRIPTION_COUNT, 0);
   }
 
   incrementTranscriptionCount() {
@@ -127,7 +115,7 @@ export class PwaService {
       const currentCount = this.getTranscriptionCount();
       const newCount = currentCount + 1;
       
-      localStorage.setItem(TRANSCRIPTION_COUNT_KEY, newCount.toString());
+      StorageUtils.setItem(STORAGE_KEYS.TRANSCRIPTION_COUNT, newCount.toString());
       transcriptionCount.set(newCount);
       
       this.log(`Transcription count incremented to ${newCount}`);
@@ -150,18 +138,18 @@ export class PwaService {
     
     try {
       // Don't show if already installed
-      if (localStorage.getItem(PWA_INSTALLED_KEY) === 'true') {
+      if (StorageUtils.getBooleanItem(STORAGE_KEYS.PWA_INSTALLED, false)) {
         return false;
       }
 
       // Check conditions based on transcription count and last prompt
-      const transcriptionCount = this.getTranscriptionCount();
-      const hasShownPrompt = localStorage.getItem(PWA_PROMPT_SHOWN_KEY) === 'true';
-      const promptCount = parseInt(localStorage.getItem(PWA_PROMPT_COUNT_KEY) || '0', 10);
-      const lastPromptDate = localStorage.getItem(PWA_LAST_PROMPT_DATE_KEY);
+      const count = this.getTranscriptionCount();
+      const hasShownPrompt = StorageUtils.getBooleanItem(STORAGE_KEYS.PWA_PROMPT_SHOWN, false);
+      const promptCount = StorageUtils.getNumberItem(STORAGE_KEYS.PWA_PROMPT_COUNT, 0);
+      const lastPromptDate = StorageUtils.getItem(STORAGE_KEYS.PWA_LAST_PROMPT_DATE);
 
       // If we've never shown the prompt before, show it after threshold
-      if (!hasShownPrompt && transcriptionCount >= PWA_INSTALL_PROMPT_THRESHOLD) {
+      if (!hasShownPrompt && count >= PWA_INSTALL_PROMPT_THRESHOLD) {
         return true;
       }
 
@@ -172,7 +160,7 @@ export class PwaService {
           : 0;
 
         // Show again after at least 3 days and 5 more transcriptions
-        if (daysSinceLastPrompt >= 3 && transcriptionCount >= 5) {
+        if (daysSinceLastPrompt >= 3 && count >= 5) {
           return true;
         }
       }
@@ -184,7 +172,7 @@ export class PwaService {
           : 0;
 
         // Show again after at least 14 days and 10 more transcriptions
-        if (daysSinceLastPrompt >= 14 && transcriptionCount >= 10) {
+        if (daysSinceLastPrompt >= 14 && count >= 10) {
           return true;
         }
       }
@@ -201,14 +189,14 @@ export class PwaService {
     
     try {
       // Mark that we've shown the prompt
-      localStorage.setItem(PWA_PROMPT_SHOWN_KEY, 'true');
+      StorageUtils.setItem(STORAGE_KEYS.PWA_PROMPT_SHOWN, 'true');
 
       // Get and increment the prompt count
-      const promptCount = parseInt(localStorage.getItem(PWA_PROMPT_COUNT_KEY) || '0', 10);
-      localStorage.setItem(PWA_PROMPT_COUNT_KEY, (promptCount + 1).toString());
+      const promptCount = StorageUtils.getNumberItem(STORAGE_KEYS.PWA_PROMPT_COUNT, 0);
+      StorageUtils.setItem(STORAGE_KEYS.PWA_PROMPT_COUNT, (promptCount + 1).toString());
 
       // Record the current date
-      localStorage.setItem(PWA_LAST_PROMPT_DATE_KEY, new Date().toISOString());
+      StorageUtils.setItem(STORAGE_KEYS.PWA_LAST_PROMPT_DATE, new Date().toISOString());
 
       this.log(`PWA installation prompt shown (count: ${promptCount + 1})`);
     } catch (error) {
@@ -220,7 +208,7 @@ export class PwaService {
     if (!browser) return;
     
     try {
-      localStorage.setItem(PWA_INSTALLED_KEY, 'true');
+      StorageUtils.setItem(STORAGE_KEYS.PWA_INSTALLED, 'true');
       isPwaInstalled.set(true);
       this.log('PWA marked as installed');
     } catch (error) {
@@ -266,7 +254,7 @@ export class PwaService {
       }
       
       // Check for installation event registration
-      if (localStorage.getItem(PWA_PROMPT_SHOWN_KEY) === 'true') {
+      if (StorageUtils.getBooleanItem(STORAGE_KEYS.PWA_PROMPT_SHOWN, false)) {
         confidenceScore += 0.5;
       }
       

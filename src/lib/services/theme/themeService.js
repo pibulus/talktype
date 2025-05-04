@@ -1,21 +1,22 @@
 import { browser } from '$app/environment';
+import { StorageUtils } from '../infrastructure/storageUtils';
+import { STORAGE_KEYS } from '../../constants';
 
 export class ThemeService {
   constructor() {
-    this.storageKey = 'talktype-vibe';
+    this.storageKey = STORAGE_KEYS.THEME;
     this.defaultTheme = 'peach';
     this.initialized = false;
   }
 
   getCurrentTheme() {
-    if (!browser) return this.defaultTheme;
-    return localStorage.getItem(this.storageKey) || this.defaultTheme;
+    return StorageUtils.getItem(this.storageKey, this.defaultTheme);
   }
 
   applyTheme(themeId) {
     if (!browser) return;
     
-    localStorage.setItem(this.storageKey, themeId);
+    StorageUtils.setItem(this.storageKey, themeId);
     document.documentElement.setAttribute('data-theme', themeId);
   }
 
@@ -31,11 +32,11 @@ export class ThemeService {
     // Only initialize if not already done
     if (this.initialized) return;
     
-    const savedTheme = localStorage.getItem(this.storageKey);
+    const savedTheme = StorageUtils.getItem(this.storageKey);
     const currentTheme = document.documentElement.getAttribute('data-theme');
     
     if (!savedTheme) {
-      localStorage.setItem(this.storageKey, this.defaultTheme);
+      StorageUtils.setItem(this.storageKey, this.defaultTheme);
       if (currentTheme !== this.defaultTheme) {
         document.documentElement.setAttribute('data-theme', this.defaultTheme);
       }
