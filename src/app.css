@@ -13,6 +13,22 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Global scroll behavior improvement - with subtle overscroll */
+html, body {
+  overscroll-behavior: contain; /* Allow some overscroll but contain it */
+  -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
+}
+
+/* Ensure pages don't jump when content changes */
+html {
+  overflow-y: scroll; /* Prevent layout shift when content height changes */
+}
+
+/* Prevent horizontal overflow */
+body {
+  overflow-x: hidden;
+}
+
 /* Prevent modals from creating scroll issues - stronger overrides */
 html:has(dialog[open]),
 html.modal-active {

@@ -11,10 +11,12 @@
   // Refs
   let editableTranscript;
   let copyButtonRef;
+  let transcriptBoxRef;
   
   // State
   let tooltipHoverCount = 0;
   let hasUsedCopyButton = false;
+  let isScrollable = false;
   
   // Event dispatcher
   const dispatch = createEventDispatcher();
@@ -34,6 +36,13 @@
     }
   }
   
+  // Check if content is scrollable
+  function checkScrollable() {
+    if (transcriptBoxRef) {
+      isScrollable = transcriptBoxRef.scrollHeight > transcriptBoxRef.clientHeight;
+    }
+  }
+  
   // Browser feature detection
   function isWebShareSupported() {
     return (
@@ -45,33 +54,36 @@
   }
   
   onMount(() => {
-    // Ensure transcript is scrolled into view on mount
-    setTimeout(() => {
-      if (typeof window !== 'undefined') {
-        window.scrollTo({
-          top: document.body.scrollHeight,
-          behavior: 'smooth'
-        });
+    // Check if content is scrollable on mount
+    checkScrollable();
+    
+    // Watch for content changes to update scrollable state
+    const resizeObserver = new ResizeObserver(() => {
+      checkScrollable();
+    });
+    
+    if (transcriptBoxRef) {
+      resizeObserver.observe(transcriptBoxRef);
+    }
+    
+    return () => {
+      if (transcriptBoxRef) {
+        resizeObserver.unobserve(transcriptBoxRef);
       }
-    }, 100);
+    };
   });
 </script>
 
 <div
-  class="w-full transcript-wrapper animate-fadeIn-from-top"
+  class="transcript-wrapper w-full animate-fadeIn-from-top"
   on:animationend={() => {
-    // Scroll to the bottom when transcript appears
-    if (typeof window !== 'undefined') {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth'
-      });
-    }
+    // No page scrolling needed anymore with fixed layout
+    checkScrollable();
   }}
 >
-  <div class="flex justify-center w-full wrapper-container">
+  <div class="wrapper-container flex w-full justify-center">
     <div
-      class="transcript-box-wrapper relative mx-auto w-[90%] max-w-[500px] px-2 sm:w-full sm:px-3 md:px-0"
+      class="transcript-box-container relative mx-auto w-[95%] max-w-[580px] px-0 sm:w-full"
     >
       <!-- Ghost icon copy button positioned outside the transcript box -->
       <button
@@ -104,65 +116,87 @@
         {/if}
       </button>
 
-      <!-- Editable transcript box with controlled scrolling -->
+      <!-- Redesigned transcript box with proper structure -->
       <div
-        class="transcript-box animate-shadow-appear relative mx-auto my-4 box-border max-h-[320px] w-full max-w-[90vw] overflow-y-auto whitespace-pre-line rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 px-6 py-5 font-mono text-gray-800 shadow-xl transition-all duration-300 sm:px-8 sm:py-6 md:max-w-[580px]"
+        class="transcript-box animate-shadow-appear relative mx-auto my-4 box-border 
+               rounded-[2rem] border-[1.5px] border-pink-100/70 bg-white/95
+               shadow-xl transition-all duration-300 contain-layout"
       >
-        <div
-          class={`transcript-text ${responsiveFontSize} animate-text-appear text-left custom-transcript-text`}
-          contenteditable="true"
-          role="textbox"
-          aria-label="Transcript editor"
-          aria-multiline="true"
-          tabindex="0"
-          aria-describedby="transcript-instructions"
-          bind:this={editableTranscript}
-          on:focus={() => {
-            dispatch('focus', {
-              message: 'You can edit this transcript. Use keyboard to make changes.'
-            });
-          }}
+        <!-- Content Area - scrollable -->
+        <div 
+          class="transcript-content-area w-full max-h-[320px] overflow-y-auto px-6 pt-5 pb-1 sm:px-8 sm:pt-6 sm:pb-2"
+          bind:this={transcriptBoxRef}
         >
-          {transcript}
+          <div
+            class={`transcript-text ${responsiveFontSize} text-left custom-transcript-text animate-text-appear font-mono mb-3`}
+            contenteditable="true"
+            role="textbox"
+            aria-label="Transcript editor"
+            aria-multiline="true"
+            tabindex="0"
+            aria-describedby="transcript-instructions"
+            bind:this={editableTranscript}
+            on:focus={() => {
+              dispatch('focus', {
+                message: 'You can edit this transcript. Use keyboard to make changes.'
+              });
+            }}
+          >
+            {transcript}
+          </div>
+          
+          <!-- Hidden instructions for screen readers -->
+          <div id="transcript-instructions" class="sr-only">
+            Editable transcript. You can modify the text if needed.
+          </div>
         </div>
         
-        <!-- Enhanced gradient mask to indicate scrollable content -->
-        <div
-          class="scroll-indicator-bottom pointer-events-none absolute bottom-0 left-0 right-0 rounded-b-[2rem]"
-        ></div>
-
-        <!-- Add padding at the bottom of transcript for the share button -->
-        <div class="pb-16"></div>
-
-        <!-- Simple share button at bottom middle - only visible when Web Share API is supported -->
-        {#if isWebShareSupported()}
+        <!-- Scroll indicator - only visible when scrollable -->
+        {#if isScrollable}
           <div
-            class="absolute bottom-6 left-0 right-0 z-[200] flex w-full justify-center"
-          >
-            <button
-              class="px-5 py-2 text-sm font-medium text-indigo-600 transition-all duration-200 rounded-full shadow-sm share-btn-text bg-gradient-to-r from-indigo-50 to-purple-100 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 active:scale-95"
-              on:click|preventDefault={() => dispatch('share', { text: getEditedTranscript() })}
-              aria-label="Share transcript"
-            >
-              Share
-            </button>
+            class="scroll-indicator-bottom pointer-events-none absolute bottom-0 left-0 right-0 z-10"
+          ></div>
+        {/if}
+        
+        <!-- Share button area - integrated with content -->
+        {#if isWebShareSupported()}
+          <div class="transcript-button-area w-full py-3 pb-5">
+            <div class="flex w-full justify-center">
+              <button
+                class="px-5 py-2 text-sm font-medium text-indigo-600 transition-all duration-200 rounded-full shadow-sm share-btn-text bg-gradient-to-r from-indigo-50 to-purple-100 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 active:scale-95"
+                on:click|preventDefault={() => dispatch('share', { text: getEditedTranscript() })}
+                aria-label="Share transcript"
+              >
+                Share
+              </button>
+            </div>
           </div>
         {/if}
-
-        <!-- Hidden instructions for screen readers -->
-        <div id="transcript-instructions" class="sr-only">
-          Editable transcript. You can modify the text if needed.
-        </div>
       </div>
     </div>
   </div>
 </div>
 
 <style>
+  /* Container layout */
+  .transcript-wrapper {
+    contain: layout;
+    margin-top: 32px; /* Space between button and transcript */
+  }
+  
+  /* Box structure */
+  .transcript-box {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Contain all scrolling internally */
+  }
+  
+  /* Enhanced transcript text styling */
   .custom-transcript-text {
     font-size: 17px;
     line-height: 1.65;
     text-align: left;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
   
   @media (min-width: 768px) {
@@ -171,55 +205,94 @@
     }
   }
   
-  /* Enhanced transcript box styles */
-  .transcript-box {
-    line-height: 1.6;
-    box-shadow: 0 8px 30px rgba(249, 168, 212, 0.25);
-    /* Cleaner scrollbar appearance */
+  /* Content area scrolling */
+  .transcript-content-area {
     scrollbar-width: thin;
     scrollbar-color: rgba(249, 168, 212, 0.5) transparent;
+    overscroll-behavior: auto; /* Allow natural overscroll within this container */
+    -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
   }
   
   /* Custom scrollbar styles for WebKit browsers */
-  .transcript-box::-webkit-scrollbar {
+  .transcript-content-area::-webkit-scrollbar {
     width: 6px;
   }
   
-  .transcript-box::-webkit-scrollbar-track {
+  .transcript-content-area::-webkit-scrollbar-track {
     background: transparent;
   }
   
-  .transcript-box::-webkit-scrollbar-thumb {
+  .transcript-content-area::-webkit-scrollbar-thumb {
     background-color: rgba(249, 168, 212, 0.5);
     border-radius: 20px;
     border: 2px solid transparent;
   }
   
-  /* Add a visual indicator for scrollable content */
+  /* Visual indicator for scrollable content */
   .scroll-indicator-bottom {
-    height: 28px;
-    background: linear-gradient(to top, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 100%);
-    box-shadow: 0 -8px 16px -8px rgba(249, 168, 212, 0.15);
+    height: 24px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0) 100%);
+    box-shadow: 0 -6px 12px -6px rgba(249, 168, 212, 0.12);
+    border-bottom-left-radius: 2rem;
+    border-bottom-right-radius: 2rem;
   }
   
-  /* Scale the width on smaller screens */
+  /* Mobile optimization */
   @media (max-width: 600px) {
-    .transcript-box {
-      width: 90% !important;
-      max-width: 90% !important;
-      padding: 1.25rem !important;
-      max-height: 280px !important; /* Slightly smaller on mobile */
+    .transcript-content-area {
+      max-height: 280px; /* Slightly smaller on mobile */
+      padding: 1.25rem;
     }
     
-    /* Hide standard scrollbar on mobile for cleaner look */
-    .transcript-box::-webkit-scrollbar {
+    .transcript-content-area::-webkit-scrollbar {
       width: 3px;
+    }
+    
+    .transcript-wrapper {
+      margin-top: 24px; /* Smaller gap on mobile */
     }
   }
   
-  /* Ensure Share button stays centered despite text alignment */
+  /* Button area styling - integrated with content */
+  .transcript-button-area {
+    flex-shrink: 0; /* Prevent button area from shrinking */
+    background: transparent; /* Make it blend with content */
+    margin-top: -8px; /* Pull it slightly closer to the content */
+  }
+  
+  /* Ensure Share button stays centered */
   :global(.share-btn-text) {
     display: inline-block;
     text-align: center;
+  }
+  
+  /* Animation classes */
+  .animate-shadow-appear {
+    box-shadow: 0 8px 30px rgba(249, 168, 212, 0.25);
+    animation: shadowAppear 0.5s ease-out forwards;
+  }
+  
+  .animate-text-appear {
+    animation: textAppear 0.4s ease-out forwards;
+  }
+  
+  @keyframes shadowAppear {
+    from {
+      box-shadow: 0 0 0 rgba(249, 168, 212, 0);
+    }
+    to {
+      box-shadow: 0 8px 30px rgba(249, 168, 212, 0.25);
+    }
+  }
+  
+  @keyframes textAppear {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 </style>

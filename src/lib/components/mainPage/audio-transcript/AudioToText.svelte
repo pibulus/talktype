@@ -574,14 +574,15 @@
 /* Position wrapper to create a stable layout without shifts */
 .position-wrapper {
 	min-height: 120px; /* Ensure there's enough space for content */
-	max-height: calc(100vh - 280px); /* Control max height to prevent overflow */
+	max-height: calc(100vh - 260px); /* Increased height capacity */
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	position: relative; /* Ensure proper positioning context */
-	overflow-y: visible; /* Allow overflow without jumping */
+	overflow: hidden; /* Prevent any overflow from causing page scroll */
 	transition: all 0.3s ease-in-out; /* Smooth transition when content changes */
-	contain: layout; /* Improve layout containment */
+	contain: paint layout; /* Stronger containment for better performance */
+	padding-bottom: 24px; /* Additional space at bottom for transcript */
 }
 
 /* Content container for transcripts and visualizers */
@@ -676,8 +677,9 @@
 	.position-wrapper {
 		margin-top: 0.75rem;
 		margin-bottom: 2.5rem; /* More space (40px) for footer on mobile */
-		padding: 0 8px; /* Add side padding */
-		max-height: calc(100vh - 220px); /* Control height on mobile */
+		padding: 0 8px 32px; /* Add side padding and bottom padding */
+		max-height: calc(100vh - 200px); /* Control height on mobile */
+		overflow: hidden; /* Prevent page scroll from content */
 	}
 
 	/* Make the visualizer more compact on mobile */
@@ -702,8 +704,9 @@
 	.position-wrapper {
 		margin-top: 0.5rem;
 		margin-bottom: 2rem;
-		padding: 0 4px;
-		max-height: calc(100vh - 200px); /* More compact on very small screens */
+		padding: 0 4px 24px;
+		max-height: calc(100vh - 190px); /* More compact on very small screens */
+		overflow: hidden;
 	}
 }
 </style>
