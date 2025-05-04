@@ -171,6 +171,66 @@ export const CSS_CLASSES = {
 	RAINBOW_CYCLE: 'rainbow-color-cycle'
 };
 
+// Animation state definitions
+export const ANIMATION_STATES = {
+	INITIAL: 'initial',
+	IDLE: 'idle',
+	THINKING: 'thinking',
+	RECORDING: 'recording',
+	REACTING: 'reacting',
+	WOBBLING: 'wobbling'
+};
+
+// Valid state transitions
+export const ANIMATION_TRANSITIONS = {
+	[ANIMATION_STATES.INITIAL]: [ANIMATION_STATES.IDLE, ANIMATION_STATES.WOBBLING],
+	[ANIMATION_STATES.IDLE]: [ANIMATION_STATES.THINKING, ANIMATION_STATES.RECORDING, ANIMATION_STATES.WOBBLING, ANIMATION_STATES.REACTING],
+	[ANIMATION_STATES.THINKING]: [ANIMATION_STATES.IDLE, ANIMATION_STATES.RECORDING],
+	[ANIMATION_STATES.RECORDING]: [ANIMATION_STATES.THINKING, ANIMATION_STATES.IDLE, ANIMATION_STATES.WOBBLING],
+	[ANIMATION_STATES.WOBBLING]: [ANIMATION_STATES.IDLE, ANIMATION_STATES.THINKING, ANIMATION_STATES.RECORDING],
+	[ANIMATION_STATES.REACTING]: [ANIMATION_STATES.IDLE]
+};
+
+// Animation behaviors for each state
+export const ANIMATION_BEHAVIORS = {
+	[ANIMATION_STATES.INITIAL]: {
+		blinkPattern: 'none',
+		eyeTracking: false,
+		cleanupDelay: ANIMATION_TIMING.INITIAL_LOAD_DURATION,
+		growAnimation: true
+	},
+	[ANIMATION_STATES.IDLE]: {
+		blinkPattern: 'random',
+		blinkMinGap: BLINK_CONFIG.MIN_GAP,
+		blinkMaxGap: BLINK_CONFIG.MAX_GAP,
+		eyeTracking: true,
+		cleanupDelay: 0
+	},
+	[ANIMATION_STATES.THINKING]: {
+		blinkPattern: 'rhythmic',
+		blinkInterval: BLINK_CONFIG.THINKING_INTERVAL,
+		blinkDuration: BLINK_CONFIG.THINKING_RATE,
+		eyeTracking: false,
+		cleanupDelay: BLINK_CONFIG.RESUME_DELAY
+	},
+	[ANIMATION_STATES.RECORDING]: {
+		blinkPattern: 'none',
+		eyeTracking: true,
+		cleanupDelay: 0
+	},
+	[ANIMATION_STATES.WOBBLING]: {
+		blinkPattern: 'none',
+		wobbleDuration: WOBBLE_CONFIG.DURATION,
+		eyeTracking: true,
+		cleanupDelay: WOBBLE_CONFIG.CLEANUP_DELAY
+	},
+	[ANIMATION_STATES.REACTING]: {
+		blinkPattern: 'expression',
+		eyeTracking: true,
+		cleanupDelay: EYE_CONFIG.REACT_DELAY
+	}
+};
+
 /**
  * Animation Variable Injector
  *

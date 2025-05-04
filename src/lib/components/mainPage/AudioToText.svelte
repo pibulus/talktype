@@ -124,9 +124,17 @@
 		}, ANIMATION.RECORDING.SCROLL_DELAY);
 
 		try {
-			// Subtle pulse ghost icon when starting recording
-			if (ghostComponent && typeof ghostComponent.pulse === 'function') {
-				ghostComponent.pulse();
+			// Make ghost wobble to indicate recording start
+			if (ghostComponent) {
+				// Use forceWobble with isStartRecording=true for proper animation
+				if (typeof ghostComponent.forceWobble === 'function') {
+					console.log('🎬 Triggering recording start wobble animation');
+					ghostComponent.forceWobble('', true); // Use random direction with recording start flag
+				} 
+				// As fallback, at least pulse the ghost icon if wobble not available
+				else if (typeof ghostComponent.pulse === 'function') {
+					ghostComponent.pulse();
+				}
 			}
 
 			// Start recording using the AudioService
@@ -168,6 +176,11 @@
 			// Start transcription process if we have audio data
 			if (audioBlob && audioBlob.size > 0) {
 				await transcriptionService.transcribeAudio(audioBlob);
+				
+				// Ensure ghost exits thinking mode when transcription completes
+				if (ghostComponent && typeof ghostComponent.stopThinking === 'function') {
+					ghostComponent.stopThinking();
+				}
 
 				// Schedule scroll to bottom when transcript is complete
 				setTimeout(() => {

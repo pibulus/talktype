@@ -1,36 +1,47 @@
 <script>
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { browser } from '$app/environment';
+
+	// CSS imports
 	import './ghost-animations.css';
 	import './ghost-themes.css';
+
+	// SVG paths
 	import ghostPathsUrl from './ghost-paths.svg?url';
+
+	// Configuration
 	import {
-		initGradientAnimation,
-		cleanupAnimation,
-		cleanupAllAnimations
-	} from './gradientAnimator';
-	import {
-		BLINK_CONFIG,
-		WOBBLE_CONFIG,
-		SPECIAL_CONFIG,
+		ANIMATION_STATES,
+		CSS_CLASSES,
 		PULSE_CONFIG,
 		EYE_CONFIG,
-		ANIMATION_TIMING,
-		CSS_CLASSES,
+		WOBBLE_CONFIG,
 		injectAnimationVariables
-	} from './animationConfig';
+	} from './animationConfig.js';
+
 	import { THEMES } from '$lib/constants.js';
-	import { theme as localTheme, cssVariables, setTheme } from './themeStore';
+
+	// Import stores
+	import { ghostStateStore, theme as localTheme, cssVariables, setTheme } from './stores/index.js';
+
+	// Import services
+	import { animationService, blinkService } from './services/index.js';
+
+	// Import animation utilities
+	import { forceReflow, cleanupTimers } from './utils/animationUtils.js';
+
+	// Import gradient animator for theme updates
+	import { cleanupAllAnimations, initGradientAnimation } from './gradientAnimator.js';
 
 	// Props to communicate state
 	export let isRecording = false;
 	export let isProcessing = false;
-	export let animationState = 'idle'; // 'idle', 'wobble-start', 'wobble-stop'
+	export let animationState = ANIMATION_STATES.IDLE; // Current animation state
 	export let debug = false; // General debug mode
 	export let debugAnim = false; // Animation debug mode - shows animation config
 	export let seed = 0; // Seed for randomizing animations, allows multiple ghosts to have unsynchronized animations
 	export let externalTheme = null; // Optional external theme store for integration with app-level theme
-	
+
 	// Style props for flexible sizing and appearance
 	export let width = '100%';
 	export let height = '100%';
@@ -45,208 +56,184 @@
 	let backgroundElement;
 	let ghostStyleElement;
 
-	// Local state
-	let blinkTimeoutId = null;
-	let wobbleTimeoutId = null;
-	let specialAnimationTimeoutId = null;
-	let eyesClosed = false;
-	let isWobbling = false;
-	let eyePositionX = 0; // For horizontal eye tracking: -1 to 1
-	let eyePositionY = 0; // For vertical eye tracking: -1 to 1
-	let doingSpecialAnimation = false; // For rare spin animation (easter egg)
-	let blinkCounter = 0; // Counter for advancing the seeded random generation
+	// Timer references for cleanup
+	const timers = {};
+
+	// State tracking to prevent infinite loops
+	let lastRecordingState = false;
+	let lastProcessingState = false;
+	let lastAnimationState = animationState;
+	let lastAppliedWobbleDirection = null;
 	
-	// Use either external or local theme store
+	// Additional state variables
 	let currentTheme;
 	let themeStore = externalTheme || localTheme;
 	let unsubscribeTheme;
-	
-	// Watch for changes to externalTheme prop
-	$: {
-		// Clean up previous subscription if it exists
-		if (unsubscribeTheme) unsubscribeTheme();
-		
-		// Update the theme store reference
-		themeStore = externalTheme || localTheme;
-		
-		// Create new subscription
-		unsubscribeTheme = themeStore.subscribe(value => {
-			currentTheme = value;
-			if (debug) console.log(`Ghost theme updated to: ${value} (using ${externalTheme ? 'external' : 'local'} store)`);
-		});
-	}
-	
-	// Clean up subscription on component destroy
-	onDestroy(() => {
-		if (unsubscribeTheme) unsubscribeTheme();
-	});
+	let isRecordingTransition = false;
+	let manualStateChange = false;
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher();
 
-	// Force a browser reflow to ensure animations apply correctly
-	function forceReflow(element) {
-		if (!element) return;
-		void element.offsetWidth;
+	// Configure debug mode in stores once, not reactively
+	function setDebugMode() {
+		if (browser) {
+			ghostStateStore.setDebug(debug);
+		}
 	}
 
-	// Apply theme changes when theme store updates
-	$: if (currentTheme && ghostSvg) {
-		// Get the SVG element
-		const svgElement = ghostSvg.querySelector('svg');
-		if (svgElement) {
-			// Force a reflow to ensure CSS transitions apply correctly
-			forceReflow(svgElement);
+	// Watch for changes to externalTheme prop in a safer way
+	function setupThemeSubscription() {
+		// Clean up previous subscription if it exists
+		if (unsubscribeTheme) unsubscribeTheme();
 
-			// Get the shape element
-			const shapeElem = svgElement.querySelector('#ghost-shape');
-			if (shapeElem) {
-				// Force shape animation restart
-				forceReflow(shapeElem);
-			}
+		// Update the theme store reference
+		themeStore = externalTheme || localTheme;
 
-			// Clean up previous gradient animations and initialize new ones
-			cleanupAllAnimations();
-			initGradientAnimation(currentTheme, svgElement);
+		// Create new subscription
+		unsubscribeTheme = themeStore.subscribe((value) => {
+			currentTheme = value;
+			if (debug)
+				console.log(
+					`Ghost theme updated to: ${value} (using ${externalTheme ? 'external' : 'local'} store)`
+				);
+		});
+	}
+
+	// Sync state to store only when local props actually change
+	function syncStateToStore() {
+		if (!browser || !ghostSvg) return;
+		
+		// Only update recording state if it has changed
+		if (isRecording !== lastRecordingState) {
+			const isStartingRecording = isRecording && !lastRecordingState;
+			const isStoppingRecording = !isRecording && lastRecordingState;
 			
-			// Update dynamic styles
-			initDynamicStyles();
+			// Update local tracking state first
+			lastRecordingState = isRecording;
 			
-			// Log theme change if in debug mode
-			if (debug) {
-				console.log(`Ghost theme updated to: ${currentTheme}`);
-			}
-		}
-	}
-
-	// Track mouse movement for eye tracking
-	function handleMouseMove(event) {
-		if (typeof window === 'undefined' || !ghostSvg || eyesClosed) return;
-
-		// Get ghost element bounding box
-		const ghostRect = ghostSvg.getBoundingClientRect();
-		const ghostCenterX = ghostRect.left + ghostRect.width / 2;
-		const ghostCenterY = ghostRect.top + ghostRect.height / 2;
-
-		// Calculate mouse position relative to ghost center
-		const mouseX = event.clientX;
-		const mouseY = event.clientY;
-		const distanceX = mouseX - ghostCenterX;
-		const distanceY = mouseY - ghostCenterY;
-
-		// Normalize to values between -1 and 1
-		const maxDistanceX = window.innerWidth / EYE_CONFIG.X_DIVISOR;
-		const maxDistanceY = window.innerHeight / EYE_CONFIG.Y_DIVISOR;
-		const normalizedX = Math.max(-1, Math.min(1, distanceX / maxDistanceX));
-		const normalizedY = Math.max(-1, Math.min(1, distanceY / maxDistanceY));
-
-		// Add smaller dead zone for more responsiveness
-		if (Math.abs(normalizedX) < EYE_CONFIG.DEAD_ZONE) {
-			eyePositionX = 0;
-		} else {
-			// Apply smoothing for better tactility
-			eyePositionX = eyePositionX + (normalizedX - eyePositionX) * EYE_CONFIG.SMOOTHING;
-		}
-
-		// Vertical tracking with smaller movement range
-		if (Math.abs(normalizedY) < EYE_CONFIG.DEAD_ZONE) {
-			eyePositionY = 0;
-		} else {
-			// Apply smoothing for better tactility
-			eyePositionY = eyePositionY + (normalizedY - eyePositionY) * EYE_CONFIG.SMOOTHING;
-		}
-
-		// Apply eye transforms directly with inline styles
-		applyEyeTransforms();
-	}
-
-	// Apply eye transforms based on current state
-	function applyEyeTransforms() {
-		if (!leftEye || !rightEye) return;
-
-		if (eyesClosed) {
-			leftEye.style.transform = `scaleY(${EYE_CONFIG.CLOSED_SCALE})`;
-			rightEye.style.transform = `scaleY(${EYE_CONFIG.CLOSED_SCALE})`;
-		} else {
-			leftEye.style.transform = `translate(${eyePositionX * EYE_CONFIG.X_MULTIPLIER}px, ${eyePositionY * EYE_CONFIG.Y_MULTIPLIER}px)`;
-			rightEye.style.transform = `translate(${eyePositionX * EYE_CONFIG.X_MULTIPLIER}px, ${eyePositionY * EYE_CONFIG.Y_MULTIPLIER}px)`;
-		}
-	}
-
-	// Helper function for single blink
-	function performSingleBlink(onComplete) {
-		eyesClosed = true;
-		applyEyeTransforms();
-
-		setTimeout(() => {
-			eyesClosed = false;
-			applyEyeTransforms();
-
-			if (onComplete) {
-				onComplete();
-			}
-		}, BLINK_CONFIG.SINGLE_DURATION);
-	}
-
-	// Helper function for double blink
-	function performDoubleBlink(onComplete) {
-		eyesClosed = true;
-		applyEyeTransforms();
-
-		setTimeout(() => {
-			eyesClosed = false;
-			applyEyeTransforms();
-
-			setTimeout(() => {
-				eyesClosed = true;
-				applyEyeTransforms();
-
+			// Special handling for starting recording - do wobble animation first
+			if (isStartingRecording) {
+				// Directly trigger the wobble animation with start recording flag
+				console.log('🎤 Starting recording - triggering wobble animation');
+				
+				// Force wobble with random direction and mark as recording start
+				const direction = Math.random() < 0.5 ? CSS_CLASSES.WOBBLE_LEFT : CSS_CLASSES.WOBBLE_RIGHT;
+				
+				// Directly trigger the animation service 
+				animationService.applyWobbleEffect(ghostSvg, {
+					direction,
+					force: true,
+					updateStore: true
+				});
+				
+				// Set isWobbling and wobbleDirection in store directly
+				ghostStateStore.setWobbling(true);
+				ghostStateStore.setWobbleDirection(direction);
+				
+				// Then set recording state with slight delay to allow animation to start
 				setTimeout(() => {
-					eyesClosed = false;
-					applyEyeTransforms();
-
-					if (onComplete) {
-						onComplete();
-					}
-				}, BLINK_CONFIG.SINGLE_DURATION);
-			}, BLINK_CONFIG.DOUBLE_PAUSE);
-		}, BLINK_CONFIG.SINGLE_DURATION);
+					ghostStateStore.setRecording(isRecording);
+				}, 50);
+			} else {
+				// Normal case for stopping recording - just update the store
+				ghostStateStore.setRecording(isRecording);
+			}
+			
+			// Mark as recording transition to force wobble in reactive statements
+			isRecordingTransition = true;
+		}
+		
+		// Only update processing state if it has changed
+		if (isProcessing !== lastProcessingState) {
+			lastProcessingState = isProcessing;
+			ghostStateStore.setProcessing(isProcessing);
+		}
+		
+		// Only update animation state if it has changed
+		if (animationState !== lastAnimationState) {
+			lastAnimationState = animationState;
+			manualStateChange = true;
+			
+			// Handle legacy animation commands
+			if (animationState === 'wobble-start') {
+				// Special legacy transition command
+				animationService.applyWobbleEffect(ghostSvg, {
+					direction: CSS_CLASSES.WOBBLE_LEFT,
+					updateStore: true
+				});
+			} else if (animationState === 'wobble-stop') {
+				// Special legacy transition command
+				animationService.applyWobbleEffect(ghostSvg, {
+					direction: CSS_CLASSES.WOBBLE_RIGHT,
+					updateStore: true
+				});
+			} else if (Object.values(ANIMATION_STATES).includes(animationState)) {
+				// Direct state command
+				ghostStateStore.setAnimationState(animationState);
+			}
+			
+			// Reset flag after processing
+			setTimeout(() => {
+				manualStateChange = false;
+			}, 50);
+		}
 	}
-
-	// Seeded random number generator for deterministic but unique animations
-	function seedRandom(min, max) {
-		// Simple seeded random number generator based on sine function
-		const x = Math.sin(seed + blinkCounter++) * 10000;
-		const random = x - Math.floor(x);
-		return min + random * (max - min);
-	}
-
-	// Regular ambient blinking with seed-based randomization
-	function scheduleBlink() {
-		clearTimeout(blinkTimeoutId);
-
-		// Don't blink during recording or processing
-		if (isRecording || isProcessing) {
+	
+	// Handle the wobble effect application
+	function handleWobbleEffect() {
+		if (!browser || !ghostSvg) return;
+		
+		const state = $ghostStateStore;
+		if (!state.isWobbling || !state.wobbleDirection) return;
+		
+		// Skip if this is the same direction and not a recording transition
+		if (state.wobbleDirection === lastAppliedWobbleDirection && !isRecordingTransition && !manualStateChange) {
 			return;
 		}
-
-		// Random delay between blinks using config settings and seed
-		const delay =
-			BLINK_CONFIG.MIN_GAP + seedRandom(0, 1) * (BLINK_CONFIG.MAX_GAP - BLINK_CONFIG.MIN_GAP);
-
-		blinkTimeoutId = setTimeout(() => {
-			// Chance of double blink based on config
-			if (seedRandom(0, 1) < BLINK_CONFIG.DOUBLE_CHANCE) {
-				performDoubleBlink(() => scheduleBlink());
-			} else {
-				performSingleBlink(() => scheduleBlink());
-			}
-		}, delay);
+		
+		// Remember this direction to prevent re-triggering on the same value
+		lastAppliedWobbleDirection = state.wobbleDirection;
+		
+		// Reset recording transition flag
+		isRecordingTransition = false;
+		
+		// Apply wobble effect with the new direction, but don't update the store
+		animationService.applyWobbleEffect(ghostSvg, { 
+			direction: state.wobbleDirection,
+			force: true,
+			updateStore: false // Important: don't update the store again to break the loop
+		});
 	}
 
-	// Handle click events
-	function handleClick() {
-		dispatch('toggleRecording');
+	// Apply theme changes when they occur
+	function applyThemeChanges() {
+		if (!browser || !ghostSvg || !currentTheme) return;
+		
+		const svgElement = ghostSvg.querySelector('svg');
+		if (!svgElement) return;
+		
+		// Force a reflow to ensure CSS transitions apply correctly
+		forceReflow(svgElement);
+
+		// Get the shape element
+		const shapeElem = svgElement.querySelector('#ghost-shape');
+		if (shapeElem) {
+			// Force shape animation restart
+			forceReflow(shapeElem);
+		}
+
+		// Clean up previous gradient animations and initialize new ones
+		cleanupAllAnimations();
+		initGradientAnimation(currentTheme, svgElement);
+
+		// Update dynamic styles
+		initDynamicStyles();
+
+		// Log theme change if in debug mode
+		if (debug) {
+			console.log(`Ghost theme updated to: ${currentTheme}`);
+		}
 	}
 
 	// Initialize dynamic CSS variables using the centralized store
@@ -276,81 +263,80 @@
 		}
 	}
 
-	// Lifecycle hooks
-	onMount(() => {
-		// Initialize dynamic CSS variables
-		initDynamicStyles();
+	// Handle mouse movement for eye tracking
+	function handleMouseMove(event) {
+		if (typeof window === 'undefined' || !ghostSvg) return;
 
-		if (typeof document !== 'undefined') {
-			// Initialize gradient animations (store subscription will handle updates)
-			if (ghostSvg) {
-				const svgElement = ghostSvg.querySelector('svg');
-				if (svgElement) {
-					initGradientAnimation(currentTheme, svgElement);
-				}
-			}
+		// Check the store state for eye tracking settings
+		const state = $ghostStateStore;
+		if (state.eyesClosed || !state.isEyeTrackingEnabled) return;
 
-			// Add initial-load class to container for entrance animation
-			// Add it to document body so it persists across potential component rerenders
-			document.body.classList.add(CSS_CLASSES.INITIAL_LOAD);
+		// Get ghost element bounding box
+		const ghostRect = ghostSvg.getBoundingClientRect();
+		const ghostCenterX = ghostRect.left + ghostRect.width / 2;
+		const ghostCenterY = ghostRect.top + ghostRect.height / 2;
 
-			// Remove the class after animation completes to prevent future triggers
-			setTimeout(() => {
-				document.body.classList.remove(CSS_CLASSES.INITIAL_LOAD);
+		// Calculate mouse position relative to ghost center
+		const mouseX = event.clientX;
+		const mouseY = event.clientY;
+		const distanceX = mouseX - ghostCenterX;
+		const distanceY = mouseY - ghostCenterY;
 
-				// Start greeting wobble animation after grow animation completes
-				if (ghostSvg) {
-					// Apply wobble-left directly to the SVG
-					ghostSvg.querySelector('svg').classList.add(CSS_CLASSES.WOBBLE_LEFT);
+		// Normalize to values between -1 and 1
+		const maxDistanceX = window.innerWidth / EYE_CONFIG.X_DIVISOR;
+		const maxDistanceY = window.innerHeight / EYE_CONFIG.Y_DIVISOR;
+		const normalizedX = Math.max(-1, Math.min(1, distanceX / maxDistanceX));
+		const normalizedY = Math.max(-1, Math.min(1, distanceY / maxDistanceY));
 
-					// Clear wobble after animation completes
-					setTimeout(() => {
-						ghostSvg.querySelector('svg').classList.remove(CSS_CLASSES.WOBBLE_LEFT);
+		// Add smaller dead zone for more responsiveness
+		let newX = 0;
+		let newY = 0;
 
-						// Then do natural double blink after wobble completes
-						performDoubleBlink(() => {
-							scheduleBlink(); // Start ambient blinking after greeting
-						});
-					}, WOBBLE_CONFIG.CLEANUP_DELAY);
-				} else {
-					// Fallback if SVG not available
-					performDoubleBlink(() => {
-						scheduleBlink();
-					});
-				}
-			}, ANIMATION_TIMING.INITIAL_LOAD_DURATION);
-
-			// Start tracking mouse movement for eye position
-			document.addEventListener('mousemove', handleMouseMove, { passive: true });
-
-			// Start special animation detection (easter egg)
-			maybeDoSpecialAnimation();
-
-			return () => {
-				document.removeEventListener('mousemove', handleMouseMove);
-				clearTimeout(specialAnimationTimeoutId);
-				clearTimeout(wobbleTimeoutId);
-				cleanupAllAnimations();
-
-				// Clean up style element on component destruction
-				if (ghostStyleElement) {
-					ghostStyleElement.remove();
-				}
-			};
+		if (Math.abs(normalizedX) >= EYE_CONFIG.DEAD_ZONE) {
+			// Apply smoothing for better tactility
+			newX = state.eyePosition.x + (normalizedX - state.eyePosition.x) * EYE_CONFIG.SMOOTHING;
 		}
-	});
 
-	// Clean up on destroy
+		// Vertical tracking with smaller movement range
+		if (Math.abs(normalizedY) >= EYE_CONFIG.DEAD_ZONE) {
+			// Apply smoothing for better tactility
+			newY = state.eyePosition.y + (normalizedY - state.eyePosition.y) * EYE_CONFIG.SMOOTHING;
+		}
+
+		// Update store with new position
+		ghostStateStore.setEyePosition(newX, newY);
+
+		// Apply eye transforms directly
+		blinkService.applyEyeTransforms(leftEye, rightEye);
+	}
+
+	// Handle click events
+	function handleClick() {
+		dispatch('toggleRecording');
+	}
+
+	// Clean up on destroy - ensure all animation resources are cleared
 	onDestroy(() => {
-		clearTimeout(blinkTimeoutId);
-		clearTimeout(wobbleTimeoutId);
-		clearTimeout(specialAnimationTimeoutId);
+		// Clean up theme store subscription
+		if (unsubscribeTheme) unsubscribeTheme();
+
+		// Clean up animation timers
+		cleanupTimers(timers);
+
+		// Clean up all gradient animations
 		cleanupAllAnimations();
 
 		// Remove dynamic styles
 		if (ghostStyleElement) {
 			ghostStyleElement.remove();
+			ghostStyleElement = null;
 		}
+
+		// Reset ghost state
+		ghostStateStore.reset();
+
+		// Debug log
+		if (debug) console.log('Ghost component destroyed and all animations cleaned up');
 	});
 
 	// Export function to adjust gradient animation settings during runtime
@@ -373,205 +359,154 @@
 		}
 	}
 
-	// Special animations that rarely happen (easter egg) with seeded randomization
-	function maybeDoSpecialAnimation() {
-		if (typeof window === 'undefined') return;
-
-		clearTimeout(specialAnimationTimeoutId);
-
-		// Special animation with configurable chance using seeded random
-		if (
-			seedRandom(0, 1) < SPECIAL_CONFIG.CHANCE &&
-			!isRecording &&
-			!isProcessing &&
-			!doingSpecialAnimation &&
-			!eyesClosed
-		) {
-			doingSpecialAnimation = true;
-
-			// Do a special animation (full spin)
-			if (ghostSvg) {
-				ghostSvg.classList.add(CSS_CLASSES.SPIN);
+	// Public API: Force wobble animation
+	export function forceWobble(direction = '', isStartRecording = false) {
+		if (!ghostSvg) return;
+		
+		console.log('🔄 Ghost.forceWobble called with direction:', direction);
+		
+		// Reset tracking variables to ensure animation triggers
+		lastAppliedWobbleDirection = null;
+		isRecordingTransition = true; 
+		
+		// Choose a random direction if none provided
+		const wobbleDir = direction || (Math.random() < 0.5 ? CSS_CLASSES.WOBBLE_LEFT : CSS_CLASSES.WOBBLE_RIGHT);
+		
+		// Reset wobble state in the store to force a fresh animation
+		ghostStateStore.setWobbleDirection(null);
+		
+		// Give a small delay to ensure state updates have propagated
+		setTimeout(() => {
+			// Directly trigger the animation service with store updates
+			animationService.applyWobbleEffect(ghostSvg, { 
+				direction: wobbleDir,
+				force: true,
+				updateStore: true  // Explicit API calls should update the store
+			});
+			
+			// Explicitly set the wobble state after animation starts
+			ghostStateStore.setWobbling(true);
+			ghostStateStore.setWobbleDirection(wobbleDir);
+			
+			// If this is for recording start, schedule transition to recording after wobble
+			if (isStartRecording) {
+				setTimeout(() => {
+					// Transition to recording state
+					ghostStateStore.setAnimationState(ANIMATION_STATES.RECORDING);
+					// Ensure recording state is set in the store
+					ghostStateStore.setRecording(true);
+				}, WOBBLE_CONFIG.DURATION);
 			}
-
-			// Return to normal after animation
-			setTimeout(() => {
-				if (ghostSvg) {
-					ghostSvg.classList.remove(CSS_CLASSES.SPIN);
-				}
-				doingSpecialAnimation = false;
-			}, SPECIAL_CONFIG.DURATION);
-		}
-
-		// Schedule next check using config interval with slight variation based on seed
-		const checkInterval = SPECIAL_CONFIG.CHECK_INTERVAL + seedRandom(-5000, 5000);
-		specialAnimationTimeoutId = setTimeout(maybeDoSpecialAnimation, checkInterval);
+		}, 10);
 	}
 
 	// Public methods to expose animation controls
 	export function pulse() {
 		// Add subtle pulse animation
 		if (ghostSvg) {
-			ghostSvg.classList.add(CSS_CLASSES.PULSE);
-			setTimeout(() => {
-				ghostSvg.classList.remove(CSS_CLASSES.PULSE);
-			}, PULSE_CONFIG.DURATION);
+			animationService.applyPulseEffect(ghostSvg, PULSE_CONFIG.DURATION);
 		}
 	}
 
 	export function startThinking() {
-		// Add thinking hard animation for eyes
-		if (leftEye && rightEye) {
-			// Stop ambient blinking
-			clearTimeout(blinkTimeoutId);
-
-			// Thinking blink pattern
-			const thinkingInterval = setInterval(() => {
-				if (!isProcessing) {
-					clearInterval(thinkingInterval);
-					return;
-				}
-
-				// Close eyes
-				eyesClosed = true;
-				applyEyeTransforms();
-
-				// Open after short delay
-				setTimeout(() => {
-					eyesClosed = false;
-					applyEyeTransforms();
-				}, BLINK_CONFIG.THINKING_RATE);
-			}, BLINK_CONFIG.THINKING_INTERVAL);
-		}
-
-		isProcessing = true;
+		// Transition to thinking state
+		ghostStateStore.setAnimationState(ANIMATION_STATES.THINKING);
+		ghostStateStore.setProcessing(true);
 	}
 
 	export function stopThinking() {
-		isProcessing = false;
-
-		// Resume ambient blinking
-		setTimeout(() => {
-			scheduleBlink();
-		}, BLINK_CONFIG.RESUME_DELAY);
+		// Transition to idle state
+		ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
+		ghostStateStore.setProcessing(false);
 	}
 
 	export function reactToTranscript(textLength = 0) {
-		// Skip if no element
-		if (!leftEye || !rightEye) return;
+		blinkService.reactToTranscript({ leftEye, rightEye }, textLength);
+	}
 
-		clearTimeout(blinkTimeoutId);
+	// Setup on mount
+	onMount(() => {
+		// Set initial values to prevent unnecessary updates
+		lastRecordingState = isRecording;
+		lastProcessingState = isProcessing;
+		lastAnimationState = animationState;
+		
+		// Initial setup operations
+		setDebugMode();
+		setupThemeSubscription();
+		initDynamicStyles();
 
-		if (textLength === 0) {
-			scheduleBlink();
-			return;
-		}
+		if (browser) {
+			// Initialize element references for services
+			const elements = {
+				ghostSvg,
+				leftEye,
+				rightEye,
+				backgroundElement
+			};
 
-		// Small delay before reacting
-		setTimeout(() => {
-			if (textLength > EYE_CONFIG.TEXT_THRESHOLD) {
-				// For longer transcripts, do a "satisfied" double blink
-				performDoubleBlink(() => scheduleBlink());
+			// Initialize animation services
+			const cleanupAnimations = animationService.initAnimations(elements, {
+				seed,
+				theme: currentTheme
+			});
+
+			// Initialize blink service
+			const cleanupBlinks = blinkService.initBlinking(elements, {
+				seed
+			});
+
+			// Start tracking mouse movement for eye position
+			document.addEventListener('mousemove', handleMouseMove, { passive: true });
+
+			// Set debug mode
+			ghostStateStore.setDebug(debug);
+
+			// Initialize animation state based on first visit status
+			const state = $ghostStateStore;
+			if (state.isFirstVisit) {
+				ghostStateStore.setAnimationState(ANIMATION_STATES.INITIAL);
+				animationService.applyInitialLoadEffect(ghostSvg);
 			} else {
-				// For short transcripts, just do a single blink
-				performSingleBlink(() => scheduleBlink());
+				ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 			}
-		}, EYE_CONFIG.REACT_DELAY);
+
+			// Return cleanup function
+			return () => {
+				document.removeEventListener('mousemove', handleMouseMove);
+				cleanupAnimations();
+				cleanupBlinks();
+			};
+		}
+	});
+	
+	// Monitor store state for wobble changes, but avoid calling in the render cycle
+	$: if (browser && ghostSvg && $ghostStateStore) {
+		// Schedule this on the next tick to avoid recursive updates
+		setTimeout(handleWobbleEffect, 0);
 	}
-
-	// Function to force wobble animation - works with both direct calls and animation state
-	export function forceWobble(direction = '', isStartRecording = false) {
-		// Make sure we're in browser context
-		if (typeof window === 'undefined') return;
-
-		// Force animation restart by setting to false first
-		isWobbling = false;
-
-		// Force a browser reflow to ensure the animation gets reapplied
-		if (ghostSvg) {
-			forceReflow(ghostSvg);
-		}
-
-		// Choose direction using seeded random for deterministic but unique wobbles
-		const wobbleDirection =
-			direction ||
-			(seedRandom(0, 1) < WOBBLE_CONFIG.LEFT_CHANCE
-				? CSS_CLASSES.WOBBLE_LEFT
-				: CSS_CLASSES.WOBBLE_RIGHT);
-
-		// Apply animation class to the SVG element (child of the button)
-		const svgElement = ghostSvg?.querySelector('svg');
-		if (svgElement) {
-			console.log(`Applying ${wobbleDirection} to SVG element`);
-			svgElement.classList.add(wobbleDirection);
-		} else {
-			console.warn('SVG element not found for wobble animation');
-		}
-
-		// Now set to true to start animation
-		isWobbling = true;
-
-		// Clear any existing wobble timer
-		clearTimeout(wobbleTimeoutId);
-
-		// Schedule the wobble to end after animation completes with slight variation based on seed
-		const duration = WOBBLE_CONFIG.DURATION + seedRandom(-50, 50);
-		wobbleTimeoutId = setTimeout(() => {
-			if (svgElement) {
-				svgElement.classList.remove(CSS_CLASSES.WOBBLE_LEFT, CSS_CLASSES.WOBBLE_RIGHT);
-			}
-			isWobbling = false;
-		}, duration);
+	
+	// Monitor theme changes
+	$: if (currentTheme && ghostSvg && browser) {
+		// Schedule on the next tick to avoid recursive updates
+		setTimeout(applyThemeChanges, 0);
 	}
-
-	// Track previous state to detect actual changes
-	let wasRecording = false;
-	let wasProcessing = false;
-
-	// Watch for animation state changes
-	$: if (animationState) {
-		// Run only when animationState actually changes
-		// Apply animations based on animation state
-		if (animationState === 'wobble-start') {
-			forceWobble(CSS_CLASSES.WOBBLE_LEFT, true);
-		} else if (animationState === 'wobble-stop') {
-			forceWobble(CSS_CLASSES.WOBBLE_RIGHT);
-		}
-	}
-
-	// Watch for changes in recording/processing state - only for blinking
-	$: {
-		// Track previous state for blink management
-		const wasRecordingTemp = wasRecording;
-		const wasProcessingTemp = wasProcessing;
-
-		// Blink handling
-		if (isRecording || isProcessing) {
-			// Clear any scheduled blinks during recording/processing
-			clearTimeout(blinkTimeoutId);
-		} else if ((wasRecordingTemp || wasProcessingTemp) && !isRecording && !isProcessing) {
-			// Restart blinking after a delay when we're fully stopped
-			setTimeout(() => {
-				scheduleBlink();
-			}, BLINK_CONFIG.RESUME_DELAY * 2);
-		}
-
-		// Update previous state for next comparison
-		wasRecording = isRecording;
-		wasProcessing = isProcessing;
+	
+	// Monitor props for changes
+	$: if (browser) {
+		// Schedule on the next tick to avoid reactive loop
+		setTimeout(syncStateToStore, 0);
 	}
 </script>
 
 <button
 	bind:this={ghostSvg}
 	class="ghost-container theme-{currentTheme} 
-      {isRecording
+      {$ghostStateStore.isRecording
 		? `${CSS_CLASSES.RECORDING} recording-theme-${currentTheme} ghost-recording-glow-${currentTheme}`
 		: ''}
-      {isWobbling
-		? `ghost-wobble-${Math.random() < WOBBLE_CONFIG.LEFT_CHANCE ? 'left' : 'right'}`
-		: ''} 
-      {doingSpecialAnimation ? 'do-special-animation' : ''}
+      
+      {$ghostStateStore.isSpecialAnimationActive ? 'do-special-animation' : ''}
       {!clickable ? 'ghost-non-clickable' : ''}"
 	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
 	on:click={clickable ? handleClick : undefined}
@@ -581,17 +516,19 @@
 			handleClick();
 		}
 	}}
-	aria-label={clickable ? "Toggle Recording" : "Ghost"}
-	aria-pressed={clickable ? isRecording.toString() : undefined}
-	tabindex={clickable ? "0" : "-1"}
+	aria-label={clickable ? 'Toggle Recording' : 'Ghost'}
+	aria-pressed={clickable ? $ghostStateStore.isRecording.toString() : undefined}
+	tabindex={clickable ? '0' : '-1'}
 >
 	<svg
 		viewBox="0 0 1024 1024"
 		xmlns="http://www.w3.org/2000/svg"
 		xmlns:xlink="http://www.w3.org/1999/xlink"
-		class="ghost-svg theme-{currentTheme} {isRecording ? CSS_CLASSES.RECORDING : ''} {debugAnim
-			? 'debug-animation'
-			: ''}"
+		class="ghost-svg theme-{currentTheme} {$ghostStateStore.isRecording
+			? CSS_CLASSES.RECORDING
+			: ''} {$ghostStateStore.isWobbling && $ghostStateStore.wobbleDirection
+			? $ghostStateStore.wobbleDirection
+			: ''} {debugAnim ? 'debug-animation' : ''}"
 	>
 		<defs>
 			<linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -689,7 +626,7 @@
 		box-shadow: none !important;
 		border: none !important;
 	}
-	
+
 	.ghost-non-clickable {
 		cursor: default;
 		pointer-events: none;
