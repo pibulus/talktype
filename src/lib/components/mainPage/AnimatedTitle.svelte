@@ -35,7 +35,7 @@
 
 <!-- Updated subheadline with improved typography and brand voice -->
 <p
-  class="slide-in-subtitle mx-auto mt-2 mb-6 max-w-prose text-xl text-center text-gray-700/85 cursor-default select-none sm:mt-3 sm:mb-6 md:mt-3 md:mb-8"
+  class="slide-in-subtitle mx-auto mt-2 mb-6 max-w-prose text-base text-center text-gray-700/85 cursor-default select-none sm:mt-3 sm:mb-6 sm:text-lg md:mt-3 md:mb-8 md:text-xl lg:text-2xl"
   style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.6; max-width: 35ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 >
   {subtitle}
@@ -117,7 +117,7 @@
       max-width: 28ch !important;
       margin-top: 0.5rem !important;
       margin-bottom: 1.5rem !important; /* ~24px on mobile */
-      font-size: 1.125rem;
+      font-size: 1rem; /* 16px on mobile as requested */
       line-height: 1.6;
     }
   }

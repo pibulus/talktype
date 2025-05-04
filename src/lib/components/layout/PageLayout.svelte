@@ -21,7 +21,7 @@
 
   <!-- Footer section with attribution and Chrome extension info -->
   <footer
-    class="fixed bottom-0 left-0 right-0 border-t border-pink-200/80 bg-gradient-to-r from-[#fff6e6]/90 via-[#ffead8]/90 to-[#fff1df]/90 pt-5 pb-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[3px] sm:pt-5 sm:pb-5 box-border z-10"
+    class="fixed bottom-0 left-0 right-0 border-t border-pink-200/80 bg-gradient-to-r from-[#fff6e6]/90 via-[#ffead8]/90 to-[#fff1df]/90 pt-7 pb-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[3px] sm:pt-7 sm:pb-5 box-border z-10"
   >
     <div class="container mx-auto flex flex-col items-center justify-between gap-2 sm:gap-3 sm:flex-row flex-wrap">
       <div class="copyright flex items-center flex-wrap justify-center ml-4 sm:ml-6 md:ml-8">

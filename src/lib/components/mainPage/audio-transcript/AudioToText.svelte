@@ -498,7 +498,7 @@
 
 		<!-- Dynamic content area with smooth animation and proper containment -->
 		<div
-			class="position-wrapper relative mb-8 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
+			class="position-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
 		>
 			<!-- Content container with controlled overflow -->
 			<div class="content-container flex w-full flex-col items-center">
@@ -660,7 +660,7 @@
 	position: sticky;
 	top: 0;
 	z-index: 20;
-	padding-bottom: 0.75rem;
+	padding-bottom: 1rem; /* Increased from 0.75rem */
 	background: transparent;
 }
 
