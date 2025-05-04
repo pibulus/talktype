@@ -98,42 +98,66 @@ The TalkType app uses subtle text animations for improved user experience:
 
 ## Ghost Icon System
 
-The ghost icon uses a layered SVG approach with animation:
+The ghost icon uses an inline SVG approach with layered groups for animation:
 
-### SVG Layer Structure
+### SVG Structure and Implementation
 
-- **Background Gradient** (`/talktype-icon-bg-gradient.svg`): Bottom layer with theme colors
-- **Outline** (`/assets/talktype-icon-outline.svg`): Middle layer with ghost outline
-- **Eyes** (`/assets/talktype-icon-eyes.svg`): Top layer for isolated blinking animation
+- **Unified SVG**: A single inline SVG containing multiple layer groups
+- **External Paths**: Path definitions imported via a Svelte module variable `ghostPathsUrl` and referenced using `<use>` elements
+- **Layer Grouping**: Three distinct group layers for visual elements:
+  - `.ghost-bg`: Contains the gradient-filled background shape
+  - `.ghost-outline`: Contains the black outline path
+  - `.ghost-eyes`: Contains left and right eye paths
+- **Element Identification**: The ghost shape element must have both a class AND id: `class="ghost-shape" id="ghost-shape"`
 
-### Implementation Details
+### Element Targeting
 
-- **Layer Structure**: Three separate `<img>` elements stacked with absolute positioning
-- **Path Structure**: Static assets must use web paths (`/assets/...` not `/static/assets/...`)
-- **Theme Variants**: Each theme has a dedicated gradient background SVG:
-  - Peach: `/talktype-icon-bg-gradient.svg` (default)
-  - Mint: `/talktype-icon-bg-gradient-mint.svg`
-  - Bubblegum: `/talktype-icon-bg-gradient-bubblegum.svg`
-  - Rainbow: `/talktype-icon-bg-gradient-rainbow.svg` (with animation)
-- **Favicon & PWA Icons**: Generated from the ghost SVG at various sizes
-  - Standard favicon: `/favicon.png` (32x32)
-  - Apple Touch Icon: `/apple-touch-icon.png` (180x180)
-  - PWA Icons: `/icons/icon-*.png` (various sizes)
-  - Special maskable icon: `/icons/icon-maskable-512x512.png` (for Android)
+- **Direct Element Animation**: Apply animations directly to SVG elements via ID selectors (`#ghost-shape`)
+- **NOT Container Animation**: Avoid applying animations to container groups (`.ghost-bg`, `.ghost-layer`)
+- **Proper Selector**: Use `.ghost-svg.theme-{themeName} #ghost-shape` for theme-specific animations with the necessary specificity
+- **Cascading Priority**: High selector specificity is crucial for proper animation overrides
+
+### Gradient Implementation
+
+- **Inline Gradients**: Theme gradients defined within SVG `<defs>` section using CSS variables:
+  ```
+  <linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="var(--ghost-peach-start)" />
+    <stop offset="35%" stop-color="var(--ghost-peach-mid1)" />
+    <stop offset="65%" stop-color="var(--ghost-peach-mid2)" />
+    <stop offset="85%" stop-color="var(--ghost-peach-mid3)" />
+    <stop offset="100%" stop-color="var(--ghost-peach-end)" />
+  </linearGradient>
+  ```
+- **Theme Colors**: CSS custom properties define each theme's gradient stops
+- **Dynamic Application**: Fill applied with interpolated theme name: `fill="url(#{currentTheme}Gradient)"`
 
 ### Theme Switching
 
-- **Theme Application**: Updates the `src` attribute of the gradient background image
-- **Rainbow Animation**: Adds `rainbow-animated` class for hue-shift animation
+- **Theme Variables**: Each theme has dedicated CSS variables for its gradient colors
+- **Ghost State**: Current theme stored in component state as `currentTheme`
 - **Storage**: Theme preference saved in `localStorage` as `talktype-vibe`
-- **Visualizer Colors**: Match the gradient theme in the audio visualizer bars
+- **Application**: Theme applied via the parent SVG element class: `class="ghost-svg theme-{currentTheme}"`
+- **Visual Consistency**: Audio visualizer colors match the ghost theme gradient
 
-### Common Pitfalls
+### Animation Implementation
 
-- **Incorrect Paths**: Must use web paths (`/assets/...`) not file system paths (`/static/assets/...`)
-- **Blinking Issues**: Eyes must be in a separate SVG to animate independently
-- **Multiple Theme Applications**: Ensure theme is only applied once during initialization
-- **Force Reflow**: Use `void element.offsetWidth` after changing `src` to ensure update
+- **Multi-Effect Animation**: Combine multiple animations for rich effects:
+  ```css
+  .ghost-svg.theme-peach #ghost-shape {
+    animation: 
+      shimmer 5s infinite ease-in-out,
+      peachFlow 9s infinite cubic-bezier(0.4, 0, 0.6, 1),
+      gradientShift 12s infinite ease-in-out;
+    transform-origin: center bottom;
+  }
+  ```
+- **Key Animation Components**:
+  - `shimmer`: Subtle opacity changes
+  - `peachFlow`: Color shifts and scaling transformations
+  - `gradientShift`: Filter effects like drop shadows and hue rotation
+- **Unique Keyframes**: Each theme has distinct animation keyframes with theme-appropriate effects
+- **Direct Element Targeting**: Animations applied directly to the shape element, not containers
 
 ### Blinking Animation Parameters
 
@@ -164,6 +188,7 @@ The ghost icon uses a layered SVG approach with animation:
   - Animation triggers ONLY happen via state variables - NEVER direct DOM manipulation
   - All timeouts must be properly cleared before setting new ones
   - Always use large delays (1-2s) between different animation transitions
+  - CSS animations should target SVG elements directly (#ghost-shape) rather than container groups (.ghost-bg)
 
 - **State Transitions**:
   - Use state variables (eyesClosed, isWobbling, isRecording, isProcessing)

@@ -4,18 +4,22 @@
   import './ghost-animations.css';
   import './ghost-themes.css';
   import ghostPathsUrl from './ghost-paths.svg?url';
+  import { initGradientAnimation, cleanupAnimation, cleanupAllAnimations } from './gradientAnimator';
+  import { generateCssVariables } from './gradientConfig';
   
   // Props to communicate state 
   export let isRecording = false;
   export let isProcessing = false;
   export let animationState = 'idle'; // 'idle', 'wobble-start', 'wobble-stop'
-  export let debug = false;
+  export let debug = false;     // General debug mode
+  export let debugAnim = false; // Animation debug mode - shows animation config
 
   // DOM element references
   let ghostSvg;
   let leftEye;
   let rightEye;
   let backgroundElement;
+  let ghostStyleElement;
 
   // Local state
   let blinkTimeoutId = null;
@@ -40,7 +44,37 @@
   // Update theme based on document attribute
   function updateTheme() {
     if (typeof document !== 'undefined') {
+      // Get the previous theme to clean up its animations
+      const previousTheme = currentTheme;
+      
+      // Update current theme
       currentTheme = document.documentElement.getAttribute('data-theme') || 'peach';
+      
+      // Regenerate dynamic CSS variables for new theme
+      initDynamicStyles();
+      
+      // Apply theme animation after theme update
+      if (ghostSvg) {
+        const svgElement = ghostSvg.querySelector('svg');
+        if (svgElement) {
+          // Reset any animations by forcing reflow
+          void svgElement.offsetWidth;
+          
+          // Get the shape element
+          const shapeElem = svgElement.querySelector('#ghost-shape');
+          
+          if (shapeElem) {
+            // Force shape animation restart
+            void shapeElem.offsetWidth;
+          }
+          
+          // Clean up previous gradient animation
+          cleanupAnimation(previousTheme);
+          
+          // Initialize new gradient animation
+          initGradientAnimation(currentTheme, svgElement);
+        }
+      }
     }
   }
 
@@ -165,11 +199,46 @@
     dispatch('toggleRecording');
   }
 
+  // Initialize dynamic CSS variables
+  function initDynamicStyles() {
+    if (typeof document === 'undefined') return;
+    
+    // Create a style element if it doesn't exist
+    if (!ghostStyleElement) {
+      ghostStyleElement = document.createElement('style');
+      ghostStyleElement.id = 'ghost-dynamic-styles';
+      document.head.appendChild(ghostStyleElement);
+    }
+    
+    // Generate and inject CSS variables
+    const cssVars = generateCssVariables();
+    ghostStyleElement.textContent = `:root {\n  ${cssVars}\n}`;
+    
+    // Log animation configuration if debug mode is enabled
+    if (debugAnim && console) {
+      console.log('Ghost Animation Configuration:', {
+        theme: currentTheme,
+        cssVariables: cssVars.split('\n'),
+      });
+    }
+  }
+
   // Lifecycle hooks
   onMount(() => {
+    // Initialize dynamic CSS variables
+    initDynamicStyles();
+    
     // Update theme on mount
     if (typeof document !== 'undefined') {
       updateTheme();
+      
+      // Initialize gradient animations
+      if (ghostSvg) {
+        const svgElement = ghostSvg.querySelector('svg');
+        if (svgElement) {
+          initGradientAnimation(currentTheme, svgElement);
+        }
+      }
 
       // Add initial-load class to container for entrance animation
       // Add it to document body so it persists across potential component rerenders
@@ -180,7 +249,6 @@
         document.body.classList.remove('initial-load');
         
         // Start greeting wobble animation after grow animation completes
-        console.log('Starting greeting wobble...');
         if (ghostSvg) {
           // Apply wobble-left directly to the SVG
           ghostSvg.querySelector('svg').classList.add('wobble-left');
@@ -218,8 +286,6 @@
         });
       }, 50);
 
-      // Greeting animation happens after grow animation (see above)
-
       // Start tracking mouse movement for eye position
       document.addEventListener('mousemove', handleMouseMove, { passive: true });
 
@@ -231,6 +297,12 @@
         document.removeEventListener('mousemove', handleMouseMove);
         clearTimeout(specialAnimationTimeoutId);
         clearTimeout(wobbleTimeoutId);
+        cleanupAllAnimations();
+        
+        // Clean up style element on component destruction
+        if (ghostStyleElement) {
+          ghostStyleElement.remove();
+        }
       };
     }
   });
@@ -240,7 +312,33 @@
     clearTimeout(blinkTimeoutId);
     clearTimeout(wobbleTimeoutId);
     clearTimeout(specialAnimationTimeoutId);
+    cleanupAllAnimations();
+    
+    // Remove dynamic styles
+    if (ghostStyleElement) {
+      ghostStyleElement.remove();
+    }
   });
+  
+  // Export function to adjust gradient animation settings during runtime
+  export function updateGradientSettings(themeId, settings) {
+    if (!settings || !themeId) return;
+    
+    // Re-initialize gradient animations with updated settings
+    if (ghostSvg) {
+      const svgElement = ghostSvg.querySelector('svg');
+      if (svgElement) {
+        // Clean up existing animations
+        cleanupAnimation(themeId);
+        
+        // Reinitialize with new settings
+        initGradientAnimation(themeId, svgElement);
+        
+        // Regenerate CSS variables
+        initDynamicStyles();
+      }
+    }
+  }
   
   // Special animations that rarely happen (easter egg)
   function maybeDoSpecialAnimation() {
@@ -444,7 +542,7 @@
     viewBox="0 0 1024 1024"
     xmlns="http://www.w3.org/2000/svg"
     xmlns:xlink="http://www.w3.org/1999/xlink"
-    class="ghost-svg theme-{currentTheme} {isRecording ? 'recording' : ''}"
+    class="ghost-svg theme-{currentTheme} {isRecording ? 'recording' : ''} {debugAnim ? 'debug-animation' : ''}"
   >
     <defs>
       <linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -485,6 +583,7 @@
         xlink:href={ghostPathsUrl}
         href={ghostPathsUrl + "#ghost-background"}
         class="ghost-shape"
+        id="ghost-shape"
         fill="url(#{currentTheme}Gradient)"
       />
     </g>
@@ -556,5 +655,45 @@
   /* Apply grow animation only on initial load with a separate class */
   :global(.initial-load) .ghost-layer {
     animation: grow-ghost 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  
+  /* Dynamically apply animation durations from config */
+  .ghost-svg.theme-peach #ghost-shape {
+    animation-duration: var(--ghost-shimmer-duration, 5s), var(--ghost-peach-flow-duration, 9s);
+    animation-timing-function: var(--ghost-shimmer-ease, ease-in-out), var(--ghost-peach-flow-ease, cubic-bezier(0.4, 0, 0.6, 1));
+  }
+  
+  .ghost-svg.theme-mint #ghost-shape {
+    animation-duration: var(--ghost-shimmer-duration, 6s), var(--ghost-mint-flow-duration, 10s);
+    animation-timing-function: var(--ghost-shimmer-ease, ease-in-out), var(--ghost-mint-flow-ease, cubic-bezier(0.4, 0, 0.6, 1));
+  }
+  
+  .ghost-svg.theme-bubblegum #ghost-shape {
+    animation-duration: var(--ghost-shimmer-duration, 7s), var(--ghost-bubblegum-flow-duration, 12s);
+    animation-timing-function: var(--ghost-shimmer-ease, ease-in-out), var(--ghost-bubblegum-flow-ease, cubic-bezier(0.4, 0, 0.6, 1));
+  }
+  
+  .ghost-svg.theme-rainbow #ghost-shape {
+    animation-duration: var(--ghost-rainbow-flow-duration, 9s);
+    animation-timing-function: var(--ghost-rainbow-flow-ease, cubic-bezier(0.4, 0, 0.6, 1));
+  }
+  
+  /* Debug mode styles */
+  .ghost-svg.debug-animation {
+    border: 1px dashed rgba(255, 0, 0, 0.5);
+  }
+  
+  .ghost-svg.debug-animation #ghost-shape {
+    outline: 1px dotted rgba(0, 255, 0, 0.5);
+  }
+  
+  .ghost-svg.debug-animation .ghost-eye {
+    outline: 1px dotted rgba(0, 0, 255, 0.5);
+  }
+  
+  /* Slow down animations in debug mode for easier inspection */
+  .ghost-svg.debug-animation #ghost-shape {
+    animation-duration: calc(var(--ghost-shimmer-duration, 5s) * 2), 
+                       calc(var(--ghost-peach-flow-duration, 9s) * 2) !important;
   }
 </style>

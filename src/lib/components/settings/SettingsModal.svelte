@@ -583,10 +583,22 @@
 		transform: translateY(0px);
 	}
 
-	/* Rainbow animation for ghost with sparkle effect */
+	/* Theme animations for ghost with effects */
 	.rainbow-animated {
 		animation: rainbowFlow 8.3s linear infinite;
 		filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
+	}
+	
+	.peach-animated {
+		animation: peachFlow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
+	
+	.mint-animated {
+		animation: mintFlow 10s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
+	
+	.bubblegum-animated {
+		animation: bubblegumFlow 12s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 	}
 
 	@keyframes rainbowFlow {
@@ -596,6 +608,28 @@
 		100% {
 			filter: hue-rotate(360deg) saturate(1.5) brightness(1.2);
 		}
+	}
+	
+	@keyframes peachFlow {
+		0% { filter: saturate(1) brightness(1) contrast(1); }
+		30% { filter: saturate(1.3) brightness(1.1) contrast(1.05); }
+		60% { filter: saturate(1.5) brightness(1.15) contrast(1.08); }
+		100% { filter: saturate(1) brightness(1) contrast(1); }
+	}
+	
+	@keyframes mintFlow {
+		0% { filter: saturate(1) brightness(1) contrast(1); }
+		25% { filter: saturate(1.2) brightness(1.1) contrast(1.02) hue-rotate(5deg); }
+		50% { filter: saturate(1.4) brightness(1.2) contrast(1.05) hue-rotate(-5deg); }
+		75% { filter: saturate(1.2) brightness(1.15) contrast(1.03) hue-rotate(2deg); }
+		100% { filter: saturate(1) brightness(1) contrast(1) hue-rotate(0deg); }
+	}
+	
+	@keyframes bubblegumFlow {
+		0% { filter: saturate(1) brightness(1) contrast(1); }
+		33% { filter: saturate(1.3) brightness(1.05) contrast(1.1) hue-rotate(-8deg); }
+		66% { filter: saturate(1.6) brightness(1.1) contrast(1.15) hue-rotate(8deg); }
+		100% { filter: saturate(1) brightness(1) contrast(1) hue-rotate(0deg); }
 	}
 
 	/* Add extra sparkle when previewing the rainbow theme */
