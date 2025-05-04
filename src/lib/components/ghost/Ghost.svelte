@@ -3,6 +3,7 @@
 	import { browser } from '$app/environment';
 	import './ghost-animations.css';
 	import './ghost-themes.css';
+	import './custom-ghost-glow.css';
 	import ghostPathsUrl from './ghost-paths.svg?url';
 	import {
 		initGradientAnimation,

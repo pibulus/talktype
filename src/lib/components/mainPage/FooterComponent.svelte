@@ -16,16 +16,16 @@
   }
 </script>
 
-<div class="flex items-center space-x-2 sm:space-x-4">
+<div class="flex items-center space-x-1 sm:space-x-2">
   <button
-    class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-2 px-3 sm:px-4 sm:py-2.5 h-auto min-h-0"
+    class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-2 px-2 sm:px-3 h-auto min-h-0"
     on:click={showAbout}
     aria-label="About TalkType"
   >
     About
   </button>
   <button
-    class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-2 px-3 sm:px-4 sm:py-2.5 h-auto min-h-0"
+    class="btn btn-sm btn-ghost text-gray-600 hover:text-pink-500 shadow-none hover:bg-pink-50/50 transition-all text-xs sm:text-sm py-2 px-2 sm:px-3 h-auto min-h-0"
     on:click={showSettings}
     aria-label="Open Settings"
   >
