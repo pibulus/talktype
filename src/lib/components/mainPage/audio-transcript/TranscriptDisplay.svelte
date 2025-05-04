@@ -36,10 +36,15 @@
     }
   }
   
-  // Check if content is scrollable
+  // Check if content is scrollable and update UI accordingly
   function checkScrollable() {
     if (transcriptBoxRef) {
-      isScrollable = transcriptBoxRef.scrollHeight > transcriptBoxRef.clientHeight;
+      const hasOverflow = transcriptBoxRef.scrollHeight > transcriptBoxRef.clientHeight + 20; // Add buffer for more reliable detection
+      isScrollable = hasOverflow;
+      
+      // We could also check if we're near the bottom to hide the indicator
+      // but for simplicity, we'll just show it whenever there's overflow
+      console.log(`Transcript scrollable: ${isScrollable}, height: ${transcriptBoxRef.scrollHeight}, visible: ${transcriptBoxRef.clientHeight}`);
     }
   }
   
@@ -124,7 +129,7 @@
       >
         <!-- Content Area - scrollable -->
         <div 
-          class="transcript-content-area w-full max-h-[320px] overflow-y-auto px-7 pt-5 pb-1 sm:px-10 sm:pt-6 sm:pb-2 relative z-10"
+          class="transcript-content-area w-full max-h-[320px] overflow-y-auto px-7 pt-5 pb-8 sm:px-10 sm:pt-6 sm:pb-10 relative z-5"
           bind:this={transcriptBoxRef}
         >
           <div
@@ -151,27 +156,30 @@
           </div>
         </div>
         
-        <!-- Scroll indicator - only visible when scrollable -->
-        {#if isScrollable}
-          <div
-            class="scroll-indicator-bottom pointer-events-none absolute bottom-0 left-0 right-0 z-10"
-          ></div>
-        {/if}
-        
-        <!-- Share button area - integrated with content -->
-        {#if isWebShareSupported()}
-          <div class="transcript-button-area w-full py-3 pb-5 relative z-10">
-            <div class="flex w-full justify-center">
-              <button
-                class="px-5 py-2 text-sm font-medium text-indigo-600 transition-all duration-200 rounded-full shadow-sm share-btn-text bg-gradient-to-r from-indigo-50 to-purple-100 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 active:scale-95"
-                on:click|preventDefault={() => dispatch('share', { text: getEditedTranscript() })}
-                aria-label="Share transcript"
-              >
-                Share
-              </button>
+        <!-- Footer area with scroll indicator and share button -->
+        <div class="transcript-footer-area relative w-full">
+          <!-- Scroll indicator - only visible when scrollable -->
+          {#if isScrollable}
+            <div
+              class="scroll-indicator-bottom pointer-events-none absolute top-[-32px] left-0 right-0 z-10"
+            ></div>
+          {/if}
+          
+          <!-- Share button area - integrated with content -->
+          {#if isWebShareSupported()}
+            <div class="transcript-button-area w-full py-3 pb-5 relative z-20 bg-white/90 rounded-b-[2rem]">
+              <div class="flex w-full justify-center">
+                <button
+                  class="px-5 py-2 text-sm font-medium text-indigo-600 transition-all duration-200 rounded-full shadow-sm share-btn-text bg-gradient-to-r from-indigo-50 to-purple-100 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 active:scale-95"
+                  on:click|preventDefault={() => dispatch('share', { text: getEditedTranscript() })}
+                  aria-label="Share transcript"
+                >
+                  Share
+                </button>
+              </div>
             </div>
-          </div>
-        {/if}
+          {/if}
+        </div>
       </div>
     </div>
   </div>
@@ -333,11 +341,20 @@
     }
   }
   
+  /* Footer area with gradient and button */
+  .transcript-footer-area {
+    flex-shrink: 0; /* Prevent footer from shrinking */
+    position: relative; /* For positioning the gradient */
+    z-index: 5; /* Ensure it's above the content but below the gradient */
+    margin-top: -8px; /* Pull it slightly closer to the content */
+  }
+  
   /* Button area styling - integrated with content */
   .transcript-button-area {
     flex-shrink: 0; /* Prevent button area from shrinking */
     background: transparent; /* Make it blend with content */
-    margin-top: -8px; /* Pull it slightly closer to the content */
+    margin-top: 8px; /* Small space after gradient */
+    backdrop-filter: blur(4px); /* Subtle blur effect for elegance */
   }
   
   /* Ensure Share button stays centered */
