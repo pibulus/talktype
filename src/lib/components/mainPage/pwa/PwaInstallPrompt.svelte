@@ -2,6 +2,7 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { pwaService } from '$lib/services/pwa';
+	import { ModalCloseButton } from '../modals/index.js';
 	
 	// Event dispatcher to communicate with parent components
 	const dispatch = createEventDispatcher();
@@ -132,14 +133,13 @@
 <div class="pwa-install-prompt {variant}" role="dialog" aria-labelledby="pwa-prompt-title">
 	<div class="prompt-content">
 		<!-- Close button -->
-		<button 
-			type="button" 
-			class="close-button" 
-			aria-label="Close installation prompt" 
-			on:click={close}
-		>
-			✕
-		</button>
+		<ModalCloseButton 
+			closeModal={close} 
+			label="Close installation prompt" 
+			position="right-3 top-3" 
+			size="sm"
+			modalId="pwa_install_prompt"
+		/>
 		
 		<!-- App icon and title -->
 		<div class="prompt-header">
@@ -228,28 +228,6 @@
 		padding: 16px;
 	}
 	
-	.close-button {
-		position: absolute;
-		top: 12px;
-		right: 12px;
-		width: 28px;
-		height: 28px;
-		border-radius: 50%;
-		background: rgba(0, 0, 0, 0.05);
-		border: none;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 14px;
-		color: #666;
-		cursor: pointer;
-		transition: all 0.2s ease;
-	}
-	
-	.close-button:hover {
-		background: rgba(0, 0, 0, 0.1);
-		color: #333;
-	}
 	
 	.prompt-header {
 		display: flex;

@@ -6,6 +6,7 @@
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import Ghost from '$lib/components/ghost/Ghost.svelte';
 	import TranscriptionStyleSelector from './TranscriptionStyleSelector.svelte';
+	import { ModalCloseButton } from '../modals/index.js';
 
 	// Props for the modal
 	export let closeModal = () => {};
@@ -182,12 +183,12 @@
 		class="animate-modal-enter modal-box relative max-h-[80vh] w-[95%] max-w-md overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl md:max-w-lg"
 	>
 		<form method="dialog">
-			<button
-				class="close-btn absolute right-2 top-2 z-50 flex h-8 w-8 items-center justify-center rounded-full border border-pink-200 bg-pink-100 text-pink-500 shadow-sm transition-all duration-200 ease-in-out hover:bg-pink-200 hover:text-pink-700"
-				on:click={handleModalClose}
-			>
-				<span class="relative top-[-1px] text-lg font-medium leading-none">✕</span>
-			</button>
+			<ModalCloseButton 
+				closeModal={handleModalClose} 
+				label="Close settings" 
+				position="right-2 top-2"
+				modalId="settings_modal"
+			/>
 		</form>
 
 		<div class="animate-fadeUp space-y-4">
