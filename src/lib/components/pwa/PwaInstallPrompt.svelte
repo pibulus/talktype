@@ -1,7 +1,7 @@
 <script>
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { browser } from '$app/environment';
-	import { markPWAAsInstalled, recordPWAPromptShown } from '../../components/AudioToText.svelte';
+	import { pwaService } from '$lib/services/pwa';
 	
 	// Event dispatcher to communicate with parent components
 	const dispatch = createEventDispatcher();
@@ -25,7 +25,7 @@
 		if (!browser) return;
 		
 		// Record that we've shown the prompt to the user
-		recordPWAPromptShown();
+		pwaService.recordPromptShown();
 		
 		// Detect platform and browser
 		detectPlatform();
@@ -101,7 +101,7 @@
 				
 				if (choiceResult.outcome === 'accepted') {
 					console.log('📱 User accepted the PWA installation');
-					markPWAAsInstalled();
+					pwaService.markAsInstalled();
 					close();
 				} else {
 					console.log('📱 User dismissed the PWA installation');
