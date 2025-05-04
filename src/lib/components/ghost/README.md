@@ -80,19 +80,47 @@ The component supports four themes, each with unique colors and animation behavi
 3. **Bubblegum**: Purple/pink gradient with energetic animations
 4. **Rainbow**: Full-spectrum color cycling with enhanced effects
 
-### Color Definitions
+### Theme Store (Centralized State Management)
 
-All theme colors are defined in `ghost-themes.css` as CSS variables:
+Themes are now managed using a centralized Svelte store in `themeStore.js`:
 
-```css
-/* Peach theme colors */
---ghost-peach-start: #ff60e0;
---ghost-peach-start-bright: #ff4aed;
---ghost-peach-mid1: #ff82ca;
-/* ...and so on for each theme */
+```javascript
+// Main theme store and derived values
+const theme = writable(getInitialTheme());
+const cssVariables = derived(theme, ($theme) => { /* generates CSS vars */ });
+
+// Helper functions
+function setTheme(newTheme) { /* updates the theme */ }
+function getThemeColor(themeName, position, bright = false) { /* gets specific colors */ }
+
+export { theme, cssVariables, setTheme, getThemeColor, themeColors };
 ```
 
-These variables are then referenced in animations and gradients to maintain a single source of truth for all colors.
+The theme store provides:
+
+1. **Reactive theme state**: Components can subscribe to theme changes
+2. **Automatic localStorage persistence**: Theme preferences are saved
+3. **Derived CSS variables**: Auto-generated CSS variables based on the current theme
+4. **Centralized color definitions**: Single source of truth for all theme colors
+5. **Helper functions**: Utilities for theme manipulation
+
+### Color Definitions
+
+Theme colors are defined in the `themeStore.js` as structured JavaScript objects:
+
+```javascript
+const themeColors = {
+  peach: {
+    start: '#ff60e0',
+    startBright: '#ff4aed',
+    mid1: '#ff82ca',
+    // ...more color definitions
+  },
+  // ...other themes
+};
+```
+
+These variables are dynamically injected as CSS variables and referenced in animations and gradients, maintaining a reactive single source of truth for all colors.
 
 ## Gradient System
 
@@ -246,16 +274,20 @@ Key features include:
 
 ## State Management
 
-The Ghost component manages several states:
+The Ghost component uses a hybrid state management approach:
 
+### Local Component State
 - `isRecording`: When audio is being recorded
 - `isProcessing`: When audio is being processed
 - `animationState`: Current animation state (idle, wobble-start, wobble-stop)
-- `currentTheme`: Active theme identifier
 - `eyesClosed`: Eye state for blinking animations
 - `isWobbling`: Whether wobble animation is active
 
-State transitions trigger appropriate animations:
+### Global Store State
+- `theme`: Current theme from centralized store
+- `cssVariables`: Dynamically generated CSS variables
+
+Local state transitions trigger appropriate animations:
 
 ```javascript
 // Watch for animation state changes
@@ -267,6 +299,22 @@ $: {
   }
 }
 ```
+
+Global theme state is observed reactively:
+
+```javascript
+// Apply theme changes when theme store updates
+$: if (currentTheme && ghostSvg) {
+  // Reset animations with forced reflow
+  // Update SVG elements with new theme
+  // Clean up and initialize new gradient animation
+}
+```
+
+This hybrid approach allows for:
+- Component-specific state to remain encapsulated
+- Shared state (themes) to be centrally managed and reactive
+- Automatic synchronization between components
 
 ## Eye Tracking System
 
@@ -368,6 +416,9 @@ When working with the Ghost component:
 7. Force browser reflow when needed to ensure clean animation transitions
 8. Use transform-origin consistently across related animations
 9. Use the CSS_CLASSES constants for consistent class name references
+10. When adding new theme colors, add them to the `themeColors` object in `themeStore.js`
+11. Subscribe to the theme store for any components that need to react to theme changes
+12. Use the `cssVariables` derived store for dynamically generated CSS variables
 
 ## Troubleshooting
 

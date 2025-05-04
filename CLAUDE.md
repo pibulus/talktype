@@ -22,18 +22,6 @@
 - **Documentation**: Include JSDoc comments for functions
 - **Reactivity**: Use Svelte's reactive declarations and statements properly
 
-## Workflow - Use Taskmaster
-
-Howto: src/docs/taskmaster-guide.md
-When implementing a feature, use the following TaskMaster workflow:
-
-parse-prd: Generate initial tasks from the feature spec
-analyze-complexity: Identify complex tasks that need breakdown
-expand: Break down complex tasks into smaller subtasks
-next: Determine the next task to work on
-set-status: Update task status as you progress
-validate-dependencies: Ensure proper task dependencies before marking complete
-
 ## Text Animation System
 
 The TalkType app uses subtle text animations for improved user experience:
@@ -96,114 +84,42 @@ The TalkType app uses subtle text animations for improved user experience:
 - **Implementation**: Applied through dedicated CSS classes (.title-hover, .subtitle-hover)
 - **Note**: Hover effects should be subtle and not interfere with entrance animations
 
-## Ghost Icon System
+## Ghost Component System
 
-The ghost icon uses an inline SVG approach with layered groups for animation:
+The Ghost component is a central UI element in TalkType that uses an SVG-based approach with reactive theming.
 
-### SVG Structure and Implementation
+For detailed documentation of the Ghost component, including its architecture, animation system, and theme implementation, refer to:
 
-- **Unified SVG**: A single inline SVG containing multiple layer groups
-- **External Paths**: Path definitions imported via a Svelte module variable `ghostPathsUrl` and referenced using `<use>` elements
-- **Layer Grouping**: Three distinct group layers for visual elements:
-  - `.ghost-bg`: Contains the gradient-filled background shape
-  - `.ghost-outline`: Contains the black outline path
-  - `.ghost-eyes`: Contains left and right eye paths
-- **Element Identification**: The ghost shape element must have both a class AND id: `class="ghost-shape" id="ghost-shape"`
+```
+/src/lib/components/ghost/README.md
+```
 
-### Element Targeting
+### Key Architecture Principles
 
-- **Direct Element Animation**: Apply animations directly to SVG elements via ID selectors (`#ghost-shape`)
-- **NOT Container Animation**: Avoid applying animations to container groups (`.ghost-bg`, `.ghost-layer`)
-- **Proper Selector**: Use `.ghost-svg.theme-{themeName} #ghost-shape` for theme-specific animations with the necessary specificity
-- **Cascading Priority**: High selector specificity is crucial for proper animation overrides
+1. **Unified SVG with Layered Elements**: Uses a single SVG with multiple layers (background, outline, eyes)
+2. **Hybrid State Management**:
+   - Global theme state managed by Svelte stores in `themeStore.js`
+   - Local animation states managed in component
+3. **Direct Element Targeting**: Animations target SVG elements directly via ID selectors
+4. **Theme System**: Centralized theme definitions with reactive updates
 
-### Gradient Implementation
+### Critical Implementation Guidelines
 
-- **Inline Gradients**: Theme gradients defined within SVG `<defs>` section using CSS variables:
-  ```
-  <linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-    <stop offset="0%" stop-color="var(--ghost-peach-start)" />
-    <stop offset="35%" stop-color="var(--ghost-peach-mid1)" />
-    <stop offset="65%" stop-color="var(--ghost-peach-mid2)" />
-    <stop offset="85%" stop-color="var(--ghost-peach-mid3)" />
-    <stop offset="100%" stop-color="var(--ghost-peach-end)" />
-  </linearGradient>
-  ```
-- **Theme Colors**: CSS custom properties define each theme's gradient stops
-- **Dynamic Application**: Fill applied with interpolated theme name: `fill="url(#{currentTheme}Gradient)"`
+- Apply animations directly to SVG elements via ID (#ghost-shape)
+- Never apply animations to container groups (.ghost-bg, .ghost-layer)
+- Force browser reflow between animation changes with `void element.offsetWidth`
+- Clear all timeouts properly to prevent animation conflicts
+- Use high specificity selectors for theme-specific animations
 
-### Theme Switching
+For implementing new themes or modifying existing ones, use the themeStore:
 
-- **Theme Variables**: Each theme has dedicated CSS variables for its gradient colors
-- **Ghost State**: Current theme stored in component state as `currentTheme`
-- **Storage**: Theme preference saved in `localStorage` as `talktype-vibe`
-- **Application**: Theme applied via the parent SVG element class: `class="ghost-svg theme-{currentTheme}"`
-- **Visual Consistency**: Audio visualizer colors match the ghost theme gradient
-
-### Animation Implementation
-
-- **Multi-Effect Animation**: Combine multiple animations for rich effects:
-  ```css
-  .ghost-svg.theme-peach #ghost-shape {
-    animation: 
-      shimmer 5s infinite ease-in-out,
-      peachFlow 9s infinite cubic-bezier(0.4, 0, 0.6, 1),
-      gradientShift 12s infinite ease-in-out;
-    transform-origin: center bottom;
-  }
-  ```
-- **Key Animation Components**:
-  - `shimmer`: Subtle opacity changes
-  - `peachFlow`: Color shifts and scaling transformations
-  - `gradientShift`: Filter effects like drop shadows and hue rotation
-- **Unique Keyframes**: Each theme has distinct animation keyframes with theme-appropriate effects
-- **Direct Element Targeting**: Animations applied directly to the shape element, not containers
-
-### Blinking Animation Parameters
-
-- **Ambient Timing**: 4-9 seconds between blinks (minGap = 4000ms, maxGap = 9000ms)
-- **Blink Types**: Single (60%), Double (30%), Triple (10%) with weighted probability
-- **Animation Durations**:
-  - Single blink: 300ms
-  - Double blink: 300ms per blink, 200ms gap (800ms total)
-  - Triple blink: 300ms per blink, 200ms gaps (1100ms total)
-- **CSS Fallback**: `.icon-eyes` has `animation: blink 6s infinite` as baseline
-
-### Wobble Animations
-
-- **Hover Wobble**: Gentle rotation (±1.5°) with drop-shadow when hovering
-- **Recording Glow**: Pulsing red shadow effect during recording state
-- **Directional Wobbles**: Applied when recording finishes based on response direction
-  - Left wobble: `-3.5deg` rotation with left drop-shadow
-  - Right wobble: `3.5deg` rotation with right drop-shadow
-  - Up wobble: Scale up to 110% with upward drop-shadow
-  - Down wobble: Scale down to 90% with downward drop-shadow
-
-### State Management
-
-- **CRITICAL ANIMATION ARCHITECTURE**:
-
-  - Page.svelte MUST be the ONLY source of truth for all ghost animation state
-  - Ghost.svelte must NEVER have conditional classes that respond to props (prevents double animations)
-  - Animation triggers ONLY happen via state variables - NEVER direct DOM manipulation
-  - All timeouts must be properly cleared before setting new ones
-  - Always use large delays (1-2s) between different animation transitions
-  - CSS animations should target SVG elements directly (#ghost-shape) rather than container groups (.ghost-bg)
-
-- **State Transitions**:
-  - Use state variables (eyesClosed, isWobbling, isRecording, isProcessing)
-  - Force browser reflow between animation changes with `void element.offsetWidth`
-  - Clear timeouts on state changes to prevent animation conflicts
-  - Separated ambient system from state-based animations
-
-### Troubleshooting
-
-- **Animation Not Applying**: May need to force browser reflow
-- **Inconsistent Blinking**: Check ambient system isn't being disabled by other states
-- **Ghost Not Responding to Click**: Verify DOM class state matches component state
+```javascript
+import { setTheme } from './ghost/themeStore';
+setTheme('peach'); // Change to peach theme
+```
 
 ## Editor Configuration
 
-- Default branch: master
+- Default branch: main
 - Code width: 80 characters
 - Tab size: 2 spaces
