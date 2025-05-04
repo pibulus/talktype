@@ -81,7 +81,7 @@
 />
 
 <!-- Audio component - Wider container for better transcript layout -->
-<div class="w-full max-w-xl mt-2 sm:mt-0 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
+<div class="w-full max-w-xl mt-0 sm:mt-0 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
   <AudioToText
     bind:this={audioToTextComponent}
     isModelPreloaded={speechModelPreloaded}

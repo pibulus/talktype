@@ -11,7 +11,7 @@
 </svelte:head>
 
 <section
-  class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-center px-4 py-8 pb-20 pt-[10vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[8vh] lg:py-12 lg:pb-24"
+  class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-center px-4 py-8 pb-20 pt-[15vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[12vh] lg:py-12 lg:pb-24"
 >
   <div
     class="mx-auto flex w-full max-w-md flex-col items-center pt-4 sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
@@ -23,7 +23,7 @@
   <footer
     class="fixed bottom-0 left-0 right-0 border-t border-pink-200/80 bg-gradient-to-r from-[#fff6e6]/90 via-[#ffead8]/90 to-[#fff1df]/90 px-4 py-4 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[3px] sm:py-5 box-border z-10"
   >
-    <div class="container mx-auto flex flex-col items-center justify-between gap-2 sm:gap-3 sm:flex-row flex-wrap">
+    <div class="container mx-auto flex flex-col items-center justify-between gap-2 sm:gap-3 sm:flex-row flex-wrap px-2 sm:px-4">
       <div class="copyright flex items-center flex-wrap justify-center">
         <span class="mr-1 text-sm font-medium tracking-tight sm:text-sm text-xs">
           © {footerYear} TalkType
@@ -39,7 +39,7 @@
           by Dennis & Pablo
         </span>
       </div>
-      <div class="flex items-center gap-3 sm:gap-4">
+      <div class="flex items-center">
         <slot name="footer-buttons" />
       </div>
     </div>
@@ -62,12 +62,12 @@
   /* Media queries for mobile optimization */
   @media (max-width: 640px) {
     section {
-      padding-top: 8vh !important;
+      padding-top: 12vh !important;
       padding-bottom: 16vh !important;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
+      justify-content: center;
     }
 
     footer {
@@ -76,7 +76,8 @@
     }
 
     footer .container {
-      gap: 0.5rem;
+      gap: 0.75rem;
+      padding: 0 1rem;
     }
   }
 </style>

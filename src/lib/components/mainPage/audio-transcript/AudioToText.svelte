@@ -498,7 +498,7 @@
 
 		<!-- Dynamic content area with smooth animation and proper containment -->
 		<div
-			class="position-wrapper relative mb-8 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
+			class="position-wrapper relative mb-16 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
 		>
 			<!-- Content container with controlled overflow -->
 			<div class="content-container flex w-full flex-col items-center">
@@ -675,7 +675,7 @@
 	/* Adjust spacing for mobile */
 	.position-wrapper {
 		margin-top: 0.5rem;
-		margin-bottom: 2rem; /* Reduced space for footer */
+		margin-bottom: 3rem; /* More space (48px) for footer on mobile */
 		padding: 0 8px; /* Add side padding */
 		max-height: calc(100vh - 180px); /* Control height on mobile */
 	}
@@ -701,7 +701,7 @@
 	/* Ensure proper spacing on tiny screens */
 	.position-wrapper {
 		margin-top: 0.5rem;
-		margin-bottom: 0.5rem;
+		margin-bottom: 2rem;
 		padding: 0 4px;
 		max-height: calc(100vh - 160px); /* More compact on very small screens */
 	}
