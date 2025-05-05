@@ -129,7 +129,7 @@
       >
         <!-- Content Area - scrollable -->
         <div 
-          class="transcript-content-area w-full max-h-[320px] overflow-y-auto px-7 pt-5 pb-8 sm:px-10 sm:pt-6 sm:pb-10 relative z-5"
+          class="transcript-content-area w-full max-h-[320px] overflow-y-auto px-7 pt-6 pb-8 sm:px-10 sm:pt-7 sm:pb-10 relative z-5"
           bind:this={transcriptBoxRef}
         >
           <div
@@ -276,6 +276,7 @@
     box-shadow: 0 10px 30px rgba(249, 168, 212, 0.35);
     transition: all 0.3s ease-in-out;
   }
+  
   
   /* Remove outline focus from the text itself for cleaner look */
   .custom-transcript-text:focus {
