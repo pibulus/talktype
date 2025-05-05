@@ -249,8 +249,9 @@
   .custom-transcript-text {
     text-align: left;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    transition: background-color 0.4s ease, font-size 0.5s ease-out;
+    transition: background-color 0.4s ease, font-size 0.5s ease-out, text-shadow 0.3s ease;
     line-height: 1.6; /* Consistent comfortable line height */
+    caret-color: rgba(249, 168, 212, 0.9); /* Custom cursor color */
     /* Remove explicit font-size to allow Tailwind classes to work */
     /* Base text size now handled by responsiveFontSize classes */
   }
@@ -269,12 +270,21 @@
     letter-spacing: -0.01em; /* Slightly tighter tracking for large text */
   }
   
+  /* Base transition timing for box */
+  .transcript-box {
+    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  
   /* Clean highlight when clicked/editing - single color */
   .transcript-box:focus-within {
     background-color: rgba(253, 242, 248, 0.8);
     border-color: rgba(249, 168, 212, 0.6);
     box-shadow: 0 10px 30px rgba(249, 168, 212, 0.35);
-    transition: all 0.3s ease-in-out;
+  }
+  
+  /* Subtle text shadow effect when editing - gives text a slightly lifted appearance */
+  .transcript-box:focus-within .custom-transcript-text {
+    text-shadow: 0 0.5px 0.5px rgba(249, 168, 212, 0.2);
   }
   
   
@@ -283,7 +293,11 @@
     outline: none;
   }
   
-  /* Style the share button area to match exactly */
+  /* Style the share button area to match exactly with synchronized timing */
+  .transcript-button-area {
+    transition: background-color 0.25s ease, backdrop-filter 0.25s ease;
+  }
+  
   .transcript-box:focus-within .transcript-button-area {
     background-color: rgba(253, 242, 248, 0.8);
     backdrop-filter: blur(4px);
@@ -297,6 +311,12 @@
     -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
     scroll-behavior: smooth; /* Smoother scrolling */
     transition: all 0.3s ease-out; /* Smooth transitions */
+  }
+  
+    /* Custom text selection color */
+  .transcript-box ::selection {
+    background-color: rgba(249, 168, 212, 0.4);
+    color: #111827;
   }
   
   /* Custom scrollbar styles for WebKit browsers */
