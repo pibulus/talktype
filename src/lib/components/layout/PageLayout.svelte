@@ -11,7 +11,7 @@
 </svelte:head>
 
 <section
-  class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-center px-4 py-6 pb-16 pt-[10vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[10vh] lg:pb-16"
+  class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-start px-4 py-6 pb-16 pt-[15vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[15vh] lg:pb-16"
 >
   <div
     class="mx-auto flex w-full max-w-md flex-col items-center space-y-4 sm:space-y-5 md:space-y-6 sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
@@ -62,12 +62,12 @@
   /* Media queries for mobile optimization */
   @media (max-width: 640px) {
     section {
-      padding-top: 8vh !important;
+      padding-top: 12vh !important;
       padding-bottom: 14vh !important;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
     }
     
     footer {
@@ -88,13 +88,13 @@
     }
   }
   
-  /* Desktop vertical centering */
+  /* Desktop layout - start from top */
   @media (min-width: 1024px) {
     section {
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      padding-top: 8vh !important;
+      justify-content: flex-start;
+      padding-top: 15vh !important;
       padding-bottom: 10vh !important;
     }
   }

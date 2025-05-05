@@ -77,8 +77,8 @@
   }
 </script>
 
-<!-- Ghost Icon - Size increased by ~15% -->
-<div class="ghost-icon-wrapper h-36 w-36 sm:h-40 sm:w-40 md:h-52 md:w-52 lg:h-64 lg:w-64 mb-[1px] sm:mb-0 md:mb-0">
+<!-- Ghost Icon - Size reduced slightly and moved up -->
+<div class="ghost-icon-wrapper h-32 w-32 sm:h-36 sm:w-36 md:h-48 md:w-48 lg:h-56 lg:w-56 mb-6 sm:mb-7 md:mb-8">
   <Ghost
     bind:this={ghostComponent}
     isRecording={isRecording}

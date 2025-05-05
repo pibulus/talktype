@@ -84,7 +84,7 @@
     bind:this={recordButtonElement}
     class="record-button duration-400 w-[75%] rounded-full transition-all ease-out sm:w-[85%] {clipboardSuccess
       ? 'border border-purple-200 bg-purple-50 text-black notification-pulse'
-      : 'text-black'} mx-auto max-w-[420px] px-6 py-5 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:py-5 {!recording &&
+      : 'text-black'} mx-auto max-w-[420px] px-6 py-5 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:py-5 sm:text-xl md:text-2xl {!recording &&
     buttonLabel === 'Start Recording' &&
     !clipboardSuccess
       ? 'pulse-subtle'
