@@ -165,11 +165,8 @@
    Recording State Animations
    ---------------------------------------- */
 
-/* Theme-specific recording animations */
-.ghost-svg.recording.theme-peach,
-.recording.ghost-recording-glow-peach,
-.recording.theme-peach,
-.recording-theme-peach {
+/* Theme-specific recording animations - Simplified Selectors */
+.ghost-container.recording.theme-peach {
 	animation:
 		recording-glow-pulse 1.5s ease-in-out infinite,
 		peach-recording-glow 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -178,10 +175,7 @@
 		drop-shadow(0 0 55px var(--ghost-peach-glow-tertiary));
 }
 
-.ghost-svg.recording.theme-mint,
-.recording.ghost-recording-glow-mint,
-.recording.theme-mint,
-.recording-theme-mint {
+.ghost-container.recording.theme-mint {
 	animation:
 		recording-glow-pulse 1.5s ease-in-out infinite,
 		mint-recording-glow 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -190,10 +184,7 @@
 		drop-shadow(0 0 55px var(--ghost-mint-glow-tertiary));
 }
 
-.ghost-svg.recording.theme-bubblegum,
-.recording.ghost-recording-glow-bubblegum,
-.recording.theme-bubblegum,
-.recording-theme-bubblegum {
+.ghost-container.recording.theme-bubblegum {
 	animation:
 		recording-glow-pulse 1.5s ease-in-out infinite,
 		bubblegum-recording-glow 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -202,17 +193,12 @@
 		drop-shadow(0 0 55px var(--ghost-bubblegum-glow-tertiary));
 }
 
-.ghost-svg.recording.theme-rainbow,
-.recording.ghost-recording-glow-rainbow,
-.recording.theme-rainbow,
-.recording-theme-rainbow {
+.ghost-container.recording.theme-rainbow {
 	animation:
 		recording-glow-pulse 1.5s ease-in-out infinite,
 		rainbow-recording-glow 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 	filter: drop-shadow(0 0 20px var(--ghost-rainbow-glow-primary));
 }
-
-/* Removed redundant/overly broad .recording, ... block */
 
 /* ----------------------------------------
    Theme-specific Shape Animations
@@ -253,7 +239,7 @@
    Gradient Animation Assignments
    ---------------------------------------- */
 
-/* Peach gradient animations */
+/* Peach gradient animations - Re-enabled CSS animations */
 #peachGradient {
 	animation: gradientShift 12s infinite ease-in-out;
 	will-change: x1, y1, x2, y2;
@@ -279,7 +265,7 @@
 	animation: yellowPulse 5s 2s infinite ease-in-out;
 }
 
-/* Mint gradient animations */
+/* Mint gradient animations - Re-enabled CSS animations */
 #mintGradient {
 	animation: gradientShift 14s infinite ease-in-out;
 	will-change: x1, y1, x2, y2;
@@ -305,7 +291,7 @@
 	animation: mintEndPulse 5s 2s infinite ease-in-out;
 }
 
-/* Bubblegum gradient animations */
+/* Bubblegum gradient animations - Re-enabled CSS animations */
 #bubblegumGradient {
 	animation: gradientShift 16s infinite ease-in-out;
 	will-change: x1, y1, x2, y2;

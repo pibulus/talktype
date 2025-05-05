@@ -146,8 +146,8 @@
 		}
 
 		// Clean up previous gradient animations and initialize new ones
-		cleanupAllAnimations();
-		initGradientAnimation(currentTheme, svgElement);
+		// cleanupAllAnimations(); // Commented out - Use CSS animations
+		// initGradientAnimation(currentTheme, svgElement); // Commented out - Use CSS animations
 
 		// Update dynamic styles (now only injects gradient vars)
 		initDynamicStyles();
@@ -199,7 +199,7 @@
 		// Removed cleanupTimers call (managed within services)
 
 		// Clean up all gradient animations
-		cleanupAllAnimations();
+		// cleanupAllAnimations(); // Commented out - Use CSS animations
 
 		// Remove dynamic styles
 		if (ghostStyleElement) {
@@ -334,9 +334,7 @@
 <button
 	bind:this={ghostSvg}
 	class="ghost-container theme-{currentTheme} 
-      {$ghostStateStore.isRecording
-		? `${CSS_CLASSES.RECORDING} recording-theme-${currentTheme} ghost-recording-glow-${currentTheme}`
-		: ''}
+      {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
       
       {$ghostStateStore.isSpecialAnimationActive ? 'do-special-animation' : ''}
       {!clickable ? 'ghost-non-clickable' : ''}"
