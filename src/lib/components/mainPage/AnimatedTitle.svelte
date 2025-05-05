@@ -48,8 +48,8 @@
           <AppSuffix 
             color="inherit"
             size="35%"
-            offsetX="-0.3em" 
-            offsetY="10px"
+            offsetX="-0.26em" 
+            offsetY="8px"
             position="bottom-right"
             customClass="title-suffix"
           />
