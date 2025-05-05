@@ -270,21 +270,26 @@
     letter-spacing: -0.01em; /* Slightly tighter tracking for large text */
   }
   
-  /* Base transition timing for box */
+  /* Base transition timing for box with gentle easing curve */
   .transcript-box {
-    transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                background-color 0.28s cubic-bezier(0.22, 1, 0.36, 1), 
+                border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1), 
+                box-shadow 0.38s cubic-bezier(0.22, 1, 0.36, 1);
   }
   
-  /* Clean highlight when clicked/editing - single color */
+  /* Refined highlight when clicked/editing - with delicate gradient */
   .transcript-box:focus-within {
-    background-color: rgba(253, 242, 248, 0.8);
-    border-color: rgba(249, 168, 212, 0.6);
-    box-shadow: 0 10px 30px rgba(249, 168, 212, 0.35);
+    background: linear-gradient(to bottom, rgba(252, 231, 243, 0.9), rgba(253, 242, 248, 0.75));
+    border-color: rgba(249, 168, 212, 0.65);
+    box-shadow: 0 10px 28px rgba(249, 168, 212, 0.3), 0 0 2px rgba(249, 168, 212, 0.2) inset;
+    transform: translateY(-1px) scale(1.003);
   }
   
-  /* Subtle text shadow effect when editing - gives text a slightly lifted appearance */
+  /* Refined text shadow effect when editing - with subtle depth */
   .transcript-box:focus-within .custom-transcript-text {
-    text-shadow: 0 0.5px 0.5px rgba(249, 168, 212, 0.2);
+    text-shadow: 0 0.5px 0 rgba(249, 168, 212, 0.2), 0 1px 1.5px rgba(0, 0, 0, 0.03);
+    letter-spacing: 0.01em; /* Very slightly open up letter spacing for editability */
   }
   
   
@@ -293,14 +298,17 @@
     outline: none;
   }
   
-  /* Style the share button area to match exactly with synchronized timing */
+  /* Style the share button area with matching elegance */
   .transcript-button-area {
-    transition: background-color 0.25s ease, backdrop-filter 0.25s ease;
+    transition: background 0.28s cubic-bezier(0.22, 1, 0.36, 1), 
+                backdrop-filter 0.32s cubic-bezier(0.22, 1, 0.36, 1), 
+                transform 0.34s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   
   .transcript-box:focus-within .transcript-button-area {
-    background-color: rgba(253, 242, 248, 0.8);
-    backdrop-filter: blur(4px);
+    background: linear-gradient(to bottom, rgba(252, 231, 243, 0.75), rgba(253, 242, 248, 0.6));
+    backdrop-filter: blur(5px);
+    transform: translateY(-0.5px);
   }
   
   /* Content area scrolling - more refined */
@@ -313,10 +321,11 @@
     transition: all 0.3s ease-out; /* Smooth transitions */
   }
   
-    /* Custom text selection color */
+    /* Elegant text selection styling with subtle gradient */
   .transcript-box ::selection {
-    background-color: rgba(249, 168, 212, 0.4);
+    background: linear-gradient(120deg, rgba(252, 231, 243, 0.9), rgba(249, 168, 212, 0.5));
     color: #111827;
+    text-shadow: none; /* Remove text shadow for cleaner selection */
   }
   
   /* Custom scrollbar styles for WebKit browsers */
