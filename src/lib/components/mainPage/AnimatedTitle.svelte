@@ -45,10 +45,10 @@
     {#if showAppSuffix}
       <span class="app-suffix-container stagger-letter" style="animation-delay: 0.45s; position: relative;">
         <AppSuffix 
-          color={suffixColor}
-          size={suffixSize}
-          offsetX="-0.3em"
-          offsetY="8px"
+          color="inherit"
+          size="45%"
+          offsetX="0.05em" 
+          offsetY="12px"
           position="bottom-right"
           wiggleOnHover={true}
           customClass="title-suffix"
@@ -60,7 +60,7 @@
 
 <!-- Updated subheadline with improved typography and brand voice -->
 <p
-  class="slide-in-subtitle mx-auto mt-2 mb-8 max-w-prose text-base text-center text-gray-700/85 cursor-default select-none sm:mt-3 sm:mb-10 sm:text-lg md:mt-3 md:mb-10 md:text-xl lg:text-2xl"
+  class="slide-in-subtitle mx-auto mt-4 mb-8 max-w-prose text-base text-center text-gray-700/85 cursor-default select-none sm:mt-5 sm:mb-10 sm:text-lg md:mt-5 md:mb-10 md:text-xl lg:text-2xl"
   style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.65; max-width: 35ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 >
   {subtitle}
