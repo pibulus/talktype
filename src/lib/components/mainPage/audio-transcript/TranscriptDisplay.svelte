@@ -189,7 +189,7 @@
   /* Container layout */
   .transcript-wrapper {
     contain: layout;
-    margin-top: 32px; /* Space between button and transcript */
+    margin-top: 24px; /* Reduced space between button and transcript */
   }
   
   /* Box structure */

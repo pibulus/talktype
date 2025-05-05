@@ -78,7 +78,7 @@
 </script>
 
 <!-- Ghost Icon - Size reduced slightly and moved up -->
-<div class="ghost-icon-wrapper" style="inline-size: clamp(140px, 18vw, 200px); margin-block-end: 1.75em;">
+<div class="ghost-icon-wrapper" style="inline-size: clamp(154px, 20vw, 220px); margin-block-end: 1.5em;">
   <Ghost
     bind:this={ghostComponent}
     isRecording={isRecording}
