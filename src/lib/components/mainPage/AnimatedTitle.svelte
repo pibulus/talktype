@@ -44,6 +44,9 @@
         <AppSuffix 
           color={suffixColor}
           size={suffixSize}
+          offsetX="-0.3em"
+          offsetY="8px"
+          position="bottom-right"
           wiggleOnHover={true}
           customClass="title-suffix"
         />

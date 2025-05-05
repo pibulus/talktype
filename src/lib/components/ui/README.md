@@ -28,24 +28,28 @@ This directory contains reusable UI components used throughout the TalkType appl
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `color` | string | `"inherit"` | The text color of the suffix |
-| `size` | string | `"55%"` | Size relative to parent (55% of parent font size) |
+| `size` | string | `"40%"` | Size relative to parent (40% of parent font size) |
 | `customClass` | string | `""` | Additional CSS classes |
-| `offsetY` | string | `"0.2em"` | Vertical offset from baseline |
+| `offsetX` | string | `"-0.2em"` | Horizontal positioning offset |
+| `offsetY` | string | `"6px"` | Vertical positioning offset |
+| `position` | string | `"bottom-right"` | Position preset (bottom-right, bottom-left, top-right, top-left) |
 | `wiggleOnHover` | boolean | `true` | Whether to enable hover animation |
 
 #### Implementation Details
 
-The component uses absolute positioning to place the `.app` suffix in the bottom-right of the parent element. Key features:
+The component uses absolute positioning to place the `.app` suffix relative to the parent element with highly configurable positioning. Key features:
 
-1. **Positioning**: 
+1. **Flexible Positioning**: 
    - Uses absolute positioning with responsive adjustments
    - Parent container should have `position: relative` and ideally `width: 0` with `overflow: visible`
+   - Supports four position presets: bottom-right, bottom-left, top-right, top-left
+   - Fine-grained control with offsetX and offsetY parameters
 
 2. **Visual Style**:
-   - Rotated -3° for an "off-kilter" appearance
+   - Rotated -2° for an "off-kilter" appearance
    - Inherits font family and weight from parent
    - Subtle text shadow for dimensionality
-   - 55% of parent font size
+   - 40% of parent font size by default (adjustable)
 
 3. **Hover Effect**:
    - Subtle scale and additional rotation on hover
@@ -57,6 +61,7 @@ The component uses absolute positioning to place the `.app` suffix in the bottom
 5. **Responsive Behavior**:
    - Position and size adjusts across different screen sizes
    - Custom breakpoints for various device sizes
+   - Maintains proportional positioning across screen sizes
 
 #### Example in AnimatedTitle
 
