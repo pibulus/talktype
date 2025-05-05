@@ -101,6 +101,7 @@
     <!-- Main button text -->
     <span
       class="cta-text relative inline-block whitespace-nowrap transition-all duration-300 ease-out"
+      style="letter-spacing: 0.02em;"
     >
       <!-- Clipboard success message -->
       <span

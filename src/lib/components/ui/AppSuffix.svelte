@@ -8,7 +8,7 @@
   
   // Props with defaults
   export let color = "inherit"; // Default: inherit from parent
-  export let size = "40%"; // Default: 40% of parent size (smaller suffix)
+  export let size = "30%"; // Default: 30% of parent size (smaller suffix)
   export let customClass = ""; // Optional additional classes
   export let offsetX = "-0.2em"; // Horizontal positioning
   export let offsetY = "6px"; // Vertical positioning
@@ -27,13 +27,13 @@
   .app-suffix {
     display: inline-block;
     color: var(--suffix-color, inherit);
-    font-size: var(--suffix-size, 40%);
+    font-size: var(--suffix-size, 30%);
     font-weight: 500;
     line-height: 1;
     letter-spacing: -0.01em;
     font-kerning: normal;
     position: absolute;
-    bottom: -0.5em;
+    bottom: -0.8em;
     right: var(--offset-x, -0.2em);
     margin-left: 0;
     font-family: inherit;

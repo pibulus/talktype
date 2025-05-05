@@ -1,0 +1,67 @@
+/**
+ * Typography scale system
+ * Base: 1rem (16px)
+ * Ratio: 1.25 (major third)
+ * 
+ * This establishes a consistent typography system using fluid typography
+ * with clamp() for responsive scaling without breakpoints.
+ */
+
+:root {
+  /* Base sizes - using a modular scale with ratio 1.25 */
+  --font-size-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);     /* 12-14px */
+  --font-size-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);       /* 14-16px */
+  --font-size-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);     /* 16-18px */
+  --font-size-lg: clamp(1.125rem, 1.05rem + 0.375vw, 1.25rem);   /* 18-20px */
+  --font-size-xl: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);       /* 20-24px */
+  --font-size-2xl: clamp(1.5rem, 1.3rem + 1vw, 1.875rem);        /* 24-30px */
+  --font-size-3xl: clamp(1.875rem, 1.6rem + 1.375vw, 2.25rem);   /* 30-36px */
+  --font-size-4xl: clamp(2.25rem, 1.9rem + 1.75vw, 3rem);        /* 36-48px */
+  --font-size-5xl: clamp(3rem, 2.5rem + 2.5vw, 4rem);            /* 48-64px */
+  --font-size-6xl: clamp(4rem, 3rem + 5vw, 5rem);                /* 64-80px */
+  
+  /* Line heights */
+  --line-height-tight: 1.1;
+  --line-height-snug: 1.25;
+  --line-height-normal: 1.4;
+  --line-height-relaxed: 1.65;
+  
+  /* Spacing/Tracking */
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.02em;
+  --letter-spacing-wider: 0.05em;
+}
+
+/* Apply to major components first */
+.title-text {
+  font-size: var(--font-size-5xl);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+.subtitle-text {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-normal);
+  max-width: 40ch;
+}
+
+.cta-text {
+  font-size: var(--font-size-base);
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.footer-text {
+  font-size: var(--font-size-sm);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .title-text {
+    font-size: var(--font-size-4xl);
+  }
+  
+  .subtitle-text {
+    font-size: var(--font-size-base);
+  }
+}

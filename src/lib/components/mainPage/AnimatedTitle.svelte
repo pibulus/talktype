@@ -47,7 +47,7 @@
         <span class="suffix-wrapper">
           <AppSuffix 
             color="inherit"
-            size="32%"
+            size="30%"
             offsetX="-0.4em" 
             offsetY="0"
             position="bottom-right"
@@ -62,7 +62,7 @@
 <!-- Updated subheadline with improved typography and brand voice -->
 <p
   class="mx-auto mt-6 mb-8 text-base text-center cursor-default select-none slide-in-subtitle max-w-prose text-gray-700/85 sm:mt-7 sm:mb-10 sm:text-lg md:mt-7 md:mb-10 md:text-xl lg:text-2xl"
-  style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.65; max-width: 35ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
+  style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.4; max-width: 40ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 >
   {subtitle}
 </p>
@@ -119,6 +119,7 @@
     font-feature-settings: "kern" 1;
     font-kerning: normal;
     max-width: 40ch;
+    line-height: 1.4;
   }
 
   @keyframes slideIn {
@@ -167,7 +168,8 @@
   :global(.title-suffix) {
     letter-spacing: -0.01em;
     font-variation-settings: inherit;
-    opacity: 0.82; /* Slightly less prominent than the main title */
+    opacity: 0.75; /* Less prominent than the main title */
+    font-size: 30%; /* Smaller suffix size */
   }
   
   /* Media queries for mobile optimization */
