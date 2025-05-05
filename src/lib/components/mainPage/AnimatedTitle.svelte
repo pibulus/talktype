@@ -49,7 +49,7 @@
             color="inherit"
             size="35%"
             offsetX="-0.3em" 
-            offsetY="0"
+            offsetY="10px"
             position="bottom-right"
             customClass="title-suffix"
           />
