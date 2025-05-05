@@ -11,10 +11,10 @@
 </svelte:head>
 
 <section
-  class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-center px-4 py-6 pb-16 pt-[11vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[10vh] lg:pb-16"
+  class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-center px-4 py-6 pb-16 pt-[10vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[10vh] lg:pb-16"
 >
   <div
-    class="mx-auto flex w-full max-w-md flex-col items-center pt-2 sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
+    class="mx-auto flex w-full max-w-md flex-col items-center space-y-5 sm:space-y-6 md:space-y-7 sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
   >
     <slot />
   </div>

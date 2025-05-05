@@ -27,9 +27,9 @@
 </script>
 
 <!-- Typography with improved kerning and weight using font-variation-settings -->
-<div class="relative title-container mt-1">
+<div class="relative title-container">
   <h1
-    class="mb-1 text-5xl font-black tracking-tight text-center cursor-default select-none staggered-text sm:mb-2 md:mb-2 sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
+    class="text-5xl font-black tracking-tight text-center cursor-default select-none staggered-text sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
     style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal; font-variation-settings: 'wght' 900, 'opsz' 32;"
     aria-label={title}
   >
@@ -59,9 +59,9 @@
   </h1>
 </div>
 
-<!-- Updated subheadline with improved typography and brand voice - tighter spacing -->
+<!-- Updated subheadline with improved typography and brand voice -->
 <p
-  class="mx-auto mt-4 mb-6 text-base text-center cursor-default select-none slide-in-subtitle max-w-prose text-gray-700/85 sm:mt-5 sm:mb-8 sm:text-lg md:mt-5 md:mb-8 md:text-xl lg:text-2xl"
+  class="mx-auto text-base text-center cursor-default select-none slide-in-subtitle max-w-prose text-gray-700/85 sm:text-lg md:text-xl lg:text-2xl"
   style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.4; max-width: 40ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 >
   {subtitle}
@@ -191,8 +191,6 @@
 
     .slide-in-subtitle {
       max-width: 28ch !important;
-      margin-top: 0.5rem !important;
-      margin-bottom: 2.5rem !important; /* ~40px on mobile */
       font-size: 1rem; /* 16px on mobile as requested */
       line-height: 1.6;
     }

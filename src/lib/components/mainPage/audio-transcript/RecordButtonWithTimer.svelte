@@ -67,7 +67,7 @@
 
 {#if transcribing}
   <div
-    class="progress-container relative h-[68px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%] mx-auto"
+    class="progress-container relative h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%] mx-auto"
     role="progressbar"
     aria-label="Transcription progress"
     aria-valuenow={progress}
@@ -84,12 +84,12 @@
     bind:this={recordButtonElement}
     class="record-button duration-400 w-[75%] rounded-full transition-all ease-out sm:w-[85%] {clipboardSuccess
       ? 'border border-purple-200 bg-purple-50 text-black notification-pulse'
-      : 'text-black'} mx-auto max-w-[420px] px-6 py-6 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:py-5 {!recording &&
+      : 'text-black'} mx-auto max-w-[420px] px-6 py-5 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:py-5 {!recording &&
     buttonLabel === 'Start Recording' &&
     !clipboardSuccess
       ? 'pulse-subtle'
       : ''} {recording ? 'recording-active' : ''} {isWarning && recording ? 'recording-warning' : ''} {isDanger && recording ? 'recording-danger' : ''}"
-    style="min-width: 280px; min-height: 68px; transform-origin: center center; position: relative; {recording ? `--progress: ${Math.min(recordingDuration / (isPremiumUser ? ANIMATION.RECORDING.PREMIUM_LIMIT : ANIMATION.RECORDING.FREE_LIMIT) * 100, 100)}%` : ''}"
+    style="min-width: 280px; min-height: 64px; transform-origin: center center; position: relative; {recording ? `--progress: ${Math.min(recordingDuration / (isPremiumUser ? ANIMATION.RECORDING.PREMIUM_LIMIT : ANIMATION.RECORDING.FREE_LIMIT) * 100, 100)}%` : ''}"
     on:click={() => dispatch('click')}
     on:mouseenter={() => dispatch('preload')}
     on:keydown={handleKeyDown}

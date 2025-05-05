@@ -78,7 +78,7 @@
 </script>
 
 <!-- Ghost Icon - Size increased by ~15% -->
-<div class="ghost-icon-wrapper mb-3 h-36 w-36 sm:h-40 sm:w-40 md:mb-3 md:h-52 md:w-52 lg:h-64 lg:w-64">
+<div class="ghost-icon-wrapper h-36 w-36 sm:h-40 sm:w-40 md:h-52 md:w-52 lg:h-64 lg:w-64">
   <Ghost
     bind:this={ghostComponent}
     isRecording={isRecording}
@@ -98,15 +98,8 @@
     position: relative;
   }
   
-  @media (min-width: 768px) {
-    .ghost-icon-wrapper {
-      margin-bottom: 0.5rem;
-    }
-  }
-  
-  @media (max-width: 640px) {
-    .ghost-icon-wrapper {
-      margin-bottom: 0.5rem;
-    }
+  /* Remove explicit margins to let the parent spacing control layout */
+  .ghost-icon-wrapper {
+    margin-bottom: 0;
   }
 </style>
