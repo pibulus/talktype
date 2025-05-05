@@ -212,6 +212,12 @@
     box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.4), 0 1px 3px rgba(0, 0, 0, 0.1);
   }
   
+  /* Enhanced focus ring for keyboard navigation */
+  .record-button:focus-visible {
+    outline: 3px solid #ffd65c;
+    outline-offset: 2px;
+  }
+  
   /* Hover state */
   .record-button:hover:not(:disabled) {
     transform: translateY(-1px) scale(1.02);

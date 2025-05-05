@@ -62,7 +62,7 @@
     letter-spacing: -0.01em;
     font-kerning: normal;
     position: absolute;
-    bottom: 0.2em;
+    bottom: 0.15em;
     right: -0.35em;
     margin-left: 0;
     font-family: inherit;
