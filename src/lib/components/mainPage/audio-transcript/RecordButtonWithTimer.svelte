@@ -138,7 +138,7 @@
         <span class="button-content relative z-10">
           <!-- Main label - the button text is on top of the progress bar -->
           <span class="flex items-center justify-center relative">
-            <span class="relative z-10 px-1 py-0.5 rounded-lg {recording ? 'text-shadow-recording' : ''}">
+            <span class="cta__label relative z-10 px-1 py-0.5 rounded-lg {recording ? 'text-shadow-recording' : ''}" style="font-size: clamp(1rem, 0.5vw + 0.9rem, 1.25rem); letter-spacing: .02em;">
               {buttonLabel}
             </span>
             <span class="sr-only">

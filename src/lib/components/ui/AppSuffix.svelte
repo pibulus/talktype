@@ -57,20 +57,20 @@
     display: inline-block;
     color: var(--suffix-color, inherit);
     font-size: var(--suffix-size, 30%);
-    font-weight: 500;
+    font-weight: 700;
     line-height: 1;
     letter-spacing: -0.01em;
     font-kerning: normal;
     position: absolute;
-    bottom: -0.92em;
-    right: var(--offset-x, -0.2em);
+    bottom: 0.2em;
+    right: -0.35em;
     margin-left: 0;
     font-family: inherit;
     font-variation-settings: inherit;
-    transform: translateY(var(--offset-y, 6px));
-    opacity: 0.8;
+    transform: translateY(var(--offset-y, 0));
+    opacity: 0.9;
     z-index: 1;
-    filter: drop-shadow(0 0.5px 0.5px rgba(0,0,0,0.07));
+    filter: drop-shadow(0 0 2px rgba(0,0,0,0.15));
   }
   
   .app-text {
@@ -86,9 +86,9 @@
     will-change: transform;
   }
   
-  /* Theme-specific gradients - softer */
+  /* Theme-specific gradients - darker for AA contrast */
   .theme-peach .app-text {
-    background-image: linear-gradient(to bottom right, #fdba74, #fc7a90);
+    background-image: linear-gradient(to bottom right, #cc6f6f, #fc7a90);
   }
   
   .theme-mint .app-text {
@@ -96,7 +96,7 @@
   }
   
   .theme-bubblegum .app-text {
-    background-image: linear-gradient(to bottom right, #b67df8, #8183f4);
+    background-image: linear-gradient(to bottom right, #9f8fff, #8183f4);
   }
   
   .theme-rainbow .app-text {

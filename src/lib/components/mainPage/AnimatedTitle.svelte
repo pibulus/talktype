@@ -62,7 +62,7 @@
 <!-- Updated subheadline with improved typography and brand voice -->
 <p
   class="mx-auto mt-3 mb-6 text-base text-center cursor-default select-none slide-in-subtitle max-w-prose text-gray-700/85 sm:mt-4 sm:mb-7 sm:text-lg md:text-xl lg:text-2xl"
-  style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.4; max-width: 40ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
+  style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.4; max-inline-size: 40ch; text-wrap: balance; font-variation-settings: 'wght' 400, 'opsz' 16;"
 >
   {subtitle}
 </p>
@@ -118,7 +118,8 @@
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "kern" 1;
     font-kerning: normal;
-    max-width: 40ch;
+    max-inline-size: 40ch;
+    text-wrap: balance;
     line-height: 1.4;
   }
 
@@ -185,9 +186,10 @@
     /* No need for major mobile overrides anymore */
 
     .slide-in-subtitle {
-      max-width: 28ch !important;
+      max-inline-size: 28ch !important;
       font-size: 1rem; /* 16px on mobile as requested */
       line-height: 1.6;
+      text-wrap: balance;
     }
   }
   
