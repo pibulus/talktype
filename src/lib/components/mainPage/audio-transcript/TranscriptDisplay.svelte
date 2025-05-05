@@ -165,10 +165,10 @@
             ></div>
           {/if}
           
-          <!-- Share button area - integrated with content -->
+          <!-- Share button area - aligned to the right edge -->
           {#if isWebShareSupported()}
             <div class="transcript-button-area w-full py-3 pb-5 relative z-20 bg-white/90 rounded-b-[2rem]">
-              <div class="flex w-full justify-center">
+              <div class="flex w-full justify-end pr-7 sm:pr-10">
                 <button
                   class="px-5 py-2 text-sm font-medium text-indigo-600 transition-all duration-200 rounded-full shadow-sm share-btn-text bg-gradient-to-r from-indigo-50 to-purple-100 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 active:scale-95"
                   on:click|preventDefault={() => dispatch('share', { text: getEditedTranscript() })}
@@ -251,7 +251,8 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     transition: background-color 0.4s ease, font-size 0.5s ease-out;
     line-height: 1.6; /* Consistent comfortable line height */
-    /* Base text size now handled by responsiveFontSize classes */
+    font-size: 1.05rem; /* Slightly larger base size */
+    /* Base text size now handled by responsiveFontSize classes, but with a larger default */
   }
   
   /* Optimize spacing based on font size for better readability */

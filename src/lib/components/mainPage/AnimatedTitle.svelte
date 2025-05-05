@@ -29,7 +29,7 @@
 <!-- Typography with improved kerning and weight using font-variation-settings -->
 <div class="relative title-container">
   <h1
-    class="text-5xl font-black tracking-tight text-center cursor-default select-none staggered-text sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
+    class="mb-1 text-5xl font-black tracking-tight text-center cursor-default select-none staggered-text sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
     style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal; font-variation-settings: 'wght' 900, 'opsz' 32;"
     aria-label={title}
   >
@@ -47,7 +47,7 @@
         <span class="suffix-wrapper">
           <AppSuffix 
             color="inherit"
-            size="32%"
+            size="38%"
             offsetX="-0.35em" 
             offsetY="0"
             position="bottom-right"
@@ -168,8 +168,13 @@
   :global(.title-suffix) {
     letter-spacing: -0.01em;
     font-variation-settings: inherit;
-    opacity: 0.8; /* Slightly more visible than before */
-    font-size: 32%; /* Slightly larger suffix size */
+    opacity: 0.88; /* More visible suffix */
+    font-size: 38%; /* Larger suffix size */
+    background: linear-gradient(to bottom right, currentColor, rgba(236, 72, 153, 0.9));
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.04);
   }
   
   /* Media queries for mobile optimization */
@@ -186,7 +191,9 @@
     
     /* Mobile AppSuffix override */
     :global(.title-suffix) {
-      opacity: 0.9;
+      opacity: 0.95;
+      font-size: 36%;
+      background: linear-gradient(to bottom right, currentColor, rgba(236, 72, 153, 0.95));
     }
 
     .slide-in-subtitle {

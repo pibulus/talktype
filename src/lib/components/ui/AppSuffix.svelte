@@ -20,7 +20,7 @@
   style="--suffix-color: {color}; --suffix-size: {size}; --offset-x: {offsetX}; --offset-y: {offsetY};"
   aria-hidden="true"
 >
-  .app
+  <span class="app-text">.app</span>
 </span>
 
 <style>
@@ -39,9 +39,17 @@
     font-family: inherit;
     font-variation-settings: inherit;
     transform: translateY(var(--offset-y, 6px));
-    opacity: 0.85;
+    opacity: 0.95;
     z-index: 1;
     filter: drop-shadow(0 0.5px 0.5px rgba(0,0,0,0.07));
+  }
+  
+  .app-text {
+    background: linear-gradient(to bottom right, #fdba74, #fb7185);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.04);
   }
   
   /* Position variations */
