@@ -27,9 +27,9 @@
 </script>
 
 <!-- Typography with improved kerning and weight using font-variation-settings -->
-<div class="relative title-container">
+<div class="relative title-container mt-1">
   <h1
-    class="mb-2 text-5xl font-black tracking-tight text-center cursor-default select-none staggered-text sm:mb-3 md:mb-3 sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
+    class="mb-1 text-5xl font-black tracking-tight text-center cursor-default select-none staggered-text sm:mb-2 md:mb-2 sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
     style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal; font-variation-settings: 'wght' 900, 'opsz' 32;"
     aria-label={title}
   >
@@ -47,8 +47,8 @@
         <span class="suffix-wrapper">
           <AppSuffix 
             color="inherit"
-            size="30%"
-            offsetX="-0.4em" 
+            size="32%"
+            offsetX="-0.35em" 
             offsetY="0"
             position="bottom-right"
             customClass="title-suffix"
@@ -59,9 +59,9 @@
   </h1>
 </div>
 
-<!-- Updated subheadline with improved typography and brand voice -->
+<!-- Updated subheadline with improved typography and brand voice - tighter spacing -->
 <p
-  class="mx-auto mt-6 mb-8 text-base text-center cursor-default select-none slide-in-subtitle max-w-prose text-gray-700/85 sm:mt-7 sm:mb-10 sm:text-lg md:mt-7 md:mb-10 md:text-xl lg:text-2xl"
+  class="mx-auto mt-4 mb-6 text-base text-center cursor-default select-none slide-in-subtitle max-w-prose text-gray-700/85 sm:mt-5 sm:mb-8 sm:text-lg md:mt-5 md:mb-8 md:text-xl lg:text-2xl"
   style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.4; max-width: 40ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 >
   {subtitle}
@@ -168,8 +168,8 @@
   :global(.title-suffix) {
     letter-spacing: -0.01em;
     font-variation-settings: inherit;
-    opacity: 0.75; /* Less prominent than the main title */
-    font-size: 30%; /* Smaller suffix size */
+    opacity: 0.8; /* Slightly more visible than before */
+    font-size: 32%; /* Slightly larger suffix size */
   }
   
   /* Media queries for mobile optimization */

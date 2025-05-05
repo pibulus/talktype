@@ -11,10 +11,10 @@
 </svelte:head>
 
 <section
-  class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-center px-4 py-8 pb-16 pt-[13vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[12vh] lg:pb-16"
+  class="bg-gradient-mesh flex min-h-screen flex-col items-center justify-center px-4 py-6 pb-16 pt-[11vh] font-sans text-black antialiased sm:px-6 md:px-10 md:pt-[10vh] lg:pb-16"
 >
   <div
-    class="mx-auto flex w-full max-w-md flex-col items-center pt-4 sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
+    class="mx-auto flex w-full max-w-md flex-col items-center pt-2 sm:max-w-lg md:max-w-2xl lg:max-w-3xl"
   >
     <slot />
   </div>
@@ -62,7 +62,7 @@
   /* Media queries for mobile optimization */
   @media (max-width: 640px) {
     section {
-      padding-top: 10vh !important;
+      padding-top: 8vh !important;
       padding-bottom: 14vh !important;
       min-height: 100vh;
       display: flex;
@@ -94,7 +94,7 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      padding-top: 10vh !important;
+      padding-top: 8vh !important;
       padding-bottom: 10vh !important;
     }
   }
