@@ -9,7 +9,7 @@
   export let subtitle = "Voice-to-text that doesn't suck. Spooky good, freaky fast, always free.";
   export let showAppSuffix = true;
   export let suffixColor = "inherit"; // Inherit color from parent title
-  export let suffixSize = "55%"; // 55% of parent size
+  export let suffixSize = "40%"; // Smaller suffix (40% of parent size)
   
   onMount(() => {
     // Set up animation sequence timing (for title/subtitle)
@@ -40,11 +40,10 @@
     </span>
     
     {#if showAppSuffix}
-      <span class="app-suffix-container stagger-letter" style="animation-delay: 0.45s;">
+      <span class="app-suffix-container stagger-letter" style="animation-delay: 0.45s; position: relative;">
         <AppSuffix 
           color={suffixColor}
           size={suffixSize}
-          offsetY="0.2em"
           wiggleOnHover={true}
           customClass="title-suffix"
         />
@@ -142,11 +141,9 @@
   
   /* App suffix container styling */
   .app-suffix-container {
-    display: inline-flex;
-    align-items: baseline;
-    line-height: inherit;
-    position: relative;
+    display: inline-block;
     width: 0;
+    height: 0;
     overflow: visible;
   }
   

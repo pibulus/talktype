@@ -2,22 +2,20 @@
   /**
    * AppSuffix Component
    * 
-   * A stylistic suffix that completes the product name.
-   * Designed to match the brand wordmark's style but sit
-   * as a distinct suffix element.
+   * A small tag-like suffix that appears adjacent to a product name,
+   * designed to feel like a printed label rather than a continuation of the title.
    */
   
   // Props with defaults
   export let color = "inherit"; // Default: inherit from parent
-  export let size = "55%"; // Default: 55% of parent size (reduced from 60%)
+  export let size = "40%"; // Default: 40% of parent size (smaller suffix)
   export let customClass = ""; // Optional additional classes
-  export let offsetY = "0.2em"; // Default vertical offset from baseline (increased from 0.15em)
   export let wiggleOnHover = true; // Whether to add wiggle effect on hover
 </script>
 
 <span 
   class="app-suffix {wiggleOnHover ? 'wiggle-on-hover' : ''} {customClass}" 
-  style="--suffix-color: {color}; --suffix-size: {size}; --offset-y: {offsetY};"
+  style="--suffix-color: {color}; --suffix-size: {size};"
   aria-hidden="true"
 >
   .app
@@ -27,54 +25,51 @@
   .app-suffix {
     display: inline-block;
     color: var(--suffix-color, inherit);
-    font-size: var(--suffix-size, 55%);
-    font-weight: inherit;
+    font-size: var(--suffix-size, 40%);
+    font-weight: 500; /* One step lighter than parent */
     line-height: 1;
     letter-spacing: -0.01em;
     font-kerning: normal;
     position: absolute;
-    bottom: var(--offset-y, 0.2em);
-    right: -2.2em;
-    font-variation-settings: inherit;
-    transform: rotate(-3deg);
+    bottom: -0.65em; /* Position further below the baseline */
+    right: -0.2em; /* Position to the right with more gap */
+    font-family: inherit; /* Ensure same font as TalkType */
+    font-variation-settings: inherit; /* Inherit font settings */
+    transform: rotate(-2deg) translateX(-2px) translateY(4px); /* Playful positioning */
     transition: all 0.3s ease;
-    opacity: 0.85;
+    opacity: 0.9;
     z-index: 1;
-    text-shadow: 0 0.5px 0 rgba(255,255,255,0.4);
+    filter: drop-shadow(0 0.5px 0.5px rgba(0,0,0,0.07)); /* Subtle drop shadow */
   }
   
   .wiggle-on-hover:hover {
-    transform: translateY(-1px) rotate(-5deg) scale(1.04);
-  }
-  
-  @keyframes wiggle {
-    0% { transform: rotate(-2deg); }
-    25% { transform: rotate(0deg); }
-    50% { transform: rotate(-3deg); }
-    75% { transform: rotate(-1deg); }
-    100% { transform: rotate(-2deg); }
+    transform: rotate(-4deg) translateX(-3px) translateY(3px) scale(1.05);
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
   }
   
   /* Responsive adjustments */
   @media (max-width: 640px) {
     .app-suffix {
       font-size: calc(var(--suffix-size) * 0.95);
-      right: -2em;
-      bottom: 0.15em;
+      bottom: -0.6em;
+      right: -0.18em;
     }
   }
   
   @media (max-width: 480px) {
     .app-suffix {
-      right: -1.8em;
-      bottom: 0.1em;
+      font-size: calc(var(--suffix-size) * 0.9);
+      bottom: -0.58em;
+      right: -0.15em;
+      transform: rotate(-2deg) translateX(-1px) translateY(3px);
     }
   }
   
   @media (min-width: 1024px) {
     .app-suffix {
-      right: -2.4em;
-      bottom: 0.25em;
+      bottom: -0.7em;
+      right: -0.25em;
+      transform: rotate(-2deg) translateX(-3px) translateY(5px);
     }
   }
 </style>
