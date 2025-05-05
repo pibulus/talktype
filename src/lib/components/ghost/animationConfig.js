@@ -16,9 +16,9 @@ export const BLINK_CONFIG = {
 };
 
 export const WOBBLE_CONFIG = {
-	DURATION: 400, // Duration of ghost wobble animation (ms) - Faster!
+	DURATION: 390, // Duration of ghost wobble animation (ms) - Adjusted back to slower speed
 	LEFT_CHANCE: 0.5, // Probability (0-1) of wobbling left vs right
-	CLEANUP_DELAY: 400 // Delay for wobble animation cleanup (ms) - Match duration
+	CLEANUP_DELAY: 390 // Delay for wobble animation cleanup (ms) - Match duration
 };
 
 export const SPECIAL_CONFIG = {
@@ -45,7 +45,7 @@ export const EYE_CONFIG = {
 };
 
 export const ANIMATION_TIMING = {
-	INITIAL_LOAD_DURATION: 2200, // Duration for initial load animation (ms)
+	INITIAL_LOAD_DURATION: 2500, // Duration for the new grow-and-wobble CSS animation (ms)
 	OBSERVER_SETUP_DELAY: 50, // Delay for observer setup (ms),
 	BASE_TRANSITION: '0.3s ease', // Global theme transition timing
 

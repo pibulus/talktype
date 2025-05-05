@@ -31,6 +31,9 @@ let animations = {
   isWobbling: false
 };
 
+// Flag to ensure initial load effect runs only once
+let initialLoadEffectApplied = false;
+
 /**
  * Initialize all animation systems
  * 
@@ -91,88 +94,73 @@ export function initThemeAnimation(svgElement, theme) {
  * @param {HTMLElement} ghostSvg - Ghost SVG container element
  */
 export function applyInitialLoadEffect(ghostSvg) {
-  if (!isBrowser()) return;
+  // --- Prevent multiple executions ---
+  if (initialLoadEffectApplied || !isBrowser()) {
+    if (initialLoadEffectApplied) console.log('[applyInitialLoadEffect] Skipping, already applied.');
+    return; 
+  }
+  // --- Mark as applied ---
+  initialLoadEffectApplied = true; 
   
+  console.log('[applyInitialLoadEffect] Applying combined grow-and-wobble effect...');
+
   const state = get(ghostStateStore);
   
   // Skip if not first visit
-  if (!state.isFirstVisit) return;
-  
-  // Apply initial load animation
-  document.body.classList.add(CSS_CLASSES.INITIAL_LOAD);
-  
-  // Set up to remove class after animation completes
-  setTimeout(() => {
-    document.body.classList.remove(CSS_CLASSES.INITIAL_LOAD);
-    ghostStateStore.completeFirstVisit();
-    
-    // Transition directly to IDLE state
-    ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
-    
-    // Apply wobble effect flags directly after a small delay
-    setTimeout(() => {
-      // Check if still IDLE before applying wobble (might have changed state)
-      if (get(ghostStateStore).current === ANIMATION_STATES.IDLE) {
-        // Use the store's internal method to apply wobble flags
-        ghostStateStore.setWobbling(true); // This now calls applyWobbleEffectFlags internally
-      }
-    }, 50); // Small delay to ensure state is ready
-  }, ANIMATION_TIMING.INITIAL_LOAD_DURATION);
-}
-
-/**
- * Apply wobble animation to the ghost
- * 
- * @param {HTMLElement} ghostSvg - Ghost SVG container element
- * @param {Object} options - Wobble options
- * @param {string} options.direction - Force wobble direction ('left' or 'right')
- * @param {number} options.seed - Random seed for wobble direction
- * @param {string} options.direction - Force wobble direction ('left' or 'right')
- * @param {number} options.seed - Random seed for wobble direction
- * @param {boolean} options.force - Force reapplying even if already wobbling
- */
-export function applyWobbleEffect(ghostSvg, options = {}) {
-  if (!ghostSvg) return;
-  
-  // Allow reapplying wobble if we have a new direction or force flag
-  if (animations.isWobbling && !options.direction && !options.force) {
+  if (!state.isFirstVisit) {
+    console.log('[applyInitialLoadEffect] Skipping, not first visit.');
     return;
   }
   
-  const { direction, seed = 0 } = options; // Removed updateStore
+  // Find the wobble group element within the provided ghostSvg container
+  const wobbleGroup = ghostSvg?.querySelector('.ghost-wobble-group');
   
-  // Determine direction
-  const wobbleDir = direction || (seedRandom(seed, 0, 0, 1) < WOBBLE_CONFIG.LEFT_CHANCE ? 
-                                  CSS_CLASSES.WOBBLE_LEFT : 
-                                  CSS_CLASSES.WOBBLE_RIGHT);
-
-  // Always use the store's method to handle flags and timeouts
-  ghostStateStore.setWobbling(true, wobbleDir); 
-
-  // Apply animation class directly to the SVG element for immediate visual feedback
-  // Note: This might be redundant if reactivity is fast enough, but ensures visual feedback
-  // (Store reactivity will also handle this, but direct application ensures it happens)
-  const svgElement = ghostSvg.querySelector('svg');
-  if (svgElement) {
-    // Force reflow and apply wobble class
-    forceReflow(svgElement);
-    
-    // Remove existing wobble classes first
-    svgElement.classList.remove(CSS_CLASSES.WOBBLE_LEFT);
-    svgElement.classList.remove(CSS_CLASSES.WOBBLE_RIGHT);
-    
-    // Force reflow again to ensure animation restarts
-    forceReflow(svgElement);
-    
-    // Log for debugging
-    // Note: Class application is now handled reactively in Ghost.svelte
-    if (get(ghostStateStore).debug) {
-      console.log(`Applied wobble class: ${wobbleDir} to SVG element`);
-    }
+  if (!wobbleGroup) {
+    console.error('[applyInitialLoadEffect] Could not find .ghost-wobble-group element.');
+    return;
   }
+
+  // --- Delay adding the class until the next frame ---
+  requestAnimationFrame(() => {
+    // Double-check the element still exists in case of rapid unmount
+    if (!document.body.contains(wobbleGroup)) {
+      console.warn('[applyInitialLoadEffect] Wobble group removed before animation could start.');
+      return;
+    }
+    
+    // Apply the combined animation class directly to the wobble group
+    wobbleGroup.classList.add('initial-load-effect');
+    console.log('[applyInitialLoadEffect] Added .initial-load-effect class to wobble group (after RAF).');
+
+    // Set a single timeout to clean up after the combined animation finishes
+    const cleanupDelay = ANIMATION_TIMING.INITIAL_LOAD_DURATION; 
+  console.log(`[applyInitialLoadEffect] Scheduling cleanup timeout for ${cleanupDelay}ms`);
   
-  // Removed timeout logic here - now handled by the store or local timer if updateStore=false
+  setTimeout(() => {
+    console.log('[applyInitialLoadEffect] Cleanup timeout executed.');
+    // Remove the animation class
+    wobbleGroup.classList.remove('initial-load-effect');
+    
+    // Explicitly reset transform/opacity left by "forwards" fill mode
+    wobbleGroup.style.transform = ''; 
+    wobbleGroup.style.opacity = ''; 
+    
+    // Mark first visit as complete in the store
+    ghostStateStore.completeFirstVisit();
+    
+    // Ensure final state is IDLE (unless something else changed it)
+    if (get(ghostStateStore).current === ANIMATION_STATES.INITIAL || get(ghostStateStore).current === ANIMATION_STATES.IDLE) {
+       ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
+       console.log('[applyInitialLoadEffect] Set final state to IDLE.');
+    } else {
+       console.log('[applyInitialLoadEffect] State changed during initial load, not setting to IDLE.');
+    }
+  }, cleanupDelay); 
+  
+  }); // End of requestAnimationFrame callback
 }
+
+// --- Removed applyWobbleEffect function ---
 
 /**
  * Start watching for special animation opportunities (easter eggs)
@@ -278,7 +266,7 @@ export default {
   initAnimations,
   initThemeAnimation,
   applyInitialLoadEffect,
-  applyWobbleEffect,
+  // applyWobbleEffect, // Removed
   applyPulseEffect,
   performSpecialAnimation,
   startSpecialAnimationWatch,

@@ -35,7 +35,7 @@
 	// Props to communicate state
 	export let isRecording = false;
 	export let isProcessing = false;
-	export let animationState = ANIMATION_STATES.IDLE; // Current animation state
+	// export let animationState = ANIMATION_STATES.IDLE; // Prop removed
 	export let debug = false; // General debug mode
 	export let debugAnim = false; // Animation debug mode - shows animation config
 	export let seed = 0; // Seed for randomizing animations, allows multiple ghosts to have unsynchronized animations
@@ -61,7 +61,7 @@
 	// State tracking to prevent infinite loops
 	let lastRecordingState = false;
 	let lastProcessingState = false;
-	let lastAnimationState = animationState;
+	// let lastAnimationState = animationState; // Removed reference to undefined variable
 	let lastAppliedWobbleDirection = null;
 
 	// Additional state variables
@@ -71,16 +71,7 @@
 	let isRecordingTransition = false;
 	let manualStateChange = false;
 
-	// Reactive variable for wobble group classes
-	$: wobbleGroupClasses = `ghost-wobble-group ${
-		$ghostStateStore.isWobbling && $ghostStateStore.wobbleDirection === CSS_CLASSES.WOBBLE_LEFT
-			? CSS_CLASSES.WOBBLE_LEFT
-			: ''
-	} ${
-		$ghostStateStore.isWobbling && $ghostStateStore.wobbleDirection === CSS_CLASSES.WOBBLE_RIGHT
-			? CSS_CLASSES.WOBBLE_RIGHT
-			: ''
-	}`.trim();
+	// Removed reactive variable for wobble group classes
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher();
@@ -133,34 +124,8 @@
 			ghostStateStore.setProcessing(isProcessing);
 		}
 
-		// Only update animation state if it has changed
-		if (animationState !== lastAnimationState) {
-			lastAnimationState = animationState;
-			manualStateChange = true;
-
-			// Handle legacy animation commands
-			if (animationState === 'wobble-start') {
-				// Special legacy transition command
-				animationService.applyWobbleEffect(ghostSvg, {
-					direction: CSS_CLASSES.WOBBLE_LEFT,
-					updateStore: true
-				});
-			} else if (animationState === 'wobble-stop') {
-				// Special legacy transition command
-				animationService.applyWobbleEffect(ghostSvg, {
-					direction: CSS_CLASSES.WOBBLE_RIGHT,
-					updateStore: true
-				});
-			} else if (Object.values(ANIMATION_STATES).includes(animationState)) {
-				// Direct state command
-				ghostStateStore.setAnimationState(animationState);
-			}
-
-			// Reset flag after processing
-			setTimeout(() => {
-				manualStateChange = false;
-			}, 50);
-		}
+		// Removed legacy animationState prop handling
+		// State is now driven solely by isRecording and isProcessing props syncing to the store
 	}
 
 	// Apply theme changes when they occur
@@ -269,16 +234,7 @@
 		}
 	}
 
-	// Public API: Force wobble animation (simplified)
-	export function forceWobble(direction = '') {
-		if (!ghostSvg) return;
-
-		console.log('🔄 Ghost.forceWobble called with direction:', direction);
-
-		// Use the store's simplified method to trigger the wobble effect
-		// It handles setting flags and the cleanup timeout internally.
-		ghostStateStore.setWobbling(true, direction || null); // Pass null for random direction
-	}
+	// Removed exported forceWobble function - wobble should be triggered internally by state changes
 
 	// Public methods to expose animation controls
 	export function pulse() {
@@ -310,7 +266,6 @@
 		// Set initial values to prevent unnecessary updates
 		lastRecordingState = isRecording;
 		lastProcessingState = isProcessing;
-		lastAnimationState = animationState;
 
 		// Initial setup operations
 		setDebugMode();
@@ -342,8 +297,11 @@
 			// Set debug mode
 			ghostStateStore.setDebug(debug);
 
-			// Initialize animation state based on first visit status
-			const state = $ghostStateStore;
+			// Check for first visit status on the client *before* reading the state
+			ghostStateStore.checkAndSetFirstVisit();
+
+			// Initialize animation state based on the potentially updated first visit status
+			const state = $ghostStateStore; // Read the potentially updated state
 			if (state.isFirstVisit) {
 				ghostStateStore.setAnimationState(ANIMATION_STATES.INITIAL);
 				animationService.applyInitialLoadEffect(ghostSvg);
@@ -365,9 +323,10 @@
 		setTimeout(applyThemeChanges, 0);
 	}
 
-	// Monitor props for changes
-	$: if (browser) {
-		// Schedule on the next tick to avoid reactive loop
+	// Monitor relevant props for changes
+	$: if (browser && (isRecording !== lastRecordingState || isProcessing !== lastProcessingState)) {
+		// Schedule on the next tick to avoid potential reactive loops,
+		// but only schedule when the relevant props have actually changed.
 		setTimeout(syncStateToStore, 0);
 	}
 </script>
@@ -436,8 +395,8 @@
 			</linearGradient>
 		</defs>
 
-		<!-- New wrapper group for wobble transform - Apply computed classes here -->
-		<g class={wobbleGroupClasses}>
+		<!-- New wrapper group for wobble transform - ID is used by store -->
+		<g class="ghost-wobble-group" id="ghost-wobble-group">
 			<g class="ghost-layer ghost-bg" bind:this={backgroundElement}>
 				<use
 					xlink:href={ghostPathsUrl}

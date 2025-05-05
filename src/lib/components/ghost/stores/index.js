@@ -4,7 +4,7 @@
  * Central export point for all ghost animation stores
  */
 
-// Export the main state store instance
+// Export the main state store instance (which now includes derived stores)
 export { ghostStateStore } from './ghostStateStore.js';
 
 // Export the main theme store instance and related functions/values
@@ -16,5 +16,5 @@ export {
   themeColors
 } from '../themeStore.js';
 
-// Removed exports of individual derived stores (e.g., currentState, isRecording)
-// Consumers should import ghostStateStore and derive if needed, or use $ghostStateStore.property syntax.
+// Consumers can access derived stores via ghostStateStore.currentState, ghostStateStore.isRecording etc.
+// or use $ghostStateStore.current, $ghostStateStore.isRecording etc.

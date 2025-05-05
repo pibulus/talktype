@@ -156,10 +156,10 @@
 		debug('Toggle recording triggered from ghost');
 
 		if ($recordingStore) {
-			ghostContainer.stopWobbleAnimation();
+			// ghostContainer.stopWobbleAnimation(); // Removed - Wobble handled internally
 			contentContainer.stopRecording();
 		} else {
-			ghostContainer.startWobbleAnimation();
+			// ghostContainer.startWobbleAnimation(); // Removed - Wobble handled internally
 			contentContainer.startRecording();
 		}
 	}

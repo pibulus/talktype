@@ -2,8 +2,8 @@ import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
 import { THEMES, STORAGE_KEYS } from '$lib/constants';
 import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
-import { gradientAnimations } from './gradientConfig';
-import { shapeAnimations } from './gradientConfig';
+import { gradientAnimations, shapeAnimations } from './gradientConfig';
+import { WOBBLE_CONFIG } from './animationConfig'; // Import WOBBLE_CONFIG
 
 // Theme configuration - color palette definitions
 const themeColors = {
@@ -220,6 +220,10 @@ const cssVariables = derived(theme, ($theme) => {
 			cssVars += `--ghost-${$theme}-transform-y-max: ${shapeConfig.transform.y.max}px;\n`;
 		}
 	}
+	
+	// Add wobble duration from config
+	cssVars += `\n/* Wobble Configuration */\n`;
+	cssVars += `--ghost-wobble-duration: ${WOBBLE_CONFIG.DURATION / 1000}s;\n`; // Convert ms to s
 
 	return cssVars;
 });

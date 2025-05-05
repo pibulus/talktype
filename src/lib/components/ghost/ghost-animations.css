@@ -14,13 +14,18 @@
 
 /* New group for handling wobble transforms */
 .ghost-wobble-group {
-	transition: transform 0.15s ease-in-out; /* Faster transition */
+	/* transition: transform 0.1s ease-in-out; */ /* Remove transition, use animation */
 	transform-origin: center bottom; /* Wobble around the bottom center */
 }
 
-/* Apply grow animation only to initial load using body class */
-.initial-load .ghost-svg {
-	animation: grow-ghost 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+/* Removed old body-based initial load rule */
+/* .initial-load .ghost-svg { ... } */
+
+/* New class to apply the combined initial load animation - Using ID for specificity */
+#ghost-wobble-group.initial-load-effect {
+	animation: grow-and-wobble 2.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+	/* Ensure transform origin is set */
+	transform-origin: center bottom; 
 }
 
 /* Individual eye styles - avoids transform conflicts */
@@ -73,13 +78,15 @@
    Interactive Animation Classes
    ---------------------------------------- */
 
-/* Wobble effect - target the inner group directly */
+/* Wobble effect - target the inner group directly using animations */
 .ghost-wobble-group.wobble-left {
-	transform: rotate(-8deg) scale(1.04); /* More rotation, slightly bigger */
+	/* Apply the keyframe animation */
+	animation: ghost-do-wobble-left var(--ghost-wobble-duration, 0.13s) ease-in-out forwards; 
 }
 
 .ghost-wobble-group.wobble-right {
-	transform: rotate(8deg) scale(1.04); /* More rotation, slightly bigger */
+	/* Apply the keyframe animation */
+	animation: ghost-do-wobble-right var(--ghost-wobble-duration, 0.13s) ease-in-out forwards;
 }
 
 /* Pulse animation */
@@ -780,6 +787,57 @@
 }
 
 /* @keyframes recording-pulse removed as unused */
+
+/* Keyframes for the Wobble Effect */
+@keyframes ghost-do-wobble-left {
+	0% { transform: rotate(0deg) scale(1); }
+	50% { transform: rotate(-8deg) scale(1.04); } /* Peak wobble */
+	100% { transform: rotate(0deg) scale(1); } /* Return to normal */
+}
+
+@keyframes ghost-do-wobble-right {
+	0% { transform: rotate(0deg) scale(1); }
+	50% { transform: rotate(8deg) scale(1.04); } /* Peak wobble */
+	100% { transform: rotate(0deg) scale(1); } /* Return to normal */
+}
+
+/* Combined Grow and Wobble for Initial Load */
+@keyframes grow-and-wobble {
+	/* Grow Phase (similar to grow-ghost) */
+	0% {
+		transform: scale(0) rotate(0deg);
+		opacity: 0;
+	}
+	15% { /* Start becoming visible early */
+		opacity: 1;
+	}
+	35% { /* Overshoot scale */
+		transform: scale(1.1) rotate(0deg);
+	}
+	50% { /* Settle back */
+		transform: scale(0.98) rotate(0deg);
+		opacity: 1;
+	}
+	65% { /* Fully grown, stable */
+		transform: scale(1) rotate(0deg);
+		opacity: 1;
+	}
+	/* Wobble Phase */
+	75% { /* Wobble Left */
+		transform: scale(1.04) rotate(-8deg);
+	}
+	85% { /* Wobble Right */
+		transform: scale(1.04) rotate(8deg);
+	}
+	95% { /* Settle back towards center */
+		transform: scale(1.01) rotate(-2deg);
+	}
+	100% { /* Final resting state */
+		transform: scale(1) rotate(0deg);
+		opacity: 1;
+	}
+}
+
 
 @keyframes grow-ghost {
 	0% {
