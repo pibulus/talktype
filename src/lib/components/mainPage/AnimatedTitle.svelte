@@ -27,9 +27,9 @@
 </script>
 
 <!-- Typography with improved kerning and weight using font-variation-settings -->
-<div class="title-container relative">
+<div class="relative title-container">
   <h1
-    class="staggered-text mb-2 text-center text-5xl font-black tracking-tight cursor-default select-none sm:mb-3 md:mb-3 sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
+    class="mb-2 text-5xl font-black tracking-tight text-center cursor-default select-none staggered-text sm:mb-3 md:mb-3 sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
     style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal; font-variation-settings: 'wght' 900, 'opsz' 32;"
     aria-label={title}
   >
@@ -51,7 +51,6 @@
             offsetX="-0.4em" 
             offsetY="0"
             position="bottom-right"
-            wiggleOnHover={true}
             customClass="title-suffix"
           />
         </span>
@@ -62,7 +61,7 @@
 
 <!-- Updated subheadline with improved typography and brand voice -->
 <p
-  class="slide-in-subtitle mx-auto mt-6 mb-8 max-w-prose text-base text-center text-gray-700/85 cursor-default select-none sm:mt-7 sm:mb-10 sm:text-lg md:mt-7 md:mb-10 md:text-xl lg:text-2xl"
+  class="mx-auto mt-6 mb-8 text-base text-center cursor-default select-none slide-in-subtitle max-w-prose text-gray-700/85 sm:mt-7 sm:mb-10 sm:text-lg md:mt-7 md:mb-10 md:text-xl lg:text-2xl"
   style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.65; max-width: 35ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 >
   {subtitle}
@@ -168,7 +167,7 @@
   :global(.title-suffix) {
     letter-spacing: -0.01em;
     font-variation-settings: inherit;
-    opacity: 0.85; /* Slightly less prominent than the main title */
+    opacity: 0.82; /* Slightly less prominent than the main title */
   }
   
   /* Media queries for mobile optimization */
