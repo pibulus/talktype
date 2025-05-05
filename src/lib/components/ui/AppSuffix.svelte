@@ -1,6 +1,7 @@
 <script>
   import { theme as themeStore } from '$lib/components/ghost/themeStore.js';
   import { THEMES } from '$lib/constants';
+  import { onMount } from 'svelte';
   
   /**
    * AppSuffix Component
@@ -18,11 +19,33 @@
   export let position = "bottom-right"; // Position preset
   
   // Keep current theme in sync with the global theme
-  $: theme = $themeStore || THEMES.PEACH;
+  $: currentTheme = $themeStore || THEMES.PEACH;
+  
+  // Listen for theme change events (for when theme changes from settings panel)
+  onMount(() => {
+    const handleThemeChange = (event) => {
+      if (event.detail && event.detail.setting === 'theme') {
+        // Theme changed, force component to update
+        currentTheme = event.detail.value;
+      }
+    };
+    
+    // Listen for custom events
+    if (typeof window !== 'undefined') {
+      window.addEventListener('talktype-setting-changed', handleThemeChange);
+    }
+    
+    return () => {
+      // Clean up listener
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('talktype-setting-changed', handleThemeChange);
+      }
+    };
+  });
 </script>
 
 <span 
-  class="app-suffix {customClass} {position} theme-{theme}" 
+  class="app-suffix {customClass} {position} theme-{currentTheme}" 
   style="--suffix-color: {color}; --suffix-size: {size}; --offset-x: {offsetX}; --offset-y: {offsetY};"
   aria-hidden="true"
 >

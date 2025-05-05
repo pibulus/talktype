@@ -105,6 +105,13 @@
 	function changeVibe(vibeId) {
 		selectedVibe = vibeId;
 		applyTheme(vibeId);
+		
+		// Dispatch a custom event that other components can listen for
+		window.dispatchEvent(
+			new CustomEvent('talktype-setting-changed', {
+				detail: { setting: 'theme', value: vibeId }
+			})
+		);
 	}
 
 	// Handle prompt style change
