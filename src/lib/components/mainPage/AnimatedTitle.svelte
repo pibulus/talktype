@@ -44,15 +44,17 @@
     
     {#if showAppSuffix}
       <span class="app-suffix-container stagger-letter" style="animation-delay: 0.45s; position: relative;">
-        <AppSuffix 
-          color="inherit"
-          size="45%"
-          offsetX="0.05em" 
-          offsetY="12px"
-          position="bottom-right"
-          wiggleOnHover={true}
-          customClass="title-suffix"
-        />
+        <span class="suffix-wrapper">
+          <AppSuffix 
+            color="inherit"
+            size="35%"
+            offsetX="0.25em" 
+            offsetY="12px"
+            position="bottom-right"
+            wiggleOnHover={true}
+            customClass="title-suffix"
+          />
+        </span>
       </span>
     {/if}
   </h1>
@@ -153,6 +155,15 @@
     overflow: visible;
   }
   
+  /* Suffix wrapper for precise positioning */
+  .suffix-wrapper {
+    position: absolute;
+    display: inline-block;
+    bottom: 0;
+    right: 0;
+    z-index: 1;
+  }
+  
   /* Styles applied to the AppSuffix component */
   :global(.title-suffix) {
     letter-spacing: -0.01em;
@@ -166,6 +177,16 @@
       font-size: 3rem;
       line-height: 1.1;
     }
+    
+    /* Adjust suffix for tablet screens */
+    .suffix-wrapper {
+      transform: scale(0.98);
+    }
+    
+    /* Mobile AppSuffix override */
+    :global(.title-suffix) {
+      opacity: 0.9;
+    }
 
     .slide-in-subtitle {
       max-width: 28ch !important;
@@ -173,6 +194,15 @@
       margin-bottom: 2.5rem !important; /* ~40px on mobile */
       font-size: 1rem; /* 16px on mobile as requested */
       line-height: 1.6;
+    }
+  }
+  
+  /* Small mobile adjustments */
+  @media (max-width: 480px) {
+    /* Further adjust suffix for small screens */
+    .suffix-wrapper {
+      transform: scale(0.95);
+      right: 0.05em;
     }
   }
 </style>
