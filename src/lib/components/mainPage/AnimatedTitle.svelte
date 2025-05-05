@@ -47,9 +47,9 @@
         <span class="suffix-wrapper">
           <AppSuffix 
             color="inherit"
-            size="35%"
-            offsetX="0.35em" 
-            offsetY="12px"
+            size="32%"
+            offsetX="-0.4em" 
+            offsetY="0"
             position="bottom-right"
             wiggleOnHover={true}
             customClass="title-suffix"
@@ -62,7 +62,7 @@
 
 <!-- Updated subheadline with improved typography and brand voice -->
 <p
-  class="slide-in-subtitle mx-auto mt-4 mb-8 max-w-prose text-base text-center text-gray-700/85 cursor-default select-none sm:mt-5 sm:mb-10 sm:text-lg md:mt-5 md:mb-10 md:text-xl lg:text-2xl"
+  class="slide-in-subtitle mx-auto mt-6 mb-8 max-w-prose text-base text-center text-gray-700/85 cursor-default select-none sm:mt-7 sm:mb-10 sm:text-lg md:mt-7 md:mb-10 md:text-xl lg:text-2xl"
   style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.65; max-width: 35ch; font-variation-settings: 'wght' 400, 'opsz' 16;"
 >
   {subtitle}
@@ -160,7 +160,7 @@
     position: absolute;
     display: inline-block;
     bottom: 0;
-    right: 0;
+    right: 0.25em; /* Positioned more to the left under the 'pe' */
     z-index: 1;
   }
   

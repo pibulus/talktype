@@ -36,7 +36,7 @@
     position: absolute;
     bottom: -0.5em; /* Adjusted to sit in the "pocket" of the letters */
     right: var(--offset-x, -0.2em);
-    margin-left: 6px;
+    margin-left: 0;
     font-family: inherit;
     font-variation-settings: inherit;
     transform: rotate(-4deg) translateY(var(--offset-y, 6px)); /* More off-kilter as standard */
@@ -56,7 +56,7 @@
   /* Bottom positions */
   .bottom-right,
   .bottom-left {
-    bottom: -0.5em; /* Sits in the "pocket" of the final letters */
+    bottom: -0.8em; /* A bit more vertical spacing */
   }
   
   /* Top positions */
@@ -87,7 +87,7 @@
     }
     
     .bottom-right, .bottom-left {
-      bottom: -0.5em;
+      bottom: -0.8em;
     }
     
     .top-right, .top-left {
@@ -99,11 +99,11 @@
     .app-suffix {
       font-size: calc(var(--suffix-size) * 0.9);
       transform: rotate(-4deg) translateY(var(--offset-y, 6px));
-      margin-left: 5px;
+      margin-left: 0;
     }
     
     .bottom-right, .bottom-left {
-      bottom: -0.48em;
+      bottom: -0.8em;
     }
     
     .top-right, .top-left {
@@ -117,7 +117,7 @@
     }
     
     .bottom-right, .bottom-left {
-      bottom: -0.52em;
+      bottom: -0.8em;
     }
     
     .top-right, .top-left {
