@@ -47,8 +47,8 @@
         <span class="suffix-wrapper">
           <AppSuffix 
             color="inherit"
-            size="38%"
-            offsetX="-0.35em" 
+            size="35%"
+            offsetX="-0.3em" 
             offsetY="0"
             position="bottom-right"
             customClass="title-suffix"
@@ -164,17 +164,10 @@
     z-index: 1;
   }
   
-  /* Styles applied to the AppSuffix component */
+  /* Simple styles for the suffix in title context */
   :global(.title-suffix) {
     letter-spacing: -0.01em;
     font-variation-settings: inherit;
-    opacity: 0.88; /* More visible suffix */
-    font-size: 38%; /* Larger suffix size */
-    background: linear-gradient(to bottom right, currentColor, rgba(236, 72, 153, 0.9));
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    text-shadow: 0 1px 1px rgba(0,0,0,0.04);
   }
   
   /* Media queries for mobile optimization */
@@ -189,12 +182,7 @@
       transform: scale(0.98);
     }
     
-    /* Mobile AppSuffix override */
-    :global(.title-suffix) {
-      opacity: 0.95;
-      font-size: 36%;
-      background: linear-gradient(to bottom right, currentColor, rgba(236, 72, 153, 0.95));
-    }
+    /* No need for major mobile overrides anymore */
 
     .slide-in-subtitle {
       max-width: 28ch !important;
