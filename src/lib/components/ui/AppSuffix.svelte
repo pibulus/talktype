@@ -52,28 +52,30 @@
   }
   
   /* Position variations */
-  .bottom-right {
-    bottom: -0.65em;
-    right: var(--offset-x, -0.2em);
-  }
-  
+  /* Bottom positions */
+  .bottom-right,
   .bottom-left {
     bottom: -0.65em;
-    left: var(--offset-x, -0.2em);
-    right: auto;
   }
   
-  .top-right {
-    top: -0.65em;
-    right: var(--offset-x, -0.2em);
-    bottom: auto;
-  }
-  
+  /* Top positions */
+  .top-right,
   .top-left {
     top: -0.65em;
+    bottom: auto;
+  }
+  
+  /* Right positions */
+  .bottom-right,
+  .top-right {
+    right: var(--offset-x, -0.2em);
+  }
+  
+  /* Left positions */
+  .bottom-left,
+  .top-left {
     left: var(--offset-x, -0.2em);
     right: auto;
-    bottom: auto;
   }
   
   /* Responsive adjustments */

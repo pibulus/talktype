@@ -5,8 +5,11 @@
 
   const dispatch = createEventDispatcher();
   
+  // Component props
   export let title = 'TalkType';
   export let subtitle = "Voice-to-text that doesn't suck. Spooky good, freaky fast, always free.";
+  
+  // AppSuffix configuration
   export let showAppSuffix = true;
   export let suffixColor = "inherit"; // Inherit color from parent title
   export let suffixSize = "40%"; // Smaller suffix (40% of parent size)
@@ -170,10 +173,6 @@
       margin-bottom: 2.5rem !important; /* ~40px on mobile */
       font-size: 1rem; /* 16px on mobile as requested */
       line-height: 1.6;
-    }
-    
-    .badge-container {
-      bottom: 0.3em;
     }
   }
 </style>

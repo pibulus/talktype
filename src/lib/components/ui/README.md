@@ -17,8 +17,12 @@ This directory contains reusable UI components used throughout the TalkType appl
 
 <h1>
   TalkType
-  <span class="suffix-container">
-    <AppSuffix />
+  <span style="position: relative; display: inline-block; width: 0; height: 0; overflow: visible;">
+    <AppSuffix 
+      offsetX="-0.3em"
+      offsetY="8px"
+      position="bottom-right"
+    />
   </span>
 </h1>
 ```
@@ -62,6 +66,7 @@ The component uses absolute positioning to place the `.app` suffix relative to t
    - Position and size adjusts across different screen sizes
    - Custom breakpoints for various device sizes
    - Maintains proportional positioning across screen sizes
+   - Works in all modern browsers with CSS variable support
 
 #### Example in AnimatedTitle
 
