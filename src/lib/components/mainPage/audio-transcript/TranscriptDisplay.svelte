@@ -278,9 +278,9 @@
                 box-shadow 0.38s cubic-bezier(0.22, 1, 0.36, 1);
   }
   
-  /* Refined highlight when clicked/editing - with subtle background */
+  /* Clean highlight when clicked/editing - single consistent background */
   .transcript-box:focus-within {
-    background-color: rgba(252, 231, 243, 0.85);
+    background-color: rgba(253, 242, 248, 0.9);
     border-color: rgba(249, 168, 212, 0.65);
     box-shadow: 0 10px 28px rgba(249, 168, 212, 0.3), 0 0 2px rgba(249, 168, 212, 0.2) inset;
     transform: translateY(-1px) scale(1.003);
@@ -294,9 +294,9 @@
   
   /* Subtle pulse animation when first entering edit mode */
   @keyframes edit-pulse {
-    0% { background-color: rgba(252, 231, 243, 0.85); }
+    0% { background-color: rgba(253, 242, 248, 0.9); }
     30% { background-color: rgba(249, 168, 212, 0.3); }
-    100% { background-color: rgba(252, 231, 243, 0.85); }
+    100% { background-color: rgba(253, 242, 248, 0.9); }
   }
   
   .transcript-box:focus-within {
@@ -317,7 +317,7 @@
   }
   
   .transcript-box:focus-within .transcript-button-area {
-    background-color: rgba(252, 231, 243, 0.8);
+    background-color: rgba(253, 242, 248, 0.9);
     backdrop-filter: blur(5px);
     transform: translateY(-0.5px);
   }
