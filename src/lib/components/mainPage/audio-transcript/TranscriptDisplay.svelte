@@ -251,7 +251,7 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     transition: background-color 0.4s ease, font-size 0.5s ease-out, text-shadow 0.3s ease;
     line-height: 1.6; /* Consistent comfortable line height */
-    caret-color: rgba(249, 168, 212, 0.9); /* Custom cursor color */
+    caret-color: rgba(236, 72, 153, 1); /* Darker, more visible cursor color */
     /* Remove explicit font-size to allow Tailwind classes to work */
     /* Base text size now handled by responsiveFontSize classes */
   }
@@ -278,9 +278,9 @@
                 box-shadow 0.38s cubic-bezier(0.22, 1, 0.36, 1);
   }
   
-  /* Refined highlight when clicked/editing - with delicate gradient */
+  /* Refined highlight when clicked/editing - with subtle background */
   .transcript-box:focus-within {
-    background: linear-gradient(to bottom, rgba(252, 231, 243, 0.9), rgba(253, 242, 248, 0.75));
+    background-color: rgba(252, 231, 243, 0.85);
     border-color: rgba(249, 168, 212, 0.65);
     box-shadow: 0 10px 28px rgba(249, 168, 212, 0.3), 0 0 2px rgba(249, 168, 212, 0.2) inset;
     transform: translateY(-1px) scale(1.003);
@@ -290,6 +290,17 @@
   .transcript-box:focus-within .custom-transcript-text {
     text-shadow: 0 0.5px 0 rgba(249, 168, 212, 0.2), 0 1px 1.5px rgba(0, 0, 0, 0.03);
     letter-spacing: 0.01em; /* Very slightly open up letter spacing for editability */
+  }
+  
+  /* Subtle pulse animation when first entering edit mode */
+  @keyframes edit-pulse {
+    0% { background-color: rgba(252, 231, 243, 0.85); }
+    30% { background-color: rgba(249, 168, 212, 0.3); }
+    100% { background-color: rgba(252, 231, 243, 0.85); }
+  }
+  
+  .transcript-box:focus-within {
+    animation: edit-pulse 0.6s cubic-bezier(0.4, 0, 0.2, 1) 1;
   }
   
   
@@ -306,7 +317,7 @@
   }
   
   .transcript-box:focus-within .transcript-button-area {
-    background: linear-gradient(to bottom, rgba(252, 231, 243, 0.75), rgba(253, 242, 248, 0.6));
+    background-color: rgba(252, 231, 243, 0.8);
     backdrop-filter: blur(5px);
     transform: translateY(-0.5px);
   }
@@ -321,9 +332,9 @@
     transition: all 0.3s ease-out; /* Smooth transitions */
   }
   
-    /* Elegant text selection styling with subtle gradient */
+    /* Elegant text selection styling - flat color for better consistency */
   .transcript-box ::selection {
-    background: linear-gradient(120deg, rgba(252, 231, 243, 0.9), rgba(249, 168, 212, 0.5));
+    background-color: rgba(236, 72, 153, 0.25); /* Consistent with cursor color */
     color: #111827;
     text-shadow: none; /* Remove text shadow for cleaner selection */
   }
