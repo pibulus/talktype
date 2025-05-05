@@ -351,38 +351,52 @@
 		// total length and average word length
 		const avgWordLength = charLength / (wordCount || 1); // Avoid division by zero
 		
+		console.log(`Dynamic sizing: ${wordCount} words, ${charLength} chars, ${avgWordLength.toFixed(1)} avg length`);
+		
 		// Extremely short text (5 words or less): Use larger font, especially on desktop
 		if (wordCount <= 5) {
-			return isMobile 
+			const size = isMobile 
 				? 'text-xl sm:text-2xl md:text-3xl' 
 				: isDesktop 
 					? 'text-2xl md:text-3xl lg:text-4xl' 
 					: 'text-2xl md:text-3xl';
+			console.log(`Using size for ≤5 words: ${size}`);
+			return size;
 		}
 		
 		// Very short text: 6-10 words or under 50 chars
 		if (wordCount < 10 || charLength < 50) {
-			return isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl';
+			const size = isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl';
+			console.log(`Using size for 6-10 words: ${size}`);
+			return size;
 		}
 		
 		// Short text: 11-25 words or under 150 chars with normal word length
 		if ((wordCount < 25 || charLength < 150) && avgWordLength < 8) {
-			return isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl';
+			const size = isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl';
+			console.log(`Using size for 11-25 words: ${size}`);
+			return size;
 		}
 		
 		// Medium text: 26-50 words or under 300 chars
 		if (wordCount < 50 || charLength < 300) {
-			return isMobile ? 'text-sm sm:text-base md:text-lg' : 'text-base md:text-lg';
+			const size = isMobile ? 'text-sm sm:text-base md:text-lg' : 'text-base md:text-lg';
+			console.log(`Using size for 26-50 words: ${size}`);
+			return size;
 		}
 		
 		// Medium-long text: 51-100 words or under 500 chars
 		if (wordCount < 100 || charLength < 500) {
-			return isMobile ? 'text-xs sm:text-sm md:text-base' : 'text-sm md:text-base';
+			const size = isMobile ? 'text-xs sm:text-sm md:text-base' : 'text-sm md:text-base';
+			console.log(`Using size for 51-100 words: ${size}`);
+			return size;
 		}
 		
 		// Long text: Over 100 words or 500+ chars
 		// Use smaller text for better readability on longer content
-		return isMobile ? 'text-xs sm:text-sm' : 'text-sm md:text-base';
+		const size = isMobile ? 'text-xs sm:text-sm' : 'text-sm md:text-base';
+		console.log(`Using size for >100 words: ${size}`);
+		return size;
 	}
 
 	// Reactive font size based on transcript length

@@ -251,8 +251,8 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     transition: background-color 0.4s ease, font-size 0.5s ease-out;
     line-height: 1.6; /* Consistent comfortable line height */
-    font-size: 1.05rem; /* Slightly larger base size */
-    /* Base text size now handled by responsiveFontSize classes, but with a larger default */
+    /* Remove explicit font-size to allow Tailwind classes to work */
+    /* Base text size now handled by responsiveFontSize classes */
   }
   
   /* Optimize spacing based on font size for better readability */
