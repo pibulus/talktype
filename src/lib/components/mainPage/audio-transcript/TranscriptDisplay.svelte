@@ -92,7 +92,7 @@
     >
       <!-- Ghost icon copy button positioned outside the transcript box -->
       <button
-        class="copy-btn absolute -right-4 -top-4 z-[200] h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95"
+        class="copy-btn share-chip absolute -right-4 -top-4 z-[200] h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95"
         on:click|preventDefault={() => dispatch('copy', { text: getEditedTranscript() })}
         on:mouseenter={handleTooltipMouseEnter}
         on:mouseleave={() => { showCopyTooltip = false; }}
@@ -269,12 +269,23 @@
     letter-spacing: -0.01em; /* Slightly tighter tracking for large text */
   }
   
-  /* Elegant highlight when clicked/editing - without changing dimensions */
+  /* Clean highlight when clicked/editing - single color */
+  .transcript-box:focus-within {
+    background-color: rgba(253, 242, 248, 0.8);
+    border-color: rgba(249, 168, 212, 0.6);
+    box-shadow: 0 10px 30px rgba(249, 168, 212, 0.35);
+    transition: all 0.3s ease-in-out;
+  }
+  
+  /* Remove outline focus from the text itself for cleaner look */
   .custom-transcript-text:focus {
-    background-color: rgba(253, 242, 248, 0.6); /* Very light pink background */
     outline: none;
-    border-radius: 0.75rem; /* Rounded corners */
-    box-shadow: inset 0 0 0 1px rgba(249, 168, 212, 0.15); /* Extremely subtle inner border */
+  }
+  
+  /* Style the share button area to match exactly */
+  .transcript-box:focus-within .transcript-button-area {
+    background-color: rgba(253, 242, 248, 0.8);
+    backdrop-filter: blur(4px);
   }
   
   /* Content area scrolling - more refined */
@@ -345,7 +356,7 @@
     flex-shrink: 0; /* Prevent footer from shrinking */
     position: relative; /* For positioning the gradient */
     z-index: 5; /* Ensure it's above the content but below the gradient */
-    margin-top: -8px; /* Pull it slightly closer to the content */
+    margin-top: -4px; /* Reduce gap between transcript and share button */
   }
   
   /* Button area styling - integrated with content */

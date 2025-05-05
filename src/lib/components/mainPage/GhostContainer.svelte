@@ -78,7 +78,7 @@
 </script>
 
 <!-- Ghost Icon - Size reduced slightly and moved up -->
-<div class="ghost-icon-wrapper h-32 w-32 sm:h-36 sm:w-36 md:h-48 md:w-48 lg:h-56 lg:w-56 mb-6 sm:mb-7 md:mb-8">
+<div class="ghost-icon-wrapper" style="inline-size: clamp(140px, 18vw, 200px); margin-block-end: 1.75em;">
   <Ghost
     bind:this={ghostComponent}
     isRecording={isRecording}
@@ -86,6 +86,7 @@
     animationState={isRecording ? 'wobble-start' : isProcessing ? 'processing' : 'idle'}
     externalTheme={appTheme}
     on:toggleRecording={handleToggleRecording}
+    class={isRecording ? 'ghost recording' : ''}
   />
 </div>
 
@@ -98,8 +99,12 @@
     position: relative;
   }
   
-  /* Remove explicit margins to let the parent spacing control layout */
-  .ghost-icon-wrapper {
-    margin-bottom: 0;
+  /* Recording ghost effect - enhanced contrast for accessibility */
+  :global(.ghost.recording) {
+    filter: drop-shadow(0 0 12px rgba(0,180,140,.85));
+    /* Enhanced outline for better contrast on cream backgrounds */
+    outline: 2px solid rgba(0,120,100,.4);
+    outline-offset: 2px;
+    border-radius: 50%;
   }
 </style>
