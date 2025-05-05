@@ -26,7 +26,7 @@
   style="--suffix-color: {color}; --suffix-size: {size}; --offset-x: {offsetX}; --offset-y: {offsetY};"
   aria-hidden="true"
 >
-  <span class="app-text">.app</span>
+  <span class="app-text" data-text=".app">.app</span>
 </span>
 
 <style>
@@ -51,31 +51,33 @@
   }
   
   .app-text {
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
+    background-clip: text !important;
+    -webkit-background-clip: text !important;
+    color: transparent !important;
     text-shadow: 0 1px 1px rgba(0,0,0,0.04);
     transition: all 0.3s ease;
     display: inline-block;
     position: relative;
     transform-origin: center;
+    padding: 0.1em 0; /* Add some padding for hover effect */
+    will-change: transform;
   }
   
   /* Theme-specific gradients */
   .theme-peach .app-text {
-    background: linear-gradient(to bottom right, #fdba74, #fb7185);
+    background-image: linear-gradient(to bottom right, #fdba74, #fb7185);
   }
   
   .theme-mint .app-text {
-    background: linear-gradient(to bottom right, #2dd4bf, #4ade80);
+    background-image: linear-gradient(to bottom right, #2dd4bf, #4ade80);
   }
   
   .theme-bubblegum .app-text {
-    background: linear-gradient(to bottom right, #a855f7, #6366f1);
+    background-image: linear-gradient(to bottom right, #a855f7, #6366f1);
   }
   
   .theme-rainbow .app-text {
-    background: linear-gradient(to bottom right, #ff8c00, #00ff80, #00bfff);
+    background-image: linear-gradient(to bottom right, #ff8c00, #00ff80, #00bfff);
   }
   
   /* Playful hover effects */
