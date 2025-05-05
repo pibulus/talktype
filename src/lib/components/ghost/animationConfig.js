@@ -16,9 +16,10 @@ export const BLINK_CONFIG = {
 };
 
 export const WOBBLE_CONFIG = {
-	DURATION: 390, // Duration of ghost wobble animation (ms) - Adjusted back to slower speed
-	LEFT_CHANCE: 0.5, // Probability (0-1) of wobbling left vs right
-	CLEANUP_DELAY: 390 // Delay for wobble animation cleanup (ms) - Match duration
+	// Double duration for combined left-right animation
+	DURATION: 780, // Duration of ghost wobble animation (ms) - Doubled for combined effect
+	LEFT_CHANCE: 0.5, // Probability (0-1) of wobbling left vs right - No longer used for start/stop
+	CLEANUP_DELAY: 780 // Delay for wobble animation cleanup (ms) - Match doubled duration
 };
 
 export const SPECIAL_CONFIG = {
@@ -159,8 +160,9 @@ export const ANIMATION_EFFECTS = {
 
 // CSS class names for consistent reference
 export const CSS_CLASSES = {
-	WOBBLE_LEFT: 'wobble-left',
-	WOBBLE_RIGHT: 'wobble-right',
+	WOBBLE_LEFT: 'wobble-left', // Still used? Maybe for other triggers? Keep for now.
+	WOBBLE_RIGHT: 'wobble-right', // Still used? Maybe for other triggers? Keep for now.
+	WOBBLE_BOTH: 'wobble-both', // New class for combined wobble
 	SPIN: 'spin',
 	PULSE: 'ghost-pulse',
 	INITIAL_LOAD: 'initial-load',

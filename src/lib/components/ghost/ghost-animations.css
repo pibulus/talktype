@@ -81,12 +81,17 @@
 /* Wobble effect - target the inner group directly using animations */
 .ghost-wobble-group.wobble-left {
 	/* Apply the keyframe animation */
-	animation: ghost-do-wobble-left var(--ghost-wobble-duration, 0.13s) ease-in-out forwards; 
+	animation: ghost-do-wobble-left var(--ghost-wobble-duration, 0.39s) ease-in-out forwards; 
 }
 
 .ghost-wobble-group.wobble-right {
 	/* Apply the keyframe animation */
-	animation: ghost-do-wobble-right var(--ghost-wobble-duration, 0.13s) ease-in-out forwards;
+	animation: ghost-do-wobble-right var(--ghost-wobble-duration, 0.39s) ease-in-out forwards;
+}
+
+/* New class for combined wobble */
+.ghost-wobble-group.wobble-both {
+  animation: ghost-wobble-both var(--ghost-wobble-duration, 0.78s) ease-in-out forwards; /* Use updated duration */
 }
 
 /* Pulse animation */
@@ -785,6 +790,14 @@
 	0% { transform: rotate(0deg) scale(1); }
 	50% { transform: rotate(8deg) scale(1.04); } /* Peak wobble */
 	100% { transform: rotate(0deg) scale(1); } /* Return to normal */
+}
+
+/* New Keyframe for Combined Left-Right Wobble */
+@keyframes ghost-wobble-both {
+  0%   { transform: rotate(0deg) scale(1); }
+  25%  { transform: rotate(-8deg) scale(1.04); } /* Peak left */
+  75%  { transform: rotate(8deg) scale(1.04); }  /* Peak right */
+  100% { transform: rotate(0deg) scale(1); }     /* Return */
 }
 
 /* Combined Grow and Wobble for Initial Load */

@@ -196,20 +196,19 @@ function setRecording(isRecording) {
 		const wobbleGroupStart = document.getElementById('ghost-wobble-group');
 		console.log('[Debug Step 3 - Start] Wobble group element:', wobbleGroupStart); // Log element check result
 		if (wobbleGroupStart) {
-			const wobbleClassStart =
-				Math.random() < 0.5 ? CSS_CLASSES.WOBBLE_LEFT : CSS_CLASSES.WOBBLE_RIGHT;
+			// Always use the combined wobble class
+			const wobbleClassStart = CSS_CLASSES.WOBBLE_BOTH; 
 			debugLog(`[Imperative Wobble] Adding class ${wobbleClassStart} for start`);
 			console.log(`[Wobble Debug ${Date.now()}] BEFORE adding start wobble class: ${wobbleClassStart}`); // Timestamp log
 			wobbleGroupStart.classList.add(wobbleClassStart);
 			console.log(`[Wobble Debug ${Date.now()}] AFTER adding start wobble class: ${wobbleClassStart}`); // Timestamp log
 
-			// Schedule class removal and style reset
+			// Schedule class removal and style reset (using updated duration from WOBBLE_CONFIG)
 			const startTimeoutId = setTimeout(() => {
 				debugLog(`[Imperative Wobble] Removing class ${wobbleClassStart} after start`);
 				wobbleGroupStart.classList.remove(wobbleClassStart);
-				// wobbleGroupStart.style.transform = ''; // Reset inline style - Removed, class removal should suffice
 				clearStateTimeout('startWobbleCleanup'); // Clear self
-			}, WOBBLE_CONFIG.DURATION + 50); // Duration + buffer
+			}, WOBBLE_CONFIG.DURATION + 50); // Duration + buffer (Now uses doubled duration)
 
 			// Store timeout ID for potential cleanup
 			_state.update((s) => ({ // Use _state
@@ -268,20 +267,19 @@ function setRecording(isRecording) {
 		const wobbleGroupStop = document.getElementById('ghost-wobble-group');
 		console.log('[Debug Step 3 - Stop] Wobble group element:', wobbleGroupStop); // Log element check result
 		if (wobbleGroupStop) {
-			const wobbleClassStop =
-				Math.random() < 0.5 ? CSS_CLASSES.WOBBLE_LEFT : CSS_CLASSES.WOBBLE_RIGHT;
+			// Always use the combined wobble class
+			const wobbleClassStop = CSS_CLASSES.WOBBLE_BOTH; 
 			debugLog(`[Imperative Wobble] Adding class ${wobbleClassStop} for stop`);
 			console.log(`[Wobble Debug ${Date.now()}] BEFORE adding stop wobble class: ${wobbleClassStop}`); // Timestamp log
 			wobbleGroupStop.classList.add(wobbleClassStop);
 			console.log(`[Wobble Debug ${Date.now()}] AFTER adding stop wobble class: ${wobbleClassStop}`); // Timestamp log
 
-			// Schedule class removal and style reset
+			// Schedule class removal and style reset (using updated duration from WOBBLE_CONFIG)
 			const stopTimeoutId = setTimeout(() => {
 				debugLog(`[Imperative Wobble] Removing class ${wobbleClassStop} after stop`);
 				wobbleGroupStop.classList.remove(wobbleClassStop);
-				// wobbleGroupStop.style.transform = ''; // Reset inline style - Removed, class removal should suffice
 				clearStateTimeout('stopWobbleCleanup'); // Clear self
-			}, WOBBLE_CONFIG.DURATION + 50); // Duration + buffer
+			}, WOBBLE_CONFIG.DURATION + 50); // Duration + buffer (Now uses doubled duration)
 
 			// Store timeout ID for potential cleanup
 			_state.update((s) => ({ // Use _state
