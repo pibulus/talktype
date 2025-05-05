@@ -39,7 +39,7 @@
     margin-left: 6px;
     font-family: inherit;
     font-variation-settings: inherit;
-    transform: rotate(-2deg) translateY(var(--offset-y, 6px)); /* Restore the slight rotation */
+    transform: rotate(-4deg) translateY(var(--offset-y, 6px)); /* More off-kilter as standard */
     transition: all 0.25s ease;
     opacity: 0.9;
     z-index: 1;
@@ -47,9 +47,9 @@
   }
   
   .wiggle-on-hover:hover {
-    transform: rotate(-4deg) translateY(calc(var(--offset-y, 6px) - 2px)) scale(1.05);
+    transform: rotate(-6deg) translateY(calc(var(--offset-y, 6px) - 2px)) scale(1.08);
     opacity: 1;
-    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.12));
   }
   
   /* Position variations */
@@ -83,7 +83,7 @@
   @media (max-width: 640px) {
     .app-suffix {
       font-size: calc(var(--suffix-size) * 0.95);
-      transform: rotate(-2deg) translateY(var(--offset-y, 6px));
+      transform: rotate(-4deg) translateY(var(--offset-y, 6px));
     }
     
     .bottom-right, .bottom-left {
@@ -98,7 +98,7 @@
   @media (max-width: 480px) {
     .app-suffix {
       font-size: calc(var(--suffix-size) * 0.9);
-      transform: rotate(-2deg) translateY(var(--offset-y, 6px));
+      transform: rotate(-4deg) translateY(var(--offset-y, 6px));
       margin-left: 5px;
     }
     
@@ -113,7 +113,7 @@
   
   @media (min-width: 1024px) {
     .app-suffix {
-      transform: rotate(-2deg) translateY(var(--offset-y, 6px));
+      transform: rotate(-4deg) translateY(var(--offset-y, 6px));
     }
     
     .bottom-right, .bottom-left {

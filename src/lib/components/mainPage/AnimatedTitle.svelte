@@ -48,7 +48,7 @@
           <AppSuffix 
             color="inherit"
             size="35%"
-            offsetX="0.25em" 
+            offsetX="0.35em" 
             offsetY="12px"
             position="bottom-right"
             wiggleOnHover={true}
