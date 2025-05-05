@@ -39,7 +39,7 @@
     letter-spacing: -0.01em;
     font-kerning: normal;
     position: absolute;
-    bottom: -0.8em;
+    bottom: -0.85em;
     right: var(--offset-x, -0.2em);
     margin-left: 0;
     font-family: inherit;
@@ -63,21 +63,21 @@
     will-change: transform;
   }
   
-  /* Theme-specific gradients */
+  /* Theme-specific gradients - more saturated */
   .theme-peach .app-text {
-    background-image: linear-gradient(to bottom right, #fdba74, #fb7185);
+    background-image: linear-gradient(to bottom right, #fda65f, #fb5f7b);
   }
   
   .theme-mint .app-text {
-    background-image: linear-gradient(to bottom right, #2dd4bf, #4ade80);
+    background-image: linear-gradient(to bottom right, #20dbc4, #3eea70);
   }
   
   .theme-bubblegum .app-text {
-    background-image: linear-gradient(to bottom right, #a855f7, #6366f1);
+    background-image: linear-gradient(to bottom right, #9b42ff, #5b5bff);
   }
   
   .theme-rainbow .app-text {
-    background-image: linear-gradient(to bottom right, #ff8c00, #00ff80, #00bfff);
+    background-image: linear-gradient(to bottom right, #ff7b00, #00ff90, #00a0ff);
   }
   
   /* Playful hover effects */
@@ -91,7 +91,7 @@
   /* Bottom positions */
   .bottom-right,
   .bottom-left {
-    bottom: -0.8em;
+    bottom: -0.85em;
   }
   
   /* Top positions */
