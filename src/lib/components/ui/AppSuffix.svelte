@@ -39,13 +39,13 @@
     letter-spacing: -0.01em;
     font-kerning: normal;
     position: absolute;
-    bottom: -0.85em;
+    bottom: -0.92em;
     right: var(--offset-x, -0.2em);
     margin-left: 0;
     font-family: inherit;
     font-variation-settings: inherit;
     transform: translateY(var(--offset-y, 6px));
-    opacity: 0.95;
+    opacity: 0.8;
     z-index: 1;
     filter: drop-shadow(0 0.5px 0.5px rgba(0,0,0,0.07));
   }
@@ -63,21 +63,21 @@
     will-change: transform;
   }
   
-  /* Theme-specific gradients - more saturated */
+  /* Theme-specific gradients - softer */
   .theme-peach .app-text {
-    background-image: linear-gradient(to bottom right, #fda65f, #fb5f7b);
+    background-image: linear-gradient(to bottom right, #fdba74, #fc7a90);
   }
   
   .theme-mint .app-text {
-    background-image: linear-gradient(to bottom right, #20dbc4, #3eea70);
+    background-image: linear-gradient(to bottom right, #4ad8cb, #67e799);
   }
   
   .theme-bubblegum .app-text {
-    background-image: linear-gradient(to bottom right, #9b42ff, #5b5bff);
+    background-image: linear-gradient(to bottom right, #b67df8, #8183f4);
   }
   
   .theme-rainbow .app-text {
-    background-image: linear-gradient(to bottom right, #ff7b00, #00ff90, #00a0ff);
+    background-image: linear-gradient(to bottom right, #ff9933, #33ffaa, #33b5ff);
   }
   
   /* Playful hover effects */
@@ -91,7 +91,7 @@
   /* Bottom positions */
   .bottom-right,
   .bottom-left {
-    bottom: -0.85em;
+    bottom: -0.92em;
   }
   
   /* Top positions */
