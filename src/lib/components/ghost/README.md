@@ -17,9 +17,17 @@ The Ghost component system consists of several interconnected files:
 ├── animationConfig.js     # Animation parameters and timing configuration
 ├── gradientAnimator.js    # JS animation logic for gradients
 ├── gradientConfig.js      # Gradient animation behavior configuration
-├── ghostStore.js          # State management (if applicable)
-├── eyeTracking.js         # Eye movement and tracking service
-└── themeStore.js          # Theme state management
+├── stores/                # Svelte stores
+│   ├── ghostStateStore.js # Core state machine logic
+│   └── index.js           # Store exports
+├── services/              # Business logic and effects
+│   ├── animationService.js# Imperative animations
+│   ├── blinkService.js    # Eye blinking logic
+│   └── index.js           # Service exports
+├── utils/                 # Shared helper functions
+│   └── animationUtils.js
+├── eyeTracking.js         # Eye movement and tracking service (Consider moving to services/)
+└── themeStore.js          # Theme state management (Consider moving to stores/)
 ```
 
 ### SVG Structure
@@ -48,6 +56,22 @@ The Ghost SVG has a layered architecture:
     <!-- Eyes -->
     <use href="#ghost-eye-left-path" class="ghost-eye ghost-eye-left" />
     <use href="#ghost-eye-right-path" class="ghost-eye ghost-eye-right" />
+  <g class="ghost-wobble-group"> <!-- Inner group for wobble transform -->
+    <g class="ghost-layer ghost-bg">
+      <!-- Background shape with gradient fill -->
+      <use href="#ghost-background" class="ghost-shape" id="ghost-shape" />
+    </g>
+    
+    <g class="ghost-layer ghost-outline">
+      <!-- Black outline -->
+      <use href="#ghost-body-path" class="ghost-outline-path" />
+    </g>
+    
+    <g class="ghost-layer ghost-eyes">
+      <!-- Eyes -->
+      <use href="#ghost-eye-left-path" class="ghost-eye ghost-eye-left" />
+      <use href="#ghost-eye-right-path" class="ghost-eye ghost-eye-right" />
+    </g>
   </g>
 </svg>
 ```
@@ -274,30 +298,43 @@ Key features include:
 
 ## State Management
 
-The Ghost component uses a hybrid state management approach:
+The Ghost component relies heavily on Svelte stores for managing its complex state and coordinating animations.
 
-### Local Component State
-- `isRecording`: When audio is being recorded
-- `isProcessing`: When audio is being processed
-- `animationState`: Current animation state (idle, wobble-start, wobble-stop)
-- `eyesClosed`: Eye state for blinking animations
-- `isWobbling`: Whether wobble animation is active
+### Core State (`ghostStateStore.js`)
+This store implements a state machine (`ANIMATION_STATES`) to manage the ghost's primary mode (e.g., `IDLE`, `RECORDING`, `THINKING`). It also tracks:
+- `isRecording`: Boolean flag for audio recording.
+- `isProcessing`: Boolean flag for audio processing.
+- `isWobbling`, `wobbleDirection`: Flags for the transient wobble effect.
+- `eyesClosed`, `eyePosition`: State related to eye animations.
+- `isFirstVisit`: Flag for triggering the initial load animation.
 
-### Global Store State
-- `theme`: Current theme from centralized store
-- `cssVariables`: Dynamically generated CSS variables
+Components interact with this store via exported functions like `setRecording`, `setProcessing`, `setAnimationState`, etc.
 
-Local state transitions trigger appropriate animations:
+### Theme State (`themeStore.js`)
+This store manages the current visual theme (`peach`, `mint`, etc.). Key features:
+- Persists the selected theme to `localStorage`.
+- Provides a derived store (`cssVariables`) containing all necessary CSS variables for the current theme's colors and animation parameters.
+- Updates the `data-theme` attribute on the HTML root element.
+
+### Component Interaction
+The `Ghost.svelte` component primarily uses props (`isRecording`, `isProcessing`, `externalTheme`) to receive state from its parent. It then syncs these prop changes to the `ghostStateStore`.
+
+Reactive statements (`$:`) in `Ghost.svelte` monitor the stores (`$ghostStateStore`, `$themeStore`, `$cssVariables`) and apply necessary updates, such as:
+- Binding CSS classes based on state (e.g., `.recording`).
+- Applying theme changes by re-initializing gradient animations.
+- Injecting dynamic CSS variables into the document head.
 
 ```javascript
-// Watch for animation state changes
-$: {
-  if (animationState === 'wobble-start') {
-    forceWobble('wobble-left', true);
-  } else if (animationState === 'wobble-stop') {
-    forceWobble('wobble-right');
-  }
+// Example: Syncing prop changes to the store
+$: if (isRecording !== lastRecordingState) {
+  lastRecordingState = isRecording;
+  ghostStateStore.setRecording(isRecording); // Inform the store
 }
+
+// Example: Reacting to store changes for CSS classes
+$: wobbleGroupClasses = `ghost-wobble-group ${
+  $ghostStateStore.isWobbling ? $ghostStateStore.wobbleDirection : ''
+}`.trim();
 ```
 
 Global theme state is observed reactively:

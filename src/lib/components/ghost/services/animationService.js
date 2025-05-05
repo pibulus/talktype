@@ -106,16 +106,15 @@ export function applyInitialLoadEffect(ghostSvg) {
     document.body.classList.remove(CSS_CLASSES.INITIAL_LOAD);
     ghostStateStore.completeFirstVisit();
     
-    // Transition to wobbling state after initial animation
-    ghostStateStore.setAnimationState(ANIMATION_STATES.WOBBLING);
+    // Transition directly to IDLE state
+    ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
     
-    // Force a wobble with random direction after a small delay
+    // Apply wobble effect flags directly after a small delay
     setTimeout(() => {
-      const direction = Math.random() < 0.5 ? CSS_CLASSES.WOBBLE_LEFT : CSS_CLASSES.WOBBLE_RIGHT;
-      // Apply wobble effect if the ghost is still in WOBBLING state
-      if (get(ghostStateStore).current === ANIMATION_STATES.WOBBLING) {
-        // Pass the direction to wobble in
-        ghostStateStore.setWobbleDirection(direction);
+      // Check if still IDLE before applying wobble (might have changed state)
+      if (get(ghostStateStore).current === ANIMATION_STATES.IDLE) {
+        // Use the store's internal method to apply wobble flags
+        ghostStateStore.setWobbling(true); // This now calls applyWobbleEffectFlags internally
       }
     }, 50); // Small delay to ensure state is ready
   }, ANIMATION_TIMING.INITIAL_LOAD_DURATION);
@@ -128,8 +127,9 @@ export function applyInitialLoadEffect(ghostSvg) {
  * @param {Object} options - Wobble options
  * @param {string} options.direction - Force wobble direction ('left' or 'right')
  * @param {number} options.seed - Random seed for wobble direction
+ * @param {string} options.direction - Force wobble direction ('left' or 'right')
+ * @param {number} options.seed - Random seed for wobble direction
  * @param {boolean} options.force - Force reapplying even if already wobbling
- * @param {boolean} options.updateStore - Whether to update the store (default: true)
  */
 export function applyWobbleEffect(ghostSvg, options = {}) {
   if (!ghostSvg) return;
@@ -139,43 +139,19 @@ export function applyWobbleEffect(ghostSvg, options = {}) {
     return;
   }
   
-  const { direction, seed = 0, updateStore = true } = options;
+  const { direction, seed = 0 } = options; // Removed updateStore
   
-  // Get current state to check if we should be wobbling
-  const state = get(ghostStateStore);
-  
-  // Force wobble state if not already in it and updateStore is enabled
-  if (updateStore && state.current !== ANIMATION_STATES.WOBBLING) {
-    ghostStateStore.setAnimationState(ANIMATION_STATES.WOBBLING);
-  }
-  
-  // Clean up any existing wobble timeout
-  if (timers.wobbleTimeoutId) {
-    clearTimeout(timers.wobbleTimeoutId);
-    timers.wobbleTimeoutId = null;
-  }
-  
-  // Set wobbling flag - locally and in store if updateStore is enabled
-  animations.isWobbling = true;
-  if (updateStore) {
-    ghostStateStore.setWobbling(true);
-  }
-  
-  // Choose direction using seeded random if not provided
-  let wobbleDir = direction;
-  if (!wobbleDir) {
-    const random = seedRandom(seed, 0, 0, 1);
-    wobbleDir = random < WOBBLE_CONFIG.LEFT_CHANCE ? 
-      CSS_CLASSES.WOBBLE_LEFT : 
-      CSS_CLASSES.WOBBLE_RIGHT;
-  }
-  
-  // Set the wobble direction in the store if updateStore is enabled
-  if (updateStore) {
-    ghostStateStore.setWobbleDirection(wobbleDir);
-  }
-  
-  // Apply animation to the SVG element
+  // Determine direction
+  const wobbleDir = direction || (seedRandom(seed, 0, 0, 1) < WOBBLE_CONFIG.LEFT_CHANCE ? 
+                                  CSS_CLASSES.WOBBLE_LEFT : 
+                                  CSS_CLASSES.WOBBLE_RIGHT);
+
+  // Always use the store's method to handle flags and timeouts
+  ghostStateStore.setWobbling(true, wobbleDir); 
+
+  // Apply animation class directly to the SVG element for immediate visual feedback
+  // Note: This might be redundant if reactivity is fast enough, but ensures visual feedback
+  // (Store reactivity will also handle this, but direct application ensures it happens)
   const svgElement = ghostSvg.querySelector('svg');
   if (svgElement) {
     // Force reflow and apply wobble class
@@ -188,35 +164,14 @@ export function applyWobbleEffect(ghostSvg, options = {}) {
     // Force reflow again to ensure animation restarts
     forceReflow(svgElement);
     
-    // Add the new wobble class
-    svgElement.classList.add(wobbleDir);
-    
     // Log for debugging
+    // Note: Class application is now handled reactively in Ghost.svelte
     if (get(ghostStateStore).debug) {
       console.log(`Applied wobble class: ${wobbleDir} to SVG element`);
     }
   }
   
-  // Schedule cleanup
-  timers.wobbleTimeoutId = setTimeout(() => {
-    animations.isWobbling = false;
-    
-    // Only update the store if updateStore is enabled
-    if (updateStore) {
-      ghostStateStore.setWobbling(false);
-      ghostStateStore.setWobbleDirection(null);
-      
-      // Transition to idle state
-      ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
-    }
-    
-    // Clean up classes
-    if (svgElement) {
-      // Remove wobble classes
-      svgElement.classList.remove(CSS_CLASSES.WOBBLE_LEFT);
-      svgElement.classList.remove(CSS_CLASSES.WOBBLE_RIGHT);
-    }
-  }, WOBBLE_CONFIG.DURATION);
+  // Removed timeout logic here - now handled by the store or local timer if updateStore=false
 }
 
 /**

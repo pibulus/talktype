@@ -3,8 +3,10 @@
  *
  * Behavior-only configuration for ghost gradient animations.
  * This file contains animation parameters, NOT color definitions.
- * All color values are defined in ghost-themes.css.
+ * All color values are defined in themeStore.js and injected as CSS variables.
  */
+
+// Removed helper functions (getCssVariable, getThemeColor, getThemeParameter) - use themeStore or utils
 
 /**
  * Core animation timing parameters
@@ -173,47 +175,12 @@ export const gradientAnimations = {
 	}
 };
 
-/**
- * Helper function to get CSS variable value
- * @param {string} name - CSS variable name without -- prefix
- * @param {string} fallback - Optional fallback value
- * @returns {string} CSS variable value or fallback
- */
-function getCssVariable(name, fallback = '') {
-	if (typeof document === 'undefined') return fallback;
-	return (
-		getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim() || fallback
-	);
-}
-
-/**
- * Get theme color from CSS variables
- * @param {string} theme - Theme name (peach, mint, bubblegum, rainbow)
- * @param {string} position - Color position (start, mid1, mid2, mid3, end)
- * @param {boolean} bright - Whether to use bright variant
- * @returns {string} Color value from CSS
- */
-export function getThemeColor(theme, position, bright = false) {
-	const suffix = bright ? '-bright' : '';
-	return getCssVariable(`ghost-${theme}-${position}${suffix}`, '#ffffff');
-}
-
-/**
- * Get theme animation parameter
- * @param {string} theme - Theme name
- * @param {string} param - Parameter name
- * @param {*} fallback - Fallback value
- * @returns {string} Parameter value from CSS
- */
-export function getThemeParameter(theme, param, fallback) {
-	return getCssVariable(`ghost-${theme}-${param}`, fallback);
-}
+// Removed helper functions (getCssVariable, getThemeColor, getThemeParameter) - use themeStore or utils
 
 // Export the module for debugging/console access
 export default {
 	animationTiming,
 	shapeAnimations,
-	gradientAnimations,
-	getThemeColor,
-	getThemeParameter
+	gradientAnimations
+	// Removed helper functions from export
 };

@@ -4,7 +4,7 @@
 
 	// CSS imports
 	import './ghost-animations.css';
-	import './ghost-themes.css';
+	// Removed import for ghost-themes.css (styles injected dynamically)
 
 	// SVG paths
 	import ghostPathsUrl from './ghost-paths.svg?url';
@@ -13,22 +13,21 @@
 	import {
 		ANIMATION_STATES,
 		CSS_CLASSES,
-		PULSE_CONFIG,
-		EYE_CONFIG,
-		WOBBLE_CONFIG,
-		injectAnimationVariables
+		PULSE_CONFIG
+		// Removed EYE_CONFIG, WOBBLE_CONFIG (used internally by services/stores)
+		// Removed injectAnimationVariables (handled by themeStore)
 	} from './animationConfig.js';
 
-	import { THEMES } from '$lib/constants.js';
+	// Removed THEMES import (managed by themeStore)
 
-	// Import stores
-	import { ghostStateStore, theme as localTheme, cssVariables, setTheme } from './stores/index.js';
+	// Import stores (main instances)
+	import { ghostStateStore, theme as localTheme, cssVariables } from './stores/index.js';
 
-	// Import services
+	// Import services (main instances)
 	import { animationService, blinkService } from './services/index.js';
 
 	// Import animation utilities
-	import { forceReflow, cleanupTimers } from './utils/animationUtils.js';
+	import { forceReflow } from './utils/animationUtils.js'; // Only forceReflow needed directly
 
 	// Import gradient animator for theme updates
 	import { cleanupAllAnimations, initGradientAnimation } from './gradientAnimator.js';
@@ -64,13 +63,24 @@
 	let lastProcessingState = false;
 	let lastAnimationState = animationState;
 	let lastAppliedWobbleDirection = null;
-	
+
 	// Additional state variables
 	let currentTheme;
 	let themeStore = externalTheme || localTheme;
 	let unsubscribeTheme;
 	let isRecordingTransition = false;
 	let manualStateChange = false;
+
+	// Reactive variable for wobble group classes
+	$: wobbleGroupClasses = `ghost-wobble-group ${
+		$ghostStateStore.isWobbling && $ghostStateStore.wobbleDirection === CSS_CLASSES.WOBBLE_LEFT
+			? CSS_CLASSES.WOBBLE_LEFT
+			: ''
+	} ${
+		$ghostStateStore.isWobbling && $ghostStateStore.wobbleDirection === CSS_CLASSES.WOBBLE_RIGHT
+			? CSS_CLASSES.WOBBLE_RIGHT
+			: ''
+	}`.trim();
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher();
@@ -103,58 +113,31 @@
 	// Sync state to store only when local props actually change
 	function syncStateToStore() {
 		if (!browser || !ghostSvg) return;
-		
+
 		// Only update recording state if it has changed
 		if (isRecording !== lastRecordingState) {
 			const isStartingRecording = isRecording && !lastRecordingState;
 			const isStoppingRecording = !isRecording && lastRecordingState;
-			
+
 			// Update local tracking state first
 			lastRecordingState = isRecording;
-			
-			// Special handling for starting recording - do wobble animation first
-			if (isStartingRecording) {
-				// Directly trigger the wobble animation with start recording flag
-				console.log('🎤 Starting recording - triggering wobble animation');
-				
-				// Force wobble with random direction and mark as recording start
-				const direction = Math.random() < 0.5 ? CSS_CLASSES.WOBBLE_LEFT : CSS_CLASSES.WOBBLE_RIGHT;
-				
-				// Directly trigger the animation service 
-				animationService.applyWobbleEffect(ghostSvg, {
-					direction,
-					force: true,
-					updateStore: true
-				});
-				
-				// Set isWobbling and wobbleDirection in store directly
-				ghostStateStore.setWobbling(true);
-				ghostStateStore.setWobbleDirection(direction);
-				
-				// Then set recording state with slight delay to allow animation to start
-				setTimeout(() => {
-					ghostStateStore.setRecording(isRecording);
-				}, 50);
-			} else {
-				// Normal case for stopping recording - just update the store
-				ghostStateStore.setRecording(isRecording);
-			}
-			
-			// Mark as recording transition to force wobble in reactive statements
-			isRecordingTransition = true;
+
+			// Inform the store about the state change.
+			// The store now handles the wobble sequence internally.
+			ghostStateStore.setRecording(isRecording);
 		}
-		
+
 		// Only update processing state if it has changed
 		if (isProcessing !== lastProcessingState) {
 			lastProcessingState = isProcessing;
 			ghostStateStore.setProcessing(isProcessing);
 		}
-		
+
 		// Only update animation state if it has changed
 		if (animationState !== lastAnimationState) {
 			lastAnimationState = animationState;
 			manualStateChange = true;
-			
+
 			// Handle legacy animation commands
 			if (animationState === 'wobble-start') {
 				// Special legacy transition command
@@ -172,47 +155,21 @@
 				// Direct state command
 				ghostStateStore.setAnimationState(animationState);
 			}
-			
+
 			// Reset flag after processing
 			setTimeout(() => {
 				manualStateChange = false;
 			}, 50);
 		}
 	}
-	
-	// Handle the wobble effect application
-	function handleWobbleEffect() {
-		if (!browser || !ghostSvg) return;
-		
-		const state = $ghostStateStore;
-		if (!state.isWobbling || !state.wobbleDirection) return;
-		
-		// Skip if this is the same direction and not a recording transition
-		if (state.wobbleDirection === lastAppliedWobbleDirection && !isRecordingTransition && !manualStateChange) {
-			return;
-		}
-		
-		// Remember this direction to prevent re-triggering on the same value
-		lastAppliedWobbleDirection = state.wobbleDirection;
-		
-		// Reset recording transition flag
-		isRecordingTransition = false;
-		
-		// Apply wobble effect with the new direction, but don't update the store
-		animationService.applyWobbleEffect(ghostSvg, { 
-			direction: state.wobbleDirection,
-			force: true,
-			updateStore: false // Important: don't update the store again to break the loop
-		});
-	}
 
 	// Apply theme changes when they occur
 	function applyThemeChanges() {
 		if (!browser || !ghostSvg || !currentTheme) return;
-		
+
 		const svgElement = ghostSvg.querySelector('svg');
 		if (!svgElement) return;
-		
+
 		// Force a reflow to ensure CSS transitions apply correctly
 		forceReflow(svgElement);
 
@@ -227,7 +184,7 @@
 		cleanupAllAnimations();
 		initGradientAnimation(currentTheme, svgElement);
 
-		// Update dynamic styles
+		// Update dynamic styles (now only injects gradient vars)
 		initDynamicStyles();
 
 		// Log theme change if in debug mode
@@ -251,8 +208,7 @@
 		const gradientVars = $cssVariables;
 		ghostStyleElement.textContent = `:root {\n  ${gradientVars}\n}`;
 
-		// Inject animation variables from animationConfig.js
-		injectAnimationVariables();
+		// Removed call to injectAnimationVariables()
 
 		// Log animation configuration if debug mode is enabled
 		if (debugAnim && console) {
@@ -263,52 +219,7 @@
 		}
 	}
 
-	// Handle mouse movement for eye tracking
-	function handleMouseMove(event) {
-		if (typeof window === 'undefined' || !ghostSvg) return;
-
-		// Check the store state for eye tracking settings
-		const state = $ghostStateStore;
-		if (state.eyesClosed || !state.isEyeTrackingEnabled) return;
-
-		// Get ghost element bounding box
-		const ghostRect = ghostSvg.getBoundingClientRect();
-		const ghostCenterX = ghostRect.left + ghostRect.width / 2;
-		const ghostCenterY = ghostRect.top + ghostRect.height / 2;
-
-		// Calculate mouse position relative to ghost center
-		const mouseX = event.clientX;
-		const mouseY = event.clientY;
-		const distanceX = mouseX - ghostCenterX;
-		const distanceY = mouseY - ghostCenterY;
-
-		// Normalize to values between -1 and 1
-		const maxDistanceX = window.innerWidth / EYE_CONFIG.X_DIVISOR;
-		const maxDistanceY = window.innerHeight / EYE_CONFIG.Y_DIVISOR;
-		const normalizedX = Math.max(-1, Math.min(1, distanceX / maxDistanceX));
-		const normalizedY = Math.max(-1, Math.min(1, distanceY / maxDistanceY));
-
-		// Add smaller dead zone for more responsiveness
-		let newX = 0;
-		let newY = 0;
-
-		if (Math.abs(normalizedX) >= EYE_CONFIG.DEAD_ZONE) {
-			// Apply smoothing for better tactility
-			newX = state.eyePosition.x + (normalizedX - state.eyePosition.x) * EYE_CONFIG.SMOOTHING;
-		}
-
-		// Vertical tracking with smaller movement range
-		if (Math.abs(normalizedY) >= EYE_CONFIG.DEAD_ZONE) {
-			// Apply smoothing for better tactility
-			newY = state.eyePosition.y + (normalizedY - state.eyePosition.y) * EYE_CONFIG.SMOOTHING;
-		}
-
-		// Update store with new position
-		ghostStateStore.setEyePosition(newX, newY);
-
-		// Apply eye transforms directly
-		blinkService.applyEyeTransforms(leftEye, rightEye);
-	}
+	// Removed handleMouseMove - eye tracking handled by blinkService/eyeTracking service
 
 	// Handle click events
 	function handleClick() {
@@ -320,8 +231,7 @@
 		// Clean up theme store subscription
 		if (unsubscribeTheme) unsubscribeTheme();
 
-		// Clean up animation timers
-		cleanupTimers(timers);
+		// Removed cleanupTimers call (managed within services)
 
 		// Clean up all gradient animations
 		cleanupAllAnimations();
@@ -359,51 +269,22 @@
 		}
 	}
 
-	// Public API: Force wobble animation
-	export function forceWobble(direction = '', isStartRecording = false) {
+	// Public API: Force wobble animation (simplified)
+	export function forceWobble(direction = '') {
 		if (!ghostSvg) return;
-		
+
 		console.log('🔄 Ghost.forceWobble called with direction:', direction);
-		
-		// Reset tracking variables to ensure animation triggers
-		lastAppliedWobbleDirection = null;
-		isRecordingTransition = true; 
-		
-		// Choose a random direction if none provided
-		const wobbleDir = direction || (Math.random() < 0.5 ? CSS_CLASSES.WOBBLE_LEFT : CSS_CLASSES.WOBBLE_RIGHT);
-		
-		// Reset wobble state in the store to force a fresh animation
-		ghostStateStore.setWobbleDirection(null);
-		
-		// Give a small delay to ensure state updates have propagated
-		setTimeout(() => {
-			// Directly trigger the animation service with store updates
-			animationService.applyWobbleEffect(ghostSvg, { 
-				direction: wobbleDir,
-				force: true,
-				updateStore: true  // Explicit API calls should update the store
-			});
-			
-			// Explicitly set the wobble state after animation starts
-			ghostStateStore.setWobbling(true);
-			ghostStateStore.setWobbleDirection(wobbleDir);
-			
-			// If this is for recording start, schedule transition to recording after wobble
-			if (isStartRecording) {
-				setTimeout(() => {
-					// Transition to recording state
-					ghostStateStore.setAnimationState(ANIMATION_STATES.RECORDING);
-					// Ensure recording state is set in the store
-					ghostStateStore.setRecording(true);
-				}, WOBBLE_CONFIG.DURATION);
-			}
-		}, 10);
+
+		// Use the store's simplified method to trigger the wobble effect
+		// It handles setting flags and the cleanup timeout internally.
+		ghostStateStore.setWobbling(true, direction || null); // Pass null for random direction
 	}
 
 	// Public methods to expose animation controls
 	export function pulse() {
 		// Add subtle pulse animation
 		if (ghostSvg) {
+			// Pass duration from config
 			animationService.applyPulseEffect(ghostSvg, PULSE_CONFIG.DURATION);
 		}
 	}
@@ -430,7 +311,7 @@
 		lastRecordingState = isRecording;
 		lastProcessingState = isProcessing;
 		lastAnimationState = animationState;
-		
+
 		// Initial setup operations
 		setDebugMode();
 		setupThemeSubscription();
@@ -456,8 +337,7 @@
 				seed
 			});
 
-			// Start tracking mouse movement for eye position
-			document.addEventListener('mousemove', handleMouseMove, { passive: true });
+			// Removed mousemove listener setup (handled by services)
 
 			// Set debug mode
 			ghostStateStore.setDebug(debug);
@@ -473,25 +353,18 @@
 
 			// Return cleanup function
 			return () => {
-				document.removeEventListener('mousemove', handleMouseMove);
+				// Removed mousemove listener cleanup
 				cleanupAnimations();
 				cleanupBlinks();
 			};
 		}
 	});
-	
-	// Monitor store state for wobble changes, but avoid calling in the render cycle
-	$: if (browser && ghostSvg && $ghostStateStore) {
-		// Schedule this on the next tick to avoid recursive updates
-		setTimeout(handleWobbleEffect, 0);
-	}
-	
 	// Monitor theme changes
 	$: if (currentTheme && ghostSvg && browser) {
 		// Schedule on the next tick to avoid recursive updates
 		setTimeout(applyThemeChanges, 0);
 	}
-	
+
 	// Monitor props for changes
 	$: if (browser) {
 		// Schedule on the next tick to avoid reactive loop
@@ -524,11 +397,10 @@
 		viewBox="0 0 1024 1024"
 		xmlns="http://www.w3.org/2000/svg"
 		xmlns:xlink="http://www.w3.org/1999/xlink"
-		class="ghost-svg theme-{currentTheme} {$ghostStateStore.isRecording
-			? CSS_CLASSES.RECORDING
-			: ''} {$ghostStateStore.isWobbling && $ghostStateStore.wobbleDirection
-			? $ghostStateStore.wobbleDirection
-			: ''} {debugAnim ? 'debug-animation' : ''}"
+		class="ghost-svg theme-{currentTheme}
+      {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
+      
+      {debugAnim ? 'debug-animation' : ''}"
 	>
 		<defs>
 			<linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -564,44 +436,50 @@
 			</linearGradient>
 		</defs>
 
-		<g class="ghost-layer ghost-bg" bind:this={backgroundElement}>
-			<use
-				xlink:href={ghostPathsUrl}
-				href={ghostPathsUrl + '#ghost-background'}
-				class="ghost-shape"
-				id="ghost-shape"
-				fill="url(#{currentTheme}Gradient)"
-			/>
-		</g>
+		<!-- New wrapper group for wobble transform - Apply computed classes here -->
+		<g class={wobbleGroupClasses}>
+			<g class="ghost-layer ghost-bg" bind:this={backgroundElement}>
+				<use
+					xlink:href={ghostPathsUrl}
+					href={ghostPathsUrl + '#ghost-background'}
+					class="ghost-shape"
+					id="ghost-shape"
+					fill="url(#{currentTheme}Gradient)"
+				/>
+			</g>
 
-		<g class="ghost-layer ghost-outline">
-			<use
-				xlink:href={ghostPathsUrl}
-				href={ghostPathsUrl + '#ghost-body-path'}
-				class="ghost-outline-path"
-				fill="#000000"
-				opacity="1"
-			/>
-		</g>
+			<g class="ghost-layer ghost-outline">
+				<use
+					xlink:href={ghostPathsUrl}
+					href={ghostPathsUrl + '#ghost-body-path'}
+					class="ghost-outline-path"
+					fill="#000000"
+					opacity="1"
+				/>
+			</g>
 
-		<g class="ghost-layer ghost-eyes">
-			<use
-				bind:this={leftEye}
-				xlink:href={ghostPathsUrl}
-				href={ghostPathsUrl + '#ghost-eye-left-path'}
-				class="ghost-eye ghost-eye-left"
-				fill="#000000"
-			/>
-			<use
-				bind:this={rightEye}
-				xlink:href={ghostPathsUrl}
-				href={ghostPathsUrl + '#ghost-eye-right-path'}
-				class="ghost-eye ghost-eye-right"
-				fill="#000000"
-			/>
+			<g class="ghost-layer ghost-eyes">
+				<use
+					bind:this={leftEye}
+					xlink:href={ghostPathsUrl}
+					href={ghostPathsUrl + '#ghost-eye-left-path'}
+					class="ghost-eye ghost-eye-left"
+					fill="#000000"
+				/>
+				<use
+					bind:this={rightEye}
+					xlink:href={ghostPathsUrl}
+					href={ghostPathsUrl + '#ghost-eye-right-path'}
+					class="ghost-eye ghost-eye-right"
+					fill="#000000"
+				/>
+			</g>
 		</g>
+		<!-- End of ghost-wobble-group -->
 	</svg>
 </button>
+
+<!-- Removed duplicated SVG content from here -->
 
 <style>
 	.ghost-container {

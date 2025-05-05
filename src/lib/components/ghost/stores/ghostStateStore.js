@@ -12,7 +12,8 @@ import {
   ANIMATION_STATES, 
   ANIMATION_TRANSITIONS,
   ANIMATION_BEHAVIORS,
-  CSS_CLASSES
+  CSS_CLASSES,
+  WOBBLE_CONFIG // Import WOBBLE_CONFIG
 } from '../animationConfig.js';
 
 /**
@@ -35,10 +36,12 @@ function createGhostStateStore() {
     eyePosition: { x: 0, y: 0 },
     // Whether eye tracking is enabled
     isEyeTrackingEnabled: true,
-    // Whether the ghost is wobbling
+    // Whether the ghost is wobbling (visual effect only)
     isWobbling: false,
     // Wobble direction (CSS_CLASSES.WOBBLE_LEFT or CSS_CLASSES.WOBBLE_RIGHT)
-    wobbleDirection: null,  
+    wobbleDirection: null,
+    // Timeout ID for clearing wobble effect
+    wobbleTimeoutId: null,
     // Whether a special animation is active
     isSpecialAnimationActive: false,
     // Debug mode
@@ -127,20 +130,16 @@ function createGhostStateStore() {
     // Clear current state timeout if exists
     clearStateTimeout(currentState.current);
     
-    // Special handling for wobbling state
-    const isWobbling = newState === ANIMATION_STATES.WOBBLING;
-    
     // Update state
     state.update(s => ({
       ...s,
       previous: s.current,
       current: newState,
-      isEyeTrackingEnabled: behavior.eyeTracking,
-      // Set isWobbling flag automatically when entering wobbling state
-      isWobbling: isWobbling ? true : s.isWobbling
+      isEyeTrackingEnabled: behavior.eyeTracking
+      // isWobbling flag is managed separately now
     }));
     
-    // Set up cleanup timeout if needed
+    // Set up cleanup timeout if needed (e.g., for REACTING state)
     if (behavior.cleanupDelay && behavior.cleanupDelay > 0) {
       debugLog(`Setting cleanup timeout for ${newState} → IDLE in ${behavior.cleanupDelay}ms`);
       
@@ -185,60 +184,60 @@ function createGhostStateStore() {
     // Update recording state
     state.update(s => ({ ...s, isRecording }));
     
-    // Handle recording start
+    // --- Recording Start Sequence ---
     if (isRecording && !wasRecording) {
-      console.log("🎙️ Recording started - transitioning to recording state");
+      debugLog("🎙️ Recording started - applying wobble effect first");
       
-      // Ensure we're in the correct state 
-      // This is now handled by the Ghost.svelte component directly
+      // 1. Apply wobble effect immediately (set flags, start timer to clear)
+      applyWobbleEffectFlags();
       
-      // Just make sure we transition to recording state after a short delay
-      // The wobble will be initiated from the component
-      setTimeout(() => {
-        // Check that we're not being called redundantly
-        const updatedState = get(state);
-        if (updatedState.isRecording && updatedState.current !== ANIMATION_STATES.RECORDING) {
-          setAnimationState(ANIMATION_STATES.RECORDING);
+      // 2. Schedule setting the RECORDING state on the *next animation frame*
+      // This ensures the wobble transform renders before recording animations start.
+      // Clear any pending frame request first
+      if (currentState.stateTimeouts.rafRecordingStart) {
+        cancelAnimationFrame(currentState.stateTimeouts.rafRecordingStart);
+      }
+      const rafId = requestAnimationFrame(() => {
+        // Check if we are still intending to record (user might have stopped quickly)
+        if (get(state).isRecording) {
+           debugLog("Next frame: Transitioning state to RECORDING");
+           setAnimationState(ANIMATION_STATES.RECORDING);
+        } else {
+           debugLog("Recording stopped before next frame state transition could occur.");
         }
-      }, 800); // Allow enough time for wobble animation to complete
+        // Clear the stored RAF ID after execution
+        state.update(s => ({
+          ...s,
+          stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: null }
+        }));
+      });
+
+      // Store RAF ID for potential cleanup if user stops recording quickly
+      state.update(s => ({
+        ...s,
+        stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: rafId }
+      }));
+
     } 
-    // Handle recording stop
+    // --- Recording Stop Sequence ---
     else if (!isRecording && wasRecording) {
-      console.log("🛑 Recording stopped - transitioning to wobble state");
-      
-      // Reset wobble state to ensure animation gets applied
-      setWobbleDirection(null);
-      
-      // Reset wobbling state if it was already wobbling to force reapplying
-      if (currentState.isWobbling) {
-        state.update(s => ({ ...s, isWobbling: false }));
+      debugLog("🛑 Recording stopped - applying wobble effect");
+
+      // Clear any pending next-frame start transition
+      if (currentState.stateTimeouts.rafRecordingStart) {
+        cancelAnimationFrame(currentState.stateTimeouts.rafRecordingStart);
+        state.update(s => ({
+          ...s,
+          stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: null }
+        }));
       }
       
-      // Delay to ensure state updates have propagated
-      setTimeout(() => {
-        // Set animation and wobbling state
-        setAnimationState(ANIMATION_STATES.WOBBLING);
-        state.update(s => ({ ...s, isWobbling: true }));
-        
-        // Set a wobble direction immediately to trigger animation
-        const wobbleDir = Math.random() < 0.5 ? CSS_CLASSES.WOBBLE_LEFT : CSS_CLASSES.WOBBLE_RIGHT;
-        setWobbleDirection(wobbleDir);
-        
-        // Debug logging
-        if (get(state).debug) {
-          console.log(`Recording stop: Set wobble direction to ${wobbleDir}`);
-        }
-      }, 10);
+      // 1. Transition directly to appropriate end state
+      const endState = currentState.isProcessing ? ANIMATION_STATES.THINKING : ANIMATION_STATES.IDLE;
+      setAnimationState(endState);
       
-      // After wobble, transition to appropriate state
-      setTimeout(() => {
-        const currentState = get(state);
-        if (currentState.isProcessing) {
-          setAnimationState(ANIMATION_STATES.THINKING);
-        } else {
-          setAnimationState(ANIMATION_STATES.IDLE);
-        }
-      }, 650); // Slightly longer than wobble duration
+      // 2. Apply wobble effect (set flags, start timer to clear)
+      applyWobbleEffectFlags();
     }
   }
 
@@ -282,9 +281,54 @@ function createGhostStateStore() {
   function setEyesClosed(closed) {
     state.update(s => ({ ...s, eyesClosed: closed }));
   }
+
+  /**
+   * Apply wobble effect flags and schedule cleanup
+   * @param {string|null} direction - Optional direction override
+   */
+  function applyWobbleEffectFlags(direction = null) {
+    const currentState = get(state);
+    
+    // Clear any existing wobble timeout
+    if (currentState.wobbleTimeoutId) {
+      clearTimeout(currentState.wobbleTimeoutId);
+    }
+
+    // Determine direction
+    const wobbleDir = direction || (Math.random() < 0.5 ? CSS_CLASSES.WOBBLE_LEFT : CSS_CLASSES.WOBBLE_RIGHT);
+    
+    // Set wobble flags
+    state.update(s => ({
+      ...s,
+      isWobbling: true,
+      wobbleDirection: wobbleDir,
+      wobbleTimeoutId: null // Clear previous timeout ID before setting new one
+    }));
+    debugLog(`Applied wobble effect: direction=${wobbleDir}`);
+
+    // Schedule cleanup to remove wobble flags
+    const timeoutId = setTimeout(() => {
+      state.update(s => {
+        // Only clear if this timeout is the current one
+        if (s.wobbleTimeoutId === timeoutId) {
+          debugLog(`Clearing wobble effect: direction=${s.wobbleDirection}`);
+          return {
+            ...s,
+            isWobbling: false,
+            wobbleDirection: null,
+            wobbleTimeoutId: null
+          };
+        }
+        return s; // Return unchanged state if timeout ID doesn't match
+      });
+    }, WOBBLE_CONFIG.DURATION + 25); // Use new duration + smaller buffer
+
+    // Store the new timeout ID
+    state.update(s => ({ ...s, wobbleTimeoutId: timeoutId }));
+  }
   
   /**
-   * Set the wobble direction
+   * Set the wobble direction (now primarily used by external triggers)
    * @param {string} direction - Wobble direction CSS class
    */
   function setWobbleDirection(direction) {
@@ -299,8 +343,8 @@ function createGhostStateStore() {
       return;
     }
     
-    // Update wobble direction
-    state.update(s => ({ ...s, wobbleDirection: direction }));
+    // If setting a direction, assume we want to start the wobble effect
+    applyWobbleEffectFlags(direction);
   }
 
   /**
@@ -331,11 +375,12 @@ function createGhostStateStore() {
         eyesClosed: false,
         eyePosition: { x: 0, y: 0 },
         isEyeTrackingEnabled: true,
-        isWobbling: false,
+        isWobbling: false, // Reset wobble state
         wobbleDirection: null,
+        wobbleTimeoutId: null,
         isSpecialAnimationActive: false,
         debug: s.debug,
-        isFirstVisit: false,
+        isFirstVisit: false, // Assume reset happens after first visit
         stateTimeouts: {}
       };
     });
@@ -365,54 +410,27 @@ function createGhostStateStore() {
     setProcessing,
     setEyePosition,
     setEyesClosed,
-    setWobbling: (isWobbling) => {
-      // Get current state before updating to check if this is a redundant update
-      const currentState = get(state);
-      
-      // Special case for recording state transitions - always allow wobble animation updates
-      const isHandlingRecordingTransition = 
-        (currentState.isRecording && !currentState.wobbleDirection) ||
-        (!currentState.isRecording && currentState.current === ANIMATION_STATES.RECORDING);
-      
-      // Skip redundant updates except for recording transitions
-      if (currentState.isWobbling === isWobbling && !isHandlingRecordingTransition) {
-        if (currentState.debug) {
-          console.log(`Skipping redundant wobbling state update: already ${isWobbling}`);
-        }
-        return;
-      }
-      
-      // Force reset the wobble direction when setting wobbling to true to ensure animation triggers
-      if (isWobbling && currentState.isWobbling && !isHandlingRecordingTransition) {
-        // Reset wobble direction first to allow re-triggering the animation
-        setWobbleDirection(null);
-      }
-      
-      // Update wobbling state
-      state.update(s => ({ ...s, isWobbling }));
-      
+    // Simplified setWobbling - primarily for external triggers now
+    setWobbling: (isWobbling, direction = null) => {
       if (isWobbling) {
-        // Set animation state if not already in WOBBLING state
-        if (currentState.current !== ANIMATION_STATES.WOBBLING) {
-          setAnimationState(ANIMATION_STATES.WOBBLING);
+        applyWobbleEffectFlags(direction);
+      } else {
+        // Clear wobble effect immediately if requested
+        const currentState = get(state);
+        if (currentState.wobbleTimeoutId) {
+          clearTimeout(currentState.wobbleTimeoutId);
         }
-        
-        // Always set a wobble direction with slight delay to ensure state is ready
-        setTimeout(() => {
-          const updatedState = get(state);
-          if (updatedState.isWobbling) {
-            // Force new direction even if one exists for recording transitions
-            const wobbleDir = Math.random() < 0.5 ? CSS_CLASSES.WOBBLE_LEFT : CSS_CLASSES.WOBBLE_RIGHT;
-            setWobbleDirection(wobbleDir);
-            
-            if (updatedState.debug) {
-              console.log(`Set wobble direction to ${wobbleDir}`);
-            }
-          }
-        }, 5);
+        state.update(s => ({
+          ...s,
+          isWobbling: false,
+          wobbleDirection: null,
+          wobbleTimeoutId: null
+        }));
+        debugLog("Cleared wobble effect manually");
       }
     },
-    setWobbleDirection,
+    // setWobbleDirection now calls applyWobbleEffectFlags
+    setWobbleDirection, 
     setSpecialAnimation: (isActive) => {
       state.update(s => ({ ...s, isSpecialAnimationActive: isActive }));
     },

@@ -277,7 +277,6 @@
 		{isProcessing}
 		on:toggleRecording={handleToggleRecording}
 	/>
-	this
 	<ContentContainer
 		bind:this={contentContainer}
 		ghostComponent={ghostContainer}
@@ -289,7 +288,6 @@
 		on:processingend={handleProcessingEnd}
 		on:transcriptionCompleted={handleTranscriptionCompleted}
 	/>
-	that
 	<svelte:fragment slot="footer-buttons">
 		<FooterComponent
 			on:showAbout={showAboutModal}

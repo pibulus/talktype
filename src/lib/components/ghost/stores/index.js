@@ -4,21 +4,10 @@
  * Central export point for all ghost animation stores
  */
 
-// Re-export all stores and derived values
-export {
-  ghostStateStore,
-  currentState,
-  previousState,
-  isRecording,
-  isProcessing,
-  eyePosition,
-  eyesClosed,
-  isEyeTrackingEnabled,
-  isFirstVisit,
-  ghostProps
-} from './ghostStateStore.js';
+// Export the main state store instance
+export { ghostStateStore } from './ghostStateStore.js';
 
-// Re-export theme store
+// Export the main theme store instance and related functions/values
 export {
   theme,
   cssVariables,
@@ -26,3 +15,6 @@ export {
   getThemeColor,
   themeColors
 } from '../themeStore.js';
+
+// Removed exports of individual derived stores (e.g., currentState, isRecording)
+// Consumers should import ghostStateStore and derive if needed, or use $ghostStateStore.property syntax.

@@ -16,9 +16,9 @@ export const BLINK_CONFIG = {
 };
 
 export const WOBBLE_CONFIG = {
-	DURATION: 600, // Duration of ghost wobble animation (ms)
+	DURATION: 400, // Duration of ghost wobble animation (ms) - Faster!
 	LEFT_CHANCE: 0.5, // Probability (0-1) of wobbling left vs right
-	CLEANUP_DELAY: 600 // Delay for wobble animation cleanup (ms)
+	CLEANUP_DELAY: 400 // Delay for wobble animation cleanup (ms) - Match duration
 };
 
 export const SPECIAL_CONFIG = {
@@ -177,21 +177,21 @@ export const ANIMATION_STATES = {
 	IDLE: 'idle',
 	THINKING: 'thinking',
 	RECORDING: 'recording',
-	REACTING: 'reacting',
-	WOBBLING: 'wobbling'
+	REACTING: 'reacting'
+	// WOBBLING state removed
 };
 
-// Valid state transitions
+// Valid state transitions (WOBBLING removed)
 export const ANIMATION_TRANSITIONS = {
-	[ANIMATION_STATES.INITIAL]: [ANIMATION_STATES.IDLE, ANIMATION_STATES.WOBBLING],
-	[ANIMATION_STATES.IDLE]: [ANIMATION_STATES.THINKING, ANIMATION_STATES.RECORDING, ANIMATION_STATES.WOBBLING, ANIMATION_STATES.REACTING],
+	[ANIMATION_STATES.INITIAL]: [ANIMATION_STATES.IDLE],
+	[ANIMATION_STATES.IDLE]: [ANIMATION_STATES.THINKING, ANIMATION_STATES.RECORDING, ANIMATION_STATES.REACTING],
 	[ANIMATION_STATES.THINKING]: [ANIMATION_STATES.IDLE, ANIMATION_STATES.RECORDING],
-	[ANIMATION_STATES.RECORDING]: [ANIMATION_STATES.THINKING, ANIMATION_STATES.IDLE, ANIMATION_STATES.WOBBLING],
-	[ANIMATION_STATES.WOBBLING]: [ANIMATION_STATES.IDLE, ANIMATION_STATES.THINKING, ANIMATION_STATES.RECORDING],
+	[ANIMATION_STATES.RECORDING]: [ANIMATION_STATES.THINKING, ANIMATION_STATES.IDLE],
+	// WOBBLING transitions removed
 	[ANIMATION_STATES.REACTING]: [ANIMATION_STATES.IDLE]
 };
 
-// Animation behaviors for each state
+// Animation behaviors for each state (WOBBLING removed)
 export const ANIMATION_BEHAVIORS = {
 	[ANIMATION_STATES.INITIAL]: {
 		blinkPattern: 'none',
@@ -218,12 +218,7 @@ export const ANIMATION_BEHAVIORS = {
 		eyeTracking: true,
 		cleanupDelay: 0
 	},
-	[ANIMATION_STATES.WOBBLING]: {
-		blinkPattern: 'none',
-		wobbleDuration: WOBBLE_CONFIG.DURATION,
-		eyeTracking: true,
-		cleanupDelay: WOBBLE_CONFIG.CLEANUP_DELAY
-	},
+	// WOBBLING behavior removed
 	[ANIMATION_STATES.REACTING]: {
 		blinkPattern: 'expression',
 		eyeTracking: true,
@@ -323,5 +318,5 @@ export function injectAnimationVariables() {
 	styleElement.textContent = `:root {\n  ${cssVars.replace(/\n/g, '\n  ')}\n}`;
 }
 
-// Default export for convenience - call this to initialize the variables
-export default injectAnimationVariables;
+// Removed injectAnimationVariables and generateAnimationCssVariables functions
+// Rely on themeStore.js and Ghost.svelte::initDynamicStyles for variable injection
