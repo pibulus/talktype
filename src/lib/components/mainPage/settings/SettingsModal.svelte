@@ -34,33 +34,23 @@
 		selectedPromptStyle = value;
 	});
 
-	// Theme options with CSS gradients for visualizer
+	// Theme options
 	const vibeOptions = [
 		{
 			id: 'peach',
-			name: 'Peach',
-			visualizerGradient: 'linear-gradient(to top, #ffa573, #ff9f9a, #ff7fcd, #ffb6f3)',
-			previewGradient: 'linear-gradient(135deg, #ffa573, #ff8f9a, #ff7fcd, #ffb6f3)'
+			name: 'Peach'
 		},
 		{
 			id: 'mint',
-			name: 'Mint',
-			visualizerGradient: 'linear-gradient(to top, #86efac, #5eead4, #67e8f9)',
-			previewGradient: 'linear-gradient(135deg, #86efac, #5eead4, #67e8f9)'
+			name: 'Mint'
 		},
 		{
 			id: 'bubblegum',
-			name: 'Bubblegum',
-			visualizerGradient:
-				'linear-gradient(to top, #20c5ff, #4d7bff, #c85aff, #ee45f0, #ff3ba0, #ff1a8d)',
-			previewGradient: 'linear-gradient(135deg, #20c5ff, #4d7bff, #c85aff, #ee45f0, #ff1a8d)'
+			name: 'Bubblegum'
 		},
 		{
 			id: 'rainbow',
-			name: 'Rainbow',
-			visualizerGradient: 'rainbow-gradient' /* Special identifier for rainbow animation */,
-			previewGradient: 'rainbow',
-			animated: true
+			name: 'Rainbow'
 		}
 	];
 
@@ -258,17 +248,10 @@
 							data-vibe-type={vibe.id}
 							on:click={() => changeVibe(vibe.id)}
 						>
-							<div class="preview-container mb-1">
+							<div class="preview-container mb-2">
 								<!-- Ghost preview using DisplayGhost component -->
-								<div class="preview-ghost-wrapper relative h-10 w-10">
+								<div class="preview-ghost-wrapper relative h-12 w-12">
 									<DisplayGhost theme={vibe.id} size="100%" seed={10000 + index * 777} />
-								</div>
-
-								<!-- Visualizer preview -->
-								<div
-									class="preview-visualizer-container mt-1 h-2 w-full overflow-hidden rounded-md border border-pink-100"
-								>
-									<div class="preview-visualizer h-full w-full" data-preview-theme={vibe.id}></div>
 								</div>
 							</div>
 
@@ -413,56 +396,16 @@
 		background-size: 200% 200%;
 	}
 
-	.preview-visualizer-container {
-		width: 100%;
-		min-width: 40px;
-		height: 8px;
+	/* Ghost preview styling */
+	.preview-ghost-wrapper {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: transform 0.3s ease;
 	}
-
-	/* Theme-specific gradient styles for previews */
-	.preview-visualizer[data-preview-theme='peach'] {
-		background: linear-gradient(to top, #ffa573, #ff9f9a, #ff7fcd, #ffb6f3);
-	}
-
-	.preview-visualizer[data-preview-theme='mint'] {
-		background: linear-gradient(to top, #86efac, #5eead4, #67e8f9);
-	}
-
-	.preview-visualizer[data-preview-theme='bubblegum'] {
-		background: linear-gradient(to top, #a875ff, #d554ff, #f95bf9, #ff2a8d);
-	}
-
-	.preview-visualizer[data-preview-theme='rainbow'] {
-		animation: rainbowFlow 5s linear infinite;
-		background-image: linear-gradient(
-			to top,
-			#ff3d7f,
-			#ff8d3c,
-			#fff949,
-			#4dff60,
-			#35deff,
-			#9f7aff,
-			#ff3d7f
-		);
-		box-shadow:
-			0 0 10px rgba(255, 255, 255, 0.18),
-			0 0 18px rgba(255, 156, 227, 0.15);
-	}
-
-	@keyframes rainbowPreview {
-		0%,
-		100% {
-			filter: drop-shadow(0 0 3px rgba(255, 61, 127, 0.4)) saturate(1.3) brightness(1.1);
-		}
-		25% {
-			filter: drop-shadow(0 0 4px rgba(255, 249, 73, 0.5)) saturate(1.4) brightness(1.15);
-		}
-		50% {
-			filter: drop-shadow(0 0 4px rgba(53, 222, 255, 0.5)) saturate(1.5) brightness(1.2);
-		}
-		75% {
-			filter: drop-shadow(0 0 3px rgba(159, 122, 255, 0.4)) saturate(1.4) brightness(1.15);
-		}
+	
+	.vibe-option:hover .preview-ghost-wrapper {
+		transform: scale(1.05);
 	}
 
 	.vibe-option {
@@ -579,26 +522,6 @@
 		}
 	}
 
-	/* Theme-based visualizer styling using data-theme */
-	:global([data-theme='rainbow'] .history-bar) {
-		animation:
-			hueShift 5s ease-in-out infinite,
-			rainbowPreview 3s ease-in-out infinite;
-		background-image: linear-gradient(
-			to top,
-			#ff3d7f,
-			#ff8d3c,
-			#fff949,
-			#4dff60,
-			#35deff,
-			#9f7aff,
-			#ff3d7f
-		);
-		background-size: 100% 600%;
-		box-shadow:
-			0 0 8px rgba(255, 255, 255, 0.15),
-			0 0 15px rgba(255, 156, 227, 0.1);
-	}
 
 	/* Connect the preview eyes to the main app's Brian Eno-inspired ambient blinking system */
 	.preview-eyes {
