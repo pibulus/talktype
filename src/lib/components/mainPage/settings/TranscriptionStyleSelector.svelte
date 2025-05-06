@@ -107,9 +107,6 @@
     {/each}
   </div>
   
-  <p class="mt-0.5 text-xs italic text-gray-500">
-    Changes are applied immediately to new transcriptions.
-  </p>
 </div>
 
 <style>

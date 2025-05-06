@@ -285,9 +285,6 @@
 					{/each}
 				</div>
 
-				<p class="mt-0.5 text-xs italic text-gray-500">
-					Changes are applied immediately and saved for future visits.
-				</p>
 			</div>
 
 			<!-- Prompt Style Selection Section -->
@@ -337,7 +334,7 @@
 			</div>
 
 			<div class="border-t border-pink-100 pt-2 text-center">
-				<p class="text-xs text-gray-500">TalkType v0.1.1 • Made with 💜 by Dennis & Pablo</p>
+				<p class="text-xs text-gray-500">TalkType • Made with 💜 by Dennis & Pablo</p>
 			</div>
 		</div>
 	</div>
