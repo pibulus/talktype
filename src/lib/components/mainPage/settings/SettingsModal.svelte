@@ -249,9 +249,11 @@
 							on:click={() => changeVibe(vibe.id)}
 						>
 							<div class="preview-container mb-2">
-								<!-- Ghost preview using DisplayGhost component -->
+								<!-- Use the original DisplayGhost component with masking -->
 								<div class="preview-ghost-wrapper relative h-12 w-12">
-									<DisplayGhost theme={vibe.id} size="100%" seed={10000 + index * 777} />
+									<div class="ghost-mask-wrapper">
+										<DisplayGhost theme={vibe.id} size="48px" seed={index * 1000 + 12345} />
+									</div>
 								</div>
 							</div>
 
@@ -373,29 +375,6 @@
 			0 4px 8px rgba(249, 168, 212, 0.2);
 	}
 
-	/* Default styles for image-based gradients */
-	.preview-ghost-bg {
-		/* Default styling */
-	}
-
-	/* Properly masked rainbow gradient that only shows inside the ghost */
-	.masked-rainbow-gradient {
-		/* Apply mask to clip the gradient to the ghost shape */
-		-webkit-mask-image: url(/assets/talktype-icon-base.svg);
-		mask-image: url(/assets/talktype-icon-base.svg);
-		-webkit-mask-size: contain;
-		mask-size: contain;
-		-webkit-mask-repeat: no-repeat;
-		mask-repeat: no-repeat;
-		-webkit-mask-position: center;
-		mask-position: center;
-
-		/* Apply rainbow gradient and animation */
-		animation: hueShift 5s linear infinite;
-		background-image: linear-gradient(135deg, #61d4b3, #fdd365, #fb8d62, #fd2eb3, #61d4b3);
-		background-size: 200% 200%;
-	}
-
 	/* Ghost preview styling */
 	.preview-ghost-wrapper {
 		display: flex;
@@ -406,6 +385,37 @@
 	
 	.vibe-option:hover .preview-ghost-wrapper {
 		transform: scale(1.05);
+	}
+	
+	/* Container for masking the ghost - hides the background */
+	.ghost-mask-wrapper {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		overflow: visible;
+	}
+	
+	/* Apply masking to remove background from DisplayGhost */
+	.ghost-mask-wrapper :global(.display-ghost) {
+		overflow: visible !important; 
+	}
+	
+	/* Target only the ghost SVG, not its container */
+	.ghost-mask-wrapper :global(.ghost-svg) {
+		overflow: visible !important;
+	}
+	
+	/* Hide the ghost background rectangle */
+	.ghost-mask-wrapper :global(.ghost-container) {
+		background: transparent !important;
+	}
+	
+	.ghost-mask-wrapper :global(.ghost-bg) {
+		/* Ensure the ghost background doesn't show */
+		opacity: 1 !important;
 	}
 
 	.vibe-option {
@@ -419,109 +429,6 @@
 	.vibe-option:active {
 		transform: translateY(0px);
 	}
-
-	/* Theme animations for ghost with effects */
-	.rainbow-animated {
-		animation: rainbowFlow 8.3s linear infinite;
-		filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
-	}
-
-	.peach-animated {
-		animation: peachFlow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-	}
-
-	.mint-animated {
-		animation: mintFlow 10s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-	}
-
-	.bubblegum-animated {
-		animation: bubblegumFlow 12s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-	}
-
-	@keyframes rainbowFlow {
-		0% {
-			filter: hue-rotate(0deg) saturate(1.4) brightness(1.15);
-		}
-		100% {
-			filter: hue-rotate(360deg) saturate(1.5) brightness(1.2);
-		}
-	}
-
-	@keyframes peachFlow {
-		0% {
-			filter: saturate(1) brightness(1) contrast(1);
-		}
-		30% {
-			filter: saturate(1.3) brightness(1.1) contrast(1.05);
-		}
-		60% {
-			filter: saturate(1.5) brightness(1.15) contrast(1.08);
-		}
-		100% {
-			filter: saturate(1) brightness(1) contrast(1);
-		}
-	}
-
-	@keyframes mintFlow {
-		0% {
-			filter: saturate(1) brightness(1) contrast(1);
-		}
-		25% {
-			filter: saturate(1.2) brightness(1.1) contrast(1.02) hue-rotate(5deg);
-		}
-		50% {
-			filter: saturate(1.4) brightness(1.2) contrast(1.05) hue-rotate(-5deg);
-		}
-		75% {
-			filter: saturate(1.2) brightness(1.15) contrast(1.03) hue-rotate(2deg);
-		}
-		100% {
-			filter: saturate(1) brightness(1) contrast(1) hue-rotate(0deg);
-		}
-	}
-
-	@keyframes bubblegumFlow {
-		0% {
-			filter: saturate(1) brightness(1) contrast(1);
-		}
-		33% {
-			filter: saturate(1.3) brightness(1.05) contrast(1.1) hue-rotate(-8deg);
-		}
-		66% {
-			filter: saturate(1.6) brightness(1.1) contrast(1.15) hue-rotate(8deg);
-		}
-		100% {
-			filter: saturate(1) brightness(1) contrast(1) hue-rotate(0deg);
-		}
-	}
-
-	/* Add extra sparkle when previewing the rainbow theme */
-	.vibe-option[data-vibe-type='rainbow']:hover .preview-icon-layers .rainbow-animated {
-		animation:
-			rainbowFlow 4.7s linear infinite,
-			settingsSparkle 2s ease-in-out infinite;
-	}
-
-	@keyframes settingsSparkle {
-		0%,
-		100% {
-			filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6))
-				drop-shadow(0 0 6px rgba(255, 61, 127, 0.5));
-		}
-		25% {
-			filter: drop-shadow(0 0 4px rgba(255, 141, 60, 0.7))
-				drop-shadow(0 0 8px rgba(255, 249, 73, 0.6));
-		}
-		50% {
-			filter: drop-shadow(0 0 4px rgba(77, 255, 96, 0.6))
-				drop-shadow(0 0 7px rgba(53, 222, 255, 0.7));
-		}
-		75% {
-			filter: drop-shadow(0 0 5px rgba(159, 122, 255, 0.7))
-				drop-shadow(0 0 8px rgba(255, 61, 127, 0.6));
-		}
-	}
-
 
 	/* Connect the preview eyes to the main app's Brian Eno-inspired ambient blinking system */
 	.preview-eyes {
@@ -564,8 +471,6 @@
 			transform: scaleY(1); /* Open eyes */
 		}
 	}
-
-	/* Removed redundant rainbow-animated-bars class */
 
 	@keyframes hueShift {
 		0% {
