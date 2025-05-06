@@ -70,14 +70,14 @@
     transform: translateY(var(--offset-y, 0));
     opacity: 0.9;
     z-index: 1;
-    filter: drop-shadow(0 0 2px rgba(0,0,0,0.15));
+    filter: drop-shadow(0 0 2px rgba(0,0,0,0.12));
   }
   
   .app-text {
     background-clip: text !important;
     -webkit-background-clip: text !important;
     color: transparent !important;
-    text-shadow: 0 1px 1px rgba(0,0,0,0.04);
+    text-shadow: 0 1px 1px rgba(0,0,0,0.03);
     transition: all 0.3s ease;
     display: inline-block;
     position: relative;
@@ -88,7 +88,7 @@
   
   /* Theme-specific gradients - darker for AA contrast */
   .theme-peach .app-text {
-    background-image: linear-gradient(to bottom right, #cc6f6f, #fc7a90);
+    background-image: linear-gradient(to bottom right, #ff82ca, #ffb060);
   }
   
   .theme-mint .app-text {
@@ -100,13 +100,20 @@
   }
   
   .theme-rainbow .app-text {
-    background-image: linear-gradient(to bottom right, #ff9933, #33ffaa, #33b5ff);
+    background-image: linear-gradient(to right, #ff0080, #ff8c00, #ffed00, #00ff80, #00bfff);
+    background-size: 200% auto;
+    animation: rainbow-shift 3s linear infinite;
+  }
+  
+  @keyframes rainbow-shift {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
   }
   
   /* Playful hover effects */
   .app-suffix:hover .app-text {
-    filter: brightness(1.1) saturate(1.2);
-    transform: rotate(-3deg) scale(1.05);
+    filter: brightness(1.08) saturate(1.1);
+    transform: rotate(-2deg) scale(1.05);
     transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
   }
   
