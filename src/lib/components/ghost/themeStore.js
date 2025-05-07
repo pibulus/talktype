@@ -3,7 +3,7 @@ import { browser } from '$app/environment';
 import { THEMES, STORAGE_KEYS } from '$lib/constants';
 import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
 import { gradientAnimations, shapeAnimations } from './gradientConfig';
-import { WOBBLE_CONFIG } from './animationConfig'; // Import WOBBLE_CONFIG
+import { WOBBLE_CONFIG, SPECIAL_CONFIG } from './animationConfig'; // Import WOBBLE_CONFIG and SPECIAL_CONFIG
 
 // Theme configuration - color palette definitions
 const themeColors = {
@@ -224,6 +224,10 @@ const cssVariables = derived(theme, ($theme) => {
 	// Add wobble duration from config
 	cssVars += `\n/* Wobble Configuration */\n`;
 	cssVars += `--ghost-wobble-duration: ${WOBBLE_CONFIG.DURATION / 1000}s;\n`; // Convert ms to s
+
+	// Add special animation duration from config
+	cssVars += `\n/* Special Animation Configuration */\n`;
+	cssVars += `--ghost-special-duration: ${SPECIAL_CONFIG.DURATION / 1000}s;\n`; // Convert ms to s
 
 	return cssVars;
 });

@@ -27,8 +27,8 @@ const timers = {
 
 // Running animations tracking
 let animations = {
-  doingSpecialAnimation: false,
-  isWobbling: false
+  // doingSpecialAnimation: false, // No longer needed here
+  isWobbling: false // Keep if wobble is still managed imperatively elsewhere
 };
 
 // Flag to ensure initial load effect runs only once
@@ -179,10 +179,9 @@ export function startSpecialAnimationWatch(ghostSvg, seed = 0) {
     const state = get(ghostStateStore);
     
     // Don't interrupt other animations or states
-    if (state.isRecording || 
-        state.isProcessing ||
-        animations.doingSpecialAnimation ||
-        state.eyesClosed) {
+    // Only run if current state is IDLE and eyes are open.
+    // The state machine will prevent transitioning from EASTER_EGG to EASTER_EGG if needed.
+    if (state.current !== ANIMATION_STATES.IDLE || state.eyesClosed) {
       scheduleNextCheck();
       return;
     }
@@ -190,7 +189,9 @@ export function startSpecialAnimationWatch(ghostSvg, seed = 0) {
     // Random chance for special animation
     const random = seedRandom(seed, Date.now(), 0, 1);
     if (random < SPECIAL_CONFIG.CHANCE) {
-      performSpecialAnimation(ghostSvg);
+      // Transition to EASTER_EGG state.
+      // The state machine's cleanupDelay for EASTER_EGG will handle transitioning back to IDLE.
+      ghostStateStore.setAnimationState(ANIMATION_STATES.EASTER_EGG);
     }
     
     scheduleNextCheck();
@@ -226,22 +227,22 @@ export function stopSpecialAnimationWatch() {
  * 
  * @param {HTMLElement} ghostSvg - Ghost SVG container
  */
+// performSpecialAnimation is no longer needed as a separate exported function.
+// The logic to transition to EASTER_EGG state is now in checkForSpecialAnimation.
+// The CSS class application will be handled reactively in Ghost.svelte.
+// The transition back to IDLE is handled by the state machine's cleanupDelay for EASTER_EGG.
+// We can remove this function or keep it internal if other special, non-state-machine animations are planned.
+// For now, let's assume it's effectively removed by not being called.
+// If you want to keep the debug logs, they could be moved or adapted.
+// The `animations.doingSpecialAnimation` flag is also no longer needed from this service.
+// We might need to adjust the `animations` object if it was used elsewhere.
+// For this refactor, we'll assume `performSpecialAnimation` is no longer called.
+// The `animations.doingSpecialAnimation` flag can be removed from the `animations` object at the top of this file.
+/*
 export function performSpecialAnimation(ghostSvg) {
-  if (!ghostSvg || animations.doingSpecialAnimation) return;
-  
-  animations.doingSpecialAnimation = true;
-  ghostStateStore.setSpecialAnimation(true);
-  
-  // Apply spin class
-  ghostSvg.classList.add(CSS_CLASSES.SPIN);
-  
-  // Clean up after animation
-  setTimeout(() => {
-    ghostSvg.classList.remove(CSS_CLASSES.SPIN);
-    animations.doingSpecialAnimation = false;
-    ghostStateStore.setSpecialAnimation(false);
-  }, SPECIAL_CONFIG.DURATION);
+  // This function's logic is now integrated into the state machine and Ghost.svelte
 }
+*/
 
 /**
  * Apply a pulse animation
@@ -268,7 +269,7 @@ export default {
   applyInitialLoadEffect,
   // applyWobbleEffect, // Removed
   applyPulseEffect,
-  performSpecialAnimation,
+  // performSpecialAnimation, // No longer exported or used externally for spin
   startSpecialAnimationWatch,
   stopSpecialAnimationWatch
 };

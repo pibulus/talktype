@@ -352,8 +352,7 @@
 	bind:this={ghostSvg}
 	class="ghost-container theme-{currentTheme} 
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
-      
-      {$ghostStateStore.isSpecialAnimationActive ? 'do-special-animation' : ''}
+      {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
       {!clickable ? 'ghost-non-clickable' : ''}"
 	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
 	on:click={clickable ? handleClick : undefined}
@@ -373,7 +372,7 @@
 		xmlns:xlink="http://www.w3.org/1999/xlink"
 		class="ghost-svg theme-{currentTheme}
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
-      
+      {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
       {debugAnim ? 'debug-animation' : ''}"
 	>
 		<defs>
@@ -411,18 +410,19 @@
 		</defs>
 
 		<!-- New wrapper group for wobble transform - ID is used by store -->
-		<g
-			bind:this={ghostWobbleGroup}
-			class="ghost-wobble-group"
-			id="ghost-wobble-group"
-			use:initialGhostAnimation={$ghostStateStore.isFirstVisit
-				? { blinkService, leftEye, rightEye, debug }
-				: undefined}
-			on:initialAnimationComplete={handleInitialAnimationComplete}
-		>
-			<g class="ghost-layer ghost-bg" bind:this={backgroundElement}>
-				<use
-					xlink:href={ghostPathsUrl}
+		<g class="ghost-spin-pivot" id="ghost-spin-pivot">
+			<g
+				bind:this={ghostWobbleGroup}
+				class="ghost-wobble-group"
+				id="ghost-wobble-group"
+				use:initialGhostAnimation={$ghostStateStore.isFirstVisit
+					? { blinkService, leftEye, rightEye, debug }
+					: undefined}
+				on:initialAnimationComplete={handleInitialAnimationComplete}
+			>
+				<g class="ghost-layer ghost-bg" bind:this={backgroundElement}>
+					<use
+						xlink:href={ghostPathsUrl}
 					href={ghostPathsUrl + '#ghost-background'}
 					class="ghost-shape"
 					id="ghost-shape"
@@ -456,8 +456,10 @@
 					fill="#000000"
 				/>
 			</g>
+			</g>
+			<!-- End of ghost-wobble-group -->
 		</g>
-		<!-- End of ghost-wobble-group -->
+		<!-- End of ghost-spin-pivot -->
 	</svg>
 </button>
 

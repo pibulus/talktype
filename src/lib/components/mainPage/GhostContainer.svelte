@@ -71,6 +71,7 @@
 		{isRecording}
 		{isProcessing}
 		externalTheme={appTheme}
+		debug="true"
 		on:toggleRecording={handleToggleRecording}
 	/>
 </div>
