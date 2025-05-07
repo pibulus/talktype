@@ -158,11 +158,11 @@ function createGhostStateStore() {
 		// Handle eye state for ASLEEP and WAKING_UP
 		let newEyesClosedState = currentState.eyesClosed;
 		if (newState === ANIMATION_STATES.ASLEEP) {
-			// Eyes start open when falling asleep, animation closes them
-			newEyesClosedState = false;
+			// Set eyesClosed state flag to true when asleep. blinkService will handle visuals.
+			newEyesClosedState = true;
 		} else if (currentState.current === ANIMATION_STATES.ASLEEP && newState === ANIMATION_STATES.WAKING_UP) {
 			// Ensure eyes are open when starting the wake-up sequence
-			newEyesClosedState = false;
+			newEyesClosedState = false; // Waking up opens eyes
 		} else if (currentState.current === ANIMATION_STATES.WAKING_UP && newState === ANIMATION_STATES.IDLE) {
 			// Ensure eyes are open when finishing wake-up and going to IDLE
 			newEyesClosedState = false;
