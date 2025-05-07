@@ -13,7 +13,8 @@ import {
 	ANIMATION_TRANSITIONS,
 	ANIMATION_BEHAVIORS,
 	CSS_CLASSES,
-	WOBBLE_CONFIG // Import WOBBLE_CONFIG
+	WOBBLE_CONFIG, // Import WOBBLE_CONFIG
+	BLINK_CONFIG // Import BLINK_CONFIG
 } from '../animationConfig.js';
 
 /**
@@ -38,12 +39,14 @@ function createGhostStateStore() {
 		isEyeTrackingEnabled: true,
 		// --- Wobble state removed - handled imperatively ---
 		// isWobbling: false,
+		inactivityTimerId: null, // Timer for falling asleep
 		// wobbleDirection: null,
 		// wobbleTimeoutId: null,
 		// ---
 		// isSpecialAnimationActive is now handled by current === ANIMATION_STATES.EASTER_EGG
 		// Debug mode
 		debug: true,
+		inactivityTimerId: null, // Clear timer on reset
 		// First visit (for initial animation) - Default to false for SSR safety
 		isFirstVisit: false,
 		// Animation state timeouts
@@ -101,6 +104,9 @@ function createGhostStateStore() {
 		}
 	}
 
+	// Forward declaration for use in setAnimationState
+	let resetInactivityTimerFunc;
+
 	/**
 	 * Set a new animation state with proper validation
 	 * @param {string} newState - Target animation state
@@ -132,8 +138,32 @@ function createGhostStateStore() {
 		// Get behavior for new state
 		const behavior = ANIMATION_BEHAVIORS[newState];
 
-		// Clear current state timeout if exists
-		clearStateTimeout(currentState.current);
+		// Clear current state timeout if exists (except for inactivity timer which is managed separately)
+		if (currentState.current !== ANIMATION_STATES.IDLE || newState === ANIMATION_STATES.ASLEEP) {
+			clearStateTimeout(currentState.current);
+		}
+
+		// Manage inactivity timer based on transitions
+		if (newState === ANIMATION_STATES.IDLE) {
+			// Defer starting timer to allow other logic to complete
+			setTimeout(() => resetInactivityTimerFunc?.(), 0);
+		} else if (currentState.current === ANIMATION_STATES.IDLE && newState !== ANIMATION_STATES.ASLEEP) {
+			// Clear inactivity timer if moving from IDLE to something other than ASLEEP
+			if (get(_state).inactivityTimerId) {
+				clearTimeout(get(_state).inactivityTimerId);
+				_state.update(s => ({ ...s, inactivityTimerId: null }));
+			}
+		}
+		
+		// Handle eye state for ASLEEP
+		let newEyesClosedState = currentState.eyesClosed;
+		if (newState === ANIMATION_STATES.ASLEEP) {
+			newEyesClosedState = true;
+		} else if (currentState.current === ANIMATION_STATES.ASLEEP && newState === ANIMATION_STATES.IDLE) {
+			// Waking up to IDLE, ensure eyes open unless IDLE itself dictates otherwise (it doesn't)
+			newEyesClosedState = false; 
+		}
+
 
 		// Update state
 		_state.update((s) => ({
@@ -141,14 +171,15 @@ function createGhostStateStore() {
 			...s,
 			previous: s.current,
 			current: newState,
-			isEyeTrackingEnabled: behavior.eyeTracking
+			isEyeTrackingEnabled: behavior.eyeTracking,
+			eyesClosed: newEyesClosedState
 			// isWobbling flag is managed separately now
 		}));
 
 		// Log successful state transition
 		debugLog(`Successfully transitioned to state: ${newState}`);
 
-		// Set up cleanup timeout if needed (e.g., for REACTING state)
+		// Set up cleanup timeout if needed (e.g., for REACTING or EASTER_EGG state)
 		if (behavior.cleanupDelay && behavior.cleanupDelay > 0) {
 			debugLog(`Setting cleanup timeout for ${newState} → IDLE in ${behavior.cleanupDelay}ms`);
 
@@ -437,11 +468,47 @@ function createGhostStateStore() {
 				// wobbleDirection: null, // Removed
 				// wobbleTimeoutId: null, // Removed
 				// isSpecialAnimationActive removed
+				inactivityTimerId: null, // Clear inactivity timer on reset
 				debug: s.debug,
 				isFirstVisit: false, // Assume reset happens after first visit
 				stateTimeouts: {}
 			};
 		});
+	}
+
+	/**
+	 * Resets the inactivity timer. If in IDLE state, starts a new timer.
+	 * If the timer expires, transitions to ASLEEP state.
+	 */
+	function resetInactivityTimer() {
+		const currentStoreState = get(_state);
+		if (currentStoreState.inactivityTimerId) {
+			clearTimeout(currentStoreState.inactivityTimerId);
+		}
+
+		if (currentStoreState.current === ANIMATION_STATES.IDLE) {
+			debugLog(`Starting inactivity timer for ${BLINK_CONFIG.INACTIVITY_TIMEOUT}ms.`);
+			const newTimerId = setTimeout(() => {
+				debugLog('Inactivity timer expired. Transitioning to ASLEEP.');
+				setAnimationState(ANIMATION_STATES.ASLEEP);
+			}, BLINK_CONFIG.INACTIVITY_TIMEOUT);
+			_state.update(s => ({ ...s, inactivityTimerId: newTimerId }));
+		} else {
+			_state.update(s => ({ ...s, inactivityTimerId: null }));
+		}
+	}
+	resetInactivityTimerFunc = resetInactivityTimer; // Assign to forward-declared variable
+
+	/**
+	 * Wakes the ghost up from ASLEEP state.
+	 */
+	function wakeUp() {
+		const currentStoreState = get(_state);
+		if (currentStoreState.current === ANIMATION_STATES.ASLEEP) {
+			debugLog('Waking up from ASLEEP state.');
+			setAnimationState(ANIMATION_STATES.IDLE);
+			// The transition to IDLE will automatically call resetInactivityTimer.
+		}
 	}
 
 	/**
@@ -484,7 +551,10 @@ function createGhostStateStore() {
 		setDebug,
 		checkAndSetFirstVisit, // Expose the new method
 		completeFirstVisit,
-		reset
+		reset,
+		// Expose new methods for inactivity and wake up
+		resetInactivityTimer,
+		wakeUp
 	};
 
 	// --- Define derived stores here, inside the factory function (using underscore prefix) ---

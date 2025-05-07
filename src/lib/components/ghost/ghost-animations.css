@@ -122,6 +122,12 @@
 	transform-origin: center center; /* Ensure correct pivot point */
 }
 
+/* Asleep state animation - applied when .asleep class is on the container */
+.ghost-container.asleep #ghost-spin-pivot { /* Or target .ghost-wobble-group or .ghost-container */
+	animation: ghost-asleep 6s ease-in-out infinite;
+	/* Opacity can also be handled here if desired, e.g., opacity: 0.8; */
+}
+
 /* ----------------------------------------
    Theme-specific Base Animations
    ---------------------------------------- */
@@ -345,6 +351,17 @@
 	}
 	100% {
 		transform: rotate(360deg) scale(1); /* Single full rotation, scale back down */
+	}
+}
+
+@keyframes ghost-asleep {
+	0%, 100% {
+		transform: translateY(0) scale(1);
+		opacity: 1;
+	}
+	50% {
+		transform: translateY(2px) scale(0.98); /* Slight sink and shrink */
+		opacity: 0.85; /* Slightly dimmer */
 	}
 }
 

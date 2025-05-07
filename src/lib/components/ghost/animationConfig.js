@@ -6,6 +6,7 @@
 export const BLINK_CONFIG = {
 	MIN_GAP: 4000, // Minimum time between ambient blinks (ms)
 	MAX_GAP: 9000, // Maximum time between ambient blinks (ms)
+	INACTIVITY_TIMEOUT: 12000, // Time of no interaction in IDLE before falling asleep (ms)
 	SINGLE_DURATION: 180, // Duration of a single blink (ms) - increased to account for transitions
 	DOUBLE_PAUSE: 80, // Pause between blinks in a double-blink (ms) - increased for smoother effect
 	TRIPLE_PAUSE: 180, // Pause between blinks in a triple-blink (ms)
@@ -23,8 +24,8 @@ export const WOBBLE_CONFIG = {
 };
 
 export const SPECIAL_CONFIG = {
-	CHECK_INTERVAL: 3000, // Time between special animation checks (ms)
-	CHANCE: 0.99, // Probability (0-1) of special animation occurring
+	CHECK_INTERVAL: 5000, // Time between special animation checks (ms)
+	CHANCE: 0.05, // Probability (0-1) of special animation occurring
 	DURATION: 2000 // Duration of special animation (ms)
 };
 
@@ -170,7 +171,8 @@ export const CSS_CLASSES = {
 	RECORDING_PEACH: 'recording-glow-peach',
 	RECORDING_MINT: 'recording-glow-mint',
 	RECORDING_BUBBLEGUM: 'recording-glow-bubblegum',
-	RAINBOW_CYCLE: 'rainbow-color-cycle'
+	RAINBOW_CYCLE: 'rainbow-color-cycle',
+	ASLEEP: 'asleep' // CSS class for the asleep state
 };
 
 // Animation state definitions
@@ -180,7 +182,8 @@ export const ANIMATION_STATES = {
 	THINKING: 'thinking',
 	RECORDING: 'recording',
 	REACTING: 'reacting',
-	EASTER_EGG: 'easter_egg' // New state for special animations
+	EASTER_EGG: 'easter_egg', // New state for special animations
+	ASLEEP: 'asleep' // New state for inactivity
 	// WOBBLING state removed
 };
 
@@ -189,15 +192,18 @@ export const ANIMATION_TRANSITIONS = {
 	[ANIMATION_STATES.INITIAL]: [ANIMATION_STATES.IDLE],
 	[ANIMATION_STATES.IDLE]: [
 		ANIMATION_STATES.THINKING,
+		ANIMATION_STATES.THINKING,
 		ANIMATION_STATES.RECORDING,
 		ANIMATION_STATES.REACTING,
-		ANIMATION_STATES.EASTER_EGG // IDLE can transition to EASTER_EGG
+		ANIMATION_STATES.EASTER_EGG, // IDLE can transition to EASTER_EGG
+		ANIMATION_STATES.ASLEEP // IDLE can transition to ASLEEP
 	],
 	[ANIMATION_STATES.THINKING]: [ANIMATION_STATES.IDLE, ANIMATION_STATES.RECORDING],
 	[ANIMATION_STATES.RECORDING]: [ANIMATION_STATES.THINKING, ANIMATION_STATES.IDLE],
 	// WOBBLING transitions removed
 	[ANIMATION_STATES.REACTING]: [ANIMATION_STATES.IDLE],
-	[ANIMATION_STATES.EASTER_EGG]: [ANIMATION_STATES.IDLE] // EASTER_EGG transitions back to IDLE
+	[ANIMATION_STATES.EASTER_EGG]: [ANIMATION_STATES.IDLE], // EASTER_EGG transitions back to IDLE
+	[ANIMATION_STATES.ASLEEP]: [ANIMATION_STATES.IDLE] // ASLEEP transitions back to IDLE (when woken)
 };
 
 // Animation behaviors for each state (WOBBLING removed)
@@ -235,9 +241,14 @@ export const ANIMATION_BEHAVIORS = {
 	},
 	[ANIMATION_STATES.EASTER_EGG]: {
 		blinkPattern: 'none', // No blinking during easter egg
-		eyeTracking: true,    // Eyes can still track if desired, or set to false
-		cleanupDelay: SPECIAL_CONFIG.DURATION, // Duration of the easter egg
+		eyeTracking: true, // Eyes can still track if desired, or set to false
+		cleanupDelay: SPECIAL_CONFIG.DURATION // Duration of the easter egg
 		// Note: The actual animation (spin) is applied via CSS class in Ghost.svelte
+	},
+	[ANIMATION_STATES.ASLEEP]: {
+		blinkPattern: 'none', // Eyes will be managed as closed by the state store
+		eyeTracking: false, // No eye tracking while asleep
+		cleanupDelay: 0 // Does not auto-transition out; requires interaction
 	}
 };
 

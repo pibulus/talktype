@@ -321,6 +321,19 @@
 				cleanupAnimations();
 				cleanupBlinks();
 				// The Svelte action will handle its own timer cleanup via its destroy method.
+
+				// Add global event listeners for waking up / resetting inactivity
+				document.addEventListener('mousemove', handleUserInteraction, { passive: true });
+				document.addEventListener('pointerdown', handleUserInteraction, { passive: true });
+				
+				return () => {
+					// Original cleanup
+					cleanupAnimations();
+					cleanupBlinks();
+					// Cleanup global event listeners
+					document.removeEventListener('mousemove', handleUserInteraction);
+					document.removeEventListener('pointerdown', handleUserInteraction);
+				};
 			};
 		}
 	});
@@ -346,6 +359,17 @@
 		// but only schedule when the relevant props have actually changed.
 		setTimeout(syncStateToStore, 0);
 	}
+
+	// Interaction handlers for inactivity timer and waking up
+	function handleUserInteraction() {
+		if (!browser) return;
+		const currentState = $ghostStateStore.current;
+		if (currentState === ANIMATION_STATES.IDLE) {
+			ghostStateStore.resetInactivityTimer();
+		} else if (currentState === ANIMATION_STATES.ASLEEP) {
+			ghostStateStore.wakeUp();
+		}
+	}
 </script>
 
 <button
@@ -353,9 +377,10 @@
 	class="ghost-container theme-{currentTheme} 
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
       {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
+      {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
       {!clickable ? 'ghost-non-clickable' : ''}"
 	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
-	on:click={clickable ? handleClick : undefined}
+	on:click={() => { if (clickable) { handleClick(); handleUserInteraction(); } }}
 	on:keydown={(e) => {
 		if (clickable && (e.key === 'Enter' || e.key === ' ')) {
 			e.preventDefault();
@@ -373,6 +398,7 @@
 		class="ghost-svg theme-{currentTheme}
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
       {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
+      {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
       {debugAnim ? 'debug-animation' : ''}"
 	>
 		<defs>
