@@ -122,11 +122,20 @@
 	transform-origin: center center; /* Ensure correct pivot point */
 }
 
-/* Asleep state animation - applied directly to eyes */
+/* Falling Asleep animation - applied directly to eyes */
 .ghost-container.asleep .ghost-eye {
 	/* Apply the falling asleep animation */
-	animation: ghost-falling-asleep 5s ease-in-out 1 forwards; /* Run once over 5s, keep final state */
-	/* Ensure origin is center for scaling */
+	animation: ghost-falling-asleep 5s ease-in-out 1; /* REMOVED forwards */
+	transform-origin: center center;
+}
+
+/* Waking Up animation - applied to body and eyes */
+.ghost-container.waking-up #ghost-spin-pivot { /* Apply shake to body */
+	animation: ghost-wake-up-shake 0.8s cubic-bezier(.36,.07,.19,.97) both; /* Run once */
+	transform-origin: center center;
+}
+.ghost-container.waking-up .ghost-eye { /* Apply blink awake to eyes */
+	animation: ghost-wake-up-blink 0.8s ease-in-out 1 forwards; /* Run once */
 	transform-origin: center center;
 }
 
@@ -367,7 +376,22 @@
 	65% { transform: scaleY(0.5); }   /* Another small attempt */
 	80% { transform: scaleY(0.1); }   /* Almost asleep */
 	90% { transform: scaleY(0.2); }   /* Final flicker? */
-	100% { transform: scaleY(0.05); } /* Fully closed */
+	100% { transform: scaleY(0.05); } /* Fully closed - REMOVED FORWARDS, state handles open */
+}
+
+@keyframes ghost-wake-up-shake { /* Body shake */
+  10%, 90% { transform: translate3d(-1px, 0, 0) scale(1.01) rotate(-0.5deg); }
+  20%, 80% { transform: translate3d(2px, 0, 0) scale(0.99) rotate(0.5deg); }
+  30%, 50%, 70% { transform: translate3d(-3px, 0, 0) scale(1.02) rotate(-0.8deg); }
+  40%, 60% { transform: translate3d(3px, 0, 0) scale(0.98) rotate(0.8deg); }
+  100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+}
+
+@keyframes ghost-wake-up-blink { /* Eye blink awake */
+  0% { transform: scaleY(0.05); } /* Start closed */
+  50% { transform: scaleY(0.05); } /* Stay closed */
+  70% { transform: scaleY(1.2); }  /* Open wide quickly */
+  100% { transform: scaleY(1); }   /* Settle open */
 }
 
 

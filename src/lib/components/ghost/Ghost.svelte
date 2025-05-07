@@ -372,6 +372,7 @@
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
       {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
+      {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
       {!clickable ? 'ghost-non-clickable' : ''}"
 	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
 	on:click={() => { if (clickable) { handleClick(); handleUserInteraction(); } }}
@@ -393,6 +394,7 @@
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
       {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
+      {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
       {debugAnim ? 'debug-animation' : ''}"
 	>
 		<defs>

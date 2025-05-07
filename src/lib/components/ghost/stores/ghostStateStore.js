@@ -155,12 +155,16 @@ function createGhostStateStore() {
 			}
 		}
 		
-		// Handle eye state for ASLEEP - Eyes are now controlled by CSS animation, not state flag
+		// Handle eye state for ASLEEP and WAKING_UP
 		let newEyesClosedState = currentState.eyesClosed;
 		if (newState === ANIMATION_STATES.ASLEEP) {
-			newEyesClosedState = false; // Start with eyes open, animation will close them
-		} else if (currentState.current === ANIMATION_STATES.ASLEEP && newState === ANIMATION_STATES.IDLE) {
-			// Waking up to IDLE, ensure eyes open unless IDLE itself dictates otherwise (it doesn't)
+			// Eyes start open when falling asleep, animation closes them
+			newEyesClosedState = false;
+		} else if (currentState.current === ANIMATION_STATES.ASLEEP && newState === ANIMATION_STATES.WAKING_UP) {
+			// Ensure eyes are open when starting the wake-up sequence
+			newEyesClosedState = false;
+		} else if (currentState.current === ANIMATION_STATES.WAKING_UP && newState === ANIMATION_STATES.IDLE) {
+			// Ensure eyes are open when finishing wake-up and going to IDLE
 			newEyesClosedState = false;
 		}
 
@@ -505,9 +509,10 @@ function createGhostStateStore() {
 	function wakeUp() {
 		const currentStoreState = get(_state);
 		if (currentStoreState.current === ANIMATION_STATES.ASLEEP) {
-			debugLog('Waking up from ASLEEP state.');
-			setAnimationState(ANIMATION_STATES.IDLE);
-			// The transition to IDLE will automatically call resetInactivityTimer.
+			debugLog('Waking up from ASLEEP state, transitioning to WAKING_UP.');
+			setAnimationState(ANIMATION_STATES.WAKING_UP);
+			// The state machine will automatically transition from WAKING_UP to IDLE after cleanupDelay.
+			// The transition to IDLE will then call resetInactivityTimer.
 		}
 	}
 

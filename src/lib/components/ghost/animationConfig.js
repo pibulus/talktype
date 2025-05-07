@@ -172,7 +172,8 @@ export const CSS_CLASSES = {
 	RECORDING_MINT: 'recording-glow-mint',
 	RECORDING_BUBBLEGUM: 'recording-glow-bubblegum',
 	RAINBOW_CYCLE: 'rainbow-color-cycle',
-	ASLEEP: 'asleep' // CSS class for the asleep state
+	ASLEEP: 'asleep', // CSS class for the asleep state
+	WAKING_UP: 'waking-up' // CSS class for the waking up state
 };
 
 // Animation state definitions
@@ -183,7 +184,8 @@ export const ANIMATION_STATES = {
 	RECORDING: 'recording',
 	REACTING: 'reacting',
 	EASTER_EGG: 'easter_egg', // New state for special animations
-	ASLEEP: 'asleep' // New state for inactivity
+	ASLEEP: 'asleep', // New state for inactivity
+	WAKING_UP: 'waking_up' // New state for waking transition
 	// WOBBLING state removed
 };
 
@@ -203,7 +205,8 @@ export const ANIMATION_TRANSITIONS = {
 	// WOBBLING transitions removed
 	[ANIMATION_STATES.REACTING]: [ANIMATION_STATES.IDLE],
 	[ANIMATION_STATES.EASTER_EGG]: [ANIMATION_STATES.IDLE], // EASTER_EGG transitions back to IDLE
-	[ANIMATION_STATES.ASLEEP]: [ANIMATION_STATES.IDLE] // ASLEEP transitions back to IDLE (when woken)
+	[ANIMATION_STATES.ASLEEP]: [ANIMATION_STATES.WAKING_UP], // ASLEEP transitions to WAKING_UP
+	[ANIMATION_STATES.WAKING_UP]: [ANIMATION_STATES.IDLE] // WAKING_UP transitions to IDLE
 };
 
 // Animation behaviors for each state (WOBBLING removed)
@@ -249,6 +252,11 @@ export const ANIMATION_BEHAVIORS = {
 		blinkPattern: 'none', // Eyes will be managed as closed by the state store
 		eyeTracking: false, // No eye tracking while asleep
 		cleanupDelay: 0 // Does not auto-transition out; requires interaction
+	},
+	[ANIMATION_STATES.WAKING_UP]: {
+		blinkPattern: 'none', // Eyes controlled by wake-up animation
+		eyeTracking: false,   // No eye tracking during wake-up
+		cleanupDelay: 1000    // Duration of the wake-up animation (ms)
 	}
 };
 
