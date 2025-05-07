@@ -315,25 +315,19 @@
 				ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 			}
 
+			// Add global event listeners for waking up / resetting inactivity
+			document.addEventListener('mousemove', handleUserInteraction, { passive: true });
+			document.addEventListener('pointerdown', handleUserInteraction, { passive: true });
+
 			// Return cleanup function
 			return () => {
-				// Removed mousemove listener cleanup
+				// Original cleanup
 				cleanupAnimations();
 				cleanupBlinks();
+				// Cleanup global event listeners
+				document.removeEventListener('mousemove', handleUserInteraction);
+				document.removeEventListener('pointerdown', handleUserInteraction);
 				// The Svelte action will handle its own timer cleanup via its destroy method.
-
-				// Add global event listeners for waking up / resetting inactivity
-				document.addEventListener('mousemove', handleUserInteraction, { passive: true });
-				document.addEventListener('pointerdown', handleUserInteraction, { passive: true });
-				
-				return () => {
-					// Original cleanup
-					cleanupAnimations();
-					cleanupBlinks();
-					// Cleanup global event listeners
-					document.removeEventListener('mousemove', handleUserInteraction);
-					document.removeEventListener('pointerdown', handleUserInteraction);
-				};
 			};
 		}
 	});

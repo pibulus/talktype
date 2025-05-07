@@ -122,11 +122,14 @@
 	transform-origin: center center; /* Ensure correct pivot point */
 }
 
-/* Asleep state animation - applied when .asleep class is on the container */
-.ghost-container.asleep #ghost-spin-pivot { /* Or target .ghost-wobble-group or .ghost-container */
-	animation: ghost-asleep 6s ease-in-out infinite;
-	/* Opacity can also be handled here if desired, e.g., opacity: 0.8; */
+/* Asleep state animation - applied directly to eyes */
+.ghost-container.asleep .ghost-eye {
+	/* Apply the falling asleep animation */
+	animation: ghost-falling-asleep 5s ease-in-out 1 forwards; /* Run once over 5s, keep final state */
+	/* Ensure origin is center for scaling */
+	transform-origin: center center;
 }
+
 
 /* ----------------------------------------
    Theme-specific Base Animations
@@ -354,16 +357,19 @@
 	}
 }
 
-@keyframes ghost-asleep {
-	0%, 100% {
-		transform: translateY(0) scale(1);
-		opacity: 1;
-	}
-	50% {
-		transform: translateY(2px) scale(0.98); /* Slight sink and shrink */
-		opacity: 0.85; /* Slightly dimmer */
-	}
+/* Removed @keyframes ghost-asleep */
+
+@keyframes ghost-falling-asleep { /* Renamed */
+	0% { transform: scaleY(1); }     /* Start fully open */
+	20% { transform: scaleY(0.4); }   /* Getting drowsy */
+	35% { transform: scaleY(0.8); }   /* Tries to open */
+	50% { transform: scaleY(0.2); }   /* Fails, closes more */
+	65% { transform: scaleY(0.5); }   /* Another small attempt */
+	80% { transform: scaleY(0.1); }   /* Almost asleep */
+	90% { transform: scaleY(0.2); }   /* Final flicker? */
+	100% { transform: scaleY(0.05); } /* Fully closed */
 }
+
 
 /* ----------------------------------------
    Hover Glow Keyframe Animations

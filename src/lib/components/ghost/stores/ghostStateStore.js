@@ -155,13 +155,13 @@ function createGhostStateStore() {
 			}
 		}
 		
-		// Handle eye state for ASLEEP
+		// Handle eye state for ASLEEP - Eyes are now controlled by CSS animation, not state flag
 		let newEyesClosedState = currentState.eyesClosed;
 		if (newState === ANIMATION_STATES.ASLEEP) {
-			newEyesClosedState = true;
+			newEyesClosedState = false; // Start with eyes open, animation will close them
 		} else if (currentState.current === ANIMATION_STATES.ASLEEP && newState === ANIMATION_STATES.IDLE) {
 			// Waking up to IDLE, ensure eyes open unless IDLE itself dictates otherwise (it doesn't)
-			newEyesClosedState = false; 
+			newEyesClosedState = false;
 		}
 
 
