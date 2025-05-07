@@ -23,7 +23,11 @@
 
 /* New class to apply the combined initial load animation - Using ID for specificity */
 #ghost-wobble-group.initial-load-effect {
-	animation: grow-and-wobble 2.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+	/* Chain two animations: initial-grow, then ghost-wobble-both */
+	/* Durations: initial-grow = 2.21s, ghost-wobble-both = 0.29s (from WOBBLE_CONFIG) */
+	animation: 
+		initial-grow 2.21s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+		ghost-wobble-both var(--ghost-wobble-duration, 0.29s) ease-in-out forwards 2.21s;
 	/* Ensure transform origin is set */
 	transform-origin: center center;
 }
@@ -820,50 +824,21 @@
 	} /* Return */
 }
 
-/* Combined Grow and Wobble for Initial Load - Faster Wobble Phase */
-@keyframes grow-and-wobble {
-	/* Grow Phase (Adjusted Timing) */
-	0% {
-		transform: scale(0) rotate(0deg);
-		opacity: 0;
-	}
-	18% {
-		/* Start becoming visible early (orig 15%) */
-		opacity: 1;
-	}
-	43% {
-		/* Overshoot scale (orig 35%) */
-		transform: scale(1.1) rotate(0deg);
-	}
-	62% {
-		/* Settle back (orig 50%) */
-		transform: scale(0.98) rotate(0deg);
-		opacity: 1;
-	}
-	80% {
-		/* Fully grown, stable - Start of faster wobble phase (orig 65%) */
-		transform: scale(1) rotate(0deg);
-		opacity: 1;
-	}
-	/* Faster Wobble Phase (Compressed into last 20%) */
-	86% {
-		/* Wobble Left (orig 75%) */
-		transform: scale(1.04) rotate(-8deg);
-	}
-	91% {
-		/* Wobble Right (orig 85%) */
-		transform: scale(1.04) rotate(8deg);
-	}
-	97% {
-		/* Settle back towards center (orig 95%) */
-		transform: scale(1.01) rotate(-2deg);
-	}
-	100% {
-		/* Final resting state */
-		transform: scale(1) rotate(0deg);
-		opacity: 1;
-	}
+/* New Keyframe for the initial grow part only */
+@keyframes initial-grow {
+  0%   { transform: scale(0) rotate(0deg); opacity: 0; }
+  /* Adjusted percentages for a 2210ms duration out of 2500ms total */
+  /* Original 18% of 2500ms = 450ms. (450 / 2210) * 100 = ~20% */
+  20%  { opacity: 1; }
+  /* Original 43% of 2500ms = 1075ms. (1075 / 2210) * 100 = ~49% */
+  49%  { transform: scale(1.1) rotate(0deg); }
+  /* Original 62% of 2500ms = 1550ms. (1550 / 2210) * 100 = ~70% */
+  70%  { transform: scale(0.98) rotate(0deg); opacity: 1; }
+  /* Original 80% of 2500ms = 2000ms. (2000 / 2210) * 100 = ~90.5%, round to 100% for end of grow */
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
+
+/* @keyframes grow-and-wobble is now replaced by initial-grow + ghost-wobble-both */
 
 @keyframes grow-ghost {
 	0% {
