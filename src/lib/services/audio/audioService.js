@@ -246,25 +246,23 @@ export class AudioService {
 
   async stopRecording() {
     return new Promise((resolve) => {
-      // Force recording state update to ensure UI consistency
-      audioActions.updateState(AudioStates.STOPPING);
-      
-      // Always notify store that recording is stopping regardless of internal state
+      // Update recording state to STOPPING
       audioActions.updateState(AudioStates.STOPPING);
       
       // Check recorder state - attempt to stop even if internal state doesn't match
       if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
         this.stateManager.setState(AudioStates.IDLE);
-        resolve(null);
+        resolve(null); // No active recording to stop
         return;
       }
 
-      // Store the audio chunks for creating blob after recording stops
-      const currentAudioChunks = [...this.audioChunks];
+      // The mimeType should be determined before onstop is set up.
       const mimeType = this.mediaRecorder.mimeType || 'audio/webm';
       
       this.mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(currentAudioChunks, { type: mimeType });
+        // Create the Blob from this.audioChunks, which now contains all chunks
+        // including the final one from the last dataavailable event.
+        const audioBlob = new Blob(this.audioChunks, { type: mimeType });
         
         // Update store with audio blob
         audioActions.setAudioBlob(audioBlob, mimeType);
