@@ -202,7 +202,7 @@ export const ANIMATION_BEHAVIORS = {
 	[ANIMATION_STATES.INITIAL]: {
 		blinkPattern: 'none',
 		eyeTracking: false,
-		cleanupDelay: ANIMATION_TIMING.INITIAL_LOAD_DURATION,
+		cleanupDelay: 0, // Manually controlled transition after initial animation + blink
 		growAnimation: true
 	},
 	[ANIMATION_STATES.IDLE]: {

@@ -13,9 +13,9 @@
 	import {
 		ANIMATION_STATES,
 		CSS_CLASSES,
-		PULSE_CONFIG
-		// Removed EYE_CONFIG, WOBBLE_CONFIG (used internally by services/stores)
-		// Removed injectAnimationVariables (handled by themeStore)
+		PULSE_CONFIG,
+		ANIMATION_TIMING, // Import ANIMATION_TIMING
+		WOBBLE_CONFIG // Import WOBBLE_CONFIG
 	} from './animationConfig.js';
 
 	// Removed THEMES import (managed by themeStore)
@@ -30,7 +30,10 @@
 	import { forceReflow } from './utils/animationUtils.js'; // Only forceReflow needed directly
 
 	// Import gradient animator for theme updates
-	import { cleanupAllAnimations, initGradientAnimation } from './gradientAnimator.js';
+	// import { cleanupAllAnimations, initGradientAnimation } from './gradientAnimator.js'; // These seem to be unused based on later comments
+
+	// Import the new Svelte Action
+	import { initialGhostAnimation } from './actions/initialGhostAnimation.js';
 
 	// Props to communicate state
 	export let isRecording = false;
@@ -50,13 +53,14 @@
 
 	// DOM element references
 	let ghostSvg;
-	let leftEye;
-	let rightEye;
+	let leftEye; // Element reference for the left eye
+	let rightEye; // Element reference for the right eye
 	let backgroundElement;
 	let ghostStyleElement;
+	let ghostWobbleGroup; // Element reference for the wobble group
 
-	// Timer references for cleanup
-	const timers = {};
+	// Timer references for cleanup (now primarily managed by services/actions)
+	// const timers = {}; // Removed as initialAnimationTimer is now in the action
 
 	// State tracking to prevent infinite loops
 	let lastRecordingState = false;
@@ -304,7 +308,9 @@
 			const state = $ghostStateStore; // Read the potentially updated state
 			if (state.isFirstVisit) {
 				ghostStateStore.setAnimationState(ANIMATION_STATES.INITIAL);
-				animationService.applyInitialLoadEffect(ghostSvg);
+				// The Svelte action `initialGhostAnimation` (applied below in the template)
+				// will handle applying the 'initial-load-effect' class and the timed blink.
+				// It will then dispatch 'initialAnimationComplete'.
 			} else {
 				ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 			}
@@ -314,9 +320,20 @@
 				// Removed mousemove listener cleanup
 				cleanupAnimations();
 				cleanupBlinks();
+				// The Svelte action will handle its own timer cleanup via its destroy method.
 			};
 		}
 	});
+
+	function handleInitialAnimationComplete() {
+		if (debug)
+			console.log(
+				'[Ghost.svelte] Received "initialAnimationComplete" event. Finalizing first visit.'
+			);
+		ghostStateStore.completeFirstVisit();
+		ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
+	}
+
 	// Monitor theme changes
 	$: if (currentTheme && ghostSvg && browser) {
 		// Schedule on the next tick to avoid recursive updates
@@ -394,7 +411,15 @@
 		</defs>
 
 		<!-- New wrapper group for wobble transform - ID is used by store -->
-		<g class="ghost-wobble-group" id="ghost-wobble-group">
+		<g
+			bind:this={ghostWobbleGroup}
+			class="ghost-wobble-group"
+			id="ghost-wobble-group"
+			use:initialGhostAnimation={$ghostStateStore.isFirstVisit
+				? { blinkService, leftEye, rightEye, debug }
+				: undefined}
+			on:initialAnimationComplete={handleInitialAnimationComplete}
+		>
 			<g class="ghost-layer ghost-bg" bind:this={backgroundElement}>
 				<use
 					xlink:href={ghostPathsUrl}
