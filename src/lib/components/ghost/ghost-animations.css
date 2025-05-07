@@ -125,7 +125,7 @@
 /* Falling Asleep animation - applied directly to eyes */
 .ghost-container.asleep .ghost-eye {
 	/* Apply the falling asleep animation */
-	animation: ghost-falling-asleep 5s ease-in-out 1; /* REMOVED forwards */
+	animation: ghost-falling-asleep 5s ease-in-out 1 forwards; /* Run once, keep final state */
 	transform-origin: center center;
 }
 
@@ -374,9 +374,9 @@
 	35% { transform: scaleY(0.8); }   /* Tries to open */
 	50% { transform: scaleY(0.2); }   /* Fails, closes more */
 	65% { transform: scaleY(0.5); }   /* Another small attempt */
-	80% { transform: scaleY(0.1); }   /* Almost asleep */
-	90% { transform: scaleY(0.2); }   /* Final flicker? */
-	100% { transform: scaleY(0.05); } /* Fully closed - REMOVED FORWARDS, state handles open */
+	80% { transform: scaleY(0.2); }   /* Almost asleep */
+	90% { transform: scaleY(0.25); }  /* Final flicker? */
+	100% { transform: scaleY(0.15); } /* Final closed state (thicker) */
 }
 
 @keyframes ghost-wake-up-shake { /* Body shake */
