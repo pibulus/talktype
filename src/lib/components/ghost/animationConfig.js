@@ -6,11 +6,11 @@
 export const BLINK_CONFIG = {
 	MIN_GAP: 4000, // Minimum time between ambient blinks (ms)
 	MAX_GAP: 9000, // Maximum time between ambient blinks (ms)
-	SINGLE_DURATION: 150, // Duration of a single blink (ms)
-	DOUBLE_PAUSE: 50, // Pause between blinks in a double-blink (ms)
-	TRIPLE_PAUSE: 150, // Pause between blinks in a triple-blink (ms)
+	SINGLE_DURATION: 180, // Duration of a single blink (ms) - increased to account for transitions
+	DOUBLE_PAUSE: 80, // Pause between blinks in a double-blink (ms) - increased for smoother effect
+	TRIPLE_PAUSE: 180, // Pause between blinks in a triple-blink (ms)
 	DOUBLE_CHANCE: 0.25, // Probability (0-1) of double blink vs single
-	THINKING_RATE: 150, // Time between blinks in thinking state (ms)
+	THINKING_RATE: 180, // Time between blinks in thinking state (ms)
 	THINKING_INTERVAL: 1000, // Interval for thinking blink pattern (ms)
 	RESUME_DELAY: 500 // Delay before resuming blinks after state change (ms)
 };
@@ -40,7 +40,8 @@ export const EYE_CONFIG = {
 	DEAD_ZONE: 0.05, // Dead zone for eye movement (0-1)
 	SMOOTHING: 0.8, // Smoothing factor for eye movement (0-1)
 	REACT_DELAY: 500, // Delay before reacting to transcript (ms)
-	TEXT_THRESHOLD: 20 // Threshold for "long" transcript reactions
+	TEXT_THRESHOLD: 20, // Threshold for "long" transcript reactions
+	BLINK_TRANSITION: '0.075s cubic-bezier(0.4, 0.0, 0.2, 1)' // Transition for smooth eye blinks
 };
 
 export const ANIMATION_TIMING = {
@@ -191,6 +192,7 @@ export function generateAnimationCssVariables() {
 	cssVars += `--ghost-gradientshift-duration: ${ANIMATION_TIMING.GRADIENT_SHIFT_DURATION};\n`;
 	cssVars += `--ghost-colorpulse-duration: ${ANIMATION_TIMING.COLOR_PULSE_DURATION};\n`;
 	cssVars += `--ghost-colorpulse-stagger: ${ANIMATION_TIMING.COLOR_PULSE_STAGGER};\n`;
+	cssVars += `--ghost-eye-blink-transition: ${EYE_CONFIG.BLINK_TRANSITION};\n`;
 
 	// Flow animation durations
 	cssVars += `--ghost-peach-flow-duration: ${ANIMATION_TIMING.PEACH_FLOW_DURATION};\n`;

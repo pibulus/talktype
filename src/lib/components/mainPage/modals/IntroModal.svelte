@@ -1,6 +1,7 @@
 <script>
   import { browser } from '$app/environment';
   import Ghost from '$lib/components/ghost/Ghost.svelte';
+  import { ModalCloseButton } from './index.js';
   
   export let closeModal;
   export let markIntroAsSeen;
@@ -22,7 +23,7 @@
     style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);">
 
     <form method="dialog">
-      <button class="btn btn-sm btn-circle absolute right-4 top-4 bg-[#fff9ed]/80 border-0 text-neutral-400 hover:bg-[#fff6e6] hover:text-neutral-700 shadow-sm" aria-label="Close Intro">✕</button>
+      <ModalCloseButton {closeModal} position="right-4 top-4" size="sm" label="Close Intro" modalId="intro_modal" />
     </form>
 
     <div class="space-y-5 sm:space-y-6 md:space-y-7 animate-fadeIn">
