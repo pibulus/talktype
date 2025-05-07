@@ -74,6 +74,7 @@
 	let unsubscribeTheme;
 	let isRecordingTransition = false;
 	let manualStateChange = false;
+	let wakeUpBlinkTriggered = false; // Flag to ensure blink only triggers once per wake-up
 
 	// Removed reactive variable for wobble group classes
 
@@ -345,6 +346,32 @@
 	$: if (currentTheme && ghostSvg && browser) {
 		// Schedule on the next tick to avoid recursive updates
 		setTimeout(applyThemeChanges, 0);
+	}
+
+	// Trigger a double blink when waking up sequence finishes (transition WAKING_UP -> IDLE)
+	$: if (
+		browser &&
+		$ghostStateStore.previous === ANIMATION_STATES.WAKING_UP &&
+		$ghostStateStore.current === ANIMATION_STATES.IDLE &&
+		!wakeUpBlinkTriggered && // Check the flag
+		leftEye &&
+		rightEye
+	) {
+		wakeUpBlinkTriggered = true; // Set the flag immediately
+		// Use a minimal timeout to ensure the state change has settled and CSS is potentially updated
+		setTimeout(() => {
+			// No need to double-check state if we trust the flag
+			if (debug) console.log('[Ghost.svelte] Triggering post-wake-up double blink.');
+			blinkService.performDoubleBlink({ leftEye, rightEye });
+			// The regular IDLE blink timer will start after this double blink completes
+			// or based on its own logic within blinkService.
+		}, 50); // Small delay (50ms)
+	}
+
+	// Reset the flag when the ghost is no longer IDLE (meaning it went to sleep, started recording, etc.)
+	$: if ($ghostStateStore.current !== ANIMATION_STATES.IDLE && wakeUpBlinkTriggered) {
+		if (debug) console.log('[Ghost.svelte] Resetting wakeUpBlinkTriggered flag.');
+		wakeUpBlinkTriggered = false;
 	}
 
 	// Monitor relevant props for changes
