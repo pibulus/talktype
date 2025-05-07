@@ -45,6 +45,7 @@ export {
   waveformData,
   hasPermissionError,
   recordingDuration,
+  transcriptionCompletedEvent, // <-- Add this line
   audioActions,
   transcriptionActions,
   uiActions

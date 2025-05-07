@@ -302,3 +302,28 @@ export function resetStores() {
   
   audioActions.stopRecordingTimer();
 }
+
+// New event store for transcription completion
+export const transcriptionCompletedEvent = (() => {
+  const { subscribe, set } = writable(null); // Event store, emits text on completion then null
+  let _previousInProgress = get(transcriptionState).inProgress; // Initialize with current state
+
+  transcriptionState.subscribe(currentState => {
+    if (
+      _previousInProgress === true &&
+      currentState.inProgress === false &&
+      currentState.text &&
+      currentState.text.trim() !== ''
+    ) {
+      // Condition: Was transcribing, now finished, and there's actual text.
+      console.log('[Store DEBUG] transcriptionCompletedEvent: Firing with text -', currentState.text);
+      set(currentState.text); // Emit the text value
+      // Reset to null in a microtask to ensure current subscribers process the text value first
+      // and to make it a true "event" store for the next completion.
+      Promise.resolve().then(() => set(null));
+    }
+    _previousInProgress = currentState.inProgress;
+  });
+
+  return { subscribe };
+})();

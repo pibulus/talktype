@@ -20,12 +20,13 @@
 		isRecording,
 		isTranscribing,
 		transcriptionProgress,
-		transcriptionText,
+		transcriptionText, // Kept for display and general debug, but not for completion trigger
 		recordingDuration,
 		errorMessage,
 		uiState,
 		audioState,
 		hasPermissionError,
+		transcriptionCompletedEvent, // <-- Import the new event store
 		// Actions
 		audioActions,
 		transcriptionActions,
@@ -158,6 +159,9 @@
 			// Stop recording and get the audio blob
 			const audioBlob = await audioService.stopRecording();
 
+			// Log AudioBlob size
+			console.log('[DEBUG] AudioBlob size:', audioBlob ? audioBlob.size : 'null');
+
 			// Add confetti celebration for successful transcription (randomly 1/7 times)
 			if (audioBlob && audioBlob.size > 10000 && Math.floor(Math.random() * 7) === 0) {
 				setTimeout(() => {
@@ -187,6 +191,7 @@
 				}
 			} else {
 				// If no audio data, revert UI state
+				console.log('[DEBUG] AudioBlob was null or size was 0. No transcription attempted.');
 				transcriptionActions.updateProgress(0);
 				uiActions.setErrorMessage('No audio recorded. Please try again.');
 			}
@@ -426,11 +431,16 @@
 	}
 
 	// State changes for transcript completion
-	function handleTranscriptCompletion() {
+	function handleTranscriptCompletion(textToProcess) { // <-- Accept text as a parameter
+		// ADD THIS LOG:
+		console.log('[DEBUG] handleTranscriptCompletion() called with textToProcess:', textToProcess);
+		console.log('[DEBUG] (For comparison) Current $transcriptionText store value:', $transcriptionText);
+
+
 		// Only attempt to use ghost component if it exists
 		if (ghostComponent && typeof ghostComponent.reactToTranscript === 'function') {
 			// React to transcript with ghost expression based on length
-			ghostComponent.reactToTranscript($transcriptionText?.length || 0);
+			ghostComponent.reactToTranscript(textToProcess?.length || 0); // Use parameter
 
 			// Stop thinking animation
 			if (typeof ghostComponent.stopThinking === 'function') {
@@ -439,12 +449,15 @@
 		}
 
 		// Automatically copy to clipboard when transcription finishes
-		if ($transcriptionText) {
+		if (textToProcess) { // <-- Use the passed-in parameter
+			console.log('[DEBUG] Inside handleTranscriptCompletion: textToProcess is TRUTHY.');
 			// Add a small delay to ensure the UI has updated
 			setTimeout(() => {
-				transcriptionService.copyToClipboard($transcriptionText);
+				transcriptionService.copyToClipboard(textToProcess); // <-- Use parameter
 				console.log("Auto-copying transcript to clipboard");
 			}, 300);
+		} else {
+			console.log('[DEBUG] Inside handleTranscriptCompletion: textToProcess is FALSY.');
 		}
 	}
 
@@ -455,10 +468,19 @@
 
 		// Ghost element is now handled through the component reference
 
-		// Subscribe to transcription state for completion events
+		// Existing subscription to transcriptionText for general debugging (no longer calls handleTranscriptCompletion)
 		const transcriptUnsub = transcriptionText.subscribe((text) => {
-			if (text && !$isTranscribing) {
-				handleTranscriptCompletion();
+			console.log('[DEBUG] (Raw transcriptionText update) Text:', text, 'IsTranscribing:', $isTranscribing);
+			// NOTE: The call to handleTranscriptCompletion() has been removed from here.
+		});
+
+		// New subscription to the dedicated transcriptionCompletedEvent
+		const transcriptionCompletedUnsub = transcriptionCompletedEvent.subscribe(completedText => {
+			if (completedText) {
+				// This event fires only when transcription is truly complete and text is available.
+				// $isTranscribing should be false by now.
+				console.log('[DEBUG] transcriptionCompletedEvent fired in component with text:', completedText);
+				handleTranscriptCompletion(completedText); // <-- Pass completedText to the handler
 			}
 		});
 
@@ -491,7 +513,7 @@
 		});
 
 		// Add to unsubscribe list
-		unsubscribers.push(transcriptUnsub, permissionUnsub, audioStateUnsub);
+		unsubscribers.push(transcriptUnsub, transcriptionCompletedUnsub, permissionUnsub, audioStateUnsub);
 
 		// Check if the app is running as a PWA after a short delay
 		if (browser) {
