@@ -67,7 +67,7 @@
 
 {#if transcribing}
   <div
-    class="progress-container relative h-[72px] w-full max-w-[500px] overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[66px]"
+    class="progress-container relative h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%] mx-auto"
     role="progressbar"
     aria-label="Transcription progress"
     aria-valuenow={progress}
@@ -82,14 +82,14 @@
 {:else}
   <button
     bind:this={recordButtonElement}
-    class="record-button duration-400 w-[90%] rounded-full transition-all ease-out sm:w-full {clipboardSuccess
+    class="record-button duration-400 w-[75%] rounded-full transition-all ease-out sm:w-[85%] {clipboardSuccess
       ? 'border border-purple-200 bg-purple-50 text-black notification-pulse'
-      : 'text-black'} mx-auto max-w-[500px] px-6 py-6 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-10 sm:py-5 {!recording &&
+      : 'text-black'} mx-auto max-w-[420px] px-6 py-5 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:py-5 sm:text-xl md:text-2xl {!recording &&
     buttonLabel === 'Start Recording' &&
     !clipboardSuccess
       ? 'pulse-subtle'
       : ''} {recording ? 'recording-active' : ''} {isWarning && recording ? 'recording-warning' : ''} {isDanger && recording ? 'recording-danger' : ''}"
-    style="min-width: 300px; min-height: 72px; transform-origin: center center; position: relative; {recording ? `--progress: ${Math.min(recordingDuration / (isPremiumUser ? ANIMATION.RECORDING.PREMIUM_LIMIT : ANIMATION.RECORDING.FREE_LIMIT) * 100, 100)}%` : ''}"
+    style="min-width: 280px; min-height: 64px; transform-origin: center center; position: relative; {recording ? `--progress: ${Math.min(recordingDuration / (isPremiumUser ? ANIMATION.RECORDING.PREMIUM_LIMIT : ANIMATION.RECORDING.FREE_LIMIT) * 100, 100)}%` : ''}"
     on:click={() => dispatch('click')}
     on:mouseenter={() => dispatch('preload')}
     on:keydown={handleKeyDown}
@@ -101,6 +101,7 @@
     <!-- Main button text -->
     <span
       class="cta-text relative inline-block whitespace-nowrap transition-all duration-300 ease-out"
+      style="letter-spacing: 0.02em;"
     >
       <!-- Clipboard success message -->
       <span
@@ -137,7 +138,7 @@
         <span class="button-content relative z-10">
           <!-- Main label - the button text is on top of the progress bar -->
           <span class="flex items-center justify-center relative">
-            <span class="relative z-10 px-1 py-0.5 rounded-lg {recording ? 'text-shadow-recording' : ''}">
+            <span class="cta__label relative z-10 px-1 py-0.5 rounded-lg {recording ? 'text-shadow-recording' : ''}" style="font-size: clamp(1rem, 0.5vw + 0.9rem, 1.25rem); letter-spacing: .02em;">
               {buttonLabel}
             </span>
             <span class="sr-only">
@@ -209,6 +210,12 @@
   .record-button:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.4), 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Enhanced focus ring for keyboard navigation */
+  .record-button:focus-visible {
+    outline: 3px solid #ffd65c;
+    outline-offset: 2px;
   }
   
   /* Hover state */

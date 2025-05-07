@@ -84,9 +84,12 @@
 		position: relative;
 	}
 
-	@media (min-width: 768px) {
-		.ghost-icon-wrapper {
-			margin-bottom: 1.5rem;
-		}
+	/* Recording ghost effect - enhanced contrast for accessibility */
+	:global(.ghost.recording) {
+		filter: drop-shadow(0 0 12px rgba(0, 180, 140, 0.85));
+		/* Enhanced outline for better contrast on cream backgrounds */
+		outline: 2px solid rgba(0, 120, 100, 0.4);
+		outline-offset: 2px;
+		border-radius: 50%;
 	}
 </style>

@@ -1,6 +1,7 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+@import './lib/styles/typography.css';
 
 /* Remove outlines globally */
 *:focus {
@@ -11,6 +12,22 @@
 /* Remove tap highlight on mobile */
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Global scroll behavior improvement - more subtle */
+html, body {
+  overscroll-behavior: none; /* Disable bounce/glow on over-scroll for the main page */
+  -webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
+}
+
+/* Ensure pages don't jump when content changes */
+html {
+  overflow-y: scroll; /* Prevent layout shift when content height changes */
+}
+
+/* Prevent horizontal overflow */
+body {
+  overflow-x: hidden;
 }
 
 /* Prevent modals from creating scroll issues - stronger overrides */

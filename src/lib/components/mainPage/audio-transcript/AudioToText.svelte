@@ -329,7 +329,7 @@
 		}, ANIMATION.CONFETTI.ANIMATION_DURATION);
 	}
 
-	// Function to calculate responsive font size based on transcript length and device
+	// Function to calculate responsive font size based on transcript length, word count, and device
 	function getResponsiveFontSize(text) {
 		if (!text) return 'text-base'; // Default size
 
@@ -341,13 +341,62 @@
 
 		// Smaller base sizes for mobile
 		const isMobile = viewportWidth > 0 && viewportWidth < 640;
+		const isDesktop = viewportWidth >= 1024;
 
-		const length = text.length;
-		if (length < 50) return isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl'; // Very short text
-		if (length < 150) return isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl'; // Short text
-		if (length < 300) return isMobile ? 'text-sm sm:text-base md:text-lg' : 'text-base md:text-lg'; // Medium text
-		if (length < 500) return isMobile ? 'text-xs sm:text-sm md:text-base' : 'text-sm md:text-base'; // Medium-long text
-		return isMobile ? 'text-xs sm:text-sm' : 'text-sm md:text-base'; // Long text
+		// Calculate both character length and word count
+		const charLength = text.length;
+		const wordCount = text.trim().split(/\s+/).length;
+		
+		// Typography best practices suggest that readability is impacted by both 
+		// total length and average word length
+		const avgWordLength = charLength / (wordCount || 1); // Avoid division by zero
+		
+		console.log(`Dynamic sizing: ${wordCount} words, ${charLength} chars, ${avgWordLength.toFixed(1)} avg length`);
+		
+		// Extremely short text (5 words or less): Use larger font, especially on desktop
+		if (wordCount <= 5) {
+			const size = isMobile 
+				? 'text-xl sm:text-2xl md:text-3xl' 
+				: isDesktop 
+					? 'text-2xl md:text-3xl lg:text-4xl' 
+					: 'text-2xl md:text-3xl';
+			console.log(`Using size for ≤5 words: ${size}`);
+			return size;
+		}
+		
+		// Very short text: 6-10 words or under 50 chars
+		if (wordCount < 10 || charLength < 50) {
+			const size = isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl';
+			console.log(`Using size for 6-10 words: ${size}`);
+			return size;
+		}
+		
+		// Short text: 11-25 words or under 150 chars with normal word length
+		if ((wordCount < 25 || charLength < 150) && avgWordLength < 8) {
+			const size = isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl';
+			console.log(`Using size for 11-25 words: ${size}`);
+			return size;
+		}
+		
+		// Medium text: 26-50 words or under 300 chars
+		if (wordCount < 50 || charLength < 300) {
+			const size = isMobile ? 'text-sm sm:text-base md:text-lg' : 'text-base md:text-lg';
+			console.log(`Using size for 26-50 words: ${size}`);
+			return size;
+		}
+		
+		// Medium-long text: 51-100 words or under 500 chars
+		if (wordCount < 100 || charLength < 500) {
+			const size = isMobile ? 'text-xs sm:text-sm md:text-base' : 'text-sm md:text-base';
+			console.log(`Using size for 51-100 words: ${size}`);
+			return size;
+		}
+		
+		// Long text: Over 100 words or 500+ chars
+		// Use smaller text for better readability on longer content
+		const size = isMobile ? 'text-xs sm:text-sm' : 'text-sm md:text-base';
+		console.log(`Using size for >100 words: ${size}`);
+		return size;
 	}
 
 	// Reactive font size based on transcript length
@@ -479,7 +528,7 @@
 	<div class="mobile-centered-container flex w-full flex-col items-center justify-center">
 		<!-- Recording button/progress bar section - sticky positioned for stability -->
 		<div
-			class="button-section relative sticky top-0 z-20 flex w-full justify-center bg-transparent pb-4 pt-2"
+			class="button-section relative sticky top-0 z-20 flex w-full justify-center bg-transparent pb-6 pt-2 sm:pb-7 md:pb-8"
 		>
 			<div class="button-container mx-auto flex w-full max-w-[500px] justify-center">
 				<RecordButtonWithTimer
@@ -498,7 +547,7 @@
 
 		<!-- Dynamic content area with smooth animation and proper containment -->
 		<div
-			class="position-wrapper relative mb-20 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
+			class="position-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
 		>
 			<!-- Content container with controlled overflow -->
 			<div class="content-container flex w-full flex-col items-center">
@@ -573,15 +622,16 @@
 
 /* Position wrapper to create a stable layout without shifts */
 .position-wrapper {
-	min-height: 150px; /* Ensure there's enough space for content */
-	max-height: calc(100vh - 240px); /* Control max height to prevent overflow */
+	min-height: 120px; /* Ensure there's enough space for content */
+	max-height: calc(100vh - 260px); /* Increased height capacity */
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	position: relative; /* Ensure proper positioning context */
-	overflow-y: visible; /* Allow overflow without jumping */
+	overflow: hidden; /* Prevent any overflow from causing page scroll */
 	transition: all 0.3s ease-in-out; /* Smooth transition when content changes */
-	contain: layout; /* Improve layout containment */
+	contain: paint layout; /* Stronger containment for better performance */
+	padding-bottom: 24px; /* Additional space at bottom for transcript */
 }
 
 /* Content container for transcripts and visualizers */
@@ -660,7 +710,7 @@
 	position: sticky;
 	top: 0;
 	z-index: 20;
-	padding-bottom: 0.75rem;
+	padding-bottom: 1rem; /* Increased from 0.75rem */
 	background: transparent;
 }
 
@@ -674,10 +724,11 @@
 
 	/* Adjust spacing for mobile */
 	.position-wrapper {
-		margin-top: 0.5rem;
-		margin-bottom: 5rem; /* More space for footer */
-		padding: 0 8px; /* Add side padding */
-		max-height: calc(100vh - 180px); /* Control height on mobile */
+		margin-top: 0.75rem;
+		margin-bottom: 2.5rem; /* More space (40px) for footer on mobile */
+		padding: 0 8px 32px; /* Add side padding and bottom padding */
+		max-height: calc(100vh - 200px); /* Control height on mobile */
+		overflow: hidden; /* Prevent page scroll from content */
 	}
 
 	/* Make the visualizer more compact on mobile */
@@ -701,9 +752,10 @@
 	/* Ensure proper spacing on tiny screens */
 	.position-wrapper {
 		margin-top: 0.5rem;
-		margin-bottom: 1rem;
-		padding: 0 4px;
-		max-height: calc(100vh - 160px); /* More compact on very small screens */
+		margin-bottom: 2rem;
+		padding: 0 4px 24px;
+		max-height: calc(100vh - 190px); /* More compact on very small screens */
+		overflow: hidden;
 	}
 }
 </style>

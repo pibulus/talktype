@@ -35,33 +35,23 @@
 		selectedPromptStyle = value;
 	});
 
-	// Theme options with CSS gradients for visualizer
+	// Theme options
 	const vibeOptions = [
 		{
 			id: 'peach',
-			name: 'Peach',
-			visualizerGradient: 'linear-gradient(to top, #ffa573, #ff9f9a, #ff7fcd, #ffb6f3)',
-			previewGradient: 'linear-gradient(135deg, #ffa573, #ff8f9a, #ff7fcd, #ffb6f3)'
+			name: 'Peach'
 		},
 		{
 			id: 'mint',
-			name: 'Mint',
-			visualizerGradient: 'linear-gradient(to top, #86efac, #5eead4, #67e8f9)',
-			previewGradient: 'linear-gradient(135deg, #86efac, #5eead4, #67e8f9)'
+			name: 'Mint'
 		},
 		{
 			id: 'bubblegum',
-			name: 'Bubblegum',
-			visualizerGradient:
-				'linear-gradient(to top, #20c5ff, #4d7bff, #c85aff, #ee45f0, #ff3ba0, #ff1a8d)',
-			previewGradient: 'linear-gradient(135deg, #20c5ff, #4d7bff, #c85aff, #ee45f0, #ff1a8d)'
+			name: 'Bubblegum'
 		},
 		{
 			id: 'rainbow',
-			name: 'Rainbow',
-			visualizerGradient: 'rainbow-gradient' /* Special identifier for rainbow animation */,
-			previewGradient: 'rainbow',
-			animated: true
+			name: 'Rainbow'
 		}
 	];
 
@@ -106,6 +96,13 @@
 	function changeVibe(vibeId) {
 		selectedVibe = vibeId;
 		applyTheme(vibeId);
+		
+		// Dispatch a custom event that other components can listen for
+		window.dispatchEvent(
+			new CustomEvent('talktype-setting-changed', {
+				detail: { setting: 'theme', value: vibeId }
+			})
+		);
 	}
 
 	// Handle prompt style change
@@ -252,17 +249,12 @@
 							data-vibe-type={vibe.id}
 							on:click={() => changeVibe(vibe.id)}
 						>
-							<div class="preview-container mb-1">
-								<!-- Ghost preview using DisplayGhost component -->
-								<div class="preview-ghost-wrapper relative h-10 w-10">
-									<DisplayGhost theme={vibe.id} size="100%" seed={10000 + index * 777} />
-								</div>
-
-								<!-- Visualizer preview -->
-								<div
-									class="preview-visualizer-container mt-1 h-2 w-full overflow-hidden rounded-md border border-pink-100"
-								>
-									<div class="preview-visualizer h-full w-full" data-preview-theme={vibe.id}></div>
+							<div class="preview-container mb-2">
+								<!-- Use the original DisplayGhost component with masking -->
+								<div class="preview-ghost-wrapper relative h-12 w-12">
+									<div class="ghost-mask-wrapper">
+										<DisplayGhost theme={vibe.id} size="48px" seed={index * 1000 + 12345} />
+									</div>
 								</div>
 							</div>
 
@@ -279,9 +271,6 @@
 					{/each}
 				</div>
 
-				<p class="mt-0.5 text-xs italic text-gray-500">
-					Changes are applied immediately and saved for future visits.
-				</p>
 			</div>
 
 			<!-- Prompt Style Selection Section -->
@@ -331,7 +320,7 @@
 			</div>
 
 			<div class="border-t border-pink-100 pt-2 text-center">
-				<p class="text-xs text-gray-500">TalkType v0.1.1 • Made with 💜 by Dennis & Pablo</p>
+				<p class="text-xs text-gray-500">TalkType • Made with 💜 by Dennis & Pablo</p>
 			</div>
 		</div>
 	</div>
@@ -387,79 +376,47 @@
 			0 4px 8px rgba(249, 168, 212, 0.2);
 	}
 
-	/* Default styles for image-based gradients */
-	.preview-ghost-bg {
-		/* Default styling */
+	/* Ghost preview styling */
+	.preview-ghost-wrapper {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: transform 0.3s ease;
 	}
-
-	/* Properly masked rainbow gradient that only shows inside the ghost */
-	.masked-rainbow-gradient {
-		/* Apply mask to clip the gradient to the ghost shape */
-		-webkit-mask-image: url(/assets/talktype-icon-base.svg);
-		mask-image: url(/assets/talktype-icon-base.svg);
-		-webkit-mask-size: contain;
-		mask-size: contain;
-		-webkit-mask-repeat: no-repeat;
-		mask-repeat: no-repeat;
-		-webkit-mask-position: center;
-		mask-position: center;
-
-		/* Apply rainbow gradient and animation */
-		animation: hueShift 5s linear infinite;
-		background-image: linear-gradient(135deg, #61d4b3, #fdd365, #fb8d62, #fd2eb3, #61d4b3);
-		background-size: 200% 200%;
+	
+	.vibe-option:hover .preview-ghost-wrapper {
+		transform: scale(1.05);
 	}
-
-	.preview-visualizer-container {
+	
+	/* Container for masking the ghost - hides the background */
+	.ghost-mask-wrapper {
+		position: relative;
 		width: 100%;
-		min-width: 40px;
-		height: 8px;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		overflow: visible;
 	}
-
-	/* Theme-specific gradient styles for previews */
-	.preview-visualizer[data-preview-theme='peach'] {
-		background: linear-gradient(to top, #ffa573, #ff9f9a, #ff7fcd, #ffb6f3);
+	
+	/* Apply masking to remove background from DisplayGhost */
+	.ghost-mask-wrapper :global(.display-ghost) {
+		overflow: visible !important; 
 	}
-
-	.preview-visualizer[data-preview-theme='mint'] {
-		background: linear-gradient(to top, #86efac, #5eead4, #67e8f9);
+	
+	/* Target only the ghost SVG, not its container */
+	.ghost-mask-wrapper :global(.ghost-svg) {
+		overflow: visible !important;
 	}
-
-	.preview-visualizer[data-preview-theme='bubblegum'] {
-		background: linear-gradient(to top, #a875ff, #d554ff, #f95bf9, #ff2a8d);
+	
+	/* Hide the ghost background rectangle */
+	.ghost-mask-wrapper :global(.ghost-container) {
+		background: transparent !important;
 	}
-
-	.preview-visualizer[data-preview-theme='rainbow'] {
-		animation: rainbowFlow 5s linear infinite;
-		background-image: linear-gradient(
-			to top,
-			#ff3d7f,
-			#ff8d3c,
-			#fff949,
-			#4dff60,
-			#35deff,
-			#9f7aff,
-			#ff3d7f
-		);
-		box-shadow:
-			0 0 10px rgba(255, 255, 255, 0.18),
-			0 0 18px rgba(255, 156, 227, 0.15);
-	}
-
-	@keyframes rainbowPreview {
-		0%,
-		100% {
-			filter: drop-shadow(0 0 3px rgba(255, 61, 127, 0.4)) saturate(1.3) brightness(1.1);
-		}
-		25% {
-			filter: drop-shadow(0 0 4px rgba(255, 249, 73, 0.5)) saturate(1.4) brightness(1.15);
-		}
-		50% {
-			filter: drop-shadow(0 0 4px rgba(53, 222, 255, 0.5)) saturate(1.5) brightness(1.2);
-		}
-		75% {
-			filter: drop-shadow(0 0 3px rgba(159, 122, 255, 0.4)) saturate(1.4) brightness(1.15);
-		}
+	
+	.ghost-mask-wrapper :global(.ghost-bg) {
+		/* Ensure the ghost background doesn't show */
+		opacity: 1 !important;
 	}
 
 	.vibe-option {
@@ -472,129 +429,6 @@
 
 	.vibe-option:active {
 		transform: translateY(0px);
-	}
-
-	/* Theme animations for ghost with effects */
-	.rainbow-animated {
-		animation: rainbowFlow 8.3s linear infinite;
-		filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.4));
-	}
-
-	.peach-animated {
-		animation: peachFlow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-	}
-
-	.mint-animated {
-		animation: mintFlow 10s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-	}
-
-	.bubblegum-animated {
-		animation: bubblegumFlow 12s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-	}
-
-	@keyframes rainbowFlow {
-		0% {
-			filter: hue-rotate(0deg) saturate(1.4) brightness(1.15);
-		}
-		100% {
-			filter: hue-rotate(360deg) saturate(1.5) brightness(1.2);
-		}
-	}
-
-	@keyframes peachFlow {
-		0% {
-			filter: saturate(1) brightness(1) contrast(1);
-		}
-		30% {
-			filter: saturate(1.3) brightness(1.1) contrast(1.05);
-		}
-		60% {
-			filter: saturate(1.5) brightness(1.15) contrast(1.08);
-		}
-		100% {
-			filter: saturate(1) brightness(1) contrast(1);
-		}
-	}
-
-	@keyframes mintFlow {
-		0% {
-			filter: saturate(1) brightness(1) contrast(1);
-		}
-		25% {
-			filter: saturate(1.2) brightness(1.1) contrast(1.02) hue-rotate(5deg);
-		}
-		50% {
-			filter: saturate(1.4) brightness(1.2) contrast(1.05) hue-rotate(-5deg);
-		}
-		75% {
-			filter: saturate(1.2) brightness(1.15) contrast(1.03) hue-rotate(2deg);
-		}
-		100% {
-			filter: saturate(1) brightness(1) contrast(1) hue-rotate(0deg);
-		}
-	}
-
-	@keyframes bubblegumFlow {
-		0% {
-			filter: saturate(1) brightness(1) contrast(1);
-		}
-		33% {
-			filter: saturate(1.3) brightness(1.05) contrast(1.1) hue-rotate(-8deg);
-		}
-		66% {
-			filter: saturate(1.6) brightness(1.1) contrast(1.15) hue-rotate(8deg);
-		}
-		100% {
-			filter: saturate(1) brightness(1) contrast(1) hue-rotate(0deg);
-		}
-	}
-
-	/* Add extra sparkle when previewing the rainbow theme */
-	.vibe-option[data-vibe-type='rainbow']:hover .preview-icon-layers .rainbow-animated {
-		animation:
-			rainbowFlow 4.7s linear infinite,
-			settingsSparkle 2s ease-in-out infinite;
-	}
-
-	@keyframes settingsSparkle {
-		0%,
-		100% {
-			filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.6))
-				drop-shadow(0 0 6px rgba(255, 61, 127, 0.5));
-		}
-		25% {
-			filter: drop-shadow(0 0 4px rgba(255, 141, 60, 0.7))
-				drop-shadow(0 0 8px rgba(255, 249, 73, 0.6));
-		}
-		50% {
-			filter: drop-shadow(0 0 4px rgba(77, 255, 96, 0.6))
-				drop-shadow(0 0 7px rgba(53, 222, 255, 0.7));
-		}
-		75% {
-			filter: drop-shadow(0 0 5px rgba(159, 122, 255, 0.7))
-				drop-shadow(0 0 8px rgba(255, 61, 127, 0.6));
-		}
-	}
-
-	/* Theme-based visualizer styling using data-theme */
-	:global([data-theme='rainbow'] .history-bar) {
-		animation:
-			hueShift 5s ease-in-out infinite,
-			rainbowPreview 3s ease-in-out infinite;
-		background-image: linear-gradient(
-			to top,
-			#ff3d7f,
-			#ff8d3c,
-			#fff949,
-			#4dff60,
-			#35deff,
-			#9f7aff,
-			#ff3d7f
-		);
-		background-size: 100% 600%;
-		box-shadow:
-			0 0 8px rgba(255, 255, 255, 0.15),
-			0 0 15px rgba(255, 156, 227, 0.1);
 	}
 
 	/* Connect the preview eyes to the main app's Brian Eno-inspired ambient blinking system */
@@ -638,8 +472,6 @@
 			transform: scaleY(1); /* Open eyes */
 		}
 	}
-
-	/* Removed redundant rainbow-animated-bars class */
 
 	@keyframes hueShift {
 		0% {
