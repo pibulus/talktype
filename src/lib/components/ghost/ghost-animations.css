@@ -118,7 +118,7 @@
 /* Special spin animation - applied when .spin class is on the container */
 .ghost-container.spin #ghost-spin-pivot {
 	/* Target the new wrapper */
-	animation: ghost-spin var(--ghost-special-duration, 2s) linear; /* forwards REMOVED */
+	animation: ghost-spin var(--ghost-special-duration, 2s) cubic-bezier(0.34, 1.56, 0.64, 1); /* Changed to easeOutBack timing */
 	transform-origin: center center; /* Ensure correct pivot point */
 }
 
@@ -337,11 +337,14 @@
    Special Animation Keyframes (Easter Egg)
    ---------------------------------------- */
 @keyframes ghost-spin {
-	from {
-		transform: rotate(0deg);
+	0% {
+		transform: rotate(0deg) scale(1);
 	}
-	to {
-		transform: rotate(360deg);
+	50% {
+		transform: rotate(180deg) scale(1.15); /* Scale up at mid-rotation */
+	}
+	100% {
+		transform: rotate(360deg) scale(1); /* Single full rotation, scale back down */
 	}
 }
 
