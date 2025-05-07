@@ -15,7 +15,7 @@
 /* New group for handling wobble transforms */
 .ghost-wobble-group {
 	/* transition: transform 0.1s ease-in-out; */ /* Remove transition, use animation */
-	transform-origin: center bottom; /* Wobble around the bottom center */
+	transform-origin: center center; /* Wobble around the bottom center */
 }
 
 /* Removed old body-based initial load rule */
@@ -25,7 +25,7 @@
 #ghost-wobble-group.initial-load-effect {
 	animation: grow-and-wobble 2.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 	/* Ensure transform origin is set */
-	transform-origin: center bottom; 
+	transform-origin: center center;
 }
 
 /* Individual eye styles - avoids transform conflicts */
@@ -81,7 +81,7 @@
 /* Wobble effect - target the inner group directly using animations */
 .ghost-wobble-group.wobble-left {
 	/* Apply the keyframe animation */
-	animation: ghost-do-wobble-left var(--ghost-wobble-duration, 0.39s) ease-in-out forwards; 
+	animation: ghost-do-wobble-left var(--ghost-wobble-duration, 0.39s) ease-in-out forwards;
 }
 
 .ghost-wobble-group.wobble-right {
@@ -91,7 +91,7 @@
 
 /* New class for combined wobble */
 .ghost-wobble-group.wobble-both {
-  animation: ghost-wobble-both var(--ghost-wobble-duration, 0.78s) ease-in-out forwards; /* Use updated duration */
+	animation: ghost-wobble-both var(--ghost-wobble-duration, 0.78s) ease-in-out forwards; /* Use updated duration */
 }
 
 /* Pulse animation */
@@ -781,62 +781,89 @@
 
 /* Keyframes for the Wobble Effect */
 @keyframes ghost-do-wobble-left {
-	0% { transform: rotate(0deg) scale(1); }
-	50% { transform: rotate(-8deg) scale(1.04); } /* Peak wobble */
-	100% { transform: rotate(0deg) scale(1); } /* Return to normal */
+	0% {
+		transform: rotate(0deg) scale(1);
+	}
+	50% {
+		transform: rotate(-8deg) scale(1.04);
+	} /* Peak wobble */
+	100% {
+		transform: rotate(0deg) scale(1);
+	} /* Return to normal */
 }
 
 @keyframes ghost-do-wobble-right {
-	0% { transform: rotate(0deg) scale(1); }
-	50% { transform: rotate(8deg) scale(1.04); } /* Peak wobble */
-	100% { transform: rotate(0deg) scale(1); } /* Return to normal */
+	0% {
+		transform: rotate(0deg) scale(1);
+	}
+	50% {
+		transform: rotate(8deg) scale(1.04);
+	} /* Peak wobble */
+	100% {
+		transform: rotate(0deg) scale(1);
+	} /* Return to normal */
 }
 
 /* New Keyframe for Combined Left-Right Wobble */
 @keyframes ghost-wobble-both {
-  0%   { transform: rotate(0deg) scale(1); }
-  25%  { transform: rotate(-8deg) scale(1.04); } /* Peak left */
-  75%  { transform: rotate(8deg) scale(1.04); }  /* Peak right */
-  100% { transform: rotate(0deg) scale(1); }     /* Return */
+	0% {
+		transform: rotate(0deg) scale(1);
+	}
+	25% {
+		transform: rotate(-8deg) scale(1.04);
+	} /* Peak left */
+	75% {
+		transform: rotate(8deg) scale(1.04);
+	} /* Peak right */
+	100% {
+		transform: rotate(0deg) scale(1);
+	} /* Return */
 }
 
-/* Combined Grow and Wobble for Initial Load */
+/* Combined Grow and Wobble for Initial Load - Faster Wobble Phase */
 @keyframes grow-and-wobble {
-	/* Grow Phase (similar to grow-ghost) */
+	/* Grow Phase (Adjusted Timing) */
 	0% {
 		transform: scale(0) rotate(0deg);
 		opacity: 0;
 	}
-	15% { /* Start becoming visible early */
+	18% {
+		/* Start becoming visible early (orig 15%) */
 		opacity: 1;
 	}
-	35% { /* Overshoot scale */
+	43% {
+		/* Overshoot scale (orig 35%) */
 		transform: scale(1.1) rotate(0deg);
 	}
-	50% { /* Settle back */
+	62% {
+		/* Settle back (orig 50%) */
 		transform: scale(0.98) rotate(0deg);
 		opacity: 1;
 	}
-	65% { /* Fully grown, stable */
+	80% {
+		/* Fully grown, stable - Start of faster wobble phase (orig 65%) */
 		transform: scale(1) rotate(0deg);
 		opacity: 1;
 	}
-	/* Wobble Phase */
-	75% { /* Wobble Left */
+	/* Faster Wobble Phase (Compressed into last 20%) */
+	86% {
+		/* Wobble Left (orig 75%) */
 		transform: scale(1.04) rotate(-8deg);
 	}
-	85% { /* Wobble Right */
+	91% {
+		/* Wobble Right (orig 85%) */
 		transform: scale(1.04) rotate(8deg);
 	}
-	95% { /* Settle back towards center */
+	97% {
+		/* Settle back towards center (orig 95%) */
 		transform: scale(1.01) rotate(-2deg);
 	}
-	100% { /* Final resting state */
+	100% {
+		/* Final resting state */
 		transform: scale(1) rotate(0deg);
 		opacity: 1;
 	}
 }
-
 
 @keyframes grow-ghost {
 	0% {

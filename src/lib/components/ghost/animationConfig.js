@@ -16,10 +16,10 @@ export const BLINK_CONFIG = {
 };
 
 export const WOBBLE_CONFIG = {
-	// Double duration for combined left-right animation
-	DURATION: 780, // Duration of ghost wobble animation (ms) - Doubled for combined effect
+	// Duration for combined left-right animation - Reduced again for even faster effect
+	DURATION: 290, // Duration of ghost wobble animation (ms) - Back to original faster speed
 	LEFT_CHANCE: 0.5, // Probability (0-1) of wobbling left vs right - No longer used for start/stop
-	CLEANUP_DELAY: 780 // Delay for wobble animation cleanup (ms) - Match doubled duration
+	CLEANUP_DELAY: 290 // Delay for wobble animation cleanup (ms) - Match faster duration
 };
 
 export const SPECIAL_CONFIG = {
@@ -186,7 +186,11 @@ export const ANIMATION_STATES = {
 // Valid state transitions (WOBBLING removed)
 export const ANIMATION_TRANSITIONS = {
 	[ANIMATION_STATES.INITIAL]: [ANIMATION_STATES.IDLE],
-	[ANIMATION_STATES.IDLE]: [ANIMATION_STATES.THINKING, ANIMATION_STATES.RECORDING, ANIMATION_STATES.REACTING],
+	[ANIMATION_STATES.IDLE]: [
+		ANIMATION_STATES.THINKING,
+		ANIMATION_STATES.RECORDING,
+		ANIMATION_STATES.REACTING
+	],
 	[ANIMATION_STATES.THINKING]: [ANIMATION_STATES.IDLE, ANIMATION_STATES.RECORDING],
 	[ANIMATION_STATES.RECORDING]: [ANIMATION_STATES.THINKING, ANIMATION_STATES.IDLE],
 	// WOBBLING transitions removed
