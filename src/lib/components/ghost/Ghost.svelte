@@ -1,6 +1,7 @@
 <script>
-	import { onMount, onDestroy, createEventDispatcher, tick } from 'svelte';
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { browser } from '$app/environment';
+	import { appActive, shouldAnimateStore } from '$lib/services/infrastructure';
 
 	// CSS imports
 	import './ghost-animations.css';
@@ -80,6 +81,10 @@
 	let manualStateChange = false;
 	let wakeUpBlinkTriggered = false; // Flag to ensure blink only triggers once per wake-up
 	let eyeTracker; // Variable to hold the eye tracking instance
+	
+	// Animation control with reactive state
+	$: animationsEnabled = $appActive;
+	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 
 	// Removed reactive variable for wobble group classes
 
@@ -363,10 +368,9 @@
 		ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 	}
 
-	// Monitor theme changes
+	// Monitor theme changes - more idiomatic Svelte approach
 	$: if (currentTheme && ghostSvg && browser) {
-		// Use Svelte's tick() for better synchronization with the render cycle
-		tick().then(applyThemeChanges);
+		applyThemeChanges();
 	}
 
 	// Trigger a double blink when waking up sequence finishes (transition WAKING_UP -> IDLE)
@@ -395,10 +399,12 @@
 		wakeUpBlinkTriggered = false;
 	}
 
-	// Monitor relevant props for changes
-	$: if (browser && (isRecording !== lastRecordingState || isProcessing !== lastProcessingState)) {
-		// Use Svelte's tick() for better synchronization with the render cycle
-		tick().then(syncStateToStore);
+	// Monitor relevant props directly with Svelte reactivity
+	$: if (browser) {
+		// Only update when the props actually change
+		if (isRecording !== lastRecordingState || isProcessing !== lastProcessingState) {
+			syncStateToStore();
+		}
 	}
 
 	// Interaction handlers for inactivity timer and waking up
@@ -415,7 +421,7 @@
 
 <button
 	bind:this={ghostSvg}
-	class="ghost-container theme-{currentTheme} 
+	class="ghost-container theme-{currentTheme} {animationClass}
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
       {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
@@ -437,7 +443,7 @@
 		viewBox="0 0 1024 1024"
 		xmlns="http://www.w3.org/2000/svg"
 		xmlns:xlink="http://www.w3.org/1999/xlink"
-		class="ghost-svg theme-{currentTheme}
+		class="ghost-svg theme-{currentTheme} {animationClass}
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
       {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
@@ -621,5 +627,14 @@
 	.ghost-svg.debug-animation #ghost-shape {
 		animation-duration: calc(var(--ghost-shimmer-duration, 5s) * 2),
 			calc(var(--ghost-peach-flow-duration, 9s) * 2) !important;
+	}
+	
+	/* Animation state control */
+	.animations-enabled .ghost-svg #ghost-shape {
+		animation-play-state: running;
+	}
+	
+	.animations-paused .ghost-svg #ghost-shape {
+		animation-play-state: paused;
 	}
 </style>

@@ -1,6 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { appActive } from '$lib/services/infrastructure';
+	import { appActive, shouldAnimateStore } from '$lib/services/infrastructure';
 
 	// Audio visualization configuration
 	let audioDataArray;
@@ -12,8 +12,11 @@
 	let audioContext;
 	let recording = false; // Track recording state within the component
 	
-	// Use the store properly with $ syntax
-	$: isActive = $appActive;
+	// Reactive animation state
+	$: animationsEnabled = $appActive;
+	
+	// CSS class to control animation state
+	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 
 	// Safari/iOS detection
 	const userAgent = navigator.userAgent;
@@ -119,8 +122,8 @@
 	function updateFallbackVisualizer() {
 		if (!fallbackAnimating) return;
 		
-		if (!isActive) {
-			// If app is inactive, schedule less frequent updates
+		if (!$appActive) {
+			// If app is inactive, schedule less frequent updates with reactive store value
 			animationFrameId = setTimeout(() => {
 				animationFrameId = requestAnimationFrame(updateFallbackVisualizer);
 			}, 1000); // Check back in 1 second when inactive
@@ -217,8 +220,8 @@
 	function updateVisualizer() {
 		if (!recording || !analyser) return;
 		
-		if (!isActive) {
-			// If app is inactive, schedule less frequent updates
+		if (!$appActive) {
+			// If app is inactive, schedule less frequent updates with reactive store value
 			animationFrameId = setTimeout(() => {
 				animationFrameId = requestAnimationFrame(updateVisualizer);
 			}, 1000); // Check back in 1 second when inactive
@@ -270,8 +273,8 @@
 			updateVisualizer();
 		}
 		
-		// Ensure CSS animation styles are properly applied
-		document.body.classList.add('animations-enabled');
+		// Animation state is now managed through reactive variables
+		// No need to manually manipulate DOM classes
 	}
 
 	function stopVisualizer() {
@@ -298,11 +301,6 @@
 
 	// ===== LIFECYCLE HOOKS =====
 	onMount(() => {
-		// Add animations-enabled class to body when component mounts
-		if (typeof document !== 'undefined') {
-			document.body.classList.add('animations-enabled');
-		}
-
 		// Initialize visualizer
 		if (useFallbackVisualizer) {
 			initFallbackVisualizer();
@@ -338,7 +336,7 @@
 	});
 </script>
 
-<div class="history-container standard-container">
+<div class="history-container standard-container {animationClass}">
 	{#each history as level, index (index)}
 		<div
 			class="history-bar"
@@ -400,9 +398,13 @@
 		background-position: 0% 0%;
 	}
 	
-	/* Force animations to run when enabled */
-	:global(.animations-enabled [data-theme="rainbow"] .history-bar) {
-		animation-play-state: running !important;
+	/* Svelte-controlled animation states */
+	.animations-enabled [data-theme="rainbow"] .history-bar {
+		animation-play-state: running;
+	}
+	
+	.animations-paused [data-theme="rainbow"] .history-bar {
+		animation-play-state: paused;
 	}
 	
 	/* Special animation for rainbow theme bars */

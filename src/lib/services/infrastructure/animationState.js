@@ -3,15 +3,12 @@ import { writable, derived } from 'svelte/store';
 // Create a store to track if app animations should be active
 export const appActive = writable(true);
 
-// Keep a cached version of the active state
-let cachedActiveState = true;
-
-// Create a subscription to keep the cached state updated
-if (typeof window !== 'undefined') {
-    appActive.subscribe(value => {
-        cachedActiveState = value;
-    });
-}
+// Derived store for animation state
+// This is more idiomatic in Svelte than maintaining a cached value
+export const shouldAnimateStore = derived(
+    appActive,
+    ($appActive) => $appActive
+);
 
 // Initialize visibility listener if in browser environment
 if (typeof document !== 'undefined') {
@@ -22,9 +19,4 @@ if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', () => {
         appActive.set(document.visibilityState === 'visible');
     });
-}
-
-// Export optimized utility function that uses the cached value
-export function shouldAnimate() {
-    return cachedActiveState;
 }
