@@ -1,5 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
+	import { appActive } from '$lib/services/infrastructure';
 
 	// Audio visualization configuration
 	let audioDataArray;
@@ -10,6 +11,9 @@
 	let analyser;
 	let audioContext;
 	let recording = false; // Track recording state within the component
+	
+	// Use the store properly with $ syntax
+	$: isActive = $appActive;
 
 	// Safari/iOS detection
 	const userAgent = navigator.userAgent;
@@ -114,6 +118,14 @@
 
 	function updateFallbackVisualizer() {
 		if (!fallbackAnimating) return;
+		
+		if (!isActive) {
+			// If app is inactive, schedule less frequent updates
+			animationFrameId = setTimeout(() => {
+				animationFrameId = requestAnimationFrame(updateFallbackVisualizer);
+			}, 1000); // Check back in 1 second when inactive
+			return;
+		}
 
 		// Only animate when recording is true
 		if (recording) {
@@ -204,6 +216,14 @@
 
 	function updateVisualizer() {
 		if (!recording || !analyser) return;
+		
+		if (!isActive) {
+			// If app is inactive, schedule less frequent updates
+			animationFrameId = setTimeout(() => {
+				animationFrameId = requestAnimationFrame(updateVisualizer);
+			}, 1000); // Check back in 1 second when inactive
+			return;
+		}
 
 		// Skip frames to slow down the animation
 		if (frameSkipCounter < frameSkipRate) {
@@ -259,7 +279,10 @@
 			// The fadeout and stop is handled in updateFallbackVisualizer
 		} else {
 			// Standard cleanup
-			cancelAnimationFrame(animationFrameId);
+			if (typeof animationFrameId === 'number') {
+				cancelAnimationFrame(animationFrameId);
+				clearTimeout(animationFrameId);
+			}
 			audioLevel = 0;
 			history = [];
 			if (audioContext) {
@@ -299,6 +322,12 @@
 	onDestroy(() => {
 		fallbackAnimating = false;
 		stopVisualizer();
+		
+		// Extra cleanup for any potential timeout/animation frame
+		if (typeof animationFrameId === 'number') {
+			cancelAnimationFrame(animationFrameId);
+			clearTimeout(animationFrameId);
+		}
 	});
 </script>
 
@@ -323,6 +352,7 @@
 		overflow: hidden;
 		box-shadow: inset 0 0 15px rgba(249, 168, 212, 0.15);
 		background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 242, 248, 0.2));
+		contain: content;
 	}
 	.history-bar {
 		position: absolute;

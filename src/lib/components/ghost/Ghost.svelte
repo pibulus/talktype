@@ -1,5 +1,5 @@
 <script>
-	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { onMount, onDestroy, createEventDispatcher, tick } from 'svelte';
 	import { browser } from '$app/environment';
 
 	// CSS imports
@@ -365,8 +365,8 @@
 
 	// Monitor theme changes
 	$: if (currentTheme && ghostSvg && browser) {
-		// Schedule on the next tick to avoid recursive updates
-		setTimeout(applyThemeChanges, 0);
+		// Use Svelte's tick() for better synchronization with the render cycle
+		tick().then(applyThemeChanges);
 	}
 
 	// Trigger a double blink when waking up sequence finishes (transition WAKING_UP -> IDLE)
@@ -397,9 +397,8 @@
 
 	// Monitor relevant props for changes
 	$: if (browser && (isRecording !== lastRecordingState || isProcessing !== lastProcessingState)) {
-		// Schedule on the next tick to avoid potential reactive loops,
-		// but only schedule when the relevant props have actually changed.
-		setTimeout(syncStateToStore, 0);
+		// Use Svelte's tick() for better synchronization with the render cycle
+		tick().then(syncStateToStore);
 	}
 
 	// Interaction handlers for inactivity timer and waking up
@@ -548,6 +547,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		contain: layout paint;
 	}
 
 	.ghost-container:focus,
