@@ -83,7 +83,9 @@
     position: relative;
     transform-origin: center;
     padding: 0.1em 0; /* Add some padding for hover effect */
-    will-change: transform;
+    will-change: transform, filter;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
   
   /* Theme-specific gradients - darker for AA contrast */
@@ -112,7 +114,7 @@
   
   /* Playful hover effects */
   .app-suffix:hover .app-text {
-    filter: brightness(1.08) saturate(1.1);
+    filter: brightness(1.05) saturate(1.05);
     transform: rotate(-2deg) scale(1.05);
     transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
   }

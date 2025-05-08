@@ -334,6 +334,9 @@
 		margin-right: 1px; /* Add slight margin to prevent white line gaps */
 		box-shadow: 0 0 8px rgba(249, 168, 212, 0.2); /* Subtle glow on bars */
 		opacity: 0.95;
+		will-change: height, transform;
+		transform: translateZ(0);
+		backface-visibility: hidden;
 	}
 	
 	/* Theme-specific gradient styles - directly applied based on data-theme */
@@ -353,23 +356,26 @@
 		animation: hueShift 9.1s linear infinite, rainbowBars 3s ease-in-out infinite;
 		background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
 		background-size: 100% 600%;
-		box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 156, 227, 0.1);
+		box-shadow: 0 0 8px rgba(255, 255, 255, 0.15), 0 0 10px rgba(255, 156, 227, 0.1);
+		will-change: filter, transform, opacity;
+		transform: translateZ(0);
+		backface-visibility: hidden;
 	}
 	
 	/* Special animation for rainbow theme bars */
 	@keyframes rainbowBars {
-		0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 156, 227, 0.3)); }
-		25% { filter: drop-shadow(0 0 3px rgba(169, 255, 156, 0.3)); }
-		50% { filter: drop-shadow(0 0 3px rgba(156, 221, 255, 0.3)); }
-		75% { filter: drop-shadow(0 0 2px rgba(255, 234, 138, 0.3)); }
+		0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 156, 227, 0.2)); transform: scale(1); }
+		25% { filter: drop-shadow(0 0 3px rgba(169, 255, 156, 0.2)); transform: scale(1.01); }
+		50% { filter: drop-shadow(0 0 3px rgba(156, 221, 255, 0.2)); transform: scale(1.02); }
+		75% { filter: drop-shadow(0 0 2px rgba(255, 234, 138, 0.2)); transform: scale(1.01); }
 	}
 
 	@keyframes hueShift {
 		0% { 
-			filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); 
+			filter: hue-rotate(0deg) saturate(1.3) brightness(1.1); 
 		}
 		100% { 
-			filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); 
+			filter: hue-rotate(360deg) saturate(1.4) brightness(1.15); 
 		}
 	}
 </style>
