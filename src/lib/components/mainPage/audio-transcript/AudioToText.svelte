@@ -11,6 +11,12 @@
 	import TranscriptDisplay from './TranscriptDisplay.svelte';
 	import PermissionError from './PermissionError.svelte';
 	import { ANIMATION, CTA_PHRASES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
+	import { Confetti } from '$lib/components/ui';
+	
+	// State for confetti animation
+	let showConfetti = false;
+	let confettiTarget = '.transcript-box-container';
+	
 	import {
 		initializeServices,
 		audioService,
@@ -163,9 +169,13 @@
 			console.log('[DEBUG] AudioBlob size:', audioBlob ? audioBlob.size : 'null');
 
 			// Add confetti celebration for successful transcription (randomly 1/7 times)
-			if (audioBlob && audioBlob.size > 10000 && Math.floor(Math.random() * 7) === 0) {
+			if (audioBlob && audioBlob.size > 10000) { // Always show confetti for testing
 				setTimeout(() => {
-					showConfettiCelebration();
+					showConfetti = true;
+					// Reset after animation completes
+					setTimeout(() => {
+						showConfetti = false;
+					}, ANIMATION.CONFETTI.ANIMATION_DURATION + 500); // Add extra time for cleanup
 				}, 2000);
 			}
 
@@ -257,81 +267,6 @@
 			// Update screen reader status
 			uiActions.setScreenReaderMessage('Recording failed. Please try again.');
 		}
-	}
-
-	// These functions have been moved to the Ghost component
-
-	// Confetti celebration effect for successful transcription
-	function showConfettiCelebration() {
-		// Only run in browser environment
-		if (!browser) return;
-
-		// Create a container for the confetti
-		const container = document.createElement('div');
-		container.className = 'confetti-container';
-		document.body.appendChild(container);
-
-		// Create and animate confetti pieces
-		for (let i = 0; i < ANIMATION.CONFETTI.PIECE_COUNT; i++) {
-			const confetti = document.createElement('div');
-			confetti.className = 'confetti-piece';
-
-			// Random styling
-			const size =
-				Math.random() * (ANIMATION.CONFETTI.MAX_SIZE - ANIMATION.CONFETTI.MIN_SIZE) +
-				ANIMATION.CONFETTI.MIN_SIZE;
-			const color =
-				ANIMATION.CONFETTI.COLORS[Math.floor(Math.random() * ANIMATION.CONFETTI.COLORS.length)];
-
-			// Shape variety (circle, square, triangle)
-			const shape = Math.random() > 0.66 ? 'circle' : Math.random() > 0.33 ? 'triangle' : 'square';
-
-			// Set styles
-			confetti.style.width = `${size}px`;
-			confetti.style.height = `${size}px`;
-			confetti.style.background = color;
-			confetti.style.borderRadius = shape === 'circle' ? '50%' : shape === 'triangle' ? '0' : '2px';
-			if (shape === 'triangle') {
-				confetti.style.background = 'transparent';
-				confetti.style.borderBottom = `${size}px solid ${color}`;
-				confetti.style.borderLeft = `${size / 2}px solid transparent`;
-				confetti.style.borderRight = `${size / 2}px solid transparent`;
-				confetti.style.width = '0';
-				confetti.style.height = '0';
-			}
-
-			// Random position and animation duration
-			const startPos = Math.random() * 100; // Position 0-100%
-			const delay = Math.random() * 0.8; // Delay variation (0-0.8s)
-			const duration = Math.random() * 2 + 2; // Animation duration (2-4s)
-			const rotation = Math.random() * 720 - 360; // Rotation -360 to +360 degrees
-
-			// Apply positions and animation styles
-			const horizontalPos = Math.random() * 10 - 5; // Small horizontal variation
-			confetti.style.left = `calc(${startPos}% + ${horizontalPos}px)`;
-			const startOffset = Math.random() * 15 - 7.5; // Starting y-position variation
-			confetti.style.top = `${startOffset}px`;
-			confetti.style.animationDelay = `${delay}s`;
-			confetti.style.animationDuration = `${duration}s`;
-
-			// Choose a random easing function for variety
-			const easing =
-				Math.random() > 0.7
-					? 'cubic-bezier(0.25, 0.1, 0.25, 1)'
-					: Math.random() > 0.5
-						? 'cubic-bezier(0.42, 0, 0.58, 1)'
-						: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-			confetti.style.animationTimingFunction = easing;
-			confetti.style.transform = `rotate(${rotation}deg)`;
-
-			// Add to container
-			container.appendChild(confetti);
-		}
-
-		// Remove container after animation completes
-		setTimeout(() => {
-			document.body.removeChild(container);
-		}, ANIMATION.CONFETTI.ANIMATION_DURATION);
 	}
 
 	// Function to calculate responsive font size based on transcript length, word count, and device
@@ -620,6 +555,11 @@
 		</div>
 	</div>
 </div>
+
+<!-- Confetti component - display centered to the transcript box when triggered -->
+{#if showConfetti}
+  <Confetti targetSelector={confettiTarget} on:complete={() => showConfetti = false} />
+{/if}
 
 <!-- Screen reader only status announcements -->
 <div role="status" aria-live="polite" aria-atomic="true" class="sr-only">

@@ -93,11 +93,11 @@ export const ANIMATION = {
 
 	// Confetti animation
 	CONFETTI: {
-		PIECE_COUNT: 70, // Number of confetti pieces
+		PIECE_COUNT: 150, // Increased number of confetti pieces for more impact
 		MIN_SIZE: 6, // Minimum confetti size in px
 		MAX_SIZE: 16, // Maximum confetti size in px
-		ANIMATION_DURATION: 2500, // Duration of entire confetti animation
-		COLORS: ['#ff9cef', '#fde68a', '#a78bfa', '#f472b6', '#60a5fa'] // Confetti colors
+		ANIMATION_DURATION: 3000, // Duration of entire confetti animation
+		COLORS: ['#ff9cef', '#fde68a', '#a78bfa', '#f472b6', '#60a5fa', '#ec4899', '#8b5cf6', '#f59e0b', '#10b981'] // More vibrant colors
 	}
 };
 
