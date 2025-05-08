@@ -1,5 +1,7 @@
 // Eye tracking service for ghost component
 import { browser } from '$app/environment';
+import { get } from 'svelte/store';
+import { ghostStateStore } from './stores/ghostStateStore.js'; // Path to the central store
 
 // Default configuration
 const defaultConfig = {
@@ -26,9 +28,9 @@ export function createEyeTracking(customConfig = {}) {
     isActive: false,
     eyePositionX: 0,
     eyePositionY: 0,
-    eyesClosed: false,
+    eyesClosed: false, // This will now reflect the store's state for internal logic if needed
     tracked: null,
-    eyesElement: null,
+    // eyesElement: null, // No longer needed for direct DOM manipulation by this service
     cleanupHandler: null
   };
 
@@ -44,25 +46,23 @@ export function createEyeTracking(customConfig = {}) {
 
   /**
    * Initialize eye tracking for a ghost element
-   * @param {HTMLElement} ghostElement - SVG ghost element
-   * @param {HTMLElement} eyesElement - Eyes element to animate
+   * @param {HTMLElement} ghostElement - SVG ghost element (used for position reference)
    */
-  function initialize(ghostElement, eyesElement) {
-    log(`Initializing eye tracking: ghost=${!!ghostElement}, eyes=${!!eyesElement}, browser=${!!browser}, enabled=${config.enabled}`);
+  function initialize(ghostElement) {
+    log(`Initializing eye tracking: ghost=${!!ghostElement}, browser=${!!browser}, enabled=${config.enabled}`);
     
-    if (!browser || !ghostElement || !eyesElement || !config.enabled) {
+    if (!browser || !ghostElement || !config.enabled) {
       if (!browser) log('Browser environment not available');
       if (!ghostElement) log('Ghost element is missing');
-      if (!eyesElement) log('Eyes element is missing');
       if (!config.enabled) log('Eye tracking is disabled');
       return;
     }
     
-    // Store reference to elements
+    // Store reference to tracked element
     state.tracked = ghostElement;
-    state.eyesElement = eyesElement;
+    // state.eyesElement = eyesElement; // Removed
     
-    log('Elements stored, starting tracking');
+    log('Tracked element stored, starting tracking');
     
     // Start tracking if not already active
     if (!state.isActive) {
@@ -83,7 +83,9 @@ export function createEyeTracking(customConfig = {}) {
     
     // Add event listener for mouse movement
     const handleMouseMove = event => {
-      if (state.eyesClosed || !state.tracked || !state.eyesElement) {
+      const storeState = get(ghostStateStore);
+      // Check eyesClosed and isEyeTrackingEnabled from the central store
+      if (storeState.eyesClosed || !state.tracked || !storeState.isEyeTrackingEnabled) {
         return;
       }
       
@@ -99,15 +101,19 @@ export function createEyeTracking(customConfig = {}) {
       // Calculate normalized position (-1 to 1)
       const maxDistanceX = window.innerWidth / config.maxDistanceX;
       const maxDistanceY = window.innerHeight / config.maxDistanceY;
-      const normalizedX = Math.max(-1, Math.min(1, distanceX / maxDistanceX));
-      const normalizedY = Math.max(-1, Math.min(1, distanceY / maxDistanceY));
+      const targetNormalizedX = Math.max(-1, Math.min(1, distanceX / maxDistanceX));
+      const targetNormalizedY = Math.max(-1, Math.min(1, distanceY / maxDistanceY));
       
-      // Apply smoothing for more natural movement
-      state.eyePositionX = state.eyePositionX + (normalizedX - state.eyePositionX) * config.eyeSensitivity;
-      state.eyePositionY = state.eyePositionY + (normalizedY - state.eyePositionY) * config.eyeSensitivity;
+      // Apply smoothing for more natural movement to internal state
+      state.eyePositionX = state.eyePositionX + (targetNormalizedX - state.eyePositionX) * config.eyeSensitivity;
+      state.eyePositionY = state.eyePositionY + (targetNormalizedY - state.eyePositionY) * config.eyeSensitivity;
       
-      // Apply transformation to eyes
-      updateEyePosition();
+      // Update the central store with the smoothed, normalized positions
+      ghostStateStore.setEyePosition(state.eyePositionX, state.eyePositionY);
+
+      if (config.debug && Math.random() < 0.01) { // Log only occasionally to prevent spamming
+        log(`Store eyePosition updated: X=${state.eyePositionX.toFixed(2)}, Y=${state.eyePositionY.toFixed(2)}`);
+      }
     };
     
     // Add event listener
@@ -147,52 +153,32 @@ export function createEyeTracking(customConfig = {}) {
     log('Cleaning up eye tracking');
     stop();
     state.tracked = null;
-    state.eyesElement = null;
+    // state.eyesElement = null; // Removed
   }
 
   /**
-   * Update eye state for blinking
+   * Update eye state for blinking by calling the store
    * @param {boolean} closed - Whether eyes are closed
    */
   function setEyesClosed(closed) {
-    log(`Setting eyes closed: ${closed}`);
-    state.eyesClosed = closed;
-    updateEyePosition();
+    log(`Setting eyes closed via store: ${closed}`);
+    // Update internal state for consistency if needed, but primary action is store update
+    state.eyesClosed = closed; 
+    ghostStateStore.setEyesClosed(closed);
+    // updateEyePosition(); // Removed, blinkService handles DOM updates via store subscription
   }
 
-  /**
-   * Update eye position based on current state
-   */
-  function updateEyePosition() {
-    if (!state.eyesElement) {
-      log('Cannot update eye position: eyes element is missing');
-      return;
-    }
-    
-    if (state.eyesClosed) {
-      // Apply closed eyes transform
-      state.eyesElement.style.transform = 'scaleY(0.05)';
-      log('Eyes closed: applied scaleY(0.05)');
-    } else {
-      // Apply position transform
-      const xMovement = state.eyePositionX * config.maxXMovement;
-      const yMovement = state.eyePositionY * config.maxYMovement;
-      state.eyesElement.style.transform = `translate(${xMovement}px, ${yMovement}px)`;
-      
-      if (config.debug && Math.random() < 0.01) { // Log only occasionally to prevent spamming
-        log(`Eyes position: translate(${xMovement.toFixed(2)}px, ${yMovement.toFixed(2)}px)`);
-      }
-    }
-  }
+  // updateEyePosition() function is removed as DOM manipulation is now handled by blinkService
 
   /**
-   * Reset eye position to center
+   * Reset eye position to center by updating the store
    */
   function resetPosition() {
-    log('Resetting eye position to center');
+    log('Resetting eye position to center via store');
     state.eyePositionX = 0;
     state.eyePositionY = 0;
-    updateEyePosition();
+    ghostStateStore.setEyePosition(0, 0);
+    // updateEyePosition(); // Removed
   }
 
   // Public API

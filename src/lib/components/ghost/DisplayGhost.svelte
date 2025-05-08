@@ -196,4 +196,26 @@
   .ghost-layer {
     transform-origin: center center;
   }
+
+  /* Override default theme glows for DisplayGhost to be more subtle */
+  :global(.display-ghost .ghost-container.theme-peach) {
+    filter: drop-shadow(0 0 2px rgba(255, 120, 160, 0.15))
+      drop-shadow(0 0 4px rgba(255, 150, 120, 0.1));
+  }
+
+  :global(.display-ghost .ghost-container.theme-mint) {
+    filter: drop-shadow(0 0 2px rgba(80, 235, 170, 0.15))
+      drop-shadow(0 0 4px rgba(60, 220, 240, 0.1));
+  }
+
+  :global(.display-ghost .ghost-container.theme-bubblegum) {
+    filter: drop-shadow(0 0 2px rgba(200, 140, 255, 0.15))
+      drop-shadow(0 0 4px rgba(255, 110, 180, 0.1));
+  }
+
+  :global(.display-ghost .ghost-container.theme-rainbow) {
+    filter: drop-shadow(0 0 2px rgba(255, 170, 190, 0.15))
+      drop-shadow(0 0 4px rgba(210, 180, 255, 0.1))
+      drop-shadow(0 0 1px rgba(255, 255, 255, 0.2));
+  }
 </style>

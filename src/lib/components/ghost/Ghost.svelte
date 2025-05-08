@@ -15,7 +15,8 @@
 		CSS_CLASSES,
 		PULSE_CONFIG,
 		ANIMATION_TIMING, // Import ANIMATION_TIMING
-		WOBBLE_CONFIG // Import WOBBLE_CONFIG
+		WOBBLE_CONFIG, // Import WOBBLE_CONFIG
+		EYE_CONFIG
 	} from './animationConfig.js';
 
 	// Removed THEMES import (managed by themeStore)
@@ -34,6 +35,9 @@
 
 	// Import the new Svelte Action
 	import { initialGhostAnimation } from './actions/initialGhostAnimation.js';
+
+	// Import eye tracking service
+	import { createEyeTracking } from './eyeTracking.js'; // Corrected path
 
 	// Props to communicate state
 	export let isRecording = false;
@@ -75,6 +79,7 @@
 	let isRecordingTransition = false;
 	let manualStateChange = false;
 	let wakeUpBlinkTriggered = false; // Flag to ensure blink only triggers once per wake-up
+	let eyeTracker; // Variable to hold the eye tracking instance
 
 	// Removed reactive variable for wobble group classes
 
@@ -297,6 +302,19 @@
 				seed
 			});
 
+			// Initialize Eye Tracking Service
+			eyeTracker = createEyeTracking({
+				debug: debug, // Pass the debug prop
+				eyeSensitivity: EYE_CONFIG.SMOOTHING,
+				maxDistanceX: EYE_CONFIG.X_DIVISOR,
+				maxDistanceY: EYE_CONFIG.Y_DIVISOR,
+				maxXMovement: EYE_CONFIG.X_MULTIPLIER,
+				maxYMovement: EYE_CONFIG.Y_MULTIPLIER
+			});
+			// Initialize with the main ghost SVG container (for getBoundingClientRect)
+			eyeTracker.initialize(ghostSvg);
+			// eyeTracker.start(); // start() is called by initialize() if not already active
+
 			// Removed mousemove listener setup (handled by services)
 
 			// Set debug mode
@@ -325,6 +343,9 @@
 				// Original cleanup
 				cleanupAnimations();
 				cleanupBlinks();
+				if (eyeTracker) {
+					eyeTracker.cleanup(); // Cleanup eye tracker
+				}
 				// Cleanup global event listeners
 				document.removeEventListener('mousemove', handleUserInteraction);
 				document.removeEventListener('pointerdown', handleUserInteraction);
