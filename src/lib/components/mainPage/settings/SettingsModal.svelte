@@ -253,7 +253,7 @@
 								<!-- Use the original DisplayGhost component with masking -->
 								<div class="preview-ghost-wrapper relative h-12 w-12">
 									<div class="ghost-mask-wrapper">
-										<DisplayGhost theme={vibe.id} size="48px" seed={index * 1000 + 12345} />
+										<DisplayGhost theme={vibe.id} size="48px" seed={index * 1000 + 12345} disableJsAnimation={true} />
 									</div>
 								</div>
 							</div>

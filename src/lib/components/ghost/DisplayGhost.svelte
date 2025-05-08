@@ -9,6 +9,7 @@
   export let theme = 'peach';
   export let size = '40px';
   export let seed = Math.floor(Math.random() * 10000);
+  export let disableJsAnimation = false; // Option to disable JS animation for performance
   
   // DOM references
   let ghostSvg;
@@ -71,21 +72,24 @@
   
   // Lifecycle
   onMount(() => {
-    // Initialize gradient animation for current theme
-    if (ghostSvg) {
+    // Initialize gradient animation for current theme (if not disabled)
+    if (ghostSvg && !disableJsAnimation) {
       const svgElement = ghostSvg.querySelector('svg');
       if (svgElement) {
         initGradientAnimation(theme, svgElement);
       }
     }
     
-    // Start blinking
+    // Start blinking (always enable this for visual consistency)
     scheduleBlink();
   });
   
   onDestroy(() => {
     clearTimeout(blinkTimeoutId);
-    cleanupAllAnimations();
+    // Only clean up animations if they were initialized
+    if (!disableJsAnimation) {
+      cleanupAllAnimations();
+    }
   });
 </script>
 
@@ -199,23 +203,30 @@
 
   /* Override default theme glows for DisplayGhost to be more subtle */
   :global(.display-ghost .ghost-container.theme-peach) {
-    filter: drop-shadow(0 0 2px rgba(255, 120, 160, 0.15))
-      drop-shadow(0 0 4px rgba(255, 150, 120, 0.1));
+    filter: drop-shadow(0 0 2px rgba(255, 120, 160, 0.2));
+    will-change: filter;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   :global(.display-ghost .ghost-container.theme-mint) {
-    filter: drop-shadow(0 0 2px rgba(80, 235, 170, 0.15))
-      drop-shadow(0 0 4px rgba(60, 220, 240, 0.1));
+    filter: drop-shadow(0 0 2px rgba(80, 235, 170, 0.2));
+    will-change: filter;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   :global(.display-ghost .ghost-container.theme-bubblegum) {
-    filter: drop-shadow(0 0 2px rgba(200, 140, 255, 0.15))
-      drop-shadow(0 0 4px rgba(255, 110, 180, 0.1));
+    filter: drop-shadow(0 0 2px rgba(200, 140, 255, 0.2));
+    will-change: filter;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   :global(.display-ghost .ghost-container.theme-rainbow) {
-    filter: drop-shadow(0 0 2px rgba(255, 170, 190, 0.15))
-      drop-shadow(0 0 4px rgba(210, 180, 255, 0.1))
-      drop-shadow(0 0 1px rgba(255, 255, 255, 0.2));
+    filter: drop-shadow(0 0 2px rgba(255, 170, 190, 0.2));
+    will-change: filter;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 </style>
