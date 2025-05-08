@@ -4,7 +4,7 @@
 -->
 <script>
 	import { geminiService } from '$lib/services/geminiService';
-	import { promptStyle } from '$lib';
+	import { promptStyle, theme } from '$lib';
 	import { onMount, onDestroy } from 'svelte';
 	import AudioVisualizer from './AudioVisualizer.svelte';
 	import RecordButtonWithTimer from './RecordButtonWithTimer.svelte';
@@ -16,6 +16,25 @@
 	// State for confetti animation
 	let showConfetti = false;
 	let confettiTarget = '.ghost-icon-wrapper'; // Target the ghost icon so confetti explodes from behind it
+	let confettiColors = ANIMATION.CONFETTI.COLORS; // Default colors
+	
+	// Function to get theme-specific confetti colors
+	function getThemeConfettiColors() {
+		// Get current theme from the store
+		let currentTheme;
+		const unsubscribe = theme.subscribe(value => {
+			currentTheme = value;
+		});
+		unsubscribe();
+		
+		// Use theme-specific colors if available
+		if (currentTheme && ANIMATION.CONFETTI.THEME_COLORS[currentTheme]) {
+			return ANIMATION.CONFETTI.THEME_COLORS[currentTheme];
+		}
+		
+		// Fallback to default colors
+		return ANIMATION.CONFETTI.COLORS;
+	}
 	
 	import {
 		initializeServices,
@@ -375,6 +394,9 @@
 		if (textToProcess) { // <-- Use the passed-in parameter
 			// Show confetti celebration as a random Easter egg (1/7 chance)
 			if (Math.floor(Math.random() * 7) === 0) {
+				// Update confetti colors based on current theme
+				confettiColors = getThemeConfettiColors();
+				console.log('[DEBUG] Using theme-specific confetti colors:', confettiColors);
 				showConfetti = true;
 				// Reset after animation completes
 				setTimeout(() => {
@@ -554,7 +576,11 @@
 
 <!-- Confetti component - display centered to the transcript box when triggered -->
 {#if showConfetti}
-  <Confetti targetSelector={confettiTarget} on:complete={() => showConfetti = false} />
+  <Confetti 
+    targetSelector={confettiTarget} 
+    colors={confettiColors}
+    on:complete={() => showConfetti = false} 
+  />
 {/if}
 
 <!-- Screen reader only status announcements -->
