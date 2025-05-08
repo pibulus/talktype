@@ -15,7 +15,7 @@
 	
 	// State for confetti animation
 	let showConfetti = false;
-	let confettiTarget = '.transcript-box-container';
+	let confettiTarget = '.transcript-text'; // Target the text itself for better positioning on mobile and desktop
 	
 	import {
 		initializeServices,
@@ -168,15 +168,15 @@
 			// Log AudioBlob size
 			console.log('[DEBUG] AudioBlob size:', audioBlob ? audioBlob.size : 'null');
 
-			// Add confetti celebration for successful transcription (randomly 1/7 times)
-			if (audioBlob && audioBlob.size > 10000) { // Always show confetti for testing
+			// Add confetti celebration for successful transcription
+			if (audioBlob && audioBlob.size > 10000) { // Show confetti for substantive recordings
 				setTimeout(() => {
 					showConfetti = true;
 					// Reset after animation completes
 					setTimeout(() => {
 						showConfetti = false;
 					}, ANIMATION.CONFETTI.ANIMATION_DURATION + 500); // Add extra time for cleanup
-				}, 2000);
+				}, 400); // Reduced delay for more immediate feedback
 			}
 
 			// Start transcription process if we have audio data

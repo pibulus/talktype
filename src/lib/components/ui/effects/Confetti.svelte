@@ -40,37 +40,37 @@
       }
     }
     
-    // Fire the main burst of confetti
+    // Fire the main burst of confetti with more impact
     confetti({
       particleCount: Math.floor(particleCount * 0.75),
-      spread: 70,
-      origin: { x: originX, y: originY },
+      spread: 80, // Wider spread for more coverage
+      origin: { x: originX, y: Math.max(0.05, originY - 0.05) }, // Slightly higher origin for better downward motion
       colors,
-      startVelocity: 30,
-      gravity: 1,
+      startVelocity: 45, // Higher velocity for more pop
+      gravity: 0.9, // Slightly reduced gravity for longer hang time
       ticks: 400,
       shapes: ['square', 'circle'],
-      scalar: 1.2,
+      scalar: 1.3, // Slightly larger particles
       zIndex: 1000,
       disableForReducedMotion: true
     });
     
-    // Add a second burst for more fun (slight delay, different angle)
+    // Add a second burst for more fun (reduced delay, different angle)
     setTimeout(() => {
       confetti({
-        particleCount: Math.floor(particleCount * 0.25),
-        spread: 90,
-        origin: { x: originX - 0.1, y: originY },
+        particleCount: Math.floor(particleCount * 0.35), // More particles in second burst
+        spread: 100, // Wider spread
+        origin: { x: originX - 0.1, y: Math.max(0.05, originY - 0.03) }, // Slightly offset
         colors,
-        startVelocity: 25,
-        gravity: 0.8,
+        startVelocity: 35, // Higher velocity
+        gravity: 0.7, // Lower gravity for longer hang time
         ticks: 350,
         shapes: ['square', 'circle'],
         scalar: 1.1,
         zIndex: 1000,
         disableForReducedMotion: true
       });
-    }, 150);
+    }, 80); // Reduced delay for quicker follow-up
   }
 </script>
 
