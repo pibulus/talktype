@@ -269,6 +269,9 @@
 			history = Array(historyLength).fill(0);
 			updateVisualizer();
 		}
+		
+		// Ensure CSS animation styles are properly applied
+		document.body.classList.add('animations-enabled');
 	}
 
 	function stopVisualizer() {
@@ -295,6 +298,10 @@
 
 	// ===== LIFECYCLE HOOKS =====
 	onMount(() => {
+		// Add animations-enabled class to body when component mounts
+		if (typeof document !== 'undefined') {
+			document.body.classList.add('animations-enabled');
+		}
 
 		// Initialize visualizer
 		if (useFallbackVisualizer) {
@@ -364,7 +371,7 @@
 		margin-right: 1px; /* Add slight margin to prevent white line gaps */
 		box-shadow: 0 0 8px rgba(249, 168, 212, 0.2); /* Subtle glow on bars */
 		opacity: 0.95;
-		will-change: height, transform;
+		will-change: height, transform, background-image, filter;
 		transform: translateZ(0);
 		backface-visibility: hidden;
 	}
@@ -387,9 +394,15 @@
 		background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
 		background-size: 100% 600%;
 		box-shadow: 0 0 8px rgba(255, 255, 255, 0.15), 0 0 10px rgba(255, 156, 227, 0.1);
-		will-change: filter, transform, opacity;
+		will-change: filter, transform, opacity, background-position;
 		transform: translateZ(0);
 		backface-visibility: hidden;
+		background-position: 0% 0%;
+	}
+	
+	/* Force animations to run when enabled */
+	:global(.animations-enabled [data-theme="rainbow"] .history-bar) {
+		animation-play-state: running !important;
 	}
 	
 	/* Special animation for rainbow theme bars */
@@ -402,10 +415,16 @@
 
 	@keyframes hueShift {
 		0% { 
-			filter: hue-rotate(0deg) saturate(1.3) brightness(1.1); 
+			filter: hue-rotate(0deg) saturate(1.3) brightness(1.1);
+			background-position: 0% 0%;
+		}
+		50% {
+			filter: hue-rotate(180deg) saturate(1.35) brightness(1.125);
+			background-position: 0% 300%;
 		}
 		100% { 
-			filter: hue-rotate(360deg) saturate(1.4) brightness(1.15); 
+			filter: hue-rotate(360deg) saturate(1.4) brightness(1.15);
+			background-position: 0% 600%;
 		}
 	}
 </style>
