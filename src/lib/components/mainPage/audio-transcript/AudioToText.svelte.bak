@@ -168,7 +168,7 @@
 			// Log AudioBlob size
 			console.log('[DEBUG] AudioBlob size:', audioBlob ? audioBlob.size : 'null');
 
-			// Confetti celebration moved to transcription completion event as a random Easter egg
+			// Confetti celebration moved to transcription completion event for better timing
 
 			// Start transcription process if we have audio data
 			if (audioBlob && audioBlob.size > 0) {
