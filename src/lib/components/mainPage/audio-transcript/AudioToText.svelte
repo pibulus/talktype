@@ -15,7 +15,7 @@
 	
 	// State for confetti animation
 	let showConfetti = false;
-	let confettiTarget = '.transcript-text'; // Target the text itself for better positioning on mobile and desktop
+	let confettiTarget = '.ghost-icon-wrapper'; // Target the ghost icon so confetti explodes from behind it
 	
 	import {
 		initializeServices,
