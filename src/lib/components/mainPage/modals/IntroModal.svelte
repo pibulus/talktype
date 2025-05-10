@@ -30,7 +30,7 @@
 
     <div class="space-y-5 sm:space-y-6 md:space-y-7 animate-fadeIn">
       <div class="flex justify-center mb-4">
-        <div class="w-16 h-16 animate-pulse-slow">
+        <div class="w-16 h-16 animate-pulse-slow ghost-wrapper">
           <Ghost size="100%" clickable={false} class="intro-ghost" seed={12345} />
         </div>
       </div>
@@ -109,7 +109,37 @@
     }
   }
 
-  :global(.intro-ghost) {
+  /* Ghost wrapper styles to hide background container */
+  .ghost-wrapper {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Target and modify the ghost button container */
+  .ghost-wrapper :global(button.ghost-container) {
+    background: transparent !important;
+    box-shadow: none !important;
+    filter: none !important;
+    animation: none !important;
+    contain: none !important; /* Remove containment which may affect transparency */
+  }
+
+  /* Target ghost container and remove any box shadows or backgrounds */
+  .ghost-wrapper :global(.ghost-container),
+  .ghost-wrapper :global(.ghost-svg) {
+    background-color: transparent !important;
+    box-shadow: none !important;
+    filter: none !important;
+  }
+
+  /* Target pseudo elements that might have backgrounds */
+  .ghost-wrapper :global(.ghost-container::before),
+  .ghost-wrapper :global(.ghost-container::after) {
+    display: none !important;
+  }
+
+  /* Apply animation only to the ghost SVG elements */
+  .ghost-wrapper :global(svg.ghost-svg .ghost-layer) {
     animation: intro-pulse 3s ease-in-out infinite;
   }
 
