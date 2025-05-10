@@ -16,7 +16,9 @@
   let leftEye;
   let rightEye;
   let eyesClosed = false;
-  
+  let isGhostReady = false;
+  let readyTimeoutId;
+
   // Simple blink animation with random timing based on seed
   let blinkTimeoutId;
   let blinkCounter = 0;
@@ -79,13 +81,19 @@
         initGradientAnimation(theme, svgElement);
       }
     }
-    
+
     // Start blinking (always enable this for visual consistency)
     scheduleBlink();
+
+    // Mark the ghost as ready after a short delay to ensure gradients are loaded
+    readyTimeoutId = setTimeout(() => {
+      isGhostReady = true;
+    }, 100);
   });
-  
+
   onDestroy(() => {
     clearTimeout(blinkTimeoutId);
+    clearTimeout(readyTimeoutId);
     // Only clean up animations if they were initialized
     if (!disableJsAnimation) {
       cleanupAllAnimations();
@@ -99,7 +107,7 @@
       viewBox="0 0 1024 1024"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
-      class="ghost-svg theme-{theme}"
+      class="ghost-svg theme-{theme} {isGhostReady ? 'ready' : ''}"
     >
       <defs>
         <linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -195,6 +203,12 @@
     height: 100%;
     max-width: 100%;
     max-height: 100%;
+    opacity: 0; /* Initially hidden */
+    transition: opacity 0.3s ease-out;
+  }
+
+  .ghost-svg.ready {
+    opacity: 1;
   }
   
   .ghost-layer {

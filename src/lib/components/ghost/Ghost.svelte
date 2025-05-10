@@ -276,6 +276,10 @@
 		blinkService.reactToTranscript({ leftEye, rightEye }, textLength);
 	}
 
+	// Variable to track if SVG is ready to be shown
+	let isGhostReady = false;
+	let readyTimeoutId;
+
 	// Setup on mount
 	onMount(() => {
 		// Set initial values to prevent unnecessary updates
@@ -339,12 +343,21 @@
 				ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 			}
 
+			// Mark the ghost as ready after a short delay to ensure gradients are loaded
+			readyTimeoutId = setTimeout(() => {
+				isGhostReady = true;
+			}, 100);
+
 			// Add global event listeners for waking up / resetting inactivity
 			document.addEventListener('mousemove', handleUserInteraction, { passive: true });
 			document.addEventListener('pointerdown', handleUserInteraction, { passive: true });
 
 			// Return cleanup function
 			return () => {
+				// Clear the ready timeout
+				if (readyTimeoutId) {
+					clearTimeout(readyTimeoutId);
+				}
 				// Original cleanup
 				cleanupAnimations();
 				cleanupBlinks();
@@ -448,6 +461,7 @@
       {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
       {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
+      {isGhostReady ? 'ready' : ''}
       {debugAnim ? 'debug-animation' : ''}"
 	>
 		<defs>
@@ -575,6 +589,12 @@
 		height: 100%;
 		max-width: 100%;
 		max-height: 100%;
+		opacity: 0; /* Initially hidden */
+		transition: opacity 0.3s ease-out;
+	}
+
+	.ghost-svg.ready {
+		opacity: 1;
 	}
 
 	.ghost-layer {
