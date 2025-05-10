@@ -74,12 +74,12 @@ function createGhostStateStore() {
 	 */
 	function debugLog(message, level = 'log') {
 		const currentDebugFlag = get(_state).debug;
+		if (!currentDebugFlag) return;
 		// ADD THIS LINE
 		console.log(
 			`[GhostStateStore DEBUGLOG_CHECK] Attempting to log (debugLog): "${message}". Current debug flag in store: ${currentDebugFlag}`
 		);
 		// END ADD
-		if (!currentDebugFlag) return;
 		console[level](`[GhostState] ${message}`);
 	}
 
@@ -303,6 +303,9 @@ function createGhostStateStore() {
 		// --- Recording Stop Sequence ---
 		else if (!isRecording && wasRecording) {
 			debugLog('🛑 Recording stopped - applying wobble effect');
+
+			// 1. Set isRecording flag to false immediately
+			_state.update((s) => ({ ...s, isRecording: false }));
 
 			// Clear any pending next-frame start transition
 			if (currentState.stateTimeouts.rafRecordingStart) {

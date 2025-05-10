@@ -1,6 +1,7 @@
 <script>
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { browser } from '$app/environment';
+	import { appActive, shouldAnimateStore } from '$lib/services/infrastructure';
 
 	// CSS imports
 	import './ghost-animations.css';
@@ -15,7 +16,8 @@
 		CSS_CLASSES,
 		PULSE_CONFIG,
 		ANIMATION_TIMING, // Import ANIMATION_TIMING
-		WOBBLE_CONFIG // Import WOBBLE_CONFIG
+		WOBBLE_CONFIG, // Import WOBBLE_CONFIG
+		EYE_CONFIG
 	} from './animationConfig.js';
 
 	// Removed THEMES import (managed by themeStore)
@@ -34,6 +36,9 @@
 
 	// Import the new Svelte Action
 	import { initialGhostAnimation } from './actions/initialGhostAnimation.js';
+
+	// Import eye tracking service
+	import { createEyeTracking } from './eyeTracking.js'; // Corrected path
 
 	// Props to communicate state
 	export let isRecording = false;
@@ -75,6 +80,11 @@
 	let isRecordingTransition = false;
 	let manualStateChange = false;
 	let wakeUpBlinkTriggered = false; // Flag to ensure blink only triggers once per wake-up
+	let eyeTracker; // Variable to hold the eye tracking instance
+	
+	// Animation control with reactive state
+	$: animationsEnabled = $appActive;
+	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 
 	// Removed reactive variable for wobble group classes
 
@@ -297,6 +307,19 @@
 				seed
 			});
 
+			// Initialize Eye Tracking Service
+			eyeTracker = createEyeTracking({
+				debug: debug, // Pass the debug prop
+				eyeSensitivity: EYE_CONFIG.SMOOTHING,
+				maxDistanceX: EYE_CONFIG.X_DIVISOR,
+				maxDistanceY: EYE_CONFIG.Y_DIVISOR,
+				maxXMovement: EYE_CONFIG.X_MULTIPLIER,
+				maxYMovement: EYE_CONFIG.Y_MULTIPLIER
+			});
+			// Initialize with the main ghost SVG container (for getBoundingClientRect)
+			eyeTracker.initialize(ghostSvg);
+			// eyeTracker.start(); // start() is called by initialize() if not already active
+
 			// Removed mousemove listener setup (handled by services)
 
 			// Set debug mode
@@ -325,6 +348,9 @@
 				// Original cleanup
 				cleanupAnimations();
 				cleanupBlinks();
+				if (eyeTracker) {
+					eyeTracker.cleanup(); // Cleanup eye tracker
+				}
 				// Cleanup global event listeners
 				document.removeEventListener('mousemove', handleUserInteraction);
 				document.removeEventListener('pointerdown', handleUserInteraction);
@@ -342,10 +368,9 @@
 		ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 	}
 
-	// Monitor theme changes
+	// Monitor theme changes - more idiomatic Svelte approach
 	$: if (currentTheme && ghostSvg && browser) {
-		// Schedule on the next tick to avoid recursive updates
-		setTimeout(applyThemeChanges, 0);
+		applyThemeChanges();
 	}
 
 	// Trigger a double blink when waking up sequence finishes (transition WAKING_UP -> IDLE)
@@ -374,11 +399,12 @@
 		wakeUpBlinkTriggered = false;
 	}
 
-	// Monitor relevant props for changes
-	$: if (browser && (isRecording !== lastRecordingState || isProcessing !== lastProcessingState)) {
-		// Schedule on the next tick to avoid potential reactive loops,
-		// but only schedule when the relevant props have actually changed.
-		setTimeout(syncStateToStore, 0);
+	// Monitor relevant props directly with Svelte reactivity
+	$: if (browser) {
+		// Only update when the props actually change
+		if (isRecording !== lastRecordingState || isProcessing !== lastProcessingState) {
+			syncStateToStore();
+		}
 	}
 
 	// Interaction handlers for inactivity timer and waking up
@@ -395,7 +421,7 @@
 
 <button
 	bind:this={ghostSvg}
-	class="ghost-container theme-{currentTheme} 
+	class="ghost-container theme-{currentTheme} {animationClass}
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
       {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
@@ -417,7 +443,7 @@
 		viewBox="0 0 1024 1024"
 		xmlns="http://www.w3.org/2000/svg"
 		xmlns:xlink="http://www.w3.org/1999/xlink"
-		class="ghost-svg theme-{currentTheme}
+		class="ghost-svg theme-{currentTheme} {animationClass}
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
       {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
@@ -527,6 +553,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		contain: layout paint;
 	}
 
 	.ghost-container:focus,
@@ -600,5 +627,14 @@
 	.ghost-svg.debug-animation #ghost-shape {
 		animation-duration: calc(var(--ghost-shimmer-duration, 5s) * 2),
 			calc(var(--ghost-peach-flow-duration, 9s) * 2) !important;
+	}
+	
+	/* Animation state control */
+	.animations-enabled .ghost-svg #ghost-shape {
+		animation-play-state: running;
+	}
+	
+	.animations-paused .ghost-svg #ghost-shape {
+		animation-play-state: paused;
 	}
 </style>
