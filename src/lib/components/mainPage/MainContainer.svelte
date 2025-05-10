@@ -265,7 +265,8 @@
 			debug('Added listener for settings changes.');
 		}
 
-		// IntroModal now handles first visit check internally
+		// Check if first visit to show intro
+		firstVisitService.showIntroModal();
 	});
 </script>
 
@@ -303,7 +304,6 @@
 	{closeModal}
 	markIntroAsSeen={() => firstVisitService.markIntroAsSeen()}
 	{triggerGhostClick}
-	ghostComponent={ghostContainer}
 />
 
 <!-- Settings Modal - lazy loaded -->

@@ -41,36 +41,34 @@ export class FirstVisitService {
     this.log('Marked intro as seen in localStorage');
   }
 
-  // Check if we should show the intro modal (first visit)
-  shouldShowIntroModal() {
-    if (!browser) return false;
-    return this.checkFirstVisit();
-  }
-
-  // This function is now called by the IntroModal component when it's ready
-  showIntroModal(modalId = 'intro_modal') {
+  showIntroModal(modalId = 'intro_modal', delay = 500) {
     if (!browser || !this.checkFirstVisit()) return null;
 
-    this.log('IntroModal is displaying');
-
+    this.log('Scheduling intro modal to appear');
+    
     return new Promise((resolve) => {
-      const modal = document.getElementById(modalId);
-      if (modal) {
-        // Set up event listener to handle modal close
-        const handleClose = () => {
-          this.log('Intro modal closed, marking intro as seen');
-          this.markIntroAsSeen();
-          modal.removeEventListener('close', handleClose);
-          resolve(true);
-        };
+      setTimeout(() => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+          this.log('Opening intro modal on first visit');
+          modal.showModal();
 
-        modal.addEventListener('close', handleClose, { once: true });
-        resolve(modal);
-      } else {
-        console.error('Intro modal element not found');
-        this.log('Intro modal element not found');
-        resolve(null);
-      }
+          // Set up event listener to handle modal close
+          const handleClose = () => {
+            this.log('Intro modal closed, marking intro as seen');
+            this.markIntroAsSeen();
+            modal.removeEventListener('close', handleClose);
+            resolve(true);
+          };
+          
+          modal.addEventListener('close', handleClose, { once: true });
+          resolve(modal);
+        } else {
+          console.error('Intro modal element not found');
+          this.log('Intro modal element not found');
+          resolve(null);
+        }
+      }, delay);
     });
   }
 }
