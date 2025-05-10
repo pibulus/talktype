@@ -3,7 +3,7 @@
   import './ghost-themes.css';
   import ghostPathsUrl from './ghost-paths.svg?url';
   import { initGradientAnimation, cleanupAnimation, cleanupAllAnimations } from './gradientAnimator';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, createEventDispatcher } from 'svelte';
   
   // Direct theme prop - no store subscription
   export let theme = 'peach';
@@ -16,8 +16,7 @@
   let leftEye;
   let rightEye;
   let eyesClosed = false;
-  let isGhostReady = false;
-  let readyTimeoutId;
+  let componentsLoaded = false;
 
   // Simple blink animation with random timing based on seed
   let blinkTimeoutId;
@@ -85,20 +84,30 @@
     // Start blinking (always enable this for visual consistency)
     scheduleBlink();
 
-    // Mark the ghost as ready after a short delay to ensure gradients are loaded
-    readyTimeoutId = setTimeout(() => {
-      isGhostReady = true;
-    }, 100);
+    // Mark component as loaded
+    componentsLoaded = true;
   });
 
   onDestroy(() => {
     clearTimeout(blinkTimeoutId);
-    clearTimeout(readyTimeoutId);
     // Only clean up animations if they were initialized
     if (!disableJsAnimation) {
       cleanupAllAnimations();
     }
   });
+
+  // Event dispatcher
+  const dispatch = createEventDispatcher();
+
+  // Reactive declaration for ghost ready state
+  $: isGhostReady = componentsLoaded && !!ghostSvg && !!theme;
+
+  // Track previous ready state to dispatch event once
+  let wasReady = false;
+  $: if (isGhostReady && !wasReady) {
+    wasReady = true;
+    dispatch('ghostReady');
+  }
 </script>
 
 <div class="display-ghost" style="width:{size}; height:{size};">
@@ -107,7 +116,8 @@
       viewBox="0 0 1024 1024"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
-      class="ghost-svg theme-{theme} {isGhostReady ? 'ready' : ''}"
+      class="ghost-svg theme-{theme}"
+      class:ready={isGhostReady}
     >
       <defs>
         <linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -198,17 +208,21 @@
     align-items: center;
   }
   
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
   .ghost-svg {
     width: 100%;
     height: 100%;
     max-width: 100%;
     max-height: 100%;
     opacity: 0; /* Initially hidden */
-    transition: opacity 0.3s ease-out;
   }
 
   .ghost-svg.ready {
-    opacity: 1;
+    animation: fadeIn 0.3s ease-out forwards;
   }
   
   .ghost-layer {

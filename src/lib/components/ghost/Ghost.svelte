@@ -276,9 +276,8 @@
 		blinkService.reactToTranscript({ leftEye, rightEye }, textLength);
 	}
 
-	// Variable to track if SVG is ready to be shown
-	let isGhostReady = false;
-	let readyTimeoutId;
+	// Variables to track component loading state
+	let componentsLoaded = false;
 
 	// Setup on mount
 	onMount(() => {
@@ -343,10 +342,8 @@
 				ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 			}
 
-			// Mark the ghost as ready after a short delay to ensure gradients are loaded
-			readyTimeoutId = setTimeout(() => {
-				isGhostReady = true;
-			}, 100);
+			// Mark component as loaded
+			componentsLoaded = true;
 
 			// Add global event listeners for waking up / resetting inactivity
 			document.addEventListener('mousemove', handleUserInteraction, { passive: true });
@@ -354,11 +351,7 @@
 
 			// Return cleanup function
 			return () => {
-				// Clear the ready timeout
-				if (readyTimeoutId) {
-					clearTimeout(readyTimeoutId);
-				}
-				// Original cleanup
+				// Cleanup animations and services
 				cleanupAnimations();
 				cleanupBlinks();
 				if (eyeTracker) {
@@ -384,6 +377,17 @@
 	// Monitor theme changes - more idiomatic Svelte approach
 	$: if (currentTheme && ghostSvg && browser) {
 		applyThemeChanges();
+	}
+
+	// Reactive declaration for ghost ready state
+	$: isGhostReady = browser && componentsLoaded && !!ghostSvg && !!currentTheme;
+
+	// Track previous ready state to dispatch event once
+	let wasReady = false;
+	$: if (isGhostReady && !wasReady) {
+		wasReady = true;
+		if (debug) console.log('[Ghost.svelte] Ghost is ready, gradients loaded');
+		dispatch('ghostReady');
 	}
 
 	// Trigger a double blink when waking up sequence finishes (transition WAKING_UP -> IDLE)
@@ -456,13 +460,13 @@
 		viewBox="0 0 1024 1024"
 		xmlns="http://www.w3.org/2000/svg"
 		xmlns:xlink="http://www.w3.org/1999/xlink"
-		class="ghost-svg theme-{currentTheme} {animationClass}
-      {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
-      {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
-      {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
-      {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
-      {isGhostReady ? 'ready' : ''}
-      {debugAnim ? 'debug-animation' : ''}"
+		class="ghost-svg theme-{currentTheme} {animationClass}"
+		class:recording={$ghostStateStore.isRecording}
+		class:spin={$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG}
+		class:asleep={$ghostStateStore.current === ANIMATION_STATES.ASLEEP}
+		class:waking-up={$ghostStateStore.current === ANIMATION_STATES.WAKING_UP}
+		class:ready={isGhostReady}
+		class:debug-animation={debugAnim}
 	>
 		<defs>
 			<linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -584,17 +588,21 @@
 		pointer-events: none;
 	}
 
+	@keyframes fadeIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
 	.ghost-svg {
 		width: 100%;
 		height: 100%;
 		max-width: 100%;
 		max-height: 100%;
 		opacity: 0; /* Initially hidden */
-		transition: opacity 0.3s ease-out;
 	}
 
 	.ghost-svg.ready {
-		opacity: 1;
+		animation: fadeIn 0.3s ease-out forwards;
 	}
 
 	.ghost-layer {
