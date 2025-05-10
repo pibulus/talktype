@@ -1,24 +1,66 @@
 <script>
   import { browser } from '$app/environment';
+  import { onMount } from 'svelte';
   import Ghost from '$lib/components/ghost/Ghost.svelte';
   import { ModalCloseButton } from './index.js';
-  
+  import { firstVisitService } from '$lib/services/first-visit';
+
   export let closeModal;
   export let markIntroAsSeen;
   export let triggerGhostClick;
+  export let ghostComponent = null;
+
+  // Local state
+  let modalElement;
+  let introGhostReady = false;
+  let mainGhostReady = false;
+  let shouldOpenModal = false;
+
+  // This function will be called when the ghost in this modal is ready
+  function handleIntroGhostReady() {
+    introGhostReady = true;
+    checkAndShowModal();
+  }
+
+  // Check if we should show the modal
+  function checkAndShowModal() {
+    // Only open if both ghosts are ready and we haven't opened yet
+    if (introGhostReady && (mainGhostReady || !ghostComponent) && shouldOpenModal && modalElement) {
+      modalElement.showModal();
+      firstVisitService.showIntroModal('intro_modal'); // Notify service the modal is shown
+    }
+  }
 
   function handleActionButton() {
-    const modal = document.getElementById('intro_modal');
-    if (modal) modal.close();
+    if (modalElement) modalElement.close();
     markIntroAsSeen();
-    
+
     setTimeout(() => {
       triggerGhostClick();
-    }, 300);
+    }, 200); // Slightly shorter delay for better responsiveness
   }
+
+  onMount(() => {
+    // Check if we should show intro modal
+    shouldOpenModal = firstVisitService.shouldShowIntroModal();
+
+    // If main ghost was passed and it's already ready
+    if (ghostComponent && ghostComponent.isGhostReady) {
+      mainGhostReady = true;
+    }
+
+    // If we have the main ghost component, but it's not ready yet,
+    // listen for when it becomes ready (if it emits a ghostReady event)
+    if (ghostComponent && !mainGhostReady && typeof ghostComponent.addEventListener === 'function') {
+      ghostComponent.addEventListener('ghostReady', () => {
+        mainGhostReady = true;
+        checkAndShowModal();
+      });
+    }
+  });
 </script>
 
-<dialog id="intro_modal" class="modal modal-bottom sm:modal-middle" role="dialog" aria-labelledby="intro_modal_title" aria-modal="true">
+<dialog id="intro_modal" bind:this={modalElement} class="modal modal-bottom sm:modal-middle" role="dialog" aria-labelledby="intro_modal_title" aria-modal="true">
   <div class="modal-box relative bg-[#fff9ed] rounded-3xl p-6 sm:p-8 md:p-10 w-[95%] max-w-[90vw] sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto border-0"
     style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);">
 
@@ -29,7 +71,13 @@
     <div class="space-y-5 sm:space-y-6 md:space-y-7 animate-fadeIn">
       <div class="flex justify-center mb-4">
         <div class="w-16 h-16 animate-pulse-slow">
-          <Ghost size="100%" clickable={false} class="intro-ghost" seed={12345} />
+          <Ghost
+            size="100%"
+            clickable={false}
+            class="intro-ghost"
+            seed={12345}
+            on:ghostReady={handleIntroGhostReady}
+          />
         </div>
       </div>
 
