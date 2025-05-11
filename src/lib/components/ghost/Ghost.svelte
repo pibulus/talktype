@@ -1,6 +1,7 @@
 <script>
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { browser } from '$app/environment';
+	import { appActive, shouldAnimateStore } from '$lib/services/infrastructure';
 
 	// CSS imports
 	import './ghost-animations.css';
@@ -80,6 +81,10 @@
 	let manualStateChange = false;
 	let wakeUpBlinkTriggered = false; // Flag to ensure blink only triggers once per wake-up
 	let eyeTracker; // Variable to hold the eye tracking instance
+	
+	// Animation control with reactive state
+	$: animationsEnabled = $appActive;
+	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 
 	// Removed reactive variable for wobble group classes
 
@@ -271,6 +276,9 @@
 		blinkService.reactToTranscript({ leftEye, rightEye }, textLength);
 	}
 
+	// Variables to track component loading state
+	let componentsLoaded = false;
+
 	// Setup on mount
 	onMount(() => {
 		// Set initial values to prevent unnecessary updates
@@ -334,13 +342,16 @@
 				ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 			}
 
+			// Mark component as loaded
+			componentsLoaded = true;
+
 			// Add global event listeners for waking up / resetting inactivity
 			document.addEventListener('mousemove', handleUserInteraction, { passive: true });
 			document.addEventListener('pointerdown', handleUserInteraction, { passive: true });
 
 			// Return cleanup function
 			return () => {
-				// Original cleanup
+				// Cleanup animations and services
 				cleanupAnimations();
 				cleanupBlinks();
 				if (eyeTracker) {
@@ -363,10 +374,20 @@
 		ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 	}
 
-	// Monitor theme changes
+	// Monitor theme changes - more idiomatic Svelte approach
 	$: if (currentTheme && ghostSvg && browser) {
-		// Schedule on the next tick to avoid recursive updates
-		setTimeout(applyThemeChanges, 0);
+		applyThemeChanges();
+	}
+
+	// Reactive declaration for ghost ready state
+	$: isGhostReady = browser && componentsLoaded && !!ghostSvg && !!currentTheme;
+
+	// Track previous ready state to dispatch event once
+	let wasReady = false;
+	$: if (isGhostReady && !wasReady) {
+		wasReady = true;
+		if (debug) console.log('[Ghost.svelte] Ghost is ready, gradients loaded');
+		dispatch('ghostReady');
 	}
 
 	// Trigger a double blink when waking up sequence finishes (transition WAKING_UP -> IDLE)
@@ -395,11 +416,12 @@
 		wakeUpBlinkTriggered = false;
 	}
 
-	// Monitor relevant props for changes
-	$: if (browser && (isRecording !== lastRecordingState || isProcessing !== lastProcessingState)) {
-		// Schedule on the next tick to avoid potential reactive loops,
-		// but only schedule when the relevant props have actually changed.
-		setTimeout(syncStateToStore, 0);
+	// Monitor relevant props directly with Svelte reactivity
+	$: if (browser) {
+		// Only update when the props actually change
+		if (isRecording !== lastRecordingState || isProcessing !== lastProcessingState) {
+			syncStateToStore();
+		}
 	}
 
 	// Interaction handlers for inactivity timer and waking up
@@ -416,7 +438,7 @@
 
 <button
 	bind:this={ghostSvg}
-	class="ghost-container theme-{currentTheme} 
+	class="ghost-container theme-{currentTheme} {animationClass}
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
       {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
@@ -438,12 +460,13 @@
 		viewBox="0 0 1024 1024"
 		xmlns="http://www.w3.org/2000/svg"
 		xmlns:xlink="http://www.w3.org/1999/xlink"
-		class="ghost-svg theme-{currentTheme}
-      {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
-      {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
-      {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
-      {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
-      {debugAnim ? 'debug-animation' : ''}"
+		class="ghost-svg theme-{currentTheme} {animationClass}"
+		class:recording={$ghostStateStore.isRecording}
+		class:spin={$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG}
+		class:asleep={$ghostStateStore.current === ANIMATION_STATES.ASLEEP}
+		class:waking-up={$ghostStateStore.current === ANIMATION_STATES.WAKING_UP}
+		class:ready={isGhostReady}
+		class:debug-animation={debugAnim}
 	>
 		<defs>
 			<linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -548,6 +571,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		contain: layout paint;
 	}
 
 	.ghost-container:focus,
@@ -564,11 +588,21 @@
 		pointer-events: none;
 	}
 
+	@keyframes fadeIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
 	.ghost-svg {
 		width: 100%;
 		height: 100%;
 		max-width: 100%;
 		max-height: 100%;
+		opacity: 0; /* Initially hidden */
+	}
+
+	.ghost-svg.ready {
+		animation: fadeIn 0.3s ease-out forwards;
 	}
 
 	.ghost-layer {
@@ -621,5 +655,14 @@
 	.ghost-svg.debug-animation #ghost-shape {
 		animation-duration: calc(var(--ghost-shimmer-duration, 5s) * 2),
 			calc(var(--ghost-peach-flow-duration, 9s) * 2) !important;
+	}
+	
+	/* Animation state control */
+	.animations-enabled .ghost-svg #ghost-shape {
+		animation-play-state: running;
+	}
+	
+	.animations-paused .ghost-svg #ghost-shape {
+		animation-play-state: paused;
 	}
 </style>

@@ -3,19 +3,21 @@
   import './ghost-themes.css';
   import ghostPathsUrl from './ghost-paths.svg?url';
   import { initGradientAnimation, cleanupAnimation, cleanupAllAnimations } from './gradientAnimator';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, createEventDispatcher } from 'svelte';
   
   // Direct theme prop - no store subscription
   export let theme = 'peach';
   export let size = '40px';
   export let seed = Math.floor(Math.random() * 10000);
+  export let disableJsAnimation = false; // Option to disable JS animation for performance
   
   // DOM references
   let ghostSvg;
   let leftEye;
   let rightEye;
   let eyesClosed = false;
-  
+  let componentsLoaded = false;
+
   // Simple blink animation with random timing based on seed
   let blinkTimeoutId;
   let blinkCounter = 0;
@@ -71,22 +73,41 @@
   
   // Lifecycle
   onMount(() => {
-    // Initialize gradient animation for current theme
-    if (ghostSvg) {
+    // Initialize gradient animation for current theme (if not disabled)
+    if (ghostSvg && !disableJsAnimation) {
       const svgElement = ghostSvg.querySelector('svg');
       if (svgElement) {
         initGradientAnimation(theme, svgElement);
       }
     }
-    
-    // Start blinking
+
+    // Start blinking (always enable this for visual consistency)
     scheduleBlink();
+
+    // Mark component as loaded
+    componentsLoaded = true;
   });
-  
+
   onDestroy(() => {
     clearTimeout(blinkTimeoutId);
-    cleanupAllAnimations();
+    // Only clean up animations if they were initialized
+    if (!disableJsAnimation) {
+      cleanupAllAnimations();
+    }
   });
+
+  // Event dispatcher
+  const dispatch = createEventDispatcher();
+
+  // Reactive declaration for ghost ready state
+  $: isGhostReady = componentsLoaded && !!ghostSvg && !!theme;
+
+  // Track previous ready state to dispatch event once
+  let wasReady = false;
+  $: if (isGhostReady && !wasReady) {
+    wasReady = true;
+    dispatch('ghostReady');
+  }
 </script>
 
 <div class="display-ghost" style="width:{size}; height:{size};">
@@ -96,6 +117,7 @@
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
       class="ghost-svg theme-{theme}"
+      class:ready={isGhostReady}
     >
       <defs>
         <linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -186,11 +208,21 @@
     align-items: center;
   }
   
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
   .ghost-svg {
     width: 100%;
     height: 100%;
     max-width: 100%;
     max-height: 100%;
+    opacity: 0; /* Initially hidden */
+  }
+
+  .ghost-svg.ready {
+    animation: fadeIn 0.3s ease-out forwards;
   }
   
   .ghost-layer {
@@ -199,23 +231,30 @@
 
   /* Override default theme glows for DisplayGhost to be more subtle */
   :global(.display-ghost .ghost-container.theme-peach) {
-    filter: drop-shadow(0 0 2px rgba(255, 120, 160, 0.15))
-      drop-shadow(0 0 4px rgba(255, 150, 120, 0.1));
+    filter: drop-shadow(0 0 2px rgba(255, 120, 160, 0.2));
+    will-change: filter;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   :global(.display-ghost .ghost-container.theme-mint) {
-    filter: drop-shadow(0 0 2px rgba(80, 235, 170, 0.15))
-      drop-shadow(0 0 4px rgba(60, 220, 240, 0.1));
+    filter: drop-shadow(0 0 2px rgba(80, 235, 170, 0.2));
+    will-change: filter;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   :global(.display-ghost .ghost-container.theme-bubblegum) {
-    filter: drop-shadow(0 0 2px rgba(200, 140, 255, 0.15))
-      drop-shadow(0 0 4px rgba(255, 110, 180, 0.1));
+    filter: drop-shadow(0 0 2px rgba(200, 140, 255, 0.2));
+    will-change: filter;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   :global(.display-ghost .ghost-container.theme-rainbow) {
-    filter: drop-shadow(0 0 2px rgba(255, 170, 190, 0.15))
-      drop-shadow(0 0 4px rgba(210, 180, 255, 0.1))
-      drop-shadow(0 0 1px rgba(255, 255, 255, 0.2));
+    filter: drop-shadow(0 0 2px rgba(255, 170, 190, 0.2));
+    will-change: filter;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 </style>

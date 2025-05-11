@@ -1,4 +1,6 @@
 <script>
+  import Ghost from '$lib/components/ghost/Ghost.svelte';
+  import { theme } from '$lib';
   import { ModalCloseButton } from './index.js';
   export let closeModal;
 </script>
@@ -11,8 +13,14 @@
 
     <div class="animate-fadeUp space-y-4">
       <div class="flex items-center gap-3 mb-1">
-        <div class="w-9 h-9 rounded-full flex items-center justify-center shadow-sm border border-purple-200/60 overflow-hidden">
-          <img src="/icons/icon-96x96.png" alt="TalkType Chrome Extension" class="w-full h-full object-cover" />
+        <div class="w-9 h-9 bg-gradient-to-br from-white to-pink-50 rounded-full flex items-center justify-center shadow-sm border border-pink-200/60">
+          <Ghost
+            width="28px"
+            height="28px"
+            externalTheme={theme}
+            clickable={false}
+            seed={98765}
+          />
         </div>
         <h3 id="extension_modal_title" class="font-black text-xl text-gray-800 tracking-tight">Chrome Extension</h3>
       </div>
@@ -70,5 +78,10 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* Ensure ghost container is properly styled and background is hidden */
+  :global(.ghost-container) {
+    background: transparent !important;
   }
 </style>

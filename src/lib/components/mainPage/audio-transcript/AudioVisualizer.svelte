@@ -1,5 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
+	import { appActive, shouldAnimateStore } from '$lib/services/infrastructure';
 
 	// Audio visualization configuration
 	let audioDataArray;
@@ -10,6 +11,12 @@
 	let analyser;
 	let audioContext;
 	let recording = false; // Track recording state within the component
+	
+	// Reactive animation state
+	$: animationsEnabled = $appActive;
+	
+	// CSS class to control animation state
+	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 
 	// Safari/iOS detection
 	const userAgent = navigator.userAgent;
@@ -114,6 +121,14 @@
 
 	function updateFallbackVisualizer() {
 		if (!fallbackAnimating) return;
+		
+		if (!$appActive) {
+			// If app is inactive, schedule less frequent updates with reactive store value
+			animationFrameId = setTimeout(() => {
+				animationFrameId = requestAnimationFrame(updateFallbackVisualizer);
+			}, 1000); // Check back in 1 second when inactive
+			return;
+		}
 
 		// Only animate when recording is true
 		if (recording) {
@@ -204,6 +219,14 @@
 
 	function updateVisualizer() {
 		if (!recording || !analyser) return;
+		
+		if (!$appActive) {
+			// If app is inactive, schedule less frequent updates with reactive store value
+			animationFrameId = setTimeout(() => {
+				animationFrameId = requestAnimationFrame(updateVisualizer);
+			}, 1000); // Check back in 1 second when inactive
+			return;
+		}
 
 		// Skip frames to slow down the animation
 		if (frameSkipCounter < frameSkipRate) {
@@ -249,6 +272,9 @@
 			history = Array(historyLength).fill(0);
 			updateVisualizer();
 		}
+		
+		// Animation state is now managed through reactive variables
+		// No need to manually manipulate DOM classes
 	}
 
 	function stopVisualizer() {
@@ -259,7 +285,10 @@
 			// The fadeout and stop is handled in updateFallbackVisualizer
 		} else {
 			// Standard cleanup
-			cancelAnimationFrame(animationFrameId);
+			if (typeof animationFrameId === 'number') {
+				cancelAnimationFrame(animationFrameId);
+				clearTimeout(animationFrameId);
+			}
 			audioLevel = 0;
 			history = [];
 			if (audioContext) {
@@ -272,7 +301,6 @@
 
 	// ===== LIFECYCLE HOOKS =====
 	onMount(() => {
-
 		// Initialize visualizer
 		if (useFallbackVisualizer) {
 			initFallbackVisualizer();
@@ -299,10 +327,16 @@
 	onDestroy(() => {
 		fallbackAnimating = false;
 		stopVisualizer();
+		
+		// Extra cleanup for any potential timeout/animation frame
+		if (typeof animationFrameId === 'number') {
+			cancelAnimationFrame(animationFrameId);
+			clearTimeout(animationFrameId);
+		}
 	});
 </script>
 
-<div class="history-container standard-container">
+<div class="history-container standard-container {animationClass}">
 	{#each history as level, index (index)}
 		<div
 			class="history-bar"
@@ -323,6 +357,7 @@
 		overflow: hidden;
 		box-shadow: inset 0 0 15px rgba(249, 168, 212, 0.15);
 		background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 242, 248, 0.2));
+		contain: content;
 	}
 	.history-bar {
 		position: absolute;
@@ -334,6 +369,9 @@
 		margin-right: 1px; /* Add slight margin to prevent white line gaps */
 		box-shadow: 0 0 8px rgba(249, 168, 212, 0.2); /* Subtle glow on bars */
 		opacity: 0.95;
+		will-change: height, transform, background-image, filter;
+		transform: translateZ(0);
+		backface-visibility: hidden;
 	}
 	
 	/* Theme-specific gradient styles - directly applied based on data-theme */
@@ -353,23 +391,42 @@
 		animation: hueShift 9.1s linear infinite, rainbowBars 3s ease-in-out infinite;
 		background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
 		background-size: 100% 600%;
-		box-shadow: 0 0 10px rgba(255, 255, 255, 0.15), 0 0 20px rgba(255, 156, 227, 0.1);
+		box-shadow: 0 0 8px rgba(255, 255, 255, 0.15), 0 0 10px rgba(255, 156, 227, 0.1);
+		will-change: filter, transform, opacity, background-position;
+		transform: translateZ(0);
+		backface-visibility: hidden;
+		background-position: 0% 0%;
+	}
+	
+	/* Svelte-controlled animation states */
+	.animations-enabled [data-theme="rainbow"] .history-bar {
+		animation-play-state: running;
+	}
+	
+	.animations-paused [data-theme="rainbow"] .history-bar {
+		animation-play-state: paused;
 	}
 	
 	/* Special animation for rainbow theme bars */
 	@keyframes rainbowBars {
-		0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 156, 227, 0.3)); }
-		25% { filter: drop-shadow(0 0 3px rgba(169, 255, 156, 0.3)); }
-		50% { filter: drop-shadow(0 0 3px rgba(156, 221, 255, 0.3)); }
-		75% { filter: drop-shadow(0 0 2px rgba(255, 234, 138, 0.3)); }
+		0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 156, 227, 0.2)); transform: scale(1); }
+		25% { filter: drop-shadow(0 0 3px rgba(169, 255, 156, 0.2)); transform: scale(1.01); }
+		50% { filter: drop-shadow(0 0 3px rgba(156, 221, 255, 0.2)); transform: scale(1.02); }
+		75% { filter: drop-shadow(0 0 2px rgba(255, 234, 138, 0.2)); transform: scale(1.01); }
 	}
 
 	@keyframes hueShift {
 		0% { 
-			filter: hue-rotate(0deg) saturate(1.4) brightness(1.15); 
+			filter: hue-rotate(0deg) saturate(1.3) brightness(1.1);
+			background-position: 0% 0%;
+		}
+		50% {
+			filter: hue-rotate(180deg) saturate(1.35) brightness(1.125);
+			background-position: 0% 300%;
 		}
 		100% { 
-			filter: hue-rotate(360deg) saturate(1.5) brightness(1.2); 
+			filter: hue-rotate(360deg) saturate(1.4) brightness(1.15);
+			background-position: 0% 600%;
 		}
 	}
 </style>

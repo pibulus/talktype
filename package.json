@@ -42,6 +42,7 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "@google/generative-ai": "^0.21.0",
     "boxen": "^8.0.1",
+    "canvas-confetti": "^1.9.3",
     "chalk": "^4.1.2",
     "cli-table3": "^0.6.5",
     "commander": "^11.1.0",
