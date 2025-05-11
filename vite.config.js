@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
 	plugins: [sveltekit()],
 	server: {
-		port: 51732, // runs with localhost:51732
+		port: 50001, // runs with localhost:50001
 		host: true, // allows access from other devices on the network
 		strictPort: true // exits if port is already taken (no fallback)
 	}
