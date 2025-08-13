@@ -3,6 +3,7 @@
 ## Completed Tasks
 
 ### Core PWA Infrastructure
+
 - ✅ Created comprehensive Web App Manifest (`manifest.json`)
 - ✅ Implemented Service Worker with caching strategy and offline fallback
 - ✅ Added PWA meta tags to `app.html` head section
@@ -12,6 +13,7 @@
 - ✅ Enhanced PWA manifest with categories, screenshots, and launch handler
 
 ### Icon System Setup
+
 - ✅ Defined all required icon sizes in the manifest
 - ✅ Added "purpose": "any maskable" support for Android adaptive icons
 - ✅ Created directory structure for PWA icons
@@ -23,6 +25,7 @@
 - ✅ Created iOS splash screens with proper sizing
 
 ### Installation Experience
+
 - ✅ Implemented transcription count tracking in localStorage
 - ✅ Created PWA installation state management system
 - ✅ Integrated with beforeinstallprompt API for native installation
@@ -32,6 +35,7 @@
 - ✅ Created progressive threshold system (shows prompt after engagement)
 
 ### Documentation
+
 - ✅ Updated PWA implementation guide
 - ✅ Created Next Steps document with testing guidelines
 - ✅ Added implementation checklist
@@ -40,12 +44,14 @@
 ## Remaining Tasks
 
 ### Icon and Asset Generation
+
 - ⏳ Install Sharp and SVG Export libraries: `npm install sharp svgexport`
 - ⏳ Run the icon generation script: `node scripts/generate-pwa-icons.js`
 - ⏳ Run the splash screen generation script: `node scripts/generate-splash-screens.js`
 - ⏳ Create PWA screenshots for the app store listings
 
 ### PWA Testing
+
 - ⏳ Test installation on iOS devices
 - ⏳ Test installation on Android devices
 - ⏳ Test installation on desktop browsers (Chrome, Edge)
@@ -55,6 +61,7 @@
 - ⏳ Run Lighthouse PWA audit and address any issues
 
 ### Final Validation
+
 - ⏳ Verify all icons load correctly on different platforms
 - ⏳ Test app launch from home screen
 - ⏳ Verify splash screens appear on iOS devices
@@ -69,11 +76,13 @@ We've prepared scripts to generate all necessary PWA assets:
 ### PWA Icons
 
 1. Install the required libraries:
+
    ```bash
    npm install sharp svgexport
    ```
 
 2. Run the icon generation script:
+
    ```bash
    node scripts/generate-pwa-icons.js
    ```
@@ -87,6 +96,7 @@ We've prepared scripts to generate all necessary PWA assets:
 ### iOS Splash Screens
 
 1. Run the splash screen generation script:
+
    ```bash
    node scripts/generate-splash-screens.js
    ```
@@ -99,6 +109,7 @@ We've prepared scripts to generate all necessary PWA assets:
 ### Source Files
 
 The icon system uses these source files:
+
 - `/static/assets/talktype-icon-base.svg` - Ghost outline
 - `/static/assets/talktype-icon-eyes.svg` - Ghost eyes
 - `/static/talktype-icon-bg-gradient.svg` - Peach gradient background

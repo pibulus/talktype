@@ -21,7 +21,7 @@ The AppSuffix is implemented as a reusable Svelte component that can be easily a
 
 ```svelte
 <script>
-  import { AppSuffix } from '$lib/components/ui';
+	import { AppSuffix } from '$lib/components/ui';
 </script>
 
 <h1>TalkType<AppSuffix /></h1>
@@ -36,11 +36,7 @@ The AppSuffix component accepts the following props:
 - `customClass`: Optional additional CSS classes
 
 ```svelte
-<AppSuffix 
-  color="inherit"
-  size="65%"
-  customClass="title-suffix"
-/>
+<AppSuffix color="inherit" size="65%" customClass="title-suffix" />
 ```
 
 ## Styling Guidelines
@@ -71,25 +67,21 @@ You may optionally use a slightly lighter shade of the brand color for subtle di
 
 ```svelte
 <script>
-  import { AppSuffix } from '$lib/components/ui';
-  
-  export let showAppSuffix = true;
-  export let suffixColor = "inherit";
-  export let suffixSize = "65%";
+	import { AppSuffix } from '$lib/components/ui';
+
+	export let showAppSuffix = true;
+	export let suffixColor = 'inherit';
+	export let suffixSize = '65%';
 </script>
 
 <h1>
-  <span>TalkType</span>
-  
-  {#if showAppSuffix}
-    <span>
-      <AppSuffix 
-        color={suffixColor}
-        size={suffixSize}
-        customClass="title-suffix"
-      />
-    </span>
-  {/if}
+	<span>TalkType</span>
+
+	{#if showAppSuffix}
+		<span>
+			<AppSuffix color={suffixColor} size={suffixSize} customClass="title-suffix" />
+		</span>
+	{/if}
 </h1>
 ```
 
@@ -97,11 +89,11 @@ You may optionally use a slightly lighter shade of the brand color for subtle di
 
 ```svelte
 <nav class="flex items-center space-x-6">
-  <div class="text-lg font-bold">
-    TalkType<AppSuffix size="60%" />
-  </div>
-  <a href="#" class="text-gray-600 hover:text-gray-900">Features</a>
-  <a href="#" class="text-gray-600 hover:text-gray-900">Pricing</a>
+	<div class="text-lg font-bold">
+		TalkType<AppSuffix size="60%" />
+	</div>
+	<a href="#" class="text-gray-600 hover:text-gray-900">Features</a>
+	<a href="#" class="text-gray-600 hover:text-gray-900">Pricing</a>
 </nav>
 ```
 
@@ -109,7 +101,7 @@ You may optionally use a slightly lighter shade of the brand color for subtle di
 
 ```svelte
 <footer class="text-sm text-gray-500">
-  © 2025 TalkType<AppSuffix size="60%" /> — All rights reserved.
+	© 2025 TalkType<AppSuffix size="60%" /> — All rights reserved.
 </footer>
 ```
 

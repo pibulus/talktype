@@ -132,15 +132,16 @@
 }
 
 /* Waking Up animation - applied to body and eyes */
-.ghost-container.waking-up #ghost-spin-pivot { /* Apply shake to body */
-	animation: ghost-wake-up-shake 0.8s cubic-bezier(.36,.07,.19,.97) both; /* Run once */
+.ghost-container.waking-up #ghost-spin-pivot {
+	/* Apply shake to body */
+	animation: ghost-wake-up-shake 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; /* Run once */
 	transform-origin: center center;
 }
-.ghost-container.waking-up .ghost-eye { /* Apply blink awake to eyes */
+.ghost-container.waking-up .ghost-eye {
+	/* Apply blink awake to eyes */
 	animation: ghost-wake-up-blink 0.8s ease-in-out 1 forwards; /* Run once */
 	transform-origin: center center;
 }
-
 
 /* ----------------------------------------
    Theme-specific Base Animations
@@ -198,8 +199,7 @@
 
 .theme-rainbow:hover {
 	filter: drop-shadow(0 0 10px rgba(180, 130, 255, 0.7))
-		drop-shadow(0 0 15px rgba(130, 160, 255, 0.4))
-		drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
+		drop-shadow(0 0 15px rgba(130, 160, 255, 0.4)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
 	will-change: filter;
 	transform: translateZ(0);
 	backface-visibility: hidden;
@@ -360,32 +360,73 @@
 
 /* Removed @keyframes ghost-asleep */
 
-@keyframes ghost-falling-asleep { /* Renamed */
-	0% { transform: scaleY(1); }     /* Start fully open */
-	20% { transform: scaleY(0.4); }   /* Getting drowsy */
-	35% { transform: scaleY(0.8); }   /* Tries to open */
-	50% { transform: scaleY(0.2); }   /* Fails, closes more */
-	65% { transform: scaleY(0.5); }   /* Another small attempt */
-	80% { transform: scaleY(0.2); }   /* Almost asleep */
-	90% { transform: scaleY(0.25); }  /* Final flicker? */
-	100% { transform: scaleY(0.15); } /* Final closed state (thicker) */
+@keyframes ghost-falling-asleep {
+	/* Renamed */
+	0% {
+		transform: scaleY(1);
+	} /* Start fully open */
+	20% {
+		transform: scaleY(0.4);
+	} /* Getting drowsy */
+	35% {
+		transform: scaleY(0.8);
+	} /* Tries to open */
+	50% {
+		transform: scaleY(0.2);
+	} /* Fails, closes more */
+	65% {
+		transform: scaleY(0.5);
+	} /* Another small attempt */
+	80% {
+		transform: scaleY(0.2);
+	} /* Almost asleep */
+	90% {
+		transform: scaleY(0.25);
+	} /* Final flicker? */
+	100% {
+		transform: scaleY(0.15);
+	} /* Final closed state (thicker) */
 }
 
-@keyframes ghost-wake-up-shake { /* Body shake */
-  10%, 90% { transform: translate3d(-1px, 0, 0) scale(1.01) rotate(-0.5deg); }
-  20%, 80% { transform: translate3d(2px, 0, 0) scale(0.99) rotate(0.5deg); }
-  30%, 50%, 70% { transform: translate3d(-3px, 0, 0) scale(1.02) rotate(-0.8deg); }
-  40%, 60% { transform: translate3d(3px, 0, 0) scale(0.98) rotate(0.8deg); }
-  100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+@keyframes ghost-wake-up-shake {
+	/* Body shake */
+	10%,
+	90% {
+		transform: translate3d(-1px, 0, 0) scale(1.01) rotate(-0.5deg);
+	}
+	20%,
+	80% {
+		transform: translate3d(2px, 0, 0) scale(0.99) rotate(0.5deg);
+	}
+	30%,
+	50%,
+	70% {
+		transform: translate3d(-3px, 0, 0) scale(1.02) rotate(-0.8deg);
+	}
+	40%,
+	60% {
+		transform: translate3d(3px, 0, 0) scale(0.98) rotate(0.8deg);
+	}
+	100% {
+		transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+	}
 }
 
-@keyframes ghost-wake-up-blink { /* Eye blink awake */
-  0% { transform: scaleY(0.05); } /* Start closed */
-  50% { transform: scaleY(0.05); } /* Stay closed */
-  70% { transform: scaleY(1.2); }  /* Open wide quickly */
-  100% { transform: scaleY(1); }   /* Settle open */
+@keyframes ghost-wake-up-blink {
+	/* Eye blink awake */
+	0% {
+		transform: scaleY(0.05);
+	} /* Start closed */
+	50% {
+		transform: scaleY(0.05);
+	} /* Stay closed */
+	70% {
+		transform: scaleY(1.2);
+	} /* Open wide quickly */
+	100% {
+		transform: scaleY(1);
+	} /* Settle open */
 }
-
 
 /* ----------------------------------------
    Hover Glow Keyframe Animations
@@ -1064,7 +1105,8 @@
 			drop-shadow(0 0 25px rgba(255, 150, 100, 0.6));
 		transform: scale(1.02);
 	}
-	25%, 75% {
+	25%,
+	75% {
 		filter: drop-shadow(0 0 20px rgba(255, 130, 170, 0.7))
 			drop-shadow(0 0 30px rgba(255, 160, 180, 0.5));
 		transform: scale(1.04);
@@ -1080,7 +1122,8 @@
 			drop-shadow(0 0 25px rgba(100, 255, 210, 0.6));
 		transform: scale(1.02);
 	}
-	25%, 75% {
+	25%,
+	75% {
 		filter: drop-shadow(0 0 20px rgba(80, 235, 170, 0.7))
 			drop-shadow(0 0 30px rgba(60, 220, 240, 0.5));
 		transform: scale(1.04);
@@ -1096,7 +1139,8 @@
 			drop-shadow(0 0 25px rgba(180, 120, 255, 0.6));
 		transform: scale(1.02);
 	}
-	25%, 75% {
+	25%,
+	75% {
 		filter: drop-shadow(0 0 20px rgba(210, 120, 255, 0.7))
 			drop-shadow(0 0 30px rgba(255, 110, 180, 0.5));
 		transform: scale(1.04);
@@ -1105,40 +1149,40 @@
 
 @keyframes rainbow-color-cycle {
 	0%,
-	100% { /* Base color: rgba(255, 50, 150, 1) - Magentaish Pink */
-		filter: drop-shadow(0 0 15px rgba(255, 50, 150, 0.75)) 
-			drop-shadow(0 0 25px rgba(255, 50, 150, 0.5)) 
-			drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
+	100% {
+		/* Base color: rgba(255, 50, 150, 1) - Magentaish Pink */
+		filter: drop-shadow(0 0 15px rgba(255, 50, 150, 0.75))
+			drop-shadow(0 0 25px rgba(255, 50, 150, 0.5)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
 		transform: scale(1.02);
 	}
-	16.6% { /* Base color: rgba(255, 90, 90, 1) - Reddish */
-		filter: drop-shadow(0 0 15px rgba(255, 90, 90, 0.75)) 
-			drop-shadow(0 0 25px rgba(255, 90, 90, 0.5)) 
-			drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
+	16.6% {
+		/* Base color: rgba(255, 90, 90, 1) - Reddish */
+		filter: drop-shadow(0 0 15px rgba(255, 90, 90, 0.75))
+			drop-shadow(0 0 25px rgba(255, 90, 90, 0.5)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
 		transform: scale(1.03);
 	}
-	33.3% { /* Base color: rgba(255, 180, 80, 1) - Orangeish */
-		filter: drop-shadow(0 0 15px rgba(255, 180, 80, 0.75)) 
-			drop-shadow(0 0 25px rgba(255, 180, 80, 0.5)) 
-			drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
+	33.3% {
+		/* Base color: rgba(255, 180, 80, 1) - Orangeish */
+		filter: drop-shadow(0 0 15px rgba(255, 180, 80, 0.75))
+			drop-shadow(0 0 25px rgba(255, 180, 80, 0.5)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
 		transform: scale(1.04);
 	}
-	50% { /* Base color: rgba(255, 230, 100, 1) - Yellowish */
-		filter: drop-shadow(0 0 15px rgba(255, 230, 100, 0.75)) 
-			drop-shadow(0 0 25px rgba(255, 230, 100, 0.5)) 
-			drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
+	50% {
+		/* Base color: rgba(255, 230, 100, 1) - Yellowish */
+		filter: drop-shadow(0 0 15px rgba(255, 230, 100, 0.75))
+			drop-shadow(0 0 25px rgba(255, 230, 100, 0.5)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
 		transform: scale(1.03);
 	}
-	66.6% { /* Base color: rgba(80, 220, 120, 1) - greenish */
-		filter: drop-shadow(0 0 15px rgba(80, 220, 120, 0.75)) 
-			drop-shadow(0 0 25px rgba(80, 220, 120, 0.5)) 
-			drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
+	66.6% {
+		/* Base color: rgba(80, 220, 120, 1) - greenish */
+		filter: drop-shadow(0 0 15px rgba(80, 220, 120, 0.75))
+			drop-shadow(0 0 25px rgba(80, 220, 120, 0.5)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
 		transform: scale(1.02);
 	}
-	83.3% { /* Base color: rgba(80, 160, 255, 1) - Blueish */
-		filter: drop-shadow(0 0 15px rgba(80, 160, 255, 0.75)) 
-			drop-shadow(0 0 25px rgba(80, 160, 255, 0.5)) 
-			drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
+	83.3% {
+		/* Base color: rgba(80, 160, 255, 1) - Blueish */
+		filter: drop-shadow(0 0 15px rgba(80, 160, 255, 0.75))
+			drop-shadow(0 0 25px rgba(80, 160, 255, 0.5)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
 		transform: scale(1.03);
 	}
 }

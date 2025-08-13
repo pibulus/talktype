@@ -43,6 +43,7 @@ npm run lighthouse
 ```
 
 This will:
+
 1. Build the production version of the app
 2. Run Lighthouse audits against key metrics
 3. Generate reports in the `lighthouse-reports` directory

@@ -12,30 +12,30 @@
 	import PermissionError from './PermissionError.svelte';
 	import { ANIMATION, CTA_PHRASES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
 	import { Confetti } from '$lib/components/ui';
-	
+
 	// State for confetti animation
 	let showConfetti = false;
 	let confettiTarget = '.ghost-icon-wrapper'; // Target the ghost icon so confetti explodes from behind it
 	let confettiColors = ANIMATION.CONFETTI.COLORS; // Default colors
-	
+
 	// Function to get theme-specific confetti colors
 	function getThemeConfettiColors() {
 		// Get current theme from the store
 		let currentTheme;
-		const unsubscribe = theme.subscribe(value => {
+		const unsubscribe = theme.subscribe((value) => {
 			currentTheme = value;
 		});
 		unsubscribe();
-		
+
 		// Use theme-specific colors if available
 		if (currentTheme && ANIMATION.CONFETTI.THEME_COLORS[currentTheme]) {
 			return ANIMATION.CONFETTI.THEME_COLORS[currentTheme];
 		}
-		
+
 		// Fallback to default colors
 		return ANIMATION.CONFETTI.COLORS;
 	}
-	
+
 	import {
 		initializeServices,
 		audioService,
@@ -75,7 +75,7 @@
 	let isPremiumUser = false; // Change this to true to enable premium features
 
 	// These will be set from the parent component
-	export let isModelPreloaded = false;
+	export const isModelPreloaded = false;
 	export let onPreloadRequest = null;
 
 	// Ghost component reference
@@ -296,52 +296,54 @@
 		// Calculate both character length and word count
 		const charLength = text.length;
 		const wordCount = text.trim().split(/\s+/).length;
-		
-		// Typography best practices suggest that readability is impacted by both 
+
+		// Typography best practices suggest that readability is impacted by both
 		// total length and average word length
 		const avgWordLength = charLength / (wordCount || 1); // Avoid division by zero
-		
-		console.log(`Dynamic sizing: ${wordCount} words, ${charLength} chars, ${avgWordLength.toFixed(1)} avg length`);
-		
+
+		console.log(
+			`Dynamic sizing: ${wordCount} words, ${charLength} chars, ${avgWordLength.toFixed(1)} avg length`
+		);
+
 		// Extremely short text (5 words or less): Use larger font, especially on desktop
 		if (wordCount <= 5) {
-			const size = isMobile 
-				? 'text-xl sm:text-2xl md:text-3xl' 
-				: isDesktop 
-					? 'text-2xl md:text-3xl lg:text-4xl' 
+			const size = isMobile
+				? 'text-xl sm:text-2xl md:text-3xl'
+				: isDesktop
+					? 'text-2xl md:text-3xl lg:text-4xl'
 					: 'text-2xl md:text-3xl';
 			console.log(`Using size for ≤5 words: ${size}`);
 			return size;
 		}
-		
+
 		// Very short text: 6-10 words or under 50 chars
 		if (wordCount < 10 || charLength < 50) {
 			const size = isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl';
 			console.log(`Using size for 6-10 words: ${size}`);
 			return size;
 		}
-		
+
 		// Short text: 11-25 words or under 150 chars with normal word length
 		if ((wordCount < 25 || charLength < 150) && avgWordLength < 8) {
 			const size = isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl';
 			console.log(`Using size for 11-25 words: ${size}`);
 			return size;
 		}
-		
+
 		// Medium text: 26-50 words or under 300 chars
 		if (wordCount < 50 || charLength < 300) {
 			const size = isMobile ? 'text-sm sm:text-base md:text-lg' : 'text-base md:text-lg';
 			console.log(`Using size for 26-50 words: ${size}`);
 			return size;
 		}
-		
+
 		// Medium-long text: 51-100 words or under 500 chars
 		if (wordCount < 100 || charLength < 500) {
 			const size = isMobile ? 'text-xs sm:text-sm md:text-base' : 'text-sm md:text-base';
 			console.log(`Using size for 51-100 words: ${size}`);
 			return size;
 		}
-		
+
 		// Long text: Over 100 words or 500+ chars
 		// Use smaller text for better readability on longer content
 		const size = isMobile ? 'text-xs sm:text-sm' : 'text-sm md:text-base';
@@ -376,7 +378,8 @@
 	}
 
 	// State changes for transcript completion
-	function handleTranscriptCompletion(textToProcess) { // <-- Accept text as a parameter
+	function handleTranscriptCompletion(textToProcess) {
+		// <-- Accept text as a parameter
 		console.log('[DEBUG] handleTranscriptCompletion() called with textToProcess:', textToProcess);
 
 		// Only attempt to use ghost component if it exists
@@ -391,7 +394,8 @@
 		}
 
 		// Automatically copy to clipboard when transcription finishes
-		if (textToProcess) { // <-- Use the passed-in parameter
+		if (textToProcess) {
+			// <-- Use the passed-in parameter
 			// Show confetti celebration as a random Easter egg (1/7 chance)
 			if (Math.floor(Math.random() * 7) === 0) {
 				// Update confetti colors based on current theme
@@ -403,11 +407,11 @@
 					showConfetti = false;
 				}, ANIMATION.CONFETTI.ANIMATION_DURATION + 500);
 			}
-			
+
 			// Copy to clipboard with small delay to ensure UI updates
 			setTimeout(() => {
 				transcriptionService.copyToClipboard(textToProcess); // <-- Use parameter
-				console.log("Auto-copying transcript to clipboard");
+				console.log('Auto-copying transcript to clipboard');
 			}, 100); // Faster copying
 		} else {
 			console.log('[DEBUG] Inside handleTranscriptCompletion: textToProcess is FALSY.');
@@ -423,16 +427,24 @@
 
 		// Existing subscription to transcriptionText for general debugging (no longer calls handleTranscriptCompletion)
 		const transcriptUnsub = transcriptionText.subscribe((text) => {
-			console.log('[DEBUG] (Raw transcriptionText update) Text:', text, 'IsTranscribing:', $isTranscribing);
+			console.log(
+				'[DEBUG] (Raw transcriptionText update) Text:',
+				text,
+				'IsTranscribing:',
+				$isTranscribing
+			);
 			// NOTE: The call to handleTranscriptCompletion() has been removed from here.
 		});
 
 		// New subscription to the dedicated transcriptionCompletedEvent
-		const transcriptionCompletedUnsub = transcriptionCompletedEvent.subscribe(completedText => {
+		const transcriptionCompletedUnsub = transcriptionCompletedEvent.subscribe((completedText) => {
 			if (completedText) {
 				// This event fires only when transcription is truly complete and text is available.
 				// $isTranscribing should be false by now.
-				console.log('[DEBUG] transcriptionCompletedEvent fired in component with text:', completedText);
+				console.log(
+					'[DEBUG] transcriptionCompletedEvent fired in component with text:',
+					completedText
+				);
 				handleTranscriptCompletion(completedText); // <-- Pass completedText to the handler
 			}
 		});
@@ -466,7 +478,12 @@
 		});
 
 		// Add to unsubscribe list
-		unsubscribers.push(transcriptUnsub, transcriptionCompletedUnsub, permissionUnsub, audioStateUnsub);
+		unsubscribers.push(
+			transcriptUnsub,
+			transcriptionCompletedUnsub,
+			permissionUnsub,
+			audioStateUnsub
+		);
 
 		// Check if the app is running as a PWA after a short delay
 		if (browser) {
@@ -576,11 +593,11 @@
 
 <!-- Confetti component - display centered to the transcript box when triggered -->
 {#if showConfetti}
-  <Confetti 
-    targetSelector={confettiTarget} 
-    colors={confettiColors}
-    on:complete={() => showConfetti = false} 
-  />
+	<Confetti
+		targetSelector={confettiTarget}
+		colors={confettiColors}
+		on:complete={() => (showConfetti = false)}
+	/>
 {/if}
 
 <!-- Screen reader only status announcements -->
@@ -597,149 +614,149 @@
 
 <style>
 	/* Main wrapper to ensure proper positioning */
-.main-wrapper {
-	position: relative;
-	z-index: 1;
-	width: 100%;
-	box-sizing: border-box;
-}
-
-/* Position wrapper to create a stable layout without shifts */
-.position-wrapper {
-	min-height: 120px; /* Ensure there's enough space for content */
-	max-height: calc(100vh - 260px); /* Increased height capacity */
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	position: relative; /* Ensure proper positioning context */
-	overflow: hidden; /* Prevent any overflow from causing page scroll */
-	transition: all 0.3s ease-in-out; /* Smooth transition when content changes */
-	contain: paint layout; /* Stronger containment for better performance */
-	padding-bottom: 24px; /* Additional space at bottom for transcript */
-}
-
-/* Content container for transcripts and visualizers */
-.content-container {
-	width: 100%;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	position: relative; /* For absolute positioned children */
-}
-
-/* Wrapper container for consistent max-width across components */
-.wrapper-container {
-	width: 100%;
-}
-
-/* Visualizer container for absolute positioning */
-.visualizer-container {
-	z-index: 10;
-}
-
-/* Common animation for fading elements in */
-.animate-fadeIn {
-	animation: localFadeIn 0.8s ease-out forwards;
-}
-
-@keyframes localFadeIn {
-	from {
-		opacity: 0;
-		transform: translateY(10px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
-/* Screen reader only class */
-.sr-only {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	padding: 0;
-	margin: -1px;
-	overflow: hidden;
-	clip: rect(0, 0, 0, 0);
-	white-space: nowrap;
-	border-width: 0;
-}
-
-/* Improved focus styles for keyboard navigation */
-:focus-visible {
-	outline: 2px solid #f59e0b;
-	outline-offset: 2px;
-}
-
-/* Apply box-sizing to all elements for consistent layout */
-* {
-	box-sizing: border-box;
-}
-
-/* Mobile-centered container */
-.mobile-centered-container {
-	width: 100%;
-	max-width: 100vw;
-	margin: 0 auto;
-	text-align: center;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-}
-
-/* Make the button section sticky to prevent jumping */
-.button-section {
-	position: sticky;
-	top: 0;
-	z-index: 20;
-	padding-bottom: 1rem; /* Increased from 0.75rem */
-	background: transparent;
-}
-
-/* Media queries for mobile responsiveness */
-@media (max-width: 768px) {
-	.button-container {
-		width: 90%;
-		max-width: 90vw; /* Prevent overflow */
-		margin: 0 auto; /* Center horizontally */
+	.main-wrapper {
+		position: relative;
+		z-index: 1;
+		width: 100%;
+		box-sizing: border-box;
 	}
 
-	/* Adjust spacing for mobile */
+	/* Position wrapper to create a stable layout without shifts */
 	.position-wrapper {
-		margin-top: 0.75rem;
-		margin-bottom: 2.5rem; /* More space (40px) for footer on mobile */
-		padding: 0 8px 32px; /* Add side padding and bottom padding */
-		max-height: calc(100vh - 200px); /* Control height on mobile */
-		overflow: hidden; /* Prevent page scroll from content */
+		min-height: 120px; /* Ensure there's enough space for content */
+		max-height: calc(100vh - 260px); /* Increased height capacity */
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		position: relative; /* Ensure proper positioning context */
+		overflow: hidden; /* Prevent any overflow from causing page scroll */
+		transition: all 0.3s ease-in-out; /* Smooth transition when content changes */
+		contain: paint layout; /* Stronger containment for better performance */
+		padding-bottom: 24px; /* Additional space at bottom for transcript */
 	}
 
-	/* Make the visualizer more compact on mobile */
-	.visualizer-container {
-		top: -5px;
+	/* Content container for transcripts and visualizers */
+	.content-container {
+		width: 100%;
 		display: flex;
-		justify-content: center;
+		flex-direction: column;
+		align-items: center;
+		position: relative; /* For absolute positioned children */
+	}
+
+	/* Wrapper container for consistent max-width across components */
+	.wrapper-container {
 		width: 100%;
 	}
 
-	/* Ensure minimum width even on very small screens */
-	.wrapper-container {
-		min-width: 280px;
+	/* Visualizer container for absolute positioning */
+	.visualizer-container {
+		z-index: 10;
+	}
+
+	/* Common animation for fading elements in */
+	.animate-fadeIn {
+		animation: localFadeIn 0.8s ease-out forwards;
+	}
+
+	@keyframes localFadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	/* Screen reader only class */
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border-width: 0;
+	}
+
+	/* Improved focus styles for keyboard navigation */
+	:focus-visible {
+		outline: 2px solid #f59e0b;
+		outline-offset: 2px;
+	}
+
+	/* Apply box-sizing to all elements for consistent layout */
+	* {
+		box-sizing: border-box;
+	}
+
+	/* Mobile-centered container */
+	.mobile-centered-container {
+		width: 100%;
+		max-width: 100vw;
+		margin: 0 auto;
+		text-align: center;
 		display: flex;
+		flex-direction: column;
+		align-items: center;
 		justify-content: center;
 	}
-}
 
-/* Even smaller screens */
-@media (max-width: 380px) {
-	/* Ensure proper spacing on tiny screens */
-	.position-wrapper {
-		margin-top: 0.5rem;
-		margin-bottom: 2rem;
-		padding: 0 4px 24px;
-		max-height: calc(100vh - 190px); /* More compact on very small screens */
-		overflow: hidden;
+	/* Make the button section sticky to prevent jumping */
+	.button-section {
+		position: sticky;
+		top: 0;
+		z-index: 20;
+		padding-bottom: 1rem; /* Increased from 0.75rem */
+		background: transparent;
 	}
-}
+
+	/* Media queries for mobile responsiveness */
+	@media (max-width: 768px) {
+		.button-container {
+			width: 90%;
+			max-width: 90vw; /* Prevent overflow */
+			margin: 0 auto; /* Center horizontally */
+		}
+
+		/* Adjust spacing for mobile */
+		.position-wrapper {
+			margin-top: 0.75rem;
+			margin-bottom: 2.5rem; /* More space (40px) for footer on mobile */
+			padding: 0 8px 32px; /* Add side padding and bottom padding */
+			max-height: calc(100vh - 200px); /* Control height on mobile */
+			overflow: hidden; /* Prevent page scroll from content */
+		}
+
+		/* Make the visualizer more compact on mobile */
+		.visualizer-container {
+			top: -5px;
+			display: flex;
+			justify-content: center;
+			width: 100%;
+		}
+
+		/* Ensure minimum width even on very small screens */
+		.wrapper-container {
+			min-width: 280px;
+			display: flex;
+			justify-content: center;
+		}
+	}
+
+	/* Even smaller screens */
+	@media (max-width: 380px) {
+		/* Ensure proper spacing on tiny screens */
+		.position-wrapper {
+			margin-top: 0.5rem;
+			margin-bottom: 2rem;
+			padding: 0 4px 24px;
+			max-height: calc(100vh - 190px); /* More compact on very small screens */
+			overflow: hidden;
+		}
+	}
 </style>

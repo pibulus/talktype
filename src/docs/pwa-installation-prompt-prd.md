@@ -300,13 +300,11 @@ Update the manifest to include the new maskable icon and ensure theme-aware icon
 ## Implementation Plan
 
 1. **Phase 1: Installation Prompt Logic**
-
    - Implement tracking logic for transcription counts
    - Create the beforeinstallprompt event handler
    - Develop localStorage-based state management
 
 2. **Phase 2: UI Component**
-
    - Design and implement the InstallPrompt component
    - Create platform-specific variations
    - Add animation and ghost icon integration

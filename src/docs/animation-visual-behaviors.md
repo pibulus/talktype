@@ -22,7 +22,6 @@ This document details the visual animation behaviors in TalkType and identifies 
      - Quick blink (80% chance) or double blink (20%)
      - Addition of 'recording' class for visual indicator
      - Directional wobble animation
-   
    - Stop Recording:
      - Removal of 'recording' class
      - Directional wobble animation (left/right)
@@ -77,136 +76,147 @@ This document details the visual animation behaviors in TalkType and identifies 
 ### 1. Centralized Animation State Management
 
 **Current Implementation:**
+
 - Animation state spread across multiple components
 - DOM classes used as state (e.g., 'recording', 'blink-once')
 - Complex coordination between page and component levels
 
 **Refactoring Opportunity:**
+
 - Create a single animation state store using Svelte's writeable store
 - Use derived stores for calculated animation states
 - Make animation functions pure and driven by state changes
 - Example:
+
   ```javascript
   // animation-store.js
   import { writable, derived } from 'svelte/store';
-  
+
   export const recordingState = writable(false);
   export const transcribingState = writable(false);
   export const ambientActive = derived(
-    [recordingState, transcribingState],
-    ([$recording, $transcribing]) => !$recording && !$transcribing
+  	[recordingState, transcribingState],
+  	([$recording, $transcribing]) => !$recording && !$transcribing
   );
   ```
 
 ### 2. CSS-driven Animation System
 
 **Current Implementation:**
+
 - Many animations triggered by JavaScript timeouts
 - Manual class addition/removal for animation states
 - Complex interplay between JS and CSS
 
 **Refactoring Opportunity:**
+
 - Use CSS custom properties (variables) for animation states
 - Control animations through class toggling only
 - Allow CSS transitions to handle most animations
 - Example:
+
   ```css
   /* CSS */
   .ghost-eyes {
-    --blink-state: 'idle';
-    transition: opacity 0.18s ease;
+  	--blink-state: 'idle';
+  	transition: opacity 0.18s ease;
   }
-  
-  .ghost-eyes[data-blink-state="blinking"] {
-    animation: blink-once 0.18s ease forwards;
+
+  .ghost-eyes[data-blink-state='blinking'] {
+  	animation: blink-once 0.18s ease forwards;
   }
   ```
 
 ### 3. Unified Component Architecture
 
 **Current Implementation:**
+
 - Ghost animations split between page and AudioToText component
 - Complex parent/child references shared between components
 - Difficult to trace animation flow
 
 **Refactoring Opportunity:**
+
 - Create a dedicated GhostIcon component to encapsulate all animations
 - Use events to communicate between components
 - Make recording state the single source of truth
 - Example:
+
   ```javascript
   // GhostIcon.svelte
   export let recording = false;
   export let transcribing = false;
-  
+
   function handleClick() {
-    dispatch('toggleRecording');
+  	dispatch('toggleRecording');
   }
-  
+
   $: animationState = recording ? 'recording' : transcribing ? 'transcribing' : 'idle';
   ```
 
 ### 4. RequestAnimationFrame Optimization
 
 **Current Implementation:**
+
 - Mix of setTimeout and requestAnimationFrame for animations
 - Some animations may cause layout thrashing
 - Force reflow used liberally
 
 **Refactoring Opportunity:**
+
 - Use requestAnimationFrame consistently for all animations
 - Batch DOM reads/writes to prevent layout thrashing
 - Use CSS transforms/opacity for smooth hardware-accelerated animations
 - Example:
+
   ```javascript
   function animateProgress(startValue, endValue, duration) {
-    const startTime = performance.now();
-    
-    function update(currentTime) {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const currentValue = startValue + (endValue - startValue) * easeOutQuad(progress);
-      
-      // Batch DOM writes
-      progressBar.style.transform = `scaleX(${currentValue / 100})`;
-      
-      if (progress < 1) {
-        requestAnimationFrame(update);
-      }
-    }
-    
-    requestAnimationFrame(update);
+  	const startTime = performance.now();
+
+  	function update(currentTime) {
+  		const elapsed = currentTime - startTime;
+  		const progress = Math.min(elapsed / duration, 1);
+  		const currentValue = startValue + (endValue - startValue) * easeOutQuad(progress);
+
+  		// Batch DOM writes
+  		progressBar.style.transform = `scaleX(${currentValue / 100})`;
+
+  		if (progress < 1) {
+  			requestAnimationFrame(update);
+  		}
+  	}
+
+  	requestAnimationFrame(update);
   }
   ```
 
 ### 5. Web Animation API
 
 **Current Implementation:**
+
 - CSS classes and timeouts for manual animation control
 - Hard to synchronize or sequence animations
 
 **Refactoring Opportunity:**
+
 - Use Web Animation API for programmatic animation control
 - Create composable animation sequences
 - Easily pause, reverse, or cancel animations
 - Example:
+
   ```javascript
   function blinkEyes(element) {
-    return element.animate([
-      { opacity: 1 },
-      { opacity: 0 },
-      { opacity: 1 }
-    ], {
-      duration: 180,
-      easing: 'ease'
-    });
+  	return element.animate([{ opacity: 1 }, { opacity: 0 }, { opacity: 1 }], {
+  		duration: 180,
+  		easing: 'ease'
+  	});
   }
-  
+
   function doubleBlinkEyes(element) {
-    const firstBlink = blinkEyes(element);
-    firstBlink.onfinish = () => {
-      setTimeout(() => blinkEyes(element), 200);
-    };
+  	const firstBlink = blinkEyes(element);
+  	firstBlink.onfinish = () => {
+  		setTimeout(() => blinkEyes(element), 200);
+  	};
   }
   ```
 

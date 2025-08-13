@@ -31,7 +31,6 @@ This document outlines planned features and enhancements for the TalkType applic
 #### Visual Customization
 
 - [ ] **Ghost Gradient Customization**: Allow users to select from predefined gradient options
-
   - Implementation: Store theme preference in localStorage
   - Apply custom CSS variables based on selected theme
 
@@ -69,12 +68,10 @@ This document outlines planned features and enhancements for the TalkType applic
 Implement subtle UI enhancements using these techniques from our effects cheat sheet:
 
 1. **Ghost Icon**:
-
    - [ ] Idle Wiggle/Blink: Enhance the existing ambient animation system
    - [ ] Mic Volume Glow: Integrate with mic input to make ghost glow intensity match volume
 
 2. **Text Elements**:
-
    - [ ] Staggered Text for the main TalkType heading on initial load
    - [ ] Slide-In animation for the transcript when it appears
 
@@ -88,13 +85,11 @@ Implement subtle UI enhancements using these techniques from our effects cheat s
 Create a minimal, non-intrusive settings panel with the following characteristics:
 
 1. **Icon Design**:
-
    - Simple gear or sliders icon
    - Subtle ambient animation (Idle Wiggle)
    - Semi-transparent until hovered
 
 2. **Panel UI**:
-
    - Slide-in panel animation (from bottom or side)
    - Glassmorphism effect for the settings container
    - Toggle switches for boolean options

@@ -14,13 +14,13 @@ export { eventBus, hapticService, StorageUtils } from './infrastructure/index';
 export { themeService } from './theme/themeService';
 export { modalService } from './modals/modalService';
 export { firstVisitService, isFirstVisit } from './first-visit/firstVisitService';
-export { 
-  pwaService, 
-  deferredInstallPrompt, 
-  transcriptionCount, 
-  showPwaInstallPrompt, 
-  isPwaInstalled,
-  shouldShowPrompt 
+export {
+	pwaService,
+	deferredInstallPrompt,
+	transcriptionCount,
+	showPwaInstallPrompt,
+	isPwaInstalled,
+	shouldShowPrompt
 } from './pwa/pwaService';
 
 // Audio services
@@ -31,53 +31,53 @@ export { audioService, AudioEvents } from './audio/audioService';
 export { transcriptionService, TranscriptionEvents } from './transcription/transcriptionService';
 
 // Store exports
-export { 
-  audioState, 
-  recordingState, 
-  transcriptionState, 
-  uiState, 
-  userPreferences,
-  isRecording,
-  isTranscribing,
-  transcriptionProgress,
-  transcriptionText,
-  errorMessage,
-  waveformData,
-  hasPermissionError,
-  recordingDuration,
-  transcriptionCompletedEvent, // <-- Add this line
-  audioActions,
-  transcriptionActions,
-  uiActions
+export {
+	audioState,
+	recordingState,
+	transcriptionState,
+	uiState,
+	userPreferences,
+	isRecording,
+	isTranscribing,
+	transcriptionProgress,
+	transcriptionText,
+	errorMessage,
+	waveformData,
+	hasPermissionError,
+	recordingDuration,
+	transcriptionCompletedEvent, // <-- Add this line
+	audioActions,
+	transcriptionActions,
+	uiActions
 } from './infrastructure/stores';
 
 // Convenience function to initialize all services
 export function initializeServices(options = {}) {
-  const { debug = false, haptic = true } = options;
-  
-  // Reset stores to initial state
-  resetStores();
-  
-  // Enable debugging if requested
-  if (debug) {
-    eventBusInstance.setDebug(true);
-  }
-  
-  // Configure haptic feedback
-  if (!haptic) {
-    hapticServiceInstance.disable();
-  }
-  
-  console.log('🚀 TalkType services initialized with Svelte stores');
-  
-  return {
-    eventBus: eventBusInstance,
-    audioService: audioServiceInstance,
-    transcriptionService: transcriptionServiceInstance,
-    hapticService: hapticServiceInstance,
-    themeService: themeServiceInstance,
-    modalService: modalServiceInstance,
-    firstVisitService: firstVisitServiceInstance,
-    pwaService: pwaServiceInstance
-  };
+	const { debug = false, haptic = true } = options;
+
+	// Reset stores to initial state
+	resetStores();
+
+	// Enable debugging if requested
+	if (debug) {
+		eventBusInstance.setDebug(true);
+	}
+
+	// Configure haptic feedback
+	if (!haptic) {
+		hapticServiceInstance.disable();
+	}
+
+	console.log('🚀 TalkType services initialized with Svelte stores');
+
+	return {
+		eventBus: eventBusInstance,
+		audioService: audioServiceInstance,
+		transcriptionService: transcriptionServiceInstance,
+		hapticService: hapticServiceInstance,
+		themeService: themeServiceInstance,
+		modalService: modalServiceInstance,
+		firstVisitService: firstVisitServiceInstance,
+		pwaService: pwaServiceInstance
+	};
 }

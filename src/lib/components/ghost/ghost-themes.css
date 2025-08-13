@@ -6,101 +6,101 @@
 
 /* Base ghost variables (shared across themes) */
 :root {
-  /* ==========================================
+	/* ==========================================
      THEME COLOR DEFINITIONS
      ========================================== */
-  
-  /* Peach theme colors */
-  --ghost-peach-start: #ff60e0;
-  --ghost-peach-start-bright: #ff4aed;
-  --ghost-peach-mid1: #ff82ca;
-  --ghost-peach-mid1-bright: #ff70d6;
-  --ghost-peach-mid2: #ff9a85;
-  --ghost-peach-mid2-bright: #ff8890;
-  --ghost-peach-mid3: #ffb060;
-  --ghost-peach-mid3-bright: #ffa550;
-  --ghost-peach-end: #ffcf40;
-  --ghost-peach-end-bright: #ffdf30;
-  
-  /* Mint theme colors */
-  --ghost-mint-start: #0ac5ef;
-  --ghost-mint-start-bright: #20d0fa;
-  --ghost-mint-mid1: #22d3ed;
-  --ghost-mint-mid1-bright: #30dff8;
-  --ghost-mint-mid2: #2dd4bf;
-  --ghost-mint-mid2-bright: #38e0cc;
-  --ghost-mint-mid3: #4ade80;
-  --ghost-mint-mid3-bright: #60ea95;
-  --ghost-mint-end: #a3e635;
-  --ghost-mint-end-bright: #b5f040;
-  
-  /* Bubblegum theme colors */
-  --ghost-bubblegum-start: #c026d3;
-  --ghost-bubblegum-start-bright: #d52ae6;
-  --ghost-bubblegum-mid1: #a855f7;
-  --ghost-bubblegum-mid1-bright: #b565ff;
-  --ghost-bubblegum-mid2: #8b5cf6;
-  --ghost-bubblegum-mid2-bright: #9a6aff;
-  --ghost-bubblegum-mid3: #6366f1;
-  --ghost-bubblegum-mid3-bright: #7276ff;
-  --ghost-bubblegum-end: #3b82f6;
-  --ghost-bubblegum-end-bright: #4d90ff;
-  
-  /* Rainbow theme colors */
-  --ghost-rainbow-start: #ff0080;
-  --ghost-rainbow-start-bright: #ff2090;
-  --ghost-rainbow-mid1: #ff8c00;
-  --ghost-rainbow-mid1-bright: #ff9a20;
-  --ghost-rainbow-mid2: #ffed00;
-  --ghost-rainbow-mid2-bright: #fff020;
-  --ghost-rainbow-mid3: #00ff80;
-  --ghost-rainbow-mid3-bright: #20ff95;
-  --ghost-rainbow-end: #00bfff;
-  --ghost-rainbow-end-bright: #30d0ff;
-  
-  /* Recording glow colors */
-  --ghost-peach-glow-primary: rgba(255, 80, 150, 1);
-  --ghost-peach-glow-secondary: rgba(255, 150, 100, 0.9);
-  --ghost-peach-glow-tertiary: rgba(255, 240, 200, 0.8);
-  
-  --ghost-mint-glow-primary: rgba(0, 220, 150, 1);
-  --ghost-mint-glow-secondary: rgba(100, 255, 210, 0.9);
-  --ghost-mint-glow-tertiary: rgba(160, 255, 230, 0.8);
-  
-  --ghost-bubblegum-glow-primary: rgba(140, 80, 255, 1);
-  --ghost-bubblegum-glow-secondary: rgba(180, 120, 255, 0.9);
-  --ghost-bubblegum-glow-tertiary: rgba(210, 180, 255, 0.8);
-  
-  --ghost-rainbow-glow-primary: rgba(255, 50, 150, 1);
-  --ghost-rainbow-glow-secondary: rgba(255, 90, 90, 1);
-  --ghost-rainbow-glow-tertiary: rgba(255, 180, 80, 1);
-  --ghost-rainbow-glow-quaternary: rgba(255, 230, 100, 1);
-  --ghost-rainbow-glow-quinary: rgba(80, 220, 120, 1);
-  --ghost-rainbow-glow-senary: rgba(80, 160, 255, 1);
-  
-  /* ==========================================
+
+	/* Peach theme colors */
+	--ghost-peach-start: #ff60e0;
+	--ghost-peach-start-bright: #ff4aed;
+	--ghost-peach-mid1: #ff82ca;
+	--ghost-peach-mid1-bright: #ff70d6;
+	--ghost-peach-mid2: #ff9a85;
+	--ghost-peach-mid2-bright: #ff8890;
+	--ghost-peach-mid3: #ffb060;
+	--ghost-peach-mid3-bright: #ffa550;
+	--ghost-peach-end: #ffcf40;
+	--ghost-peach-end-bright: #ffdf30;
+
+	/* Mint theme colors */
+	--ghost-mint-start: #0ac5ef;
+	--ghost-mint-start-bright: #20d0fa;
+	--ghost-mint-mid1: #22d3ed;
+	--ghost-mint-mid1-bright: #30dff8;
+	--ghost-mint-mid2: #2dd4bf;
+	--ghost-mint-mid2-bright: #38e0cc;
+	--ghost-mint-mid3: #4ade80;
+	--ghost-mint-mid3-bright: #60ea95;
+	--ghost-mint-end: #a3e635;
+	--ghost-mint-end-bright: #b5f040;
+
+	/* Bubblegum theme colors */
+	--ghost-bubblegum-start: #c026d3;
+	--ghost-bubblegum-start-bright: #d52ae6;
+	--ghost-bubblegum-mid1: #a855f7;
+	--ghost-bubblegum-mid1-bright: #b565ff;
+	--ghost-bubblegum-mid2: #8b5cf6;
+	--ghost-bubblegum-mid2-bright: #9a6aff;
+	--ghost-bubblegum-mid3: #6366f1;
+	--ghost-bubblegum-mid3-bright: #7276ff;
+	--ghost-bubblegum-end: #3b82f6;
+	--ghost-bubblegum-end-bright: #4d90ff;
+
+	/* Rainbow theme colors */
+	--ghost-rainbow-start: #ff0080;
+	--ghost-rainbow-start-bright: #ff2090;
+	--ghost-rainbow-mid1: #ff8c00;
+	--ghost-rainbow-mid1-bright: #ff9a20;
+	--ghost-rainbow-mid2: #ffed00;
+	--ghost-rainbow-mid2-bright: #fff020;
+	--ghost-rainbow-mid3: #00ff80;
+	--ghost-rainbow-mid3-bright: #20ff95;
+	--ghost-rainbow-end: #00bfff;
+	--ghost-rainbow-end-bright: #30d0ff;
+
+	/* Recording glow colors */
+	--ghost-peach-glow-primary: rgba(255, 80, 150, 1);
+	--ghost-peach-glow-secondary: rgba(255, 150, 100, 0.9);
+	--ghost-peach-glow-tertiary: rgba(255, 240, 200, 0.8);
+
+	--ghost-mint-glow-primary: rgba(0, 220, 150, 1);
+	--ghost-mint-glow-secondary: rgba(100, 255, 210, 0.9);
+	--ghost-mint-glow-tertiary: rgba(160, 255, 230, 0.8);
+
+	--ghost-bubblegum-glow-primary: rgba(140, 80, 255, 1);
+	--ghost-bubblegum-glow-secondary: rgba(180, 120, 255, 0.9);
+	--ghost-bubblegum-glow-tertiary: rgba(210, 180, 255, 0.8);
+
+	--ghost-rainbow-glow-primary: rgba(255, 50, 150, 1);
+	--ghost-rainbow-glow-secondary: rgba(255, 90, 90, 1);
+	--ghost-rainbow-glow-tertiary: rgba(255, 180, 80, 1);
+	--ghost-rainbow-glow-quaternary: rgba(255, 230, 100, 1);
+	--ghost-rainbow-glow-quinary: rgba(80, 220, 120, 1);
+	--ghost-rainbow-glow-senary: rgba(80, 160, 255, 1);
+
+	/* ==========================================
      SHADOW DEFINITIONS 
      ========================================== */
-  
-  /* Theme-specific shadow colors */
-  --ghost-peach-shadow-color: rgba(255, 180, 140, 0.3);
-  --ghost-peach-shadow-color-bright: rgba(255, 190, 170, 0.4);
-  --ghost-peach-shadow-color-brightest: rgba(255, 210, 200, 0.5);
-  
-  --ghost-mint-shadow-color: rgba(120, 240, 200, 0.3);
-  --ghost-mint-shadow-color-bright: rgba(100, 230, 210, 0.4);
-  --ghost-mint-shadow-color-brightest: rgba(80, 220, 180, 0.5);
-  
-  --ghost-bubblegum-shadow-color: rgba(200, 100, 240, 0.3);
-  --ghost-bubblegum-shadow-color-bright: rgba(190, 110, 230, 0.35);
-  --ghost-bubblegum-shadow-color-brighter: rgba(180, 120, 220, 0.4);
-  --ghost-bubblegum-shadow-color-brightest: rgba(170, 130, 210, 0.45);
-  
-  --ghost-rainbow-shadow-color: rgba(255, 120, 180, 0.35);
-  --ghost-rainbow-shadow-color-bright: rgba(255, 180, 80, 0.4);
-  --ghost-rainbow-shadow-color-brighter: rgba(180, 255, 100, 0.45);
-  --ghost-rainbow-shadow-color-brightest: rgba(100, 200, 255, 0.5);
-  --ghost-rainbow-shadow-color-bright-alt: rgba(150, 100, 255, 0.4);
+
+	/* Theme-specific shadow colors */
+	--ghost-peach-shadow-color: rgba(255, 180, 140, 0.3);
+	--ghost-peach-shadow-color-bright: rgba(255, 190, 170, 0.4);
+	--ghost-peach-shadow-color-brightest: rgba(255, 210, 200, 0.5);
+
+	--ghost-mint-shadow-color: rgba(120, 240, 200, 0.3);
+	--ghost-mint-shadow-color-bright: rgba(100, 230, 210, 0.4);
+	--ghost-mint-shadow-color-brightest: rgba(80, 220, 180, 0.5);
+
+	--ghost-bubblegum-shadow-color: rgba(200, 100, 240, 0.3);
+	--ghost-bubblegum-shadow-color-bright: rgba(190, 110, 230, 0.35);
+	--ghost-bubblegum-shadow-color-brighter: rgba(180, 120, 220, 0.4);
+	--ghost-bubblegum-shadow-color-brightest: rgba(170, 130, 210, 0.45);
+
+	--ghost-rainbow-shadow-color: rgba(255, 120, 180, 0.35);
+	--ghost-rainbow-shadow-color-bright: rgba(255, 180, 80, 0.4);
+	--ghost-rainbow-shadow-color-brighter: rgba(180, 255, 100, 0.45);
+	--ghost-rainbow-shadow-color-brightest: rgba(100, 200, 255, 0.5);
+	--ghost-rainbow-shadow-color-bright-alt: rgba(150, 100, 255, 0.4);
 }
 
 /* ==========================================
@@ -109,17 +109,17 @@
 
 /* Theme-specific styling for ghost shape and gradients */
 .ghost-svg.theme-peach #ghost-shape {
-  fill: url(#peachGradient);
+	fill: url(#peachGradient);
 }
 
 .ghost-svg.theme-mint #ghost-shape {
-  fill: url(#mintGradient);
+	fill: url(#mintGradient);
 }
 
 .ghost-svg.theme-bubblegum #ghost-shape {
-  fill: url(#bubblegumGradient);
+	fill: url(#bubblegumGradient);
 }
 
 .ghost-svg.theme-rainbow #ghost-shape {
-  fill: url(#rainbowGradient);
+	fill: url(#rainbowGradient);
 }

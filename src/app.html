@@ -120,7 +120,7 @@
 			// StorageUtils inline helpers
 			function getStorageItem(key, defaultValue) {
 				if (typeof localStorage === 'undefined') return defaultValue;
-				
+
 				try {
 					const item = localStorage.getItem(key);
 					return item !== null ? item : defaultValue;
@@ -129,10 +129,10 @@
 					return defaultValue;
 				}
 			}
-			
+
 			function setStorageItem(key, value) {
 				if (typeof localStorage === 'undefined') return false;
-				
+
 				try {
 					localStorage.setItem(key, value);
 					return true;
@@ -141,18 +141,18 @@
 					return false;
 				}
 			}
-			
+
 			// Apply theme using storage helpers
 			const THEME_KEY = 'talktype-vibe';
 			const DEFAULT_THEME = 'peach';
-			
+
 			const savedTheme = getStorageItem(THEME_KEY, DEFAULT_THEME);
 			document.documentElement.setAttribute('data-theme', savedTheme);
-			
+
 			if (savedTheme === DEFAULT_THEME) {
 				setStorageItem(THEME_KEY, DEFAULT_THEME);
 			}
-			
+
 			// Set initialization flag to prevent duplicate theme application
 			window.themeInitialized = true;
 

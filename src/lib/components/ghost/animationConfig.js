@@ -255,8 +255,8 @@ export const ANIMATION_BEHAVIORS = {
 	},
 	[ANIMATION_STATES.WAKING_UP]: {
 		blinkPattern: 'none', // Eyes controlled by wake-up animation
-		eyeTracking: false,   // No eye tracking during wake-up
-		cleanupDelay: 1000    // Duration of the wake-up animation (ms)
+		eyeTracking: false, // No eye tracking during wake-up
+		cleanupDelay: 1000 // Duration of the wake-up animation (ms)
 	}
 };
 

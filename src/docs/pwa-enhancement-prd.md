@@ -18,12 +18,14 @@ This PRD outlines the requirements for enhancing TalkType's PWA implementation t
 ### 1. Installation Prompt
 
 #### 1.1 Eligibility and Timing
+
 - Show custom installation prompt after **3 successful transcriptions**
 - Re-prompt users who didn't install after **7 days** and **5 more transcriptions**
 - Never prompt more than **3 times** total
 - Store prompt status in `localStorage` to maintain state across sessions
 
 #### 1.2 Prompt UI Design
+
 - Implementation: Bottom slide-up banner that doesn't interrupt workflow
 - Visual Style: Match TalkType's design with ghost icon animation
 - Content:
@@ -36,6 +38,7 @@ This PRD outlines the requirements for enhancing TalkType's PWA implementation t
 - Dismissible: Swipe down or X button to close
 
 #### 1.3 Platform-specific Behavior
+
 - iOS: Show custom instructions explaining how to add to home screen via Safari share sheet
 - Android/Desktop: Integrate with browser's native install API
 - Detect installed status to avoid prompting users who already installed
@@ -43,12 +46,14 @@ This PRD outlines the requirements for enhancing TalkType's PWA implementation t
 ### 2. Home Screen Icon Implementation
 
 #### 2.1 Icon Design Requirements
+
 - Primary Icon: Use the full TalkType ghost with peach gradient background
 - Ensure proper visibility on both light and dark home screens
 - Icon should be immediately recognizable as TalkType
 - Maintain brand identity across all platforms
 
 #### 2.2 Technical Specifications
+
 - Create high-quality PNG renders of the layered SVG ghost at all required sizes
 - For optimal quality:
   - Render SVG layers (background gradient, ghost outline, eyes)
@@ -60,6 +65,7 @@ This PRD outlines the requirements for enhancing TalkType's PWA implementation t
   - Windows: Generate transparent PNG with proper padding for tile icons
 
 #### 2.3 App Launch Experience
+
 - Create smooth transition from tap to app launch
 - Implement a branded splash screen matching icon aesthetics
 - Ensure color theme consistency between icon, splash screen, and app UI
@@ -67,6 +73,7 @@ This PRD outlines the requirements for enhancing TalkType's PWA implementation t
 ### 3. Usage Tracking
 
 #### 3.1 Installation Analytics
+
 - Track installation prompt:
   - Display count
   - Interaction rate (accept/dismiss/ignore)
@@ -75,6 +82,7 @@ This PRD outlines the requirements for enhancing TalkType's PWA implementation t
 - Measure retention differences between installed and non-installed users
 
 #### 3.2 PWA-specific Metrics
+
 - Track offline usage
 - Measure time spent in app when launched from home screen vs browser
 - Identify feature usage differences between installed and non-installed users

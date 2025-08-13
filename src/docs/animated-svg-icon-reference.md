@@ -606,19 +606,16 @@ function applyWobbleAnimation(element) {
    - Separate the main shape and animated elements into different SVG files
    - Create a gradient background SVG if desired
 2. **Set Up DOM Structure**:
-
    - Use the layered div structure with absolute positioning
    - Set proper z-index values
    - Include proper accessibility attributes
 
 3. **Implement CSS Animations**:
-
    - Add baseline CSS animations
    - Define keyframes for different states
    - Ensure proper transform-origin points
 
 4. **Add JavaScript Enhancement**:
-
    - Implement the generative animation system
    - Add event handlers for state changes
    - Set up proper state tracking and cleanup

@@ -97,14 +97,34 @@ export const ANIMATION = {
 		MIN_SIZE: 6, // Minimum confetti size in px
 		MAX_SIZE: 16, // Maximum confetti size in px
 		ANIMATION_DURATION: 3000, // Duration of entire confetti animation
-		COLORS: ['#ff9cef', '#fde68a', '#a78bfa', '#f472b6', '#60a5fa', '#ec4899', '#8b5cf6', '#f59e0b', '#10b981'], // Default vibrant colors
-		
+		COLORS: [
+			'#ff9cef',
+			'#fde68a',
+			'#a78bfa',
+			'#f472b6',
+			'#60a5fa',
+			'#ec4899',
+			'#8b5cf6',
+			'#f59e0b',
+			'#10b981'
+		], // Default vibrant colors
+
 		// Theme-specific color palettes
 		THEME_COLORS: {
 			peach: ['#f472b6', '#ec4899', '#f59e0b', '#ff9cef', '#fde68a', '#ff9cb8'],
 			mint: ['#10b981', '#34d399', '#a78bfa', '#60a5fa', '#00dfa7', '#8af9ff'],
 			bubblegum: ['#ff9cef', '#f472b6', '#ec4899', '#8b5cf6', '#e879f9', '#ff99d6'],
-			rainbow: ['#ff9cef', '#fde68a', '#a78bfa', '#f472b6', '#60a5fa', '#f59e0b', '#10b981', '#8b5cf6', '#e879f9']
+			rainbow: [
+				'#ff9cef',
+				'#fde68a',
+				'#a78bfa',
+				'#f472b6',
+				'#60a5fa',
+				'#f59e0b',
+				'#10b981',
+				'#8b5cf6',
+				'#e879f9'
+			]
 		}
 	}
 };

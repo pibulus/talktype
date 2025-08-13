@@ -11,10 +11,10 @@
 	let analyser;
 	let audioContext;
 	let recording = false; // Track recording state within the component
-	
+
 	// Reactive animation state
 	$: animationsEnabled = $appActive;
-	
+
 	// CSS class to control animation state
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 
@@ -121,7 +121,7 @@
 
 	function updateFallbackVisualizer() {
 		if (!fallbackAnimating) return;
-		
+
 		if (!$appActive) {
 			// If app is inactive, schedule less frequent updates with reactive store value
 			animationFrameId = setTimeout(() => {
@@ -219,7 +219,7 @@
 
 	function updateVisualizer() {
 		if (!recording || !analyser) return;
-		
+
 		if (!$appActive) {
 			// If app is inactive, schedule less frequent updates with reactive store value
 			animationFrameId = setTimeout(() => {
@@ -272,7 +272,7 @@
 			history = Array(historyLength).fill(0);
 			updateVisualizer();
 		}
-		
+
 		// Animation state is now managed through reactive variables
 		// No need to manually manipulate DOM classes
 	}
@@ -327,7 +327,7 @@
 	onDestroy(() => {
 		fallbackAnimating = false;
 		stopVisualizer();
-		
+
 		// Extra cleanup for any potential timeout/animation frame
 		if (typeof animationFrameId === 'number') {
 			cancelAnimationFrame(animationFrameId);
@@ -373,50 +373,76 @@
 		transform: translateZ(0);
 		backface-visibility: hidden;
 	}
-	
+
 	/* Theme-specific gradient styles - directly applied based on data-theme */
-	:global([data-theme="peach"] .history-bar) {
+	:global([data-theme='peach'] .history-bar) {
 		background: linear-gradient(to top, #ffa573, #ff9f9a, #ff7fcd, #ffb6f3);
 	}
-	
-	:global([data-theme="mint"] .history-bar) {
+
+	:global([data-theme='mint'] .history-bar) {
 		background: linear-gradient(to top, #86efac, #5eead4, #67e8f9);
 	}
-	
-	:global([data-theme="bubblegum"] .history-bar) {
+
+	:global([data-theme='bubblegum'] .history-bar) {
 		background: linear-gradient(to top, #20c5ff, #4d7bff, #c85aff, #ee45f0, #ff3ba0, #ff1a8d);
 	}
 
-	:global([data-theme="rainbow"] .history-bar) {
-		animation: hueShift 9.1s linear infinite, rainbowBars 3s ease-in-out infinite;
-		background-image: linear-gradient(to top, #FF3D7F, #FF8D3C, #FFF949, #4DFF60, #35DEFF, #9F7AFF, #FF3D7F);
+	:global([data-theme='rainbow'] .history-bar) {
+		animation:
+			hueShift 9.1s linear infinite,
+			rainbowBars 3s ease-in-out infinite;
+		background-image: linear-gradient(
+			to top,
+			#ff3d7f,
+			#ff8d3c,
+			#fff949,
+			#4dff60,
+			#35deff,
+			#9f7aff,
+			#ff3d7f
+		);
 		background-size: 100% 600%;
-		box-shadow: 0 0 8px rgba(255, 255, 255, 0.15), 0 0 10px rgba(255, 156, 227, 0.1);
+		box-shadow:
+			0 0 8px rgba(255, 255, 255, 0.15),
+			0 0 10px rgba(255, 156, 227, 0.1);
 		will-change: filter, transform, opacity, background-position;
 		transform: translateZ(0);
 		backface-visibility: hidden;
 		background-position: 0% 0%;
 	}
-	
+
 	/* Svelte-controlled animation states */
-	.animations-enabled [data-theme="rainbow"] .history-bar {
+	.animations-enabled [data-theme='rainbow'] .history-bar {
 		animation-play-state: running;
 	}
-	
-	.animations-paused [data-theme="rainbow"] .history-bar {
+
+	.animations-paused [data-theme='rainbow'] .history-bar {
 		animation-play-state: paused;
 	}
-	
+
 	/* Special animation for rainbow theme bars */
 	@keyframes rainbowBars {
-		0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 156, 227, 0.2)); transform: scale(1); }
-		25% { filter: drop-shadow(0 0 3px rgba(169, 255, 156, 0.2)); transform: scale(1.01); }
-		50% { filter: drop-shadow(0 0 3px rgba(156, 221, 255, 0.2)); transform: scale(1.02); }
-		75% { filter: drop-shadow(0 0 2px rgba(255, 234, 138, 0.2)); transform: scale(1.01); }
+		0%,
+		100% {
+			filter: drop-shadow(0 0 2px rgba(255, 156, 227, 0.2));
+			transform: scale(1);
+		}
+		25% {
+			filter: drop-shadow(0 0 3px rgba(169, 255, 156, 0.2));
+			transform: scale(1.01);
+		}
+		50% {
+			filter: drop-shadow(0 0 3px rgba(156, 221, 255, 0.2));
+			transform: scale(1.02);
+		}
+		75% {
+			filter: drop-shadow(0 0 2px rgba(255, 234, 138, 0.2));
+			transform: scale(1.01);
+		}
 	}
 
 	@keyframes hueShift {
-		0% { 
+		0% {
 			filter: hue-rotate(0deg) saturate(1.3) brightness(1.1);
 			background-position: 0% 0%;
 		}
@@ -424,7 +450,7 @@
 			filter: hue-rotate(180deg) saturate(1.35) brightness(1.125);
 			background-position: 0% 300%;
 		}
-		100% { 
+		100% {
 			filter: hue-rotate(360deg) saturate(1.4) brightness(1.15);
 			background-position: 0% 600%;
 		}

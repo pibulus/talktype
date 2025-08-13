@@ -31,12 +31,12 @@ The ghost icon is implemented as three stacked `<img>` elements within a contain
 
 ```html
 <div class="icon-layers">
-  <!-- Gradient background (bottom layer) -->
-  <img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
-  <!-- Outline without eyes (middle layer) -->
-  <img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" aria-hidden="true" />
-  <!-- Just the eyes (top layer - for blinking) -->
-  <img src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
+	<!-- Gradient background (bottom layer) -->
+	<img src="/talktype-icon-bg-gradient.svg" alt="" class="icon-bg" aria-hidden="true" />
+	<!-- Outline without eyes (middle layer) -->
+	<img src="/assets/talktype-icon-base.svg" alt="" class="icon-base" aria-hidden="true" />
+	<!-- Just the eyes (top layer - for blinking) -->
+	<img src="/assets/talktype-icon-eyes.svg" alt="TalkType Ghost Icon" class="icon-eyes" />
 </div>
 ```
 
@@ -46,35 +46,35 @@ The icon layers rely on proper CSS to ensure stacking and animations work correc
 
 ```css
 .icon-layers {
-  position: relative;
-  width: 100%;
-  height: 100%;
+	position: relative;
+	width: 100%;
+	height: 100%;
 }
 
 .icon-bg,
 .icon-base,
 .icon-eyes {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transition: all 0.3s ease;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	transition: all 0.3s ease;
 }
 
 /* Stack the layers correctly */
 .icon-bg {
-  z-index: 1; /* Bottom layer */
+	z-index: 1; /* Bottom layer */
 }
 
 .icon-base {
-  z-index: 2; /* Middle layer */
+	z-index: 2; /* Middle layer */
 }
 
 .icon-eyes {
-  z-index: 3; /* Top layer */
-  animation: blink 6s infinite; /* Default ambient blinking */
-  transform-origin: center center; /* Ensure eyes blink from center */
+	z-index: 3; /* Top layer */
+	animation: blink 6s infinite; /* Default ambient blinking */
+	transform-origin: center center; /* Ensure eyes blink from center */
 }
 ```
 
@@ -106,39 +106,39 @@ Theme switching is implemented by changing the `src` attribute of the background
 
 ```javascript
 function applyTheme(vibeId) {
-  // Find the theme configuration
-  const vibe = vibeOptions.find(v => v.id === vibeId);
-  if (!vibe) return;
-  
-  // Get the ghost background image element
-  const ghostBg = document.querySelector('.icon-bg');
-  
-  if (ghostBg) {
-    if (vibe.animated && vibe.id === 'rainbow') {
-      // For rainbow theme, apply animation class
-      ghostBg.classList.add('rainbow-animated');
-      ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
-    } else {
-      // Remove animation class for static themes
-      ghostBg.classList.remove('rainbow-animated');
-      
-      // Set the appropriate gradient SVG based on theme
-      switch(vibe.id) {
-        case 'mint':
-          ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
-          break;
-        case 'bubblegum':
-          ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
-          break;
-        default: // Default to peach
-          ghostBg.src = '/talktype-icon-bg-gradient.svg';
-          break;
-      }
-    }
-    
-    // Force a reflow to ensure the gradient is visible
-    void ghostBg.offsetWidth;
-  }
+	// Find the theme configuration
+	const vibe = vibeOptions.find((v) => v.id === vibeId);
+	if (!vibe) return;
+
+	// Get the ghost background image element
+	const ghostBg = document.querySelector('.icon-bg');
+
+	if (ghostBg) {
+		if (vibe.animated && vibe.id === 'rainbow') {
+			// For rainbow theme, apply animation class
+			ghostBg.classList.add('rainbow-animated');
+			ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
+		} else {
+			// Remove animation class for static themes
+			ghostBg.classList.remove('rainbow-animated');
+
+			// Set the appropriate gradient SVG based on theme
+			switch (vibe.id) {
+				case 'mint':
+					ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
+					break;
+				case 'bubblegum':
+					ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
+					break;
+				default: // Default to peach
+					ghostBg.src = '/talktype-icon-bg-gradient.svg';
+					break;
+			}
+		}
+
+		// Force a reflow to ensure the gradient is visible
+		void ghostBg.offsetWidth;
+	}
 }
 ```
 
@@ -152,19 +152,21 @@ The eyes use a combination of CSS and JavaScript to implement a Brian Eno-inspir
 
 ```css
 .icon-eyes {
-  animation: blink 6s infinite; /* Fallback ambient blinking */
+	animation: blink 6s infinite; /* Fallback ambient blinking */
 }
 
 @keyframes blink {
-  0%, 96.5%, 100% {
-    transform: scaleY(1);
-  }
-  97.5% {
-    transform: scaleY(0); /* Closed eyes */
-  }
-  98.5% {
-    transform: scaleY(1); /* Open eyes */
-  }
+	0%,
+	96.5%,
+	100% {
+		transform: scaleY(1);
+	}
+	97.5% {
+		transform: scaleY(0); /* Closed eyes */
+	}
+	98.5% {
+		transform: scaleY(1); /* Open eyes */
+	}
 }
 ```
 
@@ -173,9 +175,9 @@ The eyes use a combination of CSS and JavaScript to implement a Brian Eno-inspir
 ```javascript
 // Blink type probabilities
 const blinkTypes = [
-  { type: 'single', probability: 0.6 }, // 60%
-  { type: 'double', probability: 0.3 }, // 30%
-  { type: 'triple', probability: 0.1 }  // 10%
+	{ type: 'single', probability: 0.6 }, // 60%
+	{ type: 'double', probability: 0.3 }, // 30%
+	{ type: 'triple', probability: 0.1 } // 10%
 ];
 
 // Parameters for generative system
@@ -184,35 +186,35 @@ const maxGap = 9000; // Maximum time between blinks (9s)
 
 // Schedule the next blink recursively
 function scheduleNextBlink() {
-  // Random time interval with Brian Eno-like indeterminacy
-  const nextInterval = Math.floor(minGap + Math.random() * (maxGap - minGap));
-  
-  setTimeout(() => {
-    // Choose blink type based on probability distribution
-    const rand = Math.random();
-    let cumulativeProbability = 0;
-    let selectedType = 'single'; // Default
-    
-    for (const blink of blinkTypes) {
-      cumulativeProbability += blink.probability;
-      if (rand <= cumulativeProbability) {
-        selectedType = blink.type;
-        break;
-      }
-    }
-    
-    // Execute the selected blink pattern
-    if (selectedType === 'single') {
-      performSingleBlink();
-    } else if (selectedType === 'double') {
-      performDoubleBlink();
-    } else {
-      performTripleBlink();
-    }
-    
-    // Schedule the next blink
-    scheduleNextBlink();
-  }, nextInterval);
+	// Random time interval with Brian Eno-like indeterminacy
+	const nextInterval = Math.floor(minGap + Math.random() * (maxGap - minGap));
+
+	setTimeout(() => {
+		// Choose blink type based on probability distribution
+		const rand = Math.random();
+		let cumulativeProbability = 0;
+		let selectedType = 'single'; // Default
+
+		for (const blink of blinkTypes) {
+			cumulativeProbability += blink.probability;
+			if (rand <= cumulativeProbability) {
+				selectedType = blink.type;
+				break;
+			}
+		}
+
+		// Execute the selected blink pattern
+		if (selectedType === 'single') {
+			performSingleBlink();
+		} else if (selectedType === 'double') {
+			performDoubleBlink();
+		} else {
+			performTripleBlink();
+		}
+
+		// Schedule the next blink
+		scheduleNextBlink();
+	}, nextInterval);
 }
 ```
 
@@ -222,27 +224,47 @@ The ghost icon has wobble animations for various states and interactions:
 
 ```css
 @keyframes ghost-wobble-left {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(-5deg); }
-  50% { transform: rotate(3deg); }
-  75% { transform: rotate(-2deg); }
-  100% { transform: rotate(0deg); }
+	0% {
+		transform: rotate(0deg);
+	}
+	25% {
+		transform: rotate(-5deg);
+	}
+	50% {
+		transform: rotate(3deg);
+	}
+	75% {
+		transform: rotate(-2deg);
+	}
+	100% {
+		transform: rotate(0deg);
+	}
 }
 
 @keyframes ghost-wobble-right {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(5deg); }
-  50% { transform: rotate(-3deg); }
-  75% { transform: rotate(2deg); }
-  100% { transform: rotate(0deg); }
+	0% {
+		transform: rotate(0deg);
+	}
+	25% {
+		transform: rotate(5deg);
+	}
+	50% {
+		transform: rotate(-3deg);
+	}
+	75% {
+		transform: rotate(2deg);
+	}
+	100% {
+		transform: rotate(0deg);
+	}
 }
 
 .ghost-wobble-left {
-  animation: ghost-wobble-left 0.6s ease-in-out !important;
+	animation: ghost-wobble-left 0.6s ease-in-out !important;
 }
 
 .ghost-wobble-right {
-  animation: ghost-wobble-right 0.6s ease-in-out !important;
+	animation: ghost-wobble-right 0.6s ease-in-out !important;
 }
 ```
 
@@ -252,19 +274,19 @@ The rainbow theme uses a special animation to shift colors over time:
 
 ```css
 .rainbow-animated {
-  animation: hueShift 8s linear infinite;
+	animation: hueShift 8s linear infinite;
 }
 
 @keyframes hueShift {
-  0% {
-    background-position: 0% 0%;
-  }
-  50% {
-    background-position: 100% 100%;
-  }
-  100% {
-    background-position: 0% 0%;
-  }
+	0% {
+		background-position: 0% 0%;
+	}
+	50% {
+		background-position: 100% 100%;
+	}
+	100% {
+		background-position: 0% 0%;
+	}
 }
 ```
 
@@ -319,6 +341,7 @@ Critical path information:
 **Problem**: Ghost icon appears as broken image or "alt text" only.
 
 **Causes**:
+
 - Incorrect path referencing `/static/assets/...` instead of `/assets/...`
 - Mixing up paths between base outline (`/assets/talktype-icon-base.svg`) and legacy outline (`/talktype-icon.svg`)
 - Using `/assets/` prefix for gradient files (they should be `/talktype-icon-bg-gradient*.svg` with no `/assets/`)
@@ -326,6 +349,7 @@ Critical path information:
 - Case sensitivity issues in file paths
 
 **Solution**:
+
 - For gradient background images: Use `/talktype-icon-bg-gradient.svg` (NO `/assets/` prefix)
 - For outline and eyes: Use `/assets/talktype-icon-base.svg` and `/assets/talktype-icon-eyes.svg` (WITH `/assets/` prefix)
 - Never use file system paths with `/static/` prefix
@@ -337,11 +361,13 @@ Critical path information:
 **Problem**: The entire ghost blinks instead of just the eyes.
 
 **Causes**:
+
 - Eyes not separated into a separate SVG file
 - Animation applied to the wrong element
 - Using full ghost SVG for all layers
 
 **Solution**:
+
 - Ensure eyes are in a separate SVG file
 - Apply animation classes only to the eyes layer
 - Use the three-layer approach with separate SVGs
@@ -351,6 +377,7 @@ Critical path information:
 **Problem**: Theme doesn't change, flickers between themes, or shows rectangular background instead of ghost shape.
 
 **Causes**:
+
 - Multiple theme applications
 - Incorrect theme file paths
 - Missing force reflow
@@ -358,6 +385,7 @@ Critical path information:
 - Using `talktype-icon-bg-gradient-rainbow.svg` without the proper path constraints
 
 **Solution**:
+
 - Apply theme only once during initialization
 - Use correct file paths for theme SVGs
 - Force reflow with `void element.offsetWidth` after changing `src`
@@ -369,11 +397,13 @@ Critical path information:
 **Problem**: Animations behave erratically or stop working.
 
 **Causes**:
+
 - Multiple animation classes applied simultaneously
 - Timeouts not cleared between state changes
 - Missing force reflow between animation changes
 
 **Solution**:
+
 - Remove existing animation classes before adding new ones
 - Clear timeouts when changing states
 - Force reflow between animation changes with `void element.offsetWidth`
@@ -381,12 +411,14 @@ Critical path information:
 ## Browser Compatibility
 
 The ghost icon system has been tested and works well in:
+
 - Chrome (latest)
 - Firefox (latest)
 - Safari (latest)
 - Edge (latest)
 
 For older browsers, consider adding fallbacks for:
+
 - CSS animation support
 - SVG support
 - JavaScript animation frames
@@ -418,26 +450,26 @@ Potential enhancements to the ghost icon system:
 - Add subtle particle effects for special events
 - Implement seasonal variants (halloween, winter, etc.)
 
-## Quick Reference 
+## Quick Reference
 
 ### Correct File Paths
 
-| Layer | File System Location | Web Path to Use |
-|-------|----------------------|----------------|
-| Background (Default) | `/static/talktype-icon-bg-gradient.svg` | `/talktype-icon-bg-gradient.svg` |
-| Background (Mint) | `/static/talktype-icon-bg-gradient-mint.svg` | `/talktype-icon-bg-gradient-mint.svg` |
+| Layer                  | File System Location                              | Web Path to Use                            |
+| ---------------------- | ------------------------------------------------- | ------------------------------------------ |
+| Background (Default)   | `/static/talktype-icon-bg-gradient.svg`           | `/talktype-icon-bg-gradient.svg`           |
+| Background (Mint)      | `/static/talktype-icon-bg-gradient-mint.svg`      | `/talktype-icon-bg-gradient-mint.svg`      |
 | Background (Bubblegum) | `/static/talktype-icon-bg-gradient-bubblegum.svg` | `/talktype-icon-bg-gradient-bubblegum.svg` |
-| Background (Rainbow) | `/static/talktype-icon-bg-gradient-rainbow.svg` | `/talktype-icon-bg-gradient-rainbow.svg` |
-| Outline | `/static/assets/talktype-icon-base.svg` | `/assets/talktype-icon-base.svg` |
-| Eyes | `/static/assets/talktype-icon-eyes.svg` | `/assets/talktype-icon-eyes.svg` |
+| Background (Rainbow)   | `/static/talktype-icon-bg-gradient-rainbow.svg`   | `/talktype-icon-bg-gradient-rainbow.svg`   |
+| Outline                | `/static/assets/talktype-icon-base.svg`           | `/assets/talktype-icon-base.svg`           |
+| Eyes                   | `/static/assets/talktype-icon-eyes.svg`           | `/assets/talktype-icon-eyes.svg`           |
 
 ### Important Notes
 
 1. **Never use** `/static/` in your image paths in HTML/CSS
-2. **Always use** `/assets/talktype-icon-base.svg` for the outline layer (middle) 
+2. **Always use** `/assets/talktype-icon-base.svg` for the outline layer (middle)
 3. The original `/talktype-icon.svg` path is now considered legacy and should not be used
 4. **Critical**: For theme gradients (`.svg` files), use paths like `/talktype-icon-bg-gradient.svg` (no `/assets/`)
-5. **Critical**: For outline and eyes, use paths like `/assets/talktype-icon-base.svg` (with `/assets/`) 
+5. **Critical**: For outline and eyes, use paths like `/assets/talktype-icon-base.svg` (with `/assets/`)
 6. SVG files already contain the ghost shape - no additional masking or clipping is required
 
 ### Implementation in Different Components
@@ -445,6 +477,7 @@ Potential enhancements to the ghost icon system:
 When implementing the ghost icon in different components:
 
 1. **Main App**: `/src/routes/+page.svelte`
+
    ```html
    <!-- Gradient background (bottom layer) -->
    <img src="/talktype-icon-bg-gradient.svg" class="icon-bg" alt="" aria-hidden="true" />
@@ -457,9 +490,24 @@ When implementing the ghost icon in different components:
 2. **Settings Modal Preview**: `/src/lib/components/settings/SettingsModal.svelte`
    ```html
    <!-- Gradient background (bottom layer) -->
-   <img src="/talktype-icon-bg-gradient.svg" class="absolute inset-0 w-full h-full" alt="" aria-hidden="true" />
+   <img
+   	src="/talktype-icon-bg-gradient.svg"
+   	class="absolute inset-0 h-full w-full"
+   	alt=""
+   	aria-hidden="true"
+   />
    <!-- Outline without eyes (middle layer) -->
-   <img src="/assets/talktype-icon-base.svg" class="absolute inset-0 w-full h-full" alt="" aria-hidden="true" />
+   <img
+   	src="/assets/talktype-icon-base.svg"
+   	class="absolute inset-0 h-full w-full"
+   	alt=""
+   	aria-hidden="true"
+   />
    <!-- Just the eyes (top layer) -->
-   <img src="/assets/talktype-icon-eyes.svg" class="absolute inset-0 w-full h-full preview-eyes" alt="" aria-hidden="true" />
+   <img
+   	src="/assets/talktype-icon-eyes.svg"
+   	class="preview-eyes absolute inset-0 h-full w-full"
+   	alt=""
+   	aria-hidden="true"
+   />
    ```

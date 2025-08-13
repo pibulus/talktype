@@ -5,11 +5,13 @@ Task-Master is a powerful CLI tool for project management that helps organize, t
 ## Setup
 
 1. **Installation**:
+
    ```bash
    npm install task-master
    ```
 
 2. **Initialization**:
+
    ```bash
    npx task-master init
    ```
@@ -23,6 +25,7 @@ Task-Master is a powerful CLI tool for project management that helps organize, t
 ### Task Generation
 
 - **Parse PRD to generate tasks**:
+
   ```bash
   npx task-master parse-prd --input=requirements.txt --tasks=10
   ```
@@ -35,6 +38,7 @@ Task-Master is a powerful CLI tool for project management that helps organize, t
 ### Task Management
 
 - **List all tasks**:
+
   ```bash
   npx task-master list
   # Filter by status:
@@ -44,6 +48,7 @@ Task-Master is a powerful CLI tool for project management that helps organize, t
   ```
 
 - **Add a new task**:
+
   ```bash
   npx task-master add-task --prompt="Implement user authentication system"
   # With dependencies:
@@ -51,6 +56,7 @@ Task-Master is a powerful CLI tool for project management that helps organize, t
   ```
 
 - **Update task status**:
+
   ```bash
   npx task-master set-status --id=1 --status=done
   ```
@@ -63,6 +69,7 @@ Task-Master is a powerful CLI tool for project management that helps organize, t
 ### Task Analysis & Detail
 
 - **Break down a task into subtasks**:
+
   ```bash
   npx task-master expand --id=1 --num=5
   # Expand all pending tasks:
@@ -70,6 +77,7 @@ Task-Master is a powerful CLI tool for project management that helps organize, t
   ```
 
 - **Analyze complexity**:
+
   ```bash
   npx task-master analyze-complexity
   # With research:
@@ -84,6 +92,7 @@ Task-Master is a powerful CLI tool for project management that helps organize, t
 ### Task Navigation & Viewing
 
 - **Show the next task to work on**:
+
   ```bash
   npx task-master next
   ```
@@ -96,16 +105,19 @@ Task-Master is a powerful CLI tool for project management that helps organize, t
 ### Dependency Management
 
 - **Add dependencies between tasks**:
+
   ```bash
   npx task-master add-dependency --id=2 --depends-on=1
   ```
 
 - **Remove dependencies**:
+
   ```bash
   npx task-master remove-dependency --id=2 --depends-on=1
   ```
 
 - **Validate dependencies**:
+
   ```bash
   npx task-master validate-dependencies
   ```
@@ -137,6 +149,7 @@ Task-Master is a powerful CLI tool for project management that helps organize, t
 ## Customization
 
 You can customize Task-Master behavior with environment variables:
+
 - `MODEL`: Claude model to use (default: claude-3-7-sonnet)
 - `MAX_TOKENS`: Maximum tokens for responses (default: 4000)
 - `TEMPERATURE`: Temperature for model responses (default: 0.7)

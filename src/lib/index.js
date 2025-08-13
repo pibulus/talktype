@@ -5,36 +5,36 @@ import * as CONSTANTS from './constants';
 
 // Initialize store with localStorage value if available
 function createLocalStorageStore(key, initialValue) {
-  // Create the writable store
-  const store = writable(initialValue);
-  
-  // Initialize from localStorage if in browser context
-  if (browser) {
-    const storedValue = localStorage.getItem(key);
-    if (storedValue) {
-      store.set(storedValue);
-    }
-  }
-  
-  // Return a custom store that syncs with localStorage
-  return {
-    subscribe: store.subscribe,
-    set: (value) => {
-      if (browser) {
-        localStorage.setItem(key, value);
-      }
-      store.set(value);
-    },
-    update: (fn) => {
-      store.update(storeValue => {
-        const newValue = fn(storeValue);
-        if (browser) {
-          localStorage.setItem(key, newValue);
-        }
-        return newValue;
-      });
-    }
-  };
+	// Create the writable store
+	const store = writable(initialValue);
+
+	// Initialize from localStorage if in browser context
+	if (browser) {
+		const storedValue = localStorage.getItem(key);
+		if (storedValue) {
+			store.set(storedValue);
+		}
+	}
+
+	// Return a custom store that syncs with localStorage
+	return {
+		subscribe: store.subscribe,
+		set: (value) => {
+			if (browser) {
+				localStorage.setItem(key, value);
+			}
+			store.set(value);
+		},
+		update: (fn) => {
+			store.update((storeValue) => {
+				const newValue = fn(storeValue);
+				if (browser) {
+					localStorage.setItem(key, newValue);
+				}
+				return newValue;
+			});
+		}
+	};
 }
 
 // Create centralized store for theme/vibe management
@@ -55,45 +55,48 @@ export const hasSeenIntro = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.FIRST
 export const autoRecord = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.AUTO_RECORD, 'false');
 
 // Store for prompt style preference
-export const promptStyle = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.PROMPT_STYLE, CONSTANTS.DEFAULT_PROMPT_STYLE);
+export const promptStyle = createLocalStorageStore(
+	CONSTANTS.STORAGE_KEYS.PROMPT_STYLE,
+	CONSTANTS.DEFAULT_PROMPT_STYLE
+);
 
 // Export all constants for use throughout the app
 export { CONSTANTS };
 
 // Helper function to apply theme across app components
 export function applyTheme(vibeId) {
-  // Update the store (which also updates localStorage)
-  theme.set(vibeId);
-  
-  if (browser) {
-    // Apply theme to document root for consistent CSS targeting
-    document.documentElement.setAttribute('data-theme', vibeId);
-    
-    // Update ghost icon by swapping the SVG file
-    const ghostBg = document.querySelector('.icon-bg');
-    if (ghostBg) {
-      // Set the appropriate gradient SVG based on theme
-      switch(vibeId) {
-        case CONSTANTS.THEMES.MINT:
-          ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
-          ghostBg.classList.remove('rainbow-animated');
-          break;
-        case CONSTANTS.THEMES.BUBBLEGUM:
-          ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
-          ghostBg.classList.remove('rainbow-animated');
-          break;
-        case CONSTANTS.THEMES.RAINBOW:
-          ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
-          ghostBg.classList.add('rainbow-animated');
-          break;
-        default: // Default to peach
-          ghostBg.src = '/talktype-icon-bg-gradient.svg';
-          ghostBg.classList.remove('rainbow-animated');
-          break;
-      }
-      
-      // Force a reflow to ensure the gradient is visible
-      void ghostBg.offsetWidth;
-    }
-  }
+	// Update the store (which also updates localStorage)
+	theme.set(vibeId);
+
+	if (browser) {
+		// Apply theme to document root for consistent CSS targeting
+		document.documentElement.setAttribute('data-theme', vibeId);
+
+		// Update ghost icon by swapping the SVG file
+		const ghostBg = document.querySelector('.icon-bg');
+		if (ghostBg) {
+			// Set the appropriate gradient SVG based on theme
+			switch (vibeId) {
+				case CONSTANTS.THEMES.MINT:
+					ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
+					ghostBg.classList.remove('rainbow-animated');
+					break;
+				case CONSTANTS.THEMES.BUBBLEGUM:
+					ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
+					ghostBg.classList.remove('rainbow-animated');
+					break;
+				case CONSTANTS.THEMES.RAINBOW:
+					ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
+					ghostBg.classList.add('rainbow-animated');
+					break;
+				default: // Default to peach
+					ghostBg.src = '/talktype-icon-bg-gradient.svg';
+					ghostBg.classList.remove('rainbow-animated');
+					break;
+			}
+
+			// Force a reflow to ensure the gradient is visible
+			void ghostBg.offsetWidth;
+		}
+	}
 }

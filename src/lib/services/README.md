@@ -24,48 +24,48 @@ let services;
 let unsubscribers = [];
 
 onMount(() => {
-  // Initialize all services
-  services = initializeServices({ debug: false });
-  
-  // Subscribe to audio state changes
-  unsubscribers.push(
-    services.eventBus.on('audio:stateChanged', (data) => {
-      console.log('Audio state changed:', data.currentState);
-    })
-  );
-  
-  // Subscribe to transcription completion
-  unsubscribers.push(
-    services.eventBus.on('transcription:completed', (data) => {
-      console.log('Transcription complete:', data.text);
-    })
-  );
+	// Initialize all services
+	services = initializeServices({ debug: false });
+
+	// Subscribe to audio state changes
+	unsubscribers.push(
+		services.eventBus.on('audio:stateChanged', (data) => {
+			console.log('Audio state changed:', data.currentState);
+		})
+	);
+
+	// Subscribe to transcription completion
+	unsubscribers.push(
+		services.eventBus.on('transcription:completed', (data) => {
+			console.log('Transcription complete:', data.text);
+		})
+	);
 });
 
 onDestroy(() => {
-  // Clean up subscriptions
-  unsubscribers.forEach(unsub => unsub());
+	// Clean up subscriptions
+	unsubscribers.forEach((unsub) => unsub());
 });
 
 // Start recording function
 async function startRecording() {
-  try {
-    await services.audioService.startRecording();
-  } catch (error) {
-    console.error('Failed to start recording:', error);
-  }
+	try {
+		await services.audioService.startRecording();
+	} catch (error) {
+		console.error('Failed to start recording:', error);
+	}
 }
 
 // Stop recording and transcribe
 async function stopAndTranscribe() {
-  try {
-    const audioBlob = await services.audioService.stopRecording();
-    if (audioBlob) {
-      await services.transcriptionService.transcribeAudio(audioBlob);
-    }
-  } catch (error) {
-    console.error('Failed to transcribe:', error);
-  }
+	try {
+		const audioBlob = await services.audioService.stopRecording();
+		if (audioBlob) {
+			await services.transcriptionService.transcribeAudio(audioBlob);
+		}
+	} catch (error) {
+		console.error('Failed to transcribe:', error);
+	}
 }
 ```
 

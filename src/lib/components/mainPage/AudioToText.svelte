@@ -130,7 +130,7 @@
 				if (typeof ghostComponent.forceWobble === 'function') {
 					console.log('🎬 Triggering recording start wobble animation');
 					ghostComponent.forceWobble('', true); // Use random direction with recording start flag
-				} 
+				}
 				// As fallback, at least pulse the ghost icon if wobble not available
 				else if (typeof ghostComponent.pulse === 'function') {
 					ghostComponent.pulse();
@@ -176,7 +176,7 @@
 			// Start transcription process if we have audio data
 			if (audioBlob && audioBlob.size > 0) {
 				await transcriptionService.transcribeAudio(audioBlob);
-				
+
 				// Ensure ghost exits thinking mode when transcription completes
 				if (ghostComponent && typeof ghostComponent.stopThinking === 'function') {
 					ghostComponent.stopThinking();
@@ -358,31 +358,31 @@
 		// Calculate both character length and word count
 		const charLength = text.length;
 		const wordCount = text.trim().split(/\s+/).length;
-		
-		// Typography best practices suggest that readability is impacted by both 
+
+		// Typography best practices suggest that readability is impacted by both
 		// total length and average word length
 		const avgWordLength = charLength / (wordCount || 1); // Avoid division by zero
-		
+
 		// Very short text: 1-10 words or under 50 chars
 		if (wordCount < 10 || charLength < 50) {
 			return isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl';
 		}
-		
+
 		// Short text: 11-25 words or under 150 chars with normal word length
 		if ((wordCount < 25 || charLength < 150) && avgWordLength < 8) {
 			return isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl';
 		}
-		
+
 		// Medium text: 26-50 words or under 300 chars
 		if (wordCount < 50 || charLength < 300) {
 			return isMobile ? 'text-sm sm:text-base md:text-lg' : 'text-base md:text-lg';
 		}
-		
+
 		// Medium-long text: 51-100 words or under 500 chars
 		if (wordCount < 100 || charLength < 500) {
 			return isMobile ? 'text-xs sm:text-sm md:text-base' : 'text-sm md:text-base';
 		}
-		
+
 		// Long text: Over 100 words or 500+ chars
 		// Use smaller text for better readability on longer content
 		return isMobile ? 'text-xs sm:text-sm' : 'text-sm md:text-base';
@@ -432,7 +432,7 @@
 			// Add a small delay to ensure the UI has updated
 			setTimeout(() => {
 				transcriptionService.copyToClipboard($transcriptionText);
-				console.log("Auto-copying transcript to clipboard");
+				console.log('Auto-copying transcript to clipboard');
 			}, 300);
 		}
 	}
@@ -602,146 +602,146 @@
 
 <style>
 	/* Main wrapper to ensure proper positioning */
-.main-wrapper {
-	position: relative;
-	z-index: 1;
-	width: 100%;
-	box-sizing: border-box;
-}
-
-/* Position wrapper to create a stable layout without shifts */
-.position-wrapper {
-	min-height: 150px; /* Ensure there's enough space for content */
-	max-height: calc(100vh - 240px); /* Control max height to prevent overflow */
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	position: relative; /* Ensure proper positioning context */
-	overflow-y: visible; /* Allow overflow without jumping */
-	transition: all 0.3s ease-in-out; /* Smooth transition when content changes */
-	contain: layout; /* Improve layout containment */
-}
-
-/* Content container for transcripts and visualizers */
-.content-container {
-	width: 100%;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	position: relative; /* For absolute positioned children */
-}
-
-/* Wrapper container for consistent max-width across components */
-.wrapper-container {
-	width: 100%;
-}
-
-/* Visualizer container for absolute positioning */
-.visualizer-container {
-	z-index: 10;
-}
-
-/* Common animation for fading elements in */
-.animate-fadeIn {
-	animation: localFadeIn 0.8s ease-out forwards;
-}
-
-@keyframes localFadeIn {
-	from {
-		opacity: 0;
-		transform: translateY(10px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
-/* Screen reader only class */
-.sr-only {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	padding: 0;
-	margin: -1px;
-	overflow: hidden;
-	clip: rect(0, 0, 0, 0);
-	white-space: nowrap;
-	border-width: 0;
-}
-
-/* Improved focus styles for keyboard navigation */
-:focus-visible {
-	outline: 2px solid #f59e0b;
-	outline-offset: 2px;
-}
-
-/* Apply box-sizing to all elements for consistent layout */
-* {
-	box-sizing: border-box;
-}
-
-/* Mobile-centered container */
-.mobile-centered-container {
-	width: 100%;
-	max-width: 100vw;
-	margin: 0 auto;
-	text-align: center;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-}
-
-/* Make the button section sticky to prevent jumping */
-.button-section {
-	position: sticky;
-	top: 0;
-	z-index: 20;
-	padding-bottom: 0.75rem;
-	background: transparent;
-}
-
-/* Media queries for mobile responsiveness */
-@media (max-width: 768px) {
-	.button-container {
-		width: 90%;
-		max-width: 90vw; /* Prevent overflow */
-		margin: 0 auto; /* Center horizontally */
+	.main-wrapper {
+		position: relative;
+		z-index: 1;
+		width: 100%;
+		box-sizing: border-box;
 	}
 
-	/* Adjust spacing for mobile */
+	/* Position wrapper to create a stable layout without shifts */
 	.position-wrapper {
-		margin-top: 0.5rem;
-		margin-bottom: 5rem; /* More space for footer */
-		padding: 0 8px; /* Add side padding */
-		max-height: calc(100vh - 180px); /* Control height on mobile */
+		min-height: 150px; /* Ensure there's enough space for content */
+		max-height: calc(100vh - 240px); /* Control max height to prevent overflow */
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		position: relative; /* Ensure proper positioning context */
+		overflow-y: visible; /* Allow overflow without jumping */
+		transition: all 0.3s ease-in-out; /* Smooth transition when content changes */
+		contain: layout; /* Improve layout containment */
 	}
 
-	/* Make the visualizer more compact on mobile */
-	.visualizer-container {
-		top: -5px;
+	/* Content container for transcripts and visualizers */
+	.content-container {
+		width: 100%;
 		display: flex;
-		justify-content: center;
+		flex-direction: column;
+		align-items: center;
+		position: relative; /* For absolute positioned children */
+	}
+
+	/* Wrapper container for consistent max-width across components */
+	.wrapper-container {
 		width: 100%;
 	}
 
-	/* Ensure minimum width even on very small screens */
-	.wrapper-container {
-		min-width: 280px;
+	/* Visualizer container for absolute positioning */
+	.visualizer-container {
+		z-index: 10;
+	}
+
+	/* Common animation for fading elements in */
+	.animate-fadeIn {
+		animation: localFadeIn 0.8s ease-out forwards;
+	}
+
+	@keyframes localFadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	/* Screen reader only class */
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border-width: 0;
+	}
+
+	/* Improved focus styles for keyboard navigation */
+	:focus-visible {
+		outline: 2px solid #f59e0b;
+		outline-offset: 2px;
+	}
+
+	/* Apply box-sizing to all elements for consistent layout */
+	* {
+		box-sizing: border-box;
+	}
+
+	/* Mobile-centered container */
+	.mobile-centered-container {
+		width: 100%;
+		max-width: 100vw;
+		margin: 0 auto;
+		text-align: center;
 		display: flex;
+		flex-direction: column;
+		align-items: center;
 		justify-content: center;
 	}
-}
 
-/* Even smaller screens */
-@media (max-width: 380px) {
-	/* Ensure proper spacing on tiny screens */
-	.position-wrapper {
-		margin-top: 0.5rem;
-		margin-bottom: 1rem;
-		padding: 0 4px;
-		max-height: calc(100vh - 160px); /* More compact on very small screens */
+	/* Make the button section sticky to prevent jumping */
+	.button-section {
+		position: sticky;
+		top: 0;
+		z-index: 20;
+		padding-bottom: 0.75rem;
+		background: transparent;
 	}
-}
+
+	/* Media queries for mobile responsiveness */
+	@media (max-width: 768px) {
+		.button-container {
+			width: 90%;
+			max-width: 90vw; /* Prevent overflow */
+			margin: 0 auto; /* Center horizontally */
+		}
+
+		/* Adjust spacing for mobile */
+		.position-wrapper {
+			margin-top: 0.5rem;
+			margin-bottom: 5rem; /* More space for footer */
+			padding: 0 8px; /* Add side padding */
+			max-height: calc(100vh - 180px); /* Control height on mobile */
+		}
+
+		/* Make the visualizer more compact on mobile */
+		.visualizer-container {
+			top: -5px;
+			display: flex;
+			justify-content: center;
+			width: 100%;
+		}
+
+		/* Ensure minimum width even on very small screens */
+		.wrapper-container {
+			min-width: 280px;
+			display: flex;
+			justify-content: center;
+		}
+	}
+
+	/* Even smaller screens */
+	@media (max-width: 380px) {
+		/* Ensure proper spacing on tiny screens */
+		.position-wrapper {
+			margin-top: 0.5rem;
+			margin-bottom: 1rem;
+			padding: 0 4px;
+			max-height: calc(100vh - 160px); /* More compact on very small screens */
+		}
+	}
 </style>

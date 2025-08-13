@@ -21,6 +21,7 @@ Place the following screenshots in this directory:
 ## Why Screenshots Matter
 
 Screenshots are displayed:
+
 - In app stores
 - On installation prompts
 - In the browser's "Add to Home Screen" flow

@@ -220,7 +220,7 @@ const cssVariables = derived(theme, ($theme) => {
 			cssVars += `--ghost-${$theme}-transform-y-max: ${shapeConfig.transform.y.max}px;\n`;
 		}
 	}
-	
+
 	// Add wobble duration from config
 	cssVars += `\n/* Wobble Configuration */\n`;
 	cssVars += `--ghost-wobble-duration: ${WOBBLE_CONFIG.DURATION / 1000}s;\n`; // Convert ms to s

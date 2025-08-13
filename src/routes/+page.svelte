@@ -1,9 +1,9 @@
 <script context="module">
-  // Removed module-level state related to old modals
+	// Removed module-level state related to old modals
 </script>
 
 <script>
-  import { MainContainer } from '$lib/components/mainPage';
+	import { MainContainer } from '$lib/components/mainPage';
 </script>
 
 <MainContainer />

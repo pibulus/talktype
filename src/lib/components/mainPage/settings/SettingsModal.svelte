@@ -96,7 +96,7 @@
 	function changeVibe(vibeId) {
 		selectedVibe = vibeId;
 		applyTheme(vibeId);
-		
+
 		// Dispatch a custom event that other components can listen for
 		window.dispatchEvent(
 			new CustomEvent('talktype-setting-changed', {
@@ -172,7 +172,6 @@
 	id="settings_modal"
 	class="modal fixed z-50"
 	style="overflow: hidden !important; z-index: 999;"
-	role="dialog"
 	aria-labelledby="settings_modal_title"
 	aria-modal="true"
 >
@@ -180,9 +179,9 @@
 		class="animate-modal-enter modal-box relative max-h-[80vh] w-[95%] max-w-md overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl md:max-w-lg"
 	>
 		<form method="dialog">
-			<ModalCloseButton 
-				closeModal={handleModalClose} 
-				label="Close settings" 
+			<ModalCloseButton
+				closeModal={handleModalClose}
+				label="Close settings"
 				position="right-2 top-2"
 				modalId="settings_modal"
 			/>
@@ -253,7 +252,12 @@
 								<!-- Use the original DisplayGhost component with masking -->
 								<div class="preview-ghost-wrapper relative h-12 w-12">
 									<div class="ghost-mask-wrapper">
-										<DisplayGhost theme={vibe.id} size="48px" seed={index * 1000 + 12345} disableJsAnimation={true} />
+										<DisplayGhost
+											theme={vibe.id}
+											size="48px"
+											seed={index * 1000 + 12345}
+											disableJsAnimation={true}
+										/>
 									</div>
 								</div>
 							</div>
@@ -270,7 +274,6 @@
 						</button>
 					{/each}
 				</div>
-
 			</div>
 
 			<!-- Prompt Style Selection Section -->
@@ -325,7 +328,7 @@
 		</div>
 	</div>
 
-	<div
+	<button
 		class="modal-backdrop bg-black/40"
 		on:click|self|preventDefault|stopPropagation={() => {
 			const modal = document.getElementById('settings_modal');
@@ -334,7 +337,9 @@
 				setTimeout(handleModalClose, 50);
 			}
 		}}
-	></div>
+		on:keydown={(e) => e.key === 'Enter' && handleModalClose()}
+		aria-label="Close modal"
+	></button>
 </dialog>
 
 <style>
@@ -383,11 +388,11 @@
 		justify-content: center;
 		transition: transform 0.3s ease;
 	}
-	
+
 	.vibe-option:hover .preview-ghost-wrapper {
 		transform: scale(1.05);
 	}
-	
+
 	/* Container for masking the ghost - hides the background */
 	.ghost-mask-wrapper {
 		position: relative;
@@ -398,22 +403,22 @@
 		justify-content: center;
 		overflow: visible;
 	}
-	
+
 	/* Apply masking to remove background from DisplayGhost */
 	.ghost-mask-wrapper :global(.display-ghost) {
-		overflow: visible !important; 
+		overflow: visible !important;
 	}
-	
+
 	/* Target only the ghost SVG, not its container */
 	.ghost-mask-wrapper :global(.ghost-svg) {
 		overflow: visible !important;
 	}
-	
+
 	/* Hide the ghost background rectangle */
 	.ghost-mask-wrapper :global(.ghost-container) {
 		background: transparent !important;
 	}
-	
+
 	.ghost-mask-wrapper :global(.ghost-bg) {
 		/* Ensure the ghost background doesn't show */
 		opacity: 1 !important;

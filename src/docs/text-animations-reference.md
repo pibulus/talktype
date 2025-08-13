@@ -287,12 +287,10 @@ To maintain 60fps animations, especially on mobile devices:
    ```
 
 2. **Avoid animating expensive properties**:
-
    - Good: `transform`, `opacity`
    - Avoid: `box-shadow`, `filter`, `width/height`
 
 3. **Reduce browser reflows**:
-
    - Force reflow only when necessary with `void element.offsetWidth`
    - Group animation changes within requestAnimationFrame
 

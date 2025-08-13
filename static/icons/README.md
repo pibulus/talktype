@@ -16,6 +16,7 @@ For a complete PWA implementation, you need the following icon sizes:
 - icon-512x512.png
 
 Additional important files (stored in the static directory):
+
 - favicon.png (32x32)
 - apple-touch-icon.png (180x180)
 - og-image.png (1200x630) - for social sharing cards
@@ -38,36 +39,36 @@ const sourceFile = path.join(__dirname, 'static', 'talktype-icon.svg');
 const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
 
 // Generate PWA icons in all required sizes
-sizes.forEach(size => {
-  const filename = `icon-${size}x${size}.png`;
-  sharp(sourceFile)
-    .resize(size, size)
-    .png()
-    .toFile(path.join(__dirname, 'static', 'icons', filename))
-    .then(() => console.log(`Created ${filename}`))
-    .catch(err => console.error(`Error creating ${filename}:`, err));
+sizes.forEach((size) => {
+	const filename = `icon-${size}x${size}.png`;
+	sharp(sourceFile)
+		.resize(size, size)
+		.png()
+		.toFile(path.join(__dirname, 'static', 'icons', filename))
+		.then(() => console.log(`Created ${filename}`))
+		.catch((err) => console.error(`Error creating ${filename}:`, err));
 });
 
 // Create favicon.png (32x32)
 sharp(sourceFile)
-  .resize(32, 32)
-  .png()
-  .toFile(path.join(__dirname, 'static', 'favicon.png'))
-  .catch(err => console.error('Error creating favicon.png:', err));
+	.resize(32, 32)
+	.png()
+	.toFile(path.join(__dirname, 'static', 'favicon.png'))
+	.catch((err) => console.error('Error creating favicon.png:', err));
 
 // Create apple-touch-icon.png (180x180)
 sharp(sourceFile)
-  .resize(180, 180)
-  .png()
-  .toFile(path.join(__dirname, 'static', 'apple-touch-icon.png'))
-  .catch(err => console.error('Error creating apple-touch-icon.png:', err));
+	.resize(180, 180)
+	.png()
+	.toFile(path.join(__dirname, 'static', 'apple-touch-icon.png'))
+	.catch((err) => console.error('Error creating apple-touch-icon.png:', err));
 
 // Create og-image.png (1200x630)
 sharp(sourceFile)
-  .resize(1200, 630, { fit: 'contain', background: { r: 253, g: 247, b: 239 } })
-  .png()
-  .toFile(path.join(__dirname, 'static', 'og-image.png'))
-  .catch(err => console.error('Error creating og-image.png:', err));
+	.resize(1200, 630, { fit: 'contain', background: { r: 253, g: 247, b: 239 } })
+	.png()
+	.toFile(path.join(__dirname, 'static', 'og-image.png'))
+	.catch((err) => console.error('Error creating og-image.png:', err));
 
 console.log('Icon generation completed.');
 ```
@@ -89,6 +90,7 @@ TalkType uses a comprehensive icon strategy to support various platforms and the
 ### Maskable Icons
 
 Maskable icons support Android's adaptive icons system:
+
 - `icon-maskable-512x512.png` - Default gray icon for general use
 - `icon-maskable-light-512x512.png` - Black icon for light themes
 - `icon-maskable-dark-512x512.png` - White icon for dark themes
@@ -98,6 +100,7 @@ The manifest includes proper `purpose` attributes and media queries to automatic
 ### Theme-Aware Favicons
 
 The browser tab favicons also adapt to the user's color scheme:
+
 - `favicon.png` - Default gray fallback icon
 - `favicon-light.png` - Black icon for light theme
 - `favicon-dark.png` - White icon for dark theme
@@ -113,6 +116,7 @@ These are implemented with HTML `media` attributes to ensure proper loading.
 ## Path Consistency
 
 For icon references throughout the app:
+
 - Always use web paths: `/assets/talktype-icon-eyes.svg` not `/static/assets/talktype-icon-eyes.svg`
 - Store theme variants in the `/assets/` directory for consistency
 - Reference files via SvelteKit's asset path: `%sveltekit.assets%/assets/talktype-icon-eyes.svg`

@@ -147,27 +147,35 @@ function createGhostStateStore() {
 		if (newState === ANIMATION_STATES.IDLE) {
 			// Defer starting timer to allow other logic to complete
 			setTimeout(() => resetInactivityTimerFunc?.(), 0);
-		} else if (currentState.current === ANIMATION_STATES.IDLE && newState !== ANIMATION_STATES.ASLEEP) {
+		} else if (
+			currentState.current === ANIMATION_STATES.IDLE &&
+			newState !== ANIMATION_STATES.ASLEEP
+		) {
 			// Clear inactivity timer if moving from IDLE to something other than ASLEEP
 			if (get(_state).inactivityTimerId) {
 				clearTimeout(get(_state).inactivityTimerId);
-				_state.update(s => ({ ...s, inactivityTimerId: null }));
+				_state.update((s) => ({ ...s, inactivityTimerId: null }));
 			}
 		}
-		
+
 		// Handle eye state for ASLEEP and WAKING_UP
 		let newEyesClosedState = currentState.eyesClosed;
 		if (newState === ANIMATION_STATES.ASLEEP) {
 			// Eyes start open when falling asleep, animation closes them and holds state via 'forwards'
 			newEyesClosedState = false;
-		} else if (currentState.current === ANIMATION_STATES.ASLEEP && newState === ANIMATION_STATES.WAKING_UP) {
+		} else if (
+			currentState.current === ANIMATION_STATES.ASLEEP &&
+			newState === ANIMATION_STATES.WAKING_UP
+		) {
 			// Ensure eyes are open when starting the wake-up sequence
 			newEyesClosedState = false; // Waking up opens eyes
-		} else if (currentState.current === ANIMATION_STATES.WAKING_UP && newState === ANIMATION_STATES.IDLE) {
+		} else if (
+			currentState.current === ANIMATION_STATES.WAKING_UP &&
+			newState === ANIMATION_STATES.IDLE
+		) {
 			// Ensure eyes are open when finishing wake-up and going to IDLE
 			newEyesClosedState = false;
 		}
-
 
 		// Update state
 		_state.update((s) => ({
@@ -499,9 +507,9 @@ function createGhostStateStore() {
 				debugLog('Inactivity timer expired. Transitioning to ASLEEP.');
 				setAnimationState(ANIMATION_STATES.ASLEEP);
 			}, BLINK_CONFIG.INACTIVITY_TIMEOUT);
-			_state.update(s => ({ ...s, inactivityTimerId: newTimerId }));
+			_state.update((s) => ({ ...s, inactivityTimerId: newTimerId }));
 		} else {
-			_state.update(s => ({ ...s, inactivityTimerId: null }));
+			_state.update((s) => ({ ...s, inactivityTimerId: null }));
 		}
 	}
 	resetInactivityTimerFunc = resetInactivityTimer; // Assign to forward-declared variable

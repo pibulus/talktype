@@ -39,8 +39,8 @@ export default {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))'
 			},
 			outline: {
-				none: 'none',
-			},
+				none: 'none'
+			}
 		}
 	},
 	plugins: [typography, forms, containerQueries, daisyui],

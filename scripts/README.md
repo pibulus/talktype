@@ -24,6 +24,7 @@ node scripts/generate-theme-favicon.js
 ```
 
 This generates:
+
 - `favicon-light.png` - Black ghost for light theme
 - `favicon-dark.png` - White ghost for dark theme
 - `favicon.png` - Gray ghost as fallback
@@ -37,6 +38,7 @@ node scripts/generate-maskable-icon.js
 ```
 
 This generates:
+
 - `icon-maskable-512x512.png` - Gray ghost for general use
 - `icon-maskable-light-512x512.png` - Black ghost for light theme
 - `icon-maskable-dark-512x512.png` - White ghost for dark theme
@@ -90,7 +92,6 @@ The script can be configured through environment variables in a `.env` file at t
 ## How It Works
 
 1. **`tasks.json`**:
-
    - A JSON file at the project root containing an array of tasks (each with `id`, `title`, `description`, `status`, etc.).
    - The `meta` field can store additional info like the project's name, version, or reference to the PRD.
    - Tasks can have `subtasks` for more detailed implementation steps.
@@ -108,7 +109,6 @@ The script can be configured through environment variables in a `.env` file at t
    ```
 
    Available commands:
-
    - `init`: Initialize a new project
    - `parse-prd`: Generate tasks from a PRD document
    - `list`: Display all tasks with their status
@@ -285,20 +285,17 @@ task-master remove-dependency --id=<id> --depends-on=<id>
 These commands:
 
 1. **Allow precise dependency management**:
-
    - Add dependencies between tasks with automatic validation
    - Remove dependencies when they're no longer needed
    - Update task files automatically after changes
 
 2. **Include validation checks**:
-
    - Prevent circular dependencies (a task depending on itself)
    - Prevent duplicate dependencies
    - Verify that both tasks exist before adding/removing dependencies
    - Check if dependencies exist before attempting to remove them
 
 3. **Provide clear feedback**:
-
    - Success messages confirm when dependencies are added/removed
    - Error messages explain why operations failed (if applicable)
 

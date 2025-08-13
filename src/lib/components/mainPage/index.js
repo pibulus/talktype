@@ -13,19 +13,19 @@ import PermissionError from './audio-transcript/PermissionError.svelte';
 import { AboutModal, ExtensionModal, IntroModal } from './modals';
 
 export {
-  MainContainer,
-  GhostContainer,
-  ContentContainer,
-  FooterComponent,
-  SettingsModal,
-  PwaInstallPrompt,
-  AnimatedTitle,
-  AudioToText,
-  AudioVisualizer,
-  RecordButtonWithTimer,
-  TranscriptDisplay,
-  PermissionError,
-  AboutModal,
-  ExtensionModal,
-  IntroModal
+	MainContainer,
+	GhostContainer,
+	ContentContainer,
+	FooterComponent,
+	SettingsModal,
+	PwaInstallPrompt,
+	AnimatedTitle,
+	AudioToText,
+	AudioVisualizer,
+	RecordButtonWithTimer,
+	TranscriptDisplay,
+	PermissionError,
+	AboutModal,
+	ExtensionModal,
+	IntroModal
 };

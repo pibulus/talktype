@@ -81,7 +81,7 @@
 	let manualStateChange = false;
 	let wakeUpBlinkTriggered = false; // Flag to ensure blink only triggers once per wake-up
 	let eyeTracker; // Variable to hold the eye tracking instance
-	
+
 	// Animation control with reactive state
 	$: animationsEnabled = $appActive;
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
@@ -445,7 +445,12 @@
       {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
       {!clickable ? 'ghost-non-clickable' : ''}"
 	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
-	on:click={() => { if (clickable) { handleClick(); handleUserInteraction(); } }}
+	on:click={() => {
+		if (clickable) {
+			handleClick();
+			handleUserInteraction();
+		}
+	}}
 	on:keydown={(e) => {
 		if (clickable && (e.key === 'Enter' || e.key === ' ')) {
 			e.preventDefault();
@@ -516,39 +521,39 @@
 				<g class="ghost-layer ghost-bg" bind:this={backgroundElement}>
 					<use
 						xlink:href={ghostPathsUrl}
-					href={ghostPathsUrl + '#ghost-background'}
-					class="ghost-shape"
-					id="ghost-shape"
-					fill="url(#{currentTheme}Gradient)"
-				/>
-			</g>
+						href={ghostPathsUrl + '#ghost-background'}
+						class="ghost-shape"
+						id="ghost-shape"
+						fill="url(#{currentTheme}Gradient)"
+					/>
+				</g>
 
-			<g class="ghost-layer ghost-outline">
-				<use
-					xlink:href={ghostPathsUrl}
-					href={ghostPathsUrl + '#ghost-body-path'}
-					class="ghost-outline-path"
-					fill="#000000"
-					opacity="1"
-				/>
-			</g>
+				<g class="ghost-layer ghost-outline">
+					<use
+						xlink:href={ghostPathsUrl}
+						href={ghostPathsUrl + '#ghost-body-path'}
+						class="ghost-outline-path"
+						fill="#000000"
+						opacity="1"
+					/>
+				</g>
 
-			<g class="ghost-layer ghost-eyes">
-				<use
-					bind:this={leftEye}
-					xlink:href={ghostPathsUrl}
-					href={ghostPathsUrl + '#ghost-eye-left-path'}
-					class="ghost-eye ghost-eye-left"
-					fill="#000000"
-				/>
-				<use
-					bind:this={rightEye}
-					xlink:href={ghostPathsUrl}
-					href={ghostPathsUrl + '#ghost-eye-right-path'}
-					class="ghost-eye ghost-eye-right"
-					fill="#000000"
-				/>
-			</g>
+				<g class="ghost-layer ghost-eyes">
+					<use
+						bind:this={leftEye}
+						xlink:href={ghostPathsUrl}
+						href={ghostPathsUrl + '#ghost-eye-left-path'}
+						class="ghost-eye ghost-eye-left"
+						fill="#000000"
+					/>
+					<use
+						bind:this={rightEye}
+						xlink:href={ghostPathsUrl}
+						href={ghostPathsUrl + '#ghost-eye-right-path'}
+						class="ghost-eye ghost-eye-right"
+						fill="#000000"
+					/>
+				</g>
 			</g>
 			<!-- End of ghost-wobble-group -->
 		</g>
@@ -589,8 +594,12 @@
 	}
 
 	@keyframes fadeIn {
-		from { opacity: 0; }
-		to { opacity: 1; }
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
 	}
 
 	.ghost-svg {
@@ -617,19 +626,23 @@
 	/* Dynamically apply animation durations from config */
 	.ghost-svg.theme-peach #ghost-shape {
 		animation-duration: var(--ghost-shimmer-duration, 5s), var(--ghost-peach-flow-duration, 9s);
-		animation-timing-function: var(--ghost-shimmer-ease, ease-in-out),
+		animation-timing-function:
+			var(--ghost-shimmer-ease, ease-in-out),
 			var(--ghost-peach-flow-ease, cubic-bezier(0.4, 0, 0.6, 1));
 	}
 
 	.ghost-svg.theme-mint #ghost-shape {
 		animation-duration: var(--ghost-shimmer-duration, 6s), var(--ghost-mint-flow-duration, 10s);
-		animation-timing-function: var(--ghost-shimmer-ease, ease-in-out),
+		animation-timing-function:
+			var(--ghost-shimmer-ease, ease-in-out),
 			var(--ghost-mint-flow-ease, cubic-bezier(0.4, 0, 0.6, 1));
 	}
 
 	.ghost-svg.theme-bubblegum #ghost-shape {
-		animation-duration: var(--ghost-shimmer-duration, 7s), var(--ghost-bubblegum-flow-duration, 12s);
-		animation-timing-function: var(--ghost-shimmer-ease, ease-in-out),
+		animation-duration:
+			var(--ghost-shimmer-duration, 7s), var(--ghost-bubblegum-flow-duration, 12s);
+		animation-timing-function:
+			var(--ghost-shimmer-ease, ease-in-out),
 			var(--ghost-bubblegum-flow-ease, cubic-bezier(0.4, 0, 0.6, 1));
 	}
 
@@ -653,15 +666,15 @@
 
 	/* Slow down animations in debug mode for easier inspection */
 	.ghost-svg.debug-animation #ghost-shape {
-		animation-duration: calc(var(--ghost-shimmer-duration, 5s) * 2),
-			calc(var(--ghost-peach-flow-duration, 9s) * 2) !important;
+		animation-duration:
+			calc(var(--ghost-shimmer-duration, 5s) * 2), calc(var(--ghost-peach-flow-duration, 9s) * 2) !important;
 	}
-	
+
 	/* Animation state control */
 	.animations-enabled .ghost-svg #ghost-shape {
 		animation-play-state: running;
 	}
-	
+
 	.animations-paused .ghost-svg #ghost-shape {
 		animation-play-state: paused;
 	}

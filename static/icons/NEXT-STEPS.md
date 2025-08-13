@@ -53,13 +53,11 @@ This will create:
 After generating the icons, test the PWA functionality:
 
 1. **Installation Test**:
-
    - Desktop: Look for the install icon in the Chrome address bar
    - Android: Use "Add to Home Screen" from Chrome menu
    - iOS: Use "Add to Home Screen" from Safari share menu
 
 2. **Offline Test**:
-
    - Enable airplane mode or use DevTools to simulate offline
    - Verify the offline page appears when trying to access the app
    - Test that the installed app can be launched offline

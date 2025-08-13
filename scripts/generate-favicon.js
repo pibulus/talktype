@@ -17,8 +17,8 @@ const outputFile = path.join(__dirname, '..', 'static', 'favicon.png');
 
 // Create the favicon (32x32)
 sharp(sourceFile)
-  .resize(32, 32)
-  .png()
-  .toFile(outputFile)
-  .then(() => console.log('✅ Created favicon.png successfully'))
-  .catch(err => console.error('❌ Error creating favicon.png:', err));
+	.resize(32, 32)
+	.png()
+	.toFile(outputFile)
+	.then(() => console.log('✅ Created favicon.png successfully'))
+	.catch((err) => console.error('❌ Error creating favicon.png:', err));

@@ -1,61 +1,61 @@
 import { browser } from '$app/environment';
 
 export class ModalService {
-  constructor() {
-    this.modalOpen = false;
-    this.scrollPosition = 0;
-  }
+	constructor() {
+		this.modalOpen = false;
+		this.scrollPosition = 0;
+	}
 
-  openModal(modalId) {
-    if (!browser) return;
-    
-    const modal = document.getElementById(modalId);
-    if (!modal) return;
+	openModal(modalId) {
+		if (!browser) return;
 
-    // Save scroll position and lock body
-    this.scrollPosition = window.scrollY;
-    const width = document.body.clientWidth;
-    this.modalOpen = true;
+		const modal = document.getElementById(modalId);
+		if (!modal) return;
 
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${this.scrollPosition}px`;
-    document.body.style.width = `${width}px`;
-    document.body.style.overflow = 'hidden';
+		// Save scroll position and lock body
+		this.scrollPosition = window.scrollY;
+		const width = document.body.clientWidth;
+		this.modalOpen = true;
 
-    // Show the modal
-    if (typeof modal.showModal === 'function') {
-      modal.showModal();
-    }
+		document.body.style.position = 'fixed';
+		document.body.style.top = `-${this.scrollPosition}px`;
+		document.body.style.width = `${width}px`;
+		document.body.style.overflow = 'hidden';
 
-    return modal;
-  }
+		// Show the modal
+		if (typeof modal.showModal === 'function') {
+			modal.showModal();
+		}
 
-  closeModal() {
-    if (!browser || !this.modalOpen) return;
+		return modal;
+	}
 
-    // Close any open dialogs
-    document.querySelectorAll('dialog[open]').forEach(dialog => {
-      if (dialog && typeof dialog.close === 'function') {
-        dialog.close();
-      }
-    });
+	closeModal() {
+		if (!browser || !this.modalOpen) return;
 
-    // Restore body styles
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.width = '';
-    document.body.style.overflow = '';
-    document.body.style.height = '';
+		// Close any open dialogs
+		document.querySelectorAll('dialog[open]').forEach((dialog) => {
+			if (dialog && typeof dialog.close === 'function') {
+				dialog.close();
+			}
+		});
 
-    // Restore scroll position
-    window.scrollTo(0, this.scrollPosition);
-    
-    this.modalOpen = false;
-  }
+		// Restore body styles
+		document.body.style.position = '';
+		document.body.style.top = '';
+		document.body.style.width = '';
+		document.body.style.overflow = '';
+		document.body.style.height = '';
 
-  isModalOpen() {
-    return this.modalOpen;
-  }
+		// Restore scroll position
+		window.scrollTo(0, this.scrollPosition);
+
+		this.modalOpen = false;
+	}
+
+	isModalOpen() {
+		return this.modalOpen;
+	}
 }
 
 export const modalService = new ModalService();

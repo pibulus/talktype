@@ -21,7 +21,7 @@ export function initialGhostAnimation(node, initialParams) {
 			blinkTimeoutId = null;
 		}
 		node.classList.remove('initial-load-effect');
-		
+
 		// Update the debug state based on the current parameters being processed.
 		currentDebugState = params?.debug || false;
 
@@ -29,7 +29,10 @@ export function initialGhostAnimation(node, initialParams) {
 		// the action should not proceed with its main logic.
 		if (!params || !params.blinkService || !params.leftEye || !params.rightEye) {
 			if (currentDebugState) {
-				console.log('[Action initialGhostAnimation] Essential params missing or params undefined. Setup skipped. Params:', params);
+				console.log(
+					'[Action initialGhostAnimation] Essential params missing or params undefined. Setup skipped. Params:',
+					params
+				);
 			}
 			return; // Exit setup if prerequisites are not met.
 		}
@@ -38,7 +41,12 @@ export function initialGhostAnimation(node, initialParams) {
 		const { blinkService, leftEye, rightEye } = params;
 
 		if (currentDebugState) {
-			console.log('[Action initialGhostAnimation] Running setup on node:', node, 'with params:', params);
+			console.log(
+				'[Action initialGhostAnimation] Running setup on node:',
+				node,
+				'with params:',
+				params
+			);
 		}
 
 		// 1. Apply CSS class to trigger grow & wobble
@@ -66,10 +74,15 @@ export function initialGhostAnimation(node, initialParams) {
 					rightEye
 				);
 			}
-			
+
 			// It's good practice to ensure blinkService and eyes are still valid,
 			// though they should be if this timeout is running from a valid setup.
-			if (blinkService && typeof blinkService.performDoubleBlink === 'function' && leftEye && rightEye) {
+			if (
+				blinkService &&
+				typeof blinkService.performDoubleBlink === 'function' &&
+				leftEye &&
+				rightEye
+			) {
 				blinkService.performDoubleBlink({ leftEye, rightEye }, () => {
 					if (currentDebugState) {
 						console.log(
@@ -109,7 +122,8 @@ export function initialGhostAnimation(node, initialParams) {
 				blinkTimeoutId = null;
 			}
 			node.classList.remove('initial-load-effect'); // Ensure class is removed.
-			if (currentDebugState) { // Log based on the last known debug state.
+			if (currentDebugState) {
+				// Log based on the last known debug state.
 				console.log('[Action initialGhostAnimation] Destroying.');
 			}
 		}

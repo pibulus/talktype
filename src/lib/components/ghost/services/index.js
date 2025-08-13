@@ -1,6 +1,6 @@
 /**
  * Ghost Animation Services
- * 
+ *
  * Central export point for all ghost animation services
  */
 
