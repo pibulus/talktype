@@ -2,6 +2,28 @@
 
 _Generated from git history analysis - Key insights and architectural decisions_
 
+## 2025-01-14 - Notion Integration Setup
+**Goal**: Document all Pablo's projects in Notion for better organization
+
+**What I did:**
+- Scanned project structure: 6 web apps, 5 CLI tools, 4 Mac apps, 2 experiments
+- Set up Notion MCP integration with API token: `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`
+- Configured via: `claude mcp add notion "npx -y @notionhq/notion-mcp-server" --scope user --env NOTION_TOKEN=...`
+
+**Next steps after restart:**
+1. Test Notion connection with `mcp__notion__API-get-self`
+2. Create Projects database with properties: Name, Status, Type, Stack, Vibe Check, URLs
+3. Auto-populate from README files in each project
+4. Set up linked Features and Tech Notes databases
+
+**Projects to document:**
+- **Active Apps**: ButtonStudio, TalkType, RiffRap, DaySay, ZipList, Spellbreak
+- **CLI Tools**: Git Monkey, Terminal Power, Brief Case, Cult Code, House Keeper
+- **Mac Apps**: RackOff (formerly DeskVac), Spellbreak native
+- **Experiments**: Ambient Presence, Hex Bloop
+
+**Note**: Need Claude Code restart for MCP changes to take effect
+
 ## Core Architecture & System Design
 
 ### Application Structure
