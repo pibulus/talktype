@@ -15,29 +15,25 @@
 	import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
 	import { STORAGE_KEYS } from '$lib/constants';
 
-	// Import modals lazily
-	import { AboutModal, ExtensionModal, IntroModal } from './modals';
+	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
 
-	// Lazy load settings modal - only import when needed
 	let SettingsModal;
 	let loadingSettingsModal = false;
 
-	// PWA Install Prompt component - lazy loaded
 	let PwaInstallPrompt;
 	let loadingPwaPrompt = false;
 
-	// Track speech model preloading state
 	let speechModelPreloaded = false;
-
-	// State variables to pass to children
 	let isProcessing = false;
-
-	// Debug Helper
 	function debug(message) {
-		// Uncomment the line below during development for verbose logging
 		modalService.openModal('about_modal');
 	}
 
+	function showAboutModal() {
+		debug('showAboutModal called');
+		modalService.openModal('about_modal');
+	}
+	
 	function showExtensionModal() {
 		debug('showExtensionModal called');
 		modalService.openModal('extension_modal');
@@ -66,7 +62,7 @@
 
 			try {
 				// Import the component dynamically
-				const module = await import('./settings/SettingsModal.svelte');
+				const module = await import('../settings/SettingsModal.svelte');
 				SettingsModal = module.default;
 				debug('SettingsModal component loaded successfully');
 			} catch (err) {
@@ -152,7 +148,6 @@
 		// Add null check for contentContainer
 		if (!contentContainer) {
 			console.warn('[MainContainer] contentContainer not ready yet');
-			}
 			// Try again after a short delay
 			ghostClickRetryTimeout = setTimeout(() => {
 				if (contentContainer) {
@@ -164,6 +159,7 @@
 			return;
 		}
 		
+		contentContainer.toggleRecording();
 	}
 
 	// Function to trigger ghost click
@@ -187,7 +183,7 @@
 
 			try {
 				// Import the component dynamically
-				const module = await import('./pwa/PwaInstallPrompt.svelte');
+				const module = await import('../pwa/PwaInstallPrompt.svelte');
 				PwaInstallPrompt = module.default;
 				debug('📱 PWA install prompt component loaded successfully');
 			} catch (err) {

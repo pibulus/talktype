@@ -3,7 +3,7 @@
 </script>
 
 <script>
-	import { MainContainer } from '$lib/components/mainPage';
+	import { MainContainer } from '$lib/components/page';
 </script>
 
 <MainContainer />

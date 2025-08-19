@@ -1,6 +1,6 @@
 <script>
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
-	import AudioToText from './audio-transcript/AudioToText.svelte';
+	import AudioToText from '../audio/AudioToText.svelte';
 	import AnimatedTitle from './AnimatedTitle.svelte';
 
 	// Props passed from the parent
@@ -54,11 +54,8 @@
 	}
 
 	export function toggleRecording() {
-		console.log('[ContentContainer] toggleRecording called');
-		console.log('[ContentContainer] audioToTextComponent exists?', !!audioToTextComponent);
 		if (audioToTextComponent) {
 			debug('Toggling recording from parent');
-			console.log('[ContentContainer] Calling audioToTextComponent.toggleRecording()');
 			audioToTextComponent.toggleRecording();
 		} else {
 			console.error('[ContentContainer] audioToTextComponent is not available!');

@@ -1,4 +1,3 @@
-// Import services for local usage in initialization function
 import { eventBus as eventBusInstance } from './infrastructure/index';
 import { hapticService as hapticServiceInstance } from './infrastructure/index';
 import { audioService as audioServiceInstance } from './audio/audioService';
@@ -8,8 +7,6 @@ import { modalService as modalServiceInstance } from './modals/modalService';
 import { firstVisitService as firstVisitServiceInstance } from './first-visit/firstVisitService';
 import { pwaService as pwaServiceInstance } from './pwa/pwaService';
 import { resetStores } from './infrastructure/stores';
-
-// Re-export services for external usage
 export { eventBus, hapticService, StorageUtils } from './infrastructure/index';
 export { themeService } from './theme/themeService';
 export { modalService } from './modals/modalService';
@@ -45,7 +42,7 @@ export {
 	waveformData,
 	hasPermissionError,
 	recordingDuration,
-	transcriptionCompletedEvent, // <-- Add this line
+	transcriptionCompletedEvent,
 	audioActions,
 	transcriptionActions,
 	uiActions
@@ -68,7 +65,6 @@ export function initializeServices(options = {}) {
 		hapticServiceInstance.disable();
 	}
 
-	console.log('🚀 TalkType services initialized with Svelte stores');
 
 	return {
 		eventBus: eventBusInstance,

@@ -64,7 +64,6 @@
 			platform = navigator.platform || 'desktop';
 		}
 
-		console.log(`📱 Platform detected: ${platform}`);
 	}
 
 	/**
@@ -98,7 +97,6 @@
 		if (installPromptEvent) {
 			try {
 				// Show the native browser install prompt
-				console.log('📱 Showing native PWA install prompt');
 
 				// This is a built-in browser API, not our custom UI
 				const result = await installPromptEvent.prompt();
@@ -107,11 +105,9 @@
 				const choiceResult = await installPromptEvent.userChoice;
 
 				if (choiceResult.outcome === 'accepted') {
-					console.log('📱 User accepted the PWA installation');
 					pwaService.markAsInstalled();
 					close();
 				} else {
-					console.log('📱 User dismissed the PWA installation');
 				}
 
 				// Clear the saved prompt since it can only be used once
@@ -123,7 +119,6 @@
 			}
 		} else {
 			// No install prompt available, show manual instructions
-			console.log('📱 No native install prompt available, showing manual instructions');
 			showPlatformInstructions = true;
 		}
 	}

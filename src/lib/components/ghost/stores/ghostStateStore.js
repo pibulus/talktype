@@ -45,8 +45,7 @@ function createGhostStateStore() {
 		// ---
 		// isSpecialAnimationActive is now handled by current === ANIMATION_STATES.EASTER_EGG
 		// Debug mode
-		debug: true,
-		inactivityTimerId: null, // Clear timer on reset
+		debug: false,
 		// First visit (for initial animation) - Default to false for SSR safety
 		isFirstVisit: false,
 		// Animation state timeouts

@@ -48,7 +48,7 @@
 				<ol class="mt-2 list-decimal space-y-2 pl-5 text-left text-sm text-gray-700">
 					<li class="pb-1">
 						Download the extension files <button
-							on:click={() => console.log('Download extension')}
+							on:click={() => {}}
 							class="font-medium text-pink-600 transition-colors hover:text-pink-700 hover:underline"
 							>here</button
 						>
