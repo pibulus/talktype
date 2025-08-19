@@ -113,50 +113,13 @@
 		<meta property="twitter:image" content="%sveltekit.assets%/og-image.png" />
 
 		<script>
-			// Apply saved theme immediately to prevent flash of default theme
-			// StorageUtils inline helpers
-			function getStorageItem(key, defaultValue) {
-				if (typeof localStorage === 'undefined') return defaultValue;
-
-				try {
-					const item = localStorage.getItem(key);
-					return item !== null ? item : defaultValue;
-				} catch (e) {
-					console.warn(`Error reading ${key} from localStorage:`, e);
-					return defaultValue;
-				}
-			}
-
-			function setStorageItem(key, value) {
-				if (typeof localStorage === 'undefined') return false;
-
-				try {
-					localStorage.setItem(key, value);
-					return true;
-				} catch (e) {
-					console.warn(`Error saving ${key} to localStorage:`, e);
-					return false;
-				}
-			}
-
-			// Apply theme using storage helpers
-			const THEME_KEY = 'talktype-vibe';
-			const DEFAULT_THEME = 'peach';
-
-			const savedTheme = getStorageItem(THEME_KEY, DEFAULT_THEME);
-			document.documentElement.setAttribute('data-theme', savedTheme);
-
-			if (savedTheme === DEFAULT_THEME) {
-				setStorageItem(THEME_KEY, DEFAULT_THEME);
-			}
-
-			// Set initialization flag to prevent duplicate theme application
-			window.themeInitialized = true;
-
-			// Force reflow to ensure theme is applied before content renders
-			if (typeof document !== 'undefined') {
-				void document.documentElement.offsetWidth;
-			}
+			// Minimal critical theme setup to prevent FOUC
+			// This runs synchronously but is optimized for speed
+			(function() {
+				const t = localStorage.getItem('talktype-vibe') || 'peach';
+				document.documentElement.setAttribute('data-theme', t);
+				window.__theme = t; // Store for later use
+			})();
 		</script>
 
 		<script type="application/ld+json">

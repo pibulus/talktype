@@ -12,6 +12,7 @@
 	import PermissionError from './PermissionError.svelte';
 	import { ANIMATION, CTA_PHRASES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
 	import { Confetti } from '$lib/components/ui';
+	import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
 
 	// State for confetti animation
 	let showConfetti = false;
@@ -139,24 +140,11 @@
 		// We don't need to set up recording timer manually anymore
 		// The store takes care of it
 
-		// Only scroll down if we're not already near the bottom
-		// This prevents jarring jumps when starting a new recording
-		setTimeout(() => {
-			if (typeof window !== 'undefined') {
-				const scrollPosition = window.pageYOffset || window.scrollY;
-				const windowHeight = window.innerHeight;
-				const documentHeight = document.body.scrollHeight;
-				const isNearBottom = scrollPosition + windowHeight >= documentHeight - 200;
-				
-				// Only scroll if we're not already near the bottom
-				if (!isNearBottom) {
-					window.scrollTo({
-						top: document.body.scrollHeight,
-						behavior: 'smooth'
-					});
-				}
-			}
-		}, ANIMATION.RECORDING.SCROLL_DELAY);
+		// Scroll to bottom if needed after starting recording
+		scrollToBottomIfNeeded({
+			threshold: 200,
+			delay: ANIMATION.RECORDING.SCROLL_DELAY
+		});
 
 		try {
 			// Subtle pulse ghost icon when starting recording
@@ -199,23 +187,11 @@
 			if (audioBlob && audioBlob.size > 0) {
 				await transcriptionService.transcribeAudio(audioBlob);
 
-				// Only scroll to show transcript if it would be off-screen
-				setTimeout(() => {
-					if (typeof window !== 'undefined') {
-						const scrollPosition = window.pageYOffset || window.scrollY;
-						const windowHeight = window.innerHeight;
-						const documentHeight = document.body.scrollHeight;
-						const isNearBottom = scrollPosition + windowHeight >= documentHeight - 300;
-						
-						// Only scroll if the new content would be off-screen
-						if (!isNearBottom) {
-							window.scrollTo({
-								top: document.body.scrollHeight,
-								behavior: 'smooth'
-							});
-						}
-					}
-				}, ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY);
+				// Scroll to show transcript if needed
+				scrollToBottomIfNeeded({
+					threshold: 300,
+					delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY
+				});
 
 				// Increment the transcription count for PWA prompt
 				if (browser && 'requestIdleCallback' in window) {
