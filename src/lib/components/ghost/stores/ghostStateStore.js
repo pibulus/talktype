@@ -76,9 +76,6 @@ function createGhostStateStore() {
 		const currentDebugFlag = get(_state).debug;
 		if (!currentDebugFlag) return;
 		// ADD THIS LINE
-		console.log(
-			`[GhostStateStore DEBUGLOG_CHECK] Attempting to log (debugLog): "${message}". Current debug flag in store: ${currentDebugFlag}`
-		);
 		// END ADD
 		console[level](`[GhostState] ${message}`);
 	}
@@ -88,13 +85,12 @@ function createGhostStateStore() {
 	 * @param {string} stateName - State to clear timeout for
 	 */
 	function clearStateTimeout(stateName) {
-		const currentState = get(_state); // Use _state
+		const currentState = get(_state);
 
 		if (currentState.stateTimeouts[stateName]) {
 			clearTimeout(currentState.stateTimeouts[stateName]);
 
 			_state.update((s) => ({
-				// Use _state
 				...s,
 				stateTimeouts: {
 					...s.stateTimeouts,
@@ -113,7 +109,7 @@ function createGhostStateStore() {
 	 * @returns {boolean} Whether the transition was successful
 	 */
 	function setAnimationState(newState) {
-		const currentState = get(_state); // Use _state
+		const currentState = get(_state);
 
 		// Validate state exists
 		if (!Object.values(ANIMATION_STATES).includes(newState)) {
@@ -196,14 +192,13 @@ function createGhostStateStore() {
 			debugLog(`Setting cleanup timeout for ${newState} → IDLE in ${behavior.cleanupDelay}ms`);
 
 			const timeoutId = setTimeout(() => {
-				const _currentState = get(_state); // Use _state
+				const _currentState = get(_state);
 				if (_currentState.current === newState) {
 					setAnimationState(ANIMATION_STATES.IDLE);
 				}
 			}, behavior.cleanupDelay);
 
 			_state.update((s) => ({
-				// Use _state
 				...s,
 				stateTimeouts: {
 					...s.stateTimeouts,
@@ -216,152 +211,125 @@ function createGhostStateStore() {
 	}
 
 	/**
+	 * Apply wobble animation to the ghost
+	 * @param {'start' | 'stop'} type - Type of wobble animation
+	 * @returns {void}
+	 */
+	function applyWobbleAnimation(type) {
+		const wobbleGroup = document.getElementById('ghost-wobble-group');
+		if (!wobbleGroup) {
+			debugLog(`[Imperative Wobble] Could not find wobble group for ${type}`, 'warn');
+			return;
+		}
+
+		const wobbleClass = type === 'start' 
+			? WOBBLE_CONFIG.RECORDING_START_CLASS 
+			: WOBBLE_CONFIG.RECORDING_STOP_CLASS;
+		
+		// Force reflow before adding class
+		void wobbleGroup.offsetWidth;
+		wobbleGroup.classList.add(wobbleClass);
+		debugLog(`Applied ${wobbleClass} to wobble group`);
+
+		// Schedule cleanup
+		const timeoutKey = `${type}WobbleCleanup`;
+		const timeoutId = setTimeout(() => {
+			wobbleGroup.classList.remove(wobbleClass);
+			clearStateTimeout(timeoutKey);
+		}, WOBBLE_CONFIG.DURATION + 50);
+
+		// Store timeout ID for potential cleanup
+		_state.update((s) => ({
+			...s,
+			stateTimeouts: { ...s.stateTimeouts, [timeoutKey]: timeoutId }
+		}));
+	}
+
+	/**
+	 * Handle recording start sequence
+	 * @param {Object} currentState - Current state object
+	 */
+	function handleRecordingStart(currentState) {
+		debugLog('🎙️ Recording started - applying wobble effect first');
+		
+		// 1. Set isRecording flag immediately
+		_state.update((s) => ({ ...s, isRecording: true }));
+		
+		// 2. Apply wobble animation
+		applyWobbleAnimation('start');
+		
+		// 3. Schedule state transition to RECORDING on next frame
+		if (currentState.stateTimeouts.rafRecordingStart) {
+			cancelAnimationFrame(currentState.stateTimeouts.rafRecordingStart);
+		}
+		
+		const rafId = requestAnimationFrame(() => {
+			if (get(_state).isRecording) {
+				debugLog('Next frame: Transitioning state to RECORDING');
+				setAnimationState(ANIMATION_STATES.RECORDING);
+			} else {
+				debugLog('Recording stopped before next frame state transition could occur.');
+			}
+			// Clear the stored RAF ID after execution
+			_state.update((s) => ({
+				...s,
+				stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: null }
+			}));
+		});
+		
+		// Store RAF ID for potential cleanup
+		_state.update((s) => ({
+			...s,
+			stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: rafId }
+		}));
+	}
+
+	/**
+	 * Handle recording stop sequence
+	 * @param {Object} currentState - Current state object
+	 */
+	function handleRecordingStop(currentState) {
+		debugLog('🛑 Recording stopped - applying wobble effect');
+		
+		// 1. Set isRecording flag to false immediately
+		_state.update((s) => ({ ...s, isRecording: false }));
+		
+		// Clear any pending next-frame start transition
+		if (currentState.stateTimeouts.rafRecordingStart) {
+			cancelAnimationFrame(currentState.stateTimeouts.rafRecordingStart);
+			_state.update((s) => ({
+				...s,
+				stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: null }
+			}));
+		}
+		
+		// 2. Transition to appropriate end state
+		const endState = currentState.isProcessing
+			? ANIMATION_STATES.THINKING
+			: ANIMATION_STATES.IDLE;
+		setAnimationState(endState);
+		
+		// 3. Apply wobble animation
+		applyWobbleAnimation('stop');
+	}
+
+	/**
 	 * Set the recording state
 	 * @param {boolean} isRecording - Whether recording is active
 	 */
 	function setRecording(isRecording) {
-		console.log(`[Debug Step 1] setRecording called with: ${isRecording}`); // Log function entry
-		const currentState = get(_state); // Use _state
+		const currentState = get(_state);
 		const wasRecording = currentState.isRecording;
-
-		// Skip if state is already correct to prevent cycles
-		if (currentState.isRecording === isRecording) {
-			console.log(`Skipping redundant recording state update: already ${isRecording}`);
-			console.log('[Debug Step 2] Exiting setRecording early - state already matches.'); // Log early exit
+		
+		// No change needed
+		if (isRecording === wasRecording) {
 			return;
 		}
-
-		// Debug logging
-		if (currentState.debug) {
-			console.log(`Setting recording state: ${wasRecording} → ${isRecording}`);
-		}
-
-		// Update recording state
-		// state.update((s) => ({ ...s, isRecording })); // This is handled below now
-
-		// --- Recording Start Sequence ---
+		
 		if (isRecording && !wasRecording) {
-			debugLog('🎙️ Recording started - applying wobble effect first');
-
-			// 1. Set isRecording flag immediately
-			_state.update((s) => ({ ...s, isRecording: true })); // Use _state
-
-			// 2. Imperatively trigger wobble animation
-			const wobbleGroupStart = document.getElementById('ghost-wobble-group');
-			console.log('[Debug Step 3 - Start] Wobble group element:', wobbleGroupStart); // Log element check result
-			if (wobbleGroupStart) {
-				// Always use the combined wobble class
-				const wobbleClassStart = CSS_CLASSES.WOBBLE_BOTH;
-				debugLog(`[Imperative Wobble] Adding class ${wobbleClassStart} for start`);
-				console.log(
-					`[Wobble Debug ${Date.now()}] BEFORE adding start wobble class: ${wobbleClassStart}`
-				); // Timestamp log
-				wobbleGroupStart.classList.add(wobbleClassStart);
-				console.log(
-					`[Wobble Debug ${Date.now()}] AFTER adding start wobble class: ${wobbleClassStart}`
-				); // Timestamp log
-
-				// Schedule class removal and style reset (using updated duration from WOBBLE_CONFIG)
-				const startTimeoutId = setTimeout(() => {
-					debugLog(`[Imperative Wobble] Removing class ${wobbleClassStart} after start`);
-					wobbleGroupStart.classList.remove(wobbleClassStart);
-					clearStateTimeout('startWobbleCleanup'); // Clear self
-				}, WOBBLE_CONFIG.DURATION + 50); // Duration + buffer (Now uses doubled duration)
-
-				// Store timeout ID for potential cleanup
-				_state.update((s) => ({
-					// Use _state
-					...s,
-					stateTimeouts: { ...s.stateTimeouts, startWobbleCleanup: startTimeoutId }
-				}));
-			} else {
-				debugLog('[Imperative Wobble] Could not find wobble group for start', 'warn');
-			}
-
-			// 3. Schedule setting the RECORDING *animation state* on the *next animation frame*
-			// This ensures the wobble transform renders before recording animations start.
-			// Clear any pending frame request first
-			if (currentState.stateTimeouts.rafRecordingStart) {
-				cancelAnimationFrame(currentState.stateTimeouts.rafRecordingStart);
-			}
-			const rafId = requestAnimationFrame(() => {
-				// Check if we are still intending to record (user might have stopped quickly)
-				if (get(_state).isRecording) {
-					// Use _state
-					debugLog('Next frame: Transitioning state to RECORDING');
-					setAnimationState(ANIMATION_STATES.RECORDING);
-				} else {
-					debugLog('Recording stopped before next frame state transition could occur.');
-				}
-				// Clear the stored RAF ID after execution
-				_state.update((s) => ({
-					// Use _state
-					...s,
-					stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: null }
-				}));
-			});
-
-			// Store RAF ID for potential cleanup if user stops recording quickly
-			_state.update((s) => ({
-				// Use _state
-				...s,
-				stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: rafId }
-			}));
-		}
-		// --- Recording Stop Sequence ---
-		else if (!isRecording && wasRecording) {
-			debugLog('🛑 Recording stopped - applying wobble effect');
-
-			// 1. Set isRecording flag to false immediately
-			_state.update((s) => ({ ...s, isRecording: false }));
-
-			// Clear any pending next-frame start transition
-			if (currentState.stateTimeouts.rafRecordingStart) {
-				cancelAnimationFrame(currentState.stateTimeouts.rafRecordingStart);
-				_state.update((s) => ({
-					// Use _state
-					...s,
-					stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: null }
-				}));
-			}
-
-			// 1. Transition directly to appropriate end state
-			const endState = currentState.isProcessing
-				? ANIMATION_STATES.THINKING
-				: ANIMATION_STATES.IDLE;
-			setAnimationState(endState);
-
-			// 2. Imperatively trigger wobble animation
-			const wobbleGroupStop = document.getElementById('ghost-wobble-group');
-			console.log('[Debug Step 3 - Stop] Wobble group element:', wobbleGroupStop); // Log element check result
-			if (wobbleGroupStop) {
-				// Always use the combined wobble class
-				const wobbleClassStop = CSS_CLASSES.WOBBLE_BOTH;
-				debugLog(`[Imperative Wobble] Adding class ${wobbleClassStop} for stop`);
-				console.log(
-					`[Wobble Debug ${Date.now()}] BEFORE adding stop wobble class: ${wobbleClassStop}`
-				); // Timestamp log
-				wobbleGroupStop.classList.add(wobbleClassStop);
-				console.log(
-					`[Wobble Debug ${Date.now()}] AFTER adding stop wobble class: ${wobbleClassStop}`
-				); // Timestamp log
-
-				// Schedule class removal and style reset (using updated duration from WOBBLE_CONFIG)
-				const stopTimeoutId = setTimeout(() => {
-					debugLog(`[Imperative Wobble] Removing class ${wobbleClassStop} after stop`);
-					wobbleGroupStop.classList.remove(wobbleClassStop);
-					clearStateTimeout('stopWobbleCleanup'); // Clear self
-				}, WOBBLE_CONFIG.DURATION + 50); // Duration + buffer (Now uses doubled duration)
-
-				// Store timeout ID for potential cleanup
-				_state.update((s) => ({
-					// Use _state
-					...s,
-					stateTimeouts: { ...s.stateTimeouts, stopWobbleCleanup: stopTimeoutId }
-				}));
-			} else {
-				debugLog('[Imperative Wobble] Could not find wobble group for stop', 'warn');
-			}
+			handleRecordingStart(currentState);
+		} else if (!isRecording && wasRecording) {
+			handleRecordingStop(currentState);
 		}
 	}
 
@@ -370,7 +338,7 @@ function createGhostStateStore() {
 	 * @param {boolean} isProcessing - Whether processing is active
 	 */
 	function setProcessing(isProcessing) {
-		_state.update((s) => ({ ...s, isProcessing })); // Use _state
+		_state.update((s) => ({ ...s, isProcessing }));
 
 		// Auto-transition to thinking state if true
 		if (isProcessing) {
@@ -378,7 +346,7 @@ function createGhostStateStore() {
 		} else if (get(_state).current === ANIMATION_STATES.THINKING) {
 			// Use _state
 			// If we were thinking, go back to idle unless recording
-			const currentState = get(_state); // Use _state
+			const currentState = get(_state);
 			if (currentState.isRecording) {
 				setAnimationState(ANIMATION_STATES.RECORDING);
 			} else {
@@ -405,7 +373,7 @@ function createGhostStateStore() {
 	 * @param {boolean} closed - Whether eyes are closed
 	 */
 	function setEyesClosed(closed) {
-		_state.update((s) => ({ ...s, eyesClosed: closed })); // Use _state
+		_state.update((s) => ({ ...s, eyesClosed: closed }));
 	}
 
 	// --- Removed applyWobbleEffectFlags function ---
@@ -416,17 +384,11 @@ function createGhostStateStore() {
 	 */
 	// function setWobbleDirection(direction) { // Removed unused function
 	// 	// Get current state to check if this is a redundant update
-	// 	const currentState = get(_state); // Use _state
+	// 	const currentState = get(_state);
 	//
 	// 	// Skip if current direction already matches target direction to prevent cycles
 	// 	if (currentState.wobbleDirection === direction) {
 	// 		if (currentState.debug) {
-	// 			console.log(`Skipping redundant wobble direction update: already ${direction}`);
-	// 		}
-	// 		return; // This return makes the debugLog below unreachable
-	// 		// This function is now effectively a no-op as wobble is triggered directly
-	// 		// in setRecording. Could be removed if no external calls remain.
-	// 		// debugLog(`setWobbleDirection called with ${direction} - currently no-op`, 'warn');
 	// 	}
 	// } // Removed unused function
 
@@ -440,11 +402,11 @@ function createGhostStateStore() {
 			const firstVisit = !document.body.hasAttribute('data-ghost-animated');
 			if (firstVisit) {
 				debugLog('First visit detected, updating store.');
-				_state.update((s) => ({ ...s, isFirstVisit: true })); // Use _state
+				_state.update((s) => ({ ...s, isFirstVisit: true }));
 				return true;
 			} else {
 				// Ensure store reflects non-first visit if attribute is present
-				_state.update((s) => ({ ...s, isFirstVisit: false })); // Use _state
+				_state.update((s) => ({ ...s, isFirstVisit: false }));
 			}
 		}
 		return false; // Not first visit or not in browser
@@ -456,7 +418,7 @@ function createGhostStateStore() {
 	function completeFirstVisit() {
 		if (browser) {
 			document.body.setAttribute('data-ghost-animated', 'true');
-			_state.update((s) => ({ ...s, isFirstVisit: false })); // Use _state
+			_state.update((s) => ({ ...s, isFirstVisit: false }));
 		}
 	}
 
@@ -534,28 +496,14 @@ function createGhostStateStore() {
 	function setDebug(enabled) {
 		// ADD THESE LINES
 		const storeBefore = get(_state);
-		console.log(
-			`[GhostStateStore SETDEBUG_CALL] Called with: ${enabled}. Type: ${typeof enabled}. Current store debug before update: ${storeBefore.debug}`
-		);
 		// END ADD
 		_state.update((s) => ({ ...s, debug: !!enabled })); // Ensure it's a boolean
 		// ADD THIS LINE
-		console.log(`[GhostStateStore SETDEBUG_RESULT] Store debug after update: ${get(_state).debug}`);
-		// END ADD
-	}
-
-	// Derived store for component props
-	const props = derived(_state, ($state) => ({
-		// Use _state
-		animationState: $state.current,
-		isRecording: $state.isRecording,
-		isProcessing: $state.isProcessing
-	}));
 
 	// Combined store with public API
 	const _ghostStateStore = {
 		// Use internal name
-		subscribe: _state.subscribe, // Use _state
+		subscribe: _state.subscribe,
 		props: props,
 		setAnimationState,
 		setRecording,
@@ -574,14 +522,14 @@ function createGhostStateStore() {
 	};
 
 	// --- Define derived stores here, inside the factory function (using underscore prefix) ---
-	const _currentState = derived(_state, ($state) => $state.current); // Use _state
-	const _previousState = derived(_state, ($state) => $state.previous); // Use _state
-	const _isRecording = derived(_state, ($state) => $state.isRecording); // Use _state
-	const _isProcessing = derived(_state, ($state) => $state.isProcessing); // Use _state
-	const _eyePosition = derived(_state, ($state) => $state.eyePosition); // Use _state
-	const _eyesClosed = derived(_state, ($state) => $state.eyesClosed); // Use _state
-	const _isEyeTrackingEnabled = derived(_state, ($state) => $state.isEyeTrackingEnabled); // Use _state
-	const _isFirstVisit = derived(_state, ($state) => $state.isFirstVisit); // Use _state
+	const _currentState = derived(_state, ($state) => $state.current);
+	const _previousState = derived(_state, ($state) => $state.previous);
+	const _isRecording = derived(_state, ($state) => $state.isRecording);
+	const _isProcessing = derived(_state, ($state) => $state.isProcessing);
+	const _eyePosition = derived(_state, ($state) => $state.eyePosition);
+	const _eyesClosed = derived(_state, ($state) => $state.eyesClosed);
+	const _isEyeTrackingEnabled = derived(_state, ($state) => $state.isEyeTrackingEnabled);
+	const _isFirstVisit = derived(_state, ($state) => $state.isFirstVisit);
 	// ---
 
 	// Add derived stores to the public API object (mapping names)

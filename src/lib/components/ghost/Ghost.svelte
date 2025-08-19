@@ -110,9 +110,6 @@
 		unsubscribeTheme = themeStore.subscribe((value) => {
 			currentTheme = value;
 			if (debug)
-				console.log(
-					`Ghost theme updated to: ${value} (using ${externalTheme ? 'external' : 'local'} store)`
-				);
 		});
 	}
 
@@ -169,17 +166,6 @@
 
 		// Log theme change if in debug mode
 		if (debug) {
-			console.log(`Ghost theme updated to: ${currentTheme}`);
-		}
-	}
-
-	// Initialize dynamic CSS variables using the centralized store
-	function initDynamicStyles() {
-		if (typeof document === 'undefined') return;
-
-		// Create a style element if it doesn't exist for gradient variables
-		if (!ghostStyleElement) {
-			ghostStyleElement = document.createElement('style');
 			ghostStyleElement.id = 'ghost-dynamic-styles';
 			document.head.appendChild(ghostStyleElement);
 		}
@@ -192,10 +178,6 @@
 
 		// Log animation configuration if debug mode is enabled
 		if (debugAnim && console) {
-			console.log('Ghost Animation Configuration:', {
-				theme: currentTheme,
-				gradientVariables: gradientVars.split('\n')
-			});
 		}
 	}
 
@@ -203,8 +185,6 @@
 
 	// Handle click events
 	function handleClick() {
-		console.log('[Ghost] Ghost clicked - dispatching toggleRecording event');
-		dispatch('toggleRecording');
 	}
 
 	// Clean up on destroy - ensure all animation resources are cleared
@@ -227,8 +207,6 @@
 		ghostStateStore.reset();
 
 		// Debug log
-		if (debug) console.log('Ghost component destroyed and all animations cleaned up');
-	});
 
 	// Export function to adjust gradient animation settings during runtime
 	export function updateGradientSettings(themeId, settings) {
@@ -368,9 +346,6 @@
 
 	function handleInitialAnimationComplete() {
 		if (debug)
-			console.log(
-				'[Ghost.svelte] Received "initialAnimationComplete" event. Finalizing first visit.'
-			);
 		ghostStateStore.completeFirstVisit();
 		ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 	}
@@ -387,8 +362,6 @@
 	let wasReady = false;
 	$: if (isGhostReady && !wasReady) {
 		wasReady = true;
-		if (debug) console.log('[Ghost.svelte] Ghost is ready, gradients loaded');
-		dispatch('ghostReady');
 	}
 
 	// Trigger a double blink when waking up sequence finishes (transition WAKING_UP -> IDLE)
@@ -404,8 +377,6 @@
 		// Use a minimal timeout to ensure the state change has settled and CSS is potentially updated
 		setTimeout(() => {
 			// No need to double-check state if we trust the flag
-			if (debug) console.log('[Ghost.svelte] Triggering post-wake-up double blink.');
-			blinkService.performDoubleBlink({ leftEye, rightEye });
 			// The regular IDLE blink timer will start after this double blink completes
 			// or based on its own logic within blinkService.
 		}, 50); // Small delay (50ms)
@@ -413,15 +384,6 @@
 
 	// Reset the flag when the ghost is no longer IDLE (meaning it went to sleep, started recording, etc.)
 	$: if ($ghostStateStore.current !== ANIMATION_STATES.IDLE && wakeUpBlinkTriggered) {
-		if (debug) console.log('[Ghost.svelte] Resetting wakeUpBlinkTriggered flag.');
-		wakeUpBlinkTriggered = false;
-	}
-
-	// Monitor relevant props directly with Svelte reactivity
-	$: if (browser) {
-		// Only update when the props actually change
-		if (isRecording !== lastRecordingState || isProcessing !== lastProcessingState) {
-			syncStateToStore();
 		}
 	}
 
@@ -447,23 +409,12 @@
       {!clickable ? 'ghost-non-clickable' : ''}"
 	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
 	on:click={(e) => {
-		console.log('[Ghost] Button clicked! clickable:', clickable);
-		console.log('[Ghost] Click event:', e.type, 'Target:', e.target);
 		if (clickable) {
 			handleClick();
 			handleUserInteraction();
 		} else {
-			console.log('[Ghost] Ghost is not clickable!');
-		}
-	}}
-	on:touchstart={(e) => {
-		console.log('[Ghost] Touch start detected');
 	}}
 	on:pointerdown={(e) => {
-		console.log('[Ghost] Pointer down detected, type:', e.pointerType);
-		// For desktop mouse clicks, trigger the action on pointerdown
-		if (e.pointerType === 'mouse' && clickable) {
-			console.log('[Ghost] Triggering action on mouse pointerdown');
 			handleClick();
 			handleUserInteraction();
 		}

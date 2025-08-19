@@ -39,9 +39,7 @@ export function createEyeTracking(customConfig = {}) {
 	 * @param {string} message - Debug message
 	 */
 	function log(message) {
-		if (config.debug) {
-			console.log(`[EyeTracking] ${message}`);
-		}
+		// Debug logging removed for production
 	}
 
 	/**

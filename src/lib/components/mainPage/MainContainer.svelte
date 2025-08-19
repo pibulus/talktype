@@ -35,12 +35,6 @@
 	// Debug Helper
 	function debug(message) {
 		// Uncomment the line below during development for verbose logging
-		// console.log(`[MainContainer] ${message}`);
-	}
-
-	// Modal functions
-	function showAboutModal() {
-		debug('showAboutModal called');
 		modalService.openModal('about_modal');
 	}
 
@@ -154,22 +148,13 @@
 	// Handle toggle recording from ghost
 	function handleToggleRecording() {
 		debug('Toggle recording triggered from ghost');
-		console.log('[MainContainer] Ghost clicked - handleToggleRecording called');
-		console.log('[MainContainer] contentContainer exists?', !!contentContainer);
 		
 		// Add null check for contentContainer
 		if (!contentContainer) {
 			console.warn('[MainContainer] contentContainer not ready yet');
-			console.log('[MainContainer] Trying to wait for contentContainer...');
-			// Clear any existing retry timeout
-			if (ghostClickRetryTimeout) {
-				clearTimeout(ghostClickRetryTimeout);
 			}
 			// Try again after a short delay
 			ghostClickRetryTimeout = setTimeout(() => {
-				console.log('[MainContainer] Retry - contentContainer exists?', !!contentContainer);
-				if (contentContainer) {
-					console.log('[MainContainer] Now calling contentContainer.toggleRecording()');
 					contentContainer.toggleRecording();
 				} else {
 					console.error('[MainContainer] contentContainer still not available!');
@@ -178,9 +163,6 @@
 			return;
 		}
 		
-		console.log('[MainContainer] Calling contentContainer.toggleRecording() directly');
-		// Use the toggle method instead of manually managing state
-		contentContainer.toggleRecording();
 	}
 
 	// Function to trigger ghost click

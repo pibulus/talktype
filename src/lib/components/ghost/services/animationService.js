@@ -102,20 +102,15 @@ export function initThemeAnimation(svgElement, theme) {
 export function applyInitialLoadEffect(ghostSvg) {
 	// --- Prevent multiple executions ---
 	if (initialLoadEffectApplied || !isBrowser()) {
-		if (initialLoadEffectApplied)
-			console.log('[applyInitialLoadEffect] Skipping, already applied.');
 		return;
 	}
 	// --- Mark as applied ---
 	initialLoadEffectApplied = true;
 
-	console.log('[applyInitialLoadEffect] Applying combined grow-and-wobble effect...');
-
 	const state = get(ghostStateStore);
 
 	// Skip if not first visit
 	if (!state.isFirstVisit) {
-		console.log('[applyInitialLoadEffect] Skipping, not first visit.');
 		return;
 	}
 
@@ -123,7 +118,6 @@ export function applyInitialLoadEffect(ghostSvg) {
 	const wobbleGroup = ghostSvg?.querySelector('.ghost-wobble-group');
 
 	if (!wobbleGroup) {
-		console.error('[applyInitialLoadEffect] Could not find .ghost-wobble-group element.');
 		return;
 	}
 
@@ -131,22 +125,16 @@ export function applyInitialLoadEffect(ghostSvg) {
 	requestAnimationFrame(() => {
 		// Double-check the element still exists in case of rapid unmount
 		if (!document.body.contains(wobbleGroup)) {
-			console.warn('[applyInitialLoadEffect] Wobble group removed before animation could start.');
 			return;
 		}
 
 		// Apply the combined animation class directly to the wobble group
 		wobbleGroup.classList.add('initial-load-effect');
-		console.log(
-			'[applyInitialLoadEffect] Added .initial-load-effect class to wobble group (after RAF).'
-		);
 
 		// Set a single timeout to clean up after the combined animation finishes
 		const cleanupDelay = ANIMATION_TIMING.INITIAL_LOAD_DURATION;
-		console.log(`[applyInitialLoadEffect] Scheduling cleanup timeout for ${cleanupDelay}ms`);
 
 		setTimeout(() => {
-			console.log('[applyInitialLoadEffect] Cleanup timeout executed.');
 			// Remove the animation class
 			wobbleGroup.classList.remove('initial-load-effect');
 
@@ -163,11 +151,6 @@ export function applyInitialLoadEffect(ghostSvg) {
 				get(ghostStateStore).current === ANIMATION_STATES.IDLE
 			) {
 				ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
-				console.log('[applyInitialLoadEffect] Set final state to IDLE.');
-			} else {
-				console.log(
-					'[applyInitialLoadEffect] State changed during initial load, not setting to IDLE.'
-				);
 			}
 		}, cleanupDelay);
 	}); // End of requestAnimationFrame callback

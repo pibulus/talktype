@@ -18,14 +18,6 @@ function preloadModel() {
 		return initializationPromise;
 	}
 
-	console.log('🔍 Preloading speech model for faster response');
-
-	// We create a very small "ping" query to initialize the model
-	// This warms up the Gemini API connection and loads necessary client-side resources
-	initializationPromise = model
-		.generateContent('hello')
-		.then((response) => {
-			console.log('✅ Speech model preloaded successfully');
 			modelInitialized = true;
 			return response;
 		})

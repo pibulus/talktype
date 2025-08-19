@@ -182,13 +182,6 @@
 			const audioBlob = await audioService.stopRecording();
 
 			// Log AudioBlob size
-			console.log('[DEBUG] AudioBlob size:', audioBlob ? audioBlob.size : 'null');
-
-			// Confetti celebration moved to transcription completion event as a random Easter egg
-
-			// Start transcription process if we have audio data
-			if (audioBlob && audioBlob.size > 0) {
-				await transcriptionService.transcribeAudio(audioBlob);
 
 				// Scroll to show transcript if needed
 				scrollToBottomIfNeeded({
@@ -204,8 +197,6 @@
 				}
 			} else {
 				// If no audio data, revert UI state
-				console.log('[DEBUG] AudioBlob was null or size was 0. No transcription attempted.');
-				transcriptionActions.updateProgress(0);
 				uiActions.setErrorMessage('No audio recorded. Please try again.');
 			}
 		} catch (err) {
@@ -215,16 +206,6 @@
 	}
 
 	function toggleRecording() {
-		console.log('[AudioToText] toggleRecording called!');
-		try {
-			// Prioritize the store state for more consistent behavior
-			const currentlyRecording = get(isRecording);
-			console.log('[AudioToText] Currently recording?', currentlyRecording);
-
-			if (currentlyRecording) {
-				// Haptic feedback for stop - single pulse
-				if (services && services.hapticService) {
-					services.hapticService.stopRecording();
 				}
 
 				stopRecording();
@@ -238,20 +219,9 @@
 
 				// When using "New Recording" button, rotate to next phrase immediately
 				if ($transcriptionText) {
-					console.log('🧹 Clearing transcript for new recording');
-
-					// Pick a random CTA phrase that's not the current one
-					let newIndex;
-					do {
-						newIndex = Math.floor(Math.random() * (CTA_PHRASES.length - 1)) + 1; // Skip first one (Start Recording)
-					} while (newIndex === currentCtaIndex);
 
 					currentCtaIndex = newIndex;
 					currentCta = CTA_PHRASES[currentCtaIndex];
-					console.log(`🔥 Rotating to: "${currentCta}"`);
-
-					// Then clear transcript
-					transcriptionActions.completeTranscription('');
 				}
 
 				startRecording();
@@ -321,16 +291,6 @@
 	// State changes for transcript completion
 	function handleTranscriptCompletion(textToProcess) {
 		// <-- Accept text as a parameter
-		console.log('[DEBUG] handleTranscriptCompletion() called with textToProcess:', textToProcess);
-
-		// Only attempt to use ghost component if it exists
-		if (ghostComponent && typeof ghostComponent.reactToTranscript === 'function') {
-			// React to transcript with ghost expression based on length
-			ghostComponent.reactToTranscript(textToProcess?.length || 0); // Use parameter
-
-			// Stop thinking animation
-			if (typeof ghostComponent.stopThinking === 'function') {
-				ghostComponent.stopThinking();
 			}
 		}
 
@@ -345,12 +305,6 @@
 						Confetti = module.default;
 						// Update confetti colors based on current theme
 						confettiColors = getThemeConfettiColors();
-						console.log('[DEBUG] Using theme-specific confetti colors:', confettiColors);
-						showConfetti = true;
-						// Reset after animation completes
-						setTimeout(() => {
-							showConfetti = false;
-						}, ANIMATION.CONFETTI.ANIMATION_DURATION + 500);
 					});
 				} else {
 					// Confetti already loaded
@@ -365,10 +319,6 @@
 			// Copy to clipboard with small delay to ensure UI updates
 			setTimeout(() => {
 				transcriptionService.copyToClipboard(textToProcess); // <-- Use parameter
-				console.log('Auto-copying transcript to clipboard');
-			}, 100); // Faster copying
-		} else {
-			console.log('[DEBUG] Inside handleTranscriptCompletion: textToProcess is FALSY.');
 		}
 	}
 
@@ -381,12 +331,6 @@
 
 		// Existing subscription to transcriptionText for general debugging (no longer calls handleTranscriptCompletion)
 		const transcriptUnsub = transcriptionText.subscribe((text) => {
-			console.log(
-				'[DEBUG] (Raw transcriptionText update) Text:',
-				text,
-				'IsTranscribing:',
-				$isTranscribing
-			);
 			// NOTE: The call to handleTranscriptCompletion() has been removed from here.
 		});
 
@@ -395,10 +339,6 @@
 			if (completedText) {
 				// This event fires only when transcription is truly complete and text is available.
 				// $isTranscribing should be false by now.
-				console.log(
-					'[DEBUG] transcriptionCompletedEvent fired in component with text:',
-					completedText
-				);
 				handleTranscriptCompletion(completedText); // <-- Pass completedText to the handler
 			}
 		});
@@ -420,12 +360,6 @@
 		// Subscribe to time limit reached event
 		const audioStateUnsub = audioState.subscribe((state) => {
 			if (state.timeLimit === true) {
-				console.log('🔴 Time limit reached, stopping recording automatically');
-				// Auto-stop recording when time limit is reached
-				if (get(isRecording)) {
-					// Small timeout to let the UI update first
-					setTimeout(() => {
-						stopRecording();
 					}, 100);
 				}
 			}
@@ -444,9 +378,6 @@
 			setTimeout(async () => {
 				const isPwa = await pwaService.checkIfRunningAsPwa();
 				if (isPwa) {
-					console.log('📱 App is running as PWA');
-				}
-			}, 100);
 		}
 	});
 

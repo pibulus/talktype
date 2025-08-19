@@ -32,11 +32,6 @@ class GhostService {
 		this.debug = options.debug || false;
 		this.isInitialized = true;
 
-		if (this.debug) console.log('[GhostService] Initialized');
-
-		// Start with a greeting blink
-		setTimeout(() => {
-			this.performDoubleBlink();
 			this.startAmbientBlinking();
 		}, 800);
 	}
@@ -48,10 +43,6 @@ class GhostService {
 		const oldState = this.state;
 		this.state = newState;
 
-		if (this.debug) console.log(`[GhostService] State: ${oldState} → ${newState}`);
-
-		// Clear any existing animations
-		this.clearAllBlinks();
 		if (this.eyesElement) {
 			this.eyesElement.style.animation = 'none';
 			this.eyesElement.classList.remove('blink-once', 'recording', 'processing');
