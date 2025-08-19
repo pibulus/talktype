@@ -53,6 +53,18 @@
 		}
 	}
 
+	export function toggleRecording() {
+		console.log('[ContentContainer] toggleRecording called');
+		console.log('[ContentContainer] audioToTextComponent exists?', !!audioToTextComponent);
+		if (audioToTextComponent) {
+			debug('Toggling recording from parent');
+			console.log('[ContentContainer] Calling audioToTextComponent.toggleRecording()');
+			audioToTextComponent.toggleRecording();
+		} else {
+			console.error('[ContentContainer] audioToTextComponent is not available!');
+		}
+	}
+
 	// Event forwarding functions
 	function forwardRecordingStart() {
 		dispatch('recordingstart');

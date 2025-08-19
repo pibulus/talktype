@@ -203,6 +203,7 @@
 
 	// Handle click events
 	function handleClick() {
+		console.log('[Ghost] Ghost clicked - dispatching toggleRecording event');
 		dispatch('toggleRecording');
 	}
 
@@ -445,8 +446,24 @@
       {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
       {!clickable ? 'ghost-non-clickable' : ''}"
 	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
-	on:click={() => {
+	on:click={(e) => {
+		console.log('[Ghost] Button clicked! clickable:', clickable);
+		console.log('[Ghost] Click event:', e.type, 'Target:', e.target);
 		if (clickable) {
+			handleClick();
+			handleUserInteraction();
+		} else {
+			console.log('[Ghost] Ghost is not clickable!');
+		}
+	}}
+	on:touchstart={(e) => {
+		console.log('[Ghost] Touch start detected');
+	}}
+	on:pointerdown={(e) => {
+		console.log('[Ghost] Pointer down detected, type:', e.pointerType);
+		// For desktop mouse clicks, trigger the action on pointerdown
+		if (e.pointerType === 'mouse' && clickable) {
+			console.log('[Ghost] Triggering action on mouse pointerdown');
 			handleClick();
 			handleUserInteraction();
 		}
@@ -513,8 +530,8 @@
 				bind:this={ghostWobbleGroup}
 				class="ghost-wobble-group"
 				id="ghost-wobble-group"
-				use:initialGhostAnimation={$ghostStateStore.isFirstVisit
-					? { blinkService, leftEye, rightEye, debug }
+				use:initialGhostAnimation={componentsLoaded && $ghostStateStore.isFirstVisit
+					? { blinkService, leftEye, rightEye, debug, oneTimeOnly: true }
 					: undefined}
 				on:initialAnimationComplete={handleInitialAnimationComplete}
 			>

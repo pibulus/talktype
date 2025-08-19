@@ -89,7 +89,7 @@
 
 	// Export recording state and functions for external components
 	export const recording = isRecording; // Export the isRecording store
-	export { stopRecording, startRecording };
+	export { stopRecording, startRecording, toggleRecording };
 
 	// PWA Installation State Tracking - now using pwaService
 
@@ -172,14 +172,11 @@
 				return;
 			}
 
-			// Add wobble animation to ghost when recording stops
-			if (ghostComponent && typeof ghostComponent.forceWobble === 'function') {
-				ghostComponent.forceWobble();
-				// Make the ghost look like it's thinking hard
-				if (typeof ghostComponent.startThinking === 'function') {
-					ghostComponent.startThinking();
-				}
+			// Make the ghost look like it's thinking hard
+			if (ghostComponent && typeof ghostComponent.startThinking === 'function') {
+				ghostComponent.startThinking();
 			}
+			// Note: Wobble animation now happens automatically through ghostStateStore.setRecording()
 
 			// Stop recording and get the audio blob
 			const audioBlob = await audioService.stopRecording();
@@ -222,9 +219,11 @@
 	}
 
 	function toggleRecording() {
+		console.log('[AudioToText] toggleRecording called!');
 		try {
 			// Prioritize the store state for more consistent behavior
 			const currentlyRecording = get(isRecording);
+			console.log('[AudioToText] Currently recording?', currentlyRecording);
 
 			if (currentlyRecording) {
 				// Haptic feedback for stop - single pulse

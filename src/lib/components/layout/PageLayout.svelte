@@ -22,10 +22,10 @@
 
 	<!-- Footer section with attribution and Chrome extension info -->
 	<footer
-		class="fixed bottom-0 left-0 right-0 z-10 box-border border-t border-pink-200/80 bg-gradient-to-r from-[#fff6e6]/90 via-[#ffead8]/90 to-[#fff1df]/90 pb-4 pt-7 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[3px] sm:pb-5 sm:pt-7"
+		class="fixed bottom-0 left-0 right-0 z-10 box-border border-t border-pink-200/80 bg-gradient-to-r from-[#fff6e6]/90 via-[#ffead8]/90 to-[#fff1df]/90 pb-2 pt-3 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[3px] sm:pb-4 sm:pt-6"
 	>
 		<div
-			class="container mx-auto flex flex-col flex-wrap items-center justify-between gap-2 sm:flex-row sm:gap-3"
+			class="container mx-auto flex flex-col flex-wrap items-center justify-between gap-1 sm:flex-row sm:gap-3"
 		>
 			<div class="copyright ml-4 flex flex-wrap items-center justify-center sm:ml-6 md:ml-8">
 				<span class="mr-1 text-sm text-xs font-medium tracking-tight sm:text-sm">
@@ -73,12 +73,12 @@
 		}
 
 		footer {
-			padding-top: 0.75rem;
-			padding-bottom: 0.75rem;
+			padding-top: 0.5rem;
+			padding-bottom: 0.5rem;
 		}
 
 		footer .container {
-			gap: 0.75rem;
+			gap: 0.5rem;
 		}
 
 		footer .container > div.copyright {

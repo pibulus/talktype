@@ -154,14 +154,29 @@
 	// Handle toggle recording from ghost
 	function handleToggleRecording() {
 		debug('Toggle recording triggered from ghost');
-
-		if ($recordingStore) {
-			// ghostContainer.stopWobbleAnimation(); // Removed - Wobble handled internally
-			contentContainer.stopRecording();
-		} else {
-			// ghostContainer.startWobbleAnimation(); // Removed - Wobble handled internally
-			contentContainer.startRecording();
+		console.log('[MainContainer] Ghost clicked - handleToggleRecording called');
+		console.log('[MainContainer] contentContainer exists?', !!contentContainer);
+		
+		// Add null check for contentContainer
+		if (!contentContainer) {
+			console.warn('[MainContainer] contentContainer not ready yet');
+			console.log('[MainContainer] Trying to wait for contentContainer...');
+			// Try again after a short delay
+			setTimeout(() => {
+				console.log('[MainContainer] Retry - contentContainer exists?', !!contentContainer);
+				if (contentContainer) {
+					console.log('[MainContainer] Now calling contentContainer.toggleRecording()');
+					contentContainer.toggleRecording();
+				} else {
+					console.error('[MainContainer] contentContainer still not available!');
+				}
+			}, 100);
+			return;
 		}
+		
+		console.log('[MainContainer] Calling contentContainer.toggleRecording() directly');
+		// Use the toggle method instead of manually managing state
+		contentContainer.toggleRecording();
 	}
 
 	// Function to trigger ghost click

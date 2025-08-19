@@ -11,10 +11,19 @@ import { ANIMATION_TIMING, WOBBLE_CONFIG } from '../animationConfig.js';
 
 export function initialGhostAnimation(node, initialParams) {
 	let blinkTimeoutId = null;
+	let hasRunOnce = false; // Prevent multiple executions
 	// Persist debug state across updates, initialized from the first set of params.
 	let currentDebugState = initialParams?.debug || false;
 
 	function runSetup(params) {
+		// If oneTimeOnly is set and we've already run, skip
+		if (params?.oneTimeOnly && hasRunOnce) {
+			if (currentDebugState) {
+				console.log('[Action initialGhostAnimation] Skipping - already run once');
+			}
+			return;
+		}
+		
 		// Always clear any existing timeout and remove the class from a potential previous run.
 		if (blinkTimeoutId) {
 			clearTimeout(blinkTimeoutId);
@@ -36,6 +45,9 @@ export function initialGhostAnimation(node, initialParams) {
 			}
 			return; // Exit setup if prerequisites are not met.
 		}
+		
+		// Mark as run
+		hasRunOnce = true;
 
 		// Destructure after confirming params and its properties are valid.
 		const { blinkService, leftEye, rightEye } = params;
