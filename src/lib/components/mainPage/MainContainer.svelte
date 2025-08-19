@@ -161,8 +161,12 @@
 		if (!contentContainer) {
 			console.warn('[MainContainer] contentContainer not ready yet');
 			console.log('[MainContainer] Trying to wait for contentContainer...');
+			// Clear any existing retry timeout
+			if (ghostClickRetryTimeout) {
+				clearTimeout(ghostClickRetryTimeout);
+			}
 			// Try again after a short delay
-			setTimeout(() => {
+			ghostClickRetryTimeout = setTimeout(() => {
 				console.log('[MainContainer] Retry - contentContainer exists?', !!contentContainer);
 				if (contentContainer) {
 					console.log('[MainContainer] Now calling contentContainer.toggleRecording()');
@@ -225,15 +229,17 @@
 	
 	// Event listener cleanup
 	let settingsListener;
+	let autoRecordTimeout;
+	let ghostClickRetryTimeout;
 
 	// Lifecycle hooks
-	onMount(() => {
+	onMount(async () => {
 		// Settings modal is now truly lazy-loaded only when needed - no preloading
 
 		// Check for auto-record setting and start recording if enabled
 		if (browser && StorageUtils.getBooleanItem(STORAGE_KEYS.AUTO_RECORD, false)) {
 			// Wait minimal time for component initialization
-			setTimeout(() => {
+			autoRecordTimeout = setTimeout(() => {
 				if (contentContainer && !$recordingStore) {
 					debug('Auto-record enabled, attempting to start recording immediately');
 					try {
@@ -270,13 +276,19 @@
 		}
 
 		// Check if first visit to show intro
-		firstVisitService.showIntroModal();
+		await firstVisitService.showIntroModal();
 		
 		// Return cleanup function
 		return () => {
 			if (browser && settingsListener) {
 				window.removeEventListener('talktype-setting-changed', settingsListener);
 				debug('Removed settings change listener');
+			}
+			if (autoRecordTimeout) {
+				clearTimeout(autoRecordTimeout);
+			}
+			if (ghostClickRetryTimeout) {
+				clearTimeout(ghostClickRetryTimeout);
 			}
 		};
 	});
