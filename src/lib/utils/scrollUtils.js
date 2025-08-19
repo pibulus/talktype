@@ -9,11 +9,11 @@
  */
 export function isNearBottom(threshold = 200) {
 	if (typeof window === 'undefined') return false;
-	
+
 	const scrollPosition = window.pageYOffset || window.scrollY;
 	const windowHeight = window.innerHeight;
 	const documentHeight = document.body.scrollHeight;
-	
+
 	return scrollPosition + windowHeight >= documentHeight - threshold;
 }
 
@@ -25,20 +25,16 @@ export function isNearBottom(threshold = 200) {
  * @param {boolean} options.force - Force scroll even if near bottom
  */
 export function scrollToBottomIfNeeded(options = {}) {
-	const {
-		threshold = 200,
-		delay = 0,
-		force = false
-	} = options;
-	
+	const { threshold = 200, delay = 0, force = false } = options;
+
 	const performScroll = () => {
 		if (typeof window === 'undefined') return;
-		
+
 		// Skip if already near bottom (unless forced)
 		if (!force && isNearBottom(threshold)) {
 			return;
 		}
-		
+
 		// Use requestAnimationFrame for smoother scrolling
 		requestAnimationFrame(() => {
 			window.scrollTo({
@@ -47,7 +43,7 @@ export function scrollToBottomIfNeeded(options = {}) {
 			});
 		});
 	};
-	
+
 	if (delay > 0) {
 		setTimeout(performScroll, delay);
 	} else {
@@ -63,15 +59,15 @@ export function scrollToBottomIfNeeded(options = {}) {
  */
 export function onScroll(callback, delay = 100) {
 	if (typeof window === 'undefined') return () => {};
-	
+
 	let timeoutId;
 	const handleScroll = () => {
 		clearTimeout(timeoutId);
 		timeoutId = setTimeout(callback, delay);
 	};
-	
+
 	window.addEventListener('scroll', handleScroll, { passive: true });
-	
+
 	// Return cleanup function
 	return () => {
 		clearTimeout(timeoutId);
@@ -87,7 +83,7 @@ export function getScrollPosition() {
 	if (typeof window === 'undefined') {
 		return { x: 0, y: 0 };
 	}
-	
+
 	return {
 		x: window.pageXOffset || window.scrollX || 0,
 		y: window.pageYOffset || window.scrollY || 0
@@ -100,7 +96,7 @@ export function getScrollPosition() {
  */
 export function lockBodyScroll(lock = true) {
 	if (typeof document === 'undefined') return;
-	
+
 	if (lock) {
 		// Store current scroll position
 		const scrollY = window.scrollY;

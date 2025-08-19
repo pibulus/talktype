@@ -155,6 +155,7 @@
 			}
 			// Try again after a short delay
 			ghostClickRetryTimeout = setTimeout(() => {
+				if (contentContainer) {
 					contentContainer.toggleRecording();
 				} else {
 					console.error('[MainContainer] contentContainer still not available!');

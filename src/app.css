@@ -11,17 +11,17 @@
 	--color-modal-backdrop: rgba(0, 0, 0, 0.4);
 	--color-pink-100: rgba(252, 231, 243, 0.7);
 	--color-pink-200: rgba(249, 168, 212, 0.5);
-	
+
 	/* Spacing */
 	--modal-padding: 1rem;
 	--modal-border-radius: 1.5rem;
 	--modal-max-height: 85vh;
 	--modal-width: 95%;
-	
+
 	/* Transitions */
 	--transition-fast: 0.15s ease-out;
 	--transition-medium: 0.3s ease-out;
-	
+
 	/* Scroll */
 	--scrollbar-width: 0px;
 }
@@ -144,7 +144,7 @@ dialog.modal::backdrop {
 	html {
 		--scrollbar-width: calc(100vw - 100%);
 	}
-	
+
 	html.modal-active {
 		padding-right: var(--scrollbar-width);
 	}

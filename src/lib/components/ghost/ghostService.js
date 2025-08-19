@@ -32,6 +32,8 @@ class GhostService {
 		this.debug = options.debug || false;
 		this.isInitialized = true;
 
+		// Start ambient blinking after a short delay
+		setTimeout(() => {
 			this.startAmbientBlinking();
 		}, 800);
 	}

@@ -18,6 +18,10 @@ function preloadModel() {
 		return initializationPromise;
 	}
 
+	// Create a dummy initialization to pre-warm the model
+	initializationPromise = model
+		.generateContent('Initialize')
+		.then((response) => {
 			modelInitialized = true;
 			return response;
 		})

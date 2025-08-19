@@ -18,14 +18,20 @@ export const geminiService = {
 	async transcribeAudio(audioBlob) {
 		try {
 			if (!initialized) {
-				try {
-				} catch (err) {
+				await initialize();
+			}
+
+			// Get the current prompt
+			const prompt = promptManager.getCurrentPrompt();
 
 			// Convert audio to format Gemini can use
 			const audioPart = await geminiApiService.blobToGenerativePart(audioBlob);
 
 			// Generate content with both prompt and audio data
 			const response = await geminiApiService.generateContent([prompt, audioPart]);
+
+			// Extract the text from the response
+			return response.text();
 		} catch (error) {
 			console.error('❌ Error transcribing audio:', error);
 			throw new Error('Failed to transcribe audio with Gemini');

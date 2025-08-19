@@ -10,18 +10,18 @@ import { writable, derived } from 'svelte/store';
  */
 function createVisibilityStore() {
 	const { subscribe, set } = writable(true);
-	
+
 	if (browser) {
 		const handleVisibilityChange = () => {
 			set(!document.hidden);
 		};
-		
+
 		document.addEventListener('visibilitychange', handleVisibilityChange);
-		
+
 		// Set initial value
 		set(!document.hidden);
 	}
-	
+
 	return { subscribe };
 }
 
@@ -36,14 +36,14 @@ export function createAnimationController(callback) {
 	let animationId = null;
 	let isRunning = false;
 	let isPaused = false;
-	
+
 	const animate = () => {
 		if (!isRunning || isPaused) return;
-		
+
 		callback();
 		animationId = requestAnimationFrame(animate);
 	};
-	
+
 	// Auto-pause when document hidden
 	if (browser) {
 		document.addEventListener('visibilitychange', () => {
@@ -59,7 +59,7 @@ export function createAnimationController(callback) {
 			}
 		});
 	}
-	
+
 	return {
 		start() {
 			if (isRunning) return;
@@ -67,7 +67,7 @@ export function createAnimationController(callback) {
 			isPaused = false;
 			animate();
 		},
-		
+
 		stop() {
 			isRunning = false;
 			isPaused = false;
@@ -76,7 +76,7 @@ export function createAnimationController(callback) {
 				animationId = null;
 			}
 		},
-		
+
 		get isRunning() {
 			return isRunning && !isPaused;
 		}
@@ -92,22 +92,22 @@ export function createAnimationController(callback) {
 export function memoize(fn, keyGen = (...args) => JSON.stringify(args)) {
 	const cache = new Map();
 	const maxCacheSize = 50;
-	
-	return function(...args) {
+
+	return function (...args) {
 		const key = keyGen(...args);
-		
+
 		if (cache.has(key)) {
 			return cache.get(key);
 		}
-		
+
 		const result = fn.apply(this, args);
-		
+
 		// Limit cache size
 		if (cache.size >= maxCacheSize) {
 			const firstKey = cache.keys().next().value;
 			cache.delete(firstKey);
 		}
-		
+
 		cache.set(key, result);
 		return result;
 	};
@@ -122,11 +122,11 @@ export function memoize(fn, keyGen = (...args) => JSON.stringify(args)) {
 export function throttle(fn, delay = 100) {
 	let lastCall = 0;
 	let timeoutId = null;
-	
-	return function(...args) {
+
+	return function (...args) {
 		const now = Date.now();
 		const timeSinceLastCall = now - lastCall;
-		
+
 		if (timeSinceLastCall >= delay) {
 			lastCall = now;
 			fn.apply(this, args);
@@ -148,13 +148,16 @@ export function throttle(fn, delay = 100) {
  */
 export function deferUntilIdle(fn) {
 	if (!browser) return Promise.resolve();
-	
+
 	return new Promise((resolve) => {
 		if ('requestIdleCallback' in window) {
-			requestIdleCallback(() => {
-				fn();
-				resolve();
-			}, { timeout: 2000 });
+			requestIdleCallback(
+				() => {
+					fn();
+					resolve();
+				},
+				{ timeout: 2000 }
+			);
 		} else {
 			// Fallback for browsers without requestIdleCallback
 			setTimeout(() => {
@@ -189,28 +192,28 @@ export function loadScript(src) {
  */
 export function measurePerformance(name, fn) {
 	if (!browser || !performance.mark) return fn();
-	
+
 	const startMark = `${name}-start`;
 	const endMark = `${name}-end`;
 	const measureName = `${name}-duration`;
-	
+
 	performance.mark(startMark);
 	const result = fn();
 	performance.mark(endMark);
-	
+
 	performance.measure(measureName, startMark, endMark);
-	
+
 	// Log in development
 	if (import.meta.env.DEV) {
 		const measure = performance.getEntriesByName(measureName)[0];
 		console.log(`⏱ ${name}: ${measure.duration.toFixed(2)}ms`);
 	}
-	
+
 	// Clean up marks
 	performance.clearMarks(startMark);
 	performance.clearMarks(endMark);
 	performance.clearMeasures(measureName);
-	
+
 	return result;
 }
 
@@ -237,15 +240,15 @@ export function createLazyObserver(callback, options = {}) {
 			disconnect: () => {}
 		};
 	}
-	
+
 	const defaultOptions = {
 		rootMargin: '50px',
 		threshold: 0.01,
 		...options
 	};
-	
+
 	return new IntersectionObserver((entries) => {
-		entries.forEach(entry => {
+		entries.forEach((entry) => {
 			if (entry.isIntersecting) {
 				callback(entry.target);
 			}

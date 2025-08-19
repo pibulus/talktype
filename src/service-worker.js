@@ -7,7 +7,7 @@ const CACHE = `cache-${version}`;
 // Assets to always cache
 const ASSETS = [
 	...build, // the app itself
-	...files  // everything in `static`
+	...files // everything in `static`
 ];
 
 // Install service worker

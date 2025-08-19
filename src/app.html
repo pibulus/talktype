@@ -80,7 +80,7 @@
 		<script>
 			// Minimal critical theme setup to prevent FOUC
 			// This runs synchronously but is optimized for speed
-			(function() {
+			(function () {
 				const t = localStorage.getItem('talktype-vibe') || 'peach';
 				document.documentElement.setAttribute('data-theme', t);
 				window.__theme = t; // Store for later use

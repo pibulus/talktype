@@ -181,8 +181,8 @@
 			// Stop recording and get the audio blob
 			const audioBlob = await audioService.stopRecording();
 
-			// Log AudioBlob size
-
+			// Process the audio if we have data
+			if (audioBlob) {
 				// Scroll to show transcript if needed
 				scrollToBottomIfNeeded({
 					threshold: 300,
@@ -206,6 +206,11 @@
 	}
 
 	function toggleRecording() {
+		try {
+			if ($isRecording) {
+				// Haptic feedback for stop - single tap
+				if (services && services.hapticService) {
+					services.hapticService.stopRecording();
 				}
 
 				stopRecording();
@@ -219,7 +224,7 @@
 
 				// When using "New Recording" button, rotate to next phrase immediately
 				if ($transcriptionText) {
-
+					const newIndex = (currentCtaIndex + 1) % CTA_PHRASES.length;
 					currentCtaIndex = newIndex;
 					currentCta = CTA_PHRASES[currentCtaIndex];
 				}
@@ -290,8 +295,10 @@
 
 	// State changes for transcript completion
 	function handleTranscriptCompletion(textToProcess) {
-		// <-- Accept text as a parameter
-			}
+		// Accept text as a parameter
+		// Stop ghost thinking animation when transcript is complete
+		if (ghostComponent && typeof ghostComponent.stopThinking === 'function') {
+			ghostComponent.stopThinking();
 		}
 
 		// Automatically copy to clipboard when transcription finishes
@@ -431,9 +438,7 @@
 				<div class="content-container flex w-full flex-col items-center">
 					<!-- Audio visualizer - properly positioned -->
 					{#if $isRecording}
-						<div
-							class="visualizer-container absolute left-0 top-0 flex w-full justify-center"
-						>
+						<div class="visualizer-container absolute left-0 top-0 flex w-full justify-center">
 							<div class="wrapper-container flex w-full justify-center">
 								<div
 									class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md sm:w-full"
@@ -471,7 +476,8 @@
 
 <!-- Confetti component - display centered to the transcript box when triggered -->
 {#if showConfetti && Confetti}
-	<svelte:component this={Confetti}
+	<svelte:component
+		this={Confetti}
 		targetSelector={confettiTarget}
 		colors={confettiColors}
 		on:complete={() => (showConfetti = false)}

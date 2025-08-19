@@ -98,5 +98,6 @@ export function initialGhostAnimation(node, initialParams) {
 				blinkTimeoutId = null;
 			}
 			node.classList.remove('initial-load-effect'); // Ensure class is removed.
-			if (currentDebugState) {
-				// Log based on the last known debug state.
+		}
+	};
+}

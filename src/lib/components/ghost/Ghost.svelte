@@ -109,7 +109,6 @@
 		// Create new subscription
 		unsubscribeTheme = themeStore.subscribe((value) => {
 			currentTheme = value;
-			if (debug)
 		});
 	}
 
@@ -412,9 +411,10 @@
 		if (clickable) {
 			handleClick();
 			handleUserInteraction();
-		} else {
+		}
 	}}
 	on:pointerdown={(e) => {
+		if (clickable) {
 			handleClick();
 			handleUserInteraction();
 		}
