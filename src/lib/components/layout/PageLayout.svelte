@@ -38,7 +38,7 @@
 						class="mx-0.5 inline-block transform animate-pulse text-pink-500 transition-transform duration-300 hover:scale-110"
 						aria-label="love">❤️</span
 					>
-					by Dennis & Pablo
+					in Melbourne
 				</span>
 			</div>
 			<div class="mr-4 flex items-center sm:mr-6 md:mr-8">

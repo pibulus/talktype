@@ -139,13 +139,22 @@
 		// We don't need to set up recording timer manually anymore
 		// The store takes care of it
 
-		// Scroll to bottom when recording starts
+		// Only scroll down if we're not already near the bottom
+		// This prevents jarring jumps when starting a new recording
 		setTimeout(() => {
 			if (typeof window !== 'undefined') {
-				window.scrollTo({
-					top: document.body.scrollHeight,
-					behavior: 'smooth'
-				});
+				const scrollPosition = window.pageYOffset || window.scrollY;
+				const windowHeight = window.innerHeight;
+				const documentHeight = document.body.scrollHeight;
+				const isNearBottom = scrollPosition + windowHeight >= documentHeight - 200;
+				
+				// Only scroll if we're not already near the bottom
+				if (!isNearBottom) {
+					window.scrollTo({
+						top: document.body.scrollHeight,
+						behavior: 'smooth'
+					});
+				}
 			}
 		}, ANIMATION.RECORDING.SCROLL_DELAY);
 
@@ -190,13 +199,21 @@
 			if (audioBlob && audioBlob.size > 0) {
 				await transcriptionService.transcribeAudio(audioBlob);
 
-				// Schedule scroll to bottom when transcript is complete
+				// Only scroll to show transcript if it would be off-screen
 				setTimeout(() => {
 					if (typeof window !== 'undefined') {
-						window.scrollTo({
-							top: document.body.scrollHeight,
-							behavior: 'smooth'
-						});
+						const scrollPosition = window.pageYOffset || window.scrollY;
+						const windowHeight = window.innerHeight;
+						const documentHeight = document.body.scrollHeight;
+						const isNearBottom = scrollPosition + windowHeight >= documentHeight - 300;
+						
+						// Only scroll if the new content would be off-screen
+						if (!isNearBottom) {
+							window.scrollTo({
+								top: document.body.scrollHeight,
+								behavior: 'smooth'
+							});
+						}
 					}
 				}, ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY);
 
@@ -482,57 +499,50 @@
 			</div>
 		</div>
 
-		<!-- Dynamic content area with smooth animation and proper containment -->
-		<div
-			class="position-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
-		>
-			<!-- Content container with controlled overflow -->
-			<div class="content-container flex w-full flex-col items-center">
-				<!-- Audio visualizer - properly positioned -->
-				{#if $isRecording}
-					<div
-						class="visualizer-container absolute left-0 top-0 flex w-full justify-center"
-						on:animationend={() => {
-							// Scroll to the bottom when visualizer appears
-							if (typeof window !== 'undefined') {
-								window.scrollTo({
-									top: document.body.scrollHeight,
-									behavior: 'smooth'
-								});
-							}
-						}}
-					>
-						<div class="wrapper-container flex w-full justify-center">
-							<div
-								class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md sm:w-full"
-								style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
-							>
-								<AudioVisualizer />
+		<!-- Dynamic content area - only render when there's content -->
+		{#if $isRecording || $transcriptionText || $errorMessage}
+			<div
+				class="position-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
+			>
+				<!-- Content container with controlled overflow -->
+				<div class="content-container flex w-full flex-col items-center">
+					<!-- Audio visualizer - properly positioned -->
+					{#if $isRecording}
+						<div
+							class="visualizer-container absolute left-0 top-0 flex w-full justify-center"
+						>
+							<div class="wrapper-container flex w-full justify-center">
+								<div
+									class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md sm:w-full"
+									style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
+								>
+									<AudioVisualizer />
+								</div>
 							</div>
 						</div>
-					</div>
-				{/if}
+					{/if}
 
-				<!-- Transcript output - only visible when not recording and has transcript -->
-				{#if $transcriptionText && !$isRecording}
-					<TranscriptDisplay
-						transcript={$transcriptionText}
-						{showCopyTooltip}
-						{responsiveFontSize}
-						on:copy={handleTranscriptEvent}
-						on:share={handleTranscriptEvent}
-						on:focus={handleTranscriptEvent}
-					/>
+					<!-- Transcript output - only visible when not recording and has transcript -->
+					{#if $transcriptionText && !$isRecording}
+						<TranscriptDisplay
+							transcript={$transcriptionText}
+							{showCopyTooltip}
+							{responsiveFontSize}
+							on:copy={handleTranscriptEvent}
+							on:share={handleTranscriptEvent}
+							on:focus={handleTranscriptEvent}
+						/>
+					{/if}
+				</div>
+
+				<!-- Error message -->
+				{#if $errorMessage}
+					<p class="error-message mt-4 text-center font-medium text-red-500">
+						{$errorMessage}
+					</p>
 				{/if}
 			</div>
-
-			<!-- Error message -->
-			{#if $errorMessage}
-				<p class="error-message mt-4 text-center font-medium text-red-500">
-					{$errorMessage}
-				</p>
-			{/if}
-		</div>
+		{/if}
 	</div>
 </div>
 
@@ -568,7 +578,7 @@
 
 	/* Position wrapper to create a stable layout without shifts */
 	.position-wrapper {
-		min-height: 120px; /* Ensure there's enough space for content */
+		min-height: 120px; /* Minimum height for content stability */
 		max-height: calc(100vh - 260px); /* Increased height capacity */
 		display: flex;
 		flex-direction: column;
@@ -578,6 +588,7 @@
 		transition: all 0.3s ease-in-out; /* Smooth transition when content changes */
 		contain: paint layout; /* Stronger containment for better performance */
 		padding-bottom: 24px; /* Additional space at bottom for transcript */
+		background: transparent; /* Ensure no background shows */
 	}
 
 	/* Content container for transcripts and visualizers */
