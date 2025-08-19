@@ -37,8 +37,26 @@ export class AudioService {
 			this.audioContext = new AudioContext();
 		}
 
+		// iOS Safari requires user gesture to resume audio context
 		if (this.audioContext?.state === 'suspended') {
-			await this.audioContext.resume();
+			try {
+				await this.audioContext.resume();
+				console.log('Audio context resumed successfully');
+			} catch (error) {
+				console.warn('Failed to resume audio context:', error.message);
+				// Don't throw here - let the app continue and try again on user interaction
+			}
+		}
+
+		// For iOS, we need to be more patient - context might take time to become running
+		if (this.isIOS && this.audioContext?.state === 'suspended') {
+			// Give it a moment and try one more time
+			await new Promise((resolve) => setTimeout(resolve, 100));
+			try {
+				await this.audioContext.resume();
+			} catch (error) {
+				console.warn('Second attempt to resume audio context failed:', error.message);
+			}
 		}
 
 		return this.audioContext?.state === 'running';
@@ -59,7 +77,8 @@ export class AudioService {
 			if (this.isIOS) {
 				const contextReady = await this.initializeAudioContext();
 				if (!contextReady) {
-					throw new Error('Failed to initialize audio context');
+					console.warn('Audio context not ready, but continuing with permission request');
+					// Don't throw - iOS sometimes needs the permission request to activate context
 				}
 
 				const constraints = {
@@ -230,20 +249,33 @@ export class AudioService {
 	startWaveformMonitoring() {
 		if (!this.analyser) return;
 
+		// Cancel any existing animation frame to prevent multiple loops
+		if (this.animationFrameId) {
+			cancelAnimationFrame(this.animationFrameId);
+			this.animationFrameId = null;
+		}
+
 		const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
 
 		const updateWaveform = () => {
-			if (this.stateManager.getState() !== AudioStates.RECORDING) {
-				cancelAnimationFrame(this.animationFrameId);
+			// Double check that we're still recording and have valid analyser
+			if (this.stateManager.getState() !== AudioStates.RECORDING || !this.analyser) {
+				if (this.animationFrameId) {
+					cancelAnimationFrame(this.animationFrameId);
+					this.animationFrameId = null;
+				}
 				return;
 			}
 
-			this.analyser.getByteFrequencyData(dataArray);
-
-			// Update store instead of emitting event
-			audioActions.setWaveformData(Array.from(dataArray));
-
-			this.animationFrameId = requestAnimationFrame(updateWaveform);
+			try {
+				this.analyser.getByteFrequencyData(dataArray);
+				// Update store instead of emitting event
+				audioActions.setWaveformData(Array.from(dataArray));
+				this.animationFrameId = requestAnimationFrame(updateWaveform);
+			} catch (error) {
+				console.warn('Waveform monitoring error:', error.message);
+				this.animationFrameId = null;
+			}
 		};
 
 		this.animationFrameId = requestAnimationFrame(updateWaveform);
@@ -251,8 +283,8 @@ export class AudioService {
 
 	async stopRecording() {
 		return new Promise((resolve) => {
-			// Update recording state to STOPPING
-			audioActions.updateState(AudioStates.STOPPING);
+			// Update state through state manager first - this will trigger store update
+			this.stateManager.setState(AudioStates.STOPPING);
 
 			// Check recorder state - attempt to stop even if internal state doesn't match
 			if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {

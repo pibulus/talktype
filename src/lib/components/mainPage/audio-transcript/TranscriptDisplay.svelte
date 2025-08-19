@@ -92,9 +92,9 @@
 >
 	<div class="wrapper-container flex w-full justify-center">
 		<div class="transcript-box-container relative mx-auto w-[95%] max-w-[580px] px-0 sm:w-full">
-			<!-- Ghost icon copy button positioned outside the transcript box -->
+			<!-- Ghost icon copy button positioned safely inside viewport -->
 			<button
-				class="copy-btn share-chip absolute -right-4 -top-4 z-[200] h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95"
+				class="copy-btn share-chip absolute -top-4 right-1 z-[200] h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95 sm:-right-4 sm:-top-4"
 				on:click|preventDefault={() => dispatch('copy', { text: getEditedTranscript() })}
 				on:mouseenter={handleTooltipMouseEnter}
 				on:mouseleave={() => {
@@ -110,10 +110,12 @@
 				<!-- Smart tooltip - only shows for first few hovers -->
 				{#if showCopyTooltip}
 					<div
-						class="copy-tooltip absolute right-0 top-12 z-[250] whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md"
+						class="copy-tooltip absolute -right-2 top-12 z-[250] whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md sm:right-0 sm:top-12"
 					>
 						Copy to clipboard
-						<div class="tooltip-arrow absolute -top-1.5 right-4 h-3 w-3 rotate-45 bg-white"></div>
+						<div
+							class="tooltip-arrow absolute -top-1.5 right-6 h-3 w-3 rotate-45 bg-white sm:right-4"
+						></div>
 					</div>
 				{/if}
 			</button>

@@ -103,9 +103,9 @@
 			<div class="rounded border border-gray-200 p-4">
 				<nav class="flex items-center space-x-6">
 					<div class="text-lg font-bold">TalkType<AppSuffix size="60%" /></div>
-					<a href="#" class="text-gray-600 hover:text-gray-900">Features</a>
-					<a href="#" class="text-gray-600 hover:text-gray-900">Pricing</a>
-					<a href="#" class="text-gray-600 hover:text-gray-900">About</a>
+					<button type="button" class="text-gray-600 hover:text-gray-900">Features</button>
+					<button type="button" class="text-gray-600 hover:text-gray-900">Pricing</button>
+					<button type="button" class="text-gray-600 hover:text-gray-900">About</button>
 				</nav>
 			</div>
 		</div>

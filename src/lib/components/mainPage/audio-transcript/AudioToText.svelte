@@ -279,76 +279,22 @@
 		}
 	}
 
-	// Function to calculate responsive font size based on transcript length, word count, and device
+	// Simplified responsive font sizing based on text length
 	function getResponsiveFontSize(text) {
-		if (!text) return 'text-base'; // Default size
+		if (!text) return 'text-base';
 
-		// Get viewport width for more responsive sizing
-		let viewportWidth = 0;
-		if (typeof window !== 'undefined') {
-			viewportWidth = window.innerWidth;
-		}
-
-		// Smaller base sizes for mobile
-		const isMobile = viewportWidth > 0 && viewportWidth < 640;
-		const isDesktop = viewportWidth >= 1024;
-
-		// Calculate both character length and word count
-		const charLength = text.length;
 		const wordCount = text.trim().split(/\s+/).length;
 
-		// Typography best practices suggest that readability is impacted by both
-		// total length and average word length
-		const avgWordLength = charLength / (wordCount || 1); // Avoid division by zero
-
-		console.log(
-			`Dynamic sizing: ${wordCount} words, ${charLength} chars, ${avgWordLength.toFixed(1)} avg length`
-		);
-
-		// Extremely short text (5 words or less): Use larger font, especially on desktop
+		// Use CSS-based responsive sizing rather than JS viewport detection
 		if (wordCount <= 5) {
-			const size = isMobile
-				? 'text-xl sm:text-2xl md:text-3xl'
-				: isDesktop
-					? 'text-2xl md:text-3xl lg:text-4xl'
-					: 'text-2xl md:text-3xl';
-			console.log(`Using size for ≤5 words: ${size}`);
-			return size;
+			return 'text-lg sm:text-xl md:text-2xl lg:text-3xl';
+		} else if (wordCount <= 15) {
+			return 'text-base sm:text-lg md:text-xl';
+		} else if (wordCount <= 50) {
+			return 'text-sm sm:text-base md:text-lg';
+		} else {
+			return 'text-xs sm:text-sm md:text-base';
 		}
-
-		// Very short text: 6-10 words or under 50 chars
-		if (wordCount < 10 || charLength < 50) {
-			const size = isMobile ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl md:text-2xl';
-			console.log(`Using size for 6-10 words: ${size}`);
-			return size;
-		}
-
-		// Short text: 11-25 words or under 150 chars with normal word length
-		if ((wordCount < 25 || charLength < 150) && avgWordLength < 8) {
-			const size = isMobile ? 'text-base sm:text-lg md:text-xl' : 'text-lg md:text-xl';
-			console.log(`Using size for 11-25 words: ${size}`);
-			return size;
-		}
-
-		// Medium text: 26-50 words or under 300 chars
-		if (wordCount < 50 || charLength < 300) {
-			const size = isMobile ? 'text-sm sm:text-base md:text-lg' : 'text-base md:text-lg';
-			console.log(`Using size for 26-50 words: ${size}`);
-			return size;
-		}
-
-		// Medium-long text: 51-100 words or under 500 chars
-		if (wordCount < 100 || charLength < 500) {
-			const size = isMobile ? 'text-xs sm:text-sm md:text-base' : 'text-sm md:text-base';
-			console.log(`Using size for 51-100 words: ${size}`);
-			return size;
-		}
-
-		// Long text: Over 100 words or 500+ chars
-		// Use smaller text for better readability on longer content
-		const size = isMobile ? 'text-xs sm:text-sm' : 'text-sm md:text-base';
-		console.log(`Using size for >100 words: ${size}`);
-		return size;
 	}
 
 	// Reactive font size based on transcript length

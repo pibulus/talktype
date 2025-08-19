@@ -4,16 +4,28 @@
 	// Event handling
 	const dispatch = createEventDispatcher();
 
-	// Close the modal when clicked
+	// Close the modal when clicked or keyboard activated
 	function closeModal() {
 		dispatch('close');
+	}
+
+	// Handle keyboard events
+	function handleKeydown(event) {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			closeModal();
+		} else if (event.key === 'Escape') {
+			closeModal();
+		}
 	}
 </script>
 
 <div
 	class="permission-error-container flex w-full justify-center"
 	on:click={closeModal}
+	on:keydown={handleKeydown}
 	role="alertdialog"
+	tabindex="0"
 	aria-labelledby="permission_error_title"
 	aria-describedby="permission_error_description"
 	aria-live="assertive"

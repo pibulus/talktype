@@ -210,22 +210,7 @@
 
 	// Lifecycle hooks
 	onMount(() => {
-		// Pre-load the SettingsModal component after a short delay
-		setTimeout(async () => {
-			if (!SettingsModal && !loadingSettingsModal) {
-				try {
-					loadingSettingsModal = true;
-					debug('Pre-loading SettingsModal component');
-					const module = await import('./settings/SettingsModal.svelte');
-					SettingsModal = module.default;
-					loadingSettingsModal = false;
-					debug('SettingsModal component pre-loaded successfully');
-				} catch (err) {
-					console.error('Error pre-loading SettingsModal:', err);
-					loadingSettingsModal = false;
-				}
-			}
-		}, 1000);
+		// Settings modal is now truly lazy-loaded only when needed - no preloading
 
 		// Check for auto-record setting and start recording if enabled
 		if (browser && StorageUtils.getBooleanItem(STORAGE_KEYS.AUTO_RECORD, false)) {
