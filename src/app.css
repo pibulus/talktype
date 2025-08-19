@@ -14,6 +14,15 @@
 	-webkit-tap-highlight-color: transparent;
 }
 
+/* Prevent DaisyUI button defaults from flashing on load */
+.btn {
+	transition: none;
+}
+.btn::before,
+.btn::after {
+	display: none;
+}
+
 /* Global scroll behavior improvement - more subtle */
 html,
 body {
