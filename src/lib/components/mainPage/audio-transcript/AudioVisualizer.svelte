@@ -1,6 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { appActive, shouldAnimateStore } from '$lib/services/infrastructure';
+	import { createAnimationController } from '$lib/utils/performanceUtils';
 
 	// Audio visualization configuration
 	let audioDataArray;
@@ -217,21 +218,13 @@
 	let frameSkipCounter = 0;
 	const frameSkipRate = 2; // Adjust this value to control the speed (higher value = slower animation)
 
-	function updateVisualizer() {
+	// Create optimized animation controller that auto-pauses when tab is hidden
+	const visualizerAnimation = createAnimationController(() => {
 		if (!recording || !analyser) return;
-
-		if (!$appActive) {
-			// If app is inactive, schedule less frequent updates with reactive store value
-			animationFrameId = setTimeout(() => {
-				animationFrameId = requestAnimationFrame(updateVisualizer);
-			}, 1000); // Check back in 1 second when inactive
-			return;
-		}
 
 		// Skip frames to slow down the animation
 		if (frameSkipCounter < frameSkipRate) {
 			frameSkipCounter++;
-			animationFrameId = requestAnimationFrame(updateVisualizer);
 			return;
 		}
 		frameSkipCounter = 0;
@@ -255,8 +248,11 @@
 		if (history.length > historyLength) {
 			history.pop();
 		}
+	});
 
-		animationFrameId = requestAnimationFrame(updateVisualizer);
+	function updateVisualizer() {
+		// Legacy function kept for compatibility
+		// Now handled by animation controller
 	}
 
 	// ===== COMMON CONTROL FUNCTIONS =====
@@ -268,9 +264,9 @@
 				updateFallbackVisualizer();
 			}
 		} else if (recording && analyser) {
-			// Start standard visualizer
+			// Start optimized visualizer with auto-pause
 			history = Array(historyLength).fill(0);
-			updateVisualizer();
+			visualizerAnimation.start();
 		}
 
 		// Animation state is now managed through reactive variables
@@ -284,7 +280,9 @@
 			// Let the visualization fade out naturally
 			// The fadeout and stop is handled in updateFallbackVisualizer
 		} else {
-			// Standard cleanup
+			// Stop optimized animation controller
+			visualizerAnimation.stop();
+			// Standard cleanup for legacy code
 			if (typeof animationFrameId === 'number') {
 				cancelAnimationFrame(animationFrameId);
 				clearTimeout(animationFrameId);
@@ -369,7 +367,7 @@
 		margin-right: 1px; /* Add slight margin to prevent white line gaps */
 		box-shadow: 0 0 8px rgba(249, 168, 212, 0.2); /* Subtle glow on bars */
 		opacity: 0.95;
-		will-change: height, transform, background-image, filter;
+		will-change: transform;
 		transform: translateZ(0);
 		backface-visibility: hidden;
 	}
@@ -405,7 +403,7 @@
 		box-shadow:
 			0 0 8px rgba(255, 255, 255, 0.15),
 			0 0 10px rgba(255, 156, 227, 0.1);
-		will-change: filter, transform, opacity, background-position;
+		will-change: transform, opacity;
 		transform: translateZ(0);
 		backface-visibility: hidden;
 		background-position: 0% 0%;

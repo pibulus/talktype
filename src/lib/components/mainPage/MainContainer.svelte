@@ -222,6 +222,9 @@
 	// Component references
 	let ghostContainer;
 	let contentContainer;
+	
+	// Event listener cleanup
+	let settingsListener;
 
 	// Lifecycle hooks
 	onMount(() => {
@@ -250,7 +253,7 @@
 
 		// Listen for settings changes
 		if (browser) {
-			window.addEventListener('talktype-setting-changed', (event) => {
+			settingsListener = (event) => {
 				if (event.detail && event.detail.setting === 'autoRecord') {
 					debug(`Setting changed event: autoRecord = ${event.detail.value}`);
 					// No immediate action needed, setting will apply on next page load/refresh
@@ -261,12 +264,21 @@
 					// Update the prompt style in the service
 					geminiService.setPromptStyle(event.detail.value);
 				}
-			});
+			};
+			window.addEventListener('talktype-setting-changed', settingsListener);
 			debug('Added listener for settings changes.');
 		}
 
 		// Check if first visit to show intro
 		firstVisitService.showIntroModal();
+		
+		// Return cleanup function
+		return () => {
+			if (browser && settingsListener) {
+				window.removeEventListener('talktype-setting-changed', settingsListener);
+				debug('Removed settings change listener');
+			}
+		};
 	});
 </script>
 

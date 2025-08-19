@@ -11,8 +11,11 @@
 	import TranscriptDisplay from './TranscriptDisplay.svelte';
 	import PermissionError from './PermissionError.svelte';
 	import { ANIMATION, CTA_PHRASES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
-	import { Confetti } from '$lib/components/ui';
 	import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
+	import { memoize, deferUntilIdle } from '$lib/utils/performanceUtils';
+	
+	// Lazy load Confetti component
+	let Confetti;
 
 	// State for confetti animation
 	let showConfetti = false;
@@ -271,8 +274,8 @@
 		}
 	}
 
-	// Simplified responsive font sizing based on text length
-	function getResponsiveFontSize(text) {
+	// Memoized responsive font sizing based on text length
+	const getResponsiveFontSize = memoize((text) => {
 		if (!text) return 'text-base';
 
 		const wordCount = text.trim().split(/\s+/).length;
@@ -287,7 +290,7 @@
 		} else {
 			return 'text-xs sm:text-sm md:text-base';
 		}
-	}
+	}, (text) => text ? text.length : 0); // Cache by text length
 
 	// Reactive font size based on transcript length
 	$: responsiveFontSize = getResponsiveFontSize($transcriptionText);
@@ -336,14 +339,27 @@
 			// <-- Use the passed-in parameter
 			// Show confetti celebration as a random Easter egg (1/7 chance)
 			if (Math.floor(Math.random() * 7) === 0) {
-				// Update confetti colors based on current theme
-				confettiColors = getThemeConfettiColors();
-				console.log('[DEBUG] Using theme-specific confetti colors:', confettiColors);
-				showConfetti = true;
-				// Reset after animation completes
-				setTimeout(() => {
-					showConfetti = false;
-				}, ANIMATION.CONFETTI.ANIMATION_DURATION + 500);
+				// Lazy load Confetti component only when needed
+				if (!Confetti) {
+					import('$lib/components/ui/effects/Confetti.svelte').then(module => {
+						Confetti = module.default;
+						// Update confetti colors based on current theme
+						confettiColors = getThemeConfettiColors();
+						console.log('[DEBUG] Using theme-specific confetti colors:', confettiColors);
+						showConfetti = true;
+						// Reset after animation completes
+						setTimeout(() => {
+							showConfetti = false;
+						}, ANIMATION.CONFETTI.ANIMATION_DURATION + 500);
+					});
+				} else {
+					// Confetti already loaded
+					confettiColors = getThemeConfettiColors();
+					showConfetti = true;
+					setTimeout(() => {
+						showConfetti = false;
+					}, ANIMATION.CONFETTI.ANIMATION_DURATION + 500);
+				}
 			}
 
 			// Copy to clipboard with small delay to ensure UI updates
@@ -523,8 +539,8 @@
 </div>
 
 <!-- Confetti component - display centered to the transcript box when triggered -->
-{#if showConfetti}
-	<Confetti
+{#if showConfetti && Confetti}
+	<svelte:component this={Confetti}
 		targetSelector={confettiTarget}
 		colors={confettiColors}
 		on:complete={() => (showConfetti = false)}
