@@ -2,6 +2,7 @@
 	import { promptStyle } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { PROMPT_STYLES } from '$lib/constants';
+	import SettingsSection from './SettingsSection.svelte';
 
 	// Props
 	export let selectedPromptStyle = 'standard';
@@ -66,10 +67,7 @@
 	};
 </script>
 
-<div class="space-y-2">
-	<h4 class="text-sm font-bold text-gray-700">Transcription Style</h4>
-
-	<!-- Using exact same grid pattern as vibe selector -->
+<SettingsSection title="Transcription Style" showBorder={false}>
 	<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
 		{#each availableStyles as style}
 			<button
@@ -117,7 +115,7 @@
 			</button>
 		{/each}
 	</div>
-</div>
+</SettingsSection>
 
 <style>
 	/* Using the exact same classes as the vibe selector for complete consistency */
