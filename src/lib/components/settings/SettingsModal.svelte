@@ -6,6 +6,7 @@
 	import ThemeSelector from './ThemeSelector.svelte';
 	import AutoRecordToggle from './AutoRecordToggle.svelte';
 	import TranscriptionStyleSelector from './TranscriptionStyleSelector.svelte';
+	import TranscriptionModeSelector from './TranscriptionModeSelector.svelte';
 	import { ModalCloseButton } from '../modals/index.js';
 
 	// Props for the modal
@@ -171,6 +172,9 @@
 
 			<!-- Prompt Style Selection Section -->
 			<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
+
+			<!-- Transcription Mode Selection -->
+			<TranscriptionModeSelector />
 
 			<!-- Premium Features Section -->
 			<div
