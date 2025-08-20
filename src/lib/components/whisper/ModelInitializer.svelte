@@ -29,8 +29,9 @@
 		const previouslyAccepted = localStorage.getItem('talktype_whisper_accepted');
 		if (previouslyAccepted === 'true') {
 			await initializeModel();
-		} else if (showAlways) {
-			showModal = true;
+		} else {
+			// Auto-download on first visit for seamless experience
+			handleAccept();
 		}
 	}
 
