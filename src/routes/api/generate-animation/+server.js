@@ -44,63 +44,70 @@ function cleanMarkdownResponse(text) {
 	// Check if wrapped in markdown code block
 	const markdownPattern = /```(?:json)?\s*([\s\S]*?)```/;
 	const match = text.match(markdownPattern);
-	
+
 	if (match) {
 		return match[1].trim();
 	}
-	
+
 	// Try to find JSON object anywhere in text
 	const jsonMatch = text.match(/(\{[\s\S]*\})/);
 	if (jsonMatch) {
 		return jsonMatch[1].trim();
 	}
-	
+
 	return text;
 }
 
 export async function POST({ request }) {
 	try {
 		const { description } = await request.json();
-		
+
 		if (!description) {
-			return json({ 
-				error: "Need a description for the animation - what should the ghost do?" 
-			}, { status: 400 });
+			return json(
+				{
+					error: 'Need a description for the animation - what should the ghost do?'
+				},
+				{ status: 400 }
+			);
 		}
-		
+
 		// Generate the prompt with the description
 		const prompt = ANIMATION_PROMPT.replace('{{description}}', description);
-		
+
 		// Generate animation
 		const result = await model.generateContent(prompt);
 		const responseText = result.response.text();
-		
+
 		// Clean any markdown formatting
 		const cleanedResponse = cleanMarkdownResponse(responseText);
-		
+
 		// Parse the JSON
 		const animationData = JSON.parse(cleanedResponse);
-		
+
 		// Validate the response has required fields
 		if (!animationData.name || !animationData.keyframes) {
 			throw new Error('Invalid animation data structure');
 		}
-		
+
 		return json({ animation: animationData });
-		
 	} catch (error) {
 		console.error('Animation generation error:', error);
-		
-		let friendlyMessage = "The ghost's animation spirit got confused. Try describing it differently?";
-		
+
+		let friendlyMessage =
+			"The ghost's animation spirit got confused. Try describing it differently?";
+
 		if (error.message?.includes('quota')) {
-			friendlyMessage = "Hit our animation limit for today. The ghost needs rest!";
+			friendlyMessage = 'Hit our animation limit for today. The ghost needs rest!';
 		} else if (error.message?.includes('JSON')) {
-			friendlyMessage = "Couldn't understand the animation instructions. Try a simpler description?";
+			friendlyMessage =
+				"Couldn't understand the animation instructions. Try a simpler description?";
 		}
-		
-		return json({ 
-			error: friendlyMessage 
-		}, { status: 500 });
+
+		return json(
+			{
+				error: friendlyMessage
+			},
+			{ status: 500 }
+		);
 	}
 }

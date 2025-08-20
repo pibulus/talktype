@@ -21,15 +21,14 @@ export const animationGenerationService = {
 
 			console.log('✅ Animation generated successfully');
 			return result.animation;
-
 		} catch (error) {
 			console.error('Animation generation error:', error);
-			
+
 			// Re-throw with friendly message
 			if (error.message.includes('fetch')) {
 				throw new Error("Can't reach the animation service. Check your connection?");
 			}
-			
+
 			throw error;
 		}
 	}

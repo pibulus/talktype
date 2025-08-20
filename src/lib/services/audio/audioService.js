@@ -172,7 +172,10 @@ export class AudioService {
 			if (!granted) {
 				this.stateManager.setState(AudioStates.PERMISSION_DENIED);
 				uiActions.setPermissionError(true);
-				throw error || new Error('Need your permission to hear you - click the microphone icon in your browser!');
+				throw (
+					error ||
+					new Error('Need your permission to hear you - click the microphone icon in your browser!')
+				);
 			}
 
 			if (!stream) {
@@ -239,9 +242,9 @@ export class AudioService {
 			console.error('Error starting recording:', error);
 			this.stateManager.setState(AudioStates.ERROR, { error });
 
-			const friendlyMessage = error.message.includes('permission') 
-				? "Need microphone access - check your browser settings!"
-				: "Recording hiccup - give it another try?";
+			const friendlyMessage = error.message.includes('permission')
+				? 'Need microphone access - check your browser settings!'
+				: 'Recording hiccup - give it another try?';
 			uiActions.setErrorMessage(friendlyMessage);
 
 			await this.cleanup();

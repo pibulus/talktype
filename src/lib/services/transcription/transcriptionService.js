@@ -23,7 +23,7 @@ export class TranscriptionService {
 		try {
 			if (!audioBlob || !(audioBlob instanceof Blob)) {
 				// Friendly error message
-				const message = "Hmm, no audio to work with. Try recording something first?";
+				const message = 'Hmm, no audio to work with. Try recording something first?';
 				transcriptionActions.setTranscriptionError(message);
 				throw new Error(message);
 			}
@@ -181,7 +181,9 @@ export class TranscriptionService {
 
 			const friendlyMessage = "Couldn't copy to clipboard. Try clicking somewhere first?";
 			uiActions.setErrorMessage(friendlyMessage);
-			uiActions.setScreenReaderMessage('Click somewhere in the window first, then try copying again.');
+			uiActions.setScreenReaderMessage(
+				'Click somewhere in the window first, then try copying again.'
+			);
 
 			return false;
 		}
@@ -228,7 +230,9 @@ export class TranscriptionService {
 				return this.copyToClipboard(text);
 			}
 
-			uiActions.setErrorMessage('Sharing not available on this device - copied to clipboard instead!');
+			uiActions.setErrorMessage(
+				'Sharing not available on this device - copied to clipboard instead!'
+			);
 			return false;
 		}
 	}

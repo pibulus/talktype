@@ -87,12 +87,12 @@
 /* Wobble effect - target the inner group directly using animations */
 .ghost-wobble-group.wobble-left {
 	/* Apply the keyframe animation */
-	animation: ghost-do-wobble-left var(--ghost-wobble-duration, 0.39s) ease-in-out forwards;
+	animation: ghost-do-wobble-left var(--ghost-wobble-duration, 0.39s) ease-in-out;
 }
 
 .ghost-wobble-group.wobble-right {
 	/* Apply the keyframe animation */
-	animation: ghost-do-wobble-right var(--ghost-wobble-duration, 0.39s) ease-in-out forwards;
+	animation: ghost-do-wobble-right var(--ghost-wobble-duration, 0.39s) ease-in-out;
 }
 
 /* New class for combined wobble */

@@ -50,6 +50,12 @@
 	$: animationsEnabled = $appActive;
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 
+	// React to recording state changes
+	$: if (browser && isRecording !== lastRecordingState) {
+		ghostStateStore.setRecording(isRecording);
+		lastRecordingState = isRecording;
+	}
+
 	const dispatch = createEventDispatcher();
 	function setDebugMode() {
 		if (browser) {

@@ -163,8 +163,8 @@
 		} catch (err) {
 			console.error('❌ Error in startRecording:', err);
 			const friendlyMessage = err.message.includes('permission')
-				? "Need microphone access - click allow when asked!"
-				: "Recording hiccup - mind trying again?";
+				? 'Need microphone access - click allow when asked!'
+				: 'Recording hiccup - mind trying again?';
 			uiActions.setErrorMessage(friendlyMessage);
 		}
 	}
@@ -208,7 +208,7 @@
 					console.error('❌ Transcription error:', transcriptionError);
 					const friendlyMessage = transcriptionError.message.includes('network')
 						? "Can't reach the transcription service - check your connection?"
-						: "The ghost got tongue-tied - give it another shot?";
+						: 'The ghost got tongue-tied - give it another shot?';
 					uiActions.setErrorMessage(friendlyMessage);
 					// Stop ghost thinking animation on error
 					if (ghostComponent && typeof ghostComponent.stopThinking === 'function') {
@@ -217,7 +217,7 @@
 				}
 			} else {
 				// If no audio data, revert UI state
-				uiActions.setErrorMessage('Didn\'t catch that - try recording again?');
+				uiActions.setErrorMessage("Didn't catch that - try recording again?");
 			}
 		} catch (err) {
 			console.error('❌ Error in stopRecording:', err);
@@ -259,8 +259,8 @@
 
 			// Show error message using existing toast system
 			const friendlyMessage = err.message.includes('permission')
-				? "Need microphone access - click allow when asked!"
-				: "Recording hiccup - mind trying again?";
+				? 'Need microphone access - click allow when asked!'
+				: 'Recording hiccup - mind trying again?';
 			uiActions.setErrorMessage(friendlyMessage);
 
 			// Haptic feedback for error - with null check

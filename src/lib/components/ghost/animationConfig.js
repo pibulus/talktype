@@ -17,10 +17,12 @@ export const BLINK_CONFIG = {
 };
 
 export const WOBBLE_CONFIG = {
-	// Duration for combined left-right animation - Reduced again for even faster effect
-	DURATION: 290, // Duration of ghost wobble animation (ms) - Back to original faster speed
+	// Duration for combined left-right animation
+	DURATION: 390, // Duration of ghost wobble animation (ms) - Increased for more noticeable effect
 	LEFT_CHANCE: 0.5, // Probability (0-1) of wobbling left vs right - No longer used for start/stop
-	CLEANUP_DELAY: 290 // Delay for wobble animation cleanup (ms) - Match faster duration
+	CLEANUP_DELAY: 450, // Delay for wobble animation cleanup (ms) - Slightly longer than duration
+	RECORDING_START_CLASS: 'wobble-left', // CSS class for recording start wobble
+	RECORDING_STOP_CLASS: 'wobble-right' // CSS class for recording stop wobble
 };
 
 export const SPECIAL_CONFIG = {
