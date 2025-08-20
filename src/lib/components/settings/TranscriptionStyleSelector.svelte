@@ -87,6 +87,7 @@
 					<div class="preview-ghost-wrapper relative h-12 w-12">
 						<div
 							class="preview-icon-layers relative flex h-full w-full items-center justify-center"
+							style="pointer-events: none;"
 						>
 							{@html styleIcons[style] || ''}
 						</div>

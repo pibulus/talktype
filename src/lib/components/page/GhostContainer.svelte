@@ -1,5 +1,5 @@
 <script>
-	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 	import Ghost from '$lib/components/ghost/Ghost.svelte';
 	import { theme as appTheme } from '$lib';
@@ -7,9 +7,6 @@
 	// Props passed from the parent
 	export let isRecording = false;
 	export let isProcessing = false;
-
-	// Event dispatcher to communicate with parent
-	const dispatch = createEventDispatcher();
 
 	// Component references
 	let ghostComponent;
@@ -20,10 +17,11 @@
 		// console.log(`[GhostContainer] ${message}`);
 	}
 
-	// Function to handle toggle recording action
+	// DEPRECATED: Event forwarding no longer needed - Ghost uses custom window event
+	// Keeping function for backward compatibility but it's not called anymore
 	function handleToggleRecording() {
-		debug('Toggle recording triggered by Ghost component');
-		dispatch('toggleRecording');
+		debug('[DEPRECATED] Toggle recording handler - should not be called');
+		// Ghost now dispatches 'talktype:toggle-recording' directly to window
 	}
 
 	// Public method to trigger ghost click for parent
@@ -72,7 +70,6 @@
 		{isProcessing}
 		externalTheme={appTheme}
 		debug="true"
-		on:toggleRecording={handleToggleRecording}
 	/>
 </div>
 

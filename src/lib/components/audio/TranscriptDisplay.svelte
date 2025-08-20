@@ -103,7 +103,7 @@
 				aria-label="Copy transcript to clipboard"
 				bind:this={copyButtonRef}
 			>
-				<div class="h-full w-full">
+				<div class="h-full w-full" style="pointer-events: none;">
 					<Ghost size="100%" clickable={false} class="copy-ghost" seed={42} />
 				</div>
 

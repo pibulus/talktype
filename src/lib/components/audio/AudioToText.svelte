@@ -1,277 +1,36 @@
 <!--
-  This is the main component for audio recording and transcription.
-  It handles recording, transcription, clipboard operations, and UI feedback.
+  AudioToText Orchestrator - Simplified main component
+  Coordinates child components for recording and transcription functionality
 -->
 <script>
-	import { geminiService } from '$lib/services/geminiService';
-	import { promptStyle, theme } from '$lib';
 	import { onMount, onDestroy } from 'svelte';
-	import AudioVisualizer from './AudioVisualizer.svelte';
-	import RecordButtonWithTimer from './RecordButtonWithTimer.svelte';
+	import RecordingControls from './RecordingControls.svelte';
 	import TranscriptDisplay from './TranscriptDisplay.svelte';
-	import PermissionError from './PermissionError.svelte';
-	import { ANIMATION, CTA_PHRASES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
-	import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
-	import { memoize, deferUntilIdle } from '$lib/utils/performanceUtils';
-
-	// Lazy load Confetti component
-	let Confetti;
-
-	// State for confetti animation
-	let showConfetti = false;
-	let confettiTarget = '.ghost-icon-wrapper'; // Target the ghost icon so confetti explodes from behind it
-	let confettiColors = ANIMATION.CONFETTI.COLORS; // Default colors
-
-	// Function to get theme-specific confetti colors
-	function getThemeConfettiColors() {
-		// Get current theme from the store
-		let currentTheme;
-		const unsubscribe = theme.subscribe((value) => {
-			currentTheme = value;
-		});
-		unsubscribe();
-
-		// Use theme-specific colors if available
-		if (currentTheme && ANIMATION.CONFETTI.THEME_COLORS[currentTheme]) {
-			return ANIMATION.CONFETTI.THEME_COLORS[currentTheme];
-		}
-
-		// Fallback to default colors
-		return ANIMATION.CONFETTI.COLORS;
-	}
-
+	import RecordingStatus from './RecordingStatus.svelte';
+	import TranscriptionEffects from './TranscriptionEffects.svelte';
+	import { memoize } from '$lib/utils/performanceUtils';
 	import {
 		initializeServices,
-		audioService,
-		transcriptionService,
-		pwaService,
 		// Stores
 		isRecording,
-		isTranscribing,
-		transcriptionProgress,
-		transcriptionText, // Kept for display and general debug, but not for completion trigger
-		recordingDuration,
+		transcriptionText,
 		errorMessage,
-		uiState,
-		audioState,
 		hasPermissionError,
-		transcriptionCompletedEvent, // <-- Import the new event store
-		// Actions
-		audioActions,
-		transcriptionActions,
+		audioState,
 		uiActions
 	} from '$lib/services';
-	import { get } from 'svelte/store';
 
-	// Helper variable to check if we're in a browser environment
-	const browser = typeof window !== 'undefined';
+	// Props - simplified interface
+	export let ghostComponent = null;
+	export let onPreloadRequest = null;
+	export let isPremiumUser = false;
 
 	// Service instances
 	let services;
 	let unsubscribers = [];
-	let activeTimeouts = [];
-
-	// DOM element references
-	let progressContainerElement;
-
-	// Local component state
-	let showCopyTooltip = false;
-	let screenReaderStatus = ''; // For ARIA announcements
-	let isPremiumUser = false; // Change this to true to enable premium features
-
-	// These will be set from the parent component
-	export const isModelPreloaded = false;
-	export let onPreloadRequest = null;
-
-	// Ghost component reference
-	export let ghostComponent = null;
-
-	// Prompt style subscription
-	let currentPromptStyle;
-	const unsubscribePromptStyle = promptStyle.subscribe((value) => {
-		currentPromptStyle = value;
-	});
-
-	// Export recording state and functions for external components
-	export const recording = isRecording; // Export the isRecording store
-	export { stopRecording, startRecording, toggleRecording };
-
-	// PWA Installation State Tracking - now using pwaService
-
-	// Export PWA installation state functions through the service
-	const shouldShowPWAPrompt = () => pwaService.shouldShowPwaPrompt();
-	const recordPWAPromptShown = () => pwaService.recordPromptShown();
-	const markPWAAsInstalled = () => pwaService.markAsInstalled();
-	const isRunningAsPWA = () => pwaService.checkIfRunningAsPwa();
-
-	export { shouldShowPWAPrompt, recordPWAPromptShown, markPWAAsInstalled, isRunningAsPWA };
-
-	/**
-	 * Increment transcription count and dispatch an event.
-	 * Delegates to PWA service for actual storage.
-	 */
-	function incrementTranscriptionCount() {
-		if (!browser) return;
-
-		try {
-			const newCount = pwaService.incrementTranscriptionCount();
-
-			// Dispatch event to parent
-			dispatchEvent(new CustomEvent('transcriptionCompleted', { detail: { count: newCount } }));
-		} catch (error) {
-			console.error('Error incrementing transcription count:', error);
-		}
-	}
-	// End of PWA tracking
-
-	// Function to preload the speech model before recording starts
-	function preloadSpeechModel() {
-		if (onPreloadRequest) {
-			onPreloadRequest();
-		}
-	}
-
-	async function startRecording() {
-		// Don't start if we're already recording
-		if ($isRecording) return;
-
-		// Try to preload the speech model if not already done
-		preloadSpeechModel();
-
-		// Reset UI state
-		uiActions.clearErrorMessage();
-
-		// We don't need to set up recording timer manually anymore
-		// The store takes care of it
-
-		// Scroll to bottom if needed after starting recording
-		scrollToBottomIfNeeded({
-			threshold: 200,
-			delay: ANIMATION.RECORDING.SCROLL_DELAY
-		});
-
-		try {
-			// Subtle pulse ghost icon when starting recording
-			if (ghostComponent && typeof ghostComponent.pulse === 'function') {
-				ghostComponent.pulse();
-			}
-
-			// Start recording using the AudioService
-			await audioService.startRecording();
-
-			// State is tracked through stores now
-		} catch (err) {
-			console.error('❌ Error in startRecording:', err);
-			const friendlyMessage = err.message.includes('permission')
-				? 'Need microphone access - click allow when asked!'
-				: 'Recording hiccup - mind trying again?';
-			uiActions.setErrorMessage(friendlyMessage);
-		}
-	}
-
-	async function stopRecording() {
-		try {
-			// Get current recording state
-			if (!$isRecording) {
-				return;
-			}
-
-			// Make the ghost look like it's thinking hard
-			if (ghostComponent && typeof ghostComponent.startThinking === 'function') {
-				ghostComponent.startThinking();
-			}
-			// Note: Wobble animation now happens automatically through ghostStateStore.setRecording()
-
-			// Stop recording and get the audio blob
-			const audioBlob = await audioService.stopRecording();
-
-			// Process the audio if we have data
-			if (audioBlob) {
-				// Transcribe the audio
-				try {
-					const transcriptText = await transcriptionService.transcribeAudio(audioBlob);
-
-					// Scroll to show transcript if needed
-					scrollToBottomIfNeeded({
-						threshold: 300,
-						delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY
-					});
-
-					// Increment the transcription count for PWA prompt
-					if (browser && 'requestIdleCallback' in window) {
-						window.requestIdleCallback(() => incrementTranscriptionCount());
-					} else {
-						const timeoutId = setTimeout(incrementTranscriptionCount, 0);
-						activeTimeouts.push(timeoutId);
-					}
-				} catch (transcriptionError) {
-					console.error('❌ Transcription error:', transcriptionError);
-					const friendlyMessage = transcriptionError.message.includes('network')
-						? "Can't reach the transcription service - check your connection?"
-						: 'The ghost got tongue-tied - give it another shot?';
-					uiActions.setErrorMessage(friendlyMessage);
-					// Stop ghost thinking animation on error
-					if (ghostComponent && typeof ghostComponent.stopThinking === 'function') {
-						ghostComponent.stopThinking();
-					}
-				}
-			} else {
-				// If no audio data, revert UI state
-				uiActions.setErrorMessage("Didn't catch that - try recording again?");
-			}
-		} catch (err) {
-			console.error('❌ Error in stopRecording:', err);
-			const friendlyMessage = "Something went sideways - let's try that again!";
-			uiActions.setErrorMessage(friendlyMessage);
-		}
-	}
-
-	function toggleRecording() {
-		try {
-			if ($isRecording) {
-				// Haptic feedback for stop - single tap
-				if (services && services.hapticService) {
-					services.hapticService.stopRecording();
-				}
-
-				stopRecording();
-				// Screen reader announcement
-				uiActions.setScreenReaderMessage('Recording stopped.');
-			} else {
-				// Haptic feedback for start - double pulse
-				if (services && services.hapticService) {
-					services.hapticService.startRecording();
-				}
-
-				// When using "New Recording" button, rotate to next phrase immediately
-				if ($transcriptionText) {
-					const newIndex = (currentCtaIndex + 1) % CTA_PHRASES.length;
-					currentCtaIndex = newIndex;
-					currentCta = CTA_PHRASES[currentCtaIndex];
-				}
-
-				startRecording();
-				// Screen reader announcement
-				uiActions.setScreenReaderMessage('Recording started. Speak now.');
-			}
-		} catch (err) {
-			console.error('Recording operation failed:', err);
-
-			// Show error message using existing toast system
-			const friendlyMessage = err.message.includes('permission')
-				? 'Need microphone access - click allow when asked!'
-				: 'Recording hiccup - mind trying again?';
-			uiActions.setErrorMessage(friendlyMessage);
-
-			// Haptic feedback for error - with null check
-			if (services && services.hapticService) {
-				services.hapticService.error();
-			}
-
-			// Update screen reader status
-			uiActions.setScreenReaderMessage('Recording failed. Please try again.');
-		}
-	}
+	
+	// Component references
+	let recordingControlsRef;
 
 	// Memoized responsive font sizing based on text length
 	const getResponsiveFontSize = memoize(
@@ -297,66 +56,10 @@
 	// Reactive font size based on transcript length
 	$: responsiveFontSize = getResponsiveFontSize($transcriptionText);
 
-	// CTA rotation
-	let currentCtaIndex = 0;
-	let currentCta = CTA_PHRASES[currentCtaIndex];
-
-	// Button label computation - fixed to show CTA phrases
-	$: buttonLabel = $isRecording ? 'Stop Recording' : $transcriptionText ? currentCta : currentCta;
-
 	// Handler for transcript component events
 	function handleTranscriptEvent(event) {
 		const { type, detail } = event;
-
-		if (type === 'copy') {
-			// Use the transcript text from the detail property instead of calling a method on event.target
-			const transcriptText = detail?.text || $transcriptionText;
-			transcriptionService.copyToClipboard(transcriptText);
-		} else if (type === 'share') {
-			const transcriptText = detail?.text || $transcriptionText;
-			transcriptionService.shareTranscript(transcriptText);
-		} else if (type === 'focus') {
-			uiActions.setScreenReaderMessage(detail.message);
-		}
-	}
-
-	// State changes for transcript completion
-	function handleTranscriptCompletion(textToProcess) {
-		// Accept text as a parameter
-		// Stop ghost thinking animation when transcript is complete
-		if (ghostComponent && typeof ghostComponent.stopThinking === 'function') {
-			ghostComponent.stopThinking();
-		}
-
-		// Automatically copy to clipboard when transcription finishes
-		if (textToProcess) {
-			// <-- Use the passed-in parameter
-			// Show confetti celebration as a random Easter egg (1/7 chance)
-			if (Math.floor(Math.random() * 7) === 0) {
-				// Lazy load Confetti component only when needed
-				if (!Confetti) {
-					import('$lib/components/ui/effects/Confetti.svelte').then((module) => {
-						Confetti = module.default;
-						// Update confetti colors based on current theme
-						confettiColors = getThemeConfettiColors();
-					});
-				} else {
-					// Confetti already loaded
-					confettiColors = getThemeConfettiColors();
-					showConfetti = true;
-					const timeoutId = setTimeout(() => {
-						showConfetti = false;
-					}, ANIMATION.CONFETTI.ANIMATION_DURATION + 500);
-					activeTimeouts.push(timeoutId);
-				}
-			}
-
-			// Copy to clipboard with small delay to ensure UI updates
-			const timeoutId = setTimeout(() => {
-				transcriptionService.copyToClipboard(textToProcess);
-			}, 100);
-			activeTimeouts.push(timeoutId);
-		}
+		// Forward events to child components as needed
 	}
 
 	// Lifecycle hooks
@@ -364,174 +67,90 @@
 		// Initialize services
 		services = initializeServices({ debug: false });
 
-		// Ghost element is now handled through the component reference
-
-		// Existing subscription to transcriptionText for general debugging (no longer calls handleTranscriptCompletion)
-		const transcriptUnsub = transcriptionText.subscribe((text) => {
-			// NOTE: The call to handleTranscriptCompletion() has been removed from here.
-		});
-
-		// New subscription to the dedicated transcriptionCompletedEvent
-		const transcriptionCompletedUnsub = transcriptionCompletedEvent.subscribe((completedText) => {
-			if (completedText) {
-				// This event fires only when transcription is truly complete and text is available.
-				// $isTranscribing should be false by now.
-				handleTranscriptCompletion(completedText); // <-- Pass completedText to the handler
-			}
-		});
-
 		// Subscribe to permission denied state to show error modal
 		const permissionUnsub = hasPermissionError.subscribe((denied) => {
 			if (denied) {
 				// Show permission error modal
 				uiActions.setPermissionError(true);
-
-				// Add sad eyes animation through the Ghost component
-				if (ghostComponent) {
-					// We could add a sadEyes() method to the Ghost component
-					// but we'll keep it simple for now
-				}
-			}
-		});
-
-		// Subscribe to time limit reached event
-		const audioStateUnsub = audioState.subscribe((state) => {
-			if (state.timeLimit === true) {
-				stopRecording();
 			}
 		});
 
 		// Add to unsubscribe list
-		unsubscribers.push(
-			transcriptUnsub,
-			transcriptionCompletedUnsub,
-			permissionUnsub,
-			audioStateUnsub
-		);
-
-		// Check if the app is running as a PWA after a short delay
-		if (browser) {
-			const timeoutId = setTimeout(async () => {
-				const isPwa = await pwaService.checkIfRunningAsPwa();
-				if (isPwa) {
-					// PWA is running, can add specific logic here if needed
-				}
-			}, 100);
-			activeTimeouts.push(timeoutId);
-		}
+		unsubscribers.push(permissionUnsub);
 	});
 
 	// Clean up subscriptions and services
 	onDestroy(() => {
-		// Clear all active timeouts
-		activeTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
-		activeTimeouts = [];
-
 		// Unsubscribe from all subscriptions
 		unsubscribers.forEach((unsub) => unsub());
-
-		// Ensure audio resources are released
-		audioService.cleanup();
-
-		// Unsubscribe from prompt style
-		if (unsubscribePromptStyle) unsubscribePromptStyle();
 	});
 
-	// Recording state is now handled by the Ghost component via props
+	// Export functions for external components
+	export function startRecording() {
+		if (recordingControlsRef) {
+			recordingControlsRef.startRecording();
+		}
+	}
 
-	// Use reactive declarations for progress updates instead of DOM manipulation
-	$: progressValue = $transcriptionProgress;
+	export function stopRecording() {
+		if (recordingControlsRef) {
+			recordingControlsRef.stopRecording();
+		}
+	}
+
+	export function toggleRecording() {
+		if (recordingControlsRef) {
+			recordingControlsRef.toggleRecording();
+		}
+	}
+
+	export const recording = isRecording; // Export the isRecording store
 </script>
 
-<!-- Main wrapper with proper containment to prevent layout issues -->
+<!-- Main wrapper - simplified orchestrator layout -->
 <div class="main-wrapper mx-auto box-border w-full">
 	<!-- Shared container with proper centering for mobile -->
 	<div class="mobile-centered-container flex w-full flex-col items-center justify-center">
-		<!-- Recording button/progress bar section - sticky positioned for stability -->
-		<div
-			class="button-section relative sticky top-0 z-20 flex w-full justify-center bg-transparent pb-6 pt-2 sm:pb-7 md:pb-8"
-		>
-			<div class="button-container mx-auto flex w-full max-w-[500px] justify-center">
-				<RecordButtonWithTimer
-					recording={$isRecording}
-					transcribing={$isTranscribing}
-					clipboardSuccess={$uiState.clipboardSuccess}
-					recordingDuration={$recordingDuration}
-					progress={progressValue}
-					{isPremiumUser}
-					{buttonLabel}
-					on:click={toggleRecording}
-					on:preload={preloadSpeechModel}
-				/>
-			</div>
-		</div>
+		
+		<!-- Recording Controls Section -->
+		<RecordingControls 
+			bind:this={recordingControlsRef}
+			{ghostComponent}
+			{onPreloadRequest}
+			{isPremiumUser}
+			on:recordingStateChanged
+			on:error
+			on:preload
+		/>
 
 		<!-- Dynamic content area - only render when there's content -->
 		{#if $isRecording || $transcriptionText || $errorMessage}
 			<div
-				class="position-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
+				class="content-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
 			>
-				<!-- Content container with controlled overflow -->
-				<div class="content-container flex w-full flex-col items-center">
-					<!-- Audio visualizer - properly positioned -->
-					{#if $isRecording}
-						<div class="visualizer-container absolute left-0 top-0 flex w-full justify-center">
-							<div class="wrapper-container flex w-full justify-center">
-								<div
-									class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md sm:w-full"
-									style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
-								>
-									<AudioVisualizer />
-								</div>
-							</div>
-						</div>
-					{/if}
-
-					<!-- Transcript output - only visible when not recording and has transcript -->
-					{#if $transcriptionText && !$isRecording}
-						<TranscriptDisplay
-							transcript={$transcriptionText}
-							{showCopyTooltip}
-							{responsiveFontSize}
-							on:copy={handleTranscriptEvent}
-							on:share={handleTranscriptEvent}
-							on:focus={handleTranscriptEvent}
-						/>
-					{/if}
-				</div>
-
-				<!-- Error message -->
-				{#if $errorMessage}
-					<p class="error-message mt-4 text-center font-medium text-red-500">
-						{$errorMessage}
-					</p>
+				<!-- Transcript Display -->
+				{#if $transcriptionText && !$isRecording}
+					<TranscriptDisplay
+						transcript={$transcriptionText}
+						responsiveFontSize={responsiveFontSize}
+						on:copy={handleTranscriptEvent}
+						on:share={handleTranscriptEvent}
+						on:focus={handleTranscriptEvent}
+					/>
 				{/if}
+
+				<!-- Status and Error Messages -->
+				<RecordingStatus />
 			</div>
 		{/if}
 	</div>
 </div>
 
-<!-- Confetti component - display centered to the transcript box when triggered -->
-{#if showConfetti && Confetti}
-	<svelte:component
-		this={Confetti}
-		targetSelector={confettiTarget}
-		colors={confettiColors}
-		on:complete={() => (showConfetti = false)}
-	/>
-{/if}
-
-<!-- Screen reader only status announcements -->
-<div role="status" aria-live="polite" aria-atomic="true" class="sr-only">
-	{#if $uiState.screenReaderMessage}
-		{$uiState.screenReaderMessage}
-	{/if}
-</div>
-
-<!-- Permission error modal -->
-{#if $uiState.showPermissionError}
-	<PermissionError on:close={() => uiActions.setPermissionError(false)} />
-{/if}
+<!-- Transcription Effects (Confetti) -->
+<TranscriptionEffects 
+	{ghostComponent}
+	targetSelector=".ghost-icon-wrapper"
+/>
 
 <style>
 	/* Main wrapper to ensure proper positioning */

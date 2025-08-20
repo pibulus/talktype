@@ -127,9 +127,9 @@
 		isProcessing = false;
 	}
 
-	// Handle toggle recording from ghost
+	// Handle toggle recording from ghost via custom event
 	function handleToggleRecording() {
-		debug('Toggle recording triggered from ghost');
+		debug('Toggle recording triggered via custom event');
 
 		// Add null check for contentContainer
 		if (!contentContainer) {
@@ -215,12 +215,20 @@
 
 	// Event listener cleanup
 	let settingsListener;
+	let toggleRecordingListener;
 	let autoRecordTimeout;
 	let ghostClickRetryTimeout;
 
 	// Lifecycle hooks
 	onMount(async () => {
 		// Settings modal is now truly lazy-loaded only when needed - no preloading
+
+		// Set up direct listener for ghost toggle recording event
+		if (browser) {
+			toggleRecordingListener = () => handleToggleRecording();
+			window.addEventListener('talktype:toggle-recording', toggleRecordingListener);
+			debug('Added listener for talktype:toggle-recording custom event');
+		}
 
 		// Check for auto-record setting and start recording if enabled
 		if (browser && StorageUtils.getBooleanItem(STORAGE_KEYS.AUTO_RECORD, false)) {
@@ -270,6 +278,10 @@
 				window.removeEventListener('talktype-setting-changed', settingsListener);
 				debug('Removed settings change listener');
 			}
+			if (browser && toggleRecordingListener) {
+				window.removeEventListener('talktype:toggle-recording', toggleRecordingListener);
+				debug('Removed toggle recording listener');
+			}
 			if (autoRecordTimeout) {
 				clearTimeout(autoRecordTimeout);
 			}
@@ -285,7 +297,6 @@
 		bind:this={ghostContainer}
 		isRecording={$recordingStore}
 		{isProcessing}
-		on:toggleRecording={handleToggleRecording}
 	/>
 	<ContentContainer
 		bind:this={contentContainer}
