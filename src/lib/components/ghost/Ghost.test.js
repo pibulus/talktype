@@ -72,7 +72,7 @@ describe('Ghost Component', () => {
 			await fireEvent.click(ghostButton);
 
 			expect(mockHandler).toHaveBeenCalledTimes(1);
-			
+
 			window.removeEventListener('talktype:toggle-recording', mockHandler);
 		});
 
@@ -90,7 +90,7 @@ describe('Ghost Component', () => {
 			await fireEvent.click(ghostButton);
 
 			expect(mockHandler).not.toHaveBeenCalled();
-			
+
 			window.removeEventListener('talktype:toggle-recording', mockHandler);
 		});
 
@@ -161,7 +161,7 @@ describe('Ghost Component', () => {
 				}
 			});
 			const ghostButton = container.querySelector('button');
-			
+
 			expect(ghostButton).toHaveAttribute('aria-label', 'Toggle Recording');
 			expect(ghostButton).toHaveAttribute('aria-pressed', 'false');
 			expect(ghostButton).toHaveAttribute('tabindex', '0');
@@ -202,7 +202,7 @@ describe('Ghost Component', () => {
 			await fireEvent.keyDown(ghostButton, { key: 'Enter' });
 
 			expect(mockHandler).toHaveBeenCalled();
-			
+
 			window.removeEventListener('talktype:toggle-recording', mockHandler);
 		});
 
@@ -220,7 +220,7 @@ describe('Ghost Component', () => {
 			await fireEvent.keyDown(ghostButton, { key: ' ' });
 
 			expect(mockHandler).toHaveBeenCalled();
-			
+
 			window.removeEventListener('talktype:toggle-recording', mockHandler);
 		});
 	});
