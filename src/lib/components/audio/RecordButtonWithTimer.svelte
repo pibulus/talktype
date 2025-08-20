@@ -9,11 +9,6 @@
 	export let isPremiumUser = false;
 	export let buttonLabel = CTA_PHRASES[0];
 	export let progress = 0; // For transcription progress
-	
-	// Debug transcribing state
-	$: if (transcribing) {
-		console.log('[RecordButtonWithTimer] Transcribing:', transcribing, 'Progress:', progress);
-	}
 
 	// Element refs
 	let recordButtonElement;
@@ -72,41 +67,18 @@
 
 {#if transcribing}
 	<div
-		class="progress-container relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-gradient-to-r from-pink-50 via-purple-50 to-indigo-50 shadow-xl sm:h-[64px] sm:w-[85%]"
+		class="progress-container relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
 		role="progressbar"
 		aria-label="Transcription progress"
 		aria-valuenow={progress}
 		aria-valuemin="0"
 		aria-valuemax="100"
-		style="min-width: 280px; border: 2px solid rgba(219, 39, 119, 0.2); box-shadow: 0 10px 30px -5px rgba(219, 39, 119, 0.25), 0 0 0 1px rgba(219, 39, 119, 0.05);"
+		style="min-width: 280px;"
 	>
-		<!-- Liquid fill with gooey effect -->
 		<div
-			class="liquid-fill absolute inset-0 flex items-center justify-center"
-			style="width: {progress}%; min-width: {progress > 0 ? '20px' : '0'}; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"
-		>
-			<!-- Gradient liquid -->
-			<div class="liquid-gradient absolute inset-0"></div>
-			<!-- Bubble effects -->
-			<div class="bubble bubble-1"></div>
-			<div class="bubble bubble-2"></div>
-			<div class="bubble bubble-3"></div>
-			<!-- Glossy overlay -->
-			<div class="glossy-overlay absolute inset-0"></div>
-		</div>
-		<!-- Wave surface animation -->
-		<div 
-			class="wave-surface absolute left-0 h-full" 
-			style="width: {progress}%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"
-		>
-			<div class="wave"></div>
-		</div>
-		<!-- Loading text on top -->
-		<div class="absolute inset-0 flex items-center justify-center">
-			<span class="loading-text z-30 text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-purple-600 drop-shadow-sm">
-				{progress < 30 ? 'Processing...' : progress < 60 ? 'Thinking...' : progress < 90 ? 'Almost there...' : 'Finalizing...'}
-			</span>
-		</div>
+			class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
+			style="width: {progress}%;"
+		></div>
 	</div>
 {:else}
 	<button
@@ -312,132 +284,31 @@
 		transform-origin: center;
 	}
 
-	/* Liquid gooey loading animations */
-	.liquid-gradient {
-		background: linear-gradient(
-			135deg,
-			rgba(236, 72, 153, 0.9) 0%,
-			rgba(168, 85, 247, 0.9) 50%,
-			rgba(99, 102, 241, 0.9) 100%
-		);
-		animation: liquid-shift 3s ease-in-out infinite;
-		filter: blur(0.5px);
+	/* Clean progress bar styling */
+	.progress-container {
+		position: relative;
+		overflow: hidden;
+		transition: all 0.3s ease;
 	}
 
-	@keyframes liquid-shift {
-		0%, 100% {
-			transform: translateX(0) scale(1);
-		}
-		50% {
-			transform: translateX(2px) scale(1.02);
-		}
-	}
-
-	/* Bubble effects for liquid feel */
-	.bubble {
-		position: absolute;
-		background: radial-gradient(circle, rgba(255, 255, 255, 0.8), transparent);
-		border-radius: 50%;
-		opacity: 0;
-	}
-
-	.bubble-1 {
-		width: 20px;
-		height: 20px;
-		bottom: 10%;
-		left: 20%;
-		animation: bubble-rise 3s ease-in-out infinite;
-	}
-
-	.bubble-2 {
-		width: 15px;
-		height: 15px;
-		bottom: 5%;
-		left: 50%;
-		animation: bubble-rise 3s ease-in-out infinite 1s;
-	}
-
-	.bubble-3 {
-		width: 10px;
-		height: 10px;
-		bottom: 15%;
-		left: 80%;
-		animation: bubble-rise 3s ease-in-out infinite 2s;
-	}
-
-	@keyframes bubble-rise {
-		0% {
-			opacity: 0;
-			transform: translateY(0) scale(0.5);
-		}
-		20% {
-			opacity: 0.7;
-		}
-		80% {
-			opacity: 0.3;
-			transform: translateY(-30px) scale(1.2);
-		}
-		100% {
-			opacity: 0;
-			transform: translateY(-40px) scale(1.5);
-		}
-	}
-
-	/* Wave surface animation */
-	.wave-surface {
+	.progress-bar {
 		position: absolute;
 		top: 0;
-		overflow: hidden;
-	}
-
-	.wave {
-		position: absolute;
-		top: -2px;
-		right: -2px;
-		width: 10px;
+		left: 0;
 		height: 100%;
-		background: linear-gradient(90deg, 
-			transparent,
-			rgba(255, 255, 255, 0.4),
-			transparent
-		);
-		animation: wave-motion 1.5s ease-in-out infinite;
-		filter: blur(2px);
+		transition: width 0.3s ease;
+		animation: pulse-glow 1.5s infinite ease-in-out;
 	}
 
-	@keyframes wave-motion {
-		0%, 100% {
-			transform: translateY(-2px) scaleY(1.1);
+	@keyframes pulse-glow {
+		0% {
+			box-shadow: inset 0 0 5px rgba(255, 190, 60, 0.5);
 		}
 		50% {
-			transform: translateY(2px) scaleY(0.9);
+			box-shadow: inset 0 0 15px rgba(255, 190, 60, 0.8);
 		}
-	}
-
-	/* Glossy overlay for candy effect */
-	.glossy-overlay {
-		background: linear-gradient(
-			180deg,
-			rgba(255, 255, 255, 0.5) 0%,
-			transparent 50%,
-			rgba(0, 0, 0, 0.1) 100%
-		);
-		opacity: 0.6;
-	}
-
-	.loading-text {
-		animation: pulse-text 2s ease-in-out infinite;
-		letter-spacing: 0.05em;
-	}
-
-	@keyframes pulse-text {
-		0%, 100% {
-			opacity: 0.8;
-			transform: scale(1);
-		}
-		50% {
-			opacity: 1;
-			transform: scale(1.02);
+		100% {
+			box-shadow: inset 0 0 5px rgba(255, 190, 60, 0.5);
 		}
 	}
 

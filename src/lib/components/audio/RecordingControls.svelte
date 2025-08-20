@@ -38,7 +38,6 @@
 	let progressInterval;
 	
 	$: if ($isTranscribing) {
-		console.log('[RecordingControls] isTranscribing changed to:', $isTranscribing);
 		// Start with a small value so something is visible immediately
 		progressValue = 5;
 		// Clear any existing interval
@@ -47,7 +46,6 @@
 		progressInterval = setInterval(() => {
 			// Smoother increments
 			progressValue = Math.min(progressValue + 8, 95); // Animate to 95%, leave room for completion
-			console.log('[RecordingControls] Progress:', progressValue);
 			if (!$isTranscribing || progressValue >= 95) {
 				clearInterval(progressInterval);
 				if (!$isTranscribing) {
