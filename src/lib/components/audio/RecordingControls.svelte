@@ -33,8 +33,20 @@
 	// Reactive button label computation
 	$: buttonLabel = $isRecording ? 'Stop Recording' : $transcriptionText ? currentCta : currentCta;
 
-	// Progress value for the button
-	$: progressValue = 0; // Will be connected to transcription progress when needed
+	// Progress value for the button - animated from 0 to 100 when transcribing
+	let progressValue = 0;
+	$: if ($isTranscribing) {
+		progressValue = 0;
+		const progressInterval = setInterval(() => {
+			progressValue = Math.min(progressValue + 10, 90); // Animate to 90%, leave room for completion
+			if (!$isTranscribing || progressValue >= 90) {
+				clearInterval(progressInterval);
+				if (!$isTranscribing) progressValue = 100; // Complete when done
+			}
+		}, 200);
+	} else {
+		progressValue = 0;
+	}
 
 	onMount(() => {
 		// Initialize services
@@ -138,7 +150,7 @@
 
 <!-- Audio visualizer - only show when recording -->
 {#if $isRecording}
-	<div class="visualizer-container absolute left-0 top-0 flex w-full justify-center">
+	<div class="visualizer-container relative mt-4 flex w-full justify-center">
 		<div class="wrapper-container flex w-full justify-center">
 			<div
 				class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md sm:w-full"
@@ -187,14 +199,6 @@
 			width: 90%;
 			max-width: 90vw;
 			margin: 0 auto;
-		}
-
-		/* Make the visualizer more compact on mobile */
-		.visualizer-container {
-			top: -5px;
-			display: flex;
-			justify-content: center;
-			width: 100%;
 		}
 
 		/* Ensure minimum width even on very small screens */

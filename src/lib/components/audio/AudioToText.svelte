@@ -57,9 +57,24 @@
 	$: responsiveFontSize = getResponsiveFontSize($transcriptionText);
 
 	// Handler for transcript component events
-	function handleTranscriptEvent(event) {
+	async function handleTranscriptEvent(event) {
 		const { type, detail } = event;
-		// Forward events to child components as needed
+		
+		// Handle copy to clipboard
+		if (type === 'copy' && detail?.text) {
+			try {
+				await navigator.clipboard.writeText(detail.text);
+				// Set clipboard success state
+				uiActions.setClipboardSuccess(true);
+				// Reset after 2 seconds
+				setTimeout(() => {
+					uiActions.setClipboardSuccess(false);
+				}, 2000);
+			} catch (err) {
+				console.error('Failed to copy to clipboard:', err);
+			}
+		}
+		// Forward other events to child components as needed
 	}
 
 	// Lifecycle hooks

@@ -67,17 +67,32 @@
 
 {#if transcribing}
 	<div
-		class="progress-container relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
+		class="progress-container relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-gradient-to-r from-pink-100 to-purple-100 shadow-lg shadow-pink-200/50 sm:h-[64px] sm:w-[85%]"
 		role="progressbar"
 		aria-label="Transcription progress"
 		aria-valuenow={progress}
 		aria-valuemin="0"
 		aria-valuemax="100"
+		style="min-width: 280px;"
 	>
+		<!-- Shimmer overlay -->
+		<div class="shimmer-overlay absolute inset-0 z-20"></div>
+		<!-- Progress bar with gradient -->
 		<div
-			class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
+			class="progress-bar relative flex h-full items-center justify-center overflow-hidden transition-all duration-700 ease-out"
 			style="width: {progress}%;"
-		></div>
+		>
+			<!-- Animated gradient background -->
+			<div class="absolute inset-0 bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 opacity-90"></div>
+			<!-- Flowing animation layer -->
+			<div class="wave-animation absolute inset-0"></div>
+		</div>
+		<!-- Loading text -->
+		<div class="absolute inset-0 flex items-center justify-center">
+			<span class="loading-text z-30 text-base font-semibold text-gray-700">
+				Processing magic...
+			</span>
+		</div>
 	</div>
 {:else}
 	<button
@@ -281,6 +296,58 @@
 	.pulse-subtle {
 		animation: button-breathe 3.5s ease-in-out infinite;
 		transform-origin: center;
+	}
+
+	/* Lush loading animations */
+	.shimmer-overlay {
+		background: linear-gradient(
+			90deg,
+			transparent 0%,
+			rgba(255, 255, 255, 0.4) 50%,
+			transparent 100%
+		);
+		animation: shimmer 2s ease-in-out infinite;
+	}
+
+	@keyframes shimmer {
+		0% {
+			transform: translateX(-100%);
+		}
+		100% {
+			transform: translateX(100%);
+		}
+	}
+
+	.wave-animation {
+		background: linear-gradient(
+			90deg,
+			transparent,
+			rgba(255, 255, 255, 0.3),
+			transparent
+		);
+		animation: wave 1.5s ease-in-out infinite;
+	}
+
+	@keyframes wave {
+		0% {
+			transform: translateX(-100%) skewX(-12deg);
+		}
+		100% {
+			transform: translateX(100%) skewX(-12deg);
+		}
+	}
+
+	.loading-text {
+		animation: pulse-text 2s ease-in-out infinite;
+	}
+
+	@keyframes pulse-text {
+		0%, 100% {
+			opacity: 0.7;
+		}
+		50% {
+			opacity: 1;
+		}
 	}
 
 	@keyframes button-breathe {
