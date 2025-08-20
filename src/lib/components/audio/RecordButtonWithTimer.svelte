@@ -67,7 +67,7 @@
 
 {#if transcribing}
 	<div
-		class="progress-container relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
+		class="progress-container relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-amber-200/30 sm:w-[85%]"
 		role="progressbar"
 		aria-label="Transcription progress"
 		aria-valuenow={progress}
@@ -76,9 +76,14 @@
 		style="min-width: 280px;"
 	>
 		<div
-			class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
+			class="progress-bar absolute left-0 top-0 h-full bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
 			style="width: {progress}%;"
 		></div>
+		<div class="absolute inset-0 flex items-center justify-center">
+			<span class="text-xl font-bold text-black" style="letter-spacing: 0.02em;">
+				Processing...
+			</span>
+		</div>
 	</div>
 {:else}
 	<button

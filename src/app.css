@@ -65,8 +65,8 @@
 html {
 	/* Smooth scrolling for anchor links */
 	scroll-behavior: smooth;
-	/* Always show scrollbar to prevent layout shift */
-	overflow-y: scroll;
+	/* Remove forced scrollbar - let content dictate */
+	overflow-y: auto;
 }
 
 body {
@@ -86,11 +86,9 @@ body {
 	overflow: hidden;
 }
 
-/* Support for dialog element */
+/* Support for dialog element - removed position fixed to prevent layout shift */
 body:has(dialog[open]) {
 	overflow: hidden;
-	position: fixed;
-	width: 100%;
 }
 
 /* Modal container styles */
@@ -136,16 +134,7 @@ dialog.modal::backdrop {
 /* ===================================================================
    SCROLLBAR COMPENSATION - Prevent layout shift on modal open
    =================================================================== */
-@media screen and (min-width: 768px) {
-	/* Calculate scrollbar width dynamically */
-	:root {
-		--scrollbar-width: calc(100vw - 100%);
-	}
-
-	body:has(dialog[open]) {
-		padding-right: var(--scrollbar-width);
-	}
-}
+/* Scrollbar compensation removed - let modal service handle it */
 
 /* ===================================================================
    ANIMATIONS - Namespaced to prevent conflicts
