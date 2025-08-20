@@ -46,16 +46,16 @@
 }
 
 /* ===================================================================
-   BUTTON OVERRIDES - Fix DaisyUI flash without breaking styles
+   BUTTON OVERRIDES - Smooth transitions
    =================================================================== */
 .btn {
-	transition: var(--transition-fast);
-}
-
-/* Hide pseudo elements that cause black flash on load */
-.btn:not(.btn-initialized)::before,
-.btn:not(.btn-initialized)::after {
-	display: none;
+	transition: transform var(--transition-fast), 
+	            background-color var(--transition-fast),
+	            border-color var(--transition-fast),
+	            color var(--transition-fast),
+	            box-shadow var(--transition-fast);
+	/* Prevent layout shift on hover */
+	transform: translateZ(0);
 }
 
 /* ===================================================================
@@ -78,22 +78,18 @@ body {
 }
 
 /* ===================================================================
-   MODAL HANDLING - Proper specificity without !important
+   MODAL HANDLING - Clean and maintainable
    =================================================================== */
-/* Higher specificity for modal states */
-html:has(dialog[open]),
-html.modal-active {
+/* Prevent scroll when modal is open */
+.modal-open {
+	overflow: hidden;
+}
+
+/* Support for dialog element */
+body:has(dialog[open]) {
 	overflow: hidden;
 	position: fixed;
 	width: 100%;
-	height: 100%;
-	top: 0;
-	left: 0;
-}
-
-body:has(dialog[open]),
-body.modal-active {
-	overflow: hidden;
 }
 
 /* Modal container styles */
@@ -141,19 +137,19 @@ dialog.modal::backdrop {
    =================================================================== */
 @media screen and (min-width: 768px) {
 	/* Calculate scrollbar width dynamically */
-	html {
+	:root {
 		--scrollbar-width: calc(100vw - 100%);
 	}
 
-	html.modal-active {
+	body:has(dialog[open]) {
 		padding-right: var(--scrollbar-width);
 	}
 }
 
 /* ===================================================================
-   ANIMATIONS - Reusable and performant
+   ANIMATIONS - Namespaced to prevent conflicts
    =================================================================== */
-@keyframes fadeIn {
+@keyframes tt-fadeIn {
 	from {
 		opacity: 0;
 		transform: translateY(10px);
@@ -164,7 +160,7 @@ dialog.modal::backdrop {
 	}
 }
 
-@keyframes fadeUp {
+@keyframes tt-fadeUp {
 	from {
 		opacity: 0;
 		transform: translateY(15px);
@@ -175,7 +171,7 @@ dialog.modal::backdrop {
 	}
 }
 
-@keyframes pulse-glow {
+@keyframes tt-pulse-glow {
 	0% {
 		box-shadow: 0 0 5px rgba(255, 190, 60, 0.5);
 	}
@@ -191,11 +187,11 @@ dialog.modal::backdrop {
    UTILITY CLASSES
    =================================================================== */
 .animate-fadeIn {
-	animation: fadeIn 0.5s ease-out forwards;
+	animation: tt-fadeIn 0.5s ease-out forwards;
 }
 
 .animate-fadeUp {
-	animation: fadeUp 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+	animation: tt-fadeUp 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 }
 
 /* Custom gradient text */
