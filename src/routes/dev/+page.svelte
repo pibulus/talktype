@@ -2,16 +2,16 @@
 	import { dev } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	
+
 	let GhostTestContainer;
-	
+
 	onMount(async () => {
 		if (!dev) {
 			// Redirect to home in production
 			goto('/');
 			return;
 		}
-		
+
 		// Lazy load the test container in dev only
 		const module = await import('$lib/components/ghostTest/GhostTestContainer.svelte');
 		GhostTestContainer = module.default;
@@ -39,7 +39,7 @@
 		color: white;
 		padding: 1rem;
 	}
-	
+
 	.dev-header {
 		display: flex;
 		justify-content: space-between;
@@ -48,13 +48,13 @@
 		padding-bottom: 1rem;
 		border-bottom: 2px solid #333;
 	}
-	
+
 	.dev-header h1 {
 		margin: 0;
 		font-size: 1.5rem;
 		color: #ff69b4;
 	}
-	
+
 	.back-link {
 		color: #87ceeb;
 		text-decoration: none;
@@ -63,13 +63,14 @@
 		border-radius: 4px;
 		transition: all 0.3s ease;
 	}
-	
+
 	.back-link:hover {
 		background: #87ceeb;
 		color: #1a1a1a;
 	}
-	
-	.loading, .redirect {
+
+	.loading,
+	.redirect {
 		display: flex;
 		justify-content: center;
 		align-items: center;

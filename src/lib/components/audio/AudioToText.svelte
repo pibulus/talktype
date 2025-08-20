@@ -13,7 +13,7 @@
 	import { ANIMATION, CTA_PHRASES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
 	import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
 	import { memoize, deferUntilIdle } from '$lib/utils/performanceUtils';
-	
+
 	// Lazy load Confetti component
 	let Confetti;
 
@@ -183,17 +183,29 @@
 
 			// Process the audio if we have data
 			if (audioBlob) {
-				// Scroll to show transcript if needed
-				scrollToBottomIfNeeded({
-					threshold: 300,
-					delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY
-				});
+				// Transcribe the audio
+				try {
+					const transcriptText = await transcriptionService.transcribeAudio(audioBlob);
+					
+					// Scroll to show transcript if needed
+					scrollToBottomIfNeeded({
+						threshold: 300,
+						delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY
+					});
 
-				// Increment the transcription count for PWA prompt
-				if (browser && 'requestIdleCallback' in window) {
-					window.requestIdleCallback(() => incrementTranscriptionCount());
-				} else {
-					setTimeout(incrementTranscriptionCount, 0);
+					// Increment the transcription count for PWA prompt
+					if (browser && 'requestIdleCallback' in window) {
+						window.requestIdleCallback(() => incrementTranscriptionCount());
+					} else {
+						setTimeout(incrementTranscriptionCount, 0);
+					}
+				} catch (transcriptionError) {
+					console.error('❌ Transcription error:', transcriptionError);
+					uiActions.setErrorMessage(`Transcription error: ${transcriptionError.message || 'Unknown error'}`);
+					// Stop ghost thinking animation on error
+					if (ghostComponent && typeof ghostComponent.stopThinking === 'function') {
+						ghostComponent.stopThinking();
+					}
 				}
 			} else {
 				// If no audio data, revert UI state
@@ -250,22 +262,25 @@
 	}
 
 	// Memoized responsive font sizing based on text length
-	const getResponsiveFontSize = memoize((text) => {
-		if (!text) return 'text-base';
+	const getResponsiveFontSize = memoize(
+		(text) => {
+			if (!text) return 'text-base';
 
-		const wordCount = text.trim().split(/\s+/).length;
+			const wordCount = text.trim().split(/\s+/).length;
 
-		// Use CSS-based responsive sizing rather than JS viewport detection
-		if (wordCount <= 5) {
-			return 'text-lg sm:text-xl md:text-2xl lg:text-3xl';
-		} else if (wordCount <= 15) {
-			return 'text-base sm:text-lg md:text-xl';
-		} else if (wordCount <= 50) {
-			return 'text-sm sm:text-base md:text-lg';
-		} else {
-			return 'text-xs sm:text-sm md:text-base';
-		}
-	}, (text) => text ? text.length : 0); // Cache by text length
+			// Use CSS-based responsive sizing rather than JS viewport detection
+			if (wordCount <= 5) {
+				return 'text-lg sm:text-xl md:text-2xl lg:text-3xl';
+			} else if (wordCount <= 15) {
+				return 'text-base sm:text-lg md:text-xl';
+			} else if (wordCount <= 50) {
+				return 'text-sm sm:text-base md:text-lg';
+			} else {
+				return 'text-xs sm:text-sm md:text-base';
+			}
+		},
+		(text) => (text ? text.length : 0)
+	); // Cache by text length
 
 	// Reactive font size based on transcript length
 	$: responsiveFontSize = getResponsiveFontSize($transcriptionText);
@@ -308,7 +323,7 @@
 			if (Math.floor(Math.random() * 7) === 0) {
 				// Lazy load Confetti component only when needed
 				if (!Confetti) {
-					import('$lib/components/ui/effects/Confetti.svelte').then(module => {
+					import('$lib/components/ui/effects/Confetti.svelte').then((module) => {
 						Confetti = module.default;
 						// Update confetti colors based on current theme
 						confettiColors = getThemeConfettiColors();
@@ -385,6 +400,9 @@
 			setTimeout(async () => {
 				const isPwa = await pwaService.checkIfRunningAsPwa();
 				if (isPwa) {
+					// PWA is running, can add specific logic here if needed
+				}
+			}, 100);
 		}
 	});
 

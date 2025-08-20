@@ -63,7 +63,6 @@
 		} else {
 			platform = navigator.platform || 'desktop';
 		}
-
 	}
 
 	/**

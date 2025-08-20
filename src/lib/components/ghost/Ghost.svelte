@@ -119,11 +119,10 @@
 		// cleanupAllAnimations(); // Commented out - Use CSS animations
 		// initGradientAnimation(currentTheme, svgElement); // Commented out - Use CSS animations
 
-		// Update dynamic styles (now only injects gradient vars)
-		initDynamicStyles();
-
-		// Log theme change if in debug mode
-		if (debug) {
+		// Create or update dynamic styles element
+		let ghostStyleElement = document.getElementById('ghost-dynamic-styles');
+		if (!ghostStyleElement) {
+			ghostStyleElement = document.createElement('style');
 			ghostStyleElement.id = 'ghost-dynamic-styles';
 			document.head.appendChild(ghostStyleElement);
 		}
@@ -131,6 +130,11 @@
 		// Get CSS variables from the store
 		const gradientVars = $cssVariables;
 		ghostStyleElement.textContent = `:root {\n  ${gradientVars}\n}`;
+
+		// Log theme change if in debug mode
+		if (debug) {
+			console.log('[Ghost] Theme changed, styles updated');
+		}
 
 		// Removed call to injectAnimationVariables()
 
@@ -140,10 +144,6 @@
 	}
 
 	// Removed handleMouseMove - eye tracking handled by blinkService/eyeTracking service
-
-	// Handle click events
-	function handleClick() {
-	}
 
 	// Clean up on destroy - ensure all animation resources are cleared
 	onDestroy(() => {
@@ -212,6 +212,17 @@
 		blinkService.reactToTranscript({ leftEye, rightEye }, textLength);
 	}
 
+	// Handle click on the ghost
+	function handleClick() {
+		if (clickable) {
+			// Dispatch toggle recording event
+			dispatch('toggleRecording');
+
+			// The wobble animation is now handled through the recording state change
+			// in the ghostStateStore when setRecording is called
+		}
+	}
+
 	// Variables to track component loading state
 	let componentsLoaded = false;
 
@@ -224,7 +235,6 @@
 		// Initial setup operations
 		setDebugMode();
 		setupThemeSubscription();
-		initDynamicStyles();
 
 		if (browser) {
 			// Initialize element references for services
@@ -302,8 +312,7 @@
 	});
 
 	function handleInitialAnimationComplete() {
-		if (debug)
-		ghostStateStore.completeFirstVisit();
+		if (debug) ghostStateStore.completeFirstVisit();
 		ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 	}
 

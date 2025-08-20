@@ -26,17 +26,7 @@
 	let speechModelPreloaded = false;
 	let isProcessing = false;
 	function debug(message) {
-		modalService.openModal('about_modal');
-	}
-
-	function showAboutModal() {
-		debug('showAboutModal called');
-		modalService.openModal('about_modal');
-	}
-	
-	function showExtensionModal() {
-		debug('showExtensionModal called');
-		modalService.openModal('extension_modal');
+		// console.log(`[MainContainer] ${message}`);
 	}
 
 	async function openSettingsModal() {
@@ -81,10 +71,6 @@
 
 	function closeSettingsModal() {
 		debug('closeSettingsModal called');
-		modalService.closeModal();
-	}
-
-	function closeModal() {
 		modalService.closeModal();
 	}
 
@@ -144,7 +130,7 @@
 	// Handle toggle recording from ghost
 	function handleToggleRecording() {
 		debug('Toggle recording triggered from ghost');
-		
+
 		// Add null check for contentContainer
 		if (!contentContainer) {
 			console.warn('[MainContainer] contentContainer not ready yet');
@@ -158,7 +144,7 @@
 			}, 100);
 			return;
 		}
-		
+
 		contentContainer.toggleRecording();
 	}
 
@@ -167,6 +153,27 @@
 		debug('Triggering ghost click after intro modal close');
 		// Forward to the toggle recording handler
 		handleToggleRecording();
+	}
+
+	// Modal control functions
+	function showAboutModal() {
+		const modal = document.getElementById('about_modal');
+		if (modal) {
+			modal.showModal();
+		}
+	}
+
+	function showExtensionModal() {
+		const modal = document.getElementById('extension_modal');
+		if (modal) {
+			modal.showModal();
+		}
+	}
+
+	function closeModal() {
+		// General close modal function
+		const modals = document.querySelectorAll('dialog[open]');
+		modals.forEach((modal) => modal.close());
 	}
 
 	// Handle transcription completed event for PWA prompt
@@ -205,7 +212,7 @@
 	// Component references
 	let ghostContainer;
 	let contentContainer;
-	
+
 	// Event listener cleanup
 	let settingsListener;
 	let autoRecordTimeout;
@@ -256,7 +263,7 @@
 
 		// Check if first visit to show intro
 		await firstVisitService.showIntroModal();
-		
+
 		// Return cleanup function
 		return () => {
 			if (browser && settingsListener) {

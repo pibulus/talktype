@@ -35,7 +35,7 @@
 
 	function handleClick() {
 		if (!clickable) return;
-		
+
 		dispatch('click');
 		ghostStore.animations.pulse();
 		ghostStore.animations.wobble('left');
@@ -43,7 +43,7 @@
 
 	function startBlinking() {
 		if (!browser) return;
-		
+
 		const scheduleNextBlink = () => {
 			const delay = Math.random() * 4000 + 2000; // 2-6 seconds
 			blinkInterval = setTimeout(() => {
@@ -51,26 +51,26 @@
 				scheduleNextBlink();
 			}, delay);
 		};
-		
+
 		scheduleNextBlink();
 	}
 
 	function handleMouseMove(event) {
 		if (!eyeTrackingEnabled || !browser || !ghostSvg) return;
-		
+
 		const rect = ghostSvg.getBoundingClientRect();
 		const centerX = rect.left + rect.width / 2;
 		const centerY = rect.top + rect.height / 2;
-		
+
 		const deltaX = event.clientX - centerX;
 		const deltaY = event.clientY - centerY;
-		
+
 		const maxMove = 15;
 		const x = Math.max(-maxMove, Math.min(maxMove, deltaX * 0.02));
 		const y = Math.max(-maxMove, Math.min(maxMove, deltaY * 0.02));
-		
+
 		ghostStore.eyes.track(x, y);
-		
+
 		if (leftEye && rightEye) {
 			leftEye.style.transform = `translate(${x}px, ${y}px)`;
 			rightEye.style.transform = `translate(${x}px, ${y}px)`;
@@ -79,10 +79,10 @@
 
 	onMount(() => {
 		startBlinking();
-		
+
 		if (browser) {
 			window.addEventListener('mousemove', handleMouseMove);
-			
+
 			// Initial animation
 			setTimeout(() => {
 				ghostStore.animations.wobble('right');
@@ -99,7 +99,7 @@
 	});
 </script>
 
-<div 
+<div
 	class="ghost-container"
 	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
 >
@@ -205,32 +205,41 @@
 	}
 
 	@keyframes recording-pulse {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.7; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.7;
+		}
 	}
 
 	@keyframes processing-spin {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
-	:global([data-ghost-theme="peach"]) {
-		--ghost-color-1: #FFD4B2;
-		--ghost-color-2: #FFA578;
+	:global([data-ghost-theme='peach']) {
+		--ghost-color-1: #ffd4b2;
+		--ghost-color-2: #ffa578;
 	}
 
-	:global([data-ghost-theme="sunset"]) {
-		--ghost-color-1: #FF69B4;
-		--ghost-color-2: #FF1493;
+	:global([data-ghost-theme='sunset']) {
+		--ghost-color-1: #ff69b4;
+		--ghost-color-2: #ff1493;
 	}
 
-	:global([data-ghost-theme="ocean"]) {
-		--ghost-color-1: #87CEEB;
-		--ghost-color-2: #4682B4;
+	:global([data-ghost-theme='ocean']) {
+		--ghost-color-1: #87ceeb;
+		--ghost-color-2: #4682b4;
 	}
 
-	:global([data-ghost-theme="forest"]) {
-		--ghost-color-1: #90EE90;
-		--ghost-color-2: #228B22;
+	:global([data-ghost-theme='forest']) {
+		--ghost-color-1: #90ee90;
+		--ghost-color-2: #228b22;
 	}
 </style>

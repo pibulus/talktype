@@ -17,12 +17,14 @@ export const geminiService = {
 
 	async transcribeAudio(audioBlob) {
 		try {
-			if (!initialized) {
-				await initialize();
+			// Check if model is initialized, if not, preload it
+			const modelStatus = geminiApiService.getModelStatus();
+			if (!modelStatus.initialized && !modelStatus.initializing) {
+				await geminiApiService.preloadModel();
 			}
 
-			// Get the current prompt
-			const prompt = promptManager.getCurrentPrompt();
+			// Get the current prompt for transcription
+			const prompt = promptManager.getPrompt('transcribeAudio');
 
 			// Convert audio to format Gemini can use
 			const audioPart = await geminiApiService.blobToGenerativePart(audioBlob);

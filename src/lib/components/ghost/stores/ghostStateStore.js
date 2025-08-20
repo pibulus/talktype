@@ -221,10 +221,9 @@ function createGhostStateStore() {
 			return;
 		}
 
-		const wobbleClass = type === 'start' 
-			? WOBBLE_CONFIG.RECORDING_START_CLASS 
-			: WOBBLE_CONFIG.RECORDING_STOP_CLASS;
-		
+		const wobbleClass =
+			type === 'start' ? WOBBLE_CONFIG.RECORDING_START_CLASS : WOBBLE_CONFIG.RECORDING_STOP_CLASS;
+
 		// Force reflow before adding class
 		void wobbleGroup.offsetWidth;
 		wobbleGroup.classList.add(wobbleClass);
@@ -250,18 +249,18 @@ function createGhostStateStore() {
 	 */
 	function handleRecordingStart(currentState) {
 		debugLog('🎙️ Recording started - applying wobble effect first');
-		
+
 		// 1. Set isRecording flag immediately
 		_state.update((s) => ({ ...s, isRecording: true }));
-		
+
 		// 2. Apply wobble animation
 		applyWobbleAnimation('start');
-		
+
 		// 3. Schedule state transition to RECORDING on next frame
 		if (currentState.stateTimeouts.rafRecordingStart) {
 			cancelAnimationFrame(currentState.stateTimeouts.rafRecordingStart);
 		}
-		
+
 		const rafId = requestAnimationFrame(() => {
 			if (get(_state).isRecording) {
 				debugLog('Next frame: Transitioning state to RECORDING');
@@ -275,7 +274,7 @@ function createGhostStateStore() {
 				stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: null }
 			}));
 		});
-		
+
 		// Store RAF ID for potential cleanup
 		_state.update((s) => ({
 			...s,
@@ -289,10 +288,10 @@ function createGhostStateStore() {
 	 */
 	function handleRecordingStop(currentState) {
 		debugLog('🛑 Recording stopped - applying wobble effect');
-		
+
 		// 1. Set isRecording flag to false immediately
 		_state.update((s) => ({ ...s, isRecording: false }));
-		
+
 		// Clear any pending next-frame start transition
 		if (currentState.stateTimeouts.rafRecordingStart) {
 			cancelAnimationFrame(currentState.stateTimeouts.rafRecordingStart);
@@ -301,13 +300,11 @@ function createGhostStateStore() {
 				stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: null }
 			}));
 		}
-		
+
 		// 2. Transition to appropriate end state
-		const endState = currentState.isProcessing
-			? ANIMATION_STATES.THINKING
-			: ANIMATION_STATES.IDLE;
+		const endState = currentState.isProcessing ? ANIMATION_STATES.THINKING : ANIMATION_STATES.IDLE;
 		setAnimationState(endState);
-		
+
 		// 3. Apply wobble animation
 		applyWobbleAnimation('stop');
 	}
@@ -319,12 +316,12 @@ function createGhostStateStore() {
 	function setRecording(isRecording) {
 		const currentState = get(_state);
 		const wasRecording = currentState.isRecording;
-		
+
 		// No change needed
 		if (isRecording === wasRecording) {
 			return;
 		}
-		
+
 		if (isRecording && !wasRecording) {
 			handleRecordingStart(currentState);
 		} else if (!isRecording && wasRecording) {
@@ -498,12 +495,12 @@ function createGhostStateStore() {
 		// END ADD
 		_state.update((s) => ({ ...s, debug: !!enabled })); // Ensure it's a boolean
 		// ADD THIS LINE
+	}
 
 	// Combined store with public API
 	const _ghostStateStore = {
 		// Use internal name
 		subscribe: _state.subscribe,
-		props: props,
 		setAnimationState,
 		setRecording,
 		setProcessing,

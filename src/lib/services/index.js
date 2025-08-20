@@ -65,7 +65,6 @@ export function initializeServices(options = {}) {
 		hapticServiceInstance.disable();
 	}
 
-
 	return {
 		eventBus: eventBusInstance,
 		audioService: audioServiceInstance,

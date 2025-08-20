@@ -19,9 +19,10 @@ export function initialGhostAnimation(node, initialParams) {
 		// If oneTimeOnly is set and we've already run, skip
 		if (params?.oneTimeOnly && hasRunOnce) {
 			if (currentDebugState) {
-			blinkTimeoutId = null;
+				// Already ran, skipping
+			}
+			return;
 		}
-		node.classList.remove('initial-load-effect');
 
 		// Update the debug state based on the current parameters being processed.
 		currentDebugState = params?.debug || false;
@@ -30,10 +31,11 @@ export function initialGhostAnimation(node, initialParams) {
 		// the action should not proceed with its main logic.
 		if (!params || !params.blinkService || !params.leftEye || !params.rightEye) {
 			if (currentDebugState) {
+				// Missing required params
 			}
 			return; // Exit setup if prerequisites are not met.
 		}
-		
+
 		// Mark as run
 		hasRunOnce = true;
 
@@ -41,17 +43,20 @@ export function initialGhostAnimation(node, initialParams) {
 		const { blinkService, leftEye, rightEye } = params;
 
 		if (currentDebugState) {
+			// Debug: Starting initial animation
 		}
 
 		// 1. Apply CSS class to trigger grow & wobble
 		node.classList.add('initial-load-effect');
 		if (currentDebugState) {
+			// Applied initial-load-effect class
 		}
 
 		blinkTimeoutId = setTimeout(() => {
 			// Re-check debug state as it might have changed if update was called.
 			// However, currentDebugState is updated at the start of runSetup.
 			if (currentDebugState) {
+				// Debug: About to perform double blink
 			}
 
 			// It's good practice to ensure blinkService and eyes are still valid,
@@ -64,6 +69,7 @@ export function initialGhostAnimation(node, initialParams) {
 			) {
 				blinkService.performDoubleBlink({ leftEye, rightEye }, () => {
 					if (currentDebugState) {
+						// Double blink completed
 					}
 					node.dispatchEvent(new CustomEvent('initialAnimationComplete'));
 				});
@@ -76,7 +82,7 @@ export function initialGhostAnimation(node, initialParams) {
 				// Fallback: dispatch completion event anyway so the app doesn't get stuck
 				node.dispatchEvent(new CustomEvent('initialAnimationComplete'));
 			}
-		}, blinkStartDelay);
+		}, ANIMATION_TIMING.WOBBLE_DURATION - 650);
 	}
 
 	// Initial setup call with the parameters provided when the action is first applied.
