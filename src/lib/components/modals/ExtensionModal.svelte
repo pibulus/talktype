@@ -1,5 +1,5 @@
 <script>
-	import Ghost from '$lib/components/ghost/Ghost.svelte';
+	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { theme } from '$lib';
 	import { ModalCloseButton } from './index.js';
 	export let closeModal;
@@ -23,7 +23,7 @@
 				<div
 					class="flex h-9 w-9 items-center justify-center rounded-full border border-pink-200/60 bg-gradient-to-br from-white to-pink-50 shadow-sm"
 				>
-					<Ghost width="28px" height="28px" externalTheme={theme} clickable={false} seed={98765} />
+					<DisplayGhost width="28px" height="28px" theme={$theme} seed={98765} />
 				</div>
 				<h3 id="extension_modal_title" class="text-xl font-black tracking-tight text-gray-800">
 					Chrome Extension

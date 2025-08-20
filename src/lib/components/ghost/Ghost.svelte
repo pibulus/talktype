@@ -301,6 +301,7 @@
 			document.addEventListener('mousemove', handleUserInteraction, { passive: true });
 			document.addEventListener('pointerdown', handleUserInteraction, { passive: true });
 
+
 			// Return cleanup function
 			return () => {
 				// Cleanup animations and services
@@ -401,6 +402,7 @@
 		xmlns="http://www.w3.org/2000/svg"
 		xmlns:xlink="http://www.w3.org/1999/xlink"
 		class="ghost-svg theme-{currentTheme} {animationClass}"
+		pointer-events="none"
 		class:recording={$ghostStateStore.isRecording}
 		class:spin={$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG}
 		class:asleep={$ghostStateStore.current === ANIMATION_STATES.ASLEEP}

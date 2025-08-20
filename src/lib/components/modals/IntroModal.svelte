@@ -1,6 +1,6 @@
 <script>
 	import { browser } from '$app/environment';
-	import Ghost from '$lib/components/ghost/Ghost.svelte';
+	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './index.js';
 
 	export let closeModal;
@@ -43,7 +43,7 @@
 		<div class="animate-tt-fadeIn space-y-5 sm:space-y-6 md:space-y-7">
 			<div class="mb-4 flex justify-center">
 				<div class="animate-tt-pulse-slow ghost-wrapper h-16 w-16">
-					<Ghost size="100%" clickable={false} class="intro-ghost" seed={12345} />
+					<DisplayGhost size="100%" class="intro-ghost" seed={12345} />
 				</div>
 			</div>
 

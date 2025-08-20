@@ -4,7 +4,6 @@
 	import { geminiService } from '$lib/services/geminiService';
 	import { PROMPT_STYLES } from '$lib/constants';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
-	import Ghost from '$lib/components/ghost/Ghost.svelte';
 	import TranscriptionStyleSelector from './TranscriptionStyleSelector.svelte';
 	import { ModalCloseButton } from '../modals/index.js';
 
@@ -191,7 +190,7 @@
 				<div
 					class="flex h-8 w-8 items-center justify-center rounded-full border border-pink-200/60 bg-gradient-to-br from-white to-pink-50 shadow-sm"
 				>
-					<Ghost width="24px" height="24px" externalTheme={theme} clickable={false} seed={54321} />
+					<DisplayGhost width="24px" height="24px" theme={$theme} seed={54321} />
 				</div>
 				<h3 id="settings_modal_title" class="text-xl font-black tracking-tight text-gray-800">
 					Settings
