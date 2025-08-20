@@ -1,4 +1,4 @@
-import { geminiService as defaultGeminiService } from '$lib/services/geminiService';
+import { whisperService } from './whisper/whisperService';
 import { transcriptionState, transcriptionActions, uiActions } from '../infrastructure/stores';
 import { COPY_MESSAGES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
 import { get } from 'svelte/store';
@@ -14,9 +14,10 @@ export const TranscriptionEvents = {
 
 export class TranscriptionService {
 	constructor(dependencies = {}) {
-		this.geminiService = dependencies.geminiService || defaultGeminiService;
+		this.whisperService = dependencies.whisperService || whisperService;
 		this.browser = typeof window !== 'undefined';
 		this.lastTranscriptionTimestamp = null;
+		this.useOfflineMode = true; // Default to offline Whisper
 	}
 
 	async transcribeAudio(audioBlob) {
@@ -35,40 +36,8 @@ export class TranscriptionService {
 			// Start progress animation
 			this.startProgressAnimation();
 
-			// Convert blob to base64 for API
-			const reader = new FileReader();
-			const base64Promise = new Promise((resolve) => {
-				reader.onloadend = () => {
-					const base64 = reader.result.split(',')[1];
-					resolve(base64);
-				};
-			});
-			reader.readAsDataURL(audioBlob);
-			const audioData = await base64Promise;
-
-			// Get current prompt style
-			const promptStyle = this.geminiService?.getPromptStyle?.() || 'standard';
-
-			// Use server-side API route to protect API key
-			const response = await fetch('/api/transcribe', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					audioData,
-					mimeType: audioBlob.type,
-					promptStyle
-				})
-			});
-
-			const result = await response.json();
-
-			if (!response.ok) {
-				throw new Error(result.error || "The ghost got tongue-tied. Let's try that again!");
-			}
-
-			const transcriptText = result.transcription;
+			// Use offline Whisper transcription
+			const transcriptText = await this.whisperService.transcribeAudio(audioBlob);
 
 			// Complete progress animation with smooth transition
 			this.completeProgressAnimation();
@@ -84,6 +53,8 @@ export class TranscriptionService {
 			let friendlyMessage = error.message;
 			if (error.message.includes('fetch')) {
 				friendlyMessage = "Can't reach the transcription service. Check your connection?";
+			} else if (error.message.includes('load model')) {
+				friendlyMessage = "Loading the transcription model. This happens once and enables offline magic!";
 			}
 
 			// Update state to show error
