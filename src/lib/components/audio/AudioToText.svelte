@@ -28,7 +28,7 @@
 	// Service instances
 	let services;
 	let unsubscribers = [];
-	
+
 	// Component references
 	let recordingControlsRef;
 
@@ -111,9 +111,8 @@
 <div class="main-wrapper mx-auto box-border w-full">
 	<!-- Shared container with proper centering for mobile -->
 	<div class="mobile-centered-container flex w-full flex-col items-center justify-center">
-		
 		<!-- Recording Controls Section -->
-		<RecordingControls 
+		<RecordingControls
 			bind:this={recordingControlsRef}
 			{ghostComponent}
 			{onPreloadRequest}
@@ -132,7 +131,7 @@
 				{#if $transcriptionText && !$isRecording}
 					<TranscriptDisplay
 						transcript={$transcriptionText}
-						responsiveFontSize={responsiveFontSize}
+						{responsiveFontSize}
 						on:copy={handleTranscriptEvent}
 						on:share={handleTranscriptEvent}
 						on:focus={handleTranscriptEvent}
@@ -147,10 +146,7 @@
 </div>
 
 <!-- Transcription Effects (Confetti) -->
-<TranscriptionEffects 
-	{ghostComponent}
-	targetSelector=".ghost-icon-wrapper"
-/>
+<TranscriptionEffects {ghostComponent} targetSelector=".ghost-icon-wrapper" />
 
 <style>
 	/* Main wrapper to ensure proper positioning */

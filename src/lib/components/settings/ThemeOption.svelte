@@ -1,9 +1,9 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
-	
+
 	const dispatch = createEventDispatcher();
-	
+
 	export let vibe;
 	export let index;
 	export let active = false;

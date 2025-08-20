@@ -293,11 +293,7 @@
 </script>
 
 <PageLayout>
-	<GhostContainer
-		bind:this={ghostContainer}
-		isRecording={$recordingStore}
-		{isProcessing}
-	/>
+	<GhostContainer bind:this={ghostContainer} isRecording={$recordingStore} {isProcessing} />
 	<ContentContainer
 		bind:this={contentContainer}
 		ghostComponent={ghostContainer}

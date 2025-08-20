@@ -1,6 +1,6 @@
 <script>
 	import SettingsSection from './SettingsSection.svelte';
-	
+
 	export let enabled = false;
 	export let onToggle = () => {};
 </script>
@@ -11,19 +11,12 @@
 	>
 		<div>
 			<span class="text-sm font-medium text-gray-700">Auto-Record on Start</span>
-			<p class="mt-0.5 text-xs text-gray-500">
-				Start recording immediately when you open TalkType
-			</p>
+			<p class="mt-0.5 text-xs text-gray-500">Start recording immediately when you open TalkType</p>
 		</div>
 		<label class="flex cursor-pointer items-center">
 			<span class="sr-only">Auto-Record Toggle {enabled ? 'Enabled' : 'Disabled'}</span>
 			<div class="relative">
-				<input
-					type="checkbox"
-					class="sr-only"
-					checked={enabled}
-					on:change={onToggle}
-				/>
+				<input type="checkbox" class="sr-only" checked={enabled} on:change={onToggle} />
 				<div
 					class={`h-5 w-10 rounded-full ${enabled ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}
 				></div>

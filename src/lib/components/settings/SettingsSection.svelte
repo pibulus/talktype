@@ -24,7 +24,7 @@
 		</div>
 	{:else}
 		{#if description}
-			<p class="text-xs text-gray-500 mb-2">{description}</p>
+			<p class="mb-2 text-xs text-gray-500">{description}</p>
 		{/if}
 		<slot />
 	{/if}

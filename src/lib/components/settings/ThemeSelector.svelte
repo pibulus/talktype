@@ -1,7 +1,7 @@
 <script>
 	import SettingsSection from './SettingsSection.svelte';
 	import ThemeOption from './ThemeOption.svelte';
-	
+
 	export let currentTheme;
 	export let onThemeChange;
 
@@ -29,11 +29,11 @@
 <SettingsSection title="Choose Your Vibe" showBorder={false}>
 	<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
 		{#each vibeOptions as vibe, index}
-			<ThemeOption 
-				{vibe} 
+			<ThemeOption
+				{vibe}
 				{index}
-				active={currentTheme === vibe.id} 
-				on:select={() => onThemeChange(vibe.id)} 
+				active={currentTheme === vibe.id}
+				on:select={() => onThemeChange(vibe.id)}
 			/>
 		{/each}
 	</div>
