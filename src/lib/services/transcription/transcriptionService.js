@@ -22,7 +22,10 @@ export class TranscriptionService {
 	async transcribeAudio(audioBlob) {
 		try {
 			if (!audioBlob || !(audioBlob instanceof Blob)) {
-				throw new Error('Invalid audio data provided');
+				// Friendly error message
+				const message = "Hmm, no audio to work with. Try recording something first?";
+				transcriptionActions.setTranscriptionError(message);
+				throw new Error(message);
 			}
 
 			// Update transcription state to show in-progress
@@ -32,8 +35,40 @@ export class TranscriptionService {
 			// Start progress animation
 			this.startProgressAnimation();
 
-			// Transcribe using Gemini
-			const transcriptText = await this.geminiService.transcribeAudio(audioBlob);
+			// Convert blob to base64 for API
+			const reader = new FileReader();
+			const base64Promise = new Promise((resolve) => {
+				reader.onloadend = () => {
+					const base64 = reader.result.split(',')[1];
+					resolve(base64);
+				};
+			});
+			reader.readAsDataURL(audioBlob);
+			const audioData = await base64Promise;
+
+			// Get current prompt style
+			const promptStyle = this.geminiService?.getPromptStyle?.() || 'standard';
+
+			// Use server-side API route to protect API key
+			const response = await fetch('/api/transcribe', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					audioData,
+					mimeType: audioBlob.type,
+					promptStyle
+				})
+			});
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				throw new Error(result.error || "The ghost got tongue-tied. Let's try that again!");
+			}
+
+			const transcriptText = result.transcription;
 
 			// Complete progress animation with smooth transition
 			this.completeProgressAnimation();
@@ -43,10 +78,16 @@ export class TranscriptionService {
 
 			return transcriptText;
 		} catch (error) {
-			console.error('Transcription error:', error);
+			console.error('Transcription hiccup:', error);
+
+			// Friendly error message
+			let friendlyMessage = error.message;
+			if (error.message.includes('fetch')) {
+				friendlyMessage = "Can't reach the transcription service. Check your connection?";
+			}
 
 			// Update state to show error
-			transcriptionActions.setTranscriptionError(error.message || 'Unknown transcription error');
+			transcriptionActions.setTranscriptionError(friendlyMessage);
 
 			throw error;
 		}
@@ -97,7 +138,7 @@ export class TranscriptionService {
 		}
 
 		if (!text || text.trim() === '') {
-			uiActions.setErrorMessage('No text available to copy');
+			uiActions.setErrorMessage('Nothing to copy yet - record something first!');
 			return false;
 		}
 
@@ -138,8 +179,9 @@ export class TranscriptionService {
 		} catch (error) {
 			console.error('Clipboard copy error:', error);
 
-			uiActions.setErrorMessage(`Copy failed: ${error.message || 'Unknown error'}`);
-			uiActions.setScreenReaderMessage('Unable to copy. Please try clicking in the window first.');
+			const friendlyMessage = "Couldn't copy to clipboard. Try clicking somewhere first?";
+			uiActions.setErrorMessage(friendlyMessage);
+			uiActions.setScreenReaderMessage('Click somewhere in the window first, then try copying again.');
 
 			return false;
 		}
@@ -151,7 +193,7 @@ export class TranscriptionService {
 		}
 
 		if (!text || text.trim() === '') {
-			uiActions.setErrorMessage('No text available to share');
+			uiActions.setErrorMessage('Nothing to share yet - record something first!');
 			return false;
 		}
 
@@ -186,7 +228,7 @@ export class TranscriptionService {
 				return this.copyToClipboard(text);
 			}
 
-			uiActions.setErrorMessage(`Share failed: ${error.message || 'Unknown error'}`);
+			uiActions.setErrorMessage('Sharing not available on this device - copied to clipboard instead!');
 			return false;
 		}
 	}

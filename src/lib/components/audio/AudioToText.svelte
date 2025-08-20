@@ -69,6 +69,7 @@
 	// Service instances
 	let services;
 	let unsubscribers = [];
+	let activeTimeouts = [];
 
 	// DOM element references
 	let progressContainerElement;
@@ -161,7 +162,10 @@
 			// State is tracked through stores now
 		} catch (err) {
 			console.error('❌ Error in startRecording:', err);
-			uiActions.setErrorMessage(`Recording error: ${err.message || 'Unknown error'}`);
+			const friendlyMessage = err.message.includes('permission')
+				? "Need microphone access - click allow when asked!"
+				: "Recording hiccup - mind trying again?";
+			uiActions.setErrorMessage(friendlyMessage);
 		}
 	}
 
@@ -197,13 +201,15 @@
 					if (browser && 'requestIdleCallback' in window) {
 						window.requestIdleCallback(() => incrementTranscriptionCount());
 					} else {
-						setTimeout(incrementTranscriptionCount, 0);
+						const timeoutId = setTimeout(incrementTranscriptionCount, 0);
+						activeTimeouts.push(timeoutId);
 					}
 				} catch (transcriptionError) {
 					console.error('❌ Transcription error:', transcriptionError);
-					uiActions.setErrorMessage(
-						`Transcription error: ${transcriptionError.message || 'Unknown error'}`
-					);
+					const friendlyMessage = transcriptionError.message.includes('network')
+						? "Can't reach the transcription service - check your connection?"
+						: "The ghost got tongue-tied - give it another shot?";
+					uiActions.setErrorMessage(friendlyMessage);
 					// Stop ghost thinking animation on error
 					if (ghostComponent && typeof ghostComponent.stopThinking === 'function') {
 						ghostComponent.stopThinking();
@@ -211,11 +217,12 @@
 				}
 			} else {
 				// If no audio data, revert UI state
-				uiActions.setErrorMessage('No audio recorded. Please try again.');
+				uiActions.setErrorMessage('Didn\'t catch that - try recording again?');
 			}
 		} catch (err) {
 			console.error('❌ Error in stopRecording:', err);
-			uiActions.setErrorMessage(`Error processing recording: ${err.message || 'Unknown error'}`);
+			const friendlyMessage = "Something went sideways - let's try that again!";
+			uiActions.setErrorMessage(friendlyMessage);
 		}
 	}
 
@@ -251,7 +258,10 @@
 			console.error('Recording operation failed:', err);
 
 			// Show error message using existing toast system
-			uiActions.setErrorMessage(`Recording error: ${err.message || 'Unknown error'}`);
+			const friendlyMessage = err.message.includes('permission')
+				? "Need microphone access - click allow when asked!"
+				: "Recording hiccup - mind trying again?";
+			uiActions.setErrorMessage(friendlyMessage);
 
 			// Haptic feedback for error - with null check
 			if (services && services.hapticService) {
@@ -334,16 +344,18 @@
 					// Confetti already loaded
 					confettiColors = getThemeConfettiColors();
 					showConfetti = true;
-					setTimeout(() => {
+					const timeoutId = setTimeout(() => {
 						showConfetti = false;
 					}, ANIMATION.CONFETTI.ANIMATION_DURATION + 500);
+					activeTimeouts.push(timeoutId);
 				}
 			}
 
 			// Copy to clipboard with small delay to ensure UI updates
-			setTimeout(() => {
+			const timeoutId = setTimeout(() => {
 				transcriptionService.copyToClipboard(textToProcess);
 			}, 100);
+			activeTimeouts.push(timeoutId);
 		}
 	}
 
@@ -399,17 +411,22 @@
 
 		// Check if the app is running as a PWA after a short delay
 		if (browser) {
-			setTimeout(async () => {
+			const timeoutId = setTimeout(async () => {
 				const isPwa = await pwaService.checkIfRunningAsPwa();
 				if (isPwa) {
 					// PWA is running, can add specific logic here if needed
 				}
 			}, 100);
+			activeTimeouts.push(timeoutId);
 		}
 	});
 
 	// Clean up subscriptions and services
 	onDestroy(() => {
+		// Clear all active timeouts
+		activeTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+		activeTimeouts = [];
+
 		// Unsubscribe from all subscriptions
 		unsubscribers.forEach((unsub) => unsub());
 

@@ -172,18 +172,18 @@ export class AudioService {
 			if (!granted) {
 				this.stateManager.setState(AudioStates.PERMISSION_DENIED);
 				uiActions.setPermissionError(true);
-				throw error || new Error('Permission not granted');
+				throw error || new Error('Need your permission to hear you - click the microphone icon in your browser!');
 			}
 
 			if (!stream) {
-				throw new Error('No audio stream available');
+				throw new Error('Microphone not found - is it plugged in?');
 			}
 
 			this.stateManager.setState(AudioStates.READY);
 			this.audioChunks = [];
 
 			if (typeof MediaRecorder === 'undefined') {
-				throw new Error('MediaRecorder not supported');
+				throw new Error('Your browser needs an update to use recording features');
 			}
 
 			try {
@@ -239,7 +239,10 @@ export class AudioService {
 			console.error('Error starting recording:', error);
 			this.stateManager.setState(AudioStates.ERROR, { error });
 
-			uiActions.setErrorMessage(`Recording error: ${error.message || 'Unknown error'}`);
+			const friendlyMessage = error.message.includes('permission') 
+				? "Need microphone access - check your browser settings!"
+				: "Recording hiccup - give it another try?";
+			uiActions.setErrorMessage(friendlyMessage);
 
 			await this.cleanup();
 			throw error;
