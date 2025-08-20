@@ -186,7 +186,7 @@
 				// Transcribe the audio
 				try {
 					const transcriptText = await transcriptionService.transcribeAudio(audioBlob);
-					
+
 					// Scroll to show transcript if needed
 					scrollToBottomIfNeeded({
 						threshold: 300,
@@ -201,7 +201,9 @@
 					}
 				} catch (transcriptionError) {
 					console.error('❌ Transcription error:', transcriptionError);
-					uiActions.setErrorMessage(`Transcription error: ${transcriptionError.message || 'Unknown error'}`);
+					uiActions.setErrorMessage(
+						`Transcription error: ${transcriptionError.message || 'Unknown error'}`
+					);
 					// Stop ghost thinking animation on error
 					if (ghostComponent && typeof ghostComponent.stopThinking === 'function') {
 						ghostComponent.stopThinking();
