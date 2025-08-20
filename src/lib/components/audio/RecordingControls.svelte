@@ -25,6 +25,8 @@
 	export let ghostComponent = null;
 	export let onPreloadRequest = null;
 	export let isPremiumUser = false;
+	export let onModelRequired = () => {};
+	export let modelReady = false;
 
 	// Local state
 	let services;
@@ -70,6 +72,13 @@
 
 	async function handleRecordingToggle() {
 		if (!recordingControlsService) return;
+
+		// Check if model is ready first (only when starting recording)
+		if (!modelReady && !$isRecording) {
+			// Tell parent to show model initialization UI
+			onModelRequired();
+			return;
+		}
 
 		try {
 			await recordingControlsService.toggleRecording();
