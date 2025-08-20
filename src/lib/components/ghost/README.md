@@ -1,8 +1,25 @@
-# Ghost Component Documentation
+# Character Animation System Documentation
 
 ## Overview
 
-The Ghost component is an animated SVG character that serves as the central UI element in the TalkType application. It provides visual feedback for audio recording and processing states through various animations and theme transitions. The component combines CSS animations with JavaScript-driven dynamic effects to create a responsive, visually appealing interface element.
+The Ghost component is actually a **modular character animation engine** that can work with any SVG shape. While it appears as a ghost in TalkType, the core system (eyes, animations, state management, behaviors) can be adapted to fruits, clouds, or any other shape for future apps.
+
+> **Key Insight**: This is a reusable character framework, not just a ghost component!
+
+## ✨ After Cleanup (Jan 2025)
+
+**Removed:**
+
+- `GhostSimple.svelte` (unused)
+- `GhostSimplified.svelte` (unused)
+- `unifiedGhostStore.js` (conflicting store)
+- `ghostStore.js` (legacy store)
+- `ghostService.js` (old service pattern)
+- Duplicate static files
+
+**Result**: 800+ lines of code removed, single source of truth established.
+
+## 🏗 Current Architecture
 
 ## Component Architecture
 

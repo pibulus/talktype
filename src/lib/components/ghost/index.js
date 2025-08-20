@@ -1,24 +1,35 @@
+// Ghost Character Animation System
+// Modular character system that can be adapted to different SVG shapes
+// Core concept: Eyes + animations + behaviors = reusable character engine
+
 import Ghost from './Ghost.svelte';
+import DisplayGhost from './DisplayGhost.svelte';
+import { ghostStateStore, theme, cssVariables } from './stores';
+import { animationService, blinkService } from './services';
 import { createEyeTracking } from './eyeTracking';
-import { AnimationDebugger } from './debug';
-import {
-	ghostStateStore, // Use the main state store
-	theme // Use the theme store directly
-} from './stores'; // Adjusted import path if needed
 
-// Export the main component and services
-export { Ghost, createEyeTracking, AnimationDebugger };
+// Main exports for TalkType
+export { Ghost, DisplayGhost };
 
-// Export the animation system (using direct store access)
-export const GhostSystem = {
-	// Core stores
+// Character Animation Engine - For future apps
+export const CharacterSystem = {
+	// State management
 	stateStore: ghostStateStore,
-	themeStore: theme, // Assuming theme is exported from stores/index.js
+	themeStore: theme,
+	cssVariables,
 
-	// Debug component
-	Debugger: AnimationDebugger
-	// Consumers can derive specific states like isRecording: derived(ghostStateStore, $s => $s.isRecording)
+	// Animation services
+	animationService,
+	blinkService,
+
+	// Eye tracking system
+	createEyeTracking
+
+	// How to use in other apps:
+	// 1. Replace ghost-paths.svg with your shape (fruit, cloud, etc.)
+	// 2. Keep eye positions in your SVG
+	// 3. All animations/behaviors work with any shape
 };
 
-// Default export remains the Ghost component
+// Default export
 export default Ghost;
