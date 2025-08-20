@@ -72,7 +72,7 @@ export function initBlinking(elements, config = {}) {
 
 	// Set up state listener for animation state changes
 	const unsubscribe = ghostStateStore.subscribe((state) => {
-		// If eyes closed state changes, update eyes
+		// Always update eye transforms when state changes (including eye position)
 		applyEyeTransforms(leftEye, rightEye);
 
 		// Clean up any existing animations when state changes

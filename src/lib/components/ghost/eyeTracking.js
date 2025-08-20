@@ -5,7 +5,7 @@ import { ghostStateStore } from './stores/ghostStateStore.js'; // Path to the ce
 
 // Default configuration
 const defaultConfig = {
-	eyeSensitivity: 0.2, // Smoothing factor (0-1)
+	eyeSensitivity: 0.4, // Smoothing factor (0-1) - Higher = more responsive
 	maxDistanceX: 3, // Maximum X distance divisor (screen width / this value)
 	maxDistanceY: 3, // Maximum Y distance divisor (screen height / this value)
 	maxXMovement: 20, // Maximum X movement in pixels
