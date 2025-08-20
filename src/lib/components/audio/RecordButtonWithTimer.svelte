@@ -512,19 +512,15 @@
 		position: relative;
 		overflow: hidden;
 
-		/* Bright golden glow for normal recording state */
-		background-image:
-			linear-gradient(
-				to right,
-				rgba(251, 191, 36, 1),
-				rgba(251, 191, 36, 1) var(--progress, 0%),
-				rgba(251, 191, 36, 0.5) calc(var(--progress, 0%) + 0.5%),
-				rgba(245, 158, 11, 0.4) 100%
-			),
-			/* Subtle noise texture overlay */
-				url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.07'/%3E%3C/svg%3E");
+		/* More visible progress gradient */
+		background: linear-gradient(
+			to right,
+			rgb(251, 191, 36) 0%,
+			rgb(251, 191, 36) var(--progress, 0%),
+			rgba(251, 191, 36, 0.3) calc(var(--progress, 0%) + 1%),
+			rgba(245, 158, 11, 0.15) 100%
+		);
 
-		background-size: 100% 100%;
 		box-shadow:
 			0 4px 15px -1px rgba(251, 191, 36, 0.35),
 			inset 0 0 10px rgba(251, 191, 36, 0.2),
@@ -532,10 +528,33 @@
 		border: 1px solid rgba(251, 191, 36, 0.3);
 		/* Smoother & faster transitions for clearer state changes */
 		transition:
-			background-image 0.3s ease-out,
+			background 0.3s ease-out,
 			box-shadow 0.3s ease-out,
 			border 0.3s ease-out,
 			transform 0.2s ease;
+	}
+	
+	/* Add a pseudo-element for the progress bar effect */
+	.recording-active::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		width: var(--progress, 0%);
+		background: linear-gradient(
+			to right,
+			rgba(251, 191, 36, 0.9),
+			rgba(252, 211, 77, 0.9)
+		);
+		transition: width 0.3s ease-out;
+		z-index: 0;
+	}
+	
+	/* Ensure text stays above the progress bar */
+	.recording-active .cta-text {
+		position: relative;
+		z-index: 1;
 	}
 
 	/* Animated edge for progress indicator - commented out as not displaying correctly
@@ -563,23 +582,54 @@
   }
   */
 
-	/* Simple warning/danger gradients - keeping these simpler since the advanced effects aren't visible */
+	/* Warning state with visible progress */
 	.recording-warning {
-		background-image: linear-gradient(
+		background: linear-gradient(
 			to right,
-			rgb(251, 146, 60) var(--progress, 0%),
-			rgba(251, 146, 60, 0.5) var(--progress, 0%),
-			rgba(234, 88, 12, 0.3) 100%
+			rgba(251, 146, 60, 0.15) 0%,
+			rgba(251, 146, 60, 0.15) 100%
+		);
+	}
+	
+	.recording-warning::before {
+		background: linear-gradient(
+			to right,
+			rgba(251, 146, 60, 0.9),
+			rgba(254, 178, 108, 0.9)
 		);
 	}
 
+	/* Danger state with visible progress */
 	.recording-danger {
-		background-image: linear-gradient(
+		background: linear-gradient(
 			to right,
-			rgb(239, 68, 68) var(--progress, 0%),
-			rgba(239, 68, 68, 0.5) var(--progress, 0%),
-			rgba(220, 38, 38, 0.3) 100%
+			rgba(239, 68, 68, 0.15) 0%,
+			rgba(239, 68, 68, 0.15) 100%
 		);
+		animation: pulse-danger 1s ease-in-out infinite;
+	}
+	
+	.recording-danger::before {
+		background: linear-gradient(
+			to right,
+			rgba(239, 68, 68, 0.9),
+			rgba(248, 113, 113, 0.9)
+		);
+	}
+	
+	@keyframes pulse-danger {
+		0%, 100% {
+			box-shadow:
+				0 4px 15px -1px rgba(239, 68, 68, 0.35),
+				inset 0 0 10px rgba(239, 68, 68, 0.2),
+				0 0 20px rgba(239, 68, 68, 0.2);
+		}
+		50% {
+			box-shadow:
+				0 4px 20px -1px rgba(239, 68, 68, 0.5),
+				inset 0 0 15px rgba(239, 68, 68, 0.3),
+				0 0 30px rgba(239, 68, 68, 0.3);
+		}
 	}
 
 	.button-content {
