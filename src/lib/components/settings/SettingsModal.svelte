@@ -124,7 +124,7 @@
 	// Handle modal closure - called when the modal is closed
 	function handleModalClose() {
 		// Modal service handles restoration
-		
+
 		// Call the passed closeModal function
 		closeModal();
 	}

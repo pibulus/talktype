@@ -36,13 +36,13 @@
 	// Progress value for the button - animated from 0 to 100 when transcribing
 	let progressValue = 0;
 	let progressInterval;
-	
+
 	$: if ($isTranscribing) {
 		// Start with a small value so something is visible immediately
 		progressValue = 5;
 		// Clear any existing interval
 		if (progressInterval) clearInterval(progressInterval);
-		
+
 		progressInterval = setInterval(() => {
 			// Smoother increments
 			progressValue = Math.min(progressValue + 8, 95); // Animate to 95%, leave room for completion

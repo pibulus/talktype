@@ -59,7 +59,7 @@
 	// Handler for transcript component events
 	async function handleTranscriptEvent(event) {
 		const { type, detail } = event;
-		
+
 		// Handle copy to clipboard
 		if (type === 'copy' && detail?.text) {
 			try {

@@ -15,7 +15,7 @@ export class ModalService {
 
 		// Calculate scrollbar width to prevent layout shift
 		this.scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-		
+
 		// Save scroll position
 		this.scrollPosition = window.scrollY;
 		this.modalOpen = true;
