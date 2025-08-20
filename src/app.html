@@ -77,6 +77,24 @@
 		/>
 		<meta property="twitter:image" content="https://talktype.app/og-image.png" />
 
+		<style>
+			/* Critical styles to prevent black flash */
+			body {
+				background: linear-gradient(135deg, #FFF8F0 0%, #FFF6E6 100%);
+				margin: 0;
+				padding: 0;
+				min-height: 100vh;
+			}
+			[data-theme="mint"] body { 
+				background: linear-gradient(135deg, #E8FFF8 0%, #DEFFF5 100%); 
+			}
+			[data-theme="bubblegum"] body { 
+				background: linear-gradient(135deg, #FFF0F8 0%, #FFE8F5 100%); 
+			}
+			[data-theme="rainbow"] body { 
+				background: linear-gradient(135deg, #FFF5FA 0%, #F5FAFF 50%, #FFFAF5 100%); 
+			}
+		</style>
 		<script>
 			// Minimal critical theme setup to prevent FOUC
 			// This runs synchronously but is optimized for speed

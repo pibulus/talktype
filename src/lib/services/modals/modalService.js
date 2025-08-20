@@ -4,6 +4,7 @@ export class ModalService {
 	constructor() {
 		this.modalOpen = false;
 		this.scrollPosition = 0;
+		this.scrollbarWidth = 0;
 	}
 
 	openModal(modalId) {
@@ -12,15 +13,19 @@ export class ModalService {
 		const modal = document.getElementById(modalId);
 		if (!modal) return;
 
-		// Save scroll position and lock body
+		// Calculate scrollbar width to prevent layout shift
+		this.scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+		
+		// Save scroll position
 		this.scrollPosition = window.scrollY;
-		const width = document.body.clientWidth;
 		this.modalOpen = true;
 
-		document.body.style.position = 'fixed';
-		document.body.style.top = `-${this.scrollPosition}px`;
-		document.body.style.width = `${width}px`;
-		document.body.style.overflow = 'hidden';
+		// Use overflow hidden on HTML element instead of body to prevent layout shift
+		// Also add padding to compensate for scrollbar removal
+		document.documentElement.style.overflow = 'hidden';
+		if (this.scrollbarWidth > 0) {
+			document.documentElement.style.paddingRight = `${this.scrollbarWidth}px`;
+		}
 
 		// Show the modal
 		if (typeof modal.showModal === 'function') {
@@ -40,15 +45,11 @@ export class ModalService {
 			}
 		});
 
-		// Restore body styles
-		document.body.style.position = '';
-		document.body.style.top = '';
-		document.body.style.width = '';
-		document.body.style.overflow = '';
-		document.body.style.height = '';
+		// Restore HTML element styles
+		document.documentElement.style.overflow = '';
+		document.documentElement.style.paddingRight = '';
 
-		// Restore scroll position
-		window.scrollTo(0, this.scrollPosition);
+		// No need to restore scroll position since we didn't change position to fixed
 
 		this.modalOpen = false;
 	}

@@ -118,30 +118,13 @@
 
 	// Handle modal opening - called when the modal is opened
 	function handleModalOpen() {
-		if (typeof window === 'undefined') return;
-
-		// Get current scroll position
-		scrollPosition = window.scrollY;
-		const width = document.body.clientWidth;
-
-		// Lock the body in place exactly where it was
-		document.body.style.position = 'fixed';
-		document.body.style.top = `-${scrollPosition}px`;
-		document.body.style.width = `${width}px`;
-		document.body.style.overflow = 'hidden';
+		// Modal service now handles body locking without layout shift
 	}
 
 	// Handle modal closure - called when the modal is closed
 	function handleModalClose() {
-		// Restore body styles
-		document.body.style.position = '';
-		document.body.style.top = '';
-		document.body.style.width = '';
-		document.body.style.overflow = '';
-
-		// Restore scroll position
-		window.scrollTo(0, scrollPosition);
-
+		// Modal service handles restoration
+		
 		// Call the passed closeModal function
 		closeModal();
 	}
