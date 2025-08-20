@@ -82,7 +82,7 @@ export function initialGhostAnimation(node, initialParams) {
 				// Fallback: dispatch completion event anyway so the app doesn't get stuck
 				node.dispatchEvent(new CustomEvent('initialAnimationComplete'));
 			}
-		}, ANIMATION_TIMING.WOBBLE_DURATION - 650);
+		}, ANIMATION_TIMING.INITIAL_LOAD_DURATION - 650);
 	}
 
 	// Initial setup call with the parameters provided when the action is first applied.

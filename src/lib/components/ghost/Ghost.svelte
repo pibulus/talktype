@@ -386,12 +386,6 @@
 			handleUserInteraction();
 		}
 	}}
-	on:pointerdown={(e) => {
-		if (clickable) {
-			handleClick();
-			handleUserInteraction();
-		}
-	}}
 	on:keydown={(e) => {
 		if (clickable && (e.key === 'Enter' || e.key === ' ')) {
 			e.preventDefault();

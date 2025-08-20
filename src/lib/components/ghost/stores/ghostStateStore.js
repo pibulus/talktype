@@ -73,9 +73,8 @@ function createGhostStateStore() {
 	 */
 	function debugLog(message, level = 'log') {
 		const currentDebugFlag = get(_state).debug;
-		if (!currentDebugFlag) return;
-		// ADD THIS LINE
-		// END ADD
+		// Temporarily enable debug logging for wobble and recording issues
+		if (!currentDebugFlag && !message.includes('Wobble') && !message.includes('Recording') && !message.includes('wobble')) return;
 		console[level](`[GhostState] ${message}`);
 	}
 
@@ -217,23 +216,39 @@ function createGhostStateStore() {
 	function applyWobbleAnimation(type) {
 		const wobbleGroup = document.getElementById('ghost-wobble-group');
 		if (!wobbleGroup) {
-			debugLog(`[Imperative Wobble] Could not find wobble group for ${type}`, 'warn');
+			debugLog(`[Wobble] Could not find #ghost-wobble-group element for ${type}`, 'warn');
 			return;
 		}
 
+		// Check if initial load is running before cleaning
+		const hasInitialLoad = wobbleGroup.classList.contains('initial-load-effect');
+		
+		// Clean up any existing animation classes first, including initial load
+		wobbleGroup.classList.remove('initial-load-effect', 'wobble-left', 'wobble-right', 'wobble-both');
+		
 		const wobbleClass =
 			type === 'start' ? WOBBLE_CONFIG.RECORDING_START_CLASS : WOBBLE_CONFIG.RECORDING_STOP_CLASS;
-
+		
+		// Small delay if initial load effect was present to let animation settle
+		if (hasInitialLoad) {
+			setTimeout(() => {
+				wobbleGroup.classList.add(wobbleClass);
+				debugLog(`[Wobble] Applied ${wobbleClass} after initial load delay`);
+			}, 150);
+			return;
+		}
+		
 		// Force reflow before adding class
 		void wobbleGroup.offsetWidth;
 		wobbleGroup.classList.add(wobbleClass);
-		debugLog(`Applied ${wobbleClass} to wobble group`);
+		debugLog(`[Wobble] Applied ${wobbleClass} to wobble group`);
 
 		// Schedule cleanup
 		const timeoutKey = `${type}WobbleCleanup`;
 		const timeoutId = setTimeout(() => {
 			wobbleGroup.classList.remove(wobbleClass);
 			clearStateTimeout(timeoutKey);
+			debugLog(`[Wobble] Removed ${wobbleClass} from wobble group`);
 		}, WOBBLE_CONFIG.DURATION + 50);
 
 		// Store timeout ID for potential cleanup
