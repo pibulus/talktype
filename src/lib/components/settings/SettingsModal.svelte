@@ -2,8 +2,9 @@
 	import { onMount } from 'svelte';
 	import { theme, autoRecord, showSettingsModal, applyTheme, promptStyle } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
-	import { PROMPT_STYLES } from '$lib/constants';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
+	import ThemeSelector from './ThemeSelector.svelte';
+	import AutoRecordToggle from './AutoRecordToggle.svelte';
 	import TranscriptionStyleSelector from './TranscriptionStyleSelector.svelte';
 	import { ModalCloseButton } from '../modals/index.js';
 
@@ -34,25 +35,7 @@
 		selectedPromptStyle = value;
 	});
 
-	// Theme options
-	const vibeOptions = [
-		{
-			id: 'peach',
-			name: 'Peach'
-		},
-		{
-			id: 'mint',
-			name: 'Mint'
-		},
-		{
-			id: 'bubblegum',
-			name: 'Bubblegum'
-		},
-		{
-			id: 'rainbow',
-			name: 'Rainbow'
-		}
-	];
+	// Theme options are now handled in ThemeSelector component
 
 	// Prompt styles are now directly defined in the UI components below
 
@@ -197,82 +180,11 @@
 				</h3>
 			</div>
 
-			<!-- Settings Section -->
-			<div class="mb-2 space-y-2">
-				<h4 class="text-sm font-bold text-gray-700">Settings</h4>
+			<!-- Auto-Record Toggle -->
+			<AutoRecordToggle enabled={autoRecordValue} onToggle={toggleAutoRecord} />
 
-				<div
-					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
-				>
-					<div>
-						<span class="text-sm font-medium text-gray-700">Auto-Record on Start</span>
-						<p class="mt-0.5 text-xs text-gray-500">
-							Start recording immediately when you open TalkType
-						</p>
-					</div>
-					<label class="flex cursor-pointer items-center">
-						<span class="sr-only"
-							>Auto-Record Toggle {autoRecordValue ? 'Enabled' : 'Disabled'}</span
-						>
-						<div class="relative">
-							<input
-								type="checkbox"
-								class="sr-only"
-								checked={autoRecordValue}
-								on:change={toggleAutoRecord}
-							/>
-							<div
-								class={`h-5 w-10 rounded-full ${autoRecordValue ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}
-							></div>
-							<div
-								class={`absolute left-0.5 top-0.5 h-4 w-4 transform rounded-full bg-white transition-all duration-200 ${autoRecordValue ? 'translate-x-5' : ''}`}
-							></div>
-						</div>
-					</label>
-				</div>
-			</div>
-
-			<!-- Vibe Selector Section -->
-			<div class="space-y-2">
-				<h4 class="text-sm font-bold text-gray-700">Choose Your Vibe</h4>
-
-				<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-					{#each vibeOptions as vibe, index}
-						<button
-							class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {selectedVibe ===
-							vibe.id
-								? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
-								: ''}"
-							data-vibe-type={vibe.id}
-							on:click={() => changeVibe(vibe.id)}
-						>
-							<div class="preview-container mb-2">
-								<!-- Use the original DisplayGhost component with masking -->
-								<div class="preview-ghost-wrapper relative h-12 w-12">
-									<div class="ghost-mask-wrapper">
-										<DisplayGhost
-											theme={vibe.id}
-											size="48px"
-											seed={index * 1000 + 12345}
-											disableJsAnimation={true}
-										/>
-									</div>
-								</div>
-							</div>
-
-							<span class="text-xs font-medium text-gray-700">{vibe.name}</span>
-
-							{#if selectedVibe === vibe.id}
-								<div
-									class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-400 text-xs text-white shadow-sm"
-								>
-									✓
-								</div>
-							{/if}
-						</button>
-					{/each}
-				</div>
-			</div>
+			<!-- Theme Selector -->
+			<ThemeSelector currentTheme={selectedVibe} onThemeChange={changeVibe} />
 
 			<!-- Prompt Style Selection Section -->
 			<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
@@ -373,131 +285,7 @@
 		}
 	}
 
-	.selected-vibe {
-		box-shadow:
-			0 0 0 2px rgba(249, 168, 212, 0.4),
-			0 4px 8px rgba(249, 168, 212, 0.2);
-	}
-
-	/* Ghost preview styling */
-	.preview-ghost-wrapper {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: transform 0.3s ease;
-	}
-
-	.vibe-option:hover .preview-ghost-wrapper {
-		transform: scale(1.05);
-	}
-
-	/* Container for masking the ghost - hides the background */
-	.ghost-mask-wrapper {
-		position: relative;
-		width: 100%;
-		height: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		overflow: visible;
-	}
-
-	/* Apply masking to remove background from DisplayGhost */
-	.ghost-mask-wrapper :global(.display-ghost) {
-		overflow: visible;
-	}
-
-	/* Target only the ghost SVG, not its container */
-	.ghost-mask-wrapper :global(.ghost-svg) {
-		overflow: visible;
-	}
-
-	/* Hide the ghost background rectangle */
-	.ghost-mask-wrapper :global(.ghost-container) {
-		background: transparent;
-	}
-
-	.ghost-mask-wrapper :global(.ghost-bg) {
-		/* Ensure the ghost background doesn't show */
-		opacity: 1;
-	}
-
-	.vibe-option {
-		transition: all 0.2s ease-in-out;
-	}
-
-	.vibe-option:hover {
-		transform: translateY(-1px);
-	}
-
-	.vibe-option:active {
-		transform: translateY(0px);
-	}
-
-	/* Connect the preview eyes to the main app's Brian Eno-inspired ambient blinking system */
-	.preview-eyes {
-		animation: preview-blink 6s infinite;
-		transform-origin: center center;
-	}
-
-	/* Each theme preview has a slightly different blink timing 
-	   to create an organic, non-synchronized effect */
-	.vibe-option:nth-child(1) .preview-eyes {
-		animation-duration: 6.7s;
-		animation-delay: 0.4s;
-	}
-
-	.vibe-option:nth-child(2) .preview-eyes {
-		animation-duration: 7.3s;
-		animation-delay: 1.2s;
-	}
-
-	.vibe-option:nth-child(3) .preview-eyes {
-		animation-duration: 5.9s;
-		animation-delay: 2.3s;
-	}
-
-	.vibe-option:nth-child(4) .preview-eyes {
-		animation-duration: 8.2s;
-		animation-delay: 0.7s;
-	}
-
-	@keyframes preview-blink {
-		0%,
-		96.5%,
-		100% {
-			transform: scaleY(1);
-		}
-		97.5% {
-			transform: scaleY(0); /* Closed eyes */
-		}
-		98.5% {
-			transform: scaleY(1); /* Open eyes */
-		}
-	}
-
-	@keyframes hueShift {
-		0% {
-			background-position: 0% 0%;
-			filter: saturate(1.3) brightness(1.1);
-		}
-		25% {
-			background-position: 0% 33%;
-			filter: saturate(1.4) brightness(1.15);
-		}
-		50% {
-			background-position: 0% 66%;
-			filter: saturate(1.5) brightness(1.2);
-		}
-		75% {
-			background-position: 0% 100%;
-			filter: saturate(1.4) brightness(1.15);
-		}
-		100% {
-			background-position: 0% 0%;
-			filter: saturate(1.3) brightness(1.1);
-		}
-	}
+	/* Theme-specific styles are now in child components */
 
 	/* Modal entrance animation - clean without !important */
 	.animate-modal-enter {

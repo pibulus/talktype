@@ -8,7 +8,7 @@ export const geminiService = {
 	setPromptStyle: promptManager.setStyle,
 	getAvailableStyles: promptManager.getAvailableStyles,
 	subscribeToStyleChanges: promptManager.subscribe,
-	
+
 	// Mock preloadModel function since actual preloading happens server-side
 	preloadModel: () => Promise.resolve()
 };

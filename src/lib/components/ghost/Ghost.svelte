@@ -1,5 +1,5 @@
 <script>
-	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 	import { appActive, shouldAnimateStore } from '$lib/services/infrastructure';
 
@@ -56,7 +56,6 @@
 		lastRecordingState = isRecording;
 	}
 
-	const dispatch = createEventDispatcher();
 	function setDebugMode() {
 		if (browser) {
 			ghostStateStore.setDebug(debug);
@@ -221,8 +220,8 @@
 	// Handle click on the ghost
 	function handleClick() {
 		if (clickable) {
-			// Dispatch toggle recording event
-			dispatch('toggleRecording');
+			// Dispatch custom window event for direct communication
+			window.dispatchEvent(new CustomEvent('talktype:toggle-recording'));
 
 			// The wobble animation is now handled through the recording state change
 			// in the ghostStateStore when setRecording is called
@@ -300,7 +299,6 @@
 			// Add global event listeners for waking up / resetting inactivity
 			document.addEventListener('mousemove', handleUserInteraction, { passive: true });
 			document.addEventListener('pointerdown', handleUserInteraction, { passive: true });
-
 
 			// Return cleanup function
 			return () => {
