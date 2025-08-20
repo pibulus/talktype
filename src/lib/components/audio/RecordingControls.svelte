@@ -38,6 +38,7 @@
 	let progressInterval;
 	
 	$: if ($isTranscribing) {
+		console.log('[RecordingControls] isTranscribing changed to:', $isTranscribing);
 		// Start with a small value so something is visible immediately
 		progressValue = 5;
 		// Clear any existing interval
@@ -46,6 +47,7 @@
 		progressInterval = setInterval(() => {
 			// Smoother increments
 			progressValue = Math.min(progressValue + 8, 95); // Animate to 95%, leave room for completion
+			console.log('[RecordingControls] Progress:', progressValue);
 			if (!$isTranscribing || progressValue >= 95) {
 				clearInterval(progressInterval);
 				if (!$isTranscribing) {
@@ -143,51 +145,57 @@
 	}
 </script>
 
-<!-- Recording button/progress bar section -->
-<div
-	class="button-section relative sticky top-0 z-20 flex w-full justify-center bg-transparent pb-6 pt-2 sm:pb-7 md:pb-8"
->
-	<div class="button-container mx-auto flex w-full max-w-[500px] justify-center">
-		<RecordButtonWithTimer
-			recording={$isRecording}
-			transcribing={$isTranscribing}
-			clipboardSuccess={$uiState.clipboardSuccess}
-			recordingDuration={$recordingDuration}
-			progress={progressValue}
-			{isPremiumUser}
-			{buttonLabel}
-			on:click={handleRecordingToggle}
-			on:preload={handlePreload}
-		/>
-	</div>
-</div>
-
-<!-- Audio visualizer - only show when recording -->
-{#if $isRecording}
-	<div class="visualizer-container relative mt-4 flex w-full justify-center">
-		<div class="wrapper-container flex w-full justify-center">
-			<div
-				class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/80 p-4 backdrop-blur-md sm:w-full"
-				style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
-			>
-				<AudioVisualizer />
-			</div>
+<!-- Recording controls wrapper -->
+<div class="recording-controls-wrapper w-full">
+	<!-- Recording button/progress bar section -->
+	<div class="button-section relative flex w-full justify-center pb-4 pt-2">
+		<div class="button-container mx-auto flex w-full max-w-[500px] justify-center">
+			<RecordButtonWithTimer
+				recording={$isRecording}
+				transcribing={$isTranscribing}
+				clipboardSuccess={$uiState.clipboardSuccess}
+				recordingDuration={$recordingDuration}
+				progress={progressValue}
+				{isPremiumUser}
+				{buttonLabel}
+				on:click={handleRecordingToggle}
+				on:preload={handlePreload}
+			/>
 		</div>
 	</div>
-{/if}
+
+	<!-- Audio visualizer - only show when recording -->
+	{#if $isRecording}
+		<div class="visualizer-section mt-6 flex w-full justify-center">
+			<div class="wrapper-container flex w-full justify-center">
+				<div
+					class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 p-4 shadow-lg sm:w-full"
+					style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
+				>
+					<AudioVisualizer />
+				</div>
+			</div>
+		</div>
+	{/if}
+</div>
 
 <style>
-	/* Make the button section sticky to prevent jumping */
+	/* Recording controls wrapper */
+	.recording-controls-wrapper {
+		position: relative;
+		width: 100%;
+	}
+
+	/* Button section styling */
 	.button-section {
-		position: sticky;
-		top: 0;
-		z-index: 20;
-		padding-bottom: 1rem;
+		position: relative;
+		z-index: 30;
 		background: transparent;
 	}
 
-	/* Visualizer container for absolute positioning */
-	.visualizer-container {
+	/* Visualizer section styling */
+	.visualizer-section {
+		position: relative;
 		z-index: 10;
 	}
 

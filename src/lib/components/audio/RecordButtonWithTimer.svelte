@@ -9,6 +9,11 @@
 	export let isPremiumUser = false;
 	export let buttonLabel = CTA_PHRASES[0];
 	export let progress = 0; // For transcription progress
+	
+	// Debug transcribing state
+	$: if (transcribing) {
+		console.log('[RecordButtonWithTimer] Transcribing:', transcribing, 'Progress:', progress);
+	}
 
 	// Element refs
 	let recordButtonElement;
@@ -198,8 +203,8 @@
 		transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
 		transition-property: transform, box-shadow, background-image, background-position;
 
-		/* Enhanced default gradient */
-		background-image: linear-gradient(to right, rgba(251, 191, 36, 1), rgba(245, 158, 11, 0.96));
+		/* Solid opaque gradient - no transparency */
+		background: linear-gradient(to right, rgb(251, 191, 36), rgb(245, 158, 11));
 
 		/* Better default shadow */
 		box-shadow:
@@ -260,7 +265,7 @@
 
 	/* Non-recording hover effect */
 	.record-button:not(.recording-active):hover:not(:disabled) {
-		background-image: linear-gradient(to right, rgba(252, 211, 77, 1), rgba(251, 191, 36, 1));
+		background: linear-gradient(to right, rgb(252, 211, 77), rgb(251, 191, 36));
 	}
 
 	/* Active/pressed state */
@@ -274,7 +279,7 @@
 
 	/* Non-recording active effect */
 	.record-button:not(.recording-active):active:not(:disabled) {
-		background-image: linear-gradient(to right, rgba(245, 158, 11, 1), rgba(234, 88, 12, 0.95));
+		background: linear-gradient(to right, rgb(245, 158, 11), rgb(234, 88, 12));
 	}
 
 	/* Button press animation */
