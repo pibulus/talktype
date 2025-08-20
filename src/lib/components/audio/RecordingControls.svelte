@@ -13,6 +13,7 @@
 		isTranscribing,
 		recordingDuration,
 		transcriptionText,
+		transcriptionProgress,
 		uiState,
 		uiActions
 	} from '$lib/services';
@@ -32,35 +33,6 @@
 
 	// Reactive button label computation
 	$: buttonLabel = $isRecording ? 'Stop Recording' : $transcriptionText ? currentCta : currentCta;
-
-	// Progress value for the button - animated from 0 to 100 when transcribing
-	let progressValue = 0;
-	let progressInterval;
-
-	$: if ($isTranscribing) {
-		// Start with a small value so something is visible immediately
-		progressValue = 5;
-		// Clear any existing interval
-		if (progressInterval) clearInterval(progressInterval);
-
-		progressInterval = setInterval(() => {
-			// Smoother increments
-			progressValue = Math.min(progressValue + 8, 95); // Animate to 95%, leave room for completion
-			if (!$isTranscribing || progressValue >= 95) {
-				clearInterval(progressInterval);
-				if (!$isTranscribing) {
-					progressValue = 100; // Complete when done
-					// Reset after a short delay
-					setTimeout(() => {
-						progressValue = 0;
-					}, 500);
-				}
-			}
-		}, 150); // Faster updates for smoother animation
-	} else {
-		if (progressInterval) clearInterval(progressInterval);
-		progressValue = 0;
-	}
 
 	onMount(() => {
 		// Initialize services
@@ -153,7 +125,7 @@
 				transcribing={$isTranscribing}
 				clipboardSuccess={$uiState.clipboardSuccess}
 				recordingDuration={$recordingDuration}
-				progress={progressValue}
+				progress={$transcriptionProgress}
 				{isPremiumUser}
 				{buttonLabel}
 				on:click={handleRecordingToggle}

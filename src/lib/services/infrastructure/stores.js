@@ -187,12 +187,21 @@ export const transcriptionActions = {
 			text,
 			timestamp: Date.now()
 		}));
+		
+		// Reset progress after a short delay
+		setTimeout(() => {
+			transcriptionState.update((current) => ({
+				...current,
+				progress: 0
+			}));
+		}, 500);
 	},
 
 	setTranscriptionError(error) {
 		transcriptionState.update((current) => ({
 			...current,
 			inProgress: false,
+			progress: 0,
 			error
 		}));
 
@@ -222,6 +231,13 @@ export const uiActions = {
 		uiState.update((current) => ({
 			...current,
 			showPermissionError: show
+		}));
+	},
+
+	setClipboardSuccess(success) {
+		uiState.update((current) => ({
+			...current,
+			clipboardSuccess: success
 		}));
 	},
 
