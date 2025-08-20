@@ -120,24 +120,56 @@ export class WhisperService {
       });
 
       // Configure ONNX Runtime environment to suppress warnings
-      if (typeof window !== "undefined" && window.ort) {
-        try {
-          window.ort.env.logLevel = "error"; // Only show errors, not warnings
-        } catch {
-          // Ignore if ort environment config fails
-        }
+      if (typeof window !== "undefined") {
+        // Wait for ort to be available
+        const waitForOrt = async () => {
+          let attempts = 0;
+          while (!window.ort && attempts < 10) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+          }
+          
+          if (window.ort) {
+            try {
+              // Suppress all ONNX warnings and verbose output
+              window.ort.env.wasm.numThreads = 1;
+              window.ort.env.logLevel = "fatal"; // Only show fatal errors
+              window.ort.env.debug = false;
+              
+              // Also try to configure the WebAssembly environment
+              if (window.ort.env.wasm) {
+                window.ort.env.wasm.simd = true;
+                window.ort.env.wasm.proxy = false;
+              }
+            } catch (e) {
+              console.log("Could not configure ONNX environment:", e.message);
+            }
+          }
+        };
+        
+        // Configure before loading model
+        await waitForOrt();
       }
 
-      // Create transcription pipeline with progress tracking
-      this.transcriber = await pipeline(
-        "automatic-speech-recognition",
-        modelConfig.id,
-        {
-          // Configure model options to minimize warnings
-          onnx: {
-            logSeverityLevel: 3, // 0=Verbose, 1=Info, 2=Warning, 3=Error, 4=Fatal
-            logVerbosityLevel: 0,
-          },
+      // Temporarily suppress console.warn during model loading
+      const originalWarn = console.warn;
+      console.warn = () => {}; // Suppress warnings
+      
+      try {
+        // Create transcription pipeline with progress tracking
+        this.transcriber = await pipeline(
+          "automatic-speech-recognition",
+          modelConfig.id,
+          {
+            // Configure model options to minimize warnings
+            onnx: {
+              logSeverityLevel: 4, // 0=Verbose, 1=Info, 2=Warning, 3=Error, 4=Fatal
+              logVerbosityLevel: 0,
+              enableCpuMemArena: false,
+              enableMemPattern: false,
+              executionMode: "sequential",
+              graphOptimizationLevel: "basic",
+            },
           progress_callback: (progress) => {
             // Convert progress data to percentage
             if (progress.status === "downloading") {
@@ -155,6 +187,10 @@ export class WhisperService {
           },
         },
       );
+      } finally {
+        // Restore console.warn
+        console.warn = originalWarn;
+      }
 
       // Model is loaded
       this.updateStatus({
@@ -170,6 +206,10 @@ export class WhisperService {
       console.log("Whisper model loaded successfully");
       return { success: true, transcriber: this.transcriber };
     } catch (error) {
+      // Restore console.warn if there was an error
+      if (typeof originalWarn !== 'undefined') {
+        console.warn = originalWarn;
+      }
       console.error("Failed to load Whisper model:", error);
 
       this.updateStatus({
