@@ -49,11 +49,12 @@
    BUTTON OVERRIDES - Smooth transitions
    =================================================================== */
 .btn {
-	transition: transform var(--transition-fast), 
-	            background-color var(--transition-fast),
-	            border-color var(--transition-fast),
-	            color var(--transition-fast),
-	            box-shadow var(--transition-fast);
+	transition:
+		transform var(--transition-fast),
+		background-color var(--transition-fast),
+		border-color var(--transition-fast),
+		color var(--transition-fast),
+		box-shadow var(--transition-fast);
 	/* Prevent layout shift on hover */
 	transform: translateZ(0);
 }
@@ -197,6 +198,57 @@ dialog.modal::backdrop {
 /* Custom gradient text */
 .text-gradient {
 	fill: url(#gradient-fill);
+}
+
+/* ===================================================================
+   COMMON ANIMATIONS - Namespaced with tt- prefix
+   =================================================================== */
+/* Fade up animation for modal content */
+@keyframes tt-fadeUp {
+	0% {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Fade in animation for content */
+@keyframes tt-fadeIn {
+	0% {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Slow pulse animation */
+@keyframes tt-pulse-slow {
+	0%,
+	100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.05);
+	}
+}
+
+/* Animation utility classes */
+.animate-tt-fadeUp {
+	animation: tt-fadeUp 0.5s ease-out forwards;
+}
+
+.animate-tt-fadeIn {
+	animation: tt-fadeIn 0.5s ease-out forwards;
+}
+
+.animate-tt-pulse-slow {
+	animation: tt-pulse-slow 3s ease-in-out infinite;
 }
 
 /* ===================================================================

@@ -7,8 +7,7 @@
 
 <dialog
 	id="about_modal"
-	class="modal modal-bottom fixed z-50 overflow-hidden sm:modal-middle"
-	style="overflow-y: hidden!important;"
+	class="modal modal-bottom fixed z-50 overflow-y-hidden sm:modal-middle"
 	aria-labelledby="about_modal_title"
 	aria-modal="true"
 >
@@ -19,7 +18,7 @@
 			<ModalCloseButton {closeModal} label="Close about modal" modalId="about_modal" />
 		</form>
 
-		<div class="animate-fadeUp space-y-4">
+		<div class="animate-tt-fadeUp space-y-4">
 			<div class="mb-1 flex items-center gap-3">
 				<div
 					class="flex h-9 w-9 items-center justify-center rounded-full border border-pink-200/60 bg-gradient-to-br from-white to-pink-50 shadow-sm"
@@ -85,18 +84,5 @@
 </dialog>
 
 <style>
-	.animate-fadeUp {
-		animation: fadeUp 0.5s ease-out forwards;
-	}
-
-	@keyframes fadeUp {
-		0% {
-			opacity: 0;
-			transform: translateY(8px);
-		}
-		100% {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
+	/* Animation now in app.css with tt- prefix */
 </style>

@@ -28,8 +28,7 @@
 	aria-modal="true"
 >
 	<div
-		class="modal-box relative mx-auto w-[95%] max-w-[90vw] rounded-3xl border-0 bg-[#fff9ed] p-6 sm:max-w-md sm:p-8 md:max-w-lg md:p-10 lg:max-w-xl"
-		style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
+		class="intro-modal-box modal-box relative mx-auto w-[95%] max-w-[90vw] rounded-3xl border-0 bg-[#fff9ed] p-6 sm:max-w-md sm:p-8 md:max-w-lg md:p-10 lg:max-w-xl"
 	>
 		<form method="dialog">
 			<ModalCloseButton
@@ -41,9 +40,9 @@
 			/>
 		</form>
 
-		<div class="animate-fadeIn space-y-5 sm:space-y-6 md:space-y-7">
+		<div class="animate-tt-fadeIn space-y-5 sm:space-y-6 md:space-y-7">
 			<div class="mb-4 flex justify-center">
-				<div class="animate-pulse-slow ghost-wrapper h-16 w-16">
+				<div class="animate-tt-pulse-slow ghost-wrapper h-16 w-16">
 					<Ghost size="100%" clickable={false} class="intro-ghost" seed={12345} />
 				</div>
 			</div>
@@ -97,34 +96,15 @@
 </dialog>
 
 <style>
-	.animate-fadeIn {
-		animation: fadeIn 0.5s ease-out forwards;
+	/* Custom pink shadow for intro modal */
+	.intro-modal-box {
+		box-shadow:
+			0 10px 25px -5px rgba(249, 168, 212, 0.3),
+			0 8px 10px -6px rgba(249, 168, 212, 0.2),
+			0 0 15px rgba(249, 168, 212, 0.15);
 	}
 
-	@keyframes fadeIn {
-		0% {
-			opacity: 0;
-			transform: translateY(8px);
-		}
-		100% {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	.animate-pulse-slow {
-		animation: pulse-slow 3s ease-in-out infinite;
-	}
-
-	@keyframes pulse-slow {
-		0%,
-		100% {
-			transform: scale(1);
-		}
-		50% {
-			transform: scale(1.05);
-		}
-	}
+	/* Animations now in app.css with tt- prefix */
 
 	/* Ghost wrapper styles to hide background container */
 	.ghost-wrapper {

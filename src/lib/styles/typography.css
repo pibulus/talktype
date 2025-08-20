@@ -33,35 +33,4 @@
 	--letter-spacing-wider: 0.05em;
 }
 
-/* Apply to major components first */
-.title-text {
-	font-size: var(--font-size-5xl);
-	line-height: var(--line-height-tight);
-	letter-spacing: var(--letter-spacing-tight);
-}
-
-.subtitle-text {
-	font-size: var(--font-size-lg);
-	line-height: var(--line-height-normal);
-	max-width: 40ch;
-}
-
-.cta-text {
-	font-size: var(--font-size-base);
-	letter-spacing: var(--letter-spacing-wide);
-}
-
-.footer-text {
-	font-size: var(--font-size-sm);
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-	.title-text {
-		font-size: var(--font-size-4xl);
-	}
-
-	.subtitle-text {
-		font-size: var(--font-size-base);
-	}
-}
+/* Unused classes removed - using Tailwind utilities directly instead */

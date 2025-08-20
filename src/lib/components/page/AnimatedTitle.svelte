@@ -27,8 +27,7 @@
 <!-- Typography with improved kerning and weight using font-variation-settings -->
 <div class="title-container relative">
 	<h1
-		class="staggered-text mb-1 cursor-default select-none text-center text-5xl font-black tracking-tight sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
-		style="font-weight: 900; letter-spacing: -0.02em; font-feature-settings: 'kern' 1; font-kerning: normal; font-variation-settings: 'wght' 900, 'opsz' 32;"
+		class="staggered-text mb-1 cursor-default select-none text-center text-5xl font-black tracking-tight [font-feature-settings:'kern'_1] [font-kerning:normal] [font-variation-settings:'wght'_900,'opsz'_32] [font-weight:900] [letter-spacing:-0.02em] sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
 		aria-label={title}
 	>
 		<!-- Use aria-hidden for spans if H1 has aria-label -->
@@ -49,10 +48,7 @@
 		</span>
 
 		{#if showAppSuffix}
-			<span
-				class="app-suffix-container stagger-letter"
-				style="animation-delay: 0.45s; position: relative;"
-			>
+			<span class="app-suffix-container stagger-letter relative [animation-delay:0.45s]">
 				<span class="suffix-wrapper">
 					<AppSuffix
 						color="inherit"
@@ -70,8 +66,7 @@
 
 <!-- Updated subheadline with improved typography and brand voice -->
 <p
-	class="slide-in-subtitle mx-auto mb-6 mt-5 max-w-prose cursor-default select-none text-center text-base text-gray-700/85 sm:mb-7 sm:mt-6 sm:text-lg md:text-xl lg:text-2xl"
-	style="font-weight: 400; letter-spacing: 0.015em; line-height: 1.4; max-inline-size: 40ch; text-wrap: balance; font-variation-settings: 'wght' 400, 'opsz' 16;"
+	class="slide-in-subtitle mx-auto mb-6 mt-5 max-w-prose cursor-default select-none text-center text-base font-normal leading-relaxed tracking-wide text-gray-700/85 sm:mb-7 sm:mt-6 sm:text-lg md:text-xl lg:text-2xl"
 >
 	{subtitle}
 </p>
@@ -213,7 +208,7 @@
 		/* No need for major mobile overrides anymore */
 
 		.slide-in-subtitle {
-			max-inline-size: 28ch !important;
+			max-inline-size: 28ch;
 			font-size: 1rem; /* 16px on mobile as requested */
 			line-height: 1.6;
 			text-wrap: balance;

@@ -170,8 +170,7 @@
 
 <dialog
 	id="settings_modal"
-	class="modal fixed z-50"
-	style="overflow: hidden !important; z-index: 999;"
+	class="modal fixed z-[999] overflow-hidden"
 	aria-labelledby="settings_modal_title"
 	aria-modal="true"
 >
@@ -406,22 +405,22 @@
 
 	/* Apply masking to remove background from DisplayGhost */
 	.ghost-mask-wrapper :global(.display-ghost) {
-		overflow: visible !important;
+		overflow: visible;
 	}
 
 	/* Target only the ghost SVG, not its container */
 	.ghost-mask-wrapper :global(.ghost-svg) {
-		overflow: visible !important;
+		overflow: visible;
 	}
 
 	/* Hide the ghost background rectangle */
 	.ghost-mask-wrapper :global(.ghost-container) {
-		background: transparent !important;
+		background: transparent;
 	}
 
 	.ghost-mask-wrapper :global(.ghost-bg) {
 		/* Ensure the ghost background doesn't show */
-		opacity: 1 !important;
+		opacity: 1;
 	}
 
 	.vibe-option {
@@ -501,32 +500,7 @@
 		}
 	}
 
-	/* Modal centering and animation styles */
-	:global(dialog.modal) {
-		display: flex !important;
-		align-items: center !important;
-		justify-content: center !important;
-		overflow: hidden !important;
-		max-height: 100vh !important;
-		max-width: 100vw !important;
-		padding: 0 !important;
-		margin: 0 !important;
-		background: transparent !important;
-		border: none !important;
-		inset: 0 !important;
-	}
-
-	/* Ensure modal box is centered and properly styled */
-	:global(.modal-box) {
-		position: relative !important;
-		margin: 1.5rem auto !important;
-		transform: none !important;
-		transition:
-			transform 0.3s ease-out,
-			opacity 0.3s ease-out !important;
-	}
-
-	/* Modal entrance animation */
+	/* Modal entrance animation - clean without !important */
 	.animate-modal-enter {
 		animation: modalEnter 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 		will-change: transform, opacity;
@@ -547,18 +521,7 @@
 		}
 	}
 
-	/* Fix modal backdrop with animation */
-	:global(.modal-backdrop) {
-		animation: backdropFadeIn 0.3s ease forwards !important;
-		background-color: rgba(0, 0, 0, 0.4) !important;
-		bottom: 0 !important;
-		left: 0 !important;
-		position: fixed !important;
-		right: 0 !important;
-		top: 0 !important;
-		z-index: -1 !important;
-	}
-
+	/* Backdrop animation without fighting DaisyUI */
 	@keyframes backdropFadeIn {
 		from {
 			opacity: 0;
