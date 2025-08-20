@@ -67,18 +67,18 @@
 
 {#if transcribing}
 	<div
-		class="progress-container relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-gradient-to-r from-pink-50 via-purple-50 to-indigo-50 shadow-xl shadow-purple-200/40 sm:h-[64px] sm:w-[85%]"
+		class="progress-container relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-gradient-to-r from-pink-50 via-purple-50 to-indigo-50 shadow-xl sm:h-[64px] sm:w-[85%]"
 		role="progressbar"
 		aria-label="Transcription progress"
 		aria-valuenow={progress}
 		aria-valuemin="0"
 		aria-valuemax="100"
-		style="min-width: 280px; border: 2px solid rgba(219, 39, 119, 0.1);"
+		style="min-width: 280px; border: 2px solid rgba(219, 39, 119, 0.2); box-shadow: 0 10px 30px -5px rgba(219, 39, 119, 0.25), 0 0 0 1px rgba(219, 39, 119, 0.05);"
 	>
 		<!-- Liquid fill with gooey effect -->
 		<div
 			class="liquid-fill absolute inset-0 flex items-center justify-center"
-			style="width: {progress}%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"
+			style="width: {progress}%; min-width: {progress > 0 ? '20px' : '0'}; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);"
 		>
 			<!-- Gradient liquid -->
 			<div class="liquid-gradient absolute inset-0"></div>
