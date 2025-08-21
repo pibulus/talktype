@@ -2,6 +2,7 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 @import './lib/styles/typography.css';
+@import './lib/styles/mobile-optimizations.css';
 
 /* ===================================================================
    CSS CUSTOM PROPERTIES - Single source of truth
