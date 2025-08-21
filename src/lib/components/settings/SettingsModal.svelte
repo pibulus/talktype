@@ -6,7 +6,7 @@
 	import ThemeSelector from './ThemeSelector.svelte';
 	import AutoRecordToggle from './AutoRecordToggle.svelte';
 	import TranscriptionStyleSelector from './TranscriptionStyleSelector.svelte';
-	import TranscriptionModeSelector from './TranscriptionModeSelector.svelte';
+	import TranscriptionModeSelectorSimple from './TranscriptionModeSelectorSimple.svelte';
 	import { ModalCloseButton } from '../modals/index.js';
 
 	// Props for the modal
@@ -160,7 +160,7 @@
 					<DisplayGhost width="24px" height="24px" theme={$theme} seed={54321} />
 				</div>
 				<h3 id="settings_modal_title" class="text-xl font-black tracking-tight text-gray-800">
-					Settings
+					Options
 				</h3>
 			</div>
 
@@ -174,7 +174,7 @@
 			<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
 
 			<!-- Transcription Mode Selection -->
-			<TranscriptionModeSelector />
+			<TranscriptionModeSelectorSimple />
 
 			<!-- Premium Features Section -->
 			<div

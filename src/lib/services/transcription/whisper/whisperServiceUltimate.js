@@ -441,12 +441,16 @@ export class WhisperServiceUltimate {
         audioDuration = processedAudio.size / (16000 * 2);
       }
 
+      // Get translation preferences
+      const prefs = JSON.parse(localStorage.getItem('talktype_model_prefs') || '{}');
+      const shouldTranslate = options.translate !== undefined ? options.translate : prefs.translate;
+      
       // Use optimal settings based on model and duration
       const transcriptionOptions = { 
-        task: "transcribe",
+        task: shouldTranslate ? "translate" : "transcribe",
         
-        // Language hint if known
-        language: "english",
+        // Language hint - auto-detect if translating
+        language: shouldTranslate ? undefined : (options.language || "english"),
         
         // Use chunking for longer audio
         chunk_length_s: audioDuration > 30 ? 30 : undefined,
@@ -489,6 +493,13 @@ export class WhisperServiceUltimate {
         `Failed to transcribe: ${error.message}`,
       );
     }
+  }
+
+  /**
+   * Translate audio to English
+   */
+  async translateAudio(audioBlob, options = {}) {
+    return this.transcribeAudio(audioBlob, { ...options, translate: true });
   }
 
   /**
