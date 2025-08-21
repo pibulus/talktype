@@ -1,12 +1,39 @@
-# CLAUDE.md - Code Standards for TalkType
+# CLAUDE.md - TalkType Technical Documentation
+
+## 🚀 What Makes TalkType Special
+
+TalkType isn't just another transcription app - it's a **progressive, offline-first voice-to-text PWA** with:
+- **Instant start**: Web Speech API for 0ms latency
+- **Progressive quality**: Invisible upgrades from tiny → optimal models
+- **Distil-Whisper models**: 6x faster, 50% smaller than regular Whisper
+- **Multi-language Pro mode**: 9+ languages with one toggle
+- **Delightful ghost personality**: Not just a tool, but a companion
+- **No subscription BS**: One-time $9 unlock vs competitors' $10+/month
+
+## 📦 Progressive Transcription Architecture
+
+### Three-Layer System
+1. **Instant Layer**: Web Speech API (0ms start, online-only)
+2. **Tiny Layer**: 20MB distil-tiny loads invisibly (2-3s)
+3. **Target Layer**: Auto-selected based on device RAM:
+   - <3GB RAM: distil-small (83MB)
+   - ≥3GB RAM: distil-medium (166MB)
+   - Pro mode: distil-large-v3 (750MB, 9+ languages)
+
+### Key Features
+- **WebGPU Ready**: 10-100x speed boost when available
+- **Offline-first**: All models run locally after download
+- **Smart caching**: Models persist across sessions
+- **Progressive enhancement**: Quality improves invisibly
 
 ## Build & Development
 
-- `npm run dev` - Start development server
-- `npm run build` - Create production build
-- `npm run preview` - Preview production build
+- `npm run dev` - Start development server with Vite HMR
+- `npm run build` - Production build with optimizations
+- `npm run preview` - Preview production build locally
 - `npm run format` - Run Prettier formatter
-- `npm run lint` - Check code formatting and run ESLint
+- `npm run lint` - ESLint + Prettier checks
+- `npm run lighthouse` - Performance audit
 
 ## Code Style Guidelines
 
@@ -22,104 +49,77 @@
 - **Documentation**: Include JSDoc comments for functions
 - **Reactivity**: Use Svelte's reactive declarations and statements properly
 
-## Text Animation System
-
-The TalkType app uses subtle text animations for improved user experience:
-
-### Staggered Text Animation
-
-- **Implementation**: Split text into `<span>` elements, one per letter
-- **Animation**: Each letter fades in and moves up with CSS transitions
-- **Timing**: Letters have cascading delays (50-100ms apart)
-- **Performance**: Use `will-change` and hardware acceleration for smoothness
-- **CSS Properties**:
-
-  ```css
-  .stagger-letter {
-  	display: inline-block;
-  	opacity: 0;
-  	transform: translateY(15px);
-  	animation: staggerFadeIn 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-  	will-change: transform, opacity;
-  }
-
-  /* Incremental delays per letter */
-  .stagger-letter:nth-child(1) {
-  	animation-delay: 0.05s;
-  }
-  .stagger-letter:nth-child(2) {
-  	animation-delay: 0.1s;
-  }
-  /* ... and so on */
-  ```
-
-### Slide-In Animation
-
-- **Used For**: Subtitle text and other content blocks
-- **Effect**: Text slides up and fades in simultaneously
-- **Timing**: Typically starts after main title animation begins
-- **CSS Properties**:
-  ```css
-  .slide-in-subtitle {
-  	opacity: 0;
-  	transform: translateY(10px);
-  	animation: slideIn 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-  	animation-delay: 0.6s;
-  	will-change: transform, opacity;
-  	backface-visibility: hidden;
-  }
-  ```
-
-### Animation Coordination
-
-- **Sequence**: Main title → Subtitle → Interactive elements
-- **Timing**: Total sequence completes in ~2-2.5 seconds
-- **Session Management**: Optional storage-based tracking to show animations only on first visit
-
-### Hover Effects
-
-- **Title Hover**: Subtle pink text-shadow glow effect (15px radius with 0.6 opacity)
-- **Subtitle Hover**: Color darkening with subtle pink text-shadow (8px radius with 0.3 opacity)
-- **Timing**: All hover effects use smooth 0.3s ease transitions
-- **Implementation**: Applied through dedicated CSS classes (.title-hover, .subtitle-hover)
-- **Note**: Hover effects should be subtle and not interfere with entrance animations
-
 ## Ghost Component System
 
-The Ghost component is a central UI element in TalkType that uses an SVG-based approach with reactive theming.
+The Ghost component is the heart of TalkType's personality:
 
-For detailed documentation of the Ghost component, including its architecture, animation system, and theme implementation, refer to:
+### Key Features
+- **Reactive theming**: 4 themes (peach, mint, bubblegum, rainbow)
+- **State animations**: Wobbles when recording, blinks periodically
+- **SVG-based**: Scalable, performant, delightful
+- **Eye tracking**: Follows cursor subtly
 
-```
-/src/lib/components/ghost/README.md
-```
+### Animation States
+- **Idle**: Gentle breathing effect
+- **Recording**: Wobble animation
+- **Processing**: Pulse effect
+- **Wake up**: Special blink sequence
 
-### Key Architecture Principles
+For detailed implementation, see `/src/lib/components/ghost/README.md`
 
-1. **Unified SVG with Layered Elements**: Uses a single SVG with multiple layers (background, outline, eyes)
-2. **Hybrid State Management**:
-   - Global theme state managed by Svelte stores in `themeStore.js`
-   - Local animation states managed in component
-3. **Direct Element Targeting**: Animations target SVG elements directly via ID selectors
-4. **Theme System**: Centralized theme definitions with reactive updates
+## PWA & Mobile Optimizations
 
-### Critical Implementation Guidelines
+### PWA Features
+- **Install prompt**: Shows after 5 transcriptions
+- **Offline support**: Full functionality with cached models
+- **App icons**: Custom ghost icons for all platforms
+- **Service worker**: Caches all assets and models
 
-- Apply animations directly to SVG elements via ID (#ghost-shape)
-- Never apply animations to container groups (.ghost-bg, .ghost-layer)
-- Force browser reflow between animation changes with `void element.offsetWidth`
-- Clear all timeouts properly to prevent animation conflicts
-- Use high specificity selectors for theme-specific animations
+### Mobile Optimizations
+- **iOS safe areas**: Handles notched devices
+- **Touch targets**: 44px minimum (iOS HIG)
+- **Scroll behavior**: Prevents rubber-banding
+- **Viewport locking**: App-like experience
+- **Font scaling**: Prevents zoom on input focus
 
-For implementing new themes or modifying existing ones, use the themeStore:
+## Current Feature Status
 
-```javascript
-import { setTheme } from './ghost/themeStore';
-setTheme('peach'); // Change to peach theme
-```
+### ✅ Completed
+- Progressive transcription with Distil-Whisper models
+- PWA with offline support and install prompt
+- Mobile optimizations (iOS safe areas, touch targets)
+- Ghost personality with themes and animations
+- Auto-record on startup option
+- Clean architecture (removed 881 lines of dead code)
+- Hyperspeed downloads with parallel chunks
+- WebGPU detection and optimization ready
+
+### 🎯 Ready to Ship ($9 Unlock)
+- Save transcript history
+- Export transcripts
+- Custom filename builder
+- Pro language mode (9+ languages)
+
+## Performance Metrics
+
+- **Initial Load**: <2s with tiny model
+- **Transcription Start**: Instant (Web Speech) or 2-3s (Whisper)
+- **Lighthouse Score**: 85+ target
+- **Bundle Size**: Optimized with Vite
+- **PWA Score**: Full compliance
+
+## Important Project Context
+
+- **Branch Strategy**: `main` for stable, `feat/hyperspeed-downloads` has latest transcription work
+- **The Ghost Wobbles**: When recording - this is intentional and delightful
+- **Progressive Enhancement**: Quality improves invisibly - never make users wait
+- **Joy-First Design**: If it's not fun, we're doing it wrong
+- **Business Model**: $9 one-time unlock > subscription vampire model
+- **Competition**: We're not the most powerful, we're the most delightful
 
 ## Editor Configuration
 
 - Default branch: main
-- Code width: 80 characters
+- Code width: 80 characters preferred, 100 max
 - Tab size: 2 spaces
+- Format on save: Yes (Prettier)

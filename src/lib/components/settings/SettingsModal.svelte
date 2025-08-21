@@ -9,6 +9,7 @@
 	import TranscriptionModeSelectorSimple from './TranscriptionModeSelectorSimple.svelte';
 	import KeyboardShortcuts from './KeyboardShortcuts.svelte';
 	import QuickFeatures from './QuickFeatures.svelte';
+	import PwaSettings from './PwaSettings.svelte';
 	import { ModalCloseButton } from '../modals/index.js';
 
 	// Props for the modal
@@ -177,6 +178,9 @@
 
 			<!-- Transcription Mode Selection -->
 			<TranscriptionModeSelectorSimple />
+
+			<!-- PWA Install Settings -->
+			<PwaSettings />
 
 			<!-- Quick Features (80/20 implementations) -->
 			<QuickFeatures />
