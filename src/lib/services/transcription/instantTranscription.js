@@ -23,7 +23,7 @@ class InstantTranscriptionService {
 	constructor() {
 		this.whisperReady = false;
 		this.lastAudioBlob = null;
-		this.targetModel = 'distil-medium';
+		this.targetModel = 'distil-small'; // Changed from broken distil-medium to distil-small
 		this.currentModel = null;
 		this.isInitializing = false;
 	}

@@ -22,7 +22,7 @@ import { sileroVAD } from '../vad/sileroVAD';
 
 // Configure transformers.js for optimal performance
 env.allowRemoteModels = true;
-env.allowLocalModels = false; // Disable local model checking to avoid 404s
+env.allowLocalModels = true; // Enable local caching for faster loads
 env.remoteURL = 'https://huggingface.co/';
 
 // Service status store with WebGPU info

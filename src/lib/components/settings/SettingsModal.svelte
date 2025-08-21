@@ -40,6 +40,7 @@
 	// Theme options are now handled in ThemeSelector component
 
 	// Prompt styles are now directly defined in the UI components below
+	let promptStyles = [];
 
 	// Set up event listeners for the modal on component mount
 	onMount(() => {

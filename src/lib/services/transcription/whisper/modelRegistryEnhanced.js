@@ -74,18 +74,18 @@ const ENHANCED_MODELS = [
 	// === QUALITY TIER (10-20 seconds download) ===
 	{
 		id: 'distil-medium',
-		transformers_id: 'Xenova/whisper-medium.en',
+		transformers_id: 'Xenova/whisper-small.en', // Use small model as fallback for now
 		name: 'Medium (High Quality)',
 		description: 'Excellent accuracy with good speed',
-		size: 487 * 1024 * 1024, // ~487MB
-		parameters: 769000000,
+		size: 154 * 1024 * 1024, // Actually using small model
+		parameters: 244000000,
 		languages: ['en'],
 		version: '2.0.0',
 		speed_multiplier: 3,
 		accuracy: 0.98, // 98% accuracy
 		webgpu_optimized: true,
 		recommended_for: 'professional use, accuracy-critical tasks',
-		download_time_estimate: '20-30 seconds'
+		download_time_estimate: '5-8 seconds'
 	},
 	{
 		id: 'small',

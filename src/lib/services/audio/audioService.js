@@ -306,6 +306,7 @@ export class AudioService {
 				// Create the Blob from this.audioChunks, which now contains all chunks
 				// including the final one from the last dataavailable event.
 				const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+				console.log('[AudioService] Created audio blob:', audioBlob.size, 'bytes, type:', mimeType);
 
 				// Update store with audio blob
 				audioActions.setAudioBlob(audioBlob, mimeType);

@@ -23,12 +23,14 @@ export class TranscriptionService {
 
 	async transcribeAudio(audioBlob) {
 		try {
+			console.log('[TranscriptionService] Starting transcribeAudio...');
 			if (!audioBlob || !(audioBlob instanceof Blob)) {
 				// Friendly error message
 				const message = 'Hmm, no audio to work with. Try recording something first?';
 				transcriptionActions.setTranscriptionError(message);
 				throw new Error(message);
 			}
+			console.log('[TranscriptionService] Audio blob size:', audioBlob.size);
 
 			// Update transcription state to show in-progress
 			transcriptionActions.startTranscribing();
@@ -38,12 +40,15 @@ export class TranscriptionService {
 			this.startProgressAnimation();
 
 			// Use hybrid service for intelligent mode selection (always)
+			console.log('[TranscriptionService] Calling hybrid service...');
 			const transcriptText = await this.hybridService.transcribeAudio(audioBlob);
+			console.log('[TranscriptionService] Received transcript:', transcriptText);
 
 			// Complete progress animation with smooth transition
 			this.completeProgressAnimation();
 
 			// Update transcription state with completed text
+			console.log('[TranscriptionService] Updating store with transcript text');
 			transcriptionActions.completeTranscription(transcriptText);
 
 			return transcriptText;

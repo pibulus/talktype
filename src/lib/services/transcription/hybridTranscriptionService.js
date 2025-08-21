@@ -100,11 +100,18 @@ export class HybridTranscriptionService {
 	 * Main transcription method - intelligently routes to best service
 	 */
 	async transcribeAudio(audioBlob) {
+		console.log('[HybridTranscription] Starting transcription...');
+		console.log('[HybridTranscription] Audio blob size:', audioBlob?.size, 'bytes');
+		
 		const config = get(transcriptionConfig);
 		const status = get(hybridStatus);
+		
+		console.log('[HybridTranscription] Config:', config);
+		console.log('[HybridTranscription] Status:', status);
 
 		// Privacy mode - always use offline with instant service
 		if (config.privacyMode) {
+			console.log('[HybridTranscription] Using instant service (privacy mode)');
 			return this.transcribeWithInstant(audioBlob);
 		}
 
@@ -124,6 +131,7 @@ export class HybridTranscriptionService {
 		}
 
 		// Auto mode - always use instant for progressive loading experience
+		console.log('[HybridTranscription] Using instant service (auto mode)');
 		return this.transcribeWithInstant(audioBlob);
 	}
 
@@ -133,16 +141,21 @@ export class HybridTranscriptionService {
 	 */
 	async transcribeWithInstant(audioBlob) {
 		try {
+			console.log('[HybridTranscription] Calling instantTranscription.transcribeAudio...');
 			const result = await instantTranscription.transcribeAudio(audioBlob);
+			console.log('[HybridTranscription] Instant transcription result:', result);
 
 			// Return just the text for compatibility
 			if (typeof result === 'object' && result.text) {
+				console.log('[HybridTranscription] Returning text from result object:', result.text);
 				return result.text;
 			}
+			console.log('[HybridTranscription] Returning raw result:', result);
 			return result;
 		} catch (error) {
-			console.error('Instant transcription failed:', error);
+			console.error('[HybridTranscription] Instant transcription failed:', error);
 			// Fallback to direct whisper if instant fails
+			console.log('[HybridTranscription] Falling back to Whisper...');
 			return this.transcribeWithWhisper(audioBlob);
 		}
 	}

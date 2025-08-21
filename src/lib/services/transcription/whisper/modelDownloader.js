@@ -25,6 +25,13 @@ export const downloadHistory = writable([]);
  * Update download status with new values
  */
 export function updateDownloadStatus(updates) {
+	// Log significant status changes
+	if (updates.stage) {
+		console.log(`[ModelDownloader] Stage: ${updates.stage}`);
+	}
+	if (updates.error) {
+		console.error(`[ModelDownloader] Error: ${updates.error}`);
+	}
 	downloadStatus.update((current) => ({ ...current, ...updates }));
 }
 
@@ -32,7 +39,9 @@ export function updateDownloadStatus(updates) {
  * Set download progress
  */
 export function setProgress(percentage, stage = null) {
-	const updates = { progress: Math.round(percentage * 100) };
+	const progress = Math.round(percentage * 100);
+	console.log(`[ModelDownloader] Progress: ${progress}%${stage ? ` (${stage})` : ''}`);
+	const updates = { progress };
 	if (stage) {
 		updates.stage = stage;
 	}
@@ -44,6 +53,7 @@ export function setProgress(percentage, stage = null) {
  */
 export function setComplete() {
 	const status = get(downloadStatus);
+	console.log(`[ModelDownloader] ✅ Download complete for model: ${status.modelId}`);
 
 	// Add to history
 	downloadHistory.update((history) => [

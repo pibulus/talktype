@@ -99,12 +99,15 @@ export class RecordingControlsService {
 
 			// Stop recording and get the audio blob
 			const audioBlob = await this.audioService.stopRecording();
+			console.log('[RecordingControlsService] Got audio blob:', audioBlob);
 
 			// Process the audio if we have data
 			if (audioBlob) {
+				console.log('[RecordingControlsService] Starting transcription with blob size:', audioBlob.size);
 				// Transcribe the audio
 				try {
 					const transcriptText = await this.transcriptionService.transcribeAudio(audioBlob);
+					console.log('[RecordingControlsService] Transcription result:', transcriptText);
 
 					// Scroll to show transcript if needed
 					scrollToBottomIfNeeded({
