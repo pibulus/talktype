@@ -4,11 +4,13 @@
  *
  * Priority:
  * 1. Web Speech API - Chrome/Edge (0MB, instant)
- * 2. Whisper Tiny - All browsers (39MB, offline)
- * 3. Future: WebGPU Whisper - Modern browsers (39MB, 10x faster)
+ * 2. Tiny Quantized Model - 10MB, loads in 1-2 seconds!
+ * 3. Distil-Whisper Models - 20-166MB, 6x faster than original
+ * 4. WebGPU Acceleration - 10-100x faster processing when available
  */
 
-import { whisperServiceFast as whisperService } from './whisper/whisperServiceFast';
+import { instantTranscription } from './instantTranscription';
+import { whisperServiceUltimate } from './whisper/whisperServiceUltimate';
 import { webSpeechService } from './webSpeechService';
 import { voskService } from './vosk/voskService';
 import { writable, get } from 'svelte/store';
@@ -38,30 +40,34 @@ export class HybridTranscriptionService {
 		this.webSpeechAvailable = webSpeechService.isSupported;
 		this.whisperReady = false;
 		this.voskReady = false;
+		this.instantReady = false;
 		this.initializeServices();
 	}
 
 	async initializeServices() {
+		// Initialize instant transcription service for ultra-fast loading
+		console.log('🚀 Initializing instant transcription with tiny models...');
+		instantTranscription.initialize();
+
+		// Set up callback for quality upgrades
+		instantTranscription.onUpgradeReady = (result) => {
+			console.log('📈 Transcription quality upgraded:', result.quality);
+			// You could emit an event here to update UI if needed
+		};
+
 		// Check what's available
 		const status = {
 			webSpeechAvailable: webSpeechService.isSupported,
 			whisperAvailable: true, // Always available
 			voskAvailable: true, // Always available (lighter alternative)
 			webGPUAvailable: await this.checkWebGPU(),
+			instantAvailable: true, // Our new instant service!
 			recommendation: null
 		};
 
-		// Determine recommendation
-		if (status.webSpeechAvailable && !get(transcriptionConfig).privacyMode) {
-			status.recommendation = 'webspeech';
-			status.activeService = 'webspeech';
-		} else if (status.webGPUAvailable) {
-			status.recommendation = 'whisper-gpu';
-			status.activeService = 'whisper-gpu';
-		} else {
-			status.recommendation = 'whisper';
-			status.activeService = 'whisper';
-		}
+		// Determine recommendation - now we always use instant service!
+		status.recommendation = 'instant'; // Always use instant for progressive loading
+		status.activeService = 'instant';
 
 		// Update status
 		hybridStatus.set(status);
@@ -69,12 +75,15 @@ export class HybridTranscriptionService {
 		// Initialize based on preference
 		const config = get(transcriptionConfig);
 		if (config.preferredMode === 'auto') {
-			this.activeService = status.recommendation;
+			this.activeService = 'instant'; // Always use instant for best experience
+		} else if (config.preferredMode === 'webspeech') {
+			this.activeService = 'webspeech';
 		} else {
-			this.activeService = config.preferredMode;
+			this.activeService = 'instant'; // Default to instant
 		}
 
 		transcriptionConfig.update((c) => ({ ...c, initialized: true }));
+		this.instantReady = true;
 	}
 
 	async checkWebGPU() {
@@ -94,42 +103,48 @@ export class HybridTranscriptionService {
 		const config = get(transcriptionConfig);
 		const status = get(hybridStatus);
 
-		// Privacy mode - always use offline
+		// Privacy mode - always use offline with instant service
 		if (config.privacyMode) {
-			// Use preferred offline engine
-			if (config.offlineEngine === 'vosk') {
-				return this.transcribeWithVosk(audioBlob);
-			}
-			return this.transcribeWithWhisper(audioBlob);
+			return this.transcribeWithInstant(audioBlob);
 		}
 
 		// Use preference if set
 		if (config.preferredMode !== 'auto') {
 			switch (config.preferredMode) {
 				case 'webspeech':
-					if (status.webSpeechAvailable) {
-						return this.transcribeWithWebSpeech(audioBlob);
-					}
-					break;
+					// Even with webspeech preference, instantTranscription can use it as fallback
+					return this.transcribeWithInstant(audioBlob);
 				case 'whisper':
-					return this.transcribeWithWhisper(audioBlob);
+					return this.transcribeWithInstant(audioBlob);
+				case 'instant':
+					return this.transcribeWithInstant(audioBlob);
 				case 'vosk':
 					return this.transcribeWithVosk(audioBlob);
 			}
 		}
 
-		// Auto mode - use best available
-		if (status.webSpeechAvailable && this.canUseWebSpeech()) {
-			try {
-				return await this.transcribeWithWebSpeech(audioBlob);
-			} catch (error) {
-				console.log('Web Speech failed, falling back to Whisper:', error);
-				return this.transcribeWithWhisper(audioBlob);
-			}
-		}
+		// Auto mode - always use instant for progressive loading experience
+		return this.transcribeWithInstant(audioBlob);
+	}
 
-		// Default to Whisper
-		return this.transcribeWithWhisper(audioBlob);
+	/**
+	 * Transcribe using Instant Transcription Service
+	 * This provides progressive quality: Web Speech → Tiny Model → Target Model
+	 */
+	async transcribeWithInstant(audioBlob) {
+		try {
+			const result = await instantTranscription.transcribeAudio(audioBlob);
+
+			// Return just the text for compatibility
+			if (typeof result === 'object' && result.text) {
+				return result.text;
+			}
+			return result;
+		} catch (error) {
+			console.error('Instant transcription failed:', error);
+			// Fallback to direct whisper if instant fails
+			return this.transcribeWithWhisper(audioBlob);
+		}
 	}
 
 	/**
@@ -152,19 +167,20 @@ export class HybridTranscriptionService {
 	}
 
 	/**
-	 * Transcribe using Whisper
+	 * Transcribe using Whisper Ultimate (fallback method)
 	 */
 	async transcribeWithWhisper(audioBlob) {
-		// Ensure Whisper is loaded
+		// Ensure Whisper Ultimate is loaded
 		if (!this.whisperReady) {
-			const result = await whisperService.preloadModel();
+			const result = await whisperServiceUltimate.preloadModel();
 			if (!result.success) {
 				throw new Error('Failed to load Whisper model');
 			}
 			this.whisperReady = true;
 		}
 
-		return whisperService.transcribeAudio(audioBlob);
+		const result = await whisperServiceUltimate.transcribeAudio(audioBlob);
+		return result.text || result;
 	}
 
 	/**

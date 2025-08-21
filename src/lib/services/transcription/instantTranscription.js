@@ -18,6 +18,7 @@ class InstantTranscriptionService {
 		this.whisperReady = false;
 		this.lastAudioBlob = null;
 		this.targetModel = 'distil-medium';
+		this.currentModel = null;
 		this.isInitializing = false;
 	}
 
@@ -46,39 +47,78 @@ class InstantTranscriptionService {
 	}
 
 	async loadWhisperInBackground() {
-		// Load Whisper model in background
+		// Phase 1: Load TINY model first (1-3 seconds!)
 		setTimeout(async () => {
 			try {
-				console.log('⏳ Loading Whisper model in background...');
+				console.log('⚡ Loading tiny model for super fast start...');
 				transcriptionQuality.set({
 					quality: 'loading',
-					message: 'Loading high-quality model...',
+					message: 'Loading fast model...',
+					isUpgrading: true
+				});
+
+				// Try the 10MB quantized tiny first!
+				await whisperServiceUltimate.preloadModel('tiny-q8');
+				this.whisperReady = true;
+				this.currentModel = 'tiny-q8';
+
+				console.log('✅ Tiny model ready in seconds!');
+				transcriptionQuality.set({
+					quality: 'good',
+					message: 'Fast transcription ready',
+					isUpgrading: false
+				});
+
+				// Re-transcribe with tiny model
+				if (this.lastAudioBlob && this.onUpgradeReady) {
+					this.upgradeLastTranscription();
+				}
+
+				// Phase 2: Load target model in background
+				this.loadTargetModel();
+			} catch (error) {
+				console.warn('Tiny model failed, loading target directly', error);
+				this.loadTargetModel();
+			}
+		}, 100); // Start immediately
+	}
+
+	async loadTargetModel() {
+		// Load the user's preferred model after tiny is ready
+		setTimeout(async () => {
+			try {
+				if (this.currentModel === this.targetModel) return; // Already at target
+
+				console.log(`📈 Upgrading to ${this.targetModel}...`);
+				transcriptionQuality.set({
+					quality: 'good',
+					message: 'Loading better quality...',
 					isUpgrading: true
 				});
 
 				await whisperServiceUltimate.preloadModel(this.targetModel);
-				this.whisperReady = true;
+				this.currentModel = this.targetModel;
 
-				console.log('✅ Whisper ready for high-quality transcription!');
+				console.log('✅ High-quality model ready!');
 				transcriptionQuality.set({
 					quality: 'high',
-					message: 'High-quality transcription ready',
+					message: 'High-quality ready',
 					isUpgrading: false
 				});
 
-				// Re-transcribe last audio if available
+				// Final quality upgrade
 				if (this.lastAudioBlob && this.onUpgradeReady) {
 					this.upgradeLastTranscription();
 				}
 			} catch (error) {
-				console.warn('Whisper load failed, Web Speech remains available', error);
+				console.warn('Target model load failed', error);
 				transcriptionQuality.set({
-					quality: 'instant',
-					message: 'Using quick transcription',
+					quality: 'good',
+					message: 'Using fast model',
 					isUpgrading: false
 				});
 			}
-		}, 100); // Start immediately in background
+		}, 5000); // Wait 5 seconds before upgrading
 	}
 
 	async transcribeAudio(audioBlob, options = {}) {

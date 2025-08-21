@@ -22,6 +22,12 @@
 	let SettingsModal;
 	let loadingSettingsModal = false;
 
+	// Initialize instant transcription for ultra-fast loading
+	onMount(() => {
+		console.log('🚀 Initializing instant transcription with tiny models...');
+		instantTranscription.initialize();
+	});
+
 	let PwaInstallPrompt;
 	let loadingPwaPrompt = false;
 
