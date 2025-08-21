@@ -12,11 +12,11 @@ const ENHANCED_MODELS = [
 	// === INSTANT TIER (< 5 seconds download) ===
 	{
 		id: 'distil-tiny',
-		transformers_id: 'onnx-community/distil-whisper-tiny.en',
-		name: 'Distil Tiny (Fastest)',
-		description: '6x faster than regular Tiny, instant downloads',
-		size: 20 * 1024 * 1024, // ~20MB
-		parameters: 20000000,
+		transformers_id: 'Xenova/whisper-tiny.en',
+		name: 'Tiny (Fastest)',
+		description: 'Fastest model, instant downloads',
+		size: 39 * 1024 * 1024, // ~39MB
+		parameters: 39000000,
 		languages: ['en'],
 		version: '2.0.0',
 		speed_multiplier: 6,
@@ -43,11 +43,11 @@ const ENHANCED_MODELS = [
 	// === BALANCED TIER (5-10 seconds download) ===
 	{
 		id: 'distil-small',
-		transformers_id: 'onnx-community/distil-whisper-small.en',
-		name: 'Distil Small (Recommended)',
-		description: 'Best balance: 6x faster, great quality, small size',
-		size: 83 * 1024 * 1024, // ~83MB
-		parameters: 83000000,
+		transformers_id: 'Xenova/whisper-small.en',
+		name: 'Small (Recommended)',
+		description: 'Best balance: fast, great quality, small size',
+		size: 154 * 1024 * 1024, // ~154MB
+		parameters: 244000000,
 		languages: ['en'],
 		version: '2.0.0',
 		speed_multiplier: 6,
@@ -74,18 +74,18 @@ const ENHANCED_MODELS = [
 	// === QUALITY TIER (10-20 seconds download) ===
 	{
 		id: 'distil-medium',
-		transformers_id: 'onnx-community/distil-whisper-medium.en',
-		name: 'Distil Medium (High Quality)',
-		description: 'Excellent accuracy with faster processing',
-		size: 166 * 1024 * 1024, // ~166MB
-		parameters: 166000000,
+		transformers_id: 'Xenova/whisper-medium.en',
+		name: 'Medium (High Quality)',
+		description: 'Excellent accuracy with good speed',
+		size: 487 * 1024 * 1024, // ~487MB
+		parameters: 769000000,
 		languages: ['en'],
 		version: '2.0.0',
-		speed_multiplier: 6,
-		accuracy: 0.98, // 98% of original accuracy
+		speed_multiplier: 3,
+		accuracy: 0.98, // 98% accuracy
 		webgpu_optimized: true,
 		recommended_for: 'professional use, accuracy-critical tasks',
-		download_time_estimate: '10-15 seconds'
+		download_time_estimate: '20-30 seconds'
 	},
 	{
 		id: 'small',

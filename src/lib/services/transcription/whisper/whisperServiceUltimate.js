@@ -22,8 +22,8 @@ import { sileroVAD } from '../vad/sileroVAD';
 
 // Configure transformers.js for optimal performance
 env.allowRemoteModels = true;
+env.allowLocalModels = false; // Disable local model checking to avoid 404s
 env.remoteURL = 'https://huggingface.co/';
-env.localURL = '/models/';
 
 // Service status store with WebGPU info
 export const ultimateWhisperStatus = writable({
