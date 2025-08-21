@@ -39,11 +39,12 @@ class InstantTranscriptionService {
 
 	getModelIdFromPreference(pref) {
 		const mapping = {
+			instant: 'distil-tiny',
 			small: 'distil-small',
 			medium: 'distil-medium',
 			pro: 'distil-large-v3'
 		};
-		return mapping[pref] || 'distil-medium';
+		return mapping[pref] || 'distil-small'; // Default to small for better experience
 	}
 
 	async loadWhisperInBackground() {
@@ -57,10 +58,10 @@ class InstantTranscriptionService {
 					isUpgrading: true
 				});
 
-				// Try the 10MB quantized tiny first!
-				await whisperServiceUltimate.preloadModel('tiny-q8');
+				// Try the 20MB distil-tiny first (better than quantized!)
+				await whisperServiceUltimate.preloadModel('distil-tiny');
 				this.whisperReady = true;
-				this.currentModel = 'tiny-q8';
+				this.currentModel = 'distil-tiny';
 
 				console.log('✅ Tiny model ready in seconds!');
 				transcriptionQuality.set({

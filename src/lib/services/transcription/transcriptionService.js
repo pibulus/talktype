@@ -1,4 +1,3 @@
-import { whisperService } from './whisper/whisperService';
 import { hybridTranscriptionService } from './hybridTranscriptionService';
 import { transcriptionState, transcriptionActions, uiActions } from '../infrastructure/stores';
 import { COPY_MESSAGES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
@@ -17,7 +16,6 @@ export class TranscriptionService {
 	constructor(dependencies = {}) {
 		// Use hybrid service that intelligently chooses between Web Speech and Whisper
 		this.hybridService = dependencies.hybridService || hybridTranscriptionService;
-		this.whisperService = dependencies.whisperService || whisperService;
 		this.browser = typeof window !== 'undefined';
 		this.lastTranscriptionTimestamp = null;
 		this.useHybrid = true; // Use intelligent mode selection
@@ -39,10 +37,8 @@ export class TranscriptionService {
 			// Start progress animation
 			this.startProgressAnimation();
 
-			// Use hybrid service for intelligent mode selection
-			const transcriptText = this.useHybrid
-				? await this.hybridService.transcribeAudio(audioBlob)
-				: await this.whisperService.transcribeAudio(audioBlob);
+			// Use hybrid service for intelligent mode selection (always)
+			const transcriptText = await this.hybridService.transcribeAudio(audioBlob);
 
 			// Complete progress animation with smooth transition
 			this.completeProgressAnimation();

@@ -36,11 +36,21 @@
 		}
 	});
 
-	// Simplified 3-model system
+	// Simplified 4-model system with instant option
 	const models = {
+		instant: {
+			name: '🚀 Instant',
+			description: 'Starts in 2 seconds',
+			modelId: 'distil-tiny',
+			size: '20MB',
+			speed: '10x faster',
+			accuracy: '94%',
+			badge: 'Fastest',
+			color: 'from-yellow-400 to-orange-500'
+		},
 		small: {
 			name: '⚡ Fast',
-			description: 'Quick transcription for notes',
+			description: 'Quick transcription',
 			modelId: 'distil-small',
 			size: '83MB',
 			speed: '6x faster',
