@@ -8,7 +8,7 @@
  * 3. Future: WebGPU Whisper - Modern browsers (39MB, 10x faster)
  */
 
-import { whisperServiceEnhanced as whisperService } from './whisper/whisperServiceEnhanced';
+import { whisperServiceFast as whisperService } from './whisper/whisperServiceFast';
 import { webSpeechService } from './webSpeechService';
 import { voskService } from './vosk/voskService';
 import { writable, get } from 'svelte/store';

@@ -55,18 +55,37 @@ export function setComplete() {
     },
   ]);
 
-  // Reset status
-  downloadStatus.set({
+  // Update status to show complete
+  downloadStatus.update((current) => ({
+    ...current,
     inProgress: false,
     progress: 100,
     stage: "complete",
-    modelId: status.modelId,
     error: null,
     speed: 0,
     eta: null,
-    bytesLoaded: status.bytesTotal,
-    bytesTotal: status.bytesTotal,
-  });
+  }));
+  
+  // Clear the download status after a delay to show completion
+  setTimeout(() => {
+    downloadStatus.update((current) => {
+      // Only clear if this is still the same model
+      if (current.modelId === status.modelId && current.stage === "complete") {
+        return {
+          inProgress: false,
+          progress: 0,
+          stage: null,
+          modelId: null,
+          error: null,
+          speed: 0,
+          eta: null,
+          bytesLoaded: 0,
+          bytesTotal: 0,
+        };
+      }
+      return current;
+    });
+  }, 2000); // Show complete status for 2 seconds
 }
 
 /**

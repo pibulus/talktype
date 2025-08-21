@@ -1,6 +1,6 @@
 /**
- * Enhanced WhisperService with CDN support and parallel downloads
- * Implements hyperspeed model loading for 3-10x faster downloads
+ * Fast WhisperService with optimized CDN loading
+ * Uses transformers.js built-in CDN with optimizations
  */
 
 import { get, writable } from "svelte/store";
@@ -19,37 +19,20 @@ import {
   updateDownloadMetrics,
   resetDownloadMetrics,
 } from "./modelDownloader";
-import { 
-  downloadModelFast, 
-  getBestCDNUrl, 
-  DownloadSpeedTracker 
-} from "../utils/parallelDownloader";
+import { DownloadSpeedTracker } from "../utils/parallelDownloader";
 import { modelShareService } from "../utils/modelSharing";
 
-// Configure transformers.js to use HuggingFace CDN (faster than default)
+// Configure transformers.js for optimal performance
 env.allowRemoteModels = true;
-env.remoteURL = "https://huggingface.co/";
-env.localURL = "/models/"; // Fallback to local if needed
-env.backends.onnx.wasm.proxy = false; // Disable proxy for faster loading
+env.remoteURL = "https://huggingface.co/"; // Use HuggingFace CDN
+env.localURL = "/models/"; // Fallback to local
 
-// CDN configuration for models
-const MODEL_CDN_CONFIG = {
-  "Xenova/whisper-tiny.en": {
-    onnx: "whisper-tiny-en/onnx/model.onnx",
-    config: "whisper-tiny-en/config.json",
-    tokenizer: "whisper-tiny-en/tokenizer.json",
-  },
-  "Xenova/whisper-base.en": {
-    onnx: "whisper-base-en/onnx/model.onnx",
-    config: "whisper-base-en/config.json",
-    tokenizer: "whisper-base-en/tokenizer.json",
-  },
-  "Xenova/whisper-small.en": {
-    onnx: "whisper-small-en/onnx/model.onnx",
-    config: "whisper-small-en/config.json",
-    tokenizer: "whisper-small-en/tokenizer.json",
-  },
-};
+// Disable unnecessary features for faster loading
+if (typeof window !== "undefined" && window.ort) {
+  window.ort.env.wasm.numThreads = navigator.hardwareConcurrency || 4;
+  window.ort.env.wasm.simd = true;
+  window.ort.env.wasm.proxy = false;
+}
 
 // Service status store
 export const whisperStatus = writable({
@@ -64,14 +47,15 @@ export const whisperStatus = writable({
 });
 
 /**
- * Enhanced WhisperService with hyperspeed downloads
+ * Fast WhisperService with CDN optimizations
  */
-export class WhisperServiceEnhanced {
+export class WhisperServiceFast {
   constructor() {
     this.transcriber = null;
     this.modelLoadPromise = null;
     this.isSupported = typeof window !== "undefined";
     this.speedTracker = new DownloadSpeedTracker();
+    this.startTime = null;
     
     // Initialize status
     this.updateStatus({
@@ -87,7 +71,7 @@ export class WhisperServiceEnhanced {
   }
 
   /**
-   * Preload the Whisper model with hyperspeed optimizations
+   * Preload the Whisper model with speed tracking
    */
   async preloadModel() {
     // Don't reload if already loaded
@@ -117,6 +101,7 @@ export class WhisperServiceEnhanced {
     });
     
     resetDownloadMetrics();
+    this.startTime = Date.now();
 
     // Get selected model
     const prefs = get(userPreferences);
@@ -144,21 +129,19 @@ export class WhisperServiceEnhanced {
       });
       setComplete();
       
-      // Now we need to initialize the transcriber with the shared model
-      // For now, we'll still let transformers.js handle it
+      // Still need to initialize the transcriber
       // In a full implementation, we'd load from the blob
     }
 
-    this.modelLoadPromise = this._loadModelWithCDN(modelConfig, modelKey);
+    this.modelLoadPromise = this._loadModel(modelConfig, modelKey);
     return this.modelLoadPromise;
   }
 
   /**
-   * Load model using CDN with parallel downloads
+   * Load model with progress tracking
    */
-  async _loadModelWithCDN(modelConfig, modelKey) {
-    let originalFetch = null;
-    let originalWarn = null;
+  async _loadModel(modelConfig, modelKey) {
+    const originalWarn = console.warn;
     
     try {
       // Configure ONNX Runtime environment
@@ -171,120 +154,63 @@ export class WhisperServiceEnhanced {
         progress: 10,
       });
 
-      // Override the transformers.js model loading to use our CDN
-      originalFetch = window.fetch;
-      const speedTracker = this.speedTracker;
-      speedTracker.start();
+      // Track download progress
+      this.speedTracker.start();
+      let lastProgress = 0;
       
-      // Track downloads for progress
-      let totalBytes = 0;
-      let loadedBytes = 0;
-      
-      // Intercept fetch requests to use our CDN and parallel downloader
-      window.fetch = async function(url, options = {}) {
-        // Check if this is a model file request
-        if (typeof url === 'string' && url.includes('huggingface.co')) {
-          console.log("Intercepting HuggingFace request:", url);
-          
-          // Extract the file path from the URL
-          const urlParts = url.split('/');
-          const fileName = urlParts[urlParts.length - 1];
-          
-          // Map to our CDN URL
-          let cdnPath;
-          if (fileName.endsWith('.onnx')) {
-            cdnPath = MODEL_CDN_CONFIG[modelConfig.id]?.onnx;
-          } else if (fileName === 'config.json') {
-            cdnPath = MODEL_CDN_CONFIG[modelConfig.id]?.config;
-          } else if (fileName === 'tokenizer.json') {
-            cdnPath = MODEL_CDN_CONFIG[modelConfig.id]?.tokenizer;
-          }
-          
-          if (cdnPath) {
-            // Get the best CDN URL
-            const cdnUrl = await getBestCDNUrl(cdnPath, false);
-            console.log(`Using CDN: ${cdnUrl}`);
-            
-            // Use parallel downloader for large files
-            if (fileName.endsWith('.onnx')) {
-              updateDownloadStatus({ stage: "downloading" });
-              
-              const blob = await downloadModelFast(cdnUrl, (progress) => {
-                const percentage = Math.round(progress * 80) + 10;
-                whisperStatus.update(s => ({ 
-                  ...s, 
-                  progress: percentage,
-                  downloadSpeed: speedTracker.getFormattedSpeed()
-                }));
-                setProgress(progress, "downloading");
-                
-                // Update speed metrics
-                const bytesLoaded = progress * modelConfig.size;
-                speedTracker.update(bytesLoaded);
-                updateDownloadMetrics(bytesLoaded, modelConfig.size);
-              }, 4); // Use 4 parallel chunks
-              
-              // Share the model with other tabs
-              await modelShareService.shareModel(modelConfig.id, blob);
-              
-              // Return a Response object with the blob
-              return new Response(blob, {
-                status: 200,
-                statusText: 'OK',
-                headers: new Headers({
-                  'content-type': 'application/octet-stream',
-                  'content-length': blob.size.toString()
-                })
-              });
-            } else {
-              // For smaller files, use standard fetch with CDN
-              return originalFetch.call(this, cdnUrl, options);
-            }
-          }
-        }
-        
-        // Fall back to original fetch for non-model requests
-        return originalFetch.call(this, url, options);
-      };
-
-      // Temporarily suppress console.warn during model loading
-      originalWarn = console.warn;
+      // Temporarily suppress console warnings
       console.warn = () => {};
       
-      try {
-        // Create transcription pipeline
-        this.transcriber = await pipeline(
-          "automatic-speech-recognition",
-          modelConfig.id,
-          {
-            // Configure model options
-            onnx: {
-              logSeverityLevel: 4,
-              logVerbosityLevel: 0,
-              enableCpuMemArena: false,
-              enableMemPattern: false,
-              executionMode: "sequential",
-              graphOptimizationLevel: "basic",
-            },
-            progress_callback: (progress) => {
-              if (progress.status === "ready") {
-                this.updateStatus({ progress: 95 });
-                setProgress(0.95, "ready");
+      // Create transcription pipeline with progress tracking
+      console.log(`Loading model: ${modelConfig.id}`);
+      this.transcriber = await pipeline(
+        "automatic-speech-recognition",
+        modelConfig.id,
+        {
+          // Use quantized models for faster loading if available
+          quantized: true,
+          
+          // Progress callback for download tracking
+          progress_callback: (progress) => {
+            if (progress.status === "downloading" || progress.status === "progress") {
+              const percent = progress.progress || 
+                (progress.loaded && progress.total ? 
+                  Math.round((progress.loaded / progress.total) * 100) : 0);
+              
+              if (percent > lastProgress) {
+                lastProgress = percent;
+                const actualProgress = Math.round(percent * 0.8) + 10; // 10-90%
+                
+                this.updateStatus({ 
+                  progress: actualProgress,
+                  downloadSpeed: this.getDownloadSpeed()
+                });
+                setProgress(actualProgress / 100, "downloading");
+                
+                // Update metrics
+                if (progress.loaded && progress.total) {
+                  this.speedTracker.update(progress.loaded);
+                  updateDownloadMetrics(progress.loaded, progress.total);
+                }
               }
-            },
-          }
-        );
-      } finally {
-        // Restore console.warn and fetch
-        if (originalWarn) {
-          console.warn = originalWarn;
+            } else if (progress.status === "ready") {
+              this.updateStatus({ progress: 95 });
+              setProgress(0.95, "ready");
+            } else if (progress.status === "done") {
+              this.updateStatus({ progress: 98 });
+              setProgress(0.98, "finalizing");
+            }
+          },
         }
-        if (originalFetch) {
-          window.fetch = originalFetch;
-        }
-      }
+      );
+      
+      // Restore console.warn
+      console.warn = originalWarn;
 
       // Model is loaded
+      const loadTime = ((Date.now() - this.startTime) / 1000).toFixed(2);
+      console.log(`✨ Whisper model loaded in ${loadTime} seconds!`);
+      
       this.updateStatus({
         isLoaded: true,
         isLoading: false,
@@ -297,11 +223,15 @@ export class WhisperServiceEnhanced {
       // Mark download as complete
       setComplete();
 
-      console.log("✨ Whisper model loaded with HYPERSPEED!");
       return { success: true, transcriber: this.transcriber };
       
     } catch (error) {
       console.error("Failed to load Whisper model:", error);
+      
+      // Restore console.warn
+      if (originalWarn) {
+        console.warn = originalWarn;
+      }
 
       this.updateStatus({
         isLoaded: false,
@@ -313,12 +243,6 @@ export class WhisperServiceEnhanced {
       setError(error.message || "Failed to load Whisper model");
 
       this.modelLoadPromise = null;
-      
-      // Restore fetch if error occurred
-      if (typeof window !== 'undefined' && originalFetch) {
-        window.fetch = originalFetch;
-      }
-      
       return { success: false, error };
     }
   }
@@ -336,7 +260,8 @@ export class WhisperServiceEnhanced {
       
       if (window.ort) {
         try {
-          window.ort.env.wasm.numThreads = 1;
+          // Configure for optimal performance
+          window.ort.env.wasm.numThreads = navigator.hardwareConcurrency || 4;
           window.ort.env.logLevel = "fatal";
           window.ort.env.debug = false;
           
@@ -351,6 +276,14 @@ export class WhisperServiceEnhanced {
     };
     
     await waitForOrt();
+  }
+
+  /**
+   * Get formatted download speed
+   */
+  getDownloadSpeed() {
+    const speed = this.speedTracker.getFormattedSpeed();
+    return speed === 'calculating...' ? null : speed;
   }
 
   /**
@@ -399,12 +332,12 @@ export class WhisperServiceEnhanced {
       }
 
       // Perform transcription with optimal configuration
-      const transcriptionOptions = { task: "transcribe" };
-
-      if (audioDuration > 15) {
-        transcriptionOptions.chunk_length_s = 30;
-        transcriptionOptions.stride_length_s = 5;
-      }
+      const transcriptionOptions = { 
+        task: "transcribe",
+        // Use larger chunk size for faster processing
+        chunk_length_s: audioDuration > 30 ? 30 : undefined,
+        stride_length_s: audioDuration > 30 ? 5 : undefined,
+      };
 
       const result = await this.transcriber(
         processedAudio,
@@ -483,4 +416,4 @@ export class WhisperServiceEnhanced {
 }
 
 // Service instance
-export const whisperServiceEnhanced = new WhisperServiceEnhanced();
+export const whisperServiceFast = new WhisperServiceFast();

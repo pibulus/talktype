@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { whisperServiceEnhanced } from '$lib/services/transcription/whisper/whisperServiceEnhanced';
+  import { whisperServiceFast } from '$lib/services/transcription/whisper/whisperServiceFast';
   import { downloadStatus } from '$lib/services/transcription/whisper/modelDownloader';
   import { formatBytes, formatETA } from '$lib/services/transcription/whisper/modelDownloader';
   
@@ -25,7 +25,7 @@
     
     try {
       console.log('🚀 Starting HYPERSPEED download test...');
-      const result = await whisperServiceEnhanced.preloadModel();
+      const result = await whisperServiceFast.preloadModel();
       
       if (result.success) {
         endTime = Date.now();
