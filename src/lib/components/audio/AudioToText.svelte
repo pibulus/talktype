@@ -19,7 +19,7 @@
 		hasPermissionError,
 		uiActions
 	} from '$lib/services';
-	import { whisperStatus } from '../../services/transcription/whisper/whisperService';
+	import { ultimateWhisperStatus as whisperStatus } from '../../services/transcription/whisper/whisperServiceUltimate';
 
 	// Props - simplified interface
 	export let ghostComponent = null;

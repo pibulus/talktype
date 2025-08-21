@@ -39,6 +39,7 @@ export class WebSpeechService {
 	 * Check if Web Speech API is supported
 	 */
 	checkSupport() {
+		if (typeof window === 'undefined') return false;
 		return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
 	}
 
@@ -46,6 +47,7 @@ export class WebSpeechService {
 	 * Get browser name for user messaging
 	 */
 	getBrowserName() {
+		if (typeof navigator === 'undefined') return 'Browser';
 		const userAgent = navigator.userAgent.toLowerCase();
 		if (userAgent.includes('chrome')) return 'Chrome';
 		if (userAgent.includes('edge')) return 'Edge';
@@ -58,6 +60,7 @@ export class WebSpeechService {
 	 * Initialize the recognition object
 	 */
 	initializeRecognition() {
+		if (typeof window === 'undefined') return;
 		const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 		this.recognition = new SpeechRecognition();
@@ -200,5 +203,38 @@ export class WebSpeechService {
 	}
 }
 
-// Service instance
-export const webSpeechService = new WebSpeechService();
+// Service instance - lazily created on first access
+let _webSpeechService;
+export const webSpeechService = {
+	get instance() {
+		if (!_webSpeechService && typeof window !== 'undefined') {
+			_webSpeechService = new WebSpeechService();
+		}
+		return _webSpeechService;
+	},
+	// Proxy methods to the instance
+	checkSupport() {
+		return this.instance?.checkSupport() || false;
+	},
+	getBrowserName() {
+		return this.instance?.getBrowserName() || 'Browser';
+	},
+	startTranscription(onProgress) {
+		if (!this.instance) {
+			throw new Error('Web Speech API not available in this environment');
+		}
+		return this.instance.startTranscription(onProgress);
+	},
+	stopTranscription() {
+		return this.instance?.stopTranscription() || '';
+	},
+	transcribeAudio(audioBlob) {
+		if (!this.instance) {
+			throw new Error('Web Speech API not available in this environment');
+		}
+		return this.instance.transcribeAudio(audioBlob);
+	},
+	isListening() {
+		return this.instance?.isListening() || false;
+	}
+};

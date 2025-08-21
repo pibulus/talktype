@@ -3,6 +3,7 @@
 ## 🚀 What Makes TalkType Special
 
 TalkType isn't just another transcription app - it's a **progressive, offline-first voice-to-text PWA** with:
+
 - **Instant start**: Web Speech API for 0ms latency
 - **Progressive quality**: Invisible upgrades from tiny → optimal models
 - **Distil-Whisper models**: 6x faster, 50% smaller than regular Whisper
@@ -13,6 +14,7 @@ TalkType isn't just another transcription app - it's a **progressive, offline-fi
 ## 📦 Progressive Transcription Architecture
 
 ### Three-Layer System
+
 1. **Instant Layer**: Web Speech API (0ms start, online-only)
 2. **Tiny Layer**: 20MB distil-tiny loads invisibly (2-3s)
 3. **Target Layer**: Auto-selected based on device RAM:
@@ -21,6 +23,7 @@ TalkType isn't just another transcription app - it's a **progressive, offline-fi
    - Pro mode: distil-large-v3 (750MB, 9+ languages)
 
 ### Key Features
+
 - **WebGPU Ready**: 10-100x speed boost when available
 - **Offline-first**: All models run locally after download
 - **Smart caching**: Models persist across sessions
@@ -54,12 +57,14 @@ TalkType isn't just another transcription app - it's a **progressive, offline-fi
 The Ghost component is the heart of TalkType's personality:
 
 ### Key Features
+
 - **Reactive theming**: 4 themes (peach, mint, bubblegum, rainbow)
 - **State animations**: Wobbles when recording, blinks periodically
 - **SVG-based**: Scalable, performant, delightful
 - **Eye tracking**: Follows cursor subtly
 
 ### Animation States
+
 - **Idle**: Gentle breathing effect
 - **Recording**: Wobble animation
 - **Processing**: Pulse effect
@@ -70,12 +75,14 @@ For detailed implementation, see `/src/lib/components/ghost/README.md`
 ## PWA & Mobile Optimizations
 
 ### PWA Features
+
 - **Install prompt**: Shows after 5 transcriptions
 - **Offline support**: Full functionality with cached models
 - **App icons**: Custom ghost icons for all platforms
 - **Service worker**: Caches all assets and models
 
 ### Mobile Optimizations
+
 - **iOS safe areas**: Handles notched devices
 - **Touch targets**: 44px minimum (iOS HIG)
 - **Scroll behavior**: Prevents rubber-banding
@@ -85,6 +92,7 @@ For detailed implementation, see `/src/lib/components/ghost/README.md`
 ## Current Feature Status
 
 ### ✅ Completed
+
 - Progressive transcription with Distil-Whisper models
 - PWA with offline support and install prompt
 - Mobile optimizations (iOS safe areas, touch targets)
@@ -95,6 +103,7 @@ For detailed implementation, see `/src/lib/components/ghost/README.md`
 - WebGPU detection and optimization ready
 
 ### 🎯 Ready to Ship ($9 Unlock)
+
 - Save transcript history
 - Export transcripts
 - Custom filename builder
@@ -127,16 +136,20 @@ For detailed implementation, see `/src/lib/components/ghost/README.md`
 ## 💰 Payment Model & Marketing Philosophy
 
 ### "DLC Already on Disc" Approach
+
 // The entire Pro feature set is already built and deployed to every user
 // Payment ($9 one-time) simply flips a boolean to unlock features
 // This approach provides several benefits:
+
 - **Zero latency unlock**: Features activate instantly upon payment
 - **Try before buy**: Users can experience the free tier fully
 - **No server dependency**: Payment validation happens once, features work forever
 - **Ethical pricing**: One-time $9 unlock vs competitors' $10+/month subscriptions
 
 ### Key Marketing Points
+
 // These differentiators make TalkType compelling vs competition:
+
 - **100% Private**: Everything stays on device, we never see or store transcripts
 - **Zero setup**: Works instantly in browser, no API keys or accounts needed
 - **Smart model selection**: Automatically picks optimal model for your device
@@ -146,7 +159,9 @@ For detailed implementation, see `/src/lib/components/ghost/README.md`
 - **Competitor comparison**: SuperWhisper charges $10/month for similar features
 
 ### Technical Advantages for Marketing
+
 // These can be simplified for user-facing copy:
+
 - **Distil-Whisper models**: 6x faster, 50% smaller than regular Whisper
 - **WebGPU ready**: 10-100x speed improvements when browsers enable it
 - **Progressive transcription**: Web Speech → Tiny → Optimal model pipeline

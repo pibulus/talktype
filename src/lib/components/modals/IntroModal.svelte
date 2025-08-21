@@ -56,7 +56,8 @@
 
 			<div class="space-y-3 sm:space-y-4">
 				<p class="text-sm font-medium leading-relaxed text-gray-700 sm:text-base md:text-lg">
-					🎯 <strong>100% Private</strong> — Everything stays on your device. We never see or store your words.
+					🎯 <strong>100% Private</strong> — Everything stays on your device. We never see or store your
+					words.
 				</p>
 
 				<p class="text-sm font-medium leading-relaxed text-gray-700 sm:text-base md:text-lg">
@@ -64,7 +65,8 @@
 				</p>
 
 				<p class="text-sm font-medium leading-relaxed text-gray-700 sm:text-base md:text-lg">
-					✨ <strong>Pro for $9</strong> — One-time unlock. 9+ languages, export transcripts, extra ghost vibes. Forever.
+					✨ <strong>Pro for $9</strong> — One-time unlock. 9+ languages, export transcripts, extra ghost
+					vibes. Forever.
 				</p>
 			</div>
 

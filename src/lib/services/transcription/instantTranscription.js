@@ -32,11 +32,13 @@ class InstantTranscriptionService {
 		if (this.isInitializing) return;
 		this.isInitializing = true;
 
-		// Load user preference
-		const saved = localStorage.getItem('talktype_model_prefs');
-		if (saved) {
-			const prefs = JSON.parse(saved);
-			this.targetModel = this.getModelIdFromPreference(prefs.model);
+		// Load user preference (only in browser)
+		if (typeof localStorage !== 'undefined') {
+			const saved = localStorage.getItem('talktype_model_prefs');
+			if (saved) {
+				const prefs = JSON.parse(saved);
+				this.targetModel = this.getModelIdFromPreference(prefs.model);
+			}
 		}
 
 		// Start loading Whisper in background

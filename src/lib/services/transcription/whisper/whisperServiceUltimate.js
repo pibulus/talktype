@@ -562,5 +562,32 @@ export class WhisperServiceUltimate {
 	}
 }
 
-// Service instance
-export const whisperServiceUltimate = new WhisperServiceUltimate();
+// Service instance - lazily created on first access
+let _whisperServiceUltimate;
+export const whisperServiceUltimate = {
+	get instance() {
+		if (!_whisperServiceUltimate && typeof window !== 'undefined') {
+			_whisperServiceUltimate = new WhisperServiceUltimate();
+		}
+		return _whisperServiceUltimate;
+	},
+	// Proxy methods to the instance
+	loadModel(modelId) {
+		if (!this.instance) {
+			throw new Error('Whisper Service not available in this environment');
+		}
+		return this.instance.loadModel(modelId);
+	},
+	transcribeAudio(audioBlob, options) {
+		if (!this.instance) {
+			throw new Error('Whisper Service not available in this environment');
+		}
+		return this.instance.transcribeAudio(audioBlob, options);
+	},
+	unloadModel() {
+		return this.instance?.unloadModel();
+	},
+	cleanup() {
+		return this.instance?.cleanup();
+	}
+};

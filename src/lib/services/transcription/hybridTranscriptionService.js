@@ -87,7 +87,7 @@ export class HybridTranscriptionService {
 	}
 
 	async checkWebGPU() {
-		if (!navigator.gpu) return false;
+		if (typeof navigator === 'undefined' || !navigator.gpu) return false;
 		try {
 			const adapter = await navigator.gpu.requestAdapter();
 			return !!adapter;
@@ -284,5 +284,26 @@ export class HybridTranscriptionService {
 	}
 }
 
-// Export singleton instance
-export const hybridTranscriptionService = new HybridTranscriptionService();
+// Export singleton instance - lazily created on first access
+let _hybridTranscriptionService;
+export const hybridTranscriptionService = {
+	get instance() {
+		if (!_hybridTranscriptionService && typeof window !== 'undefined') {
+			_hybridTranscriptionService = new HybridTranscriptionService();
+		}
+		return _hybridTranscriptionService;
+	},
+	// Proxy methods to the instance
+	transcribeAudio(audioBlob) {
+		if (!this.instance) {
+			throw new Error('Hybrid Transcription Service not available in this environment');
+		}
+		return this.instance.transcribeAudio(audioBlob);
+	},
+	initializeServices() {
+		return this.instance?.initializeServices();
+	},
+	cleanup() {
+		return this.instance?.cleanup();
+	}
+};

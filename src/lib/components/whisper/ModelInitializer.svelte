@@ -2,15 +2,15 @@
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import {
-		whisperService,
-		whisperStatus
-	} from '../../services/transcription/whisper/whisperService';
+		whisperServiceUltimate as whisperService,
+		ultimateWhisperStatus as whisperStatus
+	} from '../../services/transcription/whisper/whisperServiceUltimate';
 	import {
 		downloadStatus,
 		formatBytes,
 		formatETA
 	} from '../../services/transcription/whisper/modelDownloader';
-	import { selectedModel } from '../../services/transcription/whisper/modelRegistry';
+	import { selectedEnhancedModel as selectedModel } from '../../services/transcription/whisper/modelRegistryEnhanced';
 
 	export let onModelReady = () => {};
 	export let showAlways = false;
