@@ -16,14 +16,12 @@
 
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
 const sharp = require('sharp');
 const svgexport = require('svgexport');
 
 // Configuration
 const ICON_SIZES = [72, 96, 128, 144, 152, 192, 384, 512];
 const OUTPUT_DIR = path.join(__dirname, '../static/icons');
-const SVG_DIR = path.join(__dirname, '../static/assets');
 const TEMP_DIR = path.join(__dirname, '../temp');
 
 // Source SVGs
@@ -107,9 +105,6 @@ async function generateCombinedSVG(theme = 'peach', maskable = false) {
  * Convert the combined SVG to PNG at various sizes
  */
 async function convertToPNG(svgPath, theme = 'peach', maskable = false) {
-	const suffix = maskable ? '-maskable' : '';
-	const baseName = path.basename(svgPath, '.svg');
-
 	// Create conversion tasks for svgexport
 	const tasks = [];
 

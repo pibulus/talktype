@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { theme, autoRecord, showSettingsModal, applyTheme, promptStyle } from '$lib';
+	import { theme, autoRecord, applyTheme, promptStyle } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import ThemeSelector from './ThemeSelector.svelte';
@@ -13,11 +13,9 @@
 
 	// Theme/vibe selection
 	let selectedVibe;
-	let scrollPosition = 0;
 	let autoRecordValue = false;
 
 	// Prompt style selection
-	let promptStyles = [];
 	let selectedPromptStyle = 'standard';
 
 	// Subscribe to theme store
@@ -114,11 +112,6 @@
 				detail: { setting: 'autoRecord', value: autoRecordValue }
 			})
 		);
-	}
-
-	// Handle modal opening - called when the modal is opened
-	function handleModalOpen() {
-		// Modal service now handles body locking without layout shift
 	}
 
 	// Handle modal closure - called when the modal is closed
@@ -236,22 +229,6 @@
 </dialog>
 
 <style>
-	/* Improve close button */
-	.close-btn {
-		-webkit-tap-highlight-color: transparent;
-		outline: none;
-		cursor: pointer;
-		user-select: none;
-		z-index: 1000;
-	}
-
-	.close-btn:hover {
-		transform: scale(1.1);
-	}
-
-	.close-btn:active {
-		transform: scale(0.95);
-	}
 
 	.animate-fadeUp {
 		animation: fadeUp 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;

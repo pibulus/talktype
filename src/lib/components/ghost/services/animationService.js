@@ -7,10 +7,8 @@
  */
 
 import { get } from 'svelte/store';
-import { browser } from '$app/environment';
 import {
 	forceReflow,
-	toggleClasses,
 	seedRandom,
 	isBrowser,
 	cleanupTimers
@@ -19,11 +17,10 @@ import {
 	ANIMATION_STATES,
 	CSS_CLASSES,
 	SPECIAL_CONFIG,
-	WOBBLE_CONFIG,
 	ANIMATION_TIMING
 } from '../animationConfig.js';
 import { ghostStateStore } from '../stores/ghostStateStore.js';
-import { initGradientAnimation, cleanupAnimation } from '../gradientAnimator.js';
+import { initGradientAnimation } from '../gradientAnimator.js';
 
 // Animation timers
 const timers = {
@@ -32,10 +29,7 @@ const timers = {
 };
 
 // Running animations tracking
-let animations = {
-	// doingSpecialAnimation: false, // No longer needed here
-	isWobbling: false // Keep if wobble is still managed imperatively elsewhere
-};
+let isWobbling = false; // Keep if wobble is still managed imperatively elsewhere
 
 // Flag to ensure initial load effect runs only once
 let initialLoadEffectApplied = false;
@@ -50,12 +44,12 @@ let initialLoadEffectApplied = false;
 export function initAnimations(elements, config = {}) {
 	if (!elements || !isBrowser()) return () => {};
 
-	const { svgElement, seed = 0 } = config;
+	const { seed = 0 } = config;
 
 	// Initialize ghost shape gradient animation
 	if (elements.ghostSvg && elements.ghostSvg.querySelector('svg')) {
-		const svgElement = elements.ghostSvg.querySelector('svg');
-		initThemeAnimation(svgElement, config.theme);
+		const svgEl = elements.ghostSvg.querySelector('svg');
+		initThemeAnimation(svgEl, config.theme);
 	}
 
 	// Start watching for special animations (easter eggs)
