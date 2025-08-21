@@ -187,7 +187,7 @@ export const transcriptionActions = {
 			text,
 			timestamp: Date.now()
 		}));
-		
+
 		// Reset progress after a short delay
 		setTimeout(() => {
 			transcriptionState.update((current) => ({
