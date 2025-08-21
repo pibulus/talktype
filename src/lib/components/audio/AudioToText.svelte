@@ -170,7 +170,6 @@
 		box-sizing: border-box;
 	}
 
-
 	/* Improved focus styles for keyboard navigation */
 	:focus-visible {
 		outline: 2px solid #f59e0b;
@@ -193,6 +192,4 @@
 		align-items: center;
 		justify-content: center;
 	}
-
-
 </style>

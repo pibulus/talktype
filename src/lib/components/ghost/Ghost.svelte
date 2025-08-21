@@ -5,12 +5,7 @@
 
 	import './ghost-animations.css';
 	import ghostPathsUrl from './ghost-paths.svg?url';
-	import {
-		ANIMATION_STATES,
-		CSS_CLASSES,
-		PULSE_CONFIG,
-		EYE_CONFIG
-	} from './animationConfig.js';
+	import { ANIMATION_STATES, CSS_CLASSES, PULSE_CONFIG, EYE_CONFIG } from './animationConfig.js';
 
 	import { ghostStateStore, theme as localTheme, cssVariables } from './stores/index.js';
 	import { animationService, blinkService } from './services/index.js';

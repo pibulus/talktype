@@ -1,12 +1,23 @@
-/* Mobile and PWA Optimizations */
+/* ===================================================================
+   MOBILE & PWA OPTIMIZATIONS
+   Comprehensive mobile-first styles for TalkType PWA
+   Supports: iOS Safari, Chrome Android, PWA standalone mode
+   =================================================================== */
 
-/* iOS-specific tap highlight removal */
+/* ===================================================================
+   TAP & TOUCH OPTIMIZATIONS
+   =================================================================== */
+/* Remove iOS tap highlight and prevent callout menu on long press */
 * {
-	-webkit-tap-highlight-color: transparent;
-	-webkit-touch-callout: none;
+	-webkit-tap-highlight-color: transparent; /* Remove blue highlight on tap */
+	-webkit-touch-callout: none; /* Disable callout menu on long press */
 }
 
-/* Prevent text selection on buttons and interactive elements */
+/* ===================================================================
+   TEXT SELECTION CONTROL
+   =================================================================== */
+/* Prevent accidental text selection on interactive elements
+   but maintain it where needed for accessibility */
 button,
 .ghost-container,
 .record-button,
@@ -15,10 +26,10 @@ button,
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
-	touch-action: manipulation; /* Faster touch response */
+	touch-action: manipulation; /* Eliminates 300ms delay on touch */
 }
 
-/* Allow text selection only in transcript areas */
+/* Explicitly allow text selection in content areas for copying */
 .transcript-text,
 .transcript-display {
 	-webkit-user-select: text;
@@ -27,7 +38,11 @@ button,
 	user-select: text;
 }
 
-/* iOS safe area insets for notched devices */
+/* ===================================================================
+   SAFE AREA HANDLING (iPhone X+ and notched devices)
+   =================================================================== */
+/* Apply safe area padding to avoid content being hidden behind notches,
+   home indicators, and rounded corners */
 .main-container {
 	padding-top: env(safe-area-inset-top);
 	padding-bottom: env(safe-area-inset-bottom);
@@ -35,12 +50,16 @@ button,
 	padding-right: env(safe-area-inset-right);
 }
 
-/* Footer adjustments for iOS home indicator */
+/* Ensure footer content clears the home indicator gesture area */
 .footer-component {
 	padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
-/* Prevent rubber-band scrolling on iOS */
+/* ===================================================================
+   SCROLL BEHAVIOR OPTIMIZATION
+   =================================================================== */
+/* Lock viewport to prevent rubber-band scrolling and maintain
+   app-like feel on iOS devices */
 html,
 body {
 	position: fixed;
@@ -49,48 +68,60 @@ body {
 	height: 100%;
 }
 
+/* Enable smooth momentum scrolling within app container */
 #app,
 .app-container {
 	width: 100%;
 	height: 100%;
 	overflow-y: auto;
-	-webkit-overflow-scrolling: touch; /* Momentum scrolling */
+	-webkit-overflow-scrolling: touch; /* Native-like momentum scrolling */
 }
 
-/* Prevent zoom on input focus (iOS) */
+/* ===================================================================
+   INPUT HANDLING
+   =================================================================== */
+/* Prevent iOS Safari from zooming when focusing inputs
+   by ensuring font-size is at least 16px */
 input,
 textarea,
 select {
-	font-size: 16px !important; /* Prevents zoom on iOS */
+	font-size: 16px !important; /* Critical: prevents zoom on iOS focus */
 }
 
-/* Optimize animations for mobile */
+/* ===================================================================
+   TOUCH DEVICE OPTIMIZATIONS
+   =================================================================== */
+/* Target touch devices specifically (phones, tablets) */
 @media (hover: none) and (pointer: coarse) {
 	/* Reduce animation complexity on touch devices */
 	.ghost-container {
 		will-change: auto; /* Only when animating */
 	}
-	
+
 	/* Simplify hover effects for touch */
 	.ghost-container:hover {
 		animation: none;
 	}
-	
-	/* Larger touch targets */
+
+	/* Ensure all interactive elements meet minimum touch target size
+	   per Apple Human Interface Guidelines (44x44px) */
 	button,
 	.clickable {
-		min-height: 44px; /* iOS HIG recommendation */
+		min-height: 44px; /* iOS HIG minimum touch target */
 		min-width: 44px;
 	}
 }
 
-/* PWA standalone mode adjustments */
+/* ===================================================================
+   PWA STANDALONE MODE
+   =================================================================== */
+/* Styles specific to when app is installed as PWA */
 @media (display-mode: standalone) {
 	/* Hide browser-specific UI elements */
 	.browser-only {
 		display: none;
 	}
-	
+
 	/* Adjust for missing browser chrome */
 	.main-container {
 		height: 100vh;
@@ -98,36 +129,45 @@ select {
 	}
 }
 
-/* Landscape orientation optimizations */
+/* ===================================================================
+   LANDSCAPE ORIENTATION
+   =================================================================== */
+/* Optimize layout for landscape mode on phones */
 @media (orientation: landscape) and (max-height: 500px) {
 	/* Reduce vertical spacing in landscape */
 	.ghost-container {
 		max-height: 40vh;
 	}
-	
+
 	.button-section {
 		padding-top: 0.5rem;
 		padding-bottom: 0.5rem;
 	}
-	
+
 	/* Hide footer in landscape on small screens */
 	.footer-component {
 		display: none;
 	}
 }
 
-/* High contrast mode support */
+/* ===================================================================
+   ACCESSIBILITY - HIGH CONTRAST
+   =================================================================== */
+/* Support users who need higher contrast for visibility */
 @media (prefers-contrast: high) {
 	.ghost-container {
 		border: 2px solid currentColor;
 	}
-	
+
 	button {
 		border: 2px solid currentColor;
 	}
 }
 
-/* Reduced motion support */
+/* ===================================================================
+   ACCESSIBILITY - REDUCED MOTION
+   =================================================================== */
+/* Respect user preference for reduced motion (vestibular disorders) */
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
@@ -139,7 +179,10 @@ select {
 	}
 }
 
-/* iOS status bar in PWA mode */
+/* ===================================================================
+   iOS PWA STATUS BAR
+   =================================================================== */
+/* Add spacing for iOS status bar in PWA mode */
 @supports (padding-top: env(safe-area-inset-top)) {
 	.status-bar-spacer {
 		height: env(safe-area-inset-top);
@@ -147,19 +190,30 @@ select {
 	}
 }
 
-/* Prevent pull-to-refresh on Chrome Android */
+/* ===================================================================
+   ANDROID SPECIFIC
+   =================================================================== */
+/* Prevent pull-to-refresh gesture on Chrome Android
+   which can interfere with app functionality */
 body {
 	overscroll-behavior-y: contain;
 }
 
-/* Optimize font rendering on mobile */
+/* ===================================================================
+   TYPOGRAPHY OPTIMIZATION
+   =================================================================== */
+/* Improve font rendering quality on mobile screens */
 body {
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased; /* Smoother fonts on WebKit */
+	-moz-osx-font-smoothing: grayscale; /* Better rendering on Firefox */
+	text-rendering: optimizeLegibility; /* Kerning and ligatures */
 }
 
-/* Disable user scaling but maintain accessibility */
+/* ===================================================================
+   VIEWPORT CONTROL
+   =================================================================== */
+/* Lock viewport to prevent pinch-zoom while maintaining accessibility
+   Note: @viewport is deprecated but kept for legacy support */
 @viewport {
 	width: device-width;
 	initial-scale: 1;

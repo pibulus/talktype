@@ -7,12 +7,7 @@
  */
 
 import { get } from 'svelte/store';
-import {
-	forceReflow,
-	seedRandom,
-	isBrowser,
-	cleanupTimers
-} from '../utils/animationUtils.js';
+import { forceReflow, seedRandom, isBrowser, cleanupTimers } from '../utils/animationUtils.js';
 import {
 	ANIMATION_STATES,
 	CSS_CLASSES,
