@@ -9,7 +9,6 @@ import AudioToText from '../audio/AudioToText.svelte';
 import AudioVisualizer from '../audio/AudioVisualizer.svelte';
 import RecordButtonWithTimer from '../audio/RecordButtonWithTimer.svelte';
 import TranscriptDisplay from '../audio/TranscriptDisplay.svelte';
-import PermissionError from '../audio/PermissionError.svelte';
 import { AboutModal, ExtensionModal, IntroModal } from '../modals';
 
 export {
@@ -24,7 +23,6 @@ export {
 	AudioVisualizer,
 	RecordButtonWithTimer,
 	TranscriptDisplay,
-	PermissionError,
 	AboutModal,
 	ExtensionModal,
 	IntroModal
