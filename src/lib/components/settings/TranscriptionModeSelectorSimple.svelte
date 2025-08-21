@@ -237,6 +237,7 @@
 					checked={selectedModel === 'pro'}
 					on:change={() => selectModel(selectedModel === 'pro' ? 'auto' : 'pro')}
 					class="toggle toggle-success"
+					aria-label="Enable Pro Multi-language Mode"
 				/>
 			</label>
 		</div>
@@ -270,6 +271,7 @@
 				bind:checked={translateToEnglish}
 				on:change={toggleTranslation}
 				class="toggle toggle-primary"
+				aria-label="Enable translation to English"
 			/>
 		</label>
 
@@ -304,6 +306,7 @@
 					bind:checked={removeSilence}
 					on:change={toggleSilenceRemoval}
 					class="toggle toggle-success toggle-sm"
+					aria-label="Enable silence removal"
 				/>
 			</label>
 		</div>

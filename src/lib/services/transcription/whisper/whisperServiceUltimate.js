@@ -458,7 +458,14 @@ export class WhisperServiceUltimate {
 				stride_length_s: audioDuration > 30 ? 5 : undefined,
 
 				// Return timestamps if supported
-				return_timestamps: true
+				return_timestamps: true,
+
+				// Additional optimizations for better accuracy
+				beam_size: 5, // Better accuracy with beam search (default: 1)
+				temperature: 0.0, // More deterministic output (default: 0.8)
+				compression_ratio_threshold: 2.4, // Filter poor quality chunks
+				no_speech_threshold: 0.6, // Skip silent chunks
+				condition_on_previous_text: true // Better context continuity
 			};
 
 			const startTime = Date.now();

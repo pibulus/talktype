@@ -258,7 +258,7 @@ export class HybridTranscriptionService {
 
 		// Preload if switching to Whisper
 		if (mode === 'whisper' && !this.whisperReady) {
-			await whisperService.preloadModel();
+			await whisperServiceUltimate.preloadModel();
 			this.whisperReady = true;
 		}
 
