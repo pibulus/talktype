@@ -6,7 +6,6 @@
 		ultimateWhisperStatus
 	} from '../../services/transcription/whisper/whisperServiceUltimate';
 	import { transcriptionConfig } from '../../services/transcription/hybridTranscriptionService';
-	import { formatBytes } from '../../services/transcription/whisper/modelDownloader';
 
 	let selectedModel = 'auto';
 	let translateToEnglish = false;
