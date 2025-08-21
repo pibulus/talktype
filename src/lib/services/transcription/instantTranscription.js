@@ -1,5 +1,11 @@
 // ===================================================================
-// INSTANT TRANSCRIPTION - Use Web Speech as fallback for speed
+// INSTANT TRANSCRIPTION - Progressive Quality Enhancement
+// ===================================================================
+// ARCHITECTURE:
+// 1. ALWAYS loads tiny model (20MB) invisibly on app start (2-3 sec)
+// 2. User chooses target quality: Simple/Balanced/Pro (or Auto)
+// 3. Progressive chain: Web Speech → Tiny → Target Model
+// 4. User NEVER waits - transcription starts immediately
 // ===================================================================
 
 import { whisperServiceUltimate } from './whisper/whisperServiceUltimate';
@@ -38,13 +44,20 @@ class InstantTranscriptionService {
 	}
 
 	getModelIdFromPreference(pref) {
+		// Handle auto mode
+		if (pref === 'auto' || !pref) {
+			// Auto-select based on device memory
+			const memory = navigator.deviceMemory || 4;
+			if (memory < 3) return 'distil-small';
+			return 'distil-medium';
+		}
+
 		const mapping = {
-			instant: 'distil-tiny',
-			small: 'distil-small',
-			medium: 'distil-medium',
+			simple: 'distil-small',
+			balanced: 'distil-medium',
 			pro: 'distil-large-v3'
 		};
-		return mapping[pref] || 'distil-small'; // Default to small for better experience
+		return mapping[pref] || 'distil-medium';
 	}
 
 	async loadWhisperInBackground() {

@@ -8,22 +8,35 @@
 	import { transcriptionConfig } from '../../services/transcription/hybridTranscriptionService';
 	import { formatBytes } from '../../services/transcription/whisper/modelDownloader';
 
-	let selectedModel = 'medium';
+	let selectedModel = 'auto';
 	let translateToEnglish = false;
 	let autoDetectedLanguage = null;
 	let removeSilence = true;
 	let webgpuAvailable = false;
+	let deviceMemory = 4;
+	let recommendedModel = 'balanced';
 
 	onMount(async () => {
-		// Check WebGPU support
+		// Check device capabilities
 		const support = await whisperServiceUltimate.getCapabilities();
 		webgpuAvailable = support.webgpu?.supported || false;
+		deviceMemory = navigator.deviceMemory || 4;
+
+		// Auto-select best model for device
+		if (deviceMemory < 3) {
+			recommendedModel = 'simple';
+		} else if (deviceMemory >= 8 && webgpuAvailable) {
+			recommendedModel = 'balanced';
+		} else {
+			recommendedModel = 'balanced';
+		}
 
 		// Load saved preferences
 		const saved = localStorage.getItem('talktype_model_prefs');
 		if (saved) {
 			const prefs = JSON.parse(saved);
-			selectedModel = prefs.model || 'medium';
+			// If they had a manual choice, respect it, otherwise use auto
+			selectedModel = prefs.model === 'pro' ? 'pro' : 'auto';
 			translateToEnglish = prefs.translate || false;
 			removeSilence = prefs.vad !== false; // Default true
 		}
@@ -36,46 +49,37 @@
 		}
 	});
 
-	// Simplified 4-model system with instant option
+	// Simplified 3-choice system (instant loads automatically in background)
 	const models = {
-		instant: {
-			name: '🚀 Instant',
-			description: 'Starts in 2 seconds',
-			modelId: 'distil-tiny',
-			size: '20MB',
-			speed: '10x faster',
-			accuracy: '94%',
-			badge: 'Fastest',
-			color: 'from-yellow-400 to-orange-500'
+		auto: {
+			name: '✨ Auto',
+			description: 'Picks best for your device',
+			modelId: null, // Determined dynamically
+			badge: 'Smart',
+			color: 'from-indigo-400 to-purple-500'
 		},
-		small: {
-			name: '⚡ Fast',
-			description: 'Quick transcription',
+		simple: {
+			name: '⚡ Simple',
+			description: 'Fast & light',
 			modelId: 'distil-small',
 			size: '83MB',
-			speed: '6x faster',
-			accuracy: '96%',
 			badge: 'Quick',
 			color: 'from-cyan-400 to-blue-500'
 		},
-		medium: {
+		balanced: {
 			name: '⚖️ Balanced',
-			description: 'Best for most uses',
+			description: 'Best quality/speed',
 			modelId: 'distil-medium',
 			size: '166MB',
-			speed: '6x faster',
-			accuracy: '98%',
 			badge: 'Recommended',
 			color: 'from-purple-400 to-pink-500'
 		},
 		pro: {
-			name: '🎬 Pro',
-			description: 'Maximum quality & languages',
+			name: '🌍 Pro',
+			description: 'Multi-language support',
 			modelId: 'distil-large-v3',
 			size: '750MB',
-			speed: '6x faster',
-			accuracy: '99%',
-			badge: 'Multi-language',
+			badge: 'Languages',
 			color: 'from-emerald-400 to-green-500',
 			languages: [
 				'English',
@@ -95,14 +99,22 @@
 		selectedModel = modelKey;
 		const model = models[modelKey];
 
+		// For auto mode, use the recommended model
+		let actualModelId = model.modelId;
+		if (modelKey === 'auto') {
+			actualModelId = models[recommendedModel].modelId;
+		}
+
 		// Save preferences
 		savePreferences();
 
-		// Switch to the selected model
-		try {
-			await whisperServiceUltimate.switchModel(model.modelId);
-		} catch (error) {
-			console.error('Failed to switch model:', error);
+		// Switch to the selected model (if not auto)
+		if (actualModelId) {
+			try {
+				await whisperServiceUltimate.switchModel(actualModelId);
+			} catch (error) {
+				console.error('Failed to switch model:', error);
+			}
 		}
 	}
 
@@ -176,10 +188,11 @@
 		</div>
 	</div>
 
-	<!-- Simple 3-Model Selection -->
+	<!-- Simple 3-Model Selection (auto mode hidden but active) -->
 	<div class="grid grid-cols-3 gap-2">
-		{#each Object.entries(models) as [key, model]}
-			{@const isSelected = selectedModel === key}
+		{#each Object.entries(models).filter(([key]) => key !== 'auto') as [key, model]}
+			{@const isSelected =
+				selectedModel === key || (selectedModel === 'auto' && key === recommendedModel)}
 			<button
 				on:click={() => selectModel(key)}
 				class="relative transform rounded-xl border-2 p-3 transition-all hover:scale-105
@@ -188,14 +201,24 @@
 					: 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50'}"
 			>
 				<div class="mb-1 text-lg font-bold">{model.name}</div>
-				<div class="text-xs opacity-90">{model.size}</div>
-				<div class="text-xs opacity-80">{model.accuracy}</div>
+				<div class="text-xs opacity-90">{model.description}</div>
+				{#if model.size}
+					<div class="mt-1 text-xs opacity-70">{model.size}</div>
+				{/if}
 
 				{#if model.badge && isSelected}
 					<span
 						class="absolute -right-2 -top-2 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-gray-800 shadow"
 					>
 						{model.badge}
+					</span>
+				{/if}
+
+				{#if selectedModel === 'auto' && key === recommendedModel}
+					<span
+						class="absolute -left-2 -top-2 rounded-full bg-indigo-500 px-2 py-0.5 text-xs font-bold text-white shadow"
+					>
+						Auto
 					</span>
 				{/if}
 			</button>
