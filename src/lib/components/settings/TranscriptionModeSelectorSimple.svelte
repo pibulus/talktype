@@ -188,41 +188,58 @@
 		</div>
 	</div>
 
-	<!-- Simple 3-Model Selection (auto mode hidden but active) -->
-	<div class="grid grid-cols-3 gap-2">
-		{#each Object.entries(models).filter(([key]) => key !== 'auto') as [key, model]}
-			{@const isSelected =
-				selectedModel === key || (selectedModel === 'auto' && key === recommendedModel)}
-			<button
-				on:click={() => selectModel(key)}
-				class="relative transform rounded-xl border-2 p-3 transition-all hover:scale-105
-					{isSelected
-					? 'bg-gradient-to-r ' + model.color + ' border-white text-white shadow-lg'
-					: 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50'}"
-			>
-				<div class="mb-1 text-lg font-bold">{model.name}</div>
-				<div class="text-xs opacity-90">{model.description}</div>
-				{#if model.size}
-					<div class="mt-1 text-xs opacity-70">{model.size}</div>
+	<!-- Ultra Simple: Auto-optimized + Pro option -->
+	<div class="space-y-3">
+		<!-- Current Mode Display -->
+		<div class="rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 p-4">
+			<div class="flex items-center justify-between">
+				<div>
+					<div class="text-sm font-medium text-gray-600">Current Mode</div>
+					<div class="text-lg font-bold text-gray-900">
+						{selectedModel === 'pro' ? '🌍 Pro Multi-language' : '✨ Auto-optimized'}
+					</div>
+					{#if selectedModel !== 'pro'}
+						<div class="mt-1 text-xs text-gray-500">
+							Using best model for your {deviceMemory}GB device
+						</div>
+					{/if}
+				</div>
+				{#if selectedModel !== 'pro'}
+					<div class="text-right">
+						<div class="text-xs text-gray-500">Active model</div>
+						<div class="text-sm font-medium text-indigo-600">
+							{recommendedModel === 'simple' ? 'Fast (83MB)' : 'Balanced (166MB)'}
+						</div>
+					</div>
 				{/if}
+			</div>
+		</div>
 
-				{#if model.badge && isSelected}
-					<span
-						class="absolute -right-2 -top-2 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-gray-800 shadow"
-					>
-						{model.badge}
-					</span>
-				{/if}
-
-				{#if selectedModel === 'auto' && key === recommendedModel}
-					<span
-						class="absolute -left-2 -top-2 rounded-full bg-indigo-500 px-2 py-0.5 text-xs font-bold text-white shadow"
-					>
-						Auto
-					</span>
-				{/if}
-			</button>
-		{/each}
+		<!-- Pro Mode Toggle -->
+		<div
+			class="rounded-xl border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-green-50 p-4"
+		>
+			<label class="flex cursor-pointer items-center justify-between">
+				<div class="flex-1">
+					<div class="flex items-center gap-2 font-bold text-gray-900">
+						🌍 Pro Multi-language Mode
+						<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
+							750MB
+						</span>
+					</div>
+					<div class="mt-1 text-xs text-gray-600">
+						Supports 9+ languages: Spanish, French, German, Italian, Portuguese, Russian, Japanese,
+						Chinese
+					</div>
+				</div>
+				<input
+					type="checkbox"
+					checked={selectedModel === 'pro'}
+					on:change={() => selectModel(selectedModel === 'pro' ? 'auto' : 'pro')}
+					class="toggle toggle-success"
+				/>
+			</label>
+		</div>
 	</div>
 
 	<!-- Translation Toggle with Auto-Detection -->
