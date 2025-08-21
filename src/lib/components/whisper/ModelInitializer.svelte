@@ -25,6 +25,9 @@
 	});
 
 	async function checkModelStatus() {
+		// Only run in browser
+		if (typeof window === 'undefined') return;
+		
 		// Check if model is already loaded
 		if ($whisperStatus.isLoaded) {
 			hasInitialized = true;
@@ -44,7 +47,9 @@
 
 	async function handleAccept() {
 		userAccepted = true;
-		localStorage.setItem('talktype_whisper_accepted', 'true');
+		if (typeof localStorage !== 'undefined') {
+			localStorage.setItem('talktype_whisper_accepted', 'true');
+		}
 		await initializeModel();
 	}
 

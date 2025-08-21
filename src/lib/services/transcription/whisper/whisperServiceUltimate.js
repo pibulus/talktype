@@ -572,6 +572,13 @@ export const whisperServiceUltimate = {
 		return _whisperServiceUltimate;
 	},
 	// Proxy methods to the instance
+	preloadModel(modelId) {
+		if (!this.instance) {
+			// Return a failed result if not in browser environment
+			return Promise.resolve({ success: false, error: { message: 'Not in browser environment' } });
+		}
+		return this.instance.preloadModel(modelId);
+	},
 	loadModel(modelId) {
 		if (!this.instance) {
 			throw new Error('Whisper Service not available in this environment');
@@ -584,10 +591,25 @@ export const whisperServiceUltimate = {
 		}
 		return this.instance.transcribeAudio(audioBlob, options);
 	},
+	translateAudio(audioBlob, options) {
+		if (!this.instance) {
+			throw new Error('Whisper Service not available in this environment');
+		}
+		return this.instance.translateAudio(audioBlob, options);
+	},
+	getCapabilities() {
+		return this.instance?.getCapabilities() || Promise.resolve({});
+	},
+	switchModel(modelId) {
+		return this.instance?.switchModel(modelId);
+	},
 	unloadModel() {
 		return this.instance?.unloadModel();
 	},
 	cleanup() {
 		return this.instance?.cleanup();
+	},
+	getDownloadSpeed() {
+		return this.instance?.getDownloadSpeed() || 0;
 	}
 };
