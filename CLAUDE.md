@@ -140,7 +140,6 @@ For detailed implementation, see `/src/lib/components/ghost/README.md`
 // The entire Pro feature set is already built and deployed to every user
 // Payment ($9 one-time) simply flips a boolean to unlock features
 // This approach provides several benefits:
-
 - **Zero latency unlock**: Features activate instantly upon payment
 - **Try before buy**: Users can experience the free tier fully
 - **No server dependency**: Payment validation happens once, features work forever
@@ -149,7 +148,6 @@ For detailed implementation, see `/src/lib/components/ghost/README.md`
 ### Key Marketing Points
 
 // These differentiators make TalkType compelling vs competition:
-
 - **100% Private**: Everything stays on device, we never see or store transcripts
 - **Zero setup**: Works instantly in browser, no API keys or accounts needed
 - **Smart model selection**: Automatically picks optimal model for your device
@@ -161,7 +159,6 @@ For detailed implementation, see `/src/lib/components/ghost/README.md`
 ### Technical Advantages for Marketing
 
 // These can be simplified for user-facing copy:
-
 - **Distil-Whisper models**: 6x faster, 50% smaller than regular Whisper
 - **WebGPU ready**: 10-100x speed improvements when browsers enable it
 - **Progressive transcription**: Web Speech → Tiny → Optimal model pipeline
