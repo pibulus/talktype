@@ -8,15 +8,17 @@
  * 3. Future: WebGPU Whisper - Modern browsers (39MB, 10x faster)
  */
 
-import { whisperService } from './whisper/whisperService';
+import { whisperServiceEnhanced as whisperService } from './whisper/whisperServiceEnhanced';
 import { webSpeechService } from './webSpeechService';
+import { voskService } from './vosk/voskService';
 import { writable, get } from 'svelte/store';
 
 // Service configuration
 export const transcriptionConfig = writable({
-  preferredMode: 'auto', // 'auto', 'webspeech', 'whisper'
+  preferredMode: 'auto', // 'auto', 'webspeech', 'whisper', 'vosk'
   privacyMode: false, // If true, always use offline
   modelSize: 'tiny', // 'tiny', 'base', 'small'
+  offlineEngine: 'whisper', // 'whisper' or 'vosk' for offline mode
   initialized: false
 });
 
@@ -25,6 +27,7 @@ export const hybridStatus = writable({
   activeService: null,
   webSpeechAvailable: false,
   whisperAvailable: false,
+  voskAvailable: false,
   webGPUAvailable: false,
   recommendation: null
 });
@@ -34,6 +37,7 @@ export class HybridTranscriptionService {
     this.activeService = null;
     this.webSpeechAvailable = webSpeechService.isSupported;
     this.whisperReady = false;
+    this.voskReady = false;
     this.initializeServices();
   }
   
@@ -42,6 +46,7 @@ export class HybridTranscriptionService {
     const status = {
       webSpeechAvailable: webSpeechService.isSupported,
       whisperAvailable: true, // Always available
+      voskAvailable: true, // Always available (lighter alternative)
       webGPUAvailable: await this.checkWebGPU(),
       recommendation: null
     };
@@ -91,6 +96,10 @@ export class HybridTranscriptionService {
     
     // Privacy mode - always use offline
     if (config.privacyMode) {
+      // Use preferred offline engine
+      if (config.offlineEngine === 'vosk') {
+        return this.transcribeWithVosk(audioBlob);
+      }
       return this.transcribeWithWhisper(audioBlob);
     }
     
@@ -104,6 +113,8 @@ export class HybridTranscriptionService {
           break;
         case 'whisper':
           return this.transcribeWithWhisper(audioBlob);
+        case 'vosk':
+          return this.transcribeWithVosk(audioBlob);
       }
     }
     
@@ -157,6 +168,22 @@ export class HybridTranscriptionService {
   }
   
   /**
+   * Transcribe using Vosk (lightweight alternative)
+   */
+  async transcribeWithVosk(audioBlob) {
+    // Ensure Vosk is loaded
+    if (!this.voskReady) {
+      const result = await voskService.initialize();
+      if (!result.success) {
+        throw new Error('Failed to load Vosk model');
+      }
+      this.voskReady = true;
+    }
+    
+    return voskService.transcribeAudio(audioBlob);
+  }
+  
+  /**
    * Get service statistics
    */
   getStats() {
@@ -168,12 +195,14 @@ export class HybridTranscriptionService {
       available: {
         webSpeech: status.webSpeechAvailable,
         whisper: status.whisperAvailable,
+        vosk: status.voskAvailable,
         webGPU: status.webGPUAvailable
       },
       settings: {
         preferredMode: config.preferredMode,
         privacyMode: config.privacyMode,
-        modelSize: config.modelSize
+        modelSize: config.modelSize,
+        offlineEngine: config.offlineEngine
       },
       recommendation: status.recommendation,
       downloadSize: this.getDownloadSize()
@@ -187,6 +216,11 @@ export class HybridTranscriptionService {
     // If using Web Speech, no download
     if (this.activeService === 'webspeech' && status.webSpeechAvailable) {
       return 0;
+    }
+    
+    // If using Vosk
+    if (this.activeService === 'vosk' || config.preferredMode === 'vosk') {
+      return 15 * 1024 * 1024; // 15MB for Vosk small model
     }
     
     // Whisper model sizes
@@ -210,6 +244,12 @@ export class HybridTranscriptionService {
     if (mode === 'whisper' && !this.whisperReady) {
       await whisperService.preloadModel();
       this.whisperReady = true;
+    }
+    
+    // Preload if switching to Vosk
+    if (mode === 'vosk' && !this.voskReady) {
+      await voskService.initialize();
+      this.voskReady = true;
     }
   }
   

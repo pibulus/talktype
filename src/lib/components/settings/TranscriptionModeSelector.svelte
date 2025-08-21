@@ -43,11 +43,20 @@
 		{
 			id: 'whisper',
 			name: '🔒 Private',
-			description: 'Fully offline transcription',
+			description: 'High accuracy offline transcription',
 			privacy: '100% offline',
 			size: '39MB',
 			speed: '2-3 seconds',
-			badge: 'Most Private'
+			badge: 'Most Accurate'
+		},
+		{
+			id: 'vosk',
+			name: '🪶 Lightweight',
+			description: 'Smaller offline transcription',
+			privacy: '100% offline',
+			size: '15MB',
+			speed: '1-2 seconds',
+			badge: 'Smallest Download'
 		}
 	];
 	
@@ -106,7 +115,8 @@
 		{#if showDetails}
 			<div class="mt-3 pt-3 border-t border-amber-200 text-xs text-gray-600 space-y-1" transition:fade>
 				<div>✅ Web Speech: {$hybridStatus.webSpeechAvailable ? 'Available' : 'Not available'}</div>
-				<div>✅ Whisper: Always available</div>
+				<div>✅ Whisper: Always available (39MB)</div>
+				<div>✅ Vosk: Always available (15MB)</div>
 				<div>✅ WebGPU: {$hybridStatus.webGPUAvailable ? 'Available' : 'Not available'}</div>
 			</div>
 		{/if}
@@ -117,7 +127,8 @@
 		{#each modes as mode}
 			{@const isAvailable = mode.id === 'auto' || 
 				(mode.id === 'webspeech' && $hybridStatus.webSpeechAvailable) || 
-				mode.id === 'whisper'}
+				mode.id === 'whisper' ||
+				mode.id === 'vosk'}
 			{@const isSelected = currentMode === mode.id}
 			
 			<button
@@ -181,6 +192,34 @@
 				class="toggle toggle-success"
 			/>
 		</label>
+		
+		{#if privacyMode}
+			<div class="mt-3 pt-3 border-t border-green-200">
+				<div class="text-sm font-medium text-gray-700 mb-2">Offline Engine:</div>
+				<div class="grid grid-cols-2 gap-2">
+					<button
+						on:click={() => transcriptionConfig.update(c => ({ ...c, offlineEngine: 'whisper' }))}
+						class="p-2 rounded-lg border-2 text-sm transition-all
+							{$transcriptionConfig.offlineEngine === 'whisper' 
+								? 'border-green-400 bg-green-100' 
+								: 'border-gray-200 bg-white hover:border-gray-300'}"
+					>
+						<div class="font-medium">Whisper</div>
+						<div class="text-xs text-gray-600">39MB • Higher accuracy</div>
+					</button>
+					<button
+						on:click={() => transcriptionConfig.update(c => ({ ...c, offlineEngine: 'vosk' }))}
+						class="p-2 rounded-lg border-2 text-sm transition-all
+							{$transcriptionConfig.offlineEngine === 'vosk' 
+								? 'border-green-400 bg-green-100' 
+								: 'border-gray-200 bg-white hover:border-gray-300'}"
+					>
+						<div class="font-medium">Vosk</div>
+						<div class="text-xs text-gray-600">15MB • Lightweight</div>
+					</button>
+				</div>
+			</div>
+		{/if}
 	</div>
 	
 	<!-- Model Size Selection (only for Whisper mode) -->
