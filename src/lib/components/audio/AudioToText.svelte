@@ -8,6 +8,7 @@
 	import TranscriptDisplay from './TranscriptDisplay.svelte';
 	import RecordingStatus from './RecordingStatus.svelte';
 	import TranscriptionEffects from './TranscriptionEffects.svelte';
+	import ModelInitializer from '../whisper/ModelInitializer.svelte';
 	import { memoize } from '$lib/utils/performanceUtils';
 	import {
 		initializeServices,
@@ -18,6 +19,7 @@
 		hasPermissionError,
 		uiActions
 	} from '$lib/services';
+	import { whisperStatus } from '../../services/transcription/whisper/whisperService';
 
 	// Props - simplified interface
 	export let ghostComponent = null;
@@ -26,6 +28,8 @@
 
 	// Service instances
 	let unsubscribers = [];
+	let modelInitializer;
+	let modelReady = false;
 
 	// Component references
 	let recordingControlsRef;
@@ -118,7 +122,21 @@
 	}
 
 	export const recording = isRecording; // Export the isRecording store
+
+	// Handle when model is required
+	function handleModelRequired() {
+		if (modelInitializer) {
+			modelInitializer.promptForModel();
+		}
+	}
+
+	function handleModelReady() {
+		modelReady = true;
+	}
 </script>
+
+<!-- Model Initializer (handles download UI) -->
+<ModelInitializer bind:this={modelInitializer} onModelReady={handleModelReady} />
 
 <!-- Main wrapper - simplified orchestrator layout -->
 <div class="main-wrapper mx-auto box-border w-full">
@@ -130,6 +148,8 @@
 			{ghostComponent}
 			{onPreloadRequest}
 			{isPremiumUser}
+			{modelReady}
+			onModelRequired={handleModelRequired}
 			on:recordingStateChanged
 			on:error
 			on:preload

@@ -1,0 +1,376 @@
+<script>
+	import { onMount } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
+	import {
+		whisperServiceUltimate,
+		ultimateWhisperStatus
+	} from '../../services/transcription/whisper/whisperServiceUltimate';
+	import { transcriptionConfig } from '../../services/transcription/hybridTranscriptionService';
+
+	let selectedModel = 'auto';
+	let translateToEnglish = false;
+	let autoDetectedLanguage = null;
+	let removeSilence = true;
+	let webgpuAvailable = false;
+	let deviceMemory = 4;
+	let recommendedModel = 'balanced';
+
+	onMount(async () => {
+		// Check device capabilities
+		const support = await whisperServiceUltimate.getCapabilities();
+		webgpuAvailable = support.webgpu?.supported || false;
+		deviceMemory = navigator.deviceMemory || 4;
+
+		// Auto-select best model for device
+		if (deviceMemory < 3) {
+			recommendedModel = 'simple';
+		} else if (deviceMemory >= 8 && webgpuAvailable) {
+			recommendedModel = 'balanced';
+		} else {
+			recommendedModel = 'balanced';
+		}
+
+		// Load saved preferences
+		const saved = localStorage.getItem('talktype_model_prefs');
+		if (saved) {
+			const prefs = JSON.parse(saved);
+			// If they had a manual choice, respect it, otherwise use auto
+			selectedModel = prefs.model === 'pro' ? 'pro' : 'auto';
+			translateToEnglish = prefs.translate || false;
+			removeSilence = prefs.vad !== false; // Default true
+		}
+
+		// Auto-detect browser language
+		const browserLang = navigator.language.toLowerCase();
+		if (!browserLang.startsWith('en')) {
+			// Non-English browser, suggest translation
+			autoDetectedLanguage = browserLang.split('-')[0];
+		}
+	});
+
+	// Simplified 3-choice system (instant loads automatically in background)
+	const models = {
+		auto: {
+			name: '✨ Auto',
+			description: 'Picks best for your device',
+			modelId: null, // Determined dynamically
+			badge: 'Smart',
+			color: 'from-indigo-400 to-purple-500'
+		},
+		simple: {
+			name: '⚡ Simple',
+			description: 'Fast & light',
+			modelId: 'distil-small',
+			size: '83MB',
+			badge: 'Quick',
+			color: 'from-cyan-400 to-blue-500'
+		},
+		balanced: {
+			name: '⚖️ Balanced',
+			description: 'Best quality/speed',
+			modelId: 'distil-medium',
+			size: '166MB',
+			badge: 'Recommended',
+			color: 'from-purple-400 to-pink-500'
+		},
+		pro: {
+			name: '🌍 Pro',
+			description: 'Multi-language support',
+			modelId: 'distil-large-v3',
+			size: '750MB',
+			badge: 'Languages',
+			color: 'from-emerald-400 to-green-500',
+			languages: [
+				'English',
+				'Spanish',
+				'French',
+				'German',
+				'Italian',
+				'Portuguese',
+				'Russian',
+				'Japanese',
+				'Chinese'
+			]
+		}
+	};
+
+	async function selectModel(modelKey) {
+		selectedModel = modelKey;
+		const model = models[modelKey];
+
+		// For auto mode, use the recommended model
+		let actualModelId = model.modelId;
+		if (modelKey === 'auto') {
+			actualModelId = models[recommendedModel].modelId;
+		}
+
+		// Save preferences
+		savePreferences();
+
+		// Switch to the selected model (if not auto)
+		if (actualModelId) {
+			try {
+				await whisperServiceUltimate.switchModel(actualModelId);
+			} catch (error) {
+				console.error('Failed to switch model:', error);
+			}
+		}
+	}
+
+	function toggleTranslation() {
+		translateToEnglish = !translateToEnglish;
+		savePreferences();
+
+		// Update transcription config
+		transcriptionConfig.update((config) => ({
+			...config,
+			translateToEnglish,
+			task: translateToEnglish ? 'translate' : 'transcribe'
+		}));
+	}
+
+	function toggleSilenceRemoval() {
+		removeSilence = !removeSilence;
+		savePreferences();
+
+		// Update transcription config
+		transcriptionConfig.update((config) => ({
+			...config,
+			useVAD: removeSilence
+		}));
+	}
+
+	function savePreferences() {
+		localStorage.setItem(
+			'talktype_model_prefs',
+			JSON.stringify({
+				model: selectedModel,
+				translate: translateToEnglish,
+				vad: removeSilence
+			})
+		);
+	}
+
+	// Language detection helper
+	function getLanguageName(code) {
+		const languages = {
+			es: 'Spanish',
+			fr: 'French',
+			de: 'German',
+			it: 'Italian',
+			pt: 'Portuguese',
+			ru: 'Russian',
+			ja: 'Japanese',
+			zh: 'Chinese',
+			ar: 'Arabic',
+			hi: 'Hindi'
+		};
+		return languages[code] || code;
+	}
+</script>
+
+<div class="transcription-options space-y-4">
+	<!-- Header with Status -->
+	<div class="flex items-center justify-between">
+		<h3 class="text-lg font-bold text-gray-800">Transcription Engine</h3>
+		<div class="flex gap-2">
+			{#if webgpuAvailable}
+				<span class="rounded-full bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
+					🚀 GPU Boost
+				</span>
+			{/if}
+			{#if $ultimateWhisperStatus.isLoaded}
+				<span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700">
+					✅ Ready
+				</span>
+			{/if}
+		</div>
+	</div>
+
+	<!-- Ultra Simple: Auto-optimized + Pro option -->
+	<div class="space-y-3">
+		<!-- Current Mode Display -->
+		<div class="rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 p-4">
+			<div class="flex items-center justify-between">
+				<div>
+					<div class="text-sm font-medium text-gray-600">Current Mode</div>
+					<div class="text-lg font-bold text-gray-900">
+						{selectedModel === 'pro' ? '🌍 Pro Multi-language' : '✨ Auto-optimized'}
+					</div>
+					{#if selectedModel !== 'pro'}
+						<div class="mt-1 text-xs text-gray-500">
+							Using best model for your {deviceMemory}GB device
+						</div>
+					{/if}
+				</div>
+				{#if selectedModel !== 'pro'}
+					<div class="text-right">
+						<div class="text-xs text-gray-500">Active model</div>
+						<div class="text-sm font-medium text-indigo-600">
+							{recommendedModel === 'simple' ? 'Fast (83MB)' : 'Balanced (166MB)'}
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+
+		<!-- Pro Mode Toggle -->
+		<div
+			class="rounded-xl border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-green-50 p-4"
+		>
+			<label class="flex cursor-pointer items-center justify-between">
+				<div class="flex-1">
+					<div class="flex items-center gap-2 font-bold text-gray-900">
+						🌍 Pro Multi-language Mode
+						<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
+							750MB
+						</span>
+					</div>
+					<div class="mt-1 text-xs text-gray-600">
+						Supports 9+ languages: Spanish, French, German, Italian, Portuguese, Russian, Japanese,
+						Chinese
+					</div>
+				</div>
+				<input
+					type="checkbox"
+					checked={selectedModel === 'pro'}
+					on:change={() => selectModel(selectedModel === 'pro' ? 'auto' : 'pro')}
+					class="toggle toggle-success"
+					aria-label="Enable Pro Multi-language Mode"
+				/>
+			</label>
+		</div>
+	</div>
+
+	<!-- Translation Toggle with Auto-Detection -->
+	<div class="rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 p-4">
+		<label class="flex cursor-pointer items-center justify-between">
+			<div class="flex-1">
+				<div class="flex items-center gap-2 font-bold text-gray-900">
+					🌍 Translate to English
+					{#if autoDetectedLanguage && !translateToEnglish}
+						<span
+							class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700"
+							transition:fade
+						>
+							Detected: {getLanguageName(autoDetectedLanguage)}
+						</span>
+					{/if}
+				</div>
+				<div class="text-sm text-gray-600">
+					{#if translateToEnglish}
+						Automatically translating speech to English
+					{:else}
+						Transcribe in original language
+					{/if}
+				</div>
+			</div>
+			<input
+				type="checkbox"
+				bind:checked={translateToEnglish}
+				on:change={toggleTranslation}
+				class="toggle toggle-primary"
+				aria-label="Enable translation to English"
+			/>
+		</label>
+
+		{#if translateToEnglish}
+			<div
+				class="mt-3 border-t border-blue-200 pt-3 text-xs text-gray-600"
+				transition:fly={{ y: -10 }}
+			>
+				<div class="mb-1 font-medium">Supported languages:</div>
+				<div class="flex flex-wrap gap-1">
+					{#each ['Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Russian', 'Arabic', '90+ more'] as lang}
+						<span class="rounded bg-white/70 px-2 py-0.5">
+							{lang}
+						</span>
+					{/each}
+				</div>
+			</div>
+		{/if}
+	</div>
+
+	<!-- Advanced Options -->
+	<div class="space-y-3">
+		<!-- Silence Removal Toggle -->
+		<div class="rounded-lg border border-green-200 bg-green-50 p-3">
+			<label class="flex cursor-pointer items-center justify-between">
+				<div>
+					<div class="text-sm font-medium text-gray-900">🎤 Remove Silence</div>
+					<div class="text-xs text-gray-600">Speed up by skipping quiet parts</div>
+				</div>
+				<input
+					type="checkbox"
+					bind:checked={removeSilence}
+					on:change={toggleSilenceRemoval}
+					class="toggle toggle-success toggle-sm"
+					aria-label="Enable silence removal"
+				/>
+			</label>
+		</div>
+
+		<!-- Storage Info -->
+		{#if $ultimateWhisperStatus.modelStats}
+			<div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+				<div class="flex items-center justify-between text-sm">
+					<span class="text-gray-600">Current Model:</span>
+					<span class="font-medium text-gray-900">
+						{$ultimateWhisperStatus.modelStats.name}
+					</span>
+				</div>
+				{#if $ultimateWhisperStatus.modelStats.speed_multiplier}
+					<div class="mt-1 flex items-center justify-between text-xs">
+						<span class="text-gray-500">Performance:</span>
+						<span class="font-medium text-green-600">
+							{$ultimateWhisperStatus.modelStats.speed_multiplier}x faster
+						</span>
+					</div>
+				{/if}
+			</div>
+		{/if}
+	</div>
+
+	<!-- Pro Model Features (shown when Pro is selected) -->
+	{#if selectedModel === 'pro'}
+		<div
+			class="rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-green-50 p-3"
+			transition:fly={{ y: -10 }}
+		>
+			<div class="mb-2 text-sm font-bold text-gray-800">🎬 Pro Features:</div>
+			<ul class="space-y-1 text-xs text-gray-600">
+				<li>• Studio-quality transcription (99% accuracy)</li>
+				<li>• Multi-language support (9+ languages)</li>
+				<li>• Best for professional content</li>
+				<li>• Requires WebGPU for best performance</li>
+			</ul>
+		</div>
+	{/if}
+</div>
+
+<style>
+	.transcription-options {
+		@apply w-full;
+	}
+
+	/* Smooth toggle animations */
+	.toggle {
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.toggle:checked {
+		animation: toggleBounce 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+	}
+
+	@keyframes toggleBounce {
+		0% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.2);
+		}
+		100% {
+			transform: scale(1);
+		}
+	}
+</style>

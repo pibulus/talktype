@@ -56,16 +56,15 @@
 
 			<div class="space-y-3 sm:space-y-4">
 				<p class="text-sm font-medium leading-relaxed text-gray-700 sm:text-base md:text-lg">
-					Clean, sweet, and stupidly easy.
+					🎯 <strong>100% Private</strong> — Everything stays on your device. We never see or store your words.
 				</p>
 
 				<p class="text-sm font-medium leading-relaxed text-gray-700 sm:text-base md:text-lg">
-					Tap the ghost to speak — we turn your voice into text.
+					⚡ <strong>Instant Start</strong> — Tap the ghost and talk. Works offline after first use.
 				</p>
 
 				<p class="text-sm font-medium leading-relaxed text-gray-700 sm:text-base md:text-lg">
-					Use it anywhere. Save it to your home screen. Add the extension. Talk into any box on any
-					site.
+					✨ <strong>Pro for $9</strong> — One-time unlock. 9+ languages, export transcripts, extra ghost vibes. Forever.
 				</p>
 			</div>
 

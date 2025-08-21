@@ -16,9 +16,17 @@
 	import { STORAGE_KEYS } from '$lib/constants';
 
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
+	import TranscriptionQualityIndicator from '../audio/TranscriptionQualityIndicator.svelte';
+	import { instantTranscription } from '$lib/services/transcription/instantTranscription';
 
 	let SettingsModal;
 	let loadingSettingsModal = false;
+
+	// Initialize instant transcription for ultra-fast loading
+	onMount(() => {
+		console.log('🚀 Initializing instant transcription with tiny models...');
+		instantTranscription.initialize();
+	});
 
 	let PwaInstallPrompt;
 	let loadingPwaPrompt = false;
@@ -223,6 +231,12 @@
 	onMount(async () => {
 		// Settings modal is now truly lazy-loaded only when needed - no preloading
 
+		// Initialize instant transcription service for fast start
+		if (browser) {
+			instantTranscription.initialize();
+			debug('Initialized instant transcription service');
+		}
+
 		// Set up direct listener for ghost toggle recording event
 		if (browser) {
 			toggleRecordingListener = () => handleToggleRecording();
@@ -339,3 +353,6 @@
 		/>
 	</div>
 {/if}
+
+<!-- Transcription Quality Indicator -->
+<TranscriptionQualityIndicator />
