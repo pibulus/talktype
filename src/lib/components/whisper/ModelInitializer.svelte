@@ -1,8 +1,15 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
-	import { whisperService, whisperStatus } from '../../services/transcription/whisper/whisperService';
-	import { downloadStatus, formatBytes, formatETA } from '../../services/transcription/whisper/modelDownloader';
+	import {
+		whisperService,
+		whisperStatus
+	} from '../../services/transcription/whisper/whisperService';
+	import {
+		downloadStatus,
+		formatBytes,
+		formatETA
+	} from '../../services/transcription/whisper/modelDownloader';
 	import { selectedModel } from '../../services/transcription/whisper/modelRegistry';
 
 	export let onModelReady = () => {};
@@ -74,36 +81,39 @@
 </script>
 
 {#if showModal && !hasInitialized}
-	<div 
-		class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
 		transition:fade={{ duration: 200 }}
 	>
-		<div 
-			class="bg-white rounded-3xl shadow-2xl border-4 border-black max-w-md w-full overflow-hidden"
+		<div
+			class="w-full max-w-md overflow-hidden rounded-3xl border-4 border-black bg-white shadow-2xl"
 			transition:fly={{ y: 50, duration: 300 }}
 		>
 			<!-- Header with gradient -->
-			<div class="bg-gradient-to-r from-amber-400 via-rose-300 to-purple-400 p-6 border-b-4 border-black">
-				<h2 class="text-2xl font-black text-black">
-					✨ Enable Offline Magic?
-				</h2>
+			<div
+				class="border-b-4 border-black bg-gradient-to-r from-amber-400 via-rose-300 to-purple-400 p-6"
+			>
+				<h2 class="text-2xl font-black text-black">✨ Enable Offline Magic?</h2>
 			</div>
 
 			<!-- Content -->
-			<div class="p-6 space-y-4">
+			<div class="space-y-4 p-6">
 				{#if error}
-					<div class="bg-red-50 border-2 border-red-300 rounded-xl p-4">
-						<p class="text-red-800 text-sm">{error}</p>
+					<div class="rounded-xl border-2 border-red-300 bg-red-50 p-4">
+						<p class="text-sm text-red-800">{error}</p>
 					</div>
 				{/if}
 
 				<div class="space-y-3">
 					<p class="text-gray-700">
-						TalkType can work <strong>completely offline</strong> by downloading a small AI model to your device.
+						TalkType can work <strong>completely offline</strong> by downloading a small AI model to
+						your device.
 					</p>
 
-					<div class="bg-gradient-to-r from-amber-50 to-rose-50 rounded-xl p-4 border-2 border-amber-200">
-						<h3 class="font-bold text-gray-800 mb-2">What you get:</h3>
+					<div
+						class="rounded-xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-rose-50 p-4"
+					>
+						<h3 class="mb-2 font-bold text-gray-800">What you get:</h3>
 						<ul class="space-y-1 text-sm text-gray-600">
 							<li>🎯 <strong>Unlimited transcriptions</strong> - no quotas!</li>
 							<li>🔒 <strong>100% privacy</strong> - nothing leaves your device</li>
@@ -112,18 +122,17 @@
 						</ul>
 					</div>
 
-					<div class="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
-						<div class="flex items-center justify-between mb-1">
+					<div class="rounded-xl border-2 border-gray-200 bg-gray-50 p-4">
+						<div class="mb-1 flex items-center justify-between">
 							<span class="text-sm font-medium text-gray-600">Model:</span>
 							<span class="text-sm font-bold text-gray-800">{$selectedModel.name}</span>
 						</div>
 						<div class="flex items-center justify-between">
 							<span class="text-sm font-medium text-gray-600">Download size:</span>
-							<span class="text-sm font-bold text-gray-800">{formatBytes($selectedModel.size)}</span>
+							<span class="text-sm font-bold text-gray-800">{formatBytes($selectedModel.size)}</span
+							>
 						</div>
-						<p class="text-xs text-gray-500 mt-2">
-							Downloads once, works forever! 🎉
-						</p>
+						<p class="mt-2 text-xs text-gray-500">Downloads once, works forever! 🎉</p>
 					</div>
 				</div>
 
@@ -131,13 +140,13 @@
 				<div class="flex gap-3 pt-2">
 					<button
 						on:click={handleAccept}
-						class="flex-1 bg-gradient-to-r from-amber-400 to-rose-300 text-black font-bold py-3 px-6 rounded-full border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+						class="flex-1 rounded-full border-2 border-black bg-gradient-to-r from-amber-400 to-rose-300 px-6 py-3 font-bold text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
 					>
 						Enable Magic ✨
 					</button>
 					<button
 						on:click={handleDecline}
-						class="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors"
+						class="px-6 py-3 text-gray-600 transition-colors hover:text-gray-800"
 					>
 						Maybe later
 					</button>
@@ -148,28 +157,26 @@
 {/if}
 
 {#if $downloadStatus.inProgress}
-	<div 
+	<div
 		class="fixed bottom-4 right-4 z-40 w-96 max-w-[calc(100vw-2rem)]"
 		transition:fly={{ y: 100, duration: 300 }}
 	>
-		<div class="bg-white rounded-2xl shadow-2xl border-2 border-black overflow-hidden">
+		<div class="overflow-hidden rounded-2xl border-2 border-black bg-white shadow-2xl">
 			<!-- Header -->
 			<div class="bg-gradient-to-r from-amber-400 to-rose-300 px-4 py-3">
-				<h3 class="font-bold text-black">
-					Downloading Magic... ✨
-				</h3>
+				<h3 class="font-bold text-black">Downloading Magic... ✨</h3>
 			</div>
 
 			<!-- Content -->
 			<div class="p-4">
 				<!-- Progress Bar -->
 				<div class="mb-3">
-					<div class="h-8 bg-gray-200 rounded-full overflow-hidden">
-						<div 
-							class="h-full bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300 flex items-center justify-center"
+					<div class="h-8 overflow-hidden rounded-full bg-gray-200">
+						<div
+							class="flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
 							style="width: {$downloadStatus.progress}%"
 						>
-							<span class="text-xs font-bold text-black px-2">
+							<span class="px-2 text-xs font-bold text-black">
 								{$downloadStatus.progress}%
 							</span>
 						</div>
@@ -177,7 +184,7 @@
 				</div>
 
 				<!-- Stage indicator -->
-				<div class="text-sm text-gray-600 mb-2">
+				<div class="mb-2 text-sm text-gray-600">
 					{#if $downloadStatus.stage === 'initializing'}
 						Preparing download...
 					{:else if $downloadStatus.stage === 'downloading'}
@@ -192,7 +199,7 @@
 				</div>
 
 				{#if $downloadStatus.bytesTotal > 0}
-					<div class="text-xs text-gray-500 space-y-1">
+					<div class="space-y-1 text-xs text-gray-500">
 						<div>
 							{formatBytes($downloadStatus.bytesLoaded)} / {formatBytes($downloadStatus.bytesTotal)}
 						</div>

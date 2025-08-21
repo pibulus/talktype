@@ -1,138 +1,139 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <title>Clear TalkType Cache</title>
-    <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 40px;
-            max-width: 600px;
-            margin: 0 auto;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-        button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 10px 10px 10px 0;
-        }
-        button:hover {
-            opacity: 0.9;
-        }
-        .status {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 8px;
-            background: #f0f0f0;
-        }
-        .success {
-            background: #d4edda;
-            color: #155724;
-        }
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🧹 TalkType Cache Manager</h1>
-        <p>Use this tool to clear various caches when troubleshooting issues.</p>
-        
-        <button onclick="clearServiceWorker()">Clear Service Worker</button>
-        <button onclick="clearAllCaches()">Clear All Caches</button>
-        <button onclick="clearIndexedDB()">Clear IndexedDB</button>
-        <button onclick="clearEverything()">🔥 Clear Everything</button>
-        
-        <div id="status" class="status"></div>
-    </div>
+	<head>
+		<title>Clear TalkType Cache</title>
+		<style>
+			body {
+				font-family:
+					system-ui,
+					-apple-system,
+					sans-serif;
+				padding: 40px;
+				max-width: 600px;
+				margin: 0 auto;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh;
+			}
+			.container {
+				background: white;
+				padding: 30px;
+				border-radius: 20px;
+				box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+			}
+			h1 {
+				color: #333;
+				margin-bottom: 20px;
+			}
+			button {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+				border: none;
+				padding: 12px 30px;
+				font-size: 16px;
+				border-radius: 8px;
+				cursor: pointer;
+				margin: 10px 10px 10px 0;
+			}
+			button:hover {
+				opacity: 0.9;
+			}
+			.status {
+				margin-top: 20px;
+				padding: 15px;
+				border-radius: 8px;
+				background: #f0f0f0;
+			}
+			.success {
+				background: #d4edda;
+				color: #155724;
+			}
+			.error {
+				background: #f8d7da;
+				color: #721c24;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1>🧹 TalkType Cache Manager</h1>
+			<p>Use this tool to clear various caches when troubleshooting issues.</p>
 
-    <script>
-        function showStatus(message, isSuccess = true) {
-            const status = document.getElementById('status');
-            status.textContent = message;
-            status.className = `status ${isSuccess ? 'success' : 'error'}`;
-        }
+			<button onclick="clearServiceWorker()">Clear Service Worker</button>
+			<button onclick="clearAllCaches()">Clear All Caches</button>
+			<button onclick="clearIndexedDB()">Clear IndexedDB</button>
+			<button onclick="clearEverything()">🔥 Clear Everything</button>
 
-        async function clearServiceWorker() {
-            try {
-                const registrations = await navigator.serviceWorker.getRegistrations();
-                for (let registration of registrations) {
-                    await registration.unregister();
-                }
-                showStatus('✅ Service Worker unregistered successfully!');
-            } catch (error) {
-                showStatus('❌ Error clearing Service Worker: ' + error.message, false);
-            }
-        }
+			<div id="status" class="status"></div>
+		</div>
 
-        async function clearAllCaches() {
-            try {
-                const cacheNames = await caches.keys();
-                await Promise.all(
-                    cacheNames.map(cacheName => caches.delete(cacheName))
-                );
-                showStatus(`✅ Cleared ${cacheNames.length} cache(s) successfully!`);
-            } catch (error) {
-                showStatus('❌ Error clearing caches: ' + error.message, false);
-            }
-        }
+		<script>
+			function showStatus(message, isSuccess = true) {
+				const status = document.getElementById('status');
+				status.textContent = message;
+				status.className = `status ${isSuccess ? 'success' : 'error'}`;
+			}
 
-        async function clearIndexedDB() {
-            try {
-                const databases = await indexedDB.databases();
-                for (const db of databases) {
-                    indexedDB.deleteDatabase(db.name);
-                }
-                showStatus(`✅ Cleared ${databases.length} IndexedDB database(s)!`);
-            } catch (error) {
-                // Fallback for browsers that don't support databases()
-                try {
-                    // Try to delete common database names
-                    const commonDBs = ['transformers-cache', 'model-cache', 'talktype-db'];
-                    for (const dbName of commonDBs) {
-                        indexedDB.deleteDatabase(dbName);
-                    }
-                    showStatus('✅ Cleared IndexedDB databases!');
-                } catch (fallbackError) {
-                    showStatus('❌ Error clearing IndexedDB: ' + error.message, false);
-                }
-            }
-        }
+			async function clearServiceWorker() {
+				try {
+					const registrations = await navigator.serviceWorker.getRegistrations();
+					for (let registration of registrations) {
+						await registration.unregister();
+					}
+					showStatus('✅ Service Worker unregistered successfully!');
+				} catch (error) {
+					showStatus('❌ Error clearing Service Worker: ' + error.message, false);
+				}
+			}
 
-        async function clearEverything() {
-            try {
-                await clearServiceWorker();
-                await clearAllCaches();
-                await clearIndexedDB();
-                localStorage.clear();
-                sessionStorage.clear();
-                
-                showStatus('🔥 All caches and storage cleared! Refreshing in 2 seconds...');
-                
-                setTimeout(() => {
-                    window.location.href = 'http://localhost:50001';
-                }, 2000);
-            } catch (error) {
-                showStatus('❌ Error during cleanup: ' + error.message, false);
-            }
-        }
-    </script>
-</body>
+			async function clearAllCaches() {
+				try {
+					const cacheNames = await caches.keys();
+					await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+					showStatus(`✅ Cleared ${cacheNames.length} cache(s) successfully!`);
+				} catch (error) {
+					showStatus('❌ Error clearing caches: ' + error.message, false);
+				}
+			}
+
+			async function clearIndexedDB() {
+				try {
+					const databases = await indexedDB.databases();
+					for (const db of databases) {
+						indexedDB.deleteDatabase(db.name);
+					}
+					showStatus(`✅ Cleared ${databases.length} IndexedDB database(s)!`);
+				} catch (error) {
+					// Fallback for browsers that don't support databases()
+					try {
+						// Try to delete common database names
+						const commonDBs = ['transformers-cache', 'model-cache', 'talktype-db'];
+						for (const dbName of commonDBs) {
+							indexedDB.deleteDatabase(dbName);
+						}
+						showStatus('✅ Cleared IndexedDB databases!');
+					} catch (fallbackError) {
+						showStatus('❌ Error clearing IndexedDB: ' + error.message, false);
+					}
+				}
+			}
+
+			async function clearEverything() {
+				try {
+					await clearServiceWorker();
+					await clearAllCaches();
+					await clearIndexedDB();
+					localStorage.clear();
+					sessionStorage.clear();
+
+					showStatus('🔥 All caches and storage cleared! Refreshing in 2 seconds...');
+
+					setTimeout(() => {
+						window.location.href = 'http://localhost:50001';
+					}, 2000);
+				} catch (error) {
+					showStatus('❌ Error during cleanup: ' + error.message, false);
+				}
+			}
+		</script>
+	</body>
 </html>

@@ -2,15 +2,16 @@
 
 **Date**: August 21, 2025, 2:30 AM Bangkok Time  
 **Vibe**: HIGH ENERGY - Pablo's on fire, 110% energy mode  
-**Mission**: Make TalkType model downloads STUPID FAST  
+**Mission**: Make TalkType model downloads STUPID FAST
 
-## Hey Future Me! 
+## Hey Future Me!
 
 Pablo and I just had a breakthrough moment. We realized the model downloads are painfully slow and killing the user experience. But instead of getting lost in complex WebRTC P2P networks or edge computing infrastructure, we found the **80/20 path to victory**.
 
 ## Context You Need
 
 ### What Just Happened
+
 1. We successfully implemented **offline transcription** with 3 options:
    - Web Speech API (0MB - Chrome only)
    - Whisper (39MB - accurate but chunky)
@@ -22,10 +23,11 @@ Pablo and I just had a breakthrough moment. We realized the model downloads are 
    - We need SPEED without complexity
 
 ### The Plan We Created
+
 Check `/docs/SPEED_BOOST_PLAN.md` for the full technical details, but here's the TL;DR:
 
 1. **jsDelivr CDN** - Free, global, instant 3-5x boost
-2. **Parallel Downloads** - Chunk the models, download simultaneously  
+2. **Parallel Downloads** - Chunk the models, download simultaneously
 3. **Tab Sharing** - Multi-tab users get instant loads
 4. **Compression** - Brotli that shit, save 30%
 
@@ -34,6 +36,7 @@ Check `/docs/SPEED_BOOST_PLAN.md` for the full technical details, but here's the
 **Primary Goal**: Ship download speed improvements TONIGHT. Don't overthink it.
 
 **The Approach**:
+
 ```
 1. Start with jsDelivr (biggest bang for buck)
 2. Add parallel downloads if feeling spicy
@@ -56,6 +59,7 @@ The plan in `SPEED_BOOST_PLAN.md` is solid, but it's a MAP not a PRISON. The goa
 ## Things to Remember
 
 ### Pablo's Vibe Right Now
+
 - It's late night in Bangkok
 - He's in hotel coding mode (the best mode)
 - He wants to SHIP, not architect
@@ -63,12 +67,14 @@ The plan in `SPEED_BOOST_PLAN.md` is solid, but it's a MAP not a PRISON. The goa
 - Working code > Perfect code
 
 ### Technical Context
+
 - We're on branch `feat/hyperspeed-downloads`
 - The dev server is running on port 50001
 - Main transcription code is in `/src/lib/services/transcription/`
 - Model loading happens in `whisperService.js` and `voskService.js`
 
 ### What Success Looks Like
+
 - Whisper loads in <5 seconds (currently 30-40)
 - Vosk loads in <2 seconds (currently 15)
 - Users go "holy shit that was fast"
@@ -100,6 +106,6 @@ Now go make it FAST! 🚀
 
 ---
 
-*P.S. - If you're reading this and the models are already downloading instantly, then congratulations, you already crushed it. Go celebrate!*
+_P.S. - If you're reading this and the models are already downloading instantly, then congratulations, you already crushed it. Go celebrate!_
 
-*P.P.S - The command `npm run dev` is already running in the background. The app is live at localhost:50001*
+_P.P.S - The command `npm run dev` is already running in the background. The app is live at localhost:50001_

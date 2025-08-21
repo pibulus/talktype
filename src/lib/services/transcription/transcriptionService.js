@@ -40,7 +40,7 @@ export class TranscriptionService {
 			this.startProgressAnimation();
 
 			// Use hybrid service for intelligent mode selection
-			const transcriptText = this.useHybrid 
+			const transcriptText = this.useHybrid
 				? await this.hybridService.transcribeAudio(audioBlob)
 				: await this.whisperService.transcribeAudio(audioBlob);
 
@@ -59,7 +59,8 @@ export class TranscriptionService {
 			if (error.message.includes('fetch')) {
 				friendlyMessage = "Can't reach the transcription service. Check your connection?";
 			} else if (error.message.includes('load model')) {
-				friendlyMessage = "Loading the transcription model. This happens once and enables offline magic!";
+				friendlyMessage =
+					'Loading the transcription model. This happens once and enables offline magic!';
 			}
 
 			// Update state to show error

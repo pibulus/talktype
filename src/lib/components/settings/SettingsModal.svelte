@@ -7,6 +7,8 @@
 	import AutoRecordToggle from './AutoRecordToggle.svelte';
 	import TranscriptionStyleSelector from './TranscriptionStyleSelector.svelte';
 	import TranscriptionModeSelectorSimple from './TranscriptionModeSelectorSimple.svelte';
+	import KeyboardShortcuts from './KeyboardShortcuts.svelte';
+	import QuickFeatures from './QuickFeatures.svelte';
 	import { ModalCloseButton } from '../modals/index.js';
 
 	// Props for the modal
@@ -176,48 +178,11 @@
 			<!-- Transcription Mode Selection -->
 			<TranscriptionModeSelectorSimple />
 
-			<!-- Premium Features Section -->
-			<div
-				class="space-y-2 rounded-lg border border-pink-100/60 bg-gradient-to-r from-pink-50/50 to-amber-50/50 p-3 shadow-sm"
-			>
-				<div class="flex items-center justify-between">
-					<h4 class="text-sm font-bold text-gray-700">
-						Bonus Features <span class="text-xs font-normal text-pink-500">(Coming Soon)</span>
-					</h4>
-					<span
-						class="badge badge-sm gap-1 border-amber-200 bg-amber-100 font-medium text-amber-700"
-					>
-						<span class="text-[10px]">✧</span> Premium
-					</span>
-				</div>
+			<!-- Quick Features (80/20 implementations) -->
+			<QuickFeatures />
 
-				<div class="space-y-2 pt-1">
-					<!-- Toggle items -->
-					<div class="flex items-center justify-between">
-						<span class="text-xs font-medium text-gray-600">Save transcript + audio</span>
-						<input type="checkbox" disabled class="toggle toggle-primary toggle-xs bg-gray-200" />
-					</div>
-
-					<div class="flex items-center justify-between">
-						<span class="text-xs font-medium text-gray-600">View transcript history</span>
-						<input type="checkbox" disabled class="toggle toggle-primary toggle-xs bg-gray-200" />
-					</div>
-
-					<div class="flex items-center justify-between">
-						<span class="text-xs font-medium text-gray-600">Batch download everything</span>
-						<input type="checkbox" disabled class="toggle toggle-primary toggle-xs bg-gray-200" />
-					</div>
-
-					<div class="flex items-center justify-between">
-						<span class="text-xs font-medium text-gray-600">Custom filename builder</span>
-						<input type="checkbox" disabled class="toggle toggle-primary toggle-xs bg-gray-200" />
-					</div>
-				</div>
-
-				<div class="flex justify-end">
-					<span class="text-xs italic text-gray-500">We're working on these goodies!</span>
-				</div>
-			</div>
+			<!-- Keyboard Shortcuts -->
+			<KeyboardShortcuts />
 
 			<div class="border-t border-pink-100 pt-2 text-center">
 				<p class="text-xs text-gray-500">TalkType • Made with 💜 by Dennis & Pablo</p>

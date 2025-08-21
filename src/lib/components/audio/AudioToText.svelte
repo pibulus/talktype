@@ -138,10 +138,7 @@
 </script>
 
 <!-- Model Initializer (handles download UI) -->
-<ModelInitializer
-	bind:this={modelInitializer}
-	onModelReady={handleModelReady}
-/>
+<ModelInitializer bind:this={modelInitializer} onModelReady={handleModelReady} />
 
 <!-- Main wrapper - simplified orchestrator layout -->
 <div class="main-wrapper mx-auto box-border w-full">

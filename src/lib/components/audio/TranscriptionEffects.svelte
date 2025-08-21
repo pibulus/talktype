@@ -21,15 +21,13 @@
 	onMount(() => {
 		// Subscribe to transcription state changes
 		let previousText = '';
-		const transcriptionStateUnsub = transcriptionState.subscribe(
-			async (state) => {
-				// Check if transcription just completed
-				if (!state.inProgress && state.text && state.text !== previousText) {
-					previousText = state.text;
-					await handleTranscriptCompletion(state.text);
-				}
+		const transcriptionStateUnsub = transcriptionState.subscribe(async (state) => {
+			// Check if transcription just completed
+			if (!state.inProgress && state.text && state.text !== previousText) {
+				previousText = state.text;
+				await handleTranscriptCompletion(state.text);
 			}
-		);
+		});
 
 		unsubscribers.push(transcriptionStateUnsub);
 	});

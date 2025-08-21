@@ -1,25 +1,25 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
-	import { 
-		hybridTranscriptionService, 
-		hybridStatus, 
-		transcriptionConfig 
+	import {
+		hybridTranscriptionService,
+		hybridStatus,
+		transcriptionConfig
 	} from '../../services/transcription/hybridTranscriptionService';
 	import { formatBytes } from '../../services/transcription/whisper/modelDownloader';
-	
+
 	let showDetails = false;
 	let stats = {};
-	
+
 	onMount(() => {
 		// Get initial stats
 		stats = hybridTranscriptionService.getStats();
 	});
-	
+
 	$: currentMode = $transcriptionConfig.preferredMode;
 	$: privacyMode = $transcriptionConfig.privacyMode;
 	$: recommendation = $hybridStatus.recommendation;
-	
+
 	const modes = [
 		{
 			id: 'auto',
@@ -59,39 +59,41 @@
 			badge: 'Smallest Download'
 		}
 	];
-	
+
 	const modelSizes = [
 		{ id: 'tiny', name: 'Tiny', size: '39MB', quality: 'Good' },
 		{ id: 'base', name: 'Base', size: '74MB', quality: 'Better' },
 		{ id: 'small', name: 'Small', size: '244MB', quality: 'Best' }
 	];
-	
+
 	function selectMode(modeId) {
 		hybridTranscriptionService.switchMode(modeId);
 	}
-	
+
 	function togglePrivacy() {
 		hybridTranscriptionService.togglePrivacyMode(!privacyMode);
 	}
-	
+
 	function selectModelSize(size) {
-		transcriptionConfig.update(c => ({ ...c, modelSize: size }));
+		transcriptionConfig.update((c) => ({ ...c, modelSize: size }));
 	}
 </script>
 
 <div class="transcription-settings">
-	<div class="flex items-center justify-between mb-4">
+	<div class="mb-4 flex items-center justify-between">
 		<h3 class="text-lg font-bold text-gray-800">Transcription Mode</h3>
 		<button
-			on:click={() => showDetails = !showDetails}
-			class="text-sm text-gray-600 hover:text-gray-800 transition-colors"
+			on:click={() => (showDetails = !showDetails)}
+			class="text-sm text-gray-600 transition-colors hover:text-gray-800"
 		>
 			{showDetails ? 'Hide' : 'Show'} Details
 		</button>
 	</div>
-	
+
 	<!-- Quick Status -->
-	<div class="mb-4 p-3 bg-gradient-to-r from-amber-50 to-rose-50 rounded-xl border-2 border-amber-200">
+	<div
+		class="mb-4 rounded-xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-rose-50 p-3"
+	>
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-2">
 				<span class="text-sm font-medium text-gray-700">Current:</span>
@@ -106,14 +108,17 @@
 				</span>
 			</div>
 			{#if privacyMode}
-				<span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-full">
+				<span class="rounded-full bg-green-100 px-2 py-1 text-xs font-bold text-green-800">
 					🔒 Privacy Mode
 				</span>
 			{/if}
 		</div>
-		
+
 		{#if showDetails}
-			<div class="mt-3 pt-3 border-t border-amber-200 text-xs text-gray-600 space-y-1" transition:fade>
+			<div
+				class="mt-3 space-y-1 border-t border-amber-200 pt-3 text-xs text-gray-600"
+				transition:fade
+			>
 				<div>✅ Web Speech: {$hybridStatus.webSpeechAvailable ? 'Available' : 'Not available'}</div>
 				<div>✅ Whisper: Always available (39MB)</div>
 				<div>✅ Vosk: Always available (15MB)</div>
@@ -121,37 +126,40 @@
 			</div>
 		{/if}
 	</div>
-	
+
 	<!-- Mode Selection -->
-	<div class="grid gap-3 mb-4">
+	<div class="mb-4 grid gap-3">
 		{#each modes as mode}
-			{@const isAvailable = mode.id === 'auto' || 
-				(mode.id === 'webspeech' && $hybridStatus.webSpeechAvailable) || 
+			{@const isAvailable =
+				mode.id === 'auto' ||
+				(mode.id === 'webspeech' && $hybridStatus.webSpeechAvailable) ||
 				mode.id === 'whisper' ||
 				mode.id === 'vosk'}
 			{@const isSelected = currentMode === mode.id}
-			
+
 			<button
 				on:click={() => selectMode(mode.id)}
 				disabled={!isAvailable}
-				class="relative p-4 text-left rounded-xl border-2 transition-all
-					{isSelected 
-						? 'border-amber-400 bg-gradient-to-r from-amber-50 to-rose-50 shadow-md' 
-						: 'border-gray-200 hover:border-gray-300 bg-white'}
-					{!isAvailable ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}"
+				class="relative rounded-xl border-2 p-4 text-left transition-all
+					{isSelected
+					? 'border-amber-400 bg-gradient-to-r from-amber-50 to-rose-50 shadow-md'
+					: 'border-gray-200 bg-white hover:border-gray-300'}
+					{!isAvailable ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}"
 			>
 				{#if mode.badge}
-					<span class="absolute top-2 right-2 px-2 py-1 text-xs font-bold rounded-full
+					<span
+						class="absolute right-2 top-2 rounded-full px-2 py-1 text-xs font-bold
 						{mode.badge === 'Recommended' ? 'bg-amber-100 text-amber-800' : ''}
 						{mode.badge === 'Fastest' ? 'bg-blue-100 text-blue-800' : ''}
-						{mode.badge === 'Most Private' ? 'bg-green-100 text-green-800' : ''}">
+						{mode.badge === 'Most Private' ? 'bg-green-100 text-green-800' : ''}"
+					>
 						{mode.badge}
 					</span>
 				{/if}
-				
-				<div class="font-bold text-gray-900 mb-1">{mode.name}</div>
-				<div class="text-sm text-gray-600 mb-2">{mode.description}</div>
-				
+
+				<div class="mb-1 font-bold text-gray-900">{mode.name}</div>
+				<div class="mb-2 text-sm text-gray-600">{mode.description}</div>
+
 				<div class="grid grid-cols-3 gap-2 text-xs">
 					<div>
 						<span class="text-gray-500">Privacy:</span>
@@ -168,7 +176,7 @@
 						<div class="font-medium text-gray-700">{mode.speed}</div>
 					</div>
 				</div>
-				
+
 				{#if mode.availability}
 					<div class="mt-2 text-xs text-amber-600">
 						⚠️ {mode.availability}
@@ -177,10 +185,10 @@
 			</button>
 		{/each}
 	</div>
-	
+
 	<!-- Privacy Toggle -->
-	<div class="p-4 bg-green-50 rounded-xl border-2 border-green-200">
-		<label class="flex items-center justify-between cursor-pointer">
+	<div class="rounded-xl border-2 border-green-200 bg-green-50 p-4">
+		<label class="flex cursor-pointer items-center justify-between">
 			<div>
 				<div class="font-bold text-gray-900">🔒 Privacy Mode</div>
 				<div class="text-sm text-gray-600">Always use offline transcription</div>
@@ -192,27 +200,27 @@
 				class="toggle toggle-success"
 			/>
 		</label>
-		
+
 		{#if privacyMode}
-			<div class="mt-3 pt-3 border-t border-green-200">
-				<div class="text-sm font-medium text-gray-700 mb-2">Offline Engine:</div>
+			<div class="mt-3 border-t border-green-200 pt-3">
+				<div class="mb-2 text-sm font-medium text-gray-700">Offline Engine:</div>
 				<div class="grid grid-cols-2 gap-2">
 					<button
-						on:click={() => transcriptionConfig.update(c => ({ ...c, offlineEngine: 'whisper' }))}
-						class="p-2 rounded-lg border-2 text-sm transition-all
-							{$transcriptionConfig.offlineEngine === 'whisper' 
-								? 'border-green-400 bg-green-100' 
-								: 'border-gray-200 bg-white hover:border-gray-300'}"
+						on:click={() => transcriptionConfig.update((c) => ({ ...c, offlineEngine: 'whisper' }))}
+						class="rounded-lg border-2 p-2 text-sm transition-all
+							{$transcriptionConfig.offlineEngine === 'whisper'
+							? 'border-green-400 bg-green-100'
+							: 'border-gray-200 bg-white hover:border-gray-300'}"
 					>
 						<div class="font-medium">Whisper</div>
 						<div class="text-xs text-gray-600">39MB • Higher accuracy</div>
 					</button>
 					<button
-						on:click={() => transcriptionConfig.update(c => ({ ...c, offlineEngine: 'vosk' }))}
-						class="p-2 rounded-lg border-2 text-sm transition-all
-							{$transcriptionConfig.offlineEngine === 'vosk' 
-								? 'border-green-400 bg-green-100' 
-								: 'border-gray-200 bg-white hover:border-gray-300'}"
+						on:click={() => transcriptionConfig.update((c) => ({ ...c, offlineEngine: 'vosk' }))}
+						class="rounded-lg border-2 p-2 text-sm transition-all
+							{$transcriptionConfig.offlineEngine === 'vosk'
+							? 'border-green-400 bg-green-100'
+							: 'border-gray-200 bg-white hover:border-gray-300'}"
 					>
 						<div class="font-medium">Vosk</div>
 						<div class="text-xs text-gray-600">15MB • Lightweight</div>
@@ -221,22 +229,20 @@
 			</div>
 		{/if}
 	</div>
-	
+
 	<!-- Model Size Selection (only for Whisper mode) -->
 	{#if currentMode === 'whisper' || (currentMode === 'auto' && recommendation === 'whisper')}
-		<div class="mt-4 p-4 bg-gray-50 rounded-xl border-2 border-gray-200" transition:fly={{ y: 10 }}>
-			<h4 class="font-bold text-gray-900 mb-3">Model Size</h4>
+		<div class="mt-4 rounded-xl border-2 border-gray-200 bg-gray-50 p-4" transition:fly={{ y: 10 }}>
+			<h4 class="mb-3 font-bold text-gray-900">Model Size</h4>
 			<div class="grid grid-cols-3 gap-2">
 				{#each modelSizes as size}
 					{@const isSelected = $transcriptionConfig.modelSize === size.id}
 					<button
 						on:click={() => selectModelSize(size.id)}
-						class="p-3 rounded-lg border-2 transition-all text-center
-							{isSelected 
-								? 'border-amber-400 bg-amber-50' 
-								: 'border-gray-200 hover:border-gray-300 bg-white'}"
+						class="rounded-lg border-2 p-3 text-center transition-all
+							{isSelected ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-white hover:border-gray-300'}"
 					>
-						<div class="font-bold text-sm">{size.name}</div>
+						<div class="text-sm font-bold">{size.name}</div>
 						<div class="text-xs text-gray-600">{size.size}</div>
 						<div class="text-xs text-gray-500">{size.quality}</div>
 					</button>
