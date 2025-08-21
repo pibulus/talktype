@@ -1,7 +1,7 @@
 <script>
 	import { transcriptionQuality } from '$lib/services/transcription/instantTranscription';
 	import { fade } from 'svelte/transition';
-	
+
 	$: quality = $transcriptionQuality.quality;
 	$: message = $transcriptionQuality.message;
 	$: isUpgrading = $transcriptionQuality.isUpgrading;
@@ -65,7 +65,8 @@
 	}
 
 	@keyframes pulse {
-		0%, 100% {
+		0%,
+		100% {
 			opacity: 1;
 		}
 		50% {

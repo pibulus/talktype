@@ -18,11 +18,11 @@ class ProgressiveTranscriptionLoader {
 			{ id: 'distil-medium', name: 'Medium', size: 166, service: 'whisper' },
 			{ id: 'distil-large-v3', name: 'Large', size: 750, service: 'whisper' }
 		];
-		
+
 		// User's target model from preferences
 		this.targetModel = 'distil-medium';
 		this.loadedModels = new Set();
-		
+
 		// Callbacks
 		this.onModelUpgrade = null;
 		this.onTranscriptionUpgrade = null;
@@ -38,7 +38,7 @@ class ProgressiveTranscriptionLoader {
 
 		// Start loading chain immediately
 		this.startProgressiveLoading();
-		
+
 		// Initialize Web Speech for instant fallback
 		if (webSpeechService.isSupported()) {
 			console.log('🚀 Web Speech ready for instant transcription');
@@ -48,9 +48,9 @@ class ProgressiveTranscriptionLoader {
 
 	getModelIdFromPreference(pref) {
 		const mapping = {
-			'small': 'distil-small',
-			'medium': 'distil-medium',
-			'pro': 'distil-large-v3'
+			small: 'distil-small',
+			medium: 'distil-medium',
+			pro: 'distil-large-v3'
 		};
 		return mapping[pref] || 'distil-medium';
 	}
@@ -65,7 +65,7 @@ class ProgressiveTranscriptionLoader {
 					this.loadedModels.add('distil-tiny');
 					this.currentTier = Math.max(this.currentTier, 1);
 					console.log('✅ Tiny model ready!');
-					
+
 					// Re-transcribe if we have pending audio
 					if (this.lastAudioBlob && this.onTranscriptionUpgrade) {
 						this.upgradeTranscription(this.lastAudioBlob);
@@ -85,7 +85,7 @@ class ProgressiveTranscriptionLoader {
 					this.loadedModels.add('distil-small');
 					this.currentTier = Math.max(this.currentTier, 2);
 					console.log('✅ Small model ready!');
-					
+
 					// Re-transcribe if target is small
 					if (this.targetModel === 'distil-small' && this.lastAudioBlob) {
 						this.upgradeTranscription(this.lastAudioBlob);
@@ -103,15 +103,15 @@ class ProgressiveTranscriptionLoader {
 				try {
 					await whisperServiceUltimate.preloadModel(this.targetModel);
 					this.loadedModels.add(this.targetModel);
-					const targetTier = this.modelTiers.findIndex(m => m.id === this.targetModel);
+					const targetTier = this.modelTiers.findIndex((m) => m.id === this.targetModel);
 					this.currentTier = Math.max(this.currentTier, targetTier);
 					console.log(`✅ Target model ready: ${this.targetModel}`);
-					
+
 					// Final quality upgrade
 					if (this.lastAudioBlob && this.onTranscriptionUpgrade) {
 						this.upgradeTranscription(this.lastAudioBlob);
 					}
-					
+
 					// Notify UI that we're at full quality
 					if (this.onModelUpgrade) {
 						this.onModelUpgrade({
@@ -130,16 +130,16 @@ class ProgressiveTranscriptionLoader {
 	async transcribeAudio(audioBlob, options = {}) {
 		// Store for potential re-transcription
 		this.lastAudioBlob = audioBlob;
-		
+
 		// Determine best available service
 		const bestAvailable = this.getBestAvailableService();
-		
+
 		if (bestAvailable.service === 'webspeech') {
 			// Use Web Speech for instant response
 			console.log('🎙️ Using Web Speech for instant transcription');
 			try {
 				const result = await webSpeechService.transcribeAudio(audioBlob);
-				
+
 				// Mark as provisional
 				return {
 					text: result.text,
@@ -152,15 +152,15 @@ class ProgressiveTranscriptionLoader {
 				// Fall through to whisper
 			}
 		}
-		
+
 		// Use best available Whisper model
 		const modelToUse = bestAvailable.id;
 		console.log(`🎯 Using ${modelToUse} for transcription`);
-		
+
 		try {
 			await whisperServiceUltimate.switchModel(modelToUse);
 			const result = await whisperServiceUltimate.transcribeAudio(audioBlob, options);
-			
+
 			const isFinalQuality = modelToUse === this.targetModel;
 			return {
 				text: result.text,
@@ -177,22 +177,22 @@ class ProgressiveTranscriptionLoader {
 	getBestAvailableService() {
 		// Return the best loaded model/service
 		if (this.loadedModels.has(this.targetModel)) {
-			return this.modelTiers.find(m => m.id === this.targetModel);
+			return this.modelTiers.find((m) => m.id === this.targetModel);
 		}
-		
+
 		// Check loaded models in order of quality
 		const preferenceOrder = ['distil-large-v3', 'distil-medium', 'distil-small', 'distil-tiny'];
 		for (const modelId of preferenceOrder) {
 			if (this.loadedModels.has(modelId)) {
-				return this.modelTiers.find(m => m.id === modelId);
+				return this.modelTiers.find((m) => m.id === modelId);
 			}
 		}
-		
+
 		// Fallback to Web Speech if available
 		if (webSpeechService.isSupported()) {
 			return this.modelTiers[0]; // webspeech
 		}
-		
+
 		// Return tiny as last resort (will trigger loading)
 		return this.modelTiers[1];
 	}
@@ -200,16 +200,16 @@ class ProgressiveTranscriptionLoader {
 	async upgradeTranscription(audioBlob) {
 		// Re-transcribe with better model in background
 		if (this.isUpgrading) return;
-		
+
 		this.isUpgrading = true;
 		const bestModel = this.getBestAvailableService();
-		
+
 		if (bestModel.service === 'whisper') {
 			console.log(`📈 Upgrading transcription with ${bestModel.id}`);
 			try {
 				await whisperServiceUltimate.switchModel(bestModel.id);
 				const result = await whisperServiceUltimate.transcribeAudio(audioBlob);
-				
+
 				if (this.onTranscriptionUpgrade) {
 					this.onTranscriptionUpgrade({
 						text: result.text,
@@ -221,7 +221,7 @@ class ProgressiveTranscriptionLoader {
 				console.warn('Upgrade transcription failed:', err);
 			}
 		}
-		
+
 		this.isUpgrading = false;
 	}
 

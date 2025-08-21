@@ -38,9 +38,9 @@ class InstantTranscriptionService {
 
 	getModelIdFromPreference(pref) {
 		const mapping = {
-			'small': 'distil-small',
-			'medium': 'distil-medium',
-			'pro': 'distil-large-v3'
+			small: 'distil-small',
+			medium: 'distil-medium',
+			pro: 'distil-large-v3'
 		};
 		return mapping[pref] || 'distil-medium';
 	}
@@ -139,7 +139,7 @@ class InstantTranscriptionService {
 			const timeout = 30000;
 			const start = Date.now();
 			while (!this.whisperReady && Date.now() - start < timeout) {
-				await new Promise(resolve => setTimeout(resolve, 500));
+				await new Promise((resolve) => setTimeout(resolve, 500));
 			}
 
 			if (this.whisperReady) {
@@ -161,7 +161,7 @@ class InstantTranscriptionService {
 		console.log('📈 Upgrading transcription with Whisper...');
 		try {
 			const result = await whisperServiceUltimate.transcribeAudio(this.lastAudioBlob);
-			
+
 			if (this.onUpgradeReady) {
 				this.onUpgradeReady({
 					text: result.text,
