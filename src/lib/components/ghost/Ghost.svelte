@@ -1,7 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { appActive, shouldAnimateStore } from '$lib/services/infrastructure';
+	import { appActive } from '$lib/services/infrastructure';
 
 	import './ghost-animations.css';
 	import ghostPathsUrl from './ghost-paths.svg?url';
@@ -9,8 +9,6 @@
 		ANIMATION_STATES,
 		CSS_CLASSES,
 		PULSE_CONFIG,
-		ANIMATION_TIMING,
-		WOBBLE_CONFIG,
 		EYE_CONFIG
 	} from './animationConfig.js';
 
@@ -39,12 +37,9 @@
 	let ghostWobbleGroup;
 	let lastRecordingState = false;
 	let lastProcessingState = false;
-	let lastAppliedWobbleDirection = null;
 	let currentTheme;
 	let themeStore = externalTheme || localTheme;
 	let unsubscribeTheme;
-	let isRecordingTransition = false;
-	let manualStateChange = false;
 	let wakeUpBlinkTriggered = false;
 	let eyeTracker;
 	$: animationsEnabled = $appActive;
@@ -82,9 +77,6 @@
 
 		// Only update recording state if it has changed
 		if (isRecording !== lastRecordingState) {
-			const isStartingRecording = isRecording && !lastRecordingState;
-			const isStoppingRecording = !isRecording && lastRecordingState;
-
 			// Update local tracking state first
 			lastRecordingState = isRecording;
 
@@ -153,7 +145,9 @@
 	// Clean up on destroy - ensure all animation resources are cleared
 	onDestroy(() => {
 		// Clean up theme store subscription
-		if (unsubscribeTheme) unsubscribeTheme();
+		if (unsubscribeTheme) {
+			unsubscribeTheme();
+		}
 
 		// Removed cleanupTimers call (managed within services)
 
@@ -178,14 +172,8 @@
 		if (ghostSvg) {
 			const svgElement = ghostSvg.querySelector('svg');
 			if (svgElement) {
-				// Clean up existing animations
-				cleanupAnimation(themeId);
-
-				// Reinitialize with new settings
-				initGradientAnimation(themeId, svgElement);
-
-				// Update dynamic styles
-				initDynamicStyles();
+				// Animation updates handled by CSS classes now
+				// Legacy gradient animation functions removed
 			}
 		}
 	}
@@ -379,7 +367,7 @@
       {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
       {!clickable ? 'ghost-non-clickable' : ''}"
 	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
-	on:click={(e) => {
+	on:click={() => {
 		if (clickable) {
 			handleClick();
 			handleUserInteraction();

@@ -16,7 +16,6 @@
 		transcriptionText,
 		errorMessage,
 		hasPermissionError,
-		audioState,
 		uiActions
 	} from '$lib/services';
 
@@ -26,7 +25,6 @@
 	export let isPremiumUser = false;
 
 	// Service instances
-	let services;
 	let unsubscribers = [];
 
 	// Component references
@@ -80,7 +78,7 @@
 	// Lifecycle hooks
 	onMount(() => {
 		// Initialize services
-		services = initializeServices({ debug: false });
+		initializeServices({ debug: false });
 
 		// Subscribe to permission denied state to show error modal
 		const permissionUnsub = hasPermissionError.subscribe((denied) => {
@@ -172,68 +170,6 @@
 		box-sizing: border-box;
 	}
 
-	/* Position wrapper to create a stable layout without shifts */
-	.position-wrapper {
-		min-height: 120px; /* Minimum height for content stability */
-		max-height: calc(100vh - 260px); /* Increased height capacity */
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		position: relative; /* Ensure proper positioning context */
-		overflow: hidden; /* Prevent any overflow from causing page scroll */
-		transition: all 0.3s ease-in-out; /* Smooth transition when content changes */
-		contain: paint layout; /* Stronger containment for better performance */
-		padding-bottom: 24px; /* Additional space at bottom for transcript */
-		background: transparent; /* Ensure no background shows */
-	}
-
-	/* Content container for transcripts and visualizers */
-	.content-container {
-		width: 100%;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		position: relative; /* For absolute positioned children */
-	}
-
-	/* Wrapper container for consistent max-width across components */
-	.wrapper-container {
-		width: 100%;
-	}
-
-	/* Visualizer container for absolute positioning */
-	.visualizer-container {
-		z-index: 10;
-	}
-
-	/* Common animation for fading elements in */
-	.animate-fadeIn {
-		animation: localFadeIn 0.8s ease-out forwards;
-	}
-
-	@keyframes localFadeIn {
-		from {
-			opacity: 0;
-			transform: translateY(10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	/* Screen reader only class */
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border-width: 0;
-	}
 
 	/* Improved focus styles for keyboard navigation */
 	:focus-visible {
@@ -258,57 +194,5 @@
 		justify-content: center;
 	}
 
-	/* Make the button section sticky to prevent jumping */
-	.button-section {
-		position: sticky;
-		top: 0;
-		z-index: 20;
-		padding-bottom: 1rem; /* Increased from 0.75rem */
-		background: transparent;
-	}
 
-	/* Media queries for mobile responsiveness */
-	@media (max-width: 768px) {
-		.button-container {
-			width: 90%;
-			max-width: 90vw; /* Prevent overflow */
-			margin: 0 auto; /* Center horizontally */
-		}
-
-		/* Adjust spacing for mobile */
-		.position-wrapper {
-			margin-top: 0.75rem;
-			margin-bottom: 2.5rem; /* More space (40px) for footer on mobile */
-			padding: 0 8px 32px; /* Add side padding and bottom padding */
-			max-height: calc(100vh - 200px); /* Control height on mobile */
-			overflow: hidden; /* Prevent page scroll from content */
-		}
-
-		/* Make the visualizer more compact on mobile */
-		.visualizer-container {
-			top: -5px;
-			display: flex;
-			justify-content: center;
-			width: 100%;
-		}
-
-		/* Ensure minimum width even on very small screens */
-		.wrapper-container {
-			min-width: 280px;
-			display: flex;
-			justify-content: center;
-		}
-	}
-
-	/* Even smaller screens */
-	@media (max-width: 380px) {
-		/* Ensure proper spacing on tiny screens */
-		.position-wrapper {
-			margin-top: 0.5rem;
-			margin-bottom: 2rem;
-			padding: 0 4px 24px;
-			max-height: calc(100vh - 190px); /* More compact on very small screens */
-			overflow: hidden;
-		}
-	}
 </style>
