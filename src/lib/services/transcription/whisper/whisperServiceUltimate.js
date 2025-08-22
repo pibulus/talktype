@@ -5,7 +5,7 @@
 
 import { get, writable } from 'svelte/store';
 import { userPreferences } from '../../infrastructure/stores';
-import { pipeline, env } from '@xenova/transformers';
+import { pipeline, env, read_audio } from '@xenova/transformers';
 import { convertToWAV as convertToRawAudio, needsConversion } from './audioConverter';
 import { getModelStats, checkWebGPUSupport, getRecommendedModel } from './modelRegistryEnhanced';
 import {
@@ -422,49 +422,51 @@ export class WhisperServiceUltimate {
 				}
 			}
 
-			// Convert audio if needed
-			if (needsConversion(processedAudio.type)) {
-				this.updateStatus({ isLoading: true, progress: 10 });
-
+			// Convert audio blob to proper format for transformers
+			// The library needs Float32Array at 16kHz sample rate
+			let audioData;
+			try {
+				// Convert blob to object URL for read_audio
+				const audioUrl = URL.createObjectURL(processedAudio);
+				
+				// Use the transformers library's read_audio function
+				// It handles all the conversion properly
+				audioData = await read_audio(audioUrl, 16000);
+				
+				// Clean up the object URL
+				URL.revokeObjectURL(audioUrl);
+				
+				console.log('Audio converted to Float32Array, length:', audioData.length);
+			} catch (conversionError) {
+				console.error('Audio conversion failed:', conversionError);
+				// Try fallback conversion
 				try {
-					processedAudio = await convertToRawAudio(processedAudio);
-				} catch (conversionError) {
-					console.warn('Audio conversion failed:', conversionError.message);
-					processedAudio = audioBlob;
+					audioData = await convertToRawAudio(processedAudio);
+				} catch (fallbackError) {
+					throw new Error(`Failed to convert audio: ${conversionError.message}`);
 				}
 			}
 
 			// Start transcription
 			this.updateStatus({ isLoading: true, progress: 20 });
 
-			// Calculate duration
-			let audioDuration;
-			if (processedAudio instanceof Float32Array) {
-				audioDuration = processedAudio.length / 16000;
-			} else {
-				audioDuration = processedAudio.size / (16000 * 2);
-			}
+			// Skip duration calculation - let transformers.js handle it
+			// The library will process the audio internally
 
 			// Get translation preferences
 			const prefs = JSON.parse(localStorage.getItem('talktype_model_prefs') || '{}');
 			const shouldTranslate = options.translate !== undefined ? options.translate : prefs.translate;
 
-			// Simplified options - remove features that might cause ONNX errors
+			// Very simple options for maximum compatibility
 			const transcriptionOptions = {
-				// Basic options only
-				task: shouldTranslate ? 'translate' : 'transcribe',
-				language: shouldTranslate ? undefined : options.language || 'english',
-				
-				// Remove all advanced options that might cause ONNX runtime errors
-				// chunk_length_s: undefined,
-				// stride_length_s: undefined,
-				// return_timestamps: false,
-				// beam_size: 1,
-				// temperature: 0.0
+				// Only the most basic options
+				task: 'transcribe',
+				language: 'english'
 			};
 
 			const startTime = Date.now();
-			const result = await this.transcriber(processedAudio, transcriptionOptions);
+			// Pass the converted Float32Array to the transcriber
+			const result = await this.transcriber(audioData, transcriptionOptions);
 			const transcriptionTime = ((Date.now() - startTime) / 1000).toFixed(2);
 
 			this.updateStatus({ isLoading: false, progress: 100 });
@@ -475,10 +477,6 @@ export class WhisperServiceUltimate {
 				: '';
 
 			console.log(`Transcribed in ${transcriptionTime}s${speedInfo}`);
-
-			if (vadStats) {
-				console.log(`VAD saved ${vadStats.reduction}% processing time`);
-			}
 
 			return result?.text || '';
 		} catch (error) {
