@@ -525,11 +525,11 @@
 		height: 100%;
 		max-width: 100%;
 		max-height: 100%;
-		opacity: 0; /* Initially hidden */
+		opacity: 1; /* Start visible to prevent flashing */
 	}
 
 	.ghost-svg.ready {
-		animation: fadeIn 0.3s ease-out forwards;
+		/* Removed fade-in animation - ghost should always be visible */
 	}
 
 	.ghost-layer {

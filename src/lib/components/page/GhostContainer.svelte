@@ -69,7 +69,7 @@
 		{isRecording}
 		{isProcessing}
 		externalTheme={appTheme}
-		debug="true"
+		debug={false}
 	/>
 </div>
 

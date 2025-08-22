@@ -303,7 +303,7 @@ export class AudioService {
 
 			// The mimeType should be determined before onstop is set up.
 			const mimeType = this.mediaRecorder.mimeType || 'audio/webm';
-			
+
 			// Request any remaining data before stopping
 			// This ensures we capture audio right up to when stop was pressed
 			if (this.mediaRecorder.state === 'recording') {
@@ -316,7 +316,12 @@ export class AudioService {
 					// Create the Blob from this.audioChunks, which now contains all chunks
 					// including the final one from the last dataavailable event.
 					const audioBlob = new Blob(this.audioChunks, { type: mimeType });
-					console.log('[AudioService] Created audio blob:', audioBlob.size, 'bytes, type:', mimeType);
+					console.log(
+						'[AudioService] Created audio blob:',
+						audioBlob.size,
+						'bytes, type:',
+						mimeType
+					);
 
 					// Update store with audio blob
 					audioActions.setAudioBlob(audioBlob, mimeType);
