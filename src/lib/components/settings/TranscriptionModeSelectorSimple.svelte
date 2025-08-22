@@ -11,36 +11,36 @@
 		{
 			id: 'api',
 			name: 'Cloud',
-			emoji: '☁️',
-			description: 'Fast & accurate',
-			details: 'Uses Google Speech API',
+			emoji: '⚡',
+			description: 'Instant',
+			tooltip: 'Google Speech API - Fast, accurate, requires internet',
 			size: 0,
 			privacy: false
 		},
 		{
 			id: 'tiny',
 			name: 'Tiny',
-			emoji: '🐭',
-			description: 'Quick & light',
-			details: '39MB model',
+			emoji: '✦',
+			description: '39MB',
+			tooltip: 'Whisper Tiny - Basic quality, super fast, works offline',
 			size: 39000000,
 			privacy: true
 		},
 		{
 			id: 'base',
 			name: 'Base',
-			emoji: '🦊',
-			description: 'Better accuracy',
-			details: '74MB model',
+			emoji: '◆',
+			description: '74MB',
+			tooltip: 'Whisper Base - Good accuracy, balanced speed, works offline',
 			size: 74000000,
 			privacy: true
 		},
 		{
 			id: 'small',
 			name: 'Small',
-			emoji: '🐻',
-			description: 'Best offline',
-			details: '244MB model',
+			emoji: '★',
+			description: '244MB',
+			tooltip: 'Whisper Small - Best accuracy, slower processing, works offline',
 			size: 244000000,
 			privacy: true
 		}
@@ -121,16 +121,7 @@
 </script>
 
 <div class="model-selector">
-	<div class="mb-3">
-		<h3 class="text-sm font-bold text-gray-700">Transcription Model</h3>
-		<p class="text-xs text-gray-500 mt-1">
-			{#if selectedModel === 'api'}
-				Using fast cloud transcription
-			{:else}
-				Everything stays on your device
-			{/if}
-		</p>
-	</div>
+	<h3 class="text-sm font-bold text-gray-700 mb-3">Transcription Model</h3>
 	
 	<div class="grid grid-cols-4 gap-2">
 		{#each modelOptions as model}
@@ -143,7 +134,7 @@
 						: 'border-gray-200 bg-white hover:border-pink-200 hover:shadow-sm'
 				} {isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}"
 				aria-label="Select {model.name} model"
-				title={model.details}
+				title={model.tooltip}
 			>
 				<!-- Loading overlay for this specific model -->
 				{#if isLoading && selectedModel === model.id}
@@ -156,7 +147,7 @@
 				{/if}
 				
 				<!-- Model icon -->
-				<div class="text-2xl mb-1 transition-transform group-hover:scale-110">
+				<div class="text-3xl mb-1 transition-transform group-hover:scale-110 opacity-80 group-hover:opacity-100">
 					{model.emoji}
 				</div>
 				
@@ -165,15 +156,22 @@
 					{model.name}
 				</div>
 				
-				<!-- Model description -->
+				<!-- Model size/speed -->
 				<div class="text-[10px] text-gray-500 mt-0.5">
 					{model.description}
 				</div>
 				
-				<!-- Privacy indicator -->
+				<!-- Status indicators -->
 				{#if model.privacy}
-					<div class="absolute top-1 right-1">
+					<div class="absolute top-1 right-1 flex items-center gap-1">
+						{#if $whisperStatus.isLoaded && selectedModel === model.id}
+							<span class="text-[10px] text-green-600" title="Model loaded">✓</span>
+						{/if}
 						<span class="text-[10px]" title="Offline mode">🔒</span>
+					</div>
+				{:else if selectedModel === model.id}
+					<div class="absolute top-1 right-1">
+						<span class="text-[10px] text-green-600" title="Active">✓</span>
 					</div>
 				{/if}
 				
@@ -186,21 +184,6 @@
 			</button>
 		{/each}
 	</div>
-	
-	<!-- Model details -->
-	{#if selectedModel !== 'api'}
-		{@const selected = modelOptions.find(m => m.id === selectedModel)}
-		<div class="mt-3 p-2 rounded-lg bg-purple-50 border border-purple-200">
-			<div class="flex items-center justify-between text-xs">
-				<span class="text-purple-700 font-medium">
-					{selected?.details}
-				</span>
-				{#if $whisperStatus.isLoaded && selectedModel !== 'api'}
-					<span class="text-green-600 font-bold">✓ Ready</span>
-				{/if}
-			</div>
-		</div>
-	{/if}
 </div>
 
 <style>

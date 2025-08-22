@@ -61,8 +61,14 @@
 			}
 		}
 
-		// Open the settings modal
-		modalService.openModal('settings_modal');
+		// Open the modal directly like About modal does
+		// Small delay to ensure component is mounted
+		setTimeout(() => {
+			const modal = document.getElementById('settings_modal');
+			if (modal) {
+				modal.showModal();
+			}
+		}, 10);
 	}
 
 	function closeSettingsModal() {
