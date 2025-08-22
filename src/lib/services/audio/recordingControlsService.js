@@ -6,6 +6,7 @@
 import { get } from 'svelte/store';
 import { CTA_PHRASES, ANIMATION } from '$lib/constants';
 import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
+import { transcriptionState } from '../infrastructure/stores';
 
 export class RecordingControlsService {
 	constructor(dependencies) {
@@ -46,7 +47,7 @@ export class RecordingControlsService {
 	}
 
 	async startRecording() {
-		const { isRecording } = this.stores;
+		const { isRecording, transcriptionText } = this.stores;
 
 		// Don't start if we're already recording
 		if (get(isRecording)) return;
@@ -56,6 +57,17 @@ export class RecordingControlsService {
 
 		// Reset UI state
 		this.uiActions.clearErrorMessage();
+		
+		// Clear previous transcription text for new recording
+		if (get(transcriptionText)) {
+			transcriptionState.update((current) => ({
+				...current,
+				text: '',
+				error: null,
+				progress: 0,
+				inProgress: false
+			}));
+		}
 
 		// Scroll to bottom if needed after starting recording
 		scrollToBottomIfNeeded({
