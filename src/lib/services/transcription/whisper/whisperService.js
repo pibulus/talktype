@@ -295,12 +295,19 @@ export class WhisperService {
 			}
 
 			// Perform transcription with optimal configuration
-			const transcriptionOptions = { task: 'transcribe' };
+			const transcriptionOptions = { 
+				task: 'transcribe',
+				// Add language hint to reduce hallucinations
+				language: 'en',
+				// Suppress tokens that cause repetition loops
+				suppress_tokens: [-1]
+			};
 
 			// Only use chunking for longer audio to avoid edge cases with short clips
-			if (audioDuration > 15) {
+			if (audioDuration > 30) {
+				// Reduced overlap to prevent repetition at chunk boundaries
 				transcriptionOptions.chunk_length_s = 30;
-				transcriptionOptions.stride_length_s = 5;
+				transcriptionOptions.stride_length_s = 2; // Reduced from 5 to 2 seconds
 			}
 
 			const result = await this.transcriber(processedAudio, transcriptionOptions);
@@ -309,6 +316,11 @@ export class WhisperService {
 
 			// Return the transcribed text
 			const text = result?.text || '';
+			
+			// Log if we see obvious repetition for debugging
+			if (text.includes('So we have a lot of options So we have a lot of options')) {
+				console.warn('[Whisper] Detected repetition in output, may need to adjust model parameters');
+			}
 
 			return text;
 		} catch (error) {
