@@ -20,7 +20,7 @@ function base64ToGenerativePart(base64Data, mimeType) {
 function getTranscriptionPrompt(style = 'standard') {
 	const prompts = {
 		standard:
-			"Transcribe this audio file accurately and completely. Remove filler words like 'um', 'uh', 'like' when they don't add meaning. Fix any repetitions or loops in the speech. If the audio seems to repeat the same phrase multiple times unnaturally, transcribe it only once. Return ONLY the transcription text, nothing else.",
+			"Transcribe this audio file accurately and completely. Remove filler words like 'um', 'uh', 'like' when they don't add meaning. IMPORTANT: If you detect the same phrase repeating multiple times (like 'So we have a lot of options' repeated 3+ times), this is likely an audio loop or echo - transcribe it only ONCE and continue with the rest. Fix any repetitions, loops, or echo artifacts in the speech. Return ONLY the clean transcription text, nothing else.",
 		surlyPirate:
 			'Transcribe this audio file accurately, but rewrite it in the style of a surly pirate. Use pirate slang, expressions, and attitude. Arr! Return only the pirate-style transcription, no additional text.',
 		leetSpeak:
@@ -61,29 +61,41 @@ export async function POST({ request }) {
 
 		// Generate transcription
 		const result = await model.generateContent([prompt, audioPart]);
-		const transcription = result.response.text();
+		let transcription = result.response.text();
 
 		// Log transcription length for debugging repetition issues
 		console.log(`[Gemini API] Transcription complete: ${transcription.length} chars`);
+		
+		// Quick fix for common echo patterns
+		// If we see "So we have a lot of options" repeated, it's definitely echo/feedback
+		transcription = transcription.replace(
+			/(So we have a lot of options[\.\s]*){2,}/gi, 
+			'So we have a lot of options. '
+		);
 
-		// Check for obvious repetition patterns
+		// Check for obvious repetition patterns (improved detection)
 		const words = transcription.split(' ');
 		if (words.length > 10) {
-			// Check if the same phrase repeats more than 3 times
-			const phraseLength = 5;
-			for (let i = 0; i < words.length - phraseLength * 3; i++) {
-				const phrase = words.slice(i, i + phraseLength).join(' ');
-				const nextPhrase = words.slice(i + phraseLength, i + phraseLength * 2).join(' ');
-				const thirdPhrase = words.slice(i + phraseLength * 2, i + phraseLength * 3).join(' ');
-
-				if (phrase === nextPhrase && phrase === thirdPhrase) {
-					console.warn(`[Gemini API] Detected repetition: "${phrase}" repeats 3+ times`);
-					// Try to clean it up by removing excessive repetitions
-					const cleanedTranscription = transcription.replace(
-						new RegExp(`(${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*){3,}`, 'g'),
-						phrase + ' '
-					);
-					return json({ transcription: cleanedTranscription });
+			// Check for repetitions of different phrase lengths (3-7 words)
+			for (let phraseLength = 3; phraseLength <= 7; phraseLength++) {
+				for (let i = 0; i < words.length - phraseLength * 2; i++) {
+					const phrase = words.slice(i, i + phraseLength).join(' ');
+					const nextPhrase = words.slice(i + phraseLength, i + phraseLength * 2).join(' ');
+					
+					if (phrase === nextPhrase) {
+						// Check if it repeats a third time
+						const thirdPhrase = words.slice(i + phraseLength * 2, i + phraseLength * 3).join(' ');
+						if (phrase === thirdPhrase) {
+							console.warn(`[Gemini API] Detected repetition: "${phrase}" repeats 3+ times`);
+							// Remove excessive repetitions (keep only one instance)
+							const pattern = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+							const cleanedTranscription = transcription.replace(
+								new RegExp(`(${pattern}\\s*){2,}`, 'gi'),
+								phrase + ' '
+							);
+							return json({ transcription: cleanedTranscription.trim() });
+						}
+					}
 				}
 			}
 		}
