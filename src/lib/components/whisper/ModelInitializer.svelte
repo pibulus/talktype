@@ -34,8 +34,9 @@
 		if (previouslyAccepted === 'true') {
 			await initializeModel();
 		} else {
-			// Auto-download on first visit for seamless experience
-			handleAccept();
+			// Don't auto-download on first visit - let API handle it
+			// User can manually trigger download from the modal if they want offline
+			console.log('📡 Using online transcription - offline model available on demand');
 		}
 	}
 

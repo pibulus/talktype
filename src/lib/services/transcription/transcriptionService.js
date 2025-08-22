@@ -1,4 +1,4 @@
-import { whisperService } from './whisper/whisperService';
+import { simpleHybridService } from './simpleHybridService';
 import { transcriptionState, transcriptionActions, uiActions } from '../infrastructure/stores';
 import { COPY_MESSAGES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
 import { get } from 'svelte/store';
@@ -14,10 +14,9 @@ export const TranscriptionEvents = {
 
 export class TranscriptionService {
 	constructor(dependencies = {}) {
-		this.whisperService = dependencies.whisperService || whisperService;
+		this.hybridService = dependencies.hybridService || simpleHybridService;
 		this.browser = typeof window !== 'undefined';
 		this.lastTranscriptionTimestamp = null;
-		this.useOfflineMode = true; // Default to offline Whisper
 	}
 
 	async transcribeAudio(audioBlob) {
@@ -36,8 +35,8 @@ export class TranscriptionService {
 			// Start progress animation
 			this.startProgressAnimation();
 
-			// Use offline Whisper transcription
-			const transcriptText = await this.whisperService.transcribeAudio(audioBlob);
+			// Use hybrid service (API while Whisper loads, then Whisper when ready)
+			const transcriptText = await this.hybridService.transcribeAudio(audioBlob);
 
 			// Complete progress animation with smooth transition
 			this.completeProgressAnimation();
