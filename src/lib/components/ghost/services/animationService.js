@@ -25,6 +25,10 @@ const timers = {
 
 // Running animations tracking
 let isWobbling = false; // Keep if wobble is still managed imperatively elsewhere
+let animations = {
+	doingSpecialAnimation: false,
+	isWobbling: false
+};
 
 // Flag to ensure initial load effect runs only once
 let initialLoadEffectApplied = false;

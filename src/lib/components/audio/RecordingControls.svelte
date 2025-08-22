@@ -35,6 +35,9 @@
 
 	// Reactive button label computation
 	$: buttonLabel = $isRecording ? 'Stop Recording' : $transcriptionText ? currentCta : currentCta;
+	
+	// Debug logging for recording state
+	$: console.log('[RecordingControls] isRecording state:', $isRecording, 'buttonLabel:', buttonLabel);
 
 	onMount(() => {
 		// Initialize services

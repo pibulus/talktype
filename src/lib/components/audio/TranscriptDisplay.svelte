@@ -41,14 +41,18 @@
 	// Check if content is scrollable and update UI accordingly
 	function checkScrollable() {
 		if (transcriptBoxRef) {
-			const hasOverflow = transcriptBoxRef.scrollHeight > transcriptBoxRef.clientHeight + 20; // Add buffer for more reliable detection
-			isScrollable = hasOverflow;
+			// Wait a tick for the element to fully render
+			requestAnimationFrame(() => {
+				const scrollHeight = transcriptBoxRef.scrollHeight;
+				const clientHeight = transcriptBoxRef.clientHeight;
+				const hasOverflow = scrollHeight > clientHeight + 20; // Add buffer for more reliable detection
+				isScrollable = hasOverflow;
 
-			// We could also check if we're near the bottom to hide the indicator
-			// but for simplicity, we'll just show it whenever there's overflow
-			console.log(
-				`Transcript scrollable: ${isScrollable}, height: ${transcriptBoxRef.scrollHeight}, visible: ${transcriptBoxRef.clientHeight}`
-			);
+				// Debug log to see what's happening
+				console.log(
+					`Transcript scrollable: ${isScrollable}, scrollHeight: ${scrollHeight}, clientHeight: ${clientHeight}`
+				);
+			});
 		}
 	}
 
