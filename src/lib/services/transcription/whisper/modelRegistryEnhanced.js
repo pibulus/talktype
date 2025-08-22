@@ -9,6 +9,23 @@ import { browser } from '$app/environment';
 
 // Enhanced model collection with Distil-Whisper and quantized options
 const ENHANCED_MODELS = [
+	// === TEST REAL DISTIL MODEL ===
+	{
+		id: 'distil-small-real',
+		transformers_id: 'distil-whisper/distil-small.en',
+		name: 'REAL Distil Small (TEST)',
+		description: 'Testing if real distil models work',
+		size: 200 * 1024 * 1024, // ~200MB
+		parameters: 200000000,
+		languages: ['en'],
+		version: '3.0.0',
+		speed_multiplier: 6,
+		accuracy: 0.99,
+		webgpu_optimized: true,
+		recommended_for: 'testing real distil-whisper',
+		download_time_estimate: '8-10 seconds',
+		badge: 'EXPERIMENTAL'
+	},
 	// === INSTANT TIER (< 5 seconds download) ===
 	{
 		id: 'distil-tiny',
@@ -42,20 +59,20 @@ const ENHANCED_MODELS = [
 
 	// === BALANCED TIER (5-10 seconds download) ===
 	{
-		id: 'distil-small',
+		id: 'whisper-small-en',
 		transformers_id: 'Xenova/whisper-small.en',
-		name: 'Small (Recommended)',
-		description: 'Best balance: fast, great quality, small size',
+		name: 'Small English (Fast)',
+		description: 'Optimized for English, fast and accurate',
 		size: 154 * 1024 * 1024, // ~154MB
 		parameters: 244000000,
 		languages: ['en'],
 		version: '2.0.0',
-		speed_multiplier: 6,
-		accuracy: 0.96, // 96% of original accuracy
+		speed_multiplier: 1,
+		accuracy: 0.96,
 		webgpu_optimized: true,
 		recommended_for: 'daily use, meetings, general transcription',
 		download_time_estimate: '5-8 seconds',
-		badge: 'BEST VALUE'
+		badge: 'RECOMMENDED'
 	},
 	{
 		id: 'base',
@@ -101,37 +118,39 @@ const ENHANCED_MODELS = [
 		download_time_estimate: '15-20 seconds'
 	},
 
-	// === PRO TIER (20+ seconds download, WebGPU recommended) ===
+	// === PRO TIER - Multilingual Support ===
 	{
-		id: 'distil-large-v3',
-		transformers_id: 'onnx-community/distil-whisper-large-v3',
-		name: 'Distil Large V3 (Pro)',
-		description: 'Latest and greatest: 6x faster than Whisper Large V3',
-		size: 750 * 1024 * 1024, // ~750MB
-		parameters: 750000000,
-		languages: ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'zh'],
-		version: '3.0.0',
-		speed_multiplier: 6.3,
-		accuracy: 0.99, // Within 1% of Large V3
-		webgpu_required: true,
-		recommended_for: 'studio quality, multi-language, broadcast',
-		download_time_estimate: '30-60 seconds',
-		badge: 'PRO'
+		id: 'whisper-small',
+		transformers_id: 'Xenova/whisper-small',
+		name: 'Whisper Small Multilingual (Pro)',
+		description: 'Supports 100+ languages with great accuracy',
+		size: 154 * 1024 * 1024, // ~154MB
+		parameters: 244000000,
+		languages: ['100+ languages including en, es, fr, de, it, pt, ru, ja, zh, ar, hi'],
+		version: '2.0.0',
+		speed_multiplier: 1,
+		accuracy: 0.95,
+		webgpu_optimized: true,
+		recommended_for: 'multilingual transcription, international users',
+		download_time_estimate: '5-8 seconds',
+		badge: 'PRO - MULTILINGUAL'
 	},
 	{
-		id: 'large-v3-turbo',
-		transformers_id: 'onnx-community/whisper-large-v3-turbo',
-		name: 'Large V3 Turbo (Ultimate)',
-		description: 'Optimized Large V3 with turbo processing',
-		size: 800 * 1024 * 1024, // ~800MB
-		parameters: 1550000000,
-		languages: ['en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'zh', 'ar', 'hi'],
-		version: '3.0.0',
-		webgpu_required: true,
-		recommended_for: 'maximum quality, research, production',
-		download_time_estimate: '45-90 seconds',
-		badge: 'ULTIMATE'
-	}
+		id: 'whisper-small.en',
+		transformers_id: 'Xenova/whisper-small.en',
+		name: 'Whisper Small English',
+		description: 'English-optimized for best accuracy',
+		size: 154 * 1024 * 1024, // ~154MB
+		parameters: 244000000,
+		languages: ['en'],
+		version: '2.0.0',
+		speed_multiplier: 1,
+		accuracy: 0.97, // Better for English than multilingual
+		webgpu_optimized: true,
+		recommended_for: 'English-only transcription, best accuracy',
+		download_time_estimate: '5-8 seconds',
+		badge: 'ENGLISH OPTIMIZED'
+	},
 ];
 
 // WebGPU capability detection

@@ -22,11 +22,9 @@
 	let SettingsModal;
 	let loadingSettingsModal = false;
 
-	// Initialize instant transcription for ultra-fast loading
-	onMount(() => {
-		console.log('🚀 Initializing instant transcription with tiny models...');
-		instantTranscription.initialize();
-	});
+	// Don't initialize on mount - wait for user interaction (SEO optimization)
+	// Model will load on first record click
+	let hasInitializedTranscription = false;
 
 	let PwaInstallPrompt;
 	let loadingPwaPrompt = false;

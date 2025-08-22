@@ -21,8 +21,8 @@
 	let error = null;
 
 	onMount(() => {
-		console.log('[ModelInitializer] Component mounted, checking model status...');
-		checkModelStatus();
+		console.log('[ModelInitializer] Component mounted, waiting for user interaction...');
+		// Don't auto-check on mount - wait for user interaction (SEO optimization)
 	});
 
 	async function checkModelStatus() {
@@ -37,8 +37,8 @@
 			return;
 		}
 
-		// Always auto-initialize the model silently
-		console.log('[ModelInitializer] Auto-initializing model silently...');
+		// Initialize the model when called
+		console.log('[ModelInitializer] Initializing model on user interaction...');
 		await initializeModel();
 	}
 
@@ -73,8 +73,8 @@
 	// Silently ensure model is loaded when user tries to record
 	export function promptForModel() {
 		if (!hasInitialized && !$whisperStatus.isLoaded) {
-			console.log('[ModelInitializer] Model not loaded, initializing now...');
-			initializeModel();
+			console.log('[ModelInitializer] Model not loaded, checking and initializing now...');
+			checkModelStatus();
 		}
 	}
 </script>

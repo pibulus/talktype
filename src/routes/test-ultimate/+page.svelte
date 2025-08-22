@@ -19,7 +19,7 @@
 	});
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-purple-900 via-pink-900 to-red-900 p-8">
+<div class="min-h-screen overflow-y-auto bg-gradient-to-br from-purple-900 via-pink-900 to-red-900 p-8">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-8 text-center">
 			<h1 class="mb-4 text-6xl font-bold text-white">🚀 Ultimate Whisper Test</h1>

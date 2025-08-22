@@ -41,12 +41,17 @@ export class HybridTranscriptionService {
 		this.whisperReady = false;
 		this.voskReady = false;
 		this.instantReady = false;
-		this.initializeServices();
+		this.hasInitialized = false;
+		// Don't auto-initialize - wait for first use (SEO optimization)
 	}
 
 	async initializeServices() {
+		// Only initialize once
+		if (this.hasInitialized) return;
+		this.hasInitialized = true;
+		
 		// Initialize instant transcription service for ultra-fast loading
-		console.log('🚀 Initializing instant transcription with tiny models...');
+		console.log('🚀 Initializing instant transcription on first use...');
 		instantTranscription.initialize();
 
 		// Set up callback for quality upgrades
@@ -102,6 +107,12 @@ export class HybridTranscriptionService {
 	async transcribeAudio(audioBlob) {
 		console.log('[HybridTranscription] Starting transcription...');
 		console.log('[HybridTranscription] Audio blob size:', audioBlob?.size, 'bytes');
+		
+		// Initialize services on first use (lazy loading for SEO)
+		if (!this.hasInitialized) {
+			console.log('[HybridTranscription] First use - initializing services...');
+			await this.initializeServices();
+		}
 		
 		const config = get(transcriptionConfig);
 		const status = get(hybridStatus);
