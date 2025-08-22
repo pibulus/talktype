@@ -71,16 +71,23 @@
 	});
 
 	async function handleRecordingToggle() {
-		if (!recordingControlsService) return;
+		console.log('[RecordingControls] handleRecordingToggle called, isRecording:', $isRecording);
+		
+		if (!recordingControlsService) {
+			console.log('[RecordingControls] No recording service available');
+			return;
+		}
 
 		// Check if model is ready first (only when starting recording)
 		if (!modelReady && !$isRecording) {
+			console.log('[RecordingControls] Model not ready, requesting initialization');
 			// Tell parent to show model initialization UI
 			onModelRequired();
 			return;
 		}
 
 		try {
+			console.log('[RecordingControls] Calling toggleRecording...');
 			await recordingControlsService.toggleRecording();
 
 			// Update CTA if we have transcription text

@@ -170,9 +170,13 @@ export class RecordingControlsService {
 
 	async toggleRecording() {
 		const { isRecording, transcriptionText } = this.stores;
+		const currentlyRecording = get(isRecording);
+		
+		console.log('[RecordingControlsService] toggleRecording called, currently recording:', currentlyRecording);
 
 		try {
-			if (get(isRecording)) {
+			if (currentlyRecording) {
+				console.log('[RecordingControlsService] Stopping recording...');
 				// Haptic feedback for stop - single tap
 				if (this.hapticService) {
 					this.hapticService.stopRecording();
@@ -182,6 +186,7 @@ export class RecordingControlsService {
 				// Screen reader announcement
 				this.uiActions.setScreenReaderMessage('Recording stopped.');
 			} else {
+				console.log('[RecordingControlsService] Starting recording...');
 				// Haptic feedback for start - double pulse
 				if (this.hapticService) {
 					this.hapticService.startRecording();
