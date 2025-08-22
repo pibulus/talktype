@@ -332,21 +332,31 @@ let _hybridTranscriptionService;
 export const hybridTranscriptionService = {
 	get instance() {
 		if (!_hybridTranscriptionService && typeof window !== 'undefined') {
+			console.log('[HybridService] Creating new instance...');
 			_hybridTranscriptionService = new HybridTranscriptionService();
 		}
 		return _hybridTranscriptionService;
 	},
 	// Proxy methods to the instance
-	transcribeAudio(audioBlob) {
-		if (!this.instance) {
+	async transcribeAudio(audioBlob) {
+		console.log('[HybridService Proxy] transcribeAudio called with blob size:', audioBlob?.size);
+		
+		// Ensure instance exists before using it
+		const instance = this.instance;
+		if (!instance) {
+			console.error('[HybridService Proxy] No instance available!');
 			throw new Error('Hybrid Transcription Service not available in this environment');
 		}
-		return this.instance.transcribeAudio(audioBlob);
+		
+		console.log('[HybridService Proxy] Forwarding to instance...');
+		return instance.transcribeAudio(audioBlob);
 	},
-	initializeServices() {
-		return this.instance?.initializeServices();
+	async initializeServices() {
+		const instance = this.instance;
+		return instance?.initializeServices();
 	},
 	cleanup() {
-		return this.instance?.cleanup();
+		const instance = this.instance;
+		return instance?.cleanup();
 	}
 };

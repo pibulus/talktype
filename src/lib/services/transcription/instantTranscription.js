@@ -9,7 +9,8 @@
 // ===================================================================
 
 import { whisperServiceUltimate } from './whisper/whisperServiceUltimate';
-import { webSpeechService } from './webSpeechService';
+// Lazy import webSpeechService to avoid SSR issues
+// import { webSpeechService } from './webSpeechService';
 import { writable } from 'svelte/store';
 
 // Store for transcription quality status
@@ -27,6 +28,16 @@ class InstantTranscriptionService {
 		this.currentModel = null;
 		this.isInitializing = false;
 		this.hasStartedInitialization = false; // Track if we've ever started
+		this._webSpeechService = null; // Lazy-loaded reference
+	}
+
+	// Lazy load webSpeechService to avoid SSR issues
+	async getWebSpeechService() {
+		if (!this._webSpeechService && typeof window !== 'undefined') {
+			const { webSpeechService } = await import('./webSpeechService');
+			this._webSpeechService = webSpeechService;
+		}
+		return this._webSpeechService;
 	}
 
 	async initialize() {
@@ -214,12 +225,15 @@ class InstantTranscriptionService {
 	// Callback for when transcription is upgraded
 	onUpgradeReady = null;
 
-	getStatus() {
+	async getStatus() {
+		const webSpeech = await this.getWebSpeechService();
+		const isWebSpeechSupported = webSpeech?.isSupported || false;
+		
 		return {
 			whisperReady: this.whisperReady,
-			webSpeechAvailable: webSpeechService.isSupported(),
+			webSpeechAvailable: isWebSpeechSupported,
 			targetModel: this.targetModel,
-			ready: this.whisperReady || webSpeechService.isSupported()
+			ready: this.whisperReady || isWebSpeechSupported
 		};
 	}
 }
