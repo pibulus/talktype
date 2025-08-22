@@ -9,21 +9,21 @@ import { browser } from '$app/environment';
 
 // Enhanced model collection with Distil-Whisper and quantized options
 export const ENHANCED_MODELS = [
-	// === Working Xenova Model (Default) ===
+	// === Use Tiny Model as Default (More Stable) ===
 	{
 		id: 'distil-small-real',
-		transformers_id: 'Xenova/whisper-small.en',
-		name: 'Small English (Working)',
-		description: 'Verified working English model',
-		size: 154 * 1024 * 1024, // ~154MB
-		parameters: 244000000,
+		transformers_id: 'Xenova/whisper-tiny.en',
+		name: 'Tiny English (Fast & Stable)',
+		description: 'Smaller but reliable model',
+		size: 39 * 1024 * 1024, // ~39MB
+		parameters: 39000000,
 		languages: ['en'],
 		version: '2.0.0',
 		speed_multiplier: 1,
-		accuracy: 0.96,
-		webgpu_optimized: true,
+		accuracy: 0.90,
+		webgpu_optimized: false,
 		recommended_for: 'default English transcription',
-		download_time_estimate: '5-8 seconds',
+		download_time_estimate: '2-3 seconds',
 		badge: 'STABLE'
 	},
 	// === INSTANT TIER (< 5 seconds download) ===
