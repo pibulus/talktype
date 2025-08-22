@@ -5,7 +5,14 @@
 
 import { get, writable } from "svelte/store";
 import { userPreferences } from "../../infrastructure/stores";
-import { pipeline } from "@xenova/transformers";
+import { pipeline, env } from "@xenova/transformers";
+
+// Configure Transformers.js environment for optimal performance
+env.allowRemoteModels = true;
+// Cache models locally in browser for instant subsequent loads
+env.cacheDir = ".transformers-cache";
+// Use default Hugging Face CDN (jsDelivr doesn't host the models)
+// Models are cached after first download anyway
 import {
   convertToWAV as convertToRawAudio,
   needsConversion,
@@ -155,6 +162,11 @@ export class WhisperService {
       const originalWarn = console.warn;
       console.warn = () => {}; // Suppress warnings
       
+      // Track download start time for speed calculation
+      const downloadStartTime = Date.now();
+      let lastProgressTime = downloadStartTime;
+      let lastProgressBytes = 0;
+      
       try {
         // Create transcription pipeline with progress tracking
         this.transcriber = await pipeline(
@@ -175,8 +187,31 @@ export class WhisperService {
             if (progress.status === "downloading") {
               const percent =
                 Math.round((progress.loaded / progress.total) * 80) + 10;
+              
+              // Calculate download speed
+              const currentTime = Date.now();
+              const timeDiff = (currentTime - lastProgressTime) / 1000; // seconds
+              const bytesDiff = progress.loaded - lastProgressBytes;
+              const speed = timeDiff > 0 ? bytesDiff / timeDiff : 0;
+              
+              // Update for next calculation
+              lastProgressTime = currentTime;
+              lastProgressBytes = progress.loaded;
+              
+              // Calculate ETA
+              const remainingBytes = progress.total - progress.loaded;
+              const eta = speed > 0 ? remainingBytes / speed : 0;
+              
               this.updateStatus({ progress: percent });
               setProgress(percent / 100, "downloading");
+              
+              // Update download status with speed info
+              updateDownloadStatus({
+                bytesLoaded: progress.loaded,
+                bytesTotal: progress.total,
+                speed: speed,
+                eta: eta
+              });
             } else if (progress.status === "loading") {
               this.updateStatus({ progress: 90 });
               setProgress(0.9, "loading");
@@ -192,6 +227,9 @@ export class WhisperService {
         console.warn = originalWarn;
       }
 
+      // Calculate total load time
+      const loadTimeSeconds = ((Date.now() - downloadStartTime) / 1000).toFixed(1);
+      
       // Model is loaded
       this.updateStatus({
         isLoaded: true,
@@ -203,7 +241,7 @@ export class WhisperService {
       // Mark download as complete
       setComplete();
 
-      console.log("Whisper model loaded successfully");
+      console.log(`✨ Whisper model loaded successfully in ${loadTimeSeconds}s`);
       return { success: true, transcriber: this.transcriber };
     } catch (error) {
       // Restore console.warn if there was an error
