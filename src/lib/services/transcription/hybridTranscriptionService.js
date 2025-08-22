@@ -11,7 +11,8 @@
 
 import { instantTranscription } from './instantTranscription';
 import { whisperServiceUltimate } from './whisper/whisperServiceUltimate';
-import { webSpeechService } from './webSpeechService';
+// Lazy import webSpeechService to avoid SSR issues
+// import { webSpeechService } from './webSpeechService';
 import { voskService } from './vosk/voskService';
 import { writable, get } from 'svelte/store';
 
@@ -37,12 +38,27 @@ export const hybridStatus = writable({
 export class HybridTranscriptionService {
 	constructor() {
 		this.activeService = null;
-		this.webSpeechAvailable = webSpeechService.isSupported;
+		this.webSpeechAvailable = false; // Will be checked lazily
 		this.whisperReady = false;
 		this.voskReady = false;
 		this.instantReady = false;
 		this.hasInitialized = false;
+		this._webSpeechService = null; // Lazy-loaded reference
 		// Don't auto-initialize - wait for first use (SEO optimization)
+	}
+
+	// Lazy load webSpeechService to avoid SSR issues
+	async getWebSpeechService() {
+		if (!this._webSpeechService && typeof window !== 'undefined') {
+			const { webSpeechService } = await import('./webSpeechService');
+			this._webSpeechService = webSpeechService;
+		}
+		return this._webSpeechService;
+	}
+
+	async checkWebSpeechSupport() {
+		const service = await this.getWebSpeechService();
+		return service?.isSupported || false;
 	}
 
 	async initializeServices() {
@@ -60,9 +76,12 @@ export class HybridTranscriptionService {
 			// You could emit an event here to update UI if needed
 		};
 
+		// Check Web Speech support lazily
+		this.webSpeechAvailable = await this.checkWebSpeechSupport();
+
 		// Check what's available
 		const status = {
-			webSpeechAvailable: webSpeechService.isSupported,
+			webSpeechAvailable: this.webSpeechAvailable,
 			whisperAvailable: true, // Always available
 			voskAvailable: true, // Always available (lighter alternative)
 			webGPUAvailable: await this.checkWebGPU(),
