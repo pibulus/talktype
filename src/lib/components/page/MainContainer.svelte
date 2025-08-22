@@ -35,13 +35,6 @@
 	async function openSettingsModal() {
 		debug('openSettingsModal called');
 
-		// First, ensure any open dialogs are closed
-		if (modalService.isModalOpen()) {
-			debug('Another modal was open, closing it first.');
-			modalService.closeModal();
-			await new Promise((resolve) => setTimeout(resolve, 50));
-		}
-
 		// Check if we're already loading the modal
 		if (loadingSettingsModal) {
 			debug('SettingsModal is already loading, aborting.');
