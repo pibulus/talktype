@@ -104,21 +104,24 @@
 				document.documentElement.setAttribute('data-theme', t);
 				window.__theme = t; // Store for later use
 			})();
-			
+
 			// Global error handler for unhandled promise rejections
-			window.addEventListener('unhandledrejection', function(event) {
+			window.addEventListener('unhandledrejection', function (event) {
 				// Log the error but don't crash the app
 				console.warn('[Global Error Handler] Unhandled promise rejection:', event.reason);
-				
+
 				// Check if it's the specific Chrome extension error
-				if (event.reason && event.reason.message && 
-					event.reason.message.includes('message channel closed')) {
+				if (
+					event.reason &&
+					event.reason.message &&
+					event.reason.message.includes('message channel closed')
+				) {
 					// This is likely a Chrome extension interfering, ignore it
 					console.log('[Global Error Handler] Ignoring Chrome extension message channel error');
 					event.preventDefault();
 					return;
 				}
-				
+
 				// For other errors, log them but prevent default crash behavior
 				event.preventDefault();
 			});

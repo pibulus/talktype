@@ -66,13 +66,13 @@ export async function POST({ request }) {
 
 		// Log transcription length for debugging repetition issues
 		console.log(`[Gemini API] Transcription complete: ${transcription.length} chars`);
-		
+
 		// Aggressive hallucination detection and cleanup
 		// Split into sentences and check for exact repetitions
 		const sentences = transcription.match(/[^.!?]+[.!?]+/g) || [transcription];
 		const cleanedSentences = [];
 		const seenSentences = new Set();
-		
+
 		for (const sentence of sentences) {
 			const trimmed = sentence.trim();
 			// If we've seen this exact sentence before, it's likely a hallucination loop
@@ -83,12 +83,14 @@ export async function POST({ request }) {
 				console.warn(`[Gemini API] Removed duplicate sentence: "${trimmed}"`);
 			}
 		}
-		
+
 		// If we removed a lot of duplicates, the model was definitely hallucinating
 		if (sentences.length > cleanedSentences.length * 2) {
-			console.error(`[Gemini API] Heavy hallucination detected: ${sentences.length} sentences reduced to ${cleanedSentences.length}`);
+			console.error(
+				`[Gemini API] Heavy hallucination detected: ${sentences.length} sentences reduced to ${cleanedSentences.length}`
+			);
 		}
-		
+
 		transcription = cleanedSentences.join(' ');
 
 		// Check for obvious repetition patterns (improved detection)
@@ -99,7 +101,7 @@ export async function POST({ request }) {
 				for (let i = 0; i < words.length - phraseLength * 2; i++) {
 					const phrase = words.slice(i, i + phraseLength).join(' ');
 					const nextPhrase = words.slice(i + phraseLength, i + phraseLength * 2).join(' ');
-					
+
 					if (phrase === nextPhrase) {
 						// Check if it repeats a third time
 						const thirdPhrase = words.slice(i + phraseLength * 2, i + phraseLength * 3).join(' ');

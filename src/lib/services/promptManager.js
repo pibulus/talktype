@@ -4,6 +4,7 @@ import { promptTemplates, applyTemplate } from './promptTemplates';
 
 // Create a store for the current prompt style
 const STORAGE_KEY = 'talktype-prompt-style';
+const CUSTOM_PROMPT_KEY = 'talktype-custom-prompt';
 const DEFAULT_STYLE = 'standard';
 
 // Initialize with stored preference or default
@@ -84,5 +85,20 @@ export const promptManager = {
 	},
 
 	// Subscribe to style changes
-	subscribe: (callback) => promptStyleStore.subscribe(callback)
+	subscribe: (callback) => promptStyleStore.subscribe(callback),
+
+	// Custom prompt support
+	setCustomPrompt: (prompt) => {
+		if (browser) {
+			localStorage.setItem(CUSTOM_PROMPT_KEY, prompt);
+		}
+		return true;
+	},
+
+	getCustomPrompt: () => {
+		if (browser) {
+			return localStorage.getItem(CUSTOM_PROMPT_KEY) || '';
+		}
+		return '';
+	}
 };

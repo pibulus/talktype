@@ -2,14 +2,15 @@
 	import { onMount } from 'svelte';
 	import { theme, autoRecord, applyTheme, promptStyle } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
+	import { installPromptEvent } from '$lib/stores/pwa';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import ThemeSelector from './ThemeSelector.svelte';
 	import AutoRecordToggle from './AutoRecordToggle.svelte';
+	import AutoSaveToggle from './AutoSaveToggle.svelte';
 	import TranscriptionStyleSelector from './TranscriptionStyleSelector.svelte';
-	import TranscriptionModeSelectorSimple from './TranscriptionModeSelectorSimple.svelte';
-	import KeyboardShortcuts from './KeyboardShortcuts.svelte';
-	import QuickFeatures from './QuickFeatures.svelte';
-	import PwaSettings from './PwaSettings.svelte';
+	import CustomPromptInput from './CustomPromptInput.svelte';
+	import KeyboardShortcutsInfo from './KeyboardShortcutsInfo.svelte';
+	import SupportSection from './SupportSection.svelte';
 	import { ModalCloseButton } from '../modals/index.js';
 
 	// Props for the modal
@@ -127,6 +128,22 @@
 		closeModal();
 	}
 
+	// Handle PWA install
+	async function handleInstallClick() {
+		if ($installPromptEvent) {
+			try {
+				$installPromptEvent.prompt();
+				const { outcome } = await $installPromptEvent.userChoice;
+				if (outcome === 'accepted') {
+					// Clear the event after successful install
+					$installPromptEvent = null;
+				}
+			} catch (err) {
+				console.error('Install failed:', err);
+			}
+		}
+	}
+
 	// No need to watch for changes since we'll use direct DOM methods
 	// When this component is initialized, we just make sure the modal exists
 </script>
@@ -161,29 +178,95 @@
 				</h3>
 			</div>
 
-			<!-- Auto-Record Toggle -->
-			<AutoRecordToggle enabled={autoRecordValue} onToggle={toggleAutoRecord} />
+			<!-- Settings Sections -->
+			<div class="space-y-6">
+				<!-- Section: Vibes -->
+				<section class="space-y-3">
+					<div class="flex items-center gap-2">
+						<span class="text-lg">🎨</span>
+						<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-600">Vibes</h3>
+					</div>
+					<ThemeSelector currentTheme={selectedVibe} onThemeChange={changeVibe} />
+				</section>
 
-			<!-- Theme Selector -->
-			<ThemeSelector currentTheme={selectedVibe} onThemeChange={changeVibe} />
+				<div class="divider my-3"></div>
 
-			<!-- Prompt Style Selection Section -->
-			<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
+				<!-- Section: Personality -->
+				<section class="space-y-3">
+					<div class="flex items-center gap-2">
+						<span class="text-lg">🎭</span>
+						<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-600">
+							Personality
+						</h3>
+					</div>
+					<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
+					<CustomPromptInput />
+				</section>
 
-			<!-- Transcription Mode Selection -->
-			<TranscriptionModeSelectorSimple />
+				<div class="divider my-3"></div>
 
-			<!-- PWA Install Settings -->
-			<PwaSettings />
+				<!-- Section: Workflow -->
+				<section class="space-y-3">
+					<div class="flex items-center gap-2">
+						<span class="text-lg">⚡</span>
+						<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-600">Workflow</h3>
+					</div>
+					<AutoRecordToggle enabled={autoRecordValue} onToggle={toggleAutoRecord} />
+					<AutoSaveToggle />
+				</section>
 
-			<!-- Quick Features (80/20 implementations) -->
-			<QuickFeatures />
+				<div class="divider my-3"></div>
 
-			<!-- Keyboard Shortcuts -->
-			<KeyboardShortcuts />
+				<!-- Section: App Features -->
+				<section class="space-y-4">
+					<div class="flex items-center gap-2">
+						<span class="text-lg">📱</span>
+						<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-600">
+							App Features
+						</h3>
+					</div>
 
-			<div class="border-t border-pink-100 pt-2 text-center">
-				<p class="text-xs text-gray-500">TalkType • Made with 💜 by Dennis & Pablo</p>
+					<!-- Install App Button -->
+					{#if $installPromptEvent}
+						<button on:click={handleInstallClick} class="btn btn-primary btn-block">
+							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+								/>
+							</svg>
+							Install TalkType App
+						</button>
+					{:else}
+						<div class="alert alert-info">
+							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+								/>
+							</svg>
+							<span class="text-sm">TalkType works great in your browser!</span>
+						</div>
+					{/if}
+
+					<!-- Keyboard Shortcuts -->
+					<KeyboardShortcutsInfo />
+				</section>
+
+				<div class="divider my-3"></div>
+
+				<!-- Section: Support -->
+				<section>
+					<SupportSection />
+				</section>
+			</div>
+
+			<div class="border-t border-pink-100 pt-3 text-center">
+				<p class="text-xs text-gray-500">TalkType • Made with 💜</p>
 			</div>
 		</div>
 	</div>

@@ -124,7 +124,7 @@ export class RecordingControlsService {
 				try {
 					const transcriptText = await this.transcriptionService.transcribeAudio(audioBlob);
 					console.log('[RecordingControlsService] Transcription result:', transcriptText);
-					
+
 					// Stop ghost thinking animation after successful transcription
 					// COMMENTED OUT: These methods don't exist on ghost component
 					// if (this.ghostComponent && typeof this.ghostComponent.stopThinking === 'function') {
@@ -171,8 +171,11 @@ export class RecordingControlsService {
 	async toggleRecording() {
 		const { isRecording, transcriptionText } = this.stores;
 		const currentlyRecording = get(isRecording);
-		
-		console.log('[RecordingControlsService] toggleRecording called, currently recording:', currentlyRecording);
+
+		console.log(
+			'[RecordingControlsService] toggleRecording called, currently recording:',
+			currentlyRecording
+		);
 
 		try {
 			if (currentlyRecording) {

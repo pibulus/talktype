@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { pipeline, env, read_audio } from '@xenova/transformers';
-	
+
 	// Configure transformers.js for browser caching
 	env.allowRemoteModels = true;
 	env.useBrowserCache = true;

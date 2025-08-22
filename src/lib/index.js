@@ -60,6 +60,12 @@ export const promptStyle = createLocalStorageStore(
 	CONSTANTS.DEFAULT_PROMPT_STYLE
 );
 
+// Store for custom prompt text
+export const customPrompt = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.CUSTOM_PROMPT, '');
+
+// Store for auto-save preference
+export const autoSave = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.AUTO_SAVE, 'true');
+
 // Export all constants for use throughout the app
 export { CONSTANTS };
 

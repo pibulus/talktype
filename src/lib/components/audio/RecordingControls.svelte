@@ -35,9 +35,14 @@
 
 	// Reactive button label computation
 	$: buttonLabel = $isRecording ? 'Stop Recording' : $transcriptionText ? currentCta : currentCta;
-	
+
 	// Debug logging for recording state
-	$: console.log('[RecordingControls] isRecording state:', $isRecording, 'buttonLabel:', buttonLabel);
+	$: console.log(
+		'[RecordingControls] isRecording state:',
+		$isRecording,
+		'buttonLabel:',
+		buttonLabel
+	);
 
 	onMount(() => {
 		// Initialize services
@@ -75,7 +80,7 @@
 
 	async function handleRecordingToggle() {
 		console.log('[RecordingControls] handleRecordingToggle called, isRecording:', $isRecording);
-		
+
 		if (!recordingControlsService) {
 			console.log('[RecordingControls] No recording service available');
 			return;

@@ -16,13 +16,13 @@
 		<label class="flex cursor-pointer items-center">
 			<span class="sr-only">Auto-Record Toggle {enabled ? 'Enabled' : 'Disabled'}</span>
 			<div class="relative">
-				<input 
-					type="checkbox" 
-					class="sr-only" 
+				<input
+					type="checkbox"
+					class="sr-only"
 					id="auto-record-toggle"
 					name="auto-record"
-					checked={enabled} 
-					on:change={onToggle} 
+					checked={enabled}
+					on:change={onToggle}
 				/>
 				<div
 					class={`h-5 w-10 rounded-full ${enabled ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}

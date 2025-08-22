@@ -22,6 +22,8 @@ export const STORAGE_KEYS = {
 	FIRST_VISIT: 'hasSeenTalkTypeIntro',
 	AUTO_RECORD: 'talktype-autoRecord',
 	PROMPT_STYLE: 'talktype-prompt-style',
+	CUSTOM_PROMPT: 'talktype-custom-prompt',
+	AUTO_SAVE: 'talktype-auto-save',
 	DEBUG_MODE: 'talktype-debug-mode',
 
 	// PWA Related
