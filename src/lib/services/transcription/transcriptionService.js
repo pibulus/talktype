@@ -1,4 +1,4 @@
-import { hybridTranscriptionService } from './hybridTranscriptionService';
+import { whisperService } from './whisper/whisperService';
 import { transcriptionState, transcriptionActions, uiActions } from '../infrastructure/stores';
 import { COPY_MESSAGES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
 import { get } from 'svelte/store';
@@ -14,23 +14,20 @@ export const TranscriptionEvents = {
 
 export class TranscriptionService {
 	constructor(dependencies = {}) {
-		// Use hybrid service that intelligently chooses between Web Speech and Whisper
-		this.hybridService = dependencies.hybridService || hybridTranscriptionService;
+		this.whisperService = dependencies.whisperService || whisperService;
 		this.browser = typeof window !== 'undefined';
 		this.lastTranscriptionTimestamp = null;
-		this.useHybrid = true; // Use intelligent mode selection
+		this.useOfflineMode = true; // Default to offline Whisper
 	}
 
 	async transcribeAudio(audioBlob) {
 		try {
-			console.log('[TranscriptionService] Starting transcribeAudio...');
 			if (!audioBlob || !(audioBlob instanceof Blob)) {
 				// Friendly error message
 				const message = 'Hmm, no audio to work with. Try recording something first?';
 				transcriptionActions.setTranscriptionError(message);
 				throw new Error(message);
 			}
-			console.log('[TranscriptionService] Audio blob size:', audioBlob.size);
 
 			// Update transcription state to show in-progress
 			transcriptionActions.startTranscribing();
@@ -39,16 +36,13 @@ export class TranscriptionService {
 			// Start progress animation
 			this.startProgressAnimation();
 
-			// Use hybrid service for intelligent mode selection (always)
-			console.log('[TranscriptionService] Calling hybrid service...');
-			const transcriptText = await this.hybridService.transcribeAudio(audioBlob);
-			console.log('[TranscriptionService] Received transcript:', transcriptText);
+			// Use offline Whisper transcription
+			const transcriptText = await this.whisperService.transcribeAudio(audioBlob);
 
 			// Complete progress animation with smooth transition
 			this.completeProgressAnimation();
 
 			// Update transcription state with completed text
-			console.log('[TranscriptionService] Updating store with transcript text');
 			transcriptionActions.completeTranscription(transcriptText);
 
 			return transcriptText;
@@ -60,8 +54,7 @@ export class TranscriptionService {
 			if (error.message.includes('fetch')) {
 				friendlyMessage = "Can't reach the transcription service. Check your connection?";
 			} else if (error.message.includes('load model')) {
-				friendlyMessage =
-					'Loading the transcription model. This happens once and enables offline magic!';
+				friendlyMessage = "Loading the transcription model. This happens once and enables offline magic!";
 			}
 
 			// Update state to show error
