@@ -105,9 +105,10 @@ export class RecordingControlsService {
 			}
 
 			// Make the ghost look like it's thinking hard
-			if (this.ghostComponent && typeof this.ghostComponent.startThinking === 'function') {
-				this.ghostComponent.startThinking();
-			}
+			// COMMENTED OUT: These methods don't exist on ghost component
+			// if (this.ghostComponent && typeof this.ghostComponent.startThinking === 'function') {
+			// 	this.ghostComponent.startThinking();
+			// }
 
 			// Stop recording and get the audio blob
 			const audioBlob = await this.audioService.stopRecording();
@@ -123,6 +124,12 @@ export class RecordingControlsService {
 				try {
 					const transcriptText = await this.transcriptionService.transcribeAudio(audioBlob);
 					console.log('[RecordingControlsService] Transcription result:', transcriptText);
+					
+					// Stop ghost thinking animation after successful transcription
+					// COMMENTED OUT: These methods don't exist on ghost component
+					// if (this.ghostComponent && typeof this.ghostComponent.stopThinking === 'function') {
+					// 	this.ghostComponent.stopThinking();
+					// }
 
 					// Scroll to show transcript if needed
 					scrollToBottomIfNeeded({
@@ -145,9 +152,10 @@ export class RecordingControlsService {
 					this.uiActions.setErrorMessage(friendlyMessage);
 
 					// Stop ghost thinking animation on error
-					if (this.ghostComponent && typeof this.ghostComponent.stopThinking === 'function') {
-						this.ghostComponent.stopThinking();
-					}
+					// COMMENTED OUT: These methods don't exist on ghost component
+					// if (this.ghostComponent && typeof this.ghostComponent.stopThinking === 'function') {
+					// 	this.ghostComponent.stopThinking();
+					// }
 				}
 			} else {
 				// If no audio data, revert UI state

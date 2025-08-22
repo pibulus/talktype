@@ -109,11 +109,15 @@ export class TranscriptionService {
 	}
 
 	async copyToClipboard(text) {
+		console.log('[TranscriptionService] copyToClipboard called with:', text ? text.substring(0, 50) + '...' : 'no text');
+		
 		if (!text) {
 			text = get(transcriptionState).text;
+			console.log('[TranscriptionService] Using text from store:', text ? text.substring(0, 50) + '...' : 'no text in store');
 		}
 
 		if (!text || text.trim() === '') {
+			console.log('[TranscriptionService] No text to copy, showing error');
 			uiActions.setErrorMessage('Nothing to copy yet - record something first!');
 			return false;
 		}
