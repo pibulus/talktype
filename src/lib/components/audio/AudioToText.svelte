@@ -9,7 +9,6 @@
 	import RecordingStatus from './RecordingStatus.svelte';
 	import TranscriptionEffects from './TranscriptionEffects.svelte';
 	import ModelInitializer from '../whisper/ModelInitializer.svelte';
-	import TranscriptionModeIndicator from './TranscriptionModeIndicator.svelte';
 	import { memoize } from '$lib/utils/performanceUtils';
 	import {
 		initializeServices,
@@ -184,9 +183,6 @@
 
 <!-- Transcription Effects (Confetti) -->
 <TranscriptionEffects {ghostComponent} targetSelector=".ghost-icon-wrapper" />
-
-<!-- Transcription Mode Indicator -->
-<TranscriptionModeIndicator />
 
 <style>
 	/* Main wrapper to ensure proper positioning */

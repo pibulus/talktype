@@ -44,6 +44,11 @@ export class TranscriptionService {
 			// Update transcription state with completed text
 			transcriptionActions.completeTranscription(transcriptText);
 
+			// Auto-copy to clipboard after successful transcription
+			setTimeout(() => {
+				this.copyToClipboard(transcriptText);
+			}, 100); // Small delay to ensure UI updates first
+
 			return transcriptText;
 		} catch (error) {
 			console.error('Transcription hiccup:', error);

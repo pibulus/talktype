@@ -495,6 +495,10 @@
 		justify-content: center;
 		align-items: center;
 		contain: layout paint;
+		/* Safari-specific fixes for flashing */
+		-webkit-backface-visibility: hidden;
+		-webkit-transform: translateZ(0);
+		transform: translateZ(0);
 	}
 
 	.ghost-container:focus,
@@ -526,6 +530,11 @@
 		max-width: 100%;
 		max-height: 100%;
 		opacity: 1; /* Start visible to prevent flashing */
+		/* Safari-specific fixes */
+		-webkit-backface-visibility: hidden;
+		-webkit-transform: translateZ(0);
+		transform: translateZ(0);
+		will-change: transform;
 	}
 
 	.ghost-svg.ready {

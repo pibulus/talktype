@@ -80,6 +80,9 @@
 		justify-content: center;
 		align-items: center;
 		position: relative;
+		/* Allow glow to extend beyond container */
+		overflow: visible;
+		padding: 1rem; /* Add padding for glow space */
 	}
 
 	/* Recording ghost effect - enhanced contrast for accessibility */
