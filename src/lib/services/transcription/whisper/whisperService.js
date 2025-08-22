@@ -296,13 +296,30 @@ export class WhisperService {
 				audioDuration = processedAudio.size / (16000 * 2);
 			}
 
-			// Start with minimal options to debug
-			const transcriptionOptions = {};
+			// Configure transcription options to prevent hallucinations
+			const transcriptionOptions = {
+				// Prevent repetition loops
+				repetition_penalty: 1.2,
+				no_repeat_ngram_size: 3,
+				
+				// Temperature affects randomness (lower = more deterministic)
+				temperature: 0.0,
+				
+				// Sampling parameters
+				do_sample: false,
+				
+				// Return timestamps to help detect repetitions
+				return_timestamps: true,
+				
+				// Language detection (optional - remove if causing issues)
+				// language: 'en',
+				// task: 'transcribe'
+			};
 
-			// Only use chunking for very long audio
+			// Add chunking for longer audio
 			if (audioDuration > 30) {
 				transcriptionOptions.chunk_length_s = 30;
-				// Using default stride for now
+				transcriptionOptions.stride_length_s = 5; // Overlap between chunks
 			}
 
 			console.log('[Whisper] Transcribing with options:', transcriptionOptions);
@@ -315,16 +332,22 @@ export class WhisperService {
 
 			this.updateStatus({ isLoading: false, progress: 100 });
 
-			// Return the transcribed text
-			const text = result?.text || '';
+			// Extract text from result (handle both formats)
+			let text = '';
+			if (typeof result === 'string') {
+				text = result;
+			} else if (result?.text) {
+				text = result.text;
+			} else if (Array.isArray(result) && result[0]?.text) {
+				// Handle array of chunks with timestamps
+				text = result.map(chunk => chunk.text).join(' ');
+			}
+			
+			// Clean up text to remove excessive repetitions
+			text = this.cleanRepetitions(text);
 			
 			console.log('[Whisper] Final text:', text);
 			
-			// Log if we see obvious repetition for debugging
-			if (text.includes('So we have a lot of options So we have a lot of options')) {
-				console.warn('[Whisper] Detected repetition in output, may need to adjust model parameters');
-			}
-
 			return text;
 		} catch (error) {
 			console.error('Error transcribing with Whisper:', error);
@@ -336,6 +359,79 @@ export class WhisperService {
 
 			throw new Error(`Failed to transcribe audio with Whisper: ${error.message}`);
 		}
+	}
+
+	/**
+	 * Clean up repetitive text patterns from transcription
+	 */
+	cleanRepetitions(text) {
+		if (!text) return '';
+		
+		// Split into sentences or phrases
+		const phrases = text.split(/[.!?]/);
+		const cleanedPhrases = [];
+		
+		for (const phrase of phrases) {
+			const trimmed = phrase.trim();
+			if (!trimmed) continue;
+			
+			// Check if this phrase is repeating consecutively
+			const words = trimmed.split(' ');
+			const cleanedWords = [];
+			let lastPhrase = '';
+			let repeatCount = 0;
+			
+			// Detect and remove phrase-level repetitions
+			for (let i = 0; i < words.length; i++) {
+				// Look for patterns of 3-10 words that repeat
+				for (let len = 3; len <= Math.min(10, words.length - i); len++) {
+					const currentPhrase = words.slice(i, i + len).join(' ');
+					let matches = 0;
+					
+					// Check how many times this phrase repeats consecutively
+					for (let j = i + len; j <= words.length - len; j += len) {
+						const nextPhrase = words.slice(j, j + len).join(' ');
+						if (currentPhrase === nextPhrase) {
+							matches++;
+						} else {
+							break;
+						}
+					}
+					
+					// If phrase repeats more than twice, skip the repetitions
+					if (matches >= 2) {
+						cleanedWords.push(...words.slice(i, i + len));
+						i += len * (matches + 1) - 1; // Skip all repetitions
+						break;
+					}
+				}
+				
+				// If no repetition pattern found, add the word
+				if (i < words.length && !cleanedWords.includes(words[i])) {
+					cleanedWords.push(words[i]);
+				}
+			}
+			
+			const cleanedPhrase = cleanedWords.join(' ');
+			
+			// Don't add if it's exactly the same as the last phrase
+			if (cleanedPhrase && cleanedPhrase !== cleanedPhrases[cleanedPhrases.length - 1]) {
+				cleanedPhrases.push(cleanedPhrase);
+			}
+		}
+		
+		// Join with periods and clean up
+		let cleaned = cleanedPhrases.join('. ');
+		if (cleaned && !cleaned.endsWith('.')) {
+			cleaned += '.';
+		}
+		
+		// Log if we removed repetitions
+		if (text.length > cleaned.length * 1.5) {
+			console.log('[Whisper] Removed repetitions. Original length:', text.length, 'Cleaned length:', cleaned.length);
+		}
+		
+		return cleaned;
 	}
 
 	/**

@@ -120,7 +120,7 @@ export class RecordingControlsService {
 					'[RecordingControlsService] Starting transcription with blob size:',
 					audioBlob.size
 				);
-				// Transcribe the audio
+				// Transcribe the audio with proper error handling
 				try {
 					const transcriptText = await this.transcriptionService.transcribeAudio(audioBlob);
 					console.log('[RecordingControlsService] Transcription result:', transcriptText);
