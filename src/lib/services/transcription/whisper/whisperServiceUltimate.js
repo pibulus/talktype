@@ -24,7 +24,12 @@ import { sileroVAD } from '../vad/sileroVAD';
 env.allowRemoteModels = true;
 env.allowLocalModels = true; // Enable local caching for faster loads
 env.remoteURL = 'https://huggingface.co/'; // Use HuggingFace CDN directly
-env.localURL = '/models/'; // Cache location (not used for initial download)
+// Enable browser cache for models (critical for persistence!)
+env.useBrowserCache = true;
+// Use IndexedDB for persistent model storage across sessions
+env.useIndexedDB = true;
+// Don't use localURL - let browser handle caching
+// env.localURL = '/models/'; // This can interfere with browser caching
 
 // Service status store with WebGPU info
 export const ultimateWhisperStatus = writable({

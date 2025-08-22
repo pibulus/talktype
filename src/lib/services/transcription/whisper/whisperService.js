@@ -9,10 +9,12 @@ import { pipeline, env } from '@xenova/transformers';
 
 // Configure Transformers.js environment for optimal performance
 env.allowRemoteModels = true;
-// Cache models locally in browser for instant subsequent loads
-env.cacheDir = '.transformers-cache';
-// Use default Hugging Face CDN (jsDelivr doesn't host the models)
-// Models are cached after first download anyway
+// Enable browser cache for models (this is the key setting!)
+env.useBrowserCache = true;
+// Use IndexedDB for persistent model storage across sessions
+env.useIndexedDB = true;
+// Don't set cacheDir - let it use default browser storage
+// env.cacheDir = '.transformers-cache';  // This was causing issues!
 import { convertToWAV as convertToRawAudio, needsConversion } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
 import { updateDownloadStatus, setProgress, setComplete, setError } from './modelDownloader';

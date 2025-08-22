@@ -6,9 +6,13 @@
 
 import { env, AutoProcessor, AutoModelForAudioFrameClassification } from '@xenova/transformers';
 
-// Configure for browser environment
+// Configure for browser environment with caching
 env.allowRemoteModels = true;
 env.remoteURL = 'https://huggingface.co/';
+// Enable browser cache for models (critical for persistence!)
+env.useBrowserCache = true;
+// Use IndexedDB for persistent model storage across sessions
+env.useIndexedDB = true;
 
 /**
  * Silero VAD Service for browser-based voice activity detection

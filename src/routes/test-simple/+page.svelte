@@ -1,6 +1,11 @@
 <script>
 	import { onMount } from 'svelte';
-	import { pipeline, read_audio } from '@xenova/transformers';
+	import { pipeline, env, read_audio } from '@xenova/transformers';
+	
+	// Configure transformers.js for browser caching
+	env.allowRemoteModels = true;
+	env.useBrowserCache = true;
+	env.useIndexedDB = true;
 
 	let isLoading = false;
 	let isRecording = false;
