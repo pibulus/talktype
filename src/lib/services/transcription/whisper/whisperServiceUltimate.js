@@ -23,7 +23,8 @@ import { sileroVAD } from '../vad/sileroVAD';
 // Configure transformers.js for optimal performance
 env.allowRemoteModels = true;
 env.allowLocalModels = true; // Enable local caching for faster loads
-// Don't set env.remoteURL - let transformers.js use its default HuggingFace CDN
+env.remoteURL = 'https://huggingface.co/'; // Use HuggingFace CDN directly
+env.localURL = '/models/'; // Cache location (not used for initial download)
 
 // Service status store with WebGPU info
 export const ultimateWhisperStatus = writable({
@@ -31,7 +32,7 @@ export const ultimateWhisperStatus = writable({
 	isLoading: false,
 	progress: 0,
 	error: null,
-	selectedModel: 'distil-small',
+	selectedModel: 'distil-small-real',
 	supportsWhisper: true,
 	supportsWebGPU: false,
 	usingWebGPU: false,
@@ -138,7 +139,7 @@ export class WhisperServiceUltimate {
 
 		// Get model configuration
 		const prefs = get(userPreferences);
-		const selectedModelId = modelId || prefs.whisperModel || 'distil-small';
+		const selectedModelId = modelId || prefs.whisperModel || 'distil-small-real';
 		const modelStats = getModelStats(selectedModelId);
 
 		if (!modelStats) {
@@ -390,11 +391,13 @@ export class WhisperServiceUltimate {
 				throw new Error('Audio blob is empty');
 			}
 
-			// Apply VAD if enabled (default: true for better performance)
+			// VAD temporarily disabled due to HuggingFace authorization issues
 			let processedAudio = audioBlob;
 			let vadStats = null;
 
-			if (options.useVAD !== false) {
+			// Skip VAD for now - authorization issues with HuggingFace
+			const skipVAD = true;
+			if (!skipVAD && options.useVAD !== false) {
 				try {
 					this.updateStatus({ isLoading: true, progress: 5, stage: 'Removing silence...' });
 
@@ -446,26 +449,18 @@ export class WhisperServiceUltimate {
 			const prefs = JSON.parse(localStorage.getItem('talktype_model_prefs') || '{}');
 			const shouldTranslate = options.translate !== undefined ? options.translate : prefs.translate;
 
-			// Use optimal settings based on model and duration
+			// Simplified options - remove features that might cause ONNX errors
 			const transcriptionOptions = {
+				// Basic options only
 				task: shouldTranslate ? 'translate' : 'transcribe',
-
-				// Language hint - auto-detect if translating
 				language: shouldTranslate ? undefined : options.language || 'english',
-
-				// Use chunking for longer audio
-				chunk_length_s: audioDuration > 30 ? 30 : undefined,
-				stride_length_s: audioDuration > 30 ? 5 : undefined,
-
-				// Return timestamps if supported
-				return_timestamps: true,
-
-				// Additional optimizations for better accuracy
-				beam_size: 5, // Better accuracy with beam search (default: 1)
-				temperature: 0.0, // More deterministic output (default: 0.8)
-				compression_ratio_threshold: 2.4, // Filter poor quality chunks
-				no_speech_threshold: 0.6, // Skip silent chunks
-				condition_on_previous_text: true // Better context continuity
+				
+				// Remove all advanced options that might cause ONNX runtime errors
+				// chunk_length_s: undefined,
+				// stride_length_s: undefined,
+				// return_timestamps: false,
+				// beam_size: 1,
+				// temperature: 0.0
 			};
 
 			const startTime = Date.now();

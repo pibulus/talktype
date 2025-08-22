@@ -22,8 +22,7 @@
 	let SettingsModal;
 	let loadingSettingsModal = false;
 
-	// Don't initialize on mount - wait for user interaction (SEO optimization)
-	// Model will load on first record click
+	// Initialize transcription after a short delay
 	let hasInitializedTranscription = false;
 
 	let PwaInstallPrompt;

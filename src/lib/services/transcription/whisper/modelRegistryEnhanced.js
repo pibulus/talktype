@@ -8,23 +8,23 @@ import { userPreferences } from '../../infrastructure/stores';
 import { browser } from '$app/environment';
 
 // Enhanced model collection with Distil-Whisper and quantized options
-const ENHANCED_MODELS = [
-	// === TEST REAL DISTIL MODEL ===
+export const ENHANCED_MODELS = [
+	// === Working Xenova Model (Default) ===
 	{
 		id: 'distil-small-real',
-		transformers_id: 'distil-whisper/distil-small.en',
-		name: 'REAL Distil Small (TEST)',
-		description: 'Testing if real distil models work',
-		size: 200 * 1024 * 1024, // ~200MB
-		parameters: 200000000,
+		transformers_id: 'Xenova/whisper-small.en',
+		name: 'Small English (Working)',
+		description: 'Verified working English model',
+		size: 154 * 1024 * 1024, // ~154MB
+		parameters: 244000000,
 		languages: ['en'],
-		version: '3.0.0',
-		speed_multiplier: 6,
-		accuracy: 0.99,
+		version: '2.0.0',
+		speed_multiplier: 1,
+		accuracy: 0.96,
 		webgpu_optimized: true,
-		recommended_for: 'testing real distil-whisper',
-		download_time_estimate: '8-10 seconds',
-		badge: 'EXPERIMENTAL'
+		recommended_for: 'default English transcription',
+		download_time_estimate: '5-8 seconds',
+		badge: 'STABLE'
 	},
 	// === INSTANT TIER (< 5 seconds download) ===
 	{
@@ -189,7 +189,7 @@ export async function checkWebGPUSupport() {
 // Model recommendation based on device capabilities
 export async function getRecommendedModel() {
 	if (!browser) {
-		return ENHANCED_MODELS.find((m) => m.id === 'distil-small');
+		return ENHANCED_MODELS.find((m) => m.id === 'distil-small-real');
 	}
 
 	// Check WebGPU support
@@ -212,13 +212,13 @@ export async function getRecommendedModel() {
 		return ENHANCED_MODELS.find((m) => m.id === 'distil-medium');
 	} else if (memory >= 4) {
 		// Decent device without WebGPU
-		return ENHANCED_MODELS.find((m) => m.id === 'distil-small');
+		return ENHANCED_MODELS.find((m) => m.id === 'distil-small-real');
 	} else if (isSlowConnection || memory < 2) {
 		// Low-end device or slow connection
 		return ENHANCED_MODELS.find((m) => m.id === 'tiny-q8');
 	} else {
 		// Default recommendation
-		return ENHANCED_MODELS.find((m) => m.id === 'distil-small');
+		return ENHANCED_MODELS.find((m) => m.id === 'distil-small-real');
 	}
 }
 
@@ -235,10 +235,10 @@ export const enhancedModelRegistry = writable({
 export const selectedEnhancedModel = derived(
 	[enhancedModelRegistry, userPreferences],
 	([$registry, $preferences]) => {
-		const modelId = $preferences.whisperModel || 'distil-small';
+		const modelId = $preferences.whisperModel || 'distil-small-real';
 		return (
 			$registry.models.find((model) => model.id === modelId) ||
-			$registry.models.find((model) => model.id === 'distil-small')
+			$registry.models.find((model) => model.id === 'distil-small-real')
 		);
 	}
 );

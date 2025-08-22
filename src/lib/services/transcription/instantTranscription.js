@@ -61,40 +61,38 @@ class InstantTranscriptionService {
 	}
 
 	async loadWhisperInBackground() {
-		// Two-tier strategy: Tiny (39MB) for quick start, then Best (154MB)
+		// Skip tiny model - go straight to the working model
 		try {
-			console.log('⚡ Loading tiny model for 3-second start...');
+			console.log('⚡ Loading model...');
 			transcriptionQuality.set({
 				quality: 'loading',
 				message: 'Loading transcription model...',
 				isUpgrading: true
 			});
 
-			// Load whisper-tiny (39MB) - downloads in 2-3 seconds
-			await whisperServiceUltimate.preloadModel('whisper-tiny.en');
+			// Load the working model directly (whisper-small-en)
+			await whisperServiceUltimate.preloadModel('whisper-small-en');
 			this.whisperReady = true;
-			this.currentModel = 'whisper-tiny.en';
+			this.currentModel = 'whisper-small-en';
 
-			console.log('✅ Tiny model ready! User can transcribe now.');
+			console.log('✅ Model ready! You can transcribe now.');
 			transcriptionQuality.set({
 				quality: 'good',
 				message: 'Ready to transcribe',
 				isUpgrading: false
 			});
 
-			// Re-transcribe with tiny model if we have audio waiting
+			// Re-transcribe if we have audio waiting
 			if (this.lastAudioBlob && this.onUpgradeReady) {
 				this.upgradeLastTranscription();
 			}
-
-			// Load the BEST model in background (distil-small 154MB)
-			// Wait a bit so user sees the tiny model working first
-			setTimeout(() => this.loadTargetModel(), 3000);
 		} catch (error) {
-			console.warn('Tiny model failed, loading best model directly', error);
-			// Skip straight to best model if tiny fails
-			this.targetModel = 'distil-small';
-			this.loadTargetModel();
+			console.error('Model loading failed:', error);
+			transcriptionQuality.set({
+				quality: 'error',
+				message: 'Failed to load model',
+				isUpgrading: false
+			});
 		}
 	}
 

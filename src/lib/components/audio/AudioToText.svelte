@@ -30,6 +30,9 @@
 	let unsubscribers = [];
 	let modelInitializer;
 	let modelReady = false;
+	
+	// Subscribe to whisper status to track when model is ready
+	$: modelReady = $whisperStatus.isLoaded;
 
 	// Component references
 	let recordingControlsRef;
