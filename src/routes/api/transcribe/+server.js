@@ -4,7 +4,8 @@ import { GEMINI_API_KEY } from '$env/static/private';
 
 // Initialize Gemini (server-side only)
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+// Using stable model instead of experimental to avoid hallucination issues
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // Helper to convert base64 to generative part
 function base64ToGenerativePart(base64Data, mimeType) {
@@ -66,12 +67,29 @@ export async function POST({ request }) {
 		// Log transcription length for debugging repetition issues
 		console.log(`[Gemini API] Transcription complete: ${transcription.length} chars`);
 		
-		// Quick fix for common echo patterns
-		// If we see "So we have a lot of options" repeated, it's definitely echo/feedback
-		transcription = transcription.replace(
-			/(So we have a lot of options[\.\s]*){2,}/gi, 
-			'So we have a lot of options. '
-		);
+		// Aggressive hallucination detection and cleanup
+		// Split into sentences and check for exact repetitions
+		const sentences = transcription.match(/[^.!?]+[.!?]+/g) || [transcription];
+		const cleanedSentences = [];
+		const seenSentences = new Set();
+		
+		for (const sentence of sentences) {
+			const trimmed = sentence.trim();
+			// If we've seen this exact sentence before, it's likely a hallucination loop
+			if (!seenSentences.has(trimmed)) {
+				cleanedSentences.push(trimmed);
+				seenSentences.add(trimmed);
+			} else {
+				console.warn(`[Gemini API] Removed duplicate sentence: "${trimmed}"`);
+			}
+		}
+		
+		// If we removed a lot of duplicates, the model was definitely hallucinating
+		if (sentences.length > cleanedSentences.length * 2) {
+			console.error(`[Gemini API] Heavy hallucination detected: ${sentences.length} sentences reduced to ${cleanedSentences.length}`);
+		}
+		
+		transcription = cleanedSentences.join(' ');
 
 		// Check for obvious repetition patterns (improved detection)
 		const words = transcription.split(' ');
