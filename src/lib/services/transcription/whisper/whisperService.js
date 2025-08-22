@@ -294,28 +294,29 @@ export class WhisperService {
 				audioDuration = processedAudio.size / (16000 * 2);
 			}
 
-			// Perform transcription with optimal configuration
-			const transcriptionOptions = { 
-				task: 'transcribe',
-				// Add language hint to reduce hallucinations
-				language: 'en',
-				// Suppress tokens that cause repetition loops
-				suppress_tokens: [-1]
-			};
+			// Start with minimal options to debug
+			const transcriptionOptions = {};
 
-			// Only use chunking for longer audio to avoid edge cases with short clips
+			// Only use chunking for very long audio
 			if (audioDuration > 30) {
-				// Reduced overlap to prevent repetition at chunk boundaries
 				transcriptionOptions.chunk_length_s = 30;
-				transcriptionOptions.stride_length_s = 2; // Reduced from 5 to 2 seconds
+				// Using default stride for now
 			}
 
+			console.log('[Whisper] Transcribing with options:', transcriptionOptions);
+			console.log('[Whisper] Audio duration:', audioDuration, 'seconds');
+			console.log('[Whisper] Audio data type:', processedAudio.constructor.name, 'length:', processedAudio.length || processedAudio.size);
+			
 			const result = await this.transcriber(processedAudio, transcriptionOptions);
+			
+			console.log('[Whisper] Raw transcription result:', result);
 
 			this.updateStatus({ isLoading: false, progress: 100 });
 
 			// Return the transcribed text
 			const text = result?.text || '';
+			
+			console.log('[Whisper] Final text:', text);
 			
 			// Log if we see obvious repetition for debugging
 			if (text.includes('So we have a lot of options So we have a lot of options')) {
