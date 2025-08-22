@@ -70,12 +70,12 @@ select {
 	.ghost-container {
 		will-change: auto; /* Only when animating */
 	}
-	
+
 	/* Simplify hover effects for touch */
 	.ghost-container:hover {
 		animation: none;
 	}
-	
+
 	/* Larger touch targets */
 	button,
 	.clickable {
@@ -90,7 +90,7 @@ select {
 	.browser-only {
 		display: none;
 	}
-	
+
 	/* Adjust for missing browser chrome */
 	.main-container {
 		height: 100vh;
@@ -104,12 +104,12 @@ select {
 	.ghost-container {
 		max-height: 40vh;
 	}
-	
+
 	.button-section {
 		padding-top: 0.5rem;
 		padding-bottom: 0.5rem;
 	}
-	
+
 	/* Hide footer in landscape on small screens */
 	.footer-component {
 		display: none;
@@ -121,7 +121,7 @@ select {
 	.ghost-container {
 		border: 2px solid currentColor;
 	}
-	
+
 	button {
 		border: 2px solid currentColor;
 	}

@@ -21,13 +21,10 @@
 			isLoading = true;
 			error = null;
 			console.log('Loading Whisper model...');
-			
+
 			// Load the simplest working model
-			transcriber = await pipeline(
-				'automatic-speech-recognition',
-				'Xenova/whisper-tiny.en'
-			);
-			
+			transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny.en');
+
 			modelLoaded = true;
 			console.log('Model loaded successfully!');
 		} catch (err) {
@@ -63,7 +60,7 @@
 	function stopRecording() {
 		if (mediaRecorder && isRecording) {
 			mediaRecorder.stop();
-			mediaRecorder.stream.getTracks().forEach(track => track.stop());
+			mediaRecorder.stream.getTracks().forEach((track) => track.stop());
 			isRecording = false;
 		}
 	}
@@ -78,24 +75,24 @@
 			isLoading = true;
 			error = null;
 			transcriptionResult = '';
-			
+
 			console.log('Starting transcription...');
 			console.log('Audio blob type:', audioBlob.type);
 			console.log('Audio blob size:', audioBlob.size);
-			
+
 			// Convert blob to Float32Array using transformers' read_audio
 			const audioUrl = URL.createObjectURL(audioBlob);
 			const audioData = await read_audio(audioUrl, 16000);
 			URL.revokeObjectURL(audioUrl);
-			
+
 			console.log('Audio converted to Float32Array, length:', audioData.length);
-			
+
 			// Transcribe with the Float32Array
 			const result = await transcriber(audioData, {
 				task: 'transcribe',
 				language: 'english'
 			});
-			
+
 			transcriptionResult = result.text || 'No transcription available';
 			console.log('Transcription complete:', transcriptionResult);
 		} catch (err) {
@@ -110,12 +107,12 @@
 <div class="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 p-8">
 	<div class="mx-auto max-w-2xl">
 		<h1 class="mb-8 text-4xl font-bold text-white">🎤 Simple Whisper Test</h1>
-		
+
 		<div class="rounded-xl bg-white/20 p-6 backdrop-blur-md">
 			<!-- Model Status -->
 			<div class="mb-4 rounded-lg bg-black/30 p-4">
 				<div class="text-white">
-					Model Status: 
+					Model Status:
 					{#if isLoading}
 						<span class="text-yellow-300">Loading...</span>
 					{:else if modelLoaded}
@@ -139,7 +136,7 @@
 				{:else}
 					<button
 						on:click={stopRecording}
-						class="w-full rounded-lg bg-red-500 px-6 py-3 font-bold text-white hover:bg-red-600 animate-pulse"
+						class="w-full animate-pulse rounded-lg bg-red-500 px-6 py-3 font-bold text-white hover:bg-red-600"
 					>
 						⏹️ Stop Recording
 					</button>

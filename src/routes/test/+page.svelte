@@ -1,9 +1,15 @@
 <script>
 	import { onMount } from 'svelte';
-	import { whisperServiceUltimate, ultimateWhisperStatus } from '$lib/services/transcription/whisper/whisperServiceUltimate';
+	import {
+		whisperServiceUltimate,
+		ultimateWhisperStatus
+	} from '$lib/services/transcription/whisper/whisperServiceUltimate';
 	import { downloadStatus } from '$lib/services/transcription/whisper/modelDownloader';
 	import { formatBytes, formatETA } from '$lib/services/transcription/whisper/modelDownloader';
-	import { checkWebGPUSupport, ENHANCED_MODELS } from '$lib/services/transcription/whisper/modelRegistryEnhanced';
+	import {
+		checkWebGPUSupport,
+		ENHANCED_MODELS
+	} from '$lib/services/transcription/whisper/modelRegistryEnhanced';
 
 	let isLoading = false;
 	let transcribing = false;
@@ -87,7 +93,7 @@
 	function stopRecording() {
 		if (mediaRecorder && isRecording) {
 			mediaRecorder.stop();
-			mediaRecorder.stream.getTracks().forEach(track => track.stop());
+			mediaRecorder.stream.getTracks().forEach((track) => track.stop());
 			isRecording = false;
 		}
 	}
@@ -104,7 +110,7 @@
 			}
 
 			const result = await whisperServiceUltimate.transcribe(audioBlob);
-			
+
 			if (result.success) {
 				transcriptionResult = result.text;
 			} else {
@@ -126,28 +132,32 @@
 	}
 
 	function getModelInfo(modelId) {
-		return ENHANCED_MODELS.find(m => m.id === modelId);
+		return ENHANCED_MODELS.find((m) => m.id === modelId);
 	}
 </script>
 
 <div class="min-h-screen bg-gradient-to-br from-purple-900 via-pink-900 to-red-900 p-8">
 	<div class="mx-auto max-w-5xl">
 		<h1 class="mb-2 text-5xl font-bold text-white">🧪 TalkType Test Suite</h1>
-		<p class="mb-8 text-xl text-pink-200">
-			Test model downloads and transcription performance
-		</p>
+		<p class="mb-8 text-xl text-pink-200">Test model downloads and transcription performance</p>
 
 		<!-- Mode Selector -->
 		<div class="mb-6 flex gap-4">
 			<button
-				on:click={() => testMode = 'download'}
-				class="flex-1 rounded-xl px-6 py-3 font-bold text-white transition-all {testMode === 'download' ? 'bg-purple-600' : 'bg-white/20 hover:bg-white/30'}"
+				on:click={() => (testMode = 'download')}
+				class="flex-1 rounded-xl px-6 py-3 font-bold text-white transition-all {testMode ===
+				'download'
+					? 'bg-purple-600'
+					: 'bg-white/20 hover:bg-white/30'}"
 			>
 				📥 Download Test
 			</button>
 			<button
-				on:click={() => testMode = 'transcribe'}
-				class="flex-1 rounded-xl px-6 py-3 font-bold text-white transition-all {testMode === 'transcribe' ? 'bg-purple-600' : 'bg-white/20 hover:bg-white/30'}"
+				on:click={() => (testMode = 'transcribe')}
+				class="flex-1 rounded-xl px-6 py-3 font-bold text-white transition-all {testMode ===
+				'transcribe'
+					? 'bg-purple-600'
+					: 'bg-white/20 hover:bg-white/30'}"
 			>
 				🎤 Transcription Test
 			</button>
@@ -222,9 +232,11 @@
 						<h2 class="text-2xl font-bold text-white">
 							📥 Downloading {getModelInfo(selectedModel)?.name || selectedModel}
 						</h2>
-						
+
 						<!-- Progress Bar -->
-						<div class="relative h-8 overflow-hidden rounded-full border-2 border-white/30 bg-black/50">
+						<div
+							class="relative h-8 overflow-hidden rounded-full border-2 border-white/30 bg-black/50"
+						>
 							<div
 								class="absolute inset-y-0 left-0 bg-gradient-to-r from-pink-500 to-purple-600 transition-all duration-300"
 								style="width: {currentStatus.progress || 0}%"
@@ -257,7 +269,10 @@
 							Time: {totalTime} seconds
 						</div>
 						<button
-							on:click={() => { downloadComplete = false; error = null; }}
+							on:click={() => {
+								downloadComplete = false;
+								error = null;
+							}}
 							class="rounded-xl bg-white/20 px-6 py-3 font-bold text-white hover:bg-white/30"
 						>
 							Test Again
@@ -278,7 +293,7 @@
 					{:else}
 						<button
 							on:click={stopRecording}
-							class="w-full transform rounded-xl bg-gradient-to-r from-red-500 to-pink-600 px-8 py-6 text-2xl font-bold text-white transition-all hover:scale-105 animate-pulse"
+							class="w-full transform animate-pulse rounded-xl bg-gradient-to-r from-red-500 to-pink-600 px-8 py-6 text-2xl font-bold text-white transition-all hover:scale-105"
 						>
 							⏹️ Stop Recording
 						</button>

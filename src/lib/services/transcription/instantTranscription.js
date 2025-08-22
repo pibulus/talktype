@@ -44,7 +44,7 @@ class InstantTranscriptionService {
 		if (this.isInitializing || this.hasStartedInitialization) return;
 		this.isInitializing = true;
 		this.hasStartedInitialization = true;
-		
+
 		console.log('[InstantTranscription] Starting lazy initialization on first interaction');
 
 		// Load user preference (only in browser)
@@ -66,7 +66,7 @@ class InstantTranscriptionService {
 			// For Pro: Use whisper-small which supports 100+ languages
 			return 'whisper-small'; // 154MB multilingual
 		}
-		
+
 		// Everyone else gets English-optimized model
 		return 'whisper-small-en'; // 154MB English-only (slightly better for English)
 	}
@@ -228,7 +228,7 @@ class InstantTranscriptionService {
 	async getStatus() {
 		const webSpeech = await this.getWebSpeechService();
 		const isWebSpeechSupported = webSpeech?.isSupported || false;
-		
+
 		return {
 			whisperReady: this.whisperReady,
 			webSpeechAvailable: isWebSpeechSupported,

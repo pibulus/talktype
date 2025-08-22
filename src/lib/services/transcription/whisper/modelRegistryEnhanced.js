@@ -20,7 +20,7 @@ export const ENHANCED_MODELS = [
 		languages: ['en'],
 		version: '2.0.0',
 		speed_multiplier: 1,
-		accuracy: 0.90,
+		accuracy: 0.9,
 		webgpu_optimized: false,
 		recommended_for: 'default English transcription',
 		download_time_estimate: '2-3 seconds',
@@ -150,7 +150,7 @@ export const ENHANCED_MODELS = [
 		recommended_for: 'English-only transcription, best accuracy',
 		download_time_estimate: '5-8 seconds',
 		badge: 'ENGLISH OPTIMIZED'
-	},
+	}
 ];
 
 // WebGPU capability detection

@@ -65,7 +65,7 @@ export class HybridTranscriptionService {
 		// Only initialize once
 		if (this.hasInitialized) return;
 		this.hasInitialized = true;
-		
+
 		// Initialize instant transcription service for ultra-fast loading
 		console.log('🚀 Initializing instant transcription on first use...');
 		instantTranscription.initialize();
@@ -126,16 +126,16 @@ export class HybridTranscriptionService {
 	async transcribeAudio(audioBlob) {
 		console.log('[HybridTranscription] Starting transcription...');
 		console.log('[HybridTranscription] Audio blob size:', audioBlob?.size, 'bytes');
-		
+
 		// Initialize services on first use (lazy loading for SEO)
 		if (!this.hasInitialized) {
 			console.log('[HybridTranscription] First use - initializing services...');
 			await this.initializeServices();
 		}
-		
+
 		const config = get(transcriptionConfig);
 		const status = get(hybridStatus);
-		
+
 		console.log('[HybridTranscription] Config:', config);
 		console.log('[HybridTranscription] Status:', status);
 
@@ -340,14 +340,14 @@ export const hybridTranscriptionService = {
 	// Proxy methods to the instance
 	async transcribeAudio(audioBlob) {
 		console.log('[HybridService Proxy] transcribeAudio called with blob size:', audioBlob?.size);
-		
+
 		// Ensure instance exists before using it
 		const instance = this.instance;
 		if (!instance) {
 			console.error('[HybridService Proxy] No instance available!');
 			throw new Error('Hybrid Transcription Service not available in this environment');
 		}
-		
+
 		console.log('[HybridService Proxy] Forwarding to instance...');
 		return instance.transcribeAudio(audioBlob);
 	},

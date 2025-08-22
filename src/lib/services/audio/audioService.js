@@ -228,7 +228,9 @@ export class AudioService {
 				}
 			};
 
-			this.mediaRecorder.start(1000);
+			// Use smaller timeslice (250ms) to capture audio more frequently
+			// This helps prevent losing the last bit of audio
+			this.mediaRecorder.start(250);
 			this.stateManager.setState(AudioStates.RECORDING);
 
 			// Update the store with mimeType
@@ -301,51 +303,60 @@ export class AudioService {
 
 			// The mimeType should be determined before onstop is set up.
 			const mimeType = this.mediaRecorder.mimeType || 'audio/webm';
-
-			this.mediaRecorder.onstop = () => {
-				// Create the Blob from this.audioChunks, which now contains all chunks
-				// including the final one from the last dataavailable event.
-				const audioBlob = new Blob(this.audioChunks, { type: mimeType });
-				console.log('[AudioService] Created audio blob:', audioBlob.size, 'bytes, type:', mimeType);
-
-				// Update store with audio blob
-				audioActions.setAudioBlob(audioBlob, mimeType);
-
-				// Immediately stop all tracks to ensure browser recording indicator is removed
-				if (this.stream) {
-					this.stream.getTracks().forEach((track) => {
-						track.stop();
-					});
-					// Clear the stream reference
-					this.stream = null;
-				}
-
-				this.audioChunks = [];
-				this.mediaRecorder = null;
-
-				// Ensure state is properly reset
-				this.stateManager.setState(AudioStates.IDLE);
-
-				resolve(audioBlob);
-			};
-
-			try {
-				this.mediaRecorder.stop();
-			} catch (error) {
-				console.warn('Error stopping MediaRecorder:', error.message);
-
-				// Ensure tracks are stopped even if MediaRecorder stop fails
-				if (this.stream) {
-					this.stream.getTracks().forEach((track) => {
-						track.stop();
-					});
-					this.stream = null;
-				}
-
-				// Force state reset on error
-				this.stateManager.setState(AudioStates.IDLE);
-				resolve(null);
+			
+			// Request any remaining data before stopping
+			// This ensures we capture audio right up to when stop was pressed
+			if (this.mediaRecorder.state === 'recording') {
+				this.mediaRecorder.requestData();
 			}
+
+			// Add a small delay to ensure final audio chunk is captured
+			setTimeout(() => {
+				this.mediaRecorder.onstop = () => {
+					// Create the Blob from this.audioChunks, which now contains all chunks
+					// including the final one from the last dataavailable event.
+					const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+					console.log('[AudioService] Created audio blob:', audioBlob.size, 'bytes, type:', mimeType);
+
+					// Update store with audio blob
+					audioActions.setAudioBlob(audioBlob, mimeType);
+
+					// Immediately stop all tracks to ensure browser recording indicator is removed
+					if (this.stream) {
+						this.stream.getTracks().forEach((track) => {
+							track.stop();
+						});
+						// Clear the stream reference
+						this.stream = null;
+					}
+
+					this.audioChunks = [];
+					this.mediaRecorder = null;
+
+					// Ensure state is properly reset
+					this.stateManager.setState(AudioStates.IDLE);
+
+					resolve(audioBlob);
+				};
+
+				try {
+					this.mediaRecorder.stop();
+				} catch (error) {
+					console.warn('Error stopping MediaRecorder:', error.message);
+
+					// Ensure tracks are stopped even if MediaRecorder stop fails
+					if (this.stream) {
+						this.stream.getTracks().forEach((track) => {
+							track.stop();
+						});
+						this.stream = null;
+					}
+
+					// Force state reset on error
+					this.stateManager.setState(AudioStates.IDLE);
+					resolve(null);
+				}
+			}, 100); // Small delay to ensure final chunk is captured
 		});
 	}
 

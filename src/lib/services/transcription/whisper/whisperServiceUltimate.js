@@ -428,14 +428,14 @@ export class WhisperServiceUltimate {
 			try {
 				// Convert blob to object URL for read_audio
 				const audioUrl = URL.createObjectURL(processedAudio);
-				
+
 				// Use the transformers library's read_audio function
 				// It handles all the conversion properly
 				audioData = await read_audio(audioUrl, 16000);
-				
+
 				// Clean up the object URL
 				URL.revokeObjectURL(audioUrl);
-				
+
 				console.log('Audio converted to Float32Array, length:', audioData.length);
 			} catch (conversionError) {
 				console.error('Audio conversion failed:', conversionError);

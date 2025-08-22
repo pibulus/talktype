@@ -57,7 +57,7 @@ export class RecordingControlsService {
 
 		// Reset UI state
 		this.uiActions.clearErrorMessage();
-		
+
 		// Clear previous transcription text for new recording
 		if (get(transcriptionText)) {
 			transcriptionState.update((current) => ({
@@ -115,7 +115,10 @@ export class RecordingControlsService {
 
 			// Process the audio if we have data
 			if (audioBlob) {
-				console.log('[RecordingControlsService] Starting transcription with blob size:', audioBlob.size);
+				console.log(
+					'[RecordingControlsService] Starting transcription with blob size:',
+					audioBlob.size
+				);
 				// Transcribe the audio
 				try {
 					const transcriptText = await this.transcriptionService.transcribeAudio(audioBlob);
