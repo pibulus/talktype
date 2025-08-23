@@ -6,7 +6,7 @@
 export function createPlaceholderSVG(width, height, label) {
 	const aspectRatio = (height / width).toFixed(2);
 	const fontSize = Math.min(width, height) * 0.05;
-	
+
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
 	<!-- Gradient background matching TalkType theme -->
@@ -21,7 +21,7 @@ export function createPlaceholderSVG(width, height, label) {
 	<rect width="${width}" height="${height}" fill="url(#bg)"/>
 	
 	<!-- Ghost icon placeholder -->
-	<g transform="translate(${width/2}, ${height/2})">
+	<g transform="translate(${width / 2}, ${height / 2})">
 		<!-- Ghost body -->
 		<ellipse cx="0" cy="-20" rx="60" ry="80" fill="white" opacity="0.9"/>
 		<!-- Ghost bottom waves -->
@@ -36,7 +36,7 @@ export function createPlaceholderSVG(width, height, label) {
 	</g>
 	
 	<!-- Text -->
-	<text x="${width/2}" y="${height - 40}" 
+	<text x="${width / 2}" y="${height - 40}" 
 		  font-family="system-ui, -apple-system, sans-serif" 
 		  font-size="${fontSize}" 
 		  font-weight="600"
@@ -56,7 +56,7 @@ export function generatePlaceholders() {
 		{ width: 1280, height: 720, filename: 'screenshot-1.png', label: 'TalkType - Voice to Text' },
 		{ width: 720, height: 1280, filename: 'screenshot-mobile.png', label: 'TalkType Mobile' }
 	];
-	
+
 	return screenshots.map(({ width, height, filename, label }) => ({
 		filename,
 		svg: createPlaceholderSVG(width, height, label)

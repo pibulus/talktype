@@ -324,7 +324,7 @@ export class WhisperServiceUltimate {
 			return { success: true, transcriber: this.transcriber };
 		} catch (error) {
 			console.error('Failed to load model:', error);
-			
+
 			// More detailed error logging
 			const errorDetails = {
 				message: error.message,
@@ -350,10 +350,10 @@ export class WhisperServiceUltimate {
 					error: null,
 					progress: 0
 				});
-				
+
 				// Reset promise to allow retry
 				this.modelLoadPromise = null;
-				
+
 				// Try loading tiny model as fallback
 				return this.preloadModel('distil-tiny');
 			}

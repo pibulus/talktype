@@ -37,11 +37,11 @@ class ModelCacheService {
 
 			// Open database
 			await this.openDatabase();
-			
+
 			// Get cached models info
 			const models = await this.getCachedModels();
-			
-			cacheStatus.update(s => ({
+
+			cacheStatus.update((s) => ({
 				...s,
 				initialized: true,
 				available: true,
@@ -54,7 +54,7 @@ class ModelCacheService {
 			return true;
 		} catch (error) {
 			console.error('Failed to initialize cache service:', error);
-			cacheStatus.update(s => ({
+			cacheStatus.update((s) => ({
 				...s,
 				initialized: true,
 				available: false,
@@ -82,7 +82,7 @@ class ModelCacheService {
 
 			request.onupgradeneeded = (event) => {
 				const db = event.target.result;
-				
+
 				// Create object store if it doesn't exist
 				if (!db.objectStoreNames.contains(this.storeName)) {
 					const store = db.createObjectStore(this.storeName, { keyPath: 'id' });
@@ -190,7 +190,7 @@ class ModelCacheService {
 			const request = store.getAll();
 
 			request.onsuccess = () => {
-				const models = request.result.map(m => ({
+				const models = request.result.map((m) => ({
 					id: m.id,
 					modelId: m.modelId,
 					size: m.metadata?.size || 0,
@@ -257,7 +257,7 @@ class ModelCacheService {
 	 */
 	async updateCacheStatus() {
 		const models = await this.getCachedModels();
-		cacheStatus.update(s => ({
+		cacheStatus.update((s) => ({
 			...s,
 			cachedModels: models,
 			totalSize: models.reduce((sum, m) => sum + (m.size || 0), 0)
@@ -280,7 +280,7 @@ class ModelCacheService {
 		try {
 			const model = await this.getModel(modelId);
 			if (!model) return false;
-			
+
 			// Basic validation - check if data exists and has content
 			return model && (model.size > 0 || model.byteLength > 0);
 		} catch (error) {
