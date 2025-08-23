@@ -31,6 +31,17 @@ env.useIndexedDB = true;
 // Don't use localURL - let browser handle caching
 // env.localURL = '/models/'; // This can interfere with browser caching
 
+// Log configuration for debugging
+if (typeof window !== 'undefined') {
+	console.log('🔧 Transformers.js Configuration:', {
+		remoteURL: env.remoteURL,
+		allowRemoteModels: env.allowRemoteModels,
+		allowLocalModels: env.allowLocalModels,
+		useBrowserCache: env.useBrowserCache,
+		useIndexedDB: env.useIndexedDB
+	});
+}
+
 // Service status store with WebGPU info
 export const ultimateWhisperStatus = writable({
 	isLoaded: false,
@@ -313,10 +324,38 @@ export class WhisperServiceUltimate {
 			return { success: true, transcriber: this.transcriber };
 		} catch (error) {
 			console.error('Failed to load model:', error);
+			
+			// More detailed error logging
+			const errorDetails = {
+				message: error.message,
+				stack: error.stack,
+				modelId: modelId,
+				modelName: modelStats?.name,
+				transformersId: modelStats?.transformers_id,
+				device: this.device,
+				webgpuSupported: this.webgpuSupport?.supported
+			};
+			console.error('Model Loading Error Details:', errorDetails);
 
 			// Restore console.warn
 			if (originalWarn) {
 				console.warn = originalWarn;
+			}
+
+			// Try fallback to tiny model if different model failed
+			if (modelId !== 'distil-tiny' && modelId !== 'distil-small-real') {
+				console.log('⚠️ Failed to load model, trying fallback to tiny model...');
+				this.updateStatus({
+					isLoading: true,
+					error: null,
+					progress: 0
+				});
+				
+				// Reset promise to allow retry
+				this.modelLoadPromise = null;
+				
+				// Try loading tiny model as fallback
+				return this.preloadModel('distil-tiny');
 			}
 
 			this.updateStatus({
