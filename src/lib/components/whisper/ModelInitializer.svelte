@@ -85,7 +85,7 @@
 
 <!-- Download progress indicator (subtle, non-blocking) -->
 {#if $downloadStatus.inProgress && !showModal}
-	<div 
+	<div
 		class="fixed bottom-20 right-4 z-40 rounded-xl border border-pink-200 bg-white/95 p-3 shadow-lg backdrop-blur-sm"
 		transition:fly={{ x: 100, duration: 300 }}
 	>

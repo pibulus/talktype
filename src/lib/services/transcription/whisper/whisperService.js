@@ -117,7 +117,7 @@ export class WhisperService {
 				selectedModel: modelKey,
 				progress: 10
 			});
-			
+
 			console.log(`🎯 Loading Whisper model: ${modelKey} (${modelConfig.name})`);
 
 			// Configure ONNX Runtime environment to suppress warnings

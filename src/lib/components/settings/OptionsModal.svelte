@@ -8,7 +8,7 @@
 	import AutoRecordToggle from './AutoRecordToggle.svelte';
 	import AutoSaveToggle from './AutoSaveToggle.svelte';
 	import TranscriptionStyleSelector from './TranscriptionStyleSelector.svelte';
-		import KeyboardShortcutsInfo from './KeyboardShortcutsInfo.svelte';
+	import KeyboardShortcutsInfo from './KeyboardShortcutsInfo.svelte';
 	import SupportSection from './SupportSection.svelte';
 	import { ModalCloseButton } from '../modals/index.js';
 
@@ -227,7 +227,6 @@
 					<!-- Keyboard Shortcuts -->
 					<KeyboardShortcutsInfo />
 				</section>
-
 
 				<!-- Section: Support -->
 				<div class="divider my-1 opacity-10"></div>

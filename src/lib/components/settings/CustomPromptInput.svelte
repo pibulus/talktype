@@ -45,7 +45,7 @@
 	<button
 		on:click={toggleCustomPrompt}
 		class="btn btn-sm w-full {isCustomMode
-			? 'border-pink-300 bg-pink-100 hover:bg-pink-200 text-gray-800'
+			? 'border-pink-300 bg-pink-100 text-gray-800 hover:bg-pink-200'
 			: 'btn-ghost'} justify-between"
 	>
 		<span>Custom Prompt</span>

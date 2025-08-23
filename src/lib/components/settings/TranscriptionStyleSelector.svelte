@@ -127,7 +127,7 @@
 
 	<!-- Custom prompt input area -->
 	{#if showCustomInput}
-		<div class="mt-3 animate-in slide-in-from-top-2 space-y-2 duration-200">
+		<div class="animate-in slide-in-from-top-2 mt-3 space-y-2 duration-200">
 			<textarea
 				bind:value={customPromptText}
 				on:keydown={handleKeydown}
