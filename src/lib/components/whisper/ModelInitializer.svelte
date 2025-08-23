@@ -19,6 +19,7 @@
 	let showModal = false;
 	let userAccepted = false;
 	let error = null;
+	let downloadStarted = false;
 
 	onMount(() => {
 		checkModelStatus();
@@ -27,20 +28,15 @@
 	async function checkModelStatus() {
 		// Check if model is already loaded
 		if ($whisperStatus.isLoaded) {
+			console.log('✅ Whisper model already loaded');
 			hasInitialized = true;
 			onModelReady();
 			return;
 		}
 
-		// Check localStorage to see if user has previously accepted
-		const previouslyAccepted = localStorage.getItem('talktype_whisper_accepted');
-		if (previouslyAccepted === 'true') {
-			await initializeModel();
-		} else {
-			// Don't auto-download on first visit - let API handle it
-			// User can manually trigger download from the modal if they want offline
-			console.log('📡 Using online transcription - offline model available on demand');
-		}
+		// ALWAYS download the model automatically for quality transcription
+		console.log('🚀 Auto-downloading Whisper model for quality transcription...');
+		await initializeModel();
 	}
 
 	async function handleAccept() {
@@ -52,19 +48,25 @@
 	async function initializeModel() {
 		showModal = false;
 		error = null;
+		downloadStarted = true;
 
 		try {
+			console.log('📦 Starting Whisper model download...');
 			const result = await whisperService.preloadModel();
 			if (result.success) {
+				console.log('✅ Whisper model loaded successfully!');
 				hasInitialized = true;
+				localStorage.setItem('talktype_whisper_accepted', 'true');
 				onModelReady();
 			} else {
+				console.error('❌ Failed to load Whisper model:', result.error);
 				error = result.error?.message || 'Failed to load model';
-				showModal = true;
+				// Don't show modal on auto-download failure, just fall back to API
 			}
 		} catch (err) {
+			console.error('❌ Error loading Whisper model:', err);
 			error = err.message;
-			showModal = true;
+			// Don't show modal on auto-download failure, just fall back to API
 		}
 	}
 
@@ -75,11 +77,53 @@
 
 	// Show modal when user tries to record without model
 	export function promptForModel() {
-		if (!hasInitialized && !$whisperStatus.isLoaded) {
+		if (!hasInitialized && !$whisperStatus.isLoaded && !downloadStarted) {
 			showModal = true;
 		}
 	}
 </script>
+
+<!-- Download progress indicator (subtle, non-blocking) -->
+{#if $downloadStatus.inProgress && !showModal}
+	<div 
+		class="fixed bottom-20 right-4 z-40 rounded-xl border border-pink-200 bg-white/95 p-3 shadow-lg backdrop-blur-sm"
+		transition:fly={{ x: 100, duration: 300 }}
+	>
+		<div class="flex items-center gap-3">
+			<div class="relative h-8 w-8">
+				<svg class="h-8 w-8 -rotate-90 transform">
+					<circle
+						cx="16"
+						cy="16"
+						r="14"
+						stroke="currentColor"
+						stroke-width="2"
+						fill="none"
+						class="text-pink-100"
+					/>
+					<circle
+						cx="16"
+						cy="16"
+						r="14"
+						stroke="currentColor"
+						stroke-width="2"
+						fill="none"
+						stroke-dasharray={88}
+						stroke-dashoffset={88 - (88 * $downloadStatus.progress) / 100}
+						class="text-pink-400 transition-all duration-300"
+					/>
+				</svg>
+				<span class="absolute inset-0 flex items-center justify-center text-xs font-bold">
+					{Math.round($downloadStatus.progress)}%
+				</span>
+			</div>
+			<div>
+				<p class="text-xs font-medium text-gray-700">Downloading AI model...</p>
+				<p class="text-xs text-gray-500">One-time download for offline magic</p>
+			</div>
+		</div>
+	</div>
+{/if}
 
 {#if showModal && !hasInitialized}
 	<div
@@ -156,5 +200,3 @@
 		</div>
 	</div>
 {/if}
-
-<!-- Download progress modal removed - not working properly -->

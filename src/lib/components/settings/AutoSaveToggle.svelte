@@ -16,21 +16,30 @@
 	}
 </script>
 
-<label
-	class="label cursor-pointer justify-between rounded-xl border border-base-200 p-3 transition-colors hover:border-primary/30"
+<div
+	class="flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
 >
-	<div class="flex items-center gap-3">
-		<span class="text-lg">💾</span>
-		<div>
-			<span class="label-text font-medium">Auto-Save</span>
-			<p class="mt-0.5 text-xs opacity-60">Automatically save transcripts</p>
-		</div>
+	<div>
+		<span class="text-sm font-medium text-gray-700">Auto-Save</span>
+		<p class="mt-0.5 text-xs text-gray-500">Automatically save transcripts</p>
 	</div>
-	<input
-		type="checkbox"
-		class="toggle toggle-primary"
-		checked={isEnabled}
-		on:change={toggle}
-		aria-label="Toggle auto-save"
-	/>
-</label>
+	<label class="flex cursor-pointer items-center">
+		<span class="sr-only">Auto-Save Toggle {isEnabled ? 'Enabled' : 'Disabled'}</span>
+		<div class="relative">
+			<input
+				type="checkbox"
+				class="sr-only"
+				id="auto-save-toggle"
+				name="auto-save"
+				checked={isEnabled}
+				on:change={toggle}
+			/>
+			<div
+				class={`h-5 w-10 rounded-full ${isEnabled ? 'bg-pink-400' : 'bg-gray-300'} transition-all duration-200`}
+			></div>
+			<div
+				class={`absolute left-0.5 top-0.5 h-4 w-4 transform rounded-full bg-white transition-all duration-200 ${isEnabled ? 'translate-x-5' : ''}`}
+			></div>
+		</div>
+	</label>
+</div>

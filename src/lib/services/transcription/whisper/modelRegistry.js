@@ -64,7 +64,7 @@ export const modelRegistry = writable({
 export const selectedModel = derived(
 	[modelRegistry, userPreferences],
 	([$modelRegistry, $userPreferences]) => {
-		const modelId = $userPreferences.whisperModel || 'tiny';
+		const modelId = $userPreferences.whisperModel || 'base';
 		return $modelRegistry.models.find((model) => model.id === modelId) || $modelRegistry.models[0];
 	}
 );

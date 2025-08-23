@@ -48,7 +48,7 @@
 
 			try {
 				// Import the component dynamically
-				const module = await import('../settings/SettingsModal.svelte');
+				const module = await import('../settings/OptionsModal.svelte');
 				SettingsModal = module.default;
 				debug('SettingsModal component loaded successfully');
 			} catch (err) {

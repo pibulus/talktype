@@ -44,14 +44,13 @@
 <div class="space-y-2">
 	<button
 		on:click={toggleCustomPrompt}
-		class="btn btn-sm w-full {isCustomMode ? 'btn-primary' : 'btn-ghost'} justify-between"
+		class="btn btn-sm w-full {isCustomMode
+			? 'border-pink-300 bg-pink-100 hover:bg-pink-200 text-gray-800'
+			: 'btn-ghost'} justify-between"
 	>
-		<span class="flex items-center gap-2">
-			<span>✨</span>
-			<span>Custom Prompt</span>
-		</span>
+		<span>Custom Prompt</span>
 		{#if isCustomMode}
-			<span class="badge badge-primary badge-sm">Active</span>
+			<span class="badge badge-sm border-pink-300 bg-pink-200 text-gray-700">Active</span>
 		{:else}
 			<span class="text-xs opacity-60">Advanced</span>
 		{/if}

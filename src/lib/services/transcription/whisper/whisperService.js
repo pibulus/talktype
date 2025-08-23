@@ -85,7 +85,7 @@ export class WhisperService {
 		updateDownloadStatus({
 			inProgress: true,
 			progress: 0,
-			modelId: get(userPreferences).whisperModel || 'tiny',
+			modelId: get(userPreferences).whisperModel || 'base',
 			error: null,
 			stage: 'initializing'
 		});
@@ -104,9 +104,9 @@ export class WhisperService {
 				throw new Error('Whisper transcription only available in browser environment');
 			}
 
-			// Get selected model from preferences or default to tiny
+			// Get selected model from preferences or default to base
 			const prefs = get(userPreferences);
-			const modelKey = prefs.whisperModel || 'tiny';
+			const modelKey = prefs.whisperModel || 'base';
 			const modelConfig = getModelInfo(modelKey);
 
 			if (!modelConfig) {
@@ -117,6 +117,8 @@ export class WhisperService {
 				selectedModel: modelKey,
 				progress: 10
 			});
+			
+			console.log(`🎯 Loading Whisper model: ${modelKey} (${modelConfig.name})`);
 
 			// Configure ONNX Runtime environment to suppress warnings
 			if (typeof window !== 'undefined') {
@@ -298,28 +300,16 @@ export class WhisperService {
 
 			// Configure transcription options to prevent hallucinations
 			const transcriptionOptions = {
-				// Prevent repetition loops
-				repetition_penalty: 1.2,
-				no_repeat_ngram_size: 3,
-
-				// Temperature affects randomness (lower = more deterministic)
-				temperature: 0.0,
-
-				// Sampling parameters
+				// Basic settings that work
+				temperature: 0,
 				do_sample: false,
-
-				// Return timestamps to help detect repetitions
 				return_timestamps: true
-
-				// Language detection (optional - remove if causing issues)
-				// language: 'en',
-				// task: 'transcribe'
 			};
 
-			// Add chunking for longer audio
+			// Add chunking for longer audio (optimize for speed)
 			if (audioDuration > 30) {
-				transcriptionOptions.chunk_length_s = 30;
-				transcriptionOptions.stride_length_s = 5; // Overlap between chunks
+				transcriptionOptions.chunk_length_s = 20; // Smaller chunks = faster processing
+				transcriptionOptions.stride_length_s = 2; // Less overlap = faster but still accurate
 			}
 
 			console.log('[Whisper] Transcribing with options:', transcriptionOptions);

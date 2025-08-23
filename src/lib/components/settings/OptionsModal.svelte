@@ -8,8 +8,7 @@
 	import AutoRecordToggle from './AutoRecordToggle.svelte';
 	import AutoSaveToggle from './AutoSaveToggle.svelte';
 	import TranscriptionStyleSelector from './TranscriptionStyleSelector.svelte';
-	import CustomPromptInput from './CustomPromptInput.svelte';
-	import KeyboardShortcutsInfo from './KeyboardShortcutsInfo.svelte';
+		import KeyboardShortcutsInfo from './KeyboardShortcutsInfo.svelte';
 	import SupportSection from './SupportSection.svelte';
 	import { ModalCloseButton } from '../modals/index.js';
 
@@ -179,56 +178,40 @@
 			</div>
 
 			<!-- Settings Sections -->
-			<div class="space-y-6">
+			<div class="space-y-3">
 				<!-- Section: Vibes -->
-				<section class="space-y-3">
-					<div class="flex items-center gap-2">
-						<span class="text-lg">🎨</span>
-						<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-600">Vibes</h3>
-					</div>
+				<section class="space-y-2">
+					<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">Vibes</h3>
 					<ThemeSelector currentTheme={selectedVibe} onThemeChange={changeVibe} />
 				</section>
 
-				<div class="divider my-3"></div>
+				<div class="divider my-1 opacity-10"></div>
 
 				<!-- Section: Personality -->
-				<section class="space-y-3">
-					<div class="flex items-center gap-2">
-						<span class="text-lg">🎭</span>
-						<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-600">
-							Personality
-						</h3>
-					</div>
+				<section class="space-y-2">
+					<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">Personality</h3>
 					<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
-					<CustomPromptInput />
 				</section>
 
-				<div class="divider my-3"></div>
+				<div class="divider my-1 opacity-10"></div>
 
-				<!-- Section: Workflow -->
-				<section class="space-y-3">
-					<div class="flex items-center gap-2">
-						<span class="text-lg">⚡</span>
-						<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-600">Workflow</h3>
-					</div>
+				<!-- Section: Automagic -->
+				<section class="space-y-2">
+					<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">Automagic</h3>
 					<AutoRecordToggle enabled={autoRecordValue} onToggle={toggleAutoRecord} />
 					<AutoSaveToggle />
 				</section>
 
-				<div class="divider my-3"></div>
+				<div class="divider my-1 opacity-10"></div>
 
 				<!-- Section: App Features -->
-				<section class="space-y-4">
-					<div class="flex items-center gap-2">
-						<span class="text-lg">📱</span>
-						<h3 class="text-sm font-semibold uppercase tracking-wider text-gray-600">
-							App Features
-						</h3>
-					</div>
-
+				<section class="space-y-2">
 					<!-- Install App Button -->
 					{#if $installPromptEvent}
-						<button on:click={handleInstallClick} class="btn btn-primary btn-block">
+						<button
+							on:click={handleInstallClick}
+							class="btn btn-block border-pink-300 bg-gradient-to-r from-pink-100 to-purple-100 text-gray-800 hover:from-pink-200 hover:to-purple-200"
+						>
 							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path
 									stroke-linecap="round"
@@ -239,27 +222,15 @@
 							</svg>
 							Install TalkType App
 						</button>
-					{:else}
-						<div class="alert alert-info">
-							<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-								/>
-							</svg>
-							<span class="text-sm">TalkType works great in your browser!</span>
-						</div>
 					{/if}
 
 					<!-- Keyboard Shortcuts -->
 					<KeyboardShortcutsInfo />
 				</section>
 
-				<div class="divider my-3"></div>
 
 				<!-- Section: Support -->
+				<div class="divider my-1 opacity-10"></div>
 				<section>
 					<SupportSection />
 				</section>
