@@ -1,16 +1,15 @@
 <script>
 	import { onMount } from 'svelte';
-	import { theme, autoRecord, applyTheme, promptStyle } from '$lib';
+	import { theme, autoRecord, autoSave, applyTheme, promptStyle } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { installPromptEvent } from '$lib/stores/pwa';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import ThemeSelector from './ThemeSelector.svelte';
-	import AutoRecordToggle from './AutoRecordToggle.svelte';
-	import AutoSaveToggle from './AutoSaveToggle.svelte';
 	import TranscriptionStyleSelector from './TranscriptionStyleSelector.svelte';
 	import KeyboardShortcutsInfo from './KeyboardShortcutsInfo.svelte';
 	import SupportSection from './SupportSection.svelte';
 	import { ModalCloseButton } from '../modals/index.js';
+	import { Toggle } from '../shared';
 
 	// Props for the modal
 	export let closeModal = () => {};
@@ -198,8 +197,26 @@
 				<!-- Section: Automagic -->
 				<section class="space-y-2">
 					<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">Automagic</h3>
-					<AutoRecordToggle enabled={autoRecordValue} onToggle={toggleAutoRecord} />
-					<AutoSaveToggle />
+					<Toggle
+						label="Auto-Record on Start"
+						description="Start recording immediately when you open TalkType"
+						bind:checked={autoRecordValue}
+						on:change={toggleAutoRecord}
+					/>
+					<Toggle
+						label="Auto-Save Transcripts"
+						description="Automatically save all your transcriptions"
+						bind:checked={$autoSave === 'true'}
+						on:change={() => {
+							const newValue = $autoSave === 'true' ? 'false' : 'true';
+							$autoSave = newValue;
+							window.dispatchEvent(
+								new CustomEvent('talktype-setting-changed', {
+									detail: { setting: 'autoSave', value: newValue === 'true' }
+								})
+							);
+						}}
+					/>
 				</section>
 
 				<div class="divider my-1 opacity-10"></div>

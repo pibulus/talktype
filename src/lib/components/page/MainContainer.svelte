@@ -17,8 +17,8 @@
 
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
 
-	let SettingsModal;
-	let loadingSettingsModal = false;
+	let Settings;
+	let loadingSettings = false;
 
 	// Initialize transcription after a short delay
 	let hasInitializedTranscription = false;
@@ -36,28 +36,28 @@
 		debug('openSettingsModal called');
 
 		// Check if we're already loading the modal
-		if (loadingSettingsModal) {
-			debug('SettingsModal is already loading, aborting.');
+		if (loadingSettings) {
+			debug('Settings is already loading, aborting.');
 			return;
 		}
 
-		// Dynamically import the SettingsModal component if not already loaded
-		if (!SettingsModal) {
-			loadingSettingsModal = true;
-			debug('Lazy loading SettingsModal component...');
+		// Dynamically import the Settings component if not already loaded
+		if (!Settings) {
+			loadingSettings = true;
+			debug('Lazy loading Settings component...');
 
 			try {
 				// Import the component dynamically
-				const module = await import('../settings/OptionsModal.svelte');
-				SettingsModal = module.default;
-				debug('SettingsModal component loaded successfully');
+				const module = await import('../Settings.svelte');
+				Settings = module.default;
+				debug('Settings component loaded successfully');
 			} catch (err) {
-				console.error('Error loading SettingsModal:', err);
-				debug(`Error loading SettingsModal: ${err.message}`);
-				loadingSettingsModal = false;
+				console.error('Error loading Settings:', err);
+				debug(`Error loading Settings: ${err.message}`);
+				loadingSettings = false;
 				return; // Don't proceed if loading failed
 			} finally {
-				loadingSettingsModal = false; // Ensure this is always reset
+				loadingSettings = false; // Ensure this is always reset
 			}
 		}
 
@@ -326,9 +326,9 @@
 />
 
 <!-- Settings Modal - lazy loaded -->
-{#if SettingsModal}
+{#if Settings}
 	<!-- Pass the close function down to the component -->
-	<svelte:component this={SettingsModal} on:close={closeSettingsModal} />
+	<svelte:component this={Settings} closeModal={closeSettingsModal} />
 {/if}
 
 <!-- PWA Install Prompt -->
