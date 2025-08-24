@@ -3,12 +3,21 @@ import { build, files, version } from '$service-worker';
 
 // Create a unique cache name for this deployment
 const CACHE = `cache-${version}`;
+const MODELS_CACHE = 'whisper-models-v1';
+const RUNTIME_CACHE = 'runtime-v1';
 
 // Assets to always cache
 const ASSETS = [
 	...build, // the app itself
 	...files // everything in `static`
 ];
+
+// Cache durations
+const CACHE_DURATIONS = {
+	models: 30 * 24 * 60 * 60 * 1000, // 30 days for ML models
+	cdn: 7 * 24 * 60 * 60 * 1000, // 7 days for CDN resources
+	api: 60 * 1000 // 1 minute for API responses
+};
 
 // Install service worker
 self.addEventListener('install', (event) => {
@@ -26,7 +35,10 @@ self.addEventListener('activate', (event) => {
 	// Remove previous cached data from disk
 	async function deleteOldCaches() {
 		for (const key of await caches.keys()) {
-			if (key !== CACHE) await caches.delete(key);
+			// Keep models and runtime caches, only delete old version caches
+			if (key !== CACHE && key !== MODELS_CACHE && key !== RUNTIME_CACHE) {
+				await caches.delete(key);
+			}
 		}
 	}
 
@@ -48,6 +60,28 @@ self.addEventListener('fetch', (event) => {
 
 			if (response) {
 				return response;
+			}
+		}
+
+		// Special handling for Whisper models (ONNX files)
+		if (url.href.includes('huggingface.co') || url.href.includes('.onnx')) {
+			const modelCache = await caches.open(MODELS_CACHE);
+			const cachedResponse = await modelCache.match(event.request);
+			
+			if (cachedResponse) {
+				return cachedResponse;
+			}
+			
+			// Download and cache model files
+			try {
+				const response = await fetch(event.request);
+				if (response.ok) {
+					modelCache.put(event.request, response.clone());
+				}
+				return response;
+			} catch {
+				// If offline and not cached, return error
+				return new Response('Model not available offline', { status: 503 });
 			}
 		}
 
