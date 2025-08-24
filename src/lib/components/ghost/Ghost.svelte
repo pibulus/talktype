@@ -12,6 +12,8 @@
 	import { forceReflow } from './utils/animationUtils.js';
 	import { initialGhostAnimation } from './actions/initialGhostAnimation.js';
 	import { createEyeTracking } from './eyeTracking.js';
+	import GradientDefs from './GradientDefs.svelte';
+	import { getGradientId } from './gradients.js';
 
 	export let isRecording = false;
 	export let isProcessing = false;
@@ -37,13 +39,22 @@
 	let unsubscribeTheme;
 	let wakeUpBlinkTriggered = false;
 	let eyeTracker;
+	
+	// === REACTIVE DECLARATIONS ===
 	$: animationsEnabled = $appActive;
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
+	$: gradientId = getGradientId(currentTheme);
+	$: isGhostReady = browser && componentsLoaded && !!ghostSvg && !!currentTheme;
 
 	// React to recording state changes
 	$: if (browser && isRecording !== lastRecordingState) {
 		ghostStateStore.setRecording(isRecording);
 		lastRecordingState = isRecording;
+	}
+
+	// Monitor theme changes
+	$: if (currentTheme && ghostSvg && browser) {
+		applyThemeChanges();
 	}
 
 	function setDebugMode() {
@@ -86,8 +97,6 @@
 			ghostStateStore.setProcessing(isProcessing);
 		}
 
-		// Removed legacy animationState prop handling
-		// State is now driven solely by isRecording and isProcessing props syncing to the store
 	}
 
 	// Apply theme changes when they occur
@@ -107,9 +116,6 @@
 			forceReflow(shapeElem);
 		}
 
-		// Clean up previous gradient animations and initialize new ones
-		// cleanupAllAnimations(); // Commented out - Use CSS animations
-		// initGradientAnimation(currentTheme, svgElement); // Commented out - Use CSS animations
 
 		// Create or update dynamic styles element
 		let ghostStyleElement = document.getElementById('ghost-dynamic-styles');
@@ -128,14 +134,7 @@
 			console.log('[Ghost] Theme changed, styles updated');
 		}
 
-		// Removed call to injectAnimationVariables()
-
-		// Log animation configuration if debug mode is enabled
-		if (debugAnim && console) {
-		}
 	}
-
-	// Removed handleMouseMove - eye tracking handled by blinkService/eyeTracking service
 
 	// Clean up on destroy - ensure all animation resources are cleared
 	onDestroy(() => {
@@ -144,10 +143,6 @@
 			unsubscribeTheme();
 		}
 
-		// Removed cleanupTimers call (managed within services)
-
-		// Clean up all gradient animations
-		// cleanupAllAnimations(); // Commented out - Use CSS animations
 
 		// Remove dynamic styles
 		if (ghostStyleElement) {
@@ -159,21 +154,6 @@
 		ghostStateStore.reset();
 	});
 
-	// Export function to adjust gradient animation settings during runtime
-	export function updateGradientSettings(themeId, settings) {
-		if (!settings || !themeId) return;
-
-		// Re-initialize gradient animations with updated settings
-		if (ghostSvg) {
-			const svgElement = ghostSvg.querySelector('svg');
-			if (svgElement) {
-				// Animation updates handled by CSS classes now
-				// Legacy gradient animation functions removed
-			}
-		}
-	}
-
-	// Removed exported forceWobble function - wobble should be triggered internally by state changes
 
 	// Public methods to expose animation controls
 	export function pulse() {
@@ -255,9 +235,7 @@
 			});
 			// Initialize with the main ghost SVG container (for getBoundingClientRect)
 			eyeTracker.initialize(ghostSvg);
-			// eyeTracker.start(); // start() is called by initialize() if not already active
 
-			// Removed mousemove listener setup (handled by services)
 
 			// Set debug mode
 			ghostStateStore.setDebug(debug);
@@ -303,14 +281,6 @@
 		if (debug) ghostStateStore.completeFirstVisit();
 		ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 	}
-
-	// Monitor theme changes - more idiomatic Svelte approach
-	$: if (currentTheme && ghostSvg && browser) {
-		applyThemeChanges();
-	}
-
-	// Reactive declaration for ghost ready state
-	$: isGhostReady = browser && componentsLoaded && !!ghostSvg && !!currentTheme;
 
 	// Track previous ready state to dispatch event once
 	let wasReady = false;
@@ -392,37 +362,7 @@
 		class:debug-animation={debugAnim}
 	>
 		<defs>
-			<linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-				<stop offset="0%" stop-color="var(--ghost-peach-start)" />
-				<stop offset="35%" stop-color="var(--ghost-peach-mid1)" />
-				<stop offset="65%" stop-color="var(--ghost-peach-mid2)" />
-				<stop offset="85%" stop-color="var(--ghost-peach-mid3)" />
-				<stop offset="100%" stop-color="var(--ghost-peach-end)" />
-			</linearGradient>
-
-			<linearGradient id="mintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-				<stop offset="0%" stop-color="var(--ghost-mint-start)" />
-				<stop offset="35%" stop-color="var(--ghost-mint-mid1)" />
-				<stop offset="65%" stop-color="var(--ghost-mint-mid2)" />
-				<stop offset="85%" stop-color="var(--ghost-mint-mid3)" />
-				<stop offset="100%" stop-color="var(--ghost-mint-end)" />
-			</linearGradient>
-
-			<linearGradient id="bubblegumGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-				<stop offset="0%" stop-color="var(--ghost-bubblegum-start)" />
-				<stop offset="35%" stop-color="var(--ghost-bubblegum-mid1)" />
-				<stop offset="65%" stop-color="var(--ghost-bubblegum-mid2)" />
-				<stop offset="85%" stop-color="var(--ghost-bubblegum-mid3)" />
-				<stop offset="100%" stop-color="var(--ghost-bubblegum-end)" />
-			</linearGradient>
-
-			<linearGradient id="rainbowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-				<stop offset="0%" stop-color="var(--ghost-rainbow-start)" />
-				<stop offset="25%" stop-color="var(--ghost-rainbow-mid1)" />
-				<stop offset="50%" stop-color="var(--ghost-rainbow-mid2)" />
-				<stop offset="75%" stop-color="var(--ghost-rainbow-mid3)" />
-				<stop offset="100%" stop-color="var(--ghost-rainbow-end)" />
-			</linearGradient>
+			<GradientDefs />
 		</defs>
 
 		<!-- New wrapper group for wobble transform - ID is used by store -->
@@ -442,7 +382,7 @@
 						href={ghostPathsUrl + '#ghost-background'}
 						class="ghost-shape"
 						id="ghost-shape"
-						fill="url(#{currentTheme}Gradient)"
+						fill="url(#{gradientId})"
 					/>
 				</g>
 
@@ -537,9 +477,6 @@
 		will-change: transform;
 	}
 
-	.ghost-svg.ready {
-		/* Removed fade-in animation - ghost should always be visible */
-	}
 
 	.ghost-layer {
 		transform-origin: center center;
