@@ -70,13 +70,28 @@ export const autoSave = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.AUTO_SAVE
 export { CONSTANTS };
 
 // Helper function to apply theme across app components
-export function applyTheme(vibeId) {
+// This is the single source of truth for theme application
+export function applyTheme(vibeId, animate = false) {
 	// Update the store (which also updates localStorage)
 	theme.set(vibeId);
 
 	if (browser) {
+		const root = document.documentElement;
+
+		// Add transition for smooth theme change if requested
+		if (animate) {
+			root.style.transition = 'background-color 0.3s ease, color 0.3s ease';
+		}
+
 		// Apply theme to document root for consistent CSS targeting
-		document.documentElement.setAttribute('data-theme', vibeId);
+		root.setAttribute('data-theme', vibeId);
+
+		// Remove transition after animation
+		if (animate) {
+			setTimeout(() => {
+				root.style.transition = '';
+			}, 300);
+		}
 
 		// Update ghost icon by swapping the SVG file
 		const ghostBg = document.querySelector('.icon-bg');

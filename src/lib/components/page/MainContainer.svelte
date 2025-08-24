@@ -5,7 +5,6 @@
 	import ContentContainer from './ContentContainer.svelte';
 	import FooterComponent from './FooterComponent.svelte';
 	import { geminiService } from '$lib/services/geminiService';
-	import { themeService } from '$lib/services/theme';
 	import { modalService } from '$lib/services/modals';
 	import { firstVisitService, isFirstVisit } from '$lib/services/first-visit';
 	import { pwaService, deferredInstallPrompt, showPwaInstallPrompt } from '$lib/services/pwa';
