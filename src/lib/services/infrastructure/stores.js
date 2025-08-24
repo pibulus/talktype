@@ -5,7 +5,6 @@ import { ANIMATION } from '$lib/constants';
 // Core audio state store
 export const audioState = writable({
 	state: AudioStates.IDLE,
-	error: null,
 	previousState: null,
 	timestamp: Date.now(),
 	mimeType: null,
@@ -25,7 +24,6 @@ export const transcriptionState = writable({
 	inProgress: false,
 	progress: 0,
 	text: '',
-	error: null,
 	timestamp: null
 });
 
@@ -69,12 +67,11 @@ export const waveformData = derived(audioState, ($state) => $state.waveformData 
 
 // Action functions to update the stores
 export const audioActions = {
-	updateState(state, error = null) {
+	updateState(state) {
 		audioState.update((current) => ({
 			...current,
 			previousState: current.state,
 			state,
-			error,
 			timestamp: Date.now()
 		}));
 
@@ -167,9 +164,10 @@ export const transcriptionActions = {
 			...current,
 			inProgress: true,
 			progress: 0,
-			error: null,
 			timestamp: Date.now()
 		}));
+		// Clear any previous errors when starting new transcription
+		uiActions.clearErrorMessage();
 	},
 
 	updateProgress(progress) {
@@ -201,14 +199,11 @@ export const transcriptionActions = {
 		transcriptionState.update((current) => ({
 			...current,
 			inProgress: false,
-			progress: 0,
-			error
+			progress: 0
 		}));
 
-		uiState.update((current) => ({
-			...current,
-			errorMessage: `Transcription error: ${error || 'Unknown error'}`
-		}));
+		// Single place to set error
+		uiActions.setErrorMessage(`Transcription error: ${error || 'Unknown error'}`);
 	}
 };
 
@@ -268,7 +263,6 @@ export const uiActions = {
 export function resetStores() {
 	audioState.set({
 		state: AudioStates.IDLE,
-		error: null,
 		previousState: null,
 		timestamp: Date.now(),
 		mimeType: null,
@@ -286,7 +280,6 @@ export function resetStores() {
 		inProgress: false,
 		progress: 0,
 		text: '',
-		error: null,
 		timestamp: null
 	});
 
