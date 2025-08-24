@@ -7,7 +7,6 @@ import { get, writable } from 'svelte/store';
 import { userPreferences } from '../../infrastructure/stores';
 import { convertToWAV as convertToRawAudio, needsConversion } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
-import { updateDownloadStatus, setProgress, setComplete, setError } from './modelDownloader';
 
 // Lazy load Transformers.js to improve initial page load
 let pipeline = null;
@@ -96,14 +95,8 @@ export class WhisperService {
 			error: null
 		});
 
-		// Also update download status for UI tracking
-		updateDownloadStatus({
-			inProgress: true,
-			progress: 0,
-			modelId: get(userPreferences).whisperModel || 'base',
-			error: null,
-			stage: 'initializing'
-		});
+		// Log model loading start
+		console.log('[WhisperService] Starting model load...');
 
 		this.modelLoadPromise = this._loadModel();
 		return this.modelLoadPromise;
@@ -171,16 +164,14 @@ export class WhisperService {
 			const originalWarn = console.warn;
 			console.warn = () => {}; // Suppress warnings
 
-			// Track download start time for speed calculation
+			// Track download start time for logging
 			const downloadStartTime = Date.now();
-			let lastProgressTime = downloadStartTime;
-			let lastProgressBytes = 0;
 
 			try {
 				// Load Transformers.js if not already loaded
 				await loadTransformers();
 
-				// Create transcription pipeline with progress tracking
+				// Create transcription pipeline with simple logging
 				this.transcriber = await pipeline('automatic-speech-recognition', modelConfig.id, {
 					// Configure model options to minimize warnings
 					onnx: {
@@ -192,40 +183,17 @@ export class WhisperService {
 						graphOptimizationLevel: 'basic'
 					},
 					progress_callback: (progress) => {
-						// Convert progress data to percentage
+						// Simple console logging instead of complex progress tracking
 						if (progress.status === 'downloading') {
-							const percent = Math.round((progress.loaded / progress.total) * 80) + 10;
-
-							// Calculate download speed
-							const currentTime = Date.now();
-							const timeDiff = (currentTime - lastProgressTime) / 1000; // seconds
-							const bytesDiff = progress.loaded - lastProgressBytes;
-							const speed = timeDiff > 0 ? bytesDiff / timeDiff : 0;
-
-							// Update for next calculation
-							lastProgressTime = currentTime;
-							lastProgressBytes = progress.loaded;
-
-							// Calculate ETA
-							const remainingBytes = progress.total - progress.loaded;
-							const eta = speed > 0 ? remainingBytes / speed : 0;
-
+							const percent = Math.round((progress.loaded / progress.total) * 100);
+							console.log(`[WhisperService] Downloading model: ${percent}%`);
 							this.updateStatus({ progress: percent });
-							setProgress(percent / 100, 'downloading');
-
-							// Update download status with speed info
-							updateDownloadStatus({
-								bytesLoaded: progress.loaded,
-								bytesTotal: progress.total,
-								speed: speed,
-								eta: eta
-							});
 						} else if (progress.status === 'loading') {
+							console.log('[WhisperService] Loading model into memory...');
 							this.updateStatus({ progress: 90 });
-							setProgress(0.9, 'loading');
 						} else if (progress.status === 'ready') {
+							console.log('[WhisperService] Model ready!');
 							this.updateStatus({ progress: 95 });
-							setProgress(0.95, 'ready');
 						}
 					}
 				});
@@ -245,9 +213,6 @@ export class WhisperService {
 				error: null
 			});
 
-			// Mark download as complete
-			setComplete();
-
 			console.log(`✨ Whisper model loaded successfully in ${loadTimeSeconds}s`);
 			return { success: true, transcriber: this.transcriber };
 		} catch (error) {
@@ -263,9 +228,6 @@ export class WhisperService {
 				progress: 0,
 				error: error.message || 'Failed to load Whisper model'
 			});
-
-			// Mark download as failed
-			setError(error.message || 'Failed to load Whisper model');
 
 			this.modelLoadPromise = null;
 			return { success: false, error };
