@@ -1,0 +1,258 @@
+/* Ghost Animations - Performance Optimized Version
+   Reduced animations, simplified shadows, GPU-accelerated transforms only
+*/
+
+/* ========================================
+   BASE STYLES - Minimal transitions
+   ======================================== */
+
+.ghost-svg {
+	will-change: auto; /* Let browser decide */
+	transition: transform 0.3s ease;
+}
+
+.ghost-wobble-group {
+	transform-origin: center center;
+	will-change: auto; /* Only set during animation */
+}
+
+.ghost-container {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	cursor: pointer;
+	background: transparent;
+	border: none;
+	outline: none;
+	-webkit-tap-highlight-color: transparent;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.ghost-container:focus,
+.ghost-container:active,
+.ghost-container:focus-visible {
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+.ghost-non-clickable {
+	cursor: default;
+	pointer-events: none;
+}
+
+/* ========================================
+   THEME BASE - Single shadow layer
+   ======================================== */
+
+.theme-peach {
+	filter: drop-shadow(0 0 12px rgba(255, 135, 165, 0.3));
+}
+
+.theme-mint {
+	filter: drop-shadow(0 0 12px rgba(80, 235, 170, 0.3));
+}
+
+.theme-bubblegum {
+	filter: drop-shadow(0 0 12px rgba(200, 140, 255, 0.3));
+}
+
+.theme-rainbow {
+	filter: drop-shadow(0 0 12px rgba(255, 170, 190, 0.3));
+}
+
+/* ========================================
+   RECORDING STATE - Transform-based glow
+   ======================================== */
+
+.ghost-container.recording .ghost-wobble-group {
+	animation: recording-pulse 2s ease-in-out infinite;
+}
+
+/* Single unified recording animation */
+@keyframes recording-pulse {
+	0%, 100% {
+		transform: scale(1);
+		opacity: 0.95;
+	}
+	50% {
+		transform: scale(1.05);
+		opacity: 1;
+	}
+}
+
+/* Recording glow as box-shadow instead of filter (more performant) */
+.ghost-container.recording::before {
+	content: '';
+	position: absolute;
+	inset: -20px;
+	border-radius: 50%;
+	opacity: 0;
+	pointer-events: none;
+	animation: recording-glow-fade 2s ease-in-out infinite;
+}
+
+.ghost-container.recording.theme-peach::before {
+	background: radial-gradient(circle, rgba(255, 135, 165, 0.3) 0%, transparent 70%);
+}
+
+.ghost-container.recording.theme-mint::before {
+	background: radial-gradient(circle, rgba(80, 235, 170, 0.3) 0%, transparent 70%);
+}
+
+.ghost-container.recording.theme-bubblegum::before {
+	background: radial-gradient(circle, rgba(200, 140, 255, 0.3) 0%, transparent 70%);
+}
+
+.ghost-container.recording.theme-rainbow::before {
+	background: radial-gradient(circle, rgba(180, 130, 255, 0.3) 0%, transparent 70%);
+}
+
+@keyframes recording-glow-fade {
+	0%, 100% {
+		opacity: 0.5;
+	}
+	50% {
+		opacity: 0.8;
+	}
+}
+
+/* ========================================
+   WOBBLE ANIMATIONS - Simplified
+   ======================================== */
+
+.ghost-wobble-group.wobble-left {
+	animation: ghost-wobble-left 0.4s ease-out;
+}
+
+.ghost-wobble-group.wobble-right {
+	animation: ghost-wobble-right 0.4s ease-out;
+}
+
+.ghost-wobble-group.wobble-both {
+	animation: ghost-wobble-both 0.6s ease-out;
+}
+
+@keyframes ghost-wobble-left {
+	0%, 100% { transform: rotate(0deg); }
+	50% { transform: rotate(-6deg); }
+}
+
+@keyframes ghost-wobble-right {
+	0%, 100% { transform: rotate(0deg); }
+	50% { transform: rotate(6deg); }
+}
+
+@keyframes ghost-wobble-both {
+	0%, 100% { transform: rotate(0deg); }
+	25% { transform: rotate(-6deg); }
+	75% { transform: rotate(6deg); }
+}
+
+/* ========================================
+   INITIAL LOAD - Single animation
+   ======================================== */
+
+#ghost-wobble-group.initial-load-effect {
+	animation: initial-appear 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes initial-appear {
+	0% {
+		transform: scale(0) rotate(0deg);
+		opacity: 0;
+	}
+	40% {
+		opacity: 1;
+	}
+	70% {
+		transform: scale(1.1) rotate(0deg);
+	}
+	100% {
+		transform: scale(1) rotate(0deg);
+		opacity: 1;
+	}
+}
+
+/* ========================================
+   EYE ANIMATIONS - GPU accelerated
+   ======================================== */
+
+.ghost-eye {
+	transform-origin: center center;
+	transition: transform 0.08s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Blink uses scaleY only (GPU accelerated) */
+.ghost-eye.blink {
+	animation: eye-blink 0.3s ease-in-out;
+}
+
+@keyframes eye-blink {
+	0%, 100% { transform: scaleY(1); }
+	50% { transform: scaleY(0.1); }
+}
+
+/* ========================================
+   HOVER STATES - Simple scale
+   ======================================== */
+
+.ghost-container:hover .ghost-svg {
+	transform: scale(1.02) translateY(-2px);
+	transition: transform 0.3s ease;
+}
+
+/* ========================================
+   GRADIENT ANIMATIONS - DISABLED
+   Remove all gradient stop animations for performance
+   ======================================== */
+
+/* Gradients remain static - no animations */
+#peachGradient,
+#mintGradient,
+#bubblegumGradient,
+#rainbowGradient {
+	/* No animations */
+}
+
+/* ========================================
+   SPECIAL ANIMATIONS - On-demand only
+   ======================================== */
+
+.ghost-container.spin #ghost-spin-pivot {
+	animation: ghost-spin 2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes ghost-spin {
+	0%, 100% { transform: rotate(0deg); }
+	50% { transform: rotate(180deg) scale(1.1); }
+}
+
+/* ========================================
+   PERFORMANCE UTILITIES
+   ======================================== */
+
+/* Disable all animations for low-end devices */
+@media (prefers-reduced-motion: reduce) {
+	.ghost-svg,
+	.ghost-wobble-group,
+	.ghost-container,
+	.ghost-eye {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
+/* Force hardware acceleration on key elements */
+.ghost-wobble-group,
+.ghost-svg {
+	transform: translateZ(0);
+	backface-visibility: hidden;
+	perspective: 1000px;
+}
+
+/* Pause animations when not visible */
+.animations-paused * {
+	animation-play-state: paused !important;
+}

@@ -3,7 +3,7 @@
 	import { browser } from '$app/environment';
 	import { appActive } from '$lib/services/infrastructure';
 
-	import './ghost-animations.css';
+	import './ghost-animations-optimized.css';
 	import ghostPathsUrl from './ghost-paths.svg?url';
 	import { ANIMATION_STATES, CSS_CLASSES, PULSE_CONFIG, EYE_CONFIG } from './animationConfig.js';
 
