@@ -86,10 +86,14 @@
 			return;
 		}
 
-		// Check if model is ready first (only when starting recording)
-		if (!modelReady && !$isRecording) {
-			console.log('[RecordingControls] Model not ready, requesting initialization');
-			// Tell parent to show model initialization UI
+		// With hybrid transcription, we can always start recording
+		// Gemini API provides instant results while Whisper loads in background
+		// Only block if explicitly in privacy mode and model not ready
+		const privacyMode =
+			typeof localStorage !== 'undefined' &&
+			localStorage.getItem('talktype_privacy_mode') === 'true';
+		if (privacyMode && !modelReady && !$isRecording) {
+			console.log('[RecordingControls] Privacy mode: waiting for offline model');
 			onModelRequired();
 			return;
 		}

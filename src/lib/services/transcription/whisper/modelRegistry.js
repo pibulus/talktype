@@ -6,41 +6,63 @@
 import { writable, get, derived } from 'svelte/store';
 import { userPreferences } from '../../infrastructure/stores';
 import { browser } from '$app/environment';
+import { detectDeviceCapabilities } from '../deviceCapabilities';
 
 // Default model collection for Transformers.js
+// Progressive loading strategy: tiny → optimal based on device capabilities
 const DEFAULT_MODELS = [
 	{
 		id: 'tiny',
-		transformers_id: 'Xenova/whisper-tiny.en',
-		name: 'Tiny (English)',
-		description: 'Fast, compact model for basic transcription',
+		transformers_id: 'Xenova/whisper-tiny.en', // Proven to work with transformers.js
+		name: 'Tiny English (39MB)',
+		description: 'Instant loading, great for quick start',
 		size: 39 * 1024 * 1024, // ~39MB
 		parameters: 39000000,
 		languages: ['en'],
 		version: '1.0.0',
-		recommended_for: 'mobile, low-memory devices'
-	},
-	{
-		id: 'base',
-		transformers_id: 'Xenova/whisper-base.en',
-		name: 'Base (English)',
-		description: 'Better accuracy with reasonable size',
-		size: 74 * 1024 * 1024, // ~74MB
-		parameters: 74000000,
-		languages: ['en'],
-		version: '1.0.0',
-		recommended_for: 'desktop, balanced performance'
+		recommended_for: 'initial load, instant start, low-end devices',
+		speed_multiplier: 1.0,
+		accuracy_loss: 'baseline'
 	},
 	{
 		id: 'small',
-		transformers_id: 'Xenova/whisper-small.en',
-		name: 'Small (English)',
-		description: 'High accuracy for desktop devices',
+		transformers_id: 'Xenova/whisper-small', // Multilingual small model
+		name: 'Small (244MB)',
+		description: 'Good accuracy with reasonable size',
 		size: 244 * 1024 * 1024, // ~244MB
 		parameters: 244000000,
-		languages: ['en'],
+		languages: ['multi'],
 		version: '1.0.0',
-		recommended_for: 'desktop, high accuracy needs'
+		recommended_for: 'devices with 2-4GB RAM, mobile phones',
+		speed_multiplier: 1.0,
+		accuracy_loss: 'baseline'
+	},
+	{
+		id: 'medium',
+		transformers_id: 'Xenova/whisper-medium', // Default choice for most devices
+		name: 'Medium (1.5GB)',
+		description: 'Best accuracy/speed balance',
+		size: 1500 * 1024 * 1024, // ~1.5GB
+		parameters: 769000000,
+		languages: ['multi'],
+		version: '1.0.0',
+		recommended_for: 'devices with 4-8GB RAM, default choice',
+		speed_multiplier: 1.0,
+		accuracy_loss: 'baseline'
+	},
+	{
+		id: 'large',
+		transformers_id: 'Xenova/whisper-large', // High-end devices
+		name: 'Large (3GB)',
+		description: 'Maximum accuracy, slower processing',
+		size: 3000 * 1024 * 1024, // ~3GB
+		parameters: 1550000000,
+		languages: ['multi'],
+		version: '2.0.0',
+		recommended_for: 'high-end devices, pro users',
+		speed_multiplier: 1.0,
+		accuracy_loss: 'baseline',
+		webgpu_optimized: true
 	}
 ];
 
@@ -64,7 +86,7 @@ export const modelRegistry = writable({
 export const selectedModel = derived(
 	[modelRegistry, userPreferences],
 	([$modelRegistry, $userPreferences]) => {
-		const modelId = $userPreferences.whisperModel || 'base';
+		const modelId = $userPreferences.whisperModel || 'tiny';
 		return $modelRegistry.models.find((model) => model.id === modelId) || $modelRegistry.models[0];
 	}
 );
@@ -165,7 +187,55 @@ export function getTransformersInfo() {
 	return get(modelRegistry).transformersInfo;
 }
 
+/**
+ * Auto-select the best model based on device capabilities
+ */
+export function autoSelectModel() {
+	if (!browser) return 'tiny';
+
+	const device = detectDeviceCapabilities();
+	console.log('🔍 Device capabilities detected:', device);
+
+	// Check if user has manually selected a model
+	const prefs = get(userPreferences);
+	if (prefs.modelManuallySelected) {
+		console.log('📌 Using user-selected model:', prefs.whisperModel);
+		return prefs.whisperModel;
+	}
+
+	// Use device recommendation
+	const recommendedId = device.recommendedModel;
+	console.log(`🎯 Auto-selecting model: ${recommendedId} (${device.reason})`);
+
+	// Update preferences with auto-selected model
+	userPreferences.update((p) => ({
+		...p,
+		whisperModel: recommendedId,
+		modelAutoSelected: true
+	}));
+
+	return recommendedId;
+}
+
+/**
+ * Get progressive loading strategy for current device
+ */
+export function getProgressiveLoadingStrategy() {
+	if (!browser) {
+		return {
+			initial: 'tiny',
+			target: 'small',
+			fallback: 'tiny'
+		};
+	}
+
+	const device = detectDeviceCapabilities();
+	return device.loadingStrategy;
+}
+
 // Initialize on import if in browser
 if (browser) {
 	initializeModelRegistry();
+	// Auto-select best model on load
+	autoSelectModel();
 }

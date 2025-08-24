@@ -5,34 +5,33 @@
 
 import { get, writable } from 'svelte/store';
 import { userPreferences } from '../../infrastructure/stores';
+import { pipeline, env } from '@xenova/transformers';
 import { convertToWAV as convertToRawAudio, needsConversion } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
-import { updateDownloadStatus, setProgress, setComplete, setError } from './modelDownloader';
 
-// Lazy load Transformers.js to improve initial page load
-let pipeline = null;
-let env = null;
-let transformersLoaded = false;
+// Configure Transformers.js environment IMMEDIATELY for optimal performance
+env.allowRemoteModels = true;
+// Enable browser cache for models (this is the key setting!)
+env.useBrowserCache = true;
+// Use IndexedDB for persistent model storage across sessions
+env.useIndexedDB = true;
+// Don't set cacheDir - let it use default browser storage
 
-async function loadTransformers() {
-	if (transformersLoaded) return { pipeline, env };
-
-	const transformers = await import('@xenova/transformers');
-	pipeline = transformers.pipeline;
-	env = transformers.env;
-
-	// Configure Transformers.js environment for optimal performance
-	env.allowRemoteModels = true;
-	// Enable browser cache for models (this is the key setting!)
-	env.useBrowserCache = true;
-	// Use IndexedDB for persistent model storage across sessions
-	env.useIndexedDB = true;
-	// Don't set cacheDir - let it use default browser storage
-	// env.cacheDir = '.transformers-cache';  // This was causing issues!
-
-	transformersLoaded = true;
-	return { pipeline, env };
-}
+// Check for WebGPU support (10-100x faster!)
+const checkWebGPUSupport = async () => {
+	if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
+		try {
+			const adapter = await navigator.gpu.requestAdapter();
+			if (adapter) {
+				console.log('🚀 WebGPU detected! Transcription will be 10-100x faster');
+				return true;
+			}
+		} catch {
+			console.log('WebGPU not available, using WASM fallback');
+		}
+	}
+	return false;
+};
 
 // Service status store
 export const whisperStatus = writable({
@@ -96,14 +95,8 @@ export class WhisperService {
 			error: null
 		});
 
-		// Also update download status for UI tracking
-		updateDownloadStatus({
-			inProgress: true,
-			progress: 0,
-			modelId: get(userPreferences).whisperModel || 'base',
-			error: null,
-			stage: 'initializing'
-		});
+		// Log model loading start
+		console.log('[WhisperService] Starting model load...');
 
 		this.modelLoadPromise = this._loadModel();
 		return this.modelLoadPromise;
@@ -119,9 +112,9 @@ export class WhisperService {
 				throw new Error('Whisper transcription only available in browser environment');
 			}
 
-			// Get selected model from preferences or default to base
+			// Get selected model from preferences or default to tiny
 			const prefs = get(userPreferences);
-			const modelKey = prefs.whisperModel || 'base';
+			const modelKey = prefs.whisperModel || 'tiny';
 			const modelConfig = getModelInfo(modelKey);
 
 			if (!modelConfig) {
@@ -135,53 +128,36 @@ export class WhisperService {
 
 			console.log(`🎯 Loading Whisper model: ${modelKey} (${modelConfig.name})`);
 
-			// Configure ONNX Runtime environment to suppress warnings
-			if (typeof window !== 'undefined') {
-				// Wait for ort to be available
-				const waitForOrt = async () => {
-					let attempts = 0;
-					while (!window.ort && attempts < 10) {
-						await new Promise((resolve) => setTimeout(resolve, 100));
-						attempts++;
-					}
-
-					if (window.ort) {
-						try {
-							// Suppress all ONNX warnings and verbose output
-							window.ort.env.wasm.numThreads = 1;
-							window.ort.env.logLevel = 'fatal'; // Only show fatal errors
-							window.ort.env.debug = false;
-
-							// Also try to configure the WebAssembly environment
-							if (window.ort.env.wasm) {
-								window.ort.env.wasm.simd = true;
-								window.ort.env.wasm.proxy = false;
-							}
-						} catch (e) {
-							console.log('Could not configure ONNX environment:', e.message);
-						}
-					}
-				};
-
-				// Configure before loading model
-				await waitForOrt();
-			}
+			// Skip ONNX configuration - let Transformers.js handle it
+			// The ONNX runtime will be configured automatically by the library
 
 			// Temporarily suppress console.warn during model loading
 			const originalWarn = console.warn;
 			console.warn = () => {}; // Suppress warnings
 
-			// Track download start time for speed calculation
+			// Track download start time for logging
 			const downloadStartTime = Date.now();
-			let lastProgressTime = downloadStartTime;
-			let lastProgressBytes = 0;
 
 			try {
-				// Load Transformers.js if not already loaded
-				await loadTransformers();
+				// Transformers.js is already loaded at module level
 
-				// Create transcription pipeline with progress tracking
-				this.transcriber = await pipeline('automatic-speech-recognition', modelConfig.id, {
+				// Check for WebGPU support (but avoid on iOS due to memory issues)
+				const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+				const hasWebGPU = !isIOS && (await checkWebGPUSupport());
+
+				// Configure pipeline options based on device capabilities
+				const pipelineOptions = {
+					// Use WebGPU if available (10-100x faster!)
+					device: hasWebGPU ? 'webgpu' : 'wasm',
+
+					// Optimal dtype settings for WebGPU (based on research)
+					dtype: hasWebGPU
+						? {
+								encoder_model: 'fp32', // Encoder is sensitive, use fp32
+								decoder_model_merged: 'q4' // Decoder can be quantized for speed
+							}
+						: 'q8', // WASM default
+
 					// Configure model options to minimize warnings
 					onnx: {
 						logSeverityLevel: 4, // 0=Verbose, 1=Info, 2=Warning, 3=Error, 4=Fatal
@@ -189,46 +165,30 @@ export class WhisperService {
 						enableCpuMemArena: false,
 						enableMemPattern: false,
 						executionMode: 'sequential',
-						graphOptimizationLevel: 'basic'
+						graphOptimizationLevel: hasWebGPU ? 'all' : 'basic'
 					},
 					progress_callback: (progress) => {
-						// Convert progress data to percentage
+						// Simple console logging instead of complex progress tracking
 						if (progress.status === 'downloading') {
-							const percent = Math.round((progress.loaded / progress.total) * 80) + 10;
-
-							// Calculate download speed
-							const currentTime = Date.now();
-							const timeDiff = (currentTime - lastProgressTime) / 1000; // seconds
-							const bytesDiff = progress.loaded - lastProgressBytes;
-							const speed = timeDiff > 0 ? bytesDiff / timeDiff : 0;
-
-							// Update for next calculation
-							lastProgressTime = currentTime;
-							lastProgressBytes = progress.loaded;
-
-							// Calculate ETA
-							const remainingBytes = progress.total - progress.loaded;
-							const eta = speed > 0 ? remainingBytes / speed : 0;
-
+							const percent = Math.round((progress.loaded / progress.total) * 100);
+							console.log(`[WhisperService] Downloading model: ${percent}%`);
 							this.updateStatus({ progress: percent });
-							setProgress(percent / 100, 'downloading');
-
-							// Update download status with speed info
-							updateDownloadStatus({
-								bytesLoaded: progress.loaded,
-								bytesTotal: progress.total,
-								speed: speed,
-								eta: eta
-							});
 						} else if (progress.status === 'loading') {
+							console.log('[WhisperService] Loading model into memory...');
 							this.updateStatus({ progress: 90 });
-							setProgress(0.9, 'loading');
 						} else if (progress.status === 'ready') {
+							console.log('[WhisperService] Model ready!');
 							this.updateStatus({ progress: 95 });
-							setProgress(0.95, 'ready');
 						}
 					}
-				});
+				};
+
+				// Create transcription pipeline with optimized settings
+				this.transcriber = await pipeline(
+					'automatic-speech-recognition',
+					modelConfig.id,
+					pipelineOptions
+				);
 			} finally {
 				// Restore console.warn
 				console.warn = originalWarn;
@@ -245,16 +205,9 @@ export class WhisperService {
 				error: null
 			});
 
-			// Mark download as complete
-			setComplete();
-
 			console.log(`✨ Whisper model loaded successfully in ${loadTimeSeconds}s`);
 			return { success: true, transcriber: this.transcriber };
 		} catch (error) {
-			// Restore console.warn if there was an error
-			if (typeof originalWarn !== 'undefined') {
-				console.warn = originalWarn;
-			}
 			console.error('Failed to load Whisper model:', error);
 
 			this.updateStatus({
@@ -263,9 +216,6 @@ export class WhisperService {
 				progress: 0,
 				error: error.message || 'Failed to load Whisper model'
 			});
-
-			// Mark download as failed
-			setError(error.message || 'Failed to load Whisper model');
 
 			this.modelLoadPromise = null;
 			return { success: false, error };
@@ -316,18 +266,64 @@ export class WhisperService {
 				audioDuration = processedAudio.size / (16000 * 2);
 			}
 
-			// Configure transcription options to prevent hallucinations
+			// Get current model info for language detection
+			const prefs = get(userPreferences);
+			const modelKey = prefs.whisperModel || 'tiny';
+			const modelConfig = getModelInfo(modelKey);
+
+			// Configure transcription options for optimal speed/quality balance
 			const transcriptionOptions = {
-				// Basic settings that work
+				// Use stable generation settings
 				temperature: 0,
 				do_sample: false,
-				return_timestamps: true
+				return_timestamps: true,
+
+				// Speed optimizations with minimal accuracy loss
+				beam_size: 1, // Greedy search is 2-3x faster than beam search
+				patience: 1.0, // Standard patience for early stopping
+				length_penalty: 1.0, // No length penalty for natural output
+
+				// Language optimization (skip detection for English models)
+				language: modelConfig.id.includes('.en') ? 'en' : null,
+				task: 'transcribe' // Faster than 'translate'
 			};
 
-			// Add chunking for longer audio (optimize for speed)
+			// Smart chunking based on audio duration and device memory
+			const deviceMemory = navigator.deviceMemory || 4; // GB of RAM
+
 			if (audioDuration > 30) {
-				transcriptionOptions.chunk_length_s = 20; // Smaller chunks = faster processing
-				transcriptionOptions.stride_length_s = 2; // Less overlap = faster but still accurate
+				// Platform-specific chunking to prevent memory issues
+				const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+				const isAndroid = /Android/i.test(navigator.userAgent);
+
+				if (isIOS) {
+					// iOS has strict memory limits - use conservative chunking
+					transcriptionOptions.chunk_length_s = 10;
+					transcriptionOptions.stride_length_s = 2;
+					console.log('[Whisper] iOS detected: using conservative chunking');
+				} else if (isAndroid) {
+					// Android: adapt based on available memory
+					if (deviceMemory >= 4) {
+						transcriptionOptions.chunk_length_s = 20;
+						transcriptionOptions.stride_length_s = 3;
+					} else {
+						transcriptionOptions.chunk_length_s = 10;
+						transcriptionOptions.stride_length_s = 2;
+					}
+					console.log(`[Whisper] Android with ${deviceMemory}GB RAM: adaptive chunking`);
+				} else if (deviceMemory >= 8) {
+					// Desktop high-end: larger chunks for better context
+					transcriptionOptions.chunk_length_s = 30;
+					transcriptionOptions.stride_length_s = 5;
+				} else if (deviceMemory >= 4) {
+					// Desktop mid-range: balanced chunking
+					transcriptionOptions.chunk_length_s = 20;
+					transcriptionOptions.stride_length_s = 3;
+				} else {
+					// Low-end device: smaller chunks to prevent OOM
+					transcriptionOptions.chunk_length_s = 10;
+					transcriptionOptions.stride_length_s = 2;
+				}
 			}
 
 			console.log('[Whisper] Transcribing with options:', transcriptionOptions);
