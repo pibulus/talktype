@@ -11,9 +11,8 @@ export const audioState = writable({
 	waveformData: []
 });
 
-// Recording state
+// Recording state (removed isRecording - use audioState instead)
 export const recordingState = writable({
-	isRecording: false,
 	duration: 0,
 	audioBlob: null,
 	audioURL: null
@@ -75,12 +74,10 @@ export const audioActions = {
 			timestamp: Date.now()
 		}));
 
-		// Update recording state when audio state changes
+		// Start/stop timer based on recording state
 		if (state === AudioStates.RECORDING) {
-			recordingState.update((current) => ({ ...current, isRecording: true }));
 			this.startRecordingTimer();
 		} else if (state !== AudioStates.RECORDING) {
-			recordingState.update((current) => ({ ...current, isRecording: false }));
 			this.stopRecordingTimer();
 		}
 	},
@@ -270,7 +267,6 @@ export function resetStores() {
 	});
 
 	recordingState.set({
-		isRecording: false,
 		duration: 0,
 		audioBlob: null,
 		audioURL: null
