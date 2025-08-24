@@ -206,7 +206,7 @@
 					<Toggle
 						label="Auto-Save Transcripts"
 						description="Automatically save all your transcriptions"
-						bind:checked={$autoSave === 'true'}
+						checked={$autoSave === 'true'}
 						on:change={() => {
 							const newValue = $autoSave === 'true' ? 'false' : 'true';
 							$autoSave = newValue;
