@@ -39,7 +39,7 @@
 	let unsubscribeTheme;
 	let wakeUpBlinkTriggered = false;
 	let eyeTracker;
-	
+
 	// === REACTIVE DECLARATIONS ===
 	$: animationsEnabled = $appActive;
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
@@ -96,7 +96,6 @@
 			lastProcessingState = isProcessing;
 			ghostStateStore.setProcessing(isProcessing);
 		}
-
 	}
 
 	// Apply theme changes when they occur
@@ -116,7 +115,6 @@
 			forceReflow(shapeElem);
 		}
 
-
 		// Create or update dynamic styles element
 		let ghostStyleElement = document.getElementById('ghost-dynamic-styles');
 		if (!ghostStyleElement) {
@@ -133,7 +131,6 @@
 		if (debug) {
 			console.log('[Ghost] Theme changed, styles updated');
 		}
-
 	}
 
 	// Clean up on destroy - ensure all animation resources are cleared
@@ -142,7 +139,6 @@
 		if (unsubscribeTheme) {
 			unsubscribeTheme();
 		}
-
 
 		// Remove dynamic styles
 		if (ghostStyleElement) {
@@ -153,7 +149,6 @@
 		// Reset ghost state
 		ghostStateStore.reset();
 	});
-
 
 	// Public methods to expose animation controls
 	export function pulse() {
@@ -235,7 +230,6 @@
 			});
 			// Initialize with the main ghost SVG container (for getBoundingClientRect)
 			eyeTracker.initialize(ghostSvg);
-
 
 			// Set debug mode
 			ghostStateStore.setDebug(debug);
@@ -476,7 +470,6 @@
 		transform: translateZ(0);
 		will-change: transform;
 	}
-
 
 	.ghost-layer {
 		transform-origin: center center;

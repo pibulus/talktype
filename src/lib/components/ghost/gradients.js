@@ -83,5 +83,5 @@ export function getGradientId(theme) {
  * @returns {string[]} - Array of gradient IDs
  */
 export function getAllGradientIds() {
-	return Object.values(GRADIENT_DEFS).map(def => def.id);
+	return Object.values(GRADIENT_DEFS).map((def) => def.id);
 }
