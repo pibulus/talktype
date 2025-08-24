@@ -16,11 +16,11 @@ let transformersLoaded = false;
 
 async function loadTransformers() {
 	if (transformersLoaded) return { pipeline, env };
-	
+
 	const transformers = await import('@xenova/transformers');
 	pipeline = transformers.pipeline;
 	env = transformers.env;
-	
+
 	// Configure Transformers.js environment for optimal performance
 	env.allowRemoteModels = true;
 	// Enable browser cache for models (this is the key setting!)
@@ -29,7 +29,7 @@ async function loadTransformers() {
 	env.useIndexedDB = true;
 	// Don't set cacheDir - let it use default browser storage
 	// env.cacheDir = '.transformers-cache';  // This was causing issues!
-	
+
 	transformersLoaded = true;
 	return { pipeline, env };
 }
@@ -179,7 +179,7 @@ export class WhisperService {
 			try {
 				// Load Transformers.js if not already loaded
 				await loadTransformers();
-				
+
 				// Create transcription pipeline with progress tracking
 				this.transcriber = await pipeline('automatic-speech-recognition', modelConfig.id, {
 					// Configure model options to minimize warnings

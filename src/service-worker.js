@@ -67,11 +67,11 @@ self.addEventListener('fetch', (event) => {
 		if (url.href.includes('huggingface.co') || url.href.includes('.onnx')) {
 			const modelCache = await caches.open(MODELS_CACHE);
 			const cachedResponse = await modelCache.match(event.request);
-			
+
 			if (cachedResponse) {
 				return cachedResponse;
 			}
-			
+
 			// Download and cache model files
 			try {
 				const response = await fetch(event.request);

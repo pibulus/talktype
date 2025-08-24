@@ -72,7 +72,8 @@
 
 /* Single unified recording animation */
 @keyframes recording-pulse {
-	0%, 100% {
+	0%,
+	100% {
 		transform: scale(1);
 		opacity: 0.95;
 	}
@@ -110,7 +111,8 @@
 }
 
 @keyframes recording-glow-fade {
-	0%, 100% {
+	0%,
+	100% {
 		opacity: 0.5;
 	}
 	50% {
@@ -135,19 +137,36 @@
 }
 
 @keyframes ghost-wobble-left {
-	0%, 100% { transform: rotate(0deg); }
-	50% { transform: rotate(-6deg); }
+	0%,
+	100% {
+		transform: rotate(0deg);
+	}
+	50% {
+		transform: rotate(-6deg);
+	}
 }
 
 @keyframes ghost-wobble-right {
-	0%, 100% { transform: rotate(0deg); }
-	50% { transform: rotate(6deg); }
+	0%,
+	100% {
+		transform: rotate(0deg);
+	}
+	50% {
+		transform: rotate(6deg);
+	}
 }
 
 @keyframes ghost-wobble-both {
-	0%, 100% { transform: rotate(0deg); }
-	25% { transform: rotate(-6deg); }
-	75% { transform: rotate(6deg); }
+	0%,
+	100% {
+		transform: rotate(0deg);
+	}
+	25% {
+		transform: rotate(-6deg);
+	}
+	75% {
+		transform: rotate(6deg);
+	}
 }
 
 /* ========================================
@@ -190,8 +209,13 @@
 }
 
 @keyframes eye-blink {
-	0%, 100% { transform: scaleY(1); }
-	50% { transform: scaleY(0.1); }
+	0%,
+	100% {
+		transform: scaleY(1);
+	}
+	50% {
+		transform: scaleY(0.1);
+	}
 }
 
 /* ========================================
@@ -225,8 +249,13 @@
 }
 
 @keyframes ghost-spin {
-	0%, 100% { transform: rotate(0deg); }
-	50% { transform: rotate(180deg) scale(1.1); }
+	0%,
+	100% {
+		transform: rotate(0deg);
+	}
+	50% {
+		transform: rotate(180deg) scale(1.1);
+	}
 }
 
 /* ========================================
