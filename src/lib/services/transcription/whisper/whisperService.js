@@ -5,19 +5,34 @@
 
 import { get, writable } from 'svelte/store';
 import { userPreferences } from '../../infrastructure/stores';
-import { pipeline, env } from '@xenova/transformers';
-
-// Configure Transformers.js environment for optimal performance
-env.allowRemoteModels = true;
-// Enable browser cache for models (this is the key setting!)
-env.useBrowserCache = true;
-// Use IndexedDB for persistent model storage across sessions
-env.useIndexedDB = true;
-// Don't set cacheDir - let it use default browser storage
-// env.cacheDir = '.transformers-cache';  // This was causing issues!
 import { convertToWAV as convertToRawAudio, needsConversion } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
 import { updateDownloadStatus, setProgress, setComplete, setError } from './modelDownloader';
+
+// Lazy load Transformers.js to improve initial page load
+let pipeline = null;
+let env = null;
+let transformersLoaded = false;
+
+async function loadTransformers() {
+	if (transformersLoaded) return { pipeline, env };
+	
+	const transformers = await import('@xenova/transformers');
+	pipeline = transformers.pipeline;
+	env = transformers.env;
+	
+	// Configure Transformers.js environment for optimal performance
+	env.allowRemoteModels = true;
+	// Enable browser cache for models (this is the key setting!)
+	env.useBrowserCache = true;
+	// Use IndexedDB for persistent model storage across sessions
+	env.useIndexedDB = true;
+	// Don't set cacheDir - let it use default browser storage
+	// env.cacheDir = '.transformers-cache';  // This was causing issues!
+	
+	transformersLoaded = true;
+	return { pipeline, env };
+}
 
 // Service status store
 export const whisperStatus = writable({
@@ -162,6 +177,9 @@ export class WhisperService {
 			let lastProgressBytes = 0;
 
 			try {
+				// Load Transformers.js if not already loaded
+				await loadTransformers();
+				
 				// Create transcription pipeline with progress tracking
 				this.transcriber = await pipeline('automatic-speech-recognition', modelConfig.id, {
 					// Configure model options to minimize warnings

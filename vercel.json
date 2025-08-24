@@ -1,0 +1,12 @@
+{
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"functions": {
+		"api/*": {
+			"runtime": "nodejs20.x"
+		}
+	},
+	"buildCommand": "npm run build",
+	"outputDirectory": ".vercel/output",
+	"installCommand": "npm install",
+	"framework": "sveltekit"
+}
