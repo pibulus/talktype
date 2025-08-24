@@ -137,15 +137,13 @@ export class WhisperService {
 
 			// Track download start time for logging
 			const downloadStartTime = Date.now();
-			
-			// Store modelConfig for use in catch block
-			let modelConfigRef = modelConfig;
 
 			try {
 				// Transformers.js is already loaded at module level
 
-				// Check for WebGPU support
-				const hasWebGPU = await checkWebGPUSupport();
+				// Check for WebGPU support (but avoid on iOS due to memory issues)
+				const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+				const hasWebGPU = !isIOS && (await checkWebGPUSupport());
 
 				// Configure pipeline options based on device capabilities
 				const pipelineOptions = {
@@ -210,10 +208,6 @@ export class WhisperService {
 			console.log(`✨ Whisper model loaded successfully in ${loadTimeSeconds}s`);
 			return { success: true, transcriber: this.transcriber };
 		} catch (error) {
-			// Restore console.warn if there was an error
-			if (typeof originalWarn !== 'undefined') {
-				console.warn = originalWarn;
-			}
 			console.error('Failed to load Whisper model:', error);
 
 			this.updateStatus({
@@ -298,13 +292,31 @@ export class WhisperService {
 			const deviceMemory = navigator.deviceMemory || 4; // GB of RAM
 
 			if (audioDuration > 30) {
-				// Adaptive chunking based on device capabilities
-				if (deviceMemory >= 8) {
-					// High-end device: larger chunks for better context
+				// Platform-specific chunking to prevent memory issues
+				const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+				const isAndroid = /Android/i.test(navigator.userAgent);
+
+				if (isIOS) {
+					// iOS has strict memory limits - use conservative chunking
+					transcriptionOptions.chunk_length_s = 10;
+					transcriptionOptions.stride_length_s = 2;
+					console.log('[Whisper] iOS detected: using conservative chunking');
+				} else if (isAndroid) {
+					// Android: adapt based on available memory
+					if (deviceMemory >= 4) {
+						transcriptionOptions.chunk_length_s = 20;
+						transcriptionOptions.stride_length_s = 3;
+					} else {
+						transcriptionOptions.chunk_length_s = 10;
+						transcriptionOptions.stride_length_s = 2;
+					}
+					console.log(`[Whisper] Android with ${deviceMemory}GB RAM: adaptive chunking`);
+				} else if (deviceMemory >= 8) {
+					// Desktop high-end: larger chunks for better context
 					transcriptionOptions.chunk_length_s = 30;
 					transcriptionOptions.stride_length_s = 5;
 				} else if (deviceMemory >= 4) {
-					// Mid-range device: balanced chunking
+					// Desktop mid-range: balanced chunking
 					transcriptionOptions.chunk_length_s = 20;
 					transcriptionOptions.stride_length_s = 3;
 				} else {
@@ -312,7 +324,6 @@ export class WhisperService {
 					transcriptionOptions.chunk_length_s = 10;
 					transcriptionOptions.stride_length_s = 2;
 				}
-				console.log(`[Whisper] Using adaptive chunking for ${deviceMemory}GB device`);
 			}
 
 			console.log('[Whisper] Transcribing with options:', transcriptionOptions);

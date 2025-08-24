@@ -10,7 +10,7 @@ import { browser } from '$app/environment';
  */
 export function detectDeviceCapabilities() {
 	if (!browser) {
-		return { tier: 'medium', recommendedModel: 'distil-medium' };
+		return { tier: 'medium', recommendedModel: 'tiny' };
 	}
 
 	// Gather device information
@@ -35,7 +35,10 @@ export function detectDeviceCapabilities() {
 			isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
 			isIOS: /iPhone|iPad|iPod/i.test(navigator.userAgent),
 			isAndroid: /Android/i.test(navigator.userAgent),
-			isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+			isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
+			isChrome: /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent),
+			// Detect iOS Chrome (which is actually Safari WebKit)
+			isIOSChrome: /CriOS/.test(navigator.userAgent)
 		},
 
 		// WebGPU support
@@ -47,35 +50,35 @@ export function detectDeviceCapabilities() {
 
 	// Determine device tier
 	let tier = 'medium';
-	let recommendedModel = 'distil-medium';
-	let reason = 'Balanced performance';
+	let recommendedModel = 'tiny'; // Start with tiny for progressive loading
+	let reason = 'Progressive loading from tiny';
 
 	// High-end device detection
-	if (capabilities.memory >= 8 && capabilities.cores >= 8 && capabilities.hasWebGPU) {
+	if (capabilities.memory >= 8 && capabilities.cores >= 8) {
 		tier = 'high';
-		recommendedModel = 'distil-large-v2';
-		reason = 'High-end device with WebGPU support';
+		recommendedModel = 'medium'; // Medium is more practical than large
+		reason = 'High-end device, using medium for balance';
 	}
 	// Mid-high tier (good memory but maybe no WebGPU)
 	else if (capabilities.memory >= 6 && capabilities.cores >= 6) {
 		tier = 'medium-high';
-		recommendedModel = 'distil-medium';
-		reason = 'Good specs for balanced performance';
+		recommendedModel = 'small';
+		reason = 'Good specs, using small model';
 	}
 	// Standard mid-tier
 	else if (capabilities.memory >= 4) {
 		tier = 'medium';
-		recommendedModel = 'distil-medium';
+		recommendedModel = 'small';
 		reason = 'Standard device with adequate memory';
 	}
 	// Low-mid tier
-	else if (capabilities.memory >= 3) {
+	else if (capabilities.memory >= 2) {
 		tier = 'low-medium';
-		recommendedModel = 'distil-small';
-		reason = 'Limited memory, using smaller model';
+		recommendedModel = 'tiny';
+		reason = 'Limited memory, using tiny model';
 	}
 	// Low-end or mobile devices
-	else if (capabilities.platform.isMobile || capabilities.memory < 3) {
+	else if (capabilities.platform.isMobile || capabilities.memory < 2) {
 		tier = 'low';
 		recommendedModel = 'tiny';
 		reason = capabilities.platform.isMobile ? 'Mobile device' : 'Low memory device';
@@ -88,12 +91,18 @@ export function detectDeviceCapabilities() {
 		reason = 'Data saver mode enabled';
 	}
 
-	if (capabilities.platform.isIOS && capabilities.platform.isSafari) {
-		// iOS Safari has stricter memory limits
-		if (recommendedModel === 'distil-large-v2') {
-			recommendedModel = 'distil-medium';
-			reason = 'iOS Safari memory constraints';
+	// Platform-specific adjustments based on known issues
+	if (capabilities.platform.isIOS) {
+		// iOS has known memory issues with transformers.js v3
+		// Both Safari and Chrome on iOS use WebKit and have same constraints
+		if (recommendedModel !== 'tiny') {
+			recommendedModel = 'tiny';
+			reason = 'iOS memory constraints (transformers.js v3 issue)';
 		}
+	} else if (capabilities.platform.isAndroid && capabilities.memory < 4) {
+		// Android with low memory should use tiny
+		recommendedModel = 'tiny';
+		reason = 'Android low memory optimization';
 	}
 
 	return {
@@ -105,7 +114,7 @@ export function detectDeviceCapabilities() {
 		loadingStrategy: {
 			initial: 'tiny', // Always start with tiny for instant experience
 			target: recommendedModel, // Load this in background
-			fallback: tier === 'low' ? null : 'distil-small' // Fallback if target fails
+			fallback: tier === 'low' ? null : 'small' // Fallback if target fails
 		}
 	};
 }
@@ -145,20 +154,20 @@ export function getPerformanceEstimate(modelId, deviceTier) {
 			medium: { speed: '30x', loadTime: '2s' },
 			low: { speed: '10x', loadTime: '3s' }
 		},
-		'distil-small': {
-			high: { speed: '40x', loadTime: '3s' },
-			medium: { speed: '20x', loadTime: '5s' },
-			low: { speed: '8x', loadTime: '8s' }
+		small: {
+			high: { speed: '20x', loadTime: '5s' },
+			medium: { speed: '12x', loadTime: '8s' },
+			low: { speed: '5x', loadTime: '12s' }
 		},
-		'distil-medium': {
-			high: { speed: '35x', loadTime: '5s' },
-			medium: { speed: '15x', loadTime: '8s' },
-			low: { speed: '5x', loadTime: '15s' }
+		medium: {
+			high: { speed: '10x', loadTime: '15s' },
+			medium: { speed: '6x', loadTime: '25s' },
+			low: { speed: '2x', loadTime: '40s' }
 		},
-		'distil-large-v2': {
-			high: { speed: '25x', loadTime: '10s' },
-			medium: { speed: '10x', loadTime: '20s' },
-			low: { speed: '3x', loadTime: '30s' }
+		large: {
+			high: { speed: '5x', loadTime: '30s' },
+			medium: { speed: '3x', loadTime: '50s' },
+			low: { speed: '1x', loadTime: '90s' }
 		}
 	};
 
@@ -233,13 +242,13 @@ export class PerformanceMonitor {
 	}
 
 	getSmallerModel(current) {
-		const models = ['tiny', 'distil-small', 'distil-medium', 'distil-large-v2'];
+		const models = ['tiny', 'small', 'medium', 'large'];
 		const idx = models.indexOf(current);
 		return idx > 0 ? models[idx - 1] : current;
 	}
 
 	getLargerModel(current) {
-		const models = ['tiny', 'distil-small', 'distil-medium', 'distil-large-v2'];
+		const models = ['tiny', 'small', 'medium', 'large'];
 		const idx = models.indexOf(current);
 		return idx < models.length - 1 ? models[idx + 1] : current;
 	}

@@ -13,7 +13,7 @@ import { detectDeviceCapabilities } from '../deviceCapabilities';
 const DEFAULT_MODELS = [
 	{
 		id: 'tiny',
-		transformers_id: 'Xenova/whisper-tiny.en', // Using proven Xenova model for initial load
+		transformers_id: 'Xenova/whisper-tiny.en', // Proven to work with transformers.js
 		name: 'Tiny English (39MB)',
 		description: 'Instant loading, great for quick start',
 		size: 39 * 1024 * 1024, // ~39MB
@@ -25,43 +25,43 @@ const DEFAULT_MODELS = [
 		accuracy_loss: 'baseline'
 	},
 	{
-		id: 'distil-small',
-		transformers_id: 'distil-whisper/distil-small.en', // Official distil-whisper
-		name: 'Distil Small (166MB)',
-		description: '5.8x faster than Whisper v2',
-		size: 166 * 1024 * 1024, // ~166MB
-		parameters: 166000000,
-		languages: ['en'],
+		id: 'small',
+		transformers_id: 'Xenova/whisper-small', // Multilingual small model
+		name: 'Small (244MB)',
+		description: 'Good accuracy with reasonable size',
+		size: 244 * 1024 * 1024, // ~244MB
+		parameters: 244000000,
+		languages: ['multi'],
 		version: '1.0.0',
-		recommended_for: 'devices with <4GB RAM, mobile phones',
-		speed_multiplier: 5.8,
-		accuracy_loss: '3.2% WER increase'
+		recommended_for: 'devices with 2-4GB RAM, mobile phones',
+		speed_multiplier: 1.0,
+		accuracy_loss: 'baseline'
 	},
 	{
-		id: 'distil-medium',
-		transformers_id: 'distil-whisper/distil-medium.en', // Official distil-whisper
-		name: 'Distil Medium (394MB)',
-		description: '6.8x faster with <1% WER loss',
-		size: 394 * 1024 * 1024, // ~394MB
-		parameters: 394000000,
-		languages: ['en'],
+		id: 'medium',
+		transformers_id: 'Xenova/whisper-medium', // Default choice for most devices
+		name: 'Medium (1.5GB)',
+		description: 'Best accuracy/speed balance',
+		size: 1500 * 1024 * 1024, // ~1.5GB
+		parameters: 769000000,
+		languages: ['multi'],
 		version: '1.0.0',
 		recommended_for: 'devices with 4-8GB RAM, default choice',
-		speed_multiplier: 6.8,
-		accuracy_loss: '0.8% WER increase'
+		speed_multiplier: 1.0,
+		accuracy_loss: 'baseline'
 	},
 	{
-		id: 'distil-large-v2',
-		transformers_id: 'distil-whisper/distil-large-v2', // Most proven distil model
-		name: 'Distil Large v2 (756MB)',
-		description: '5.8x faster, within 1% WER',
-		size: 756 * 1024 * 1024, // ~756MB
-		parameters: 756000000,
-		languages: ['en'],
+		id: 'large',
+		transformers_id: 'Xenova/whisper-large', // High-end devices
+		name: 'Large (3GB)',
+		description: 'Maximum accuracy, slower processing',
+		size: 3000 * 1024 * 1024, // ~3GB
+		parameters: 1550000000,
+		languages: ['multi'],
 		version: '2.0.0',
 		recommended_for: 'high-end devices, pro users',
-		speed_multiplier: 5.8,
-		accuracy_loss: '<1% WER',
+		speed_multiplier: 1.0,
+		accuracy_loss: 'baseline',
 		webgpu_optimized: true
 	}
 ];
@@ -191,7 +191,7 @@ export function getTransformersInfo() {
  * Auto-select the best model based on device capabilities
  */
 export function autoSelectModel() {
-	if (!browser) return 'distil-tiny';
+	if (!browser) return 'tiny';
 
 	const device = detectDeviceCapabilities();
 	console.log('🔍 Device capabilities detected:', device);
@@ -224,8 +224,8 @@ export function getProgressiveLoadingStrategy() {
 	if (!browser) {
 		return {
 			initial: 'tiny',
-			target: 'distil-medium',
-			fallback: 'distil-small'
+			target: 'small',
+			fallback: 'tiny'
 		};
 	}
 
