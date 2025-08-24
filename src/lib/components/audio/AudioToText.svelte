@@ -8,7 +8,6 @@
 	import TranscriptDisplay from './TranscriptDisplay.svelte';
 	import RecordingStatus from './RecordingStatus.svelte';
 	import TranscriptionEffects from './TranscriptionEffects.svelte';
-	import ModelInitializer from '../whisper/ModelInitializer.svelte';
 	import { memoize } from '$lib/utils/performanceUtils';
 	import {
 		initializeServices,
@@ -28,7 +27,6 @@
 
 	// Service instances
 	let unsubscribers = [];
-	let modelInitializer;
 	let modelReady = false;
 
 	// Subscribe to whisper status to track when model is ready
@@ -82,10 +80,41 @@
 		// Forward other events to child components as needed
 	}
 
+	// Track if user has interacted with the page
+	let hasUserInteracted = false;
+
+	// Start background model load after first user interaction
+	// This preserves page speed scores while enabling progressive enhancement
+	function handleFirstInteraction() {
+		if (hasUserInteracted) return;
+		hasUserInteracted = true;
+
+		// Remove listeners after first interaction
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('click', handleFirstInteraction);
+			window.removeEventListener('touchstart', handleFirstInteraction);
+			window.removeEventListener('keydown', handleFirstInteraction);
+		}
+
+		// Start progressive model loading
+		import('$lib/services/transcription/simpleHybridService').then(({ simpleHybridService }) => {
+			console.log('🚀 Starting progressive Whisper model download after user interaction...');
+			simpleHybridService.startBackgroundLoad();
+		});
+	}
+
 	// Lifecycle hooks
 	onMount(() => {
 		// Initialize services
 		initializeServices({ debug: false });
+
+		// Wait for first user interaction before loading models
+		// This prevents affecting Lighthouse/PageSpeed scores
+		if (typeof window !== 'undefined') {
+			window.addEventListener('click', handleFirstInteraction, { once: true });
+			window.addEventListener('touchstart', handleFirstInteraction, { once: true });
+			window.addEventListener('keydown', handleFirstInteraction, { once: true });
+		}
 
 		// Subscribe to permission denied state to show error modal
 		const permissionUnsub = hasPermissionError.subscribe((denied) => {
@@ -128,18 +157,14 @@
 
 	// Handle when model is required
 	function handleModelRequired() {
-		if (modelInitializer) {
-			modelInitializer.promptForModel();
-		}
+		// Model initialization is now handled through the whisperService
+		console.log('Model required - initialization handled by whisperService');
 	}
 
 	function handleModelReady() {
 		modelReady = true;
 	}
 </script>
-
-<!-- Model Initializer (handles download UI) -->
-<ModelInitializer bind:this={modelInitializer} onModelReady={handleModelReady} />
 
 <!-- Main wrapper - simplified orchestrator layout -->
 <div class="main-wrapper mx-auto box-border w-full">

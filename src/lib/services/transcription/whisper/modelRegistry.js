@@ -6,41 +6,63 @@
 import { writable, get, derived } from 'svelte/store';
 import { userPreferences } from '../../infrastructure/stores';
 import { browser } from '$app/environment';
+import { detectDeviceCapabilities } from '../deviceCapabilities';
 
 // Default model collection for Transformers.js
+// Progressive loading strategy: tiny → optimal based on device capabilities
 const DEFAULT_MODELS = [
 	{
 		id: 'tiny',
-		transformers_id: 'Xenova/whisper-tiny.en',
-		name: 'Tiny (English)',
-		description: 'Fast, compact model for basic transcription',
+		transformers_id: 'Xenova/whisper-tiny.en', // Using proven Xenova model for initial load
+		name: 'Tiny English (39MB)',
+		description: 'Instant loading, great for quick start',
 		size: 39 * 1024 * 1024, // ~39MB
 		parameters: 39000000,
 		languages: ['en'],
 		version: '1.0.0',
-		recommended_for: 'mobile, low-memory devices'
+		recommended_for: 'initial load, instant start, low-end devices',
+		speed_multiplier: 1.0,
+		accuracy_loss: 'baseline'
 	},
 	{
-		id: 'base',
-		transformers_id: 'Xenova/whisper-base.en',
-		name: 'Base (English)',
-		description: 'Better accuracy with reasonable size',
-		size: 74 * 1024 * 1024, // ~74MB
-		parameters: 74000000,
+		id: 'distil-small',
+		transformers_id: 'distil-whisper/distil-small.en', // Official distil-whisper
+		name: 'Distil Small (166MB)',
+		description: '5.8x faster than Whisper v2',
+		size: 166 * 1024 * 1024, // ~166MB
+		parameters: 166000000,
 		languages: ['en'],
 		version: '1.0.0',
-		recommended_for: 'desktop, balanced performance'
+		recommended_for: 'devices with <4GB RAM, mobile phones',
+		speed_multiplier: 5.8,
+		accuracy_loss: '3.2% WER increase'
 	},
 	{
-		id: 'small',
-		transformers_id: 'Xenova/whisper-small.en',
-		name: 'Small (English)',
-		description: 'High accuracy for desktop devices',
-		size: 244 * 1024 * 1024, // ~244MB
-		parameters: 244000000,
+		id: 'distil-medium',
+		transformers_id: 'distil-whisper/distil-medium.en', // Official distil-whisper
+		name: 'Distil Medium (394MB)',
+		description: '6.8x faster with <1% WER loss',
+		size: 394 * 1024 * 1024, // ~394MB
+		parameters: 394000000,
 		languages: ['en'],
 		version: '1.0.0',
-		recommended_for: 'desktop, high accuracy needs'
+		recommended_for: 'devices with 4-8GB RAM, default choice',
+		speed_multiplier: 6.8,
+		accuracy_loss: '0.8% WER increase'
+	},
+	{
+		id: 'distil-large-v2',
+		transformers_id: 'distil-whisper/distil-large-v2', // Most proven distil model
+		name: 'Distil Large v2 (756MB)',
+		description: '5.8x faster, within 1% WER',
+		size: 756 * 1024 * 1024, // ~756MB
+		parameters: 756000000,
+		languages: ['en'],
+		version: '2.0.0',
+		recommended_for: 'high-end devices, pro users',
+		speed_multiplier: 5.8,
+		accuracy_loss: '<1% WER',
+		webgpu_optimized: true
 	}
 ];
 
@@ -64,7 +86,7 @@ export const modelRegistry = writable({
 export const selectedModel = derived(
 	[modelRegistry, userPreferences],
 	([$modelRegistry, $userPreferences]) => {
-		const modelId = $userPreferences.whisperModel || 'base';
+		const modelId = $userPreferences.whisperModel || 'tiny';
 		return $modelRegistry.models.find((model) => model.id === modelId) || $modelRegistry.models[0];
 	}
 );
@@ -165,7 +187,55 @@ export function getTransformersInfo() {
 	return get(modelRegistry).transformersInfo;
 }
 
+/**
+ * Auto-select the best model based on device capabilities
+ */
+export function autoSelectModel() {
+	if (!browser) return 'distil-tiny';
+
+	const device = detectDeviceCapabilities();
+	console.log('🔍 Device capabilities detected:', device);
+
+	// Check if user has manually selected a model
+	const prefs = get(userPreferences);
+	if (prefs.modelManuallySelected) {
+		console.log('📌 Using user-selected model:', prefs.whisperModel);
+		return prefs.whisperModel;
+	}
+
+	// Use device recommendation
+	const recommendedId = device.recommendedModel;
+	console.log(`🎯 Auto-selecting model: ${recommendedId} (${device.reason})`);
+
+	// Update preferences with auto-selected model
+	userPreferences.update((p) => ({
+		...p,
+		whisperModel: recommendedId,
+		modelAutoSelected: true
+	}));
+
+	return recommendedId;
+}
+
+/**
+ * Get progressive loading strategy for current device
+ */
+export function getProgressiveLoadingStrategy() {
+	if (!browser) {
+		return {
+			initial: 'tiny',
+			target: 'distil-medium',
+			fallback: 'distil-small'
+		};
+	}
+
+	const device = detectDeviceCapabilities();
+	return device.loadingStrategy;
+}
+
 // Initialize on import if in browser
 if (browser) {
 	initializeModelRegistry();
+	// Auto-select best model on load
+	autoSelectModel();
 }
