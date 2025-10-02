@@ -27,6 +27,7 @@
 	let autoRecordValue = false;
 	let autoSaveValue = false;
 	let selectedPromptStyle = 'standard';
+	let privacyModeValue = false;
 
 	// Store subscriptions
 	const unsubscribeTheme = theme.subscribe((value) => {
@@ -49,11 +50,15 @@
 		// Get currently selected prompt style from the service
 		selectedPromptStyle = geminiService.getPromptStyle();
 
+		// Get privacy mode value from localStorage
+		privacyModeValue = localStorage.getItem('talktype_privacy_mode') === 'true';
+
 		// Set up event listeners for the modal
 		const modal = document.getElementById('settings_modal');
 		if (modal) {
 			modal.addEventListener('open', () => {
 				selectedPromptStyle = geminiService.getPromptStyle();
+				privacyModeValue = localStorage.getItem('talktype_privacy_mode') === 'true';
 			});
 		}
 
@@ -106,6 +111,17 @@
 		window.dispatchEvent(
 			new CustomEvent('talktype-setting-changed', {
 				detail: { setting: 'autoSave', value: autoSaveValue }
+			})
+		);
+	}
+
+	function handlePrivacyModeChange(e) {
+		// e.detail contains the boolean value from Toggle component
+		privacyModeValue = e.detail;
+		localStorage.setItem('talktype_privacy_mode', privacyModeValue.toString());
+		window.dispatchEvent(
+			new CustomEvent('talktype-setting-changed', {
+				detail: { setting: 'privacyMode', value: privacyModeValue }
 			})
 		);
 	}
@@ -222,6 +238,22 @@
 							Ghost Personality
 						</h3>
 						<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
+					</section>
+
+					<div class="divider my-2 opacity-10"></div>
+
+					<!-- Privacy Mode -->
+					<section class="space-y-2">
+						<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">
+							Privacy Settings
+						</h3>
+						<Toggle
+							id="privacy_mode"
+							label="🔒 Privacy Mode"
+							description="Use only offline transcription (never send audio to cloud)"
+							checked={privacyModeValue}
+							on:change={handlePrivacyModeChange}
+						/>
 					</section>
 
 					<div class="divider my-2 opacity-10"></div>

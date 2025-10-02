@@ -23,13 +23,24 @@ const checkWebGPUSupport = async () => {
 		try {
 			const adapter = await navigator.gpu.requestAdapter();
 			if (adapter) {
-				console.log('🚀 WebGPU detected! Transcription will be 10-100x faster');
-				return true;
+				// Check for sufficient limits for transcription
+				const requiredFeatures = [];
+				const device = await adapter.requestDevice({
+					requiredFeatures
+				});
+
+				// Verify we can create compute pipelines
+				if (device && device.createComputePipeline) {
+					console.log('🚀 WebGPU fully functional! Transcription will be 10-100x faster');
+					device.destroy(); // Clean up test device
+					return true;
+				}
 			}
-		} catch {
-			console.log('WebGPU not available, using WASM fallback');
+		} catch (e) {
+			console.log('WebGPU check failed:', e.message);
 		}
 	}
+	console.log('WebGPU not available, using optimized WASM');
 	return false;
 };
 

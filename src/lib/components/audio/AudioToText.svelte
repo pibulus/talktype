@@ -82,9 +82,21 @@
 
 	// Track if user has interacted with the page
 	let hasUserInteracted = false;
+	let modelLoadStarted = false;
 
-	// Start background model load after first user interaction
-	// This preserves page speed scores while enabling progressive enhancement
+	// Start background model load after first user interaction OR after 3 seconds
+	// This gives us the best of both worlds - fast initial page load but models ready when needed
+	function startModelLoading() {
+		if (modelLoadStarted) return;
+		modelLoadStarted = true;
+
+		// Start progressive model loading
+		import('$lib/services/transcription/simpleHybridService').then(({ simpleHybridService }) => {
+			console.log('🚀 Starting progressive Whisper model download...');
+			simpleHybridService.startBackgroundLoad();
+		});
+	}
+
 	function handleFirstInteraction() {
 		if (hasUserInteracted) return;
 		hasUserInteracted = true;
@@ -96,11 +108,8 @@
 			window.removeEventListener('keydown', handleFirstInteraction);
 		}
 
-		// Start progressive model loading
-		import('$lib/services/transcription/simpleHybridService').then(({ simpleHybridService }) => {
-			console.log('🚀 Starting progressive Whisper model download after user interaction...');
-			simpleHybridService.startBackgroundLoad();
-		});
+		// Start loading immediately on interaction
+		startModelLoading();
 	}
 
 	// Lifecycle hooks
@@ -114,6 +123,15 @@
 			window.addEventListener('click', handleFirstInteraction, { once: true });
 			window.addEventListener('touchstart', handleFirstInteraction, { once: true });
 			window.addEventListener('keydown', handleFirstInteraction, { once: true });
+
+			// Also start loading after 3 seconds if no interaction
+			// This ensures models are ready when user needs them
+			setTimeout(() => {
+				if (!modelLoadStarted) {
+					console.log('⏰ Auto-starting model load after 3s delay');
+					startModelLoading();
+				}
+			}, 3000);
 		}
 
 		// Subscribe to permission denied state to show error modal

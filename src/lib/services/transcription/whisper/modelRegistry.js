@@ -8,61 +8,62 @@ import { userPreferences } from '../../infrastructure/stores';
 import { browser } from '$app/environment';
 import { detectDeviceCapabilities } from '../deviceCapabilities';
 
-// Default model collection for Transformers.js
+// Default model collection for Transformers.js - Optimized for speed & quality
 // Progressive loading strategy: tiny → optimal based on device capabilities
 const DEFAULT_MODELS = [
 	{
 		id: 'tiny',
-		transformers_id: 'Xenova/whisper-tiny.en', // Proven to work with transformers.js
+		transformers_id: 'Xenova/whisper-tiny.en', // Actual Xenova model that works
 		name: 'Tiny English (39MB)',
-		description: 'Instant loading, great for quick start',
+		description: 'Ultra-fast, instant loading',
 		size: 39 * 1024 * 1024, // ~39MB
 		parameters: 39000000,
 		languages: ['en'],
 		version: '1.0.0',
-		recommended_for: 'initial load, instant start, low-end devices',
+		recommended_for: 'initial load, instant start, all devices',
 		speed_multiplier: 1.0,
 		accuracy_loss: 'baseline'
 	},
 	{
 		id: 'small',
-		transformers_id: 'Xenova/whisper-small', // Multilingual small model
-		name: 'Small (244MB)',
-		description: 'Good accuracy with reasonable size',
-		size: 244 * 1024 * 1024, // ~244MB
+		transformers_id: 'Xenova/whisper-small.en', // Small English model for speed
+		name: 'Small English (166MB)',
+		description: 'Fast with good accuracy',
+		size: 166 * 1024 * 1024, // ~166MB
 		parameters: 244000000,
-		languages: ['multi'],
+		languages: ['en'],
 		version: '1.0.0',
-		recommended_for: 'devices with 2-4GB RAM, mobile phones',
+		recommended_for: 'devices with <3GB RAM, mobile phones',
 		speed_multiplier: 1.0,
-		accuracy_loss: 'baseline'
+		accuracy_loss: 'minimal'
 	},
 	{
 		id: 'medium',
-		transformers_id: 'Xenova/whisper-medium', // Default choice for most devices
-		name: 'Medium (1.5GB)',
-		description: 'Best accuracy/speed balance',
-		size: 1500 * 1024 * 1024, // ~1.5GB
+		transformers_id: 'Xenova/whisper-medium.en', // Medium English for balance
+		name: 'Medium English (488MB)',
+		description: 'Perfect accuracy/speed balance',
+		size: 488 * 1024 * 1024, // ~488MB
 		parameters: 769000000,
-		languages: ['multi'],
+		languages: ['en'],
 		version: '1.0.0',
-		recommended_for: 'devices with 4-8GB RAM, default choice',
+		recommended_for: 'devices with ≥3GB RAM, default choice',
 		speed_multiplier: 1.0,
-		accuracy_loss: 'baseline'
+		accuracy_loss: 'minimal'
 	},
 	{
 		id: 'large',
-		transformers_id: 'Xenova/whisper-large', // High-end devices
-		name: 'Large (3GB)',
-		description: 'Maximum accuracy, slower processing',
-		size: 3000 * 1024 * 1024, // ~3GB
+		transformers_id: 'Xenova/whisper-large-v3', // Latest v3 multilingual
+		name: 'Large Pro (1.5GB)',
+		description: '99 languages, maximum accuracy',
+		size: 1500 * 1024 * 1024, // ~1.5GB
 		parameters: 1550000000,
-		languages: ['multi'],
-		version: '2.0.0',
-		recommended_for: 'high-end devices, pro users',
+		languages: ['multi'], // 99 languages!
+		version: '3.0.0',
+		recommended_for: 'Pro users, multilingual needs',
 		speed_multiplier: 1.0,
-		accuracy_loss: 'baseline',
-		webgpu_optimized: true
+		accuracy_loss: 'none',
+		webgpu_optimized: true,
+		pro_feature: true
 	}
 ];
 
