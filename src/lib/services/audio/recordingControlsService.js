@@ -120,6 +120,22 @@ export class RecordingControlsService {
 					'[RecordingControlsService] Starting transcription with blob size:',
 					audioBlob.size
 				);
+
+				// Validate minimum recording duration (prevent processing tiny clips)
+				// Estimate duration: webm is roughly 16kbps = 2000 bytes/second
+				const estimatedDurationSeconds = audioBlob.size / 2000;
+				const MIN_DURATION_SECONDS = 0.5; // Minimum half second
+
+				if (estimatedDurationSeconds < MIN_DURATION_SECONDS) {
+					console.warn(
+						`[RecordingControlsService] Recording too short: ~${estimatedDurationSeconds.toFixed(2)}s`
+					);
+					this.uiActions.setErrorMessage(
+						'Recording too short - try speaking for at least a second!'
+					);
+					return;
+				}
+
 				// Transcribe the audio with proper error handling
 				try {
 					const transcriptText = await this.transcriptionService.transcribeAudio(audioBlob);

@@ -1,6 +1,7 @@
 # Glossary - TalkType
 
 ## Components (Svelte)
+
 - `MainContainer` - Top-level container with recording state (lib/components/page/MainContainer.svelte)
 - `GhostContainer` - Ghost character with personality (lib/components/page/GhostContainer.svelte)
 - `ContentContainer` - Main content wrapper (lib/components/page/ContentContainer.svelte)
@@ -23,12 +24,14 @@
 - `AppSuffix` - App suffix branding (lib/components/ui/AppSuffix.svelte)
 
 ## Services
+
 - Progressive transcription with Distil-Whisper models (lib/services/)
 - Web Speech API for instant start (lib/services/)
 - PWA install prompt logic (lib/services/)
 - Ghost theme management (lib/services/)
 
 ## Core Concepts
+
 - **Progressive Transcription** - Three layers: Web Speech (instant) → distil-tiny (20MB) → distil-small/medium (auto-selected by RAM)
 - **Distil-Whisper** - 6x faster, 50% smaller than regular Whisper
 - **Pro Mode** - distil-large-v3 (750MB, 9+ languages)

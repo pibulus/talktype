@@ -249,29 +249,40 @@
 						</h3>
 						<Toggle
 							id="privacy_mode"
-							label="🔒 Privacy Mode"
-							description="Use only offline transcription (never send audio to cloud)"
+							label="🔒 Offline Mode"
+							description="Download and use offline Whisper model (downloads ~150MB, works without internet)"
 							bind:checked={privacyModeValue}
 							on:change={handlePrivacyModeChange}
 						/>
+						<div class="rounded-lg bg-blue-50/50 p-3">
+							<p class="text-xs text-gray-600">
+								{#if privacyModeValue}
+									<strong>Offline mode active:</strong> All transcriptions stay on your device. No internet
+									required.
+								{:else}
+									<strong>Online mode:</strong> Using Gemini API for fast, instant transcription.
+								{/if}
+							</p>
+						</div>
 					</section>
 
 					<div class="divider my-2 opacity-10"></div>
 
-					<!-- Model Settings (placeholder for future) -->
+					<!-- Model Settings -->
 					<section class="space-y-2">
 						<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">
-							Transcription Quality
+							How It Works
 						</h3>
 						<div class="rounded-lg bg-white/50 p-3">
 							<p class="text-sm text-gray-600">
-								Progressive quality system automatically selects the best model for your device.
+								By default, TalkType uses Gemini API for instant, accurate transcription.
 							</p>
 							<ul class="mt-2 space-y-1 text-xs text-gray-500">
-								<li>• Instant: Web Speech API (online)</li>
-								<li>• Fast: Distil-Tiny (20MB)</li>
-								<li>• Better: Distil-Small/Medium (auto-selected)</li>
-								<li>• Pro: Distil-Large-v3 (coming soon)</li>
+								<li>• <strong>Online mode (default):</strong> Fast, accurate, works everywhere</li>
+								<li>
+									• <strong>Offline mode:</strong> Downloads Whisper model for complete privacy (no cloud)
+								</li>
+								<li>• Switch anytime in settings - your choice!</li>
 							</ul>
 						</div>
 					</section>

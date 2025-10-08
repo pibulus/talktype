@@ -4,8 +4,8 @@ import { GEMINI_API_KEY } from '$env/static/private';
 
 // Initialize Gemini (server-side only)
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-// Using stable model instead of experimental to avoid hallucination issues
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+// Using Gemini 2.0 Flash (same model as RiffRap)
+const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
 
 // Helper to convert base64 to generative part
 function base64ToGenerativePart(base64Data, mimeType) {
@@ -38,10 +38,13 @@ function getTranscriptionPrompt(style = 'standard') {
 }
 
 export async function POST({ request }) {
+	console.log('[API /transcribe] Request received');
 	try {
 		const { audioData, mimeType, promptStyle } = await request.json();
+		console.log('[API /transcribe] Parsed request body');
 
 		if (!audioData || !mimeType) {
+			console.error('[API /transcribe] Missing audioData or mimeType');
 			return json(
 				{
 					error: "Hmm, looks like the audio didn't make it through. Mind trying that again?"
@@ -52,7 +55,7 @@ export async function POST({ request }) {
 
 		// Log audio size for debugging
 		const audioSizeKB = ((audioData.length * 0.75) / 1024).toFixed(2);
-		console.log(`[Gemini API] Processing audio: ${audioSizeKB}KB, type: ${mimeType}`);
+		console.log(`[API /transcribe] Processing audio: ${audioSizeKB}KB, type: ${mimeType}, style: ${promptStyle}`);
 
 		// Get the appropriate prompt for the style
 		const prompt = getTranscriptionPrompt(promptStyle);
@@ -61,11 +64,12 @@ export async function POST({ request }) {
 		const audioPart = base64ToGenerativePart(audioData, mimeType);
 
 		// Generate transcription
+		console.log('[API /transcribe] Calling Gemini API...');
 		const result = await model.generateContent([prompt, audioPart]);
 		let transcription = result.response.text();
 
 		// Log transcription length for debugging repetition issues
-		console.log(`[Gemini API] Transcription complete: ${transcription.length} chars`);
+		console.log(`[API /transcribe] ✅ Transcription complete: ${transcription.length} chars, text: "${transcription.substring(0, 100)}..."`);
 
 		// Aggressive hallucination detection and cleanup
 		// Split into sentences and check for exact repetitions
@@ -120,9 +124,10 @@ export async function POST({ request }) {
 			}
 		}
 
+		console.log('[API /transcribe] Sending response to client');
 		return json({ transcription });
 	} catch (error) {
-		console.error('Transcription error:', error);
+		console.error('[API /transcribe] ❌ Error:', error.message, error.stack);
 
 		// Friendly error messages based on the error type
 		let friendlyMessage = 'Oops, the ghost got a bit confused there. Give it another shot?';

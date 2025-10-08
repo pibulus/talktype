@@ -1,6 +1,7 @@
 # 🎯 WHISPER IMPLEMENTATION HERE!
 
 ## Local Offline Transcription Working!
+
 - **Location**: `/src/lib/services/transcription/whisper/`
 - **Key files**:
   - `whisperService.js` - Main service with @xenova/transformers
@@ -10,6 +11,7 @@
 - **Features**: WebGPU support, IndexedDB caching, distil-whisper models
 
 ## To Port to Other Projects:
+
 1. Copy the whisper folder
 2. Add @xenova/transformers dependency
 3. Works offline, no API keys needed!

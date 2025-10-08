@@ -5,18 +5,21 @@ Your transcription ghost friend. Voice-to-text that doesn't suck.
 ## ✨ Features
 
 ### Progressive Transcription
+
 - **⚡ Instant Start**: Web Speech API for 0ms latency (Chrome/Edge)
 - **🔒 Privacy Mode**: 100% offline transcription with Whisper
 - **🤖 Auto Mode**: Let TalkType choose the best option for you
 - **Smart Model Selection**: Automatically picks optimal Distil-Whisper model based on your device
 
 ### Delightful Experience
+
 - **👻 Ghost Personality**: Animated companion with 4 themes (peach, mint, bubblegum, rainbow)
 - **📱 PWA Installable**: Works offline, installs like a native app
 - **🎨 Beautiful Design**: Pastel-punk aesthetic with smooth animations
 - **📋 Quick Copy**: One-click copy to clipboard
 
 ### Privacy & Performance
+
 - **100% Private**: All transcription happens locally (in Privacy mode)
 - **Distil-Whisper Models**: 6x faster, 50% smaller than regular Whisper
 - **WebGPU Ready**: Future-proofed for 10-100x speed improvements

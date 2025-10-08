@@ -22,14 +22,14 @@ class SimpleHybridService {
 	}
 
 	/**
-	 * Start loading Whisper in the background
+	 * Start loading Whisper in the background (only called when privacy mode enabled)
 	 */
 	async startBackgroundLoad() {
 		if (this.whisperLoadPromise || this.whisperReady) {
 			return; // Already loading or loaded
 		}
 
-		console.log('🔄 Starting background Whisper model download...');
+		console.log('🔒 Privacy mode: Loading Whisper model for offline transcription...');
 		this.whisperLoadPromise = whisperService
 			.preloadModel()
 			.then((result) => {
@@ -39,7 +39,7 @@ class SimpleHybridService {
 				return result;
 			})
 			.catch((err) => {
-				console.warn('Whisper load failed, will continue with API:', err);
+				console.warn('Whisper load failed:', err);
 				return { success: false, error: err };
 			});
 	}
@@ -51,11 +51,13 @@ class SimpleHybridService {
 		// Check privacy mode preference
 		const privacyMode = localStorage.getItem('talktype_privacy_mode') === 'true';
 
-		// Start loading Whisper in background if not already
-		this.startBackgroundLoad();
-
-		// If privacy mode is on, wait for Whisper or fail
+		// Privacy mode: Use offline Whisper only
 		if (privacyMode) {
+			// Start loading Whisper if not already
+			if (!this.whisperReady && !this.whisperLoadPromise) {
+				this.startBackgroundLoad();
+			}
+
 			if (this.whisperReady) {
 				console.log('🔒 Privacy Mode: Using offline Whisper');
 				localStorage.setItem('last_transcription_method', 'whisper');
@@ -73,15 +75,8 @@ class SimpleHybridService {
 			}
 		}
 
-		// Normal mode: If Whisper is ready, use it (offline, fast, free)
-		if (this.whisperReady) {
-			console.log('🎯 Using offline Whisper transcription');
-			localStorage.setItem('last_transcription_method', 'whisper');
-			return await whisperService.transcribeAudio(audioBlob);
-		}
-
-		// Otherwise use Gemini API for instant results
-		console.log('☁️ Using Gemini API while Whisper loads...');
+		// Normal mode: Use Gemini API (fast, reliable, works)
+		console.log('☁️ Using Gemini API for transcription');
 		localStorage.setItem('last_transcription_method', 'gemini');
 		return await this.transcribeWithGemini(audioBlob);
 	}
