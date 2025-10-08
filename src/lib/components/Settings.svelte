@@ -249,19 +249,23 @@
 						</h3>
 						<Toggle
 							id="privacy_mode"
-							label="🔒 Offline Mode"
-							description="Download and use offline Whisper model (downloads ~150MB, works without internet)"
+							label="🔒 Offline Mode (Desktop Only)"
+							description="Download and use offline Whisper model (downloads ~95MB, works without internet)"
 							bind:checked={privacyModeValue}
 							on:change={handlePrivacyModeChange}
 						/>
 						<div class="rounded-lg bg-blue-50/50 p-3">
 							<p class="text-xs text-gray-600">
 								{#if privacyModeValue}
-									<strong>Offline mode active:</strong> All transcriptions stay on your device. No internet
-									required.
+									<strong>🖥️ Desktop offline mode:</strong> All transcriptions stay on your device. Uses
+									Distil-Whisper for fast, private transcription.
 								{:else}
-									<strong>Online mode:</strong> Using Gemini API for fast, instant transcription.
+									<strong>☁️ Online mode:</strong> Fast Gemini API transcription. Works on all devices.
 								{/if}
+							</p>
+							<p class="mt-2 text-xs text-gray-500">
+								<strong>Note:</strong> Offline mode only works on desktop browsers. Mobile devices use
+								online API due to memory constraints.
 							</p>
 						</div>
 					</section>

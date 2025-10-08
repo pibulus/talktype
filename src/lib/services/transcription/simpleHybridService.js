@@ -12,6 +12,7 @@ class SimpleHybridService {
 	constructor() {
 		this.whisperReady = false;
 		this.whisperLoadPromise = null;
+		this.isDesktop = this.detectDesktop();
 
 		// Subscribe to whisper status
 		if (browser) {
@@ -22,14 +23,32 @@ class SimpleHybridService {
 	}
 
 	/**
+	 * Detect if device is desktop (not mobile) for offline Whisper support
+	 * Mobile has memory constraints and iOS has known memory leaks
+	 */
+	detectDesktop() {
+		if (!browser) return false;
+		const ua = navigator.userAgent;
+		const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+		return !isMobile;
+	}
+
+	/**
 	 * Start loading Whisper in the background (only called when privacy mode enabled)
+	 * Only works on desktop - mobile uses Gemini API
 	 */
 	async startBackgroundLoad() {
 		if (this.whisperLoadPromise || this.whisperReady) {
 			return; // Already loading or loaded
 		}
 
-		console.log('🔒 Privacy mode: Loading Whisper model for offline transcription...');
+		// Desktop-only: Mobile has memory constraints
+		if (!this.isDesktop) {
+			console.log('📱 Mobile device detected - offline mode not available (use online API)');
+			return { success: false, error: 'Mobile not supported' };
+		}
+
+		console.log('🖥️  Desktop detected - Loading Whisper model for offline transcription...');
 		this.whisperLoadPromise = whisperService
 			.preloadModel()
 			.then((result) => {
@@ -51,8 +70,15 @@ class SimpleHybridService {
 		// Check privacy mode preference
 		const privacyMode = localStorage.getItem('talktype_privacy_mode') === 'true';
 
-		// Privacy mode: Use offline Whisper only
+		// Privacy mode: Use offline Whisper only (desktop only)
 		if (privacyMode) {
+			// Check if desktop
+			if (!this.isDesktop) {
+				throw new Error(
+					'Offline mode not available on mobile. Mobile has memory constraints that prevent reliable offline transcription. Please disable offline mode or use a desktop browser.'
+				);
+			}
+
 			// Start loading Whisper if not already
 			if (!this.whisperReady && !this.whisperLoadPromise) {
 				this.startBackgroundLoad();

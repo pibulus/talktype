@@ -8,62 +8,66 @@ import { userPreferences } from '../../infrastructure/stores';
 import { browser } from '$app/environment';
 import { detectDeviceCapabilities } from '../deviceCapabilities';
 
-// Default model collection for Transformers.js - Optimized for speed & quality
-// Progressive loading strategy: tiny → optimal based on device capabilities
+// Default model collection - Using Distil-Whisper for 5.6x faster performance
+// Based on latest research (Oct 2025): distil-whisper models are production-ready
 const DEFAULT_MODELS = [
 	{
 		id: 'tiny',
-		transformers_id: 'Xenova/whisper-tiny.en', // Actual Xenova model that works
-		name: 'Tiny English (39MB)',
-		description: 'Ultra-fast, instant loading',
-		size: 39 * 1024 * 1024, // ~39MB
+		transformers_id: 'Xenova/whisper-tiny.en', // Mobile fallback (iOS compatible)
+		name: 'Tiny English (117MB)',
+		description: 'Mobile-optimized, iOS compatible',
+		size: 117 * 1024 * 1024, // ~117MB INT8 quantized
 		parameters: 39000000,
 		languages: ['en'],
 		version: '1.0.0',
-		recommended_for: 'initial load, instant start, all devices',
+		recommended_for: 'iOS Safari, low-memory devices',
 		speed_multiplier: 1.0,
-		accuracy_loss: 'baseline'
+		accuracy_loss: '~20% vs distil-small',
+		mobile_safe: true
 	},
 	{
 		id: 'small',
-		transformers_id: 'Xenova/whisper-small.en', // Small English model for speed
-		name: 'Small English (166MB)',
-		description: 'Fast with good accuracy',
-		size: 166 * 1024 * 1024, // ~166MB
-		parameters: 244000000,
+		transformers_id: 'distil-whisper/distil-small.en', // RECOMMENDED for desktop
+		name: 'Distil-Small English (95MB)',
+		description: '5.6x faster, 4% quality vs best models',
+		size: 95 * 1024 * 1024, // ~95MB INT8 quantized
+		parameters: 166000000,
 		languages: ['en'],
-		version: '1.0.0',
-		recommended_for: 'devices with <3GB RAM, mobile phones',
-		speed_multiplier: 1.0,
-		accuracy_loss: 'minimal'
+		version: '3.0.0',
+		recommended_for: 'Desktop (recommended), 3-5s for 30s audio',
+		speed_multiplier: 5.6,
+		accuracy_loss: '4% vs Whisper Large',
+		desktop_optimized: true
 	},
 	{
 		id: 'medium',
-		transformers_id: 'Xenova/whisper-medium.en', // Medium English for balance
-		name: 'Medium English (488MB)',
-		description: 'Perfect accuracy/speed balance',
-		size: 488 * 1024 * 1024, // ~488MB
-		parameters: 769000000,
+		transformers_id: 'distil-whisper/distil-medium.en', // Larger desktop option
+		name: 'Distil-Medium English (150MB)',
+		description: '5.6x faster, better accuracy',
+		size: 150 * 1024 * 1024, // ~150MB INT8 quantized
+		parameters: 394000000,
 		languages: ['en'],
-		version: '1.0.0',
-		recommended_for: 'devices with ≥3GB RAM, default choice',
-		speed_multiplier: 1.0,
-		accuracy_loss: 'minimal'
+		version: '3.0.0',
+		recommended_for: 'Desktop with >4GB RAM',
+		speed_multiplier: 5.6,
+		accuracy_loss: '2% vs Whisper Large',
+		desktop_optimized: true
 	},
 	{
 		id: 'large',
-		transformers_id: 'Xenova/whisper-large-v3', // Latest v3 multilingual
-		name: 'Large Pro (1.5GB)',
-		description: '99 languages, maximum accuracy',
-		size: 1500 * 1024 * 1024, // ~1.5GB
+		transformers_id: 'distil-whisper/distil-large-v3', // Pro multilingual
+		name: 'Distil-Large Pro (750MB)',
+		description: '99 languages, 5.6x faster than regular Large',
+		size: 750 * 1024 * 1024, // ~750MB
 		parameters: 1550000000,
-		languages: ['multi'], // 99 languages!
+		languages: ['multi'], // 99 languages
 		version: '3.0.0',
-		recommended_for: 'Pro users, multilingual needs',
-		speed_multiplier: 1.0,
-		accuracy_loss: 'none',
+		recommended_for: 'Pro users, multilingual, WebGPU',
+		speed_multiplier: 5.6,
+		accuracy_loss: 'minimal',
 		webgpu_optimized: true,
-		pro_feature: true
+		pro_feature: true,
+		desktop_only: true
 	}
 ];
 

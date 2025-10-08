@@ -55,7 +55,9 @@ export async function POST({ request }) {
 
 		// Log audio size for debugging
 		const audioSizeKB = ((audioData.length * 0.75) / 1024).toFixed(2);
-		console.log(`[API /transcribe] Processing audio: ${audioSizeKB}KB, type: ${mimeType}, style: ${promptStyle}`);
+		console.log(
+			`[API /transcribe] Processing audio: ${audioSizeKB}KB, type: ${mimeType}, style: ${promptStyle}`
+		);
 
 		// Get the appropriate prompt for the style
 		const prompt = getTranscriptionPrompt(promptStyle);
@@ -69,7 +71,9 @@ export async function POST({ request }) {
 		let transcription = result.response.text();
 
 		// Log transcription length for debugging repetition issues
-		console.log(`[API /transcribe] ✅ Transcription complete: ${transcription.length} chars, text: "${transcription.substring(0, 100)}..."`);
+		console.log(
+			`[API /transcribe] ✅ Transcription complete: ${transcription.length} chars, text: "${transcription.substring(0, 100)}..."`
+		);
 
 		// Aggressive hallucination detection and cleanup
 		// Split into sentences and check for exact repetitions
