@@ -251,7 +251,7 @@
 							id="privacy_mode"
 							label="🔒 Privacy Mode"
 							description="Use only offline transcription (never send audio to cloud)"
-							checked={privacyModeValue}
+							bind:checked={privacyModeValue}
 							on:change={handlePrivacyModeChange}
 						/>
 					</section>
