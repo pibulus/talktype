@@ -155,6 +155,7 @@ export class WhisperService {
 				// Check for WebGPU support (but avoid on iOS due to memory issues)
 				const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 				const hasWebGPU = !isIOS && (await checkWebGPUSupport());
+				this.hasWebGPU = hasWebGPU; // Store for debug logging
 
 				// Configure pipeline options based on device capabilities
 				const pipelineOptions = {
@@ -234,9 +235,70 @@ export class WhisperService {
 	}
 
 	/**
+	 * Validate audio data before ONNX execution
+	 */
+	validateAudioData(audioData, source = 'unknown') {
+		// Check if audio exists
+		if (!audioData) {
+			throw new Error('Audio data is null or undefined');
+		}
+
+		// Validate based on type
+		if (audioData instanceof Float32Array) {
+			// Check length
+			if (audioData.length === 0) {
+				throw new Error('Audio Float32Array is empty (length = 0)');
+			}
+
+			// Check for minimum duration (0.1 seconds at 16kHz = 1600 samples)
+			const minSamples = 1600; // 0.1s at 16kHz
+			if (audioData.length < minSamples) {
+				throw new Error(
+					`Audio too short: ${audioData.length} samples (need at least ${minSamples})`
+				);
+			}
+
+			// Check for maximum duration (10 minutes at 16kHz)
+			const maxSamples = 16000 * 60 * 10; // 10 minutes
+			if (audioData.length > maxSamples) {
+				console.warn(
+					`Audio very long: ${(audioData.length / 16000).toFixed(1)}s - may cause memory issues`
+				);
+			}
+
+			// Check if audio contains non-zero values
+			const hasSignal = audioData.some((sample) => Math.abs(sample) > 0.001);
+			if (!hasSignal) {
+				throw new Error('Audio contains only silence (no signal detected)');
+			}
+
+			console.log(
+				`[WhisperService] Audio validation passed: ${audioData.length} samples (${(audioData.length / 16000).toFixed(1)}s) from ${source}`
+			);
+		} else if (audioData instanceof Blob) {
+			if (audioData.size === 0) {
+				throw new Error('Audio blob is empty (size = 0)');
+			}
+			console.log(
+				`[WhisperService] Audio blob validation passed: ${audioData.size} bytes from ${source}`
+			);
+		} else {
+			console.warn(
+				'[WhisperService] Unknown audio data type:',
+				audioData.constructor.name,
+				'- skipping validation'
+			);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Transcribe audio using the loaded model
 	 */
-	async transcribeAudio(audioBlob) {
+	async transcribeAudio(audioBlob, retryCount = 0) {
+		const MAX_RETRIES = 1; // Only retry once with cache clear
+
 		try {
 			// Ensure model is loaded
 			if (!this.transcriber) {
@@ -246,10 +308,8 @@ export class WhisperService {
 				}
 			}
 
-			// Check if audio blob has content
-			if (audioBlob.size === 0) {
-				throw new Error('Audio blob is empty - no audio recorded');
-			}
+			// Validate input blob
+			this.validateAudioData(audioBlob, 'input blob');
 
 			// Convert audio to Float32Array if needed for Whisper compatibility
 			let processedAudio = audioBlob;
@@ -258,6 +318,8 @@ export class WhisperService {
 
 				try {
 					processedAudio = await convertToRawAudio(audioBlob);
+					// Validate converted audio
+					this.validateAudioData(processedAudio, 'converted audio');
 				} catch (conversionError) {
 					console.warn('Audio conversion failed, using original format:', conversionError.message);
 					processedAudio = audioBlob;
@@ -337,14 +399,34 @@ export class WhisperService {
 				}
 			}
 
-			console.log('[Whisper] Transcribing with options:', transcriptionOptions);
-			console.log('[Whisper] Audio duration:', audioDuration, 'seconds');
-			console.log(
-				'[Whisper] Audio data type:',
-				processedAudio.constructor.name,
-				'length:',
-				processedAudio.length || processedAudio.size
-			);
+			// Debug logging for ONNX execution
+			console.log('[Whisper] 🎯 Starting ONNX transcription with configuration:');
+			console.log('[Whisper]   Options:', transcriptionOptions);
+			console.log('[Whisper]   Audio duration:', audioDuration.toFixed(2), 'seconds');
+			console.log('[Whisper]   Audio type:', processedAudio.constructor.name);
+
+			if (processedAudio instanceof Float32Array) {
+				console.log('[Whisper]   Tensor shape: [1,', processedAudio.length, '] (mono, 16kHz)');
+				console.log('[Whisper]   Sample rate: 16000 Hz');
+				console.log('[Whisper]   Samples:', processedAudio.length);
+
+				// Check signal characteristics
+				const maxAmplitude = Math.max(...Array.from(processedAudio).map(Math.abs));
+				const avgAmplitude =
+					Array.from(processedAudio)
+						.map(Math.abs)
+						.reduce((a, b) => a + b, 0) / processedAudio.length;
+
+				console.log('[Whisper]   Signal peak:', maxAmplitude.toFixed(4));
+				console.log('[Whisper]   Signal avg:', avgAmplitude.toFixed(4));
+			} else {
+				console.log('[Whisper]   Blob size:', processedAudio.size, 'bytes');
+			}
+
+			// Log ONNX configuration being used
+			const currentStatus = get(whisperStatus);
+			console.log('[Whisper]   Model:', currentStatus.selectedModel);
+			console.log('[Whisper]   ONNX device:', this.hasWebGPU ? 'webgpu' : 'wasm');
 
 			const result = await this.transcriber(processedAudio, transcriptionOptions);
 
@@ -372,9 +454,42 @@ export class WhisperService {
 		} catch (error) {
 			console.error('Error transcribing with Whisper:', error);
 
+			// Detect ONNX Runtime errors (error code 6 = INVALID_ARGUMENT)
+			const isONNXError =
+				error.message?.includes('OrtRun') ||
+				error.message?.includes('error code = 6') ||
+				error.message?.includes('ONNX');
+
+			// If ONNX error and we haven't retried yet, clear cache and retry
+			if (isONNXError && retryCount < MAX_RETRIES) {
+				console.warn(
+					`[WhisperService] ONNX error detected (attempt ${retryCount + 1}/${MAX_RETRIES + 1}). Clearing cache and retrying...`
+				);
+
+				try {
+					// Clear the corrupted model cache
+					await this.clearModelCache();
+
+					// Wait a bit for IndexedDB to settle
+					await new Promise((resolve) => setTimeout(resolve, 500));
+
+					// Retry transcription with fresh model
+					console.log('[WhisperService] Retrying transcription with fresh model...');
+					return await this.transcribeAudio(audioBlob, retryCount + 1);
+				} catch (clearError) {
+					console.error('[WhisperService] Failed to clear cache and retry:', clearError);
+					// Continue to throw original error
+				}
+			}
+
+			// Update status with error
+			const errorMessage = isONNXError
+				? 'Model error detected. Try clearing your browser cache (Settings > Privacy > Clear browsing data) and reload.'
+				: error.message || 'Failed to transcribe audio with Whisper';
+
 			this.updateStatus({
 				isLoading: false,
-				error: error.message || 'Failed to transcribe audio with Whisper'
+				error: errorMessage
 			});
 
 			throw new Error(`Failed to transcribe audio with Whisper: ${error.message}`);
@@ -513,6 +628,53 @@ export class WhisperService {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Clear model cache from IndexedDB (for recovery from corruption)
+	 */
+	async clearModelCache() {
+		try {
+			console.log('[WhisperService] Clearing model cache from IndexedDB...');
+
+			// Unload current model first
+			this.unloadModel();
+
+			// Clear IndexedDB cache used by Transformers.js
+			if (typeof indexedDB !== 'undefined') {
+				// Transformers.js uses 'transformers-cache' database
+				const dbName = 'transformers-cache';
+
+				return new Promise((resolve, reject) => {
+					const request = indexedDB.deleteDatabase(dbName);
+
+					request.onsuccess = () => {
+						console.log('[WhisperService] Model cache cleared successfully');
+						this.updateStatus({
+							error: null,
+							isLoaded: false,
+							isLoading: false
+						});
+						resolve(true);
+					};
+
+					request.onerror = () => {
+						console.error('[WhisperService] Failed to clear cache:', request.error);
+						reject(new Error('Failed to clear model cache'));
+					};
+
+					request.onblocked = () => {
+						console.warn('[WhisperService] Cache clear blocked - close other tabs using TalkType');
+						reject(new Error('Cache clear blocked by other tabs'));
+					};
+				});
+			}
+
+			return true;
+		} catch (error) {
+			console.error('[WhisperService] Error clearing cache:', error);
+			throw error;
+		}
 	}
 }
 
