@@ -3,6 +3,7 @@
 	import { theme, autoRecord, autoSave, applyTheme, promptStyle } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { installPromptEvent } from '$lib/stores/pwa';
+	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
 	import { Toggle, Button } from './shared';
@@ -254,18 +255,57 @@
 							bind:checked={privacyModeValue}
 							on:change={handlePrivacyModeChange}
 						/>
+
+						<!-- Download Progress Indicator -->
+						{#if $whisperStatus.isLoading && privacyModeValue}
+							<div class="rounded-lg border-2 border-blue-300 bg-blue-50/80 p-3">
+								<div class="mb-2 flex items-center justify-between">
+									<p class="text-sm font-semibold text-blue-700">
+										📥 Downloading Whisper model...
+									</p>
+									<span class="text-xs font-bold text-blue-600"
+										>{$whisperStatus.progress}%</span
+									>
+								</div>
+								<div class="h-2 overflow-hidden rounded-full bg-blue-200">
+									<div
+										class="h-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-300"
+										style="width: {$whisperStatus.progress}%"
+									></div>
+								</div>
+								<p class="mt-2 text-xs text-blue-600">
+									{#if $whisperStatus.progress < 30}
+										Starting download... (~95MB)
+									{:else if $whisperStatus.progress < 90}
+										Downloading model files...
+									{:else}
+										Almost ready! Loading into memory...
+									{/if}
+								</p>
+							</div>
+						{/if}
+
+						<!-- Model Loaded Success -->
+						{#if $whisperStatus.isLoaded && privacyModeValue}
+							<div class="rounded-lg border-2 border-green-300 bg-green-50/80 p-3">
+								<p class="text-sm font-semibold text-green-700">
+									✅ Offline model ready! Your transcriptions are completely private.
+								</p>
+							</div>
+						{/if}
+
 						<div class="rounded-lg bg-blue-50/50 p-3">
 							<p class="text-xs text-gray-600">
 								{#if privacyModeValue}
-									<strong>🖥️ Desktop offline mode:</strong> All transcriptions stay on your device. Uses
-									Distil-Whisper for fast, private transcription.
+									<strong>🖥️ Desktop offline mode:</strong> All transcriptions stay on your device.
+									Uses Distil-Whisper for fast, private transcription.
 								{:else}
 									<strong>☁️ Online mode:</strong> Fast Gemini API transcription. Works on all devices.
 								{/if}
 							</p>
 							<p class="mt-2 text-xs text-gray-500">
-								<strong>Note:</strong> Offline mode only works on desktop browsers. Mobile devices use
-								online API due to memory constraints.
+								<strong>Note:</strong> Offline mode only works on desktop browsers. Mobile devices
+								use online API due to memory constraints.
 							</p>
 						</div>
 					</section>
@@ -284,7 +324,8 @@
 							<ul class="mt-2 space-y-1 text-xs text-gray-500">
 								<li>• <strong>Online mode (default):</strong> Fast, accurate, works everywhere</li>
 								<li>
-									• <strong>Offline mode:</strong> Downloads Whisper model for complete privacy (no cloud)
+									• <strong>Offline mode:</strong> Downloads Whisper model for complete privacy (no
+									cloud)
 								</li>
 								<li>• Switch anytime in settings - your choice!</li>
 							</ul>
