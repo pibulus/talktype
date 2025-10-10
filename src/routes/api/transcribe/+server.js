@@ -4,8 +4,8 @@ import { GEMINI_API_KEY } from '$env/static/private';
 
 // Initialize Gemini (server-side only)
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-// Using Gemini 2.0 Flash (same model as RiffRap)
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+// Using Gemini 2.5 Flash - proven 6.7% WER on real-world tests, $0.14/hr
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
 // Helper to convert base64 to generative part
 function base64ToGenerativePart(base64Data, mimeType) {
