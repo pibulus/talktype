@@ -1,11 +1,11 @@
 /**
- * WhisperService - Client-side speech transcription using @xenova/transformers
+ * WhisperService - Client-side speech transcription using @huggingface/transformers
  * Adapted for TalkType's transcription needs
  */
 
 import { get, writable } from 'svelte/store';
 import { userPreferences } from '../../infrastructure/stores';
-import { pipeline, env } from '@xenova/transformers';
+import { pipeline, env } from '@huggingface/transformers';
 import { convertToWAV as convertToRawAudio, needsConversion } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
 
@@ -154,32 +154,46 @@ export class WhisperService {
 			try {
 				// Transformers.js is already loaded at module level
 
-				// Check for WebGPU support (but avoid on iOS due to memory issues)
-				const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-				const hasWebGPU = !isIOS && (await checkWebGPUSupport());
-				this.hasWebGPU = hasWebGPU; // Store for debug logging
+				// Detect optimal backend based on platform
+				// Reference: Apple Silicon runs WASM faster than WebGPU for Whisper
+				// (M2 benchmark: WASM 5.9s vs WebGPU 9.5s for 60s audio)
+				const platform = navigator.platform.toLowerCase();
+				const userAgent = navigator.userAgent;
+				const isIOS = /iPhone|iPad|iPod/i.test(userAgent);
+				const isMac = platform.includes('mac');
+				const isAppleSilicon = isMac && /Apple/.test(userAgent);
+
+				// Skip WebGPU on iOS and Apple Silicon (WASM is faster)
+				let useWebGPU = false;
+				if (!isIOS && !isAppleSilicon) {
+					useWebGPU = await checkWebGPUSupport();
+				}
+
+				this.hasWebGPU = useWebGPU; // Store for debug logging
+				const backend = useWebGPU ? 'webgpu' : 'wasm';
+
+				if (isAppleSilicon) {
+					console.log('🍎 Apple Silicon: Using WASM (faster than WebGPU for Whisper)');
+				}
 
 				// Configure pipeline options based on device capabilities
 				const pipelineOptions = {
-					// Use WebGPU if available (10-100x faster!)
-					device: hasWebGPU ? 'webgpu' : 'wasm',
+					// WASM for Apple Silicon/iOS, WebGPU for Windows/Linux with discrete GPU
+					device: backend,
 
-					// Optimal dtype settings for WebGPU (based on research)
-					dtype: hasWebGPU
-						? {
-								encoder_model: 'fp32', // Encoder is sensitive, use fp32
-								decoder_model_merged: 'q4' // Decoder can be quantized for speed
-							}
-						: 'q8', // WASM default
+					// Use INT8 quantization for WASM (smaller + faster), fp16 for WebGPU
+					// INT8: ~95MB, fp16: ~166MB, fp32: ~330MB
+					quantized: backend === 'wasm',
+					dtype: backend === 'webgpu' ? 'fp16' : undefined,
 
-					// Configure model options to minimize warnings
+					// Configure ONNX runtime
 					onnx: {
 						logSeverityLevel: 4, // 0=Verbose, 1=Info, 2=Warning, 3=Error, 4=Fatal
 						logVerbosityLevel: 0,
 						enableCpuMemArena: false,
 						enableMemPattern: false,
 						executionMode: 'sequential',
-						graphOptimizationLevel: hasWebGPU ? 'all' : 'basic'
+						graphOptimizationLevel: backend === 'webgpu' ? 'all' : 'basic'
 					},
 					progress_callback: (progress) => {
 						// Simple console logging instead of complex progress tracking
@@ -302,6 +316,8 @@ export class WhisperService {
 		const MAX_RETRIES = 1; // Only retry once with cache clear
 
 		try {
+			const inferenceStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
+
 			// Ensure model is loaded
 			if (!this.transcriber) {
 				const { success, error } = await this.preloadModel();
@@ -356,12 +372,15 @@ export class WhisperService {
 				// Speed optimizations with minimal accuracy loss
 				beam_size: 1, // Greedy search is 2-3x faster than beam search
 				patience: 1.0, // Standard patience for early stopping
-				length_penalty: 1.0, // No length penalty for natural output
-
-				// Language optimization (skip detection for English models)
-				language: modelConfig.id.includes('.en') ? 'en' : null,
-				task: 'transcribe' // Faster than 'translate'
+				length_penalty: 1.0 // No length penalty for natural output
 			};
+
+			// Only add language/task params for multilingual models
+			// English-only models (.en suffix) reject these parameters
+			if (!modelConfig.id.includes('.en')) {
+				transcriptionOptions.language = null; // Auto-detect for multilingual
+				transcriptionOptions.task = 'transcribe'; // Faster than 'translate'
+			}
 
 			// Smart chunking based on audio duration and device memory
 			const deviceMemory = navigator.deviceMemory || 4; // GB of RAM
@@ -428,7 +447,8 @@ export class WhisperService {
 			// Log ONNX configuration being used
 			const currentStatus = get(whisperStatus);
 			console.log('[Whisper]   Model:', currentStatus.selectedModel);
-			console.log('[Whisper]   ONNX device:', this.hasWebGPU ? 'webgpu' : 'wasm');
+			console.log('[Whisper]   Backend:', this.hasWebGPU ? 'webgpu' : 'wasm');
+			console.log('[Whisper]   Quantization:', this.hasWebGPU ? 'fp16' : 'INT8');
 
 			const result = await this.transcriber(processedAudio, transcriptionOptions);
 
@@ -449,6 +469,17 @@ export class WhisperService {
 
 			// Clean up text to remove excessive repetitions
 			text = this.cleanRepetitions(text);
+
+			const inferenceEnd = typeof performance !== 'undefined' ? performance.now() : Date.now();
+			const elapsedMs = inferenceEnd - inferenceStart;
+			const realtimeFactor =
+				audioDuration > 0 ? (elapsedMs / 1000) / audioDuration : undefined;
+
+			console.log(
+				'[Whisper] Inference complete:',
+				`${elapsedMs.toFixed(0)}ms total`,
+				realtimeFactor ? `(RTF ${realtimeFactor.toFixed(2)})` : ''
+			);
 
 			console.log('[Whisper] Final text:', text);
 
@@ -504,76 +535,32 @@ export class WhisperService {
 	cleanRepetitions(text) {
 		if (!text) return '';
 
-		// Split into sentences or phrases
-		const phrases = text.split(/[.!?]/);
-		const cleanedPhrases = [];
+		const fallback = text.trim();
+		if (!fallback) return '';
 
-		for (const phrase of phrases) {
-			const trimmed = phrase.trim();
+		// Keep punctuation by matching sentences/clauses with their trailing delimiters
+		const sentences = fallback.match(/[^.!?]+[.!?]*/g) || [fallback];
+		const cleanedSentences = [];
+
+		for (const rawSentence of sentences) {
+			const trimmed = rawSentence.trim();
 			if (!trimmed) continue;
 
-			// Check if this phrase is repeating consecutively
-			const words = trimmed.split(' ');
-			const cleanedWords = [];
-			let lastPhrase = '';
-			let repeatCount = 0;
+			// Collapse triple+ repeated words while keeping natural double emphases
+			const dedupedWords = trimmed.replace(/\b(\w+)(\s+\1\b){2,}/gi, '$1 $1');
 
-			// Detect and remove phrase-level repetitions
-			for (let i = 0; i < words.length; i++) {
-				// Look for patterns of 3-10 words that repeat
-				for (let len = 3; len <= Math.min(10, words.length - i); len++) {
-					const currentPhrase = words.slice(i, i + len).join(' ');
-					let matches = 0;
-
-					// Check how many times this phrase repeats consecutively
-					for (let j = i + len; j <= words.length - len; j += len) {
-						const nextPhrase = words.slice(j, j + len).join(' ');
-						if (currentPhrase === nextPhrase) {
-							matches++;
-						} else {
-							break;
-						}
-					}
-
-					// If phrase repeats more than twice, skip the repetitions
-					if (matches >= 2) {
-						cleanedWords.push(...words.slice(i, i + len));
-						i += len * (matches + 1) - 1; // Skip all repetitions
-						break;
-					}
-				}
-
-				// If no repetition pattern found, add the word
-				if (i < words.length && !cleanedWords.includes(words[i])) {
-					cleanedWords.push(words[i]);
-				}
+			// Skip consecutive duplicate sentences
+			const previous = cleanedSentences[cleanedSentences.length - 1];
+			if (previous && previous.replace(/[.!?]+$/, '') === dedupedWords.replace(/[.!?]+$/, '')) {
+				continue;
 			}
 
-			const cleanedPhrase = cleanedWords.join(' ');
-
-			// Don't add if it's exactly the same as the last phrase
-			if (cleanedPhrase && cleanedPhrase !== cleanedPhrases[cleanedPhrases.length - 1]) {
-				cleanedPhrases.push(cleanedPhrase);
-			}
+			cleanedSentences.push(dedupedWords);
 		}
 
-		// Join with periods and clean up
-		let cleaned = cleanedPhrases.join('. ');
-		if (cleaned && !cleaned.endsWith('.')) {
-			cleaned += '.';
-		}
+		const cleaned = cleanedSentences.join(' ').replace(/\s{2,}/g, ' ').trim();
 
-		// Log if we removed repetitions
-		if (text.length > cleaned.length * 1.5) {
-			console.log(
-				'[Whisper] Removed repetitions. Original length:',
-				text.length,
-				'Cleaned length:',
-				cleaned.length
-			);
-		}
-
-		return cleaned;
+		return cleaned || fallback;
 	}
 
 	/**

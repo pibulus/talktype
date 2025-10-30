@@ -117,9 +117,14 @@
 	}
 
 	function handlePrivacyModeChange(e) {
-		// e.detail contains the boolean value from Toggle component
-		privacyModeValue = e.detail;
-		localStorage.setItem('talktype_privacy_mode', privacyModeValue.toString());
+		// Toggles can emit either native or custom events; support both shapes
+		const nextValue =
+			typeof e?.detail === 'boolean'
+				? e.detail
+				: e?.currentTarget?.checked ?? e?.target?.checked ?? privacyModeValue;
+
+		privacyModeValue = Boolean(nextValue);
+		localStorage.setItem('talktype_privacy_mode', String(privacyModeValue));
 		window.dispatchEvent(
 			new CustomEvent('talktype-setting-changed', {
 				detail: { setting: 'privacyMode', value: privacyModeValue }

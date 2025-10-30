@@ -53,23 +53,23 @@ export function detectDeviceCapabilities() {
 	let recommendedModel = 'tiny'; // Start with tiny for progressive loading
 	let reason = 'Progressive loading from tiny';
 
-	// High-end device detection
+	// High-end device detection – TEMP: using tiny while investigating performance
 	if (capabilities.memory >= 8 && capabilities.cores >= 8) {
 		tier = 'high';
-		recommendedModel = 'medium'; // Medium is more practical than large
-		reason = 'High-end device, using medium for balance';
+		recommendedModel = 'tiny'; // TEMP: testing performance
+		reason = 'High-end device, testing tiny model performance';
 	}
 	// Mid-high tier (good memory but maybe no WebGPU)
 	else if (capabilities.memory >= 6 && capabilities.cores >= 6) {
 		tier = 'medium-high';
-		recommendedModel = 'small';
-		reason = 'Good specs, using small model';
+		recommendedModel = 'tiny'; // TEMP: testing performance
+		reason = 'Good specs, testing tiny model';
 	}
 	// Standard mid-tier
 	else if (capabilities.memory >= 4) {
 		tier = 'medium';
-		recommendedModel = 'small';
-		reason = 'Standard device with adequate memory';
+		recommendedModel = 'tiny'; // TEMP: testing performance
+		reason = 'Standard device, testing tiny model';
 	}
 	// Low-mid tier
 	else if (capabilities.memory >= 2) {
