@@ -15,6 +15,8 @@ env.allowRemoteModels = true;
 env.useBrowserCache = true;
 // Use IndexedDB for persistent model storage across sessions
 env.useIndexedDB = true;
+// Force remote downloads so Svelte dev server doesn't 404 on /models/*
+env.allowLocalModels = false;
 // Don't set cacheDir - let it use default browser storage
 
 // Check for WebGPU support (10-100x faster!)
