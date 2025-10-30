@@ -28,6 +28,8 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	animation: gentle-float 3s ease-in-out infinite;
+	animation-delay: 1.5s;
 }
 
 .ghost-container:focus,
@@ -118,6 +120,25 @@
 	50% {
 		opacity: 0.8;
 	}
+}
+
+/* ========================================
+   IDLE / SPECIAL STATES
+   ======================================== */
+
+.ghost-container.asleep .ghost-eye {
+	animation: ghost-falling-asleep 5s ease-in-out 1 forwards;
+	transform-origin: center center;
+}
+
+.ghost-container.waking-up #ghost-spin-pivot {
+	animation: ghost-wake-up-shake 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+	transform-origin: center center;
+}
+
+.ghost-container.waking-up .ghost-eye {
+	animation: ghost-wake-up-blink 0.8s ease-in-out 1 forwards;
+	transform-origin: center center;
 }
 
 /* ========================================
@@ -223,8 +244,7 @@
    ======================================== */
 
 .ghost-container:hover .ghost-svg {
-	transform: scale(1.02) translateY(-2px);
-	transition: transform 0.3s ease;
+	animation: ghost-hover 1.2s ease-in-out infinite alternate;
 }
 
 /* ========================================
@@ -284,4 +304,90 @@
 /* Pause animations when not visible */
 .animations-paused * {
 	animation-play-state: paused !important;
+}
+
+/* ========================================
+   SUPPORTING KEYFRAMES
+   ======================================== */
+
+@keyframes gentle-float {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-3px);
+	}
+}
+
+@keyframes ghost-hover {
+	0% {
+		transform: scale(1.005) translateY(0);
+	}
+	100% {
+		transform: scale(1.015) translateY(-3px);
+	}
+}
+
+@keyframes ghost-falling-asleep {
+	0% {
+		transform: scaleY(1);
+	}
+	20% {
+		transform: scaleY(0.4);
+	}
+	35% {
+		transform: scaleY(0.8);
+	}
+	50% {
+		transform: scaleY(0.2);
+	}
+	65% {
+		transform: scaleY(0.5);
+	}
+	80% {
+		transform: scaleY(0.2);
+	}
+	90% {
+		transform: scaleY(0.25);
+	}
+	100% {
+		transform: scaleY(0.15);
+	}
+}
+
+@keyframes ghost-wake-up-shake {
+	10%,
+	90% {
+		transform: translate3d(-1px, 0, 0) scale(1.01) rotate(-0.5deg);
+	}
+	20%,
+	80% {
+		transform: translate3d(2px, 0, 0) scale(0.99) rotate(0.5deg);
+	}
+	30%,
+	50%,
+	70% {
+		transform: translate3d(-3px, 0, 0) scale(1.02) rotate(-0.8deg);
+	}
+	40%,
+	60% {
+		transform: translate3d(3px, 0, 0) scale(0.98) rotate(0.8deg);
+	}
+	100% {
+		transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+	}
+}
+
+@keyframes ghost-wake-up-blink {
+	0%,
+	50% {
+		transform: scaleY(0.05);
+	}
+	70% {
+		transform: scaleY(1.2);
+	}
+	100% {
+		transform: scaleY(1);
+	}
 }

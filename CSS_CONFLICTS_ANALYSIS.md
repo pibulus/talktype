@@ -17,7 +17,7 @@ src/app.css (main entry)
 
 Component-level imports:
 └── src/lib/components/ghost/Ghost.svelte
-    └── import './ghost-animations.css'
+    └── import './ghost-animations-optimized.css'
 ```
 
 ## ⚠️ Identified Conflicts
@@ -53,17 +53,15 @@ Component-level imports:
 
 ### 3. **Ghost Component Specific Issues**
 
-#### Broken/Missing Animations
+The legacy `ghost-animations.css` file has been removed in favor of the leaner
+`ghost-animations-optimized.css`. Most of the legacy animation warnings are no
+longer applicable, but keep an eye on:
 
-- **flash-transition** (ghost-animations.css:117)
-  - Referenced but NEVER defined
-  - Causes :active state to fail
-  - Already commented out, needs removal
+- Ensuring new animation class names remain namespaced to avoid future clashes.
+- Verifying the lightweight stylesheet still covers all required states for
+  `DisplayGhost` and `Ghost`.
 
-#### Double Event Handling
-
-- Ghost component was handling both `click` and `pointerdown`
-- Fixed but worth noting for future
+Double event handling (click + pointerdown) was previously fixed and should stay on the radar.
 
 ### 4. **CSS Variable Conflicts**
 
@@ -79,7 +77,7 @@ Component-level imports:
 2. **Tailwind components** (includes DaisyUI)
 3. **Tailwind utilities**
 4. **Typography.css**
-5. **Component-specific CSS** (ghost-animations.css) loaded per-component
+5. **Component-specific CSS** (`ghost-animations-optimized.css`) loaded per-component
 
 ### 6. **Specificity Battles**
 
@@ -115,12 +113,12 @@ html.modal-active {
 
 - Multiple pulse animations defined:
   - `pulse-glow` (app.css)
-  - `ghost-pulse` (ghost-animations.css)
+  - `ghost-pulse` (ghost-animations-optimized.css)
   - Various theme-specific pulses
 
 #### Unnecessary !important Usage
 
-- `filter: brightness(1.3) !important` (ghost-animations.css:118)
+- `filter: brightness(1.3) !important` (legacy ghost styles – verify still needed in optimized sheet)
 - Modal scroll handling uses !important unnecessarily
 
 ## 🎯 Recommended Fixes

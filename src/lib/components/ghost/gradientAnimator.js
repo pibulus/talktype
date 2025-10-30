@@ -3,7 +3,7 @@
  *
  * Handles dynamic animation of SVG gradients through direct DOM manipulation
  * since CSS animations on SVG gradients have limited browser support.
- * Uses CSS variables from ghost-themes.css for color values.
+ * Color values are sourced from themeStore.js.
  */
 
 import { gradientAnimations, animationTiming } from './gradientConfig';

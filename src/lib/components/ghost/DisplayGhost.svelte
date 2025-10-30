@@ -1,13 +1,74 @@
 <script>
-	import './ghost-animations.css';
-	import './ghost-themes.css';
+	import './ghost-animations-optimized.css';
 	import ghostPathsUrl from './ghost-paths.svg?url';
-	import {
-		initGradientAnimation,
-		cleanupAnimation,
-		cleanupAllAnimations
-	} from './gradientAnimator';
+	import { initGradientAnimation, cleanupAllAnimations } from './gradientAnimator';
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { getThemeColor } from './themeStore.js';
+
+	const GRADIENTS = [
+		{
+			id: 'peachGradient',
+			theme: 'peach',
+			x1: '0%',
+			y1: '0%',
+			x2: '100%',
+			y2: '100%',
+			stops: [
+				{ offset: '0%', position: 'start' },
+				{ offset: '35%', position: 'mid1' },
+				{ offset: '65%', position: 'mid2' },
+				{ offset: '85%', position: 'mid3' },
+				{ offset: '100%', position: 'end' }
+			]
+		},
+		{
+			id: 'mintGradient',
+			theme: 'mint',
+			x1: '0%',
+			y1: '0%',
+			x2: '100%',
+			y2: '100%',
+			stops: [
+				{ offset: '0%', position: 'start' },
+				{ offset: '35%', position: 'mid1' },
+				{ offset: '65%', position: 'mid2' },
+				{ offset: '85%', position: 'mid3' },
+				{ offset: '100%', position: 'end' }
+			]
+		},
+		{
+			id: 'bubblegumGradient',
+			theme: 'bubblegum',
+			x1: '0%',
+			y1: '0%',
+			x2: '100%',
+			y2: '100%',
+			stops: [
+				{ offset: '0%', position: 'start' },
+				{ offset: '35%', position: 'mid1' },
+				{ offset: '65%', position: 'mid2' },
+				{ offset: '85%', position: 'mid3' },
+				{ offset: '100%', position: 'end' }
+			]
+		},
+		{
+			id: 'rainbowGradient',
+			theme: 'rainbow',
+			x1: '0%',
+			y1: '0%',
+			x2: '100%',
+			y2: '100%',
+			stops: [
+				{ offset: '0%', position: 'start' },
+				{ offset: '25%', position: 'mid1' },
+				{ offset: '50%', position: 'mid2' },
+				{ offset: '75%', position: 'mid3' },
+				{ offset: '100%', position: 'end' }
+			]
+		}
+	];
+
+	const resolveStopColor = (themeName, position) => getThemeColor(themeName, position) ?? '#ffffff';
 
 	// Direct theme prop - no store subscription
 	export let theme = 'peach';
@@ -69,12 +130,6 @@
 		}
 	}
 
-	// Force reflow helper
-	function forceReflow(element) {
-		if (!element) return;
-		void element.offsetWidth;
-	}
-
 	// Lifecycle
 	onMount(() => {
 		// Initialize gradient animation for current theme (if not disabled)
@@ -124,37 +179,22 @@
 			class:ready={isGhostReady}
 		>
 			<defs>
-				<linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-					<stop offset="0%" stop-color="var(--ghost-peach-start)" />
-					<stop offset="35%" stop-color="var(--ghost-peach-mid1)" />
-					<stop offset="65%" stop-color="var(--ghost-peach-mid2)" />
-					<stop offset="85%" stop-color="var(--ghost-peach-mid3)" />
-					<stop offset="100%" stop-color="var(--ghost-peach-end)" />
-				</linearGradient>
-
-				<linearGradient id="mintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-					<stop offset="0%" stop-color="var(--ghost-mint-start)" />
-					<stop offset="35%" stop-color="var(--ghost-mint-mid1)" />
-					<stop offset="65%" stop-color="var(--ghost-mint-mid2)" />
-					<stop offset="85%" stop-color="var(--ghost-mint-mid3)" />
-					<stop offset="100%" stop-color="var(--ghost-mint-end)" />
-				</linearGradient>
-
-				<linearGradient id="bubblegumGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-					<stop offset="0%" stop-color="var(--ghost-bubblegum-start)" />
-					<stop offset="35%" stop-color="var(--ghost-bubblegum-mid1)" />
-					<stop offset="65%" stop-color="var(--ghost-bubblegum-mid2)" />
-					<stop offset="85%" stop-color="var(--ghost-bubblegum-mid3)" />
-					<stop offset="100%" stop-color="var(--ghost-bubblegum-end)" />
-				</linearGradient>
-
-				<linearGradient id="rainbowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-					<stop offset="0%" stop-color="var(--ghost-rainbow-start)" />
-					<stop offset="25%" stop-color="var(--ghost-rainbow-mid1)" />
-					<stop offset="50%" stop-color="var(--ghost-rainbow-mid2)" />
-					<stop offset="75%" stop-color="var(--ghost-rainbow-mid3)" />
-					<stop offset="100%" stop-color="var(--ghost-rainbow-end)" />
-				</linearGradient>
+				{#each GRADIENTS as gradient}
+					<linearGradient
+						id={gradient.id}
+						x1={gradient.x1}
+						y1={gradient.y1}
+						x2={gradient.x2}
+						y2={gradient.y2}
+					>
+						{#each gradient.stops as stop}
+							<stop
+								offset={stop.offset}
+								stop-color={resolveStopColor(gradient.theme, stop.position)}
+							/>
+						{/each}
+					</linearGradient>
+				{/each}
 			</defs>
 
 			<g class="ghost-layer ghost-bg">

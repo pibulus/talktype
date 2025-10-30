@@ -260,12 +260,8 @@
 						{#if $whisperStatus.isLoading && privacyModeValue}
 							<div class="rounded-lg border-2 border-blue-300 bg-blue-50/80 p-3">
 								<div class="mb-2 flex items-center justify-between">
-									<p class="text-sm font-semibold text-blue-700">
-										📥 Downloading Whisper model...
-									</p>
-									<span class="text-xs font-bold text-blue-600"
-										>{$whisperStatus.progress}%</span
-									>
+									<p class="text-sm font-semibold text-blue-700">📥 Downloading Whisper model...</p>
+									<span class="text-xs font-bold text-blue-600">{$whisperStatus.progress}%</span>
 								</div>
 								<div class="h-2 overflow-hidden rounded-full bg-blue-200">
 									<div
@@ -297,15 +293,15 @@
 						<div class="rounded-lg bg-blue-50/50 p-3">
 							<p class="text-xs text-gray-600">
 								{#if privacyModeValue}
-									<strong>🖥️ Desktop offline mode:</strong> All transcriptions stay on your device.
-									Uses Distil-Whisper for fast, private transcription.
+									<strong>🖥️ Desktop offline mode:</strong> All transcriptions stay on your device. Uses
+									Distil-Whisper for fast, private transcription.
 								{:else}
 									<strong>☁️ Online mode:</strong> Fast Gemini API transcription. Works on all devices.
 								{/if}
 							</p>
 							<p class="mt-2 text-xs text-gray-500">
-								<strong>Note:</strong> Offline mode only works on desktop browsers. Mobile devices
-								use online API due to memory constraints.
+								<strong>Note:</strong> Offline mode only works on desktop browsers. Mobile devices use
+								online API due to memory constraints.
 							</p>
 						</div>
 					</section>
@@ -324,8 +320,7 @@
 							<ul class="mt-2 space-y-1 text-xs text-gray-500">
 								<li>• <strong>Online mode (default):</strong> Fast, accurate, works everywhere</li>
 								<li>
-									• <strong>Offline mode:</strong> Downloads Whisper model for complete privacy (no
-									cloud)
+									• <strong>Offline mode:</strong> Downloads Whisper model for complete privacy (no cloud)
 								</li>
 								<li>• Switch anytime in settings - your choice!</li>
 							</ul>
