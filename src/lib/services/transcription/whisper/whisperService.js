@@ -442,11 +442,18 @@ export class WhisperService {
 				console.log('[Whisper]   Samples:', processedAudio.length);
 
 				// Check signal characteristics
-				const maxAmplitude = Math.max(...Array.from(processedAudio).map(Math.abs));
-				const avgAmplitude =
-					Array.from(processedAudio)
-						.map(Math.abs)
-						.reduce((a, b) => a + b, 0) / processedAudio.length;
+			let maxAmplitude = 0;
+			let sumAmplitude = 0;
+			for (let i = 0; i < processedAudio.length; i++) {
+				const sampleAbs = Math.abs(processedAudio[i]);
+				if (sampleAbs > maxAmplitude) {
+					maxAmplitude = sampleAbs;
+				}
+				sumAmplitude += sampleAbs;
+			}
+			// Avoid spreading large arrays into Math.max to prevent stack overflows
+			const avgAmplitude =
+				processedAudio.length > 0 ? sumAmplitude / processedAudio.length : 0;
 
 				console.log('[Whisper]   Signal peak:', maxAmplitude.toFixed(4));
 				console.log('[Whisper]   Signal avg:', avgAmplitude.toFixed(4));
