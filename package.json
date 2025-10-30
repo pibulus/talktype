@@ -12,6 +12,7 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
+		"postinstall": "rm -rf node_modules/sharp node_modules/@img || true",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
 		"lighthouse": "npm run build && lhci autorun",

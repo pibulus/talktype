@@ -4,6 +4,9 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
+  npm_config_sharp_binary_host = "https://placeholder"
+  npm_config_sharp_libvips_binary_host = "https://placeholder"
 
 [[headers]]
   for = "/service-worker.js"
