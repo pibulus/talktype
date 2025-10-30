@@ -1,14 +1,9 @@
 [build]
   command = "npm run build"
-  publish = ".svelte-kit/netlify"
+  publish = "build"
 
 [build.environment]
   NODE_VERSION = "20"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
 
 [[headers]]
   for = "/service-worker.js"
