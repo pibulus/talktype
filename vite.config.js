@@ -6,7 +6,13 @@ export default defineConfig({
 	server: {
 		port: 5173, // Vite default - avoids macOS ControlCenter on 5000
 		host: true, // allows access from other devices on the network
-		strictPort: true // exits if port is already taken (no fallback)
+		strictPort: true, // exits if port is already taken (no fallback)
+		// Enable SharedArrayBuffer and multi-threading for Whisper WASM
+		// These headers enable 4-8x faster transcription via parallel processing
+		headers: {
+			'Cross-Origin-Embedder-Policy': 'require-corp',
+			'Cross-Origin-Opener-Policy': 'same-origin'
+		}
 	},
 	optimizeDeps: {
 		exclude: ['@google/generative-ai', 'sharp'] // Never bundle AI package client-side, exclude sharp

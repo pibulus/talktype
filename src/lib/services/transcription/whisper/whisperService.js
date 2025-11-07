@@ -19,6 +19,31 @@ env.useIndexedDB = true;
 env.allowLocalModels = false;
 // Don't set cacheDir - let it use default browser storage
 
+const ONNX_WASM_CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.0/dist/';
+let onnxRuntimeConfigured = false;
+
+const configureOnnxRuntime = () => {
+	if (onnxRuntimeConfigured || typeof window === 'undefined') {
+		return;
+	}
+
+	const onnxEnv = env.backends?.onnx;
+	const wasmEnv = onnxEnv?.wasm;
+	if (!wasmEnv) {
+		return;
+	}
+
+	const availableCores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4;
+	const workerThreads = Math.max(1, Math.min(availableCores, 4));
+
+	wasmEnv.simd = true;
+	wasmEnv.proxy = true;
+	wasmEnv.numThreads = workerThreads;
+	wasmEnv.initTimeout = Math.max(wasmEnv.initTimeout ?? 0, 15000);
+	wasmEnv.wasmPaths = ONNX_WASM_CDN;
+	onnxRuntimeConfigured = true;
+};
+
 // Check for WebGPU support (10-100x faster!)
 const checkWebGPUSupport = async () => {
 	if (typeof navigator !== 'undefined' && 'gpu' in navigator) {
@@ -44,6 +69,38 @@ const checkWebGPUSupport = async () => {
 	}
 	console.log('WebGPU not available, using optimized WASM');
 	return false;
+};
+
+const logOnnxRuntimeEnvironment = (backend) => {
+	const onnxEnv = env.backends?.onnx;
+	const wasmEnv = onnxEnv?.wasm;
+	if (!wasmEnv) {
+		console.log('[WhisperService][ONNX] wasm environment not detected');
+		return;
+	}
+
+	const diagnosticSummary = {
+		version: onnxEnv?.versions?.common,
+		backend,
+		simd: wasmEnv.simd,
+		proxy: wasmEnv.proxy,
+		threaded: Boolean(wasmEnv.proxy || wasmEnv.multiThread || wasmEnv.threaded || (wasmEnv.numThreads ?? 0) > 1),
+		multiThread: wasmEnv.multiThread,
+		numThreads: wasmEnv.numThreads,
+		numThreadsDefault: wasmEnv.numThreadsDefault,
+		sharedArrayBuffer: typeof SharedArrayBuffer !== 'undefined',
+		crossOriginIsolated: typeof window !== 'undefined' ? window.crossOriginIsolated : undefined,
+		wasmPaths: wasmEnv.wasmPaths
+	};
+
+	console.log('[WhisperService][ONNX] Runtime diagnostics:', diagnosticSummary);
+	console.table(diagnosticSummary);
+	console.log('[WhisperService][ONNX] Diagnostics JSON:', JSON.stringify(diagnosticSummary, null, 2));
+	console.log('[WhisperService][ONNX] Advanced config:', {
+		initTimeout: wasmEnv.initTimeout,
+		worker: wasmEnv.worker,
+		threads: wasmEnv.threads
+	});
 };
 
 // Service status store
@@ -125,6 +182,8 @@ export class WhisperService {
 				throw new Error('Whisper transcription only available in browser environment');
 			}
 
+			configureOnnxRuntime();
+
 			// Get selected model from preferences or default to tiny
 			const prefs = get(userPreferences);
 			const modelKey = prefs.whisperModel || 'tiny';
@@ -175,6 +234,8 @@ export class WhisperService {
 				if (isAppleSilicon) {
 					console.log('🍎 Apple Silicon: Using WASM (faster than WebGPU for Whisper)');
 				}
+
+				logOnnxRuntimeEnvironment(backend);
 
 				// Configure pipeline options based on device capabilities
 				const pipelineOptions = {

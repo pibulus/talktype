@@ -63,8 +63,12 @@ self.addEventListener('fetch', (event) => {
 			}
 		}
 
-		// Special handling for Whisper models (ONNX files)
-		if (url.href.includes('huggingface.co') || url.href.includes('.onnx')) {
+		const isModelAsset =
+			url.href.includes('huggingface.co') ||
+			url.href.includes('.onnx') ||
+			(url.pathname.endsWith('.wasm') && url.href.includes('onnxruntime-web'));
+
+		if (isModelAsset) {
 			const modelCache = await caches.open(MODELS_CACHE);
 			const cachedResponse = await modelCache.match(event.request);
 
