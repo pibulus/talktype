@@ -15,9 +15,17 @@
 	import { STORAGE_KEYS } from '$lib/constants';
 
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
+	import { isPremium } from '$lib/services/premium/premiumService';
+	import { saveTranscript } from '$lib/services/storage/transcriptStorage';
 
 	let Settings;
 	let loadingSettings = false;
+
+	let PremiumUnlockModal;
+	let loadingPremiumModal = false;
+
+	let TranscriptHistoryModal;
+	let loadingHistoryModal = false;
 
 	// Initialize transcription after a short delay
 	let hasInitializedTranscription = false;
@@ -177,12 +185,28 @@
 		modals.forEach((modal) => modal.close());
 	}
 
-	// Handle transcription completed event for PWA prompt
+	// Handle transcription completed event for PWA prompt AND premium storage
 	async function handleTranscriptionCompleted(event) {
 		if (!browser) return;
 
 		const newCount = event.detail.count;
 		debug(`🔔 Transcription completed event received. Count: ${newCount}`);
+
+		// Save transcript if premium user
+		if ($isPremium && event.detail.transcript) {
+			try {
+				await saveTranscript({
+					text: event.detail.transcript.text,
+					audioBlob: event.detail.transcript.audioBlob,
+					duration: event.detail.transcript.duration || 0,
+					promptStyle: event.detail.transcript.promptStyle || 'standard',
+					method: event.detail.transcript.method || 'gemini'
+				});
+				debug('💾 Transcript saved to history');
+			} catch (err) {
+				console.error('Failed to save transcript:', err);
+			}
+		}
 
 		// The PWA service handles most of the logic, but we need to lazy-load the component
 		if ($showPwaInstallPrompt && !PwaInstallPrompt) {
@@ -210,6 +234,66 @@
 		pwaService.dismissPrompt();
 	}
 
+	// Open premium unlock modal
+	async function openPremiumModal(event) {
+		if (loadingPremiumModal) return;
+
+		// Feature info from event (if triggered by premium feature)
+		const feature = event?.detail?.feature;
+		debug(`Opening premium modal for feature: ${feature || 'general'}`);
+
+		if (!PremiumUnlockModal) {
+			loadingPremiumModal = true;
+			try {
+				const module = await import('../premium/PremiumUnlockModal.svelte');
+				PremiumUnlockModal = module.default;
+				debug('Premium modal loaded successfully');
+			} catch (err) {
+				console.error('Error loading premium modal:', err);
+				loadingPremiumModal = false;
+				return;
+			} finally {
+				loadingPremiumModal = false;
+			}
+		}
+
+		setTimeout(() => {
+			const modal = document.getElementById('premium_modal');
+			if (modal) {
+				modal.showModal();
+			}
+		}, 10);
+	}
+
+	// Open history modal
+	async function openHistoryModal() {
+		if (loadingHistoryModal) return;
+
+		debug('Opening history modal');
+
+		if (!TranscriptHistoryModal) {
+			loadingHistoryModal = true;
+			try {
+				const module = await import('../history/TranscriptHistoryModal.svelte');
+				TranscriptHistoryModal = module.default;
+				debug('History modal loaded successfully');
+			} catch (err) {
+				console.error('Error loading history modal:', err);
+				loadingHistoryModal = false;
+				return;
+			} finally {
+				loadingHistoryModal = false;
+			}
+		}
+
+		setTimeout(() => {
+			const modal = document.getElementById('history_modal');
+			if (modal) {
+				modal.showModal();
+			}
+		}, 10);
+	}
+
 	// Component references
 	let ghostContainer;
 	let contentContainer;
@@ -217,6 +301,7 @@
 	// Event listener cleanup
 	let settingsListener;
 	let toggleRecordingListener;
+	let premiumModalListener;
 	let autoRecordTimeout;
 	let ghostClickRetryTimeout;
 
@@ -268,6 +353,14 @@
 			};
 			window.addEventListener('talktype-setting-changed', settingsListener);
 			debug('Added listener for settings changes.');
+
+			// Listen for premium modal trigger
+			premiumModalListener = (event) => {
+				debug('Premium modal trigger event received');
+				openPremiumModal(event);
+			};
+			window.addEventListener('talktype:show-premium-modal', premiumModalListener);
+			debug('Added listener for premium modal trigger.');
 		}
 
 		// Check if first visit to show intro
@@ -282,6 +375,10 @@
 			if (browser && toggleRecordingListener) {
 				window.removeEventListener('talktype:toggle-recording', toggleRecordingListener);
 				debug('Removed toggle recording listener');
+			}
+			if (browser && premiumModalListener) {
+				window.removeEventListener('talktype:show-premium-modal', premiumModalListener);
+				debug('Removed premium modal listener');
 			}
 			if (autoRecordTimeout) {
 				clearTimeout(autoRecordTimeout);
@@ -311,6 +408,7 @@
 			on:showAbout={showAboutModal}
 			on:showSettings={openSettingsModal}
 			on:showExtension={showExtensionModal}
+			on:showHistory={openHistoryModal}
 		/>
 	</svelte:fragment>
 </PageLayout>
@@ -330,6 +428,16 @@
 	<svelte:component this={Settings} closeModal={closeSettingsModal} />
 {/if}
 
+<!-- Premium Unlock Modal - lazy loaded -->
+{#if PremiumUnlockModal}
+	<svelte:component this={PremiumUnlockModal} closeModal={closeModal} />
+{/if}
+
+<!-- Transcript History Modal - lazy loaded -->
+{#if TranscriptHistoryModal}
+	<svelte:component this={TranscriptHistoryModal} closeModal={closeModal} />
+{/if}
+
 <!-- PWA Install Prompt -->
 {#if $showPwaInstallPrompt && PwaInstallPrompt}
 	<div transition:fade={{ duration: 300 }}>
@@ -338,5 +446,5 @@
 			installPromptEvent={$deferredInstallPrompt}
 			on:closeprompt={closePwaInstallPrompt}
 		/>
-	</div>
+	</div}
 {/if}
