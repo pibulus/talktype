@@ -261,26 +261,17 @@
 							<div class="rounded-lg border-2 border-blue-300 bg-blue-50/80 p-3">
 								<div class="mb-2 flex items-center justify-between">
 									<p class="text-sm font-semibold text-blue-700">
-										📥 Downloading Whisper model...
+										📥 Downloading offline model...
 									</p>
-									<span class="text-xs font-bold text-blue-600"
-										>{$whisperStatus.progress}%</span
-									>
 								</div>
+								<!-- Indeterminate progress bar -->
 								<div class="h-2 overflow-hidden rounded-full bg-blue-200">
 									<div
-										class="h-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-300"
-										style="width: {$whisperStatus.progress}%"
+										class="indeterminate-progress h-full w-1/3 bg-gradient-to-r from-blue-400 to-blue-600"
 									></div>
 								</div>
 								<p class="mt-2 text-xs text-blue-600">
-									{#if $whisperStatus.progress < 30}
-										Starting download... (~95MB)
-									{:else if $whisperStatus.progress < 90}
-										Downloading model files...
-									{:else}
-										Almost ready! Loading into memory...
-									{/if}
+									The start button will show progress. You can close this modal and the download will continue.
 								</p>
 							</div>
 						{/if}
@@ -371,6 +362,11 @@
 		animation: fadeUp 0.2s ease-out;
 	}
 
+	/* Indeterminate progress bar animation */
+	.indeterminate-progress {
+		animation: indeterminate 1.5s ease-in-out infinite;
+	}
+
 	@keyframes modalSlideUp {
 		from {
 			transform: translateY(20px);
@@ -390,6 +386,18 @@
 		to {
 			transform: translateY(0);
 			opacity: 1;
+		}
+	}
+
+	@keyframes indeterminate {
+		0% {
+			transform: translateX(-100%);
+		}
+		50% {
+			transform: translateX(0%);
+		}
+		100% {
+			transform: translateX(300%);
 		}
 	}
 </style>

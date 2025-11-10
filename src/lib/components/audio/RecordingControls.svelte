@@ -17,6 +17,7 @@
 		uiState,
 		uiActions
 	} from '$lib/services';
+	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import { CTA_PHRASES } from '$lib/constants';
 
 	const dispatch = createEventDispatcher();
@@ -86,17 +87,8 @@
 			return;
 		}
 
-		// With hybrid transcription, we can always start recording
-		// Gemini API provides instant results while Whisper loads in background
-		// Only block if explicitly in privacy mode and model not ready
-		const privacyMode =
-			typeof localStorage !== 'undefined' &&
-			localStorage.getItem('talktype_privacy_mode') === 'true';
-		if (privacyMode && !modelReady && !$isRecording) {
-			console.log('[RecordingControls] Privacy mode: waiting for offline model');
-			onModelRequired();
-			return;
-		}
+		// The button is already disabled during model download
+		// No need to block here - visual feedback is handled by the button state
 
 		try {
 			console.log('[RecordingControls] Calling toggleRecording...');
@@ -151,6 +143,7 @@
 			<RecordButtonWithTimer
 				recording={$isRecording}
 				transcribing={$isTranscribing}
+				downloading={$whisperStatus.isLoading && !modelReady}
 				clipboardSuccess={$uiState.clipboardSuccess}
 				recordingDuration={$recordingDuration}
 				progress={$transcriptionProgress}

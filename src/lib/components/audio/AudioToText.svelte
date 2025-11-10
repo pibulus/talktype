@@ -88,6 +88,16 @@
 	// This gives us the best of both worlds - fast initial page load but models ready when needed
 	function startModelLoading() {
 		if (modelLoadStarted) return;
+
+		// Only download if privacy mode is enabled
+		const privacyMode = typeof localStorage !== 'undefined'
+			&& localStorage.getItem('talktype_privacy_mode') === 'true';
+
+		if (!privacyMode) {
+			console.log('⏭️ Privacy mode not enabled - skipping model download');
+			return;
+		}
+
 		modelLoadStarted = true;
 
 		// Start progressive model loading
@@ -112,10 +122,24 @@
 		startModelLoading();
 	}
 
+	// Listen for privacy mode changes from Settings
+	function handlePrivacyModeChange(event) {
+		const { setting, value } = event.detail;
+		if (setting === 'privacyMode' && value === true) {
+			console.log('🔒 Privacy mode enabled - starting model download immediately');
+			startModelLoading();
+		}
+	}
+
 	// Lifecycle hooks
 	onMount(() => {
 		// Initialize services
 		initializeServices({ debug: false });
+
+		// Listen for privacy mode toggle from Settings
+		if (typeof window !== 'undefined') {
+			window.addEventListener('talktype-setting-changed', handlePrivacyModeChange);
+		}
 
 		// Wait for first user interaction before loading models
 		// This prevents affecting Lighthouse/PageSpeed scores
@@ -150,6 +174,14 @@
 	onDestroy(() => {
 		// Unsubscribe from all subscriptions
 		unsubscribers.forEach((unsub) => unsub());
+
+		// Remove event listeners
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('talktype-setting-changed', handlePrivacyModeChange);
+			window.removeEventListener('click', handleFirstInteraction);
+			window.removeEventListener('touchstart', handleFirstInteraction);
+			window.removeEventListener('keydown', handleFirstInteraction);
+		}
 	});
 
 	// Export functions for external components

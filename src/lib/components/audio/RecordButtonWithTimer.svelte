@@ -4,6 +4,7 @@
 	// Props
 	export let recording = false;
 	export let transcribing = false;
+	export let downloading = false; // Model downloading state
 	export let clipboardSuccess = false;
 	export let recordingDuration = 0;
 	export let isPremiumUser = false;
@@ -65,7 +66,23 @@
 	const dispatch = createEventDispatcher();
 </script>
 
-{#if transcribing}
+{#if downloading}
+	<div
+		class="progress-container loading-state relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-gradient-to-r from-blue-200 to-indigo-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
+		role="status"
+		aria-label="Downloading offline model"
+	>
+		<div class="loading-shimmer absolute inset-0"></div>
+		<div class="flex h-full items-center justify-center">
+			<span
+				class="loading-text relative z-10 text-xl font-bold text-black"
+				style="letter-spacing: 0.02em;"
+			>
+				Downloading offline model...
+			</span>
+		</div>
+	</div>
+{:else if transcribing}
 	<div
 		class="progress-container loading-state relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-gradient-to-r from-amber-200 to-rose-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
 		role="progressbar"
@@ -102,10 +119,10 @@
 		on:click={() => dispatch('click')}
 		on:mouseenter={() => dispatch('preload')}
 		on:keydown={handleKeyDown}
-		disabled={transcribing}
+		disabled={transcribing || downloading}
 		aria-label={recording ? 'Stop Recording' : 'Start Recording'}
 		aria-pressed={recording}
-		aria-busy={transcribing}
+		aria-busy={transcribing || downloading}
 	>
 		<!-- Main button text -->
 		<span
