@@ -1,6 +1,22 @@
 import { writable, derived, get } from 'svelte/store';
 import { AudioStates } from '../audio/audioStates';
 import { ANIMATION } from '$lib/constants';
+import { browser } from '$app/environment';
+
+// Import promptStyle store to keep userPreferences in sync
+let promptStyleStore;
+if (browser) {
+	import('$lib').then((lib) => {
+		promptStyleStore = lib.promptStyle;
+		// Subscribe to changes in the promptStyle store
+		promptStyleStore.subscribe((newStyle) => {
+			userPreferences.update((prefs) => ({
+				...prefs,
+				promptStyle: newStyle
+			}));
+		});
+	});
+}
 
 // Core audio state store
 export const audioState = writable({
@@ -38,11 +54,19 @@ export const uiState = writable({
 	screenReaderMessage: ''
 });
 
-// User options
-export const userPreferences = writable({
-	isPremiumUser: false,
-	promptStyle: 'standard'
-});
+// User options - initialize promptStyle from localStorage
+function createUserPreferences() {
+	const initialPromptStyle = browser
+		? localStorage.getItem('talktype-prompt-style') || 'standard'
+		: 'standard';
+
+	return writable({
+		isPremiumUser: false,
+		promptStyle: initialPromptStyle
+	});
+}
+
+export const userPreferences = createUserPreferences();
 
 // Derived stores for easier consumption
 export const isRecording = derived(
