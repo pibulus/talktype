@@ -162,7 +162,9 @@ export function selectModel(modelId) {
 		// Update user preferences
 		userPreferences.update((prefs) => ({
 			...prefs,
-			whisperModel: modelId
+			whisperModel: modelId,
+			modelManuallySelected: true,
+			modelAutoSelected: false
 		}));
 
 		return true;
@@ -216,7 +218,8 @@ export function autoSelectModel() {
 	userPreferences.update((p) => ({
 		...p,
 		whisperModel: recommendedId,
-		modelAutoSelected: true
+		modelAutoSelected: true,
+		modelManuallySelected: false
 	}));
 
 	return recommendedId;

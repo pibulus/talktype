@@ -2,13 +2,15 @@
 	import { ANIMATION, CTA_PHRASES, COPY_MESSAGES, getRandomFromArray } from '$lib/constants';
 
 	// Props
-	export let recording = false;
-	export let transcribing = false;
-	export let clipboardSuccess = false;
-	export let recordingDuration = 0;
-	export let isPremiumUser = false;
-	export let buttonLabel = CTA_PHRASES[0];
-	export let progress = 0; // For transcription progress
+export let recording = false;
+export let transcribing = false;
+export let clipboardSuccess = false;
+export let recordingDuration = 0;
+export let isPremiumUser = false;
+export let buttonLabel = CTA_PHRASES[0];
+export let progress = 0; // For transcription progress
+export let disabledExternally = false;
+export let subLabel = '';
 
 	// Element refs
 	let recordButtonElement;
@@ -95,17 +97,19 @@
 			? 'pulse-subtle'
 			: ''} {recording ? 'recording-active' : ''} {isWarning && recording
 			? 'recording-warning'
-			: ''} {isDanger && recording ? 'recording-danger' : ''}"
+			: ''} {isDanger && recording ? 'recording-danger' : ''} {disabledExternally ? 'download-mode cursor-not-allowed' : ''}"
 		style="min-width: 280px; min-height: 64px; transform-origin: center center; position: relative; {recording
 			? `--progress: ${Math.min((recordingDuration / (isPremiumUser ? ANIMATION.RECORDING.PREMIUM_LIMIT : ANIMATION.RECORDING.FREE_LIMIT)) * 100, 100)}%`
 			: ''}"
 		on:click={() => dispatch('click')}
 		on:mouseenter={() => dispatch('preload')}
 		on:keydown={handleKeyDown}
-		disabled={transcribing}
+		disabled={transcribing || disabledExternally}
+		data-loading={disabledExternally}
 		aria-label={recording ? 'Stop Recording' : 'Start Recording'}
 		aria-pressed={recording}
 		aria-busy={transcribing}
+		aria-live="polite"
 	>
 		<!-- Main button text -->
 		<span
@@ -156,12 +160,24 @@
 						>
 							{buttonLabel}
 						</span>
+						{#if disabledExternally}
+							<span class="loading-dots" aria-hidden="true">
+								<span></span>
+								<span></span>
+								<span></span>
+							</span>
+						{/if}
 						<span class="sr-only">
 							{#if recording}
 								{formatTime(recordingDuration)} of {formatTime(ANIMATION.RECORDING.FREE_LIMIT)}
 							{/if}
 						</span>
 					</span>
+					{#if subLabel && !clipboardSuccess}
+						<span class="button-sublabel mt-1 block text-sm font-semibold opacity-80">
+							{subLabel}
+						</span>
+					{/if}
 				</span>
 			</span>
 		</span>
@@ -187,6 +203,67 @@
 			0 4px 6px -1px rgba(251, 191, 36, 0.2),
 			0 2px 4px -1px rgba(0, 0, 0, 0.1),
 			inset 0 1px 0 rgba(255, 255, 255, 0.15);
+	}
+
+	.record-button:disabled {
+		box-shadow: none;
+	}
+
+	.record-button.download-mode {
+		background: linear-gradient(120deg, #f3e7ff, #f7d2ff);
+		color: #3b2d4a;
+		box-shadow:
+			0 8px 20px rgba(220, 163, 255, 0.35),
+			0 2px 8px rgba(255, 255, 255, 0.6);
+	}
+
+	.record-button.download-mode .cta__label {
+		font-size: clamp(0.95rem, 0.5vw + 0.8rem, 1.1rem);
+	}
+
+	.button-sublabel {
+		letter-spacing: 0.02em;
+		font-size: 0.85rem;
+	}
+
+	.loading-dots {
+		display: inline-flex;
+		margin-left: 0.5rem;
+		gap: 0.2rem;
+	}
+
+	.loading-dots span {
+		width: 0.35rem;
+		height: 0.35rem;
+		background: currentColor;
+		border-radius: 9999px;
+		opacity: 0.25;
+		animation: bounce 1.2s infinite ease-in-out;
+	}
+
+	.loading-dots span:nth-child(2) {
+		animation-delay: 0.2s;
+	}
+
+	.loading-dots span:nth-child(3) {
+		animation-delay: 0.4s;
+	}
+
+	@keyframes bounce {
+		0%,
+		80%,
+		100% {
+			opacity: 0.25;
+			transform: translateY(0);
+		}
+		40% {
+			opacity: 0.8;
+			transform: translateY(-2px);
+		}
+	}
+
+	.button-sublabel {
+		letter-spacing: 0.01em;
 	}
 
 	/* Shimmer effect for the button - commented out as not displaying correctly

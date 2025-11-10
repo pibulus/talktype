@@ -1,9 +1,15 @@
 <script>
 	import { onMount } from 'svelte';
 	import { theme, autoRecord, autoSave, applyTheme, promptStyle } from '$lib';
-	import { geminiService } from '$lib/services/geminiService';
-	import { installPromptEvent } from '$lib/stores/pwa';
-	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
+import { geminiService } from '$lib/services/geminiService';
+import { installPromptEvent } from '$lib/stores/pwa';
+import { whisperService, whisperStatus } from '$lib/services/transcription/whisper/whisperService';
+import { userPreferences } from '$lib/services/infrastructure/stores';
+import {
+	getAvailableModels,
+	selectModel,
+	autoSelectModel
+} from '$lib/services/transcription/whisper/modelRegistry';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
 	import { Toggle, Button } from './shared';
@@ -28,7 +34,47 @@
 	let autoRecordValue = false;
 	let autoSaveValue = false;
 	let selectedPromptStyle = 'standard';
-	let privacyModeValue = false;
+let privacyModeValue = false;
+let selectedModelOption = 'auto';
+const availableWhisperModels = getAvailableModels();
+const whisperModelMap = Object.fromEntries(availableWhisperModels.map((model) => [model.id, model]));
+const OFFLINE_DOWNLOAD_SIZE = '~95MB';
+let clearingOfflineCache = false;
+let offlineCacheMessage = '';
+let lastRequestedModel = 'auto';
+
+function formatBytes(bytes) {
+	if (!bytes || typeof bytes !== 'number') return '—';
+	const units = ['B', 'KB', 'MB', 'GB'];
+	let index = 0;
+	let value = bytes;
+	while (value >= 1024 && index < units.length - 1) {
+		value /= 1024;
+		index++;
+	}
+	return `${value.toFixed(0)}${units[index]}`;
+}
+
+const whisperModelChoices = [
+	{
+		id: 'auto',
+		title: 'Auto (recommended)',
+		description: 'TalkType picks tiny vs. small based on your hardware.',
+		meta: 'Balanced speed + accuracy'
+	},
+	{
+		id: 'tiny',
+		title: 'Tiny (fastest)',
+		description: 'Quickest offline transcription with lower accuracy.',
+		meta: `${formatBytes(whisperModelMap.tiny?.size)} download`
+	},
+	{
+		id: 'small',
+		title: 'Small (higher accuracy)',
+		description: 'Better accuracy for desktop-class CPUs.',
+		meta: `${formatBytes(whisperModelMap.small?.size)} download`
+	}
+];
 
 	// Store subscriptions
 	const unsubscribeTheme = theme.subscribe((value) => {
@@ -43,9 +89,18 @@
 		autoSaveValue = value === 'true';
 	});
 
-	const unsubscribePromptStyle = promptStyle.subscribe((value) => {
-		selectedPromptStyle = value;
-	});
+const unsubscribePromptStyle = promptStyle.subscribe((value) => {
+	selectedPromptStyle = value;
+});
+const unsubscribeUserPreferences = userPreferences.subscribe((prefs) => {
+	if (prefs?.modelManuallySelected && prefs?.whisperModel) {
+		selectedModelOption = prefs.whisperModel;
+		lastRequestedModel = prefs.whisperModel;
+	} else {
+		selectedModelOption = 'auto';
+		lastRequestedModel = 'auto';
+	}
+});
 
 	onMount(() => {
 		// Get currently selected prompt style from the service
@@ -69,6 +124,7 @@
 			unsubscribeAutoRecord();
 			unsubscribeAutoSave();
 			unsubscribePromptStyle();
+			unsubscribeUserPreferences();
 		};
 	});
 
@@ -130,6 +186,61 @@
 				detail: { setting: 'privacyMode', value: privacyModeValue }
 			})
 		);
+
+		if (privacyModeValue && typeof window !== 'undefined') {
+			reloadWhisperModel();
+		} else {
+			whisperService.unloadModel();
+		}
+	}
+
+	function handleModelOptionChange(option) {
+		if (option === selectedModelOption && option === lastRequestedModel) {
+			return;
+		}
+		selectedModelOption = option;
+		lastRequestedModel = option;
+		if (option === 'auto') {
+			autoSelectModel();
+		} else {
+			selectModel(option);
+		}
+
+		reloadWhisperModel();
+	}
+
+	function reloadWhisperModel() {
+		try {
+			whisperService.unloadModel();
+		} catch (error) {
+			console.warn('[Settings] Whisper unload failed:', error?.message || error);
+		}
+
+		if (!privacyModeValue) {
+			return;
+		}
+
+		whisperService.preloadModel().catch((error) => {
+			console.warn('[Settings] Whisper preload failed:', error?.message || error);
+		});
+	}
+
+	async function handleClearOfflineCache() {
+		if (clearingOfflineCache) return;
+		clearingOfflineCache = true;
+		offlineCacheMessage = '';
+		try {
+			await whisperService.clearModelCache();
+			offlineCacheMessage = 'Offline cache cleared. The model will download again next time.';
+			if (privacyModeValue) {
+				reloadWhisperModel();
+			}
+		} catch (error) {
+			console.error('Failed to clear offline cache:', error);
+			offlineCacheMessage = 'Could not clear cache. Close other tabs and try again.';
+		} finally {
+			clearingOfflineCache = false;
+		}
 	}
 
 	async function handleInstallClick() {
@@ -261,39 +372,61 @@
 							on:change={handlePrivacyModeChange}
 						/>
 
-						<!-- Download Progress Indicator -->
-						{#if $whisperStatus.isLoading && privacyModeValue}
-							<div class="rounded-lg border-2 border-blue-300 bg-blue-50/80 p-3">
-								<div class="mb-2 flex items-center justify-between">
-									<p class="text-sm font-semibold text-blue-700">📥 Downloading Whisper model...</p>
-									<span class="text-xs font-bold text-blue-600">{$whisperStatus.progress}%</span>
-								</div>
-								<div class="h-2 overflow-hidden rounded-full bg-blue-200">
-									<div
-										class="h-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-300"
-										style="width: {$whisperStatus.progress}%"
-									></div>
-								</div>
-								<p class="mt-2 text-xs text-blue-600">
-									{#if $whisperStatus.progress < 30}
-										Starting download... (~95MB)
-									{:else if $whisperStatus.progress < 90}
-										Downloading model files...
-									{:else}
-										Almost ready! Loading into memory...
-									{/if}
-								</p>
-							</div>
-						{/if}
+							<!-- Download Progress / Status Indicator -->
+							{#if privacyModeValue}
+								{#if !$whisperStatus.isLoaded}
+									<div class="rounded-lg border-2 border-blue-300 bg-blue-50/80 p-3">
+										<div class="mb-2 flex items-center justify-between">
+											<p class="text-sm font-semibold text-blue-700">
+												📥 { $whisperStatus.isLoading ? 'Downloading Whisper model...' : 'Preparing Whisper download...' }
+											</p>
+											{#if $whisperStatus.isLoading}
+												<span class="text-xs font-bold text-blue-600">
+													{$whisperStatus.progress}%
+												</span>
+											{/if}
+										</div>
+										{#if $whisperStatus.isLoading}
+											<div class="h-2 overflow-hidden rounded-full bg-blue-200">
+												<div
+													class="h-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-300"
+													style="width: {$whisperStatus.progress}%"
+												></div>
+											</div>
+											<p class="mt-2 text-xs text-blue-600">
+												{#if $whisperStatus.progress < 30}
+													Starting download... (~95MB)
+												{:else if $whisperStatus.progress < 90}
+													Downloading model files...
+												{:else}
+													Almost ready! Loading into memory...
+												{/if}
+											</p>
+										{:else}
+											<p class="text-xs text-blue-600">Connecting and preparing download (~95MB)...</p>
+										{/if}
+									</div>
+								{:else}
+									<div class="rounded-lg border-2 border-green-300 bg-green-50/80 p-3">
+										<p class="text-sm font-semibold text-green-700">
+											✅ Offline model ready! Your transcriptions are completely private.
+										</p>
+									</div>
+								{/if}
 
-						<!-- Model Loaded Success -->
-						{#if $whisperStatus.isLoaded && privacyModeValue}
-							<div class="rounded-lg border-2 border-green-300 bg-green-50/80 p-3">
-								<p class="text-sm font-semibold text-green-700">
-									✅ Offline model ready! Your transcriptions are completely private.
-								</p>
-							</div>
-						{/if}
+								<div class="mt-3 flex flex-col gap-2">
+									<button
+										class="rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-50 disabled:opacity-60"
+										on:click={handleClearOfflineCache}
+										disabled={clearingOfflineCache}
+									>
+										{clearingOfflineCache ? 'Clearing offline cache…' : '🧹 Clear offline Whisper cache'}
+									</button>
+									{#if offlineCacheMessage}
+										<p class="text-xs text-gray-600">{offlineCacheMessage}</p>
+									{/if}
+								</div>
+							{/if}
 
 						<div class="rounded-lg bg-blue-50/50 p-3">
 							<p class="text-xs text-gray-600">
@@ -309,33 +442,44 @@
 								online API due to memory constraints.
 							</p>
 						</div>
-					</section>
+						</section>
 
-					<div class="divider my-2 opacity-10"></div>
+						<div class="divider my-2 opacity-10"></div>
 
-					<!-- Model Settings -->
-					<section class="space-y-2">
-						<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">
-							How It Works
-						</h3>
-						<div class="rounded-lg bg-white/50 p-3">
-							<p class="text-sm text-gray-600">
-								By default, TalkType uses Gemini API for instant, accurate transcription.
-							</p>
-							<ul class="mt-2 space-y-1 text-xs text-gray-500">
-								<li>• <strong>Online mode (default):</strong> Fast, accurate, works everywhere</li>
-								<li>
-									• <strong>Offline mode:</strong> Downloads Whisper model for complete privacy (no cloud)
-								</li>
-								<li>• Switch anytime in settings - your choice!</li>
-							</ul>
-						</div>
-					</section>
-				</div>
-			{:else if activeTab === 'shortcuts'}
-				<div class="space-y-4">
-					<KeyboardShortcutsInfo />
-				</div>
+						<!-- Model Settings -->
+						<section class="space-y-4">
+							<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">
+								Offline Model Preference
+							</h3>
+							<div class="space-y-3">
+								{#each whisperModelChoices as choice}
+									<label
+										class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 transition-all {selectedModelOption === choice.id
+											? 'border-amber-300 bg-white'
+											: 'border-transparent bg-white/70 hover:border-amber-200'}"
+									>
+										<input
+											type="radio"
+											name="whisper_model_choice"
+											class="mt-1"
+											value={choice.id}
+											checked={selectedModelOption === choice.id}
+											on:change={() => handleModelOptionChange(choice.id)}
+										/>
+										<div class="flex-1">
+											<div class="text-sm font-semibold text-gray-900">{choice.title}</div>
+											<p class="text-xs text-gray-600">{choice.description}</p>
+											<p class="text-xs font-semibold text-amber-700">{choice.meta}</p>
+										</div>
+									</label>
+								{/each}
+							</div>
+						</section>
+					</div>
+				{:else if activeTab === 'shortcuts'}
+					<div class="space-y-4">
+						<KeyboardShortcutsInfo />
+					</div>
 			{:else if activeTab === 'about'}
 				<div class="space-y-4">
 					<SupportSection />

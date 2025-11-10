@@ -38,7 +38,10 @@ export const uiState = writable({
 // User options
 export const userPreferences = writable({
 	isPremiumUser: false,
-	promptStyle: 'standard'
+	promptStyle: 'standard',
+	whisperModel: 'tiny',
+	modelAutoSelected: false,
+	modelManuallySelected: false
 });
 
 // Derived stores for easier consumption

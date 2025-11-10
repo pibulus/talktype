@@ -4,6 +4,7 @@
 -->
 <script>
 	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+	import { browser } from '$app/environment';
 	import RecordButtonWithTimer from './RecordButtonWithTimer.svelte';
 	import AudioVisualizer from './AudioVisualizer.svelte';
 	import { createRecordingControlsService } from '$lib/services/audio/recordingControlsService';
@@ -18,6 +19,7 @@
 		uiActions
 	} from '$lib/services';
 	import { CTA_PHRASES } from '$lib/constants';
+	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 
 	const dispatch = createEventDispatcher();
 
@@ -32,9 +34,30 @@
 	let services;
 	let recordingControlsService;
 	let currentCta = CTA_PHRASES[0];
+	let privacyModeEnabled = false;
+const OFFLINE_DOWNLOAD_SIZE = '~95MB';
+let buttonSubLabel = '';
 
-	// Reactive button label computation
-	$: buttonLabel = $isRecording ? 'Stop Recording' : $transcriptionText ? currentCta : currentCta;
+// Offline/Whisper readiness tracking
+$: offlineModeActive = privacyModeEnabled;
+$: offlineReady = $whisperStatus.isLoaded;
+$: offlineLoading = $whisperStatus.isLoading;
+$: offlineProgress = Math.max(0, $whisperStatus.progress ?? 0);
+$: defaultButtonLabel = $isRecording ? 'Stop Recording' : currentCta;
+$: offlineButtonText =
+	offlineModeActive && !offlineReady
+		? offlineLoading
+			? '📥 Downloading offline mode'
+			: '🔒 Preparing offline mode'
+		: null;
+$: buttonLabel = offlineButtonText ?? defaultButtonLabel;
+$: disableRecordingButton = offlineModeActive && !offlineReady;
+$: buttonSubLabel =
+	offlineModeActive && !offlineReady
+		? offlineLoading && offlineProgress > 0
+			? `Secure private download • ${offlineProgress}% of ${OFFLINE_DOWNLOAD_SIZE}`
+			: `Secure one-time setup • ${OFFLINE_DOWNLOAD_SIZE}`
+		: '';
 
 	// Debug logging for recording state
 	$: console.log(
@@ -44,11 +67,11 @@
 		buttonLabel
 	);
 
-	onMount(() => {
-		// Initialize services
-		services = initializeServices({ debug: false });
+onMount(() => {
+	// Initialize services
+	services = initializeServices({ debug: false });
 
-		// Create recording controls service
+	// Create recording controls service
 		recordingControlsService = createRecordingControlsService({
 			audioService: services.audioService,
 			transcriptionService: services.transcriptionService,
@@ -67,10 +90,45 @@
 		}
 
 		// Set preload handler
-		if (onPreloadRequest) {
-			recordingControlsService.setPreloadHandler(onPreloadRequest);
+	if (onPreloadRequest) {
+		recordingControlsService.setPreloadHandler(onPreloadRequest);
+	}
+});
+
+onMount(() => {
+	if (!browser) {
+		return;
+	}
+
+	const refreshPrivacyModeFlag = () => {
+		try {
+			privacyModeEnabled = localStorage.getItem('talktype_privacy_mode') === 'true';
+		} catch {
+			privacyModeEnabled = false;
 		}
-	});
+	};
+
+	const handleSettingChange = (event) => {
+		if (event?.detail?.setting === 'privacyMode') {
+			privacyModeEnabled = Boolean(event.detail.value);
+		}
+	};
+
+	const handleStorageChange = (event) => {
+		if (event.key === 'talktype_privacy_mode') {
+			refreshPrivacyModeFlag();
+		}
+	};
+
+	refreshPrivacyModeFlag();
+	window.addEventListener('talktype-setting-changed', handleSettingChange);
+	window.addEventListener('storage', handleStorageChange);
+
+	return () => {
+		window.removeEventListener('talktype-setting-changed', handleSettingChange);
+		window.removeEventListener('storage', handleStorageChange);
+	};
+});
 
 	onDestroy(() => {
 		if (recordingControlsService) {
@@ -89,10 +147,8 @@
 		// With hybrid transcription, we can always start recording
 		// Gemini API provides instant results while Whisper loads in background
 		// Only block if explicitly in privacy mode and model not ready
-		const privacyMode =
-			typeof localStorage !== 'undefined' &&
-			localStorage.getItem('talktype_privacy_mode') === 'true';
-		if (privacyMode && !modelReady && !$isRecording) {
+	const privacyMode = privacyModeEnabled;
+	if (privacyMode && !modelReady && !$isRecording) {
 			console.log('[RecordingControls] Privacy mode: waiting for offline model');
 			onModelRequired();
 			return;
@@ -156,6 +212,8 @@
 				progress={$transcriptionProgress}
 				{isPremiumUser}
 				{buttonLabel}
+				disabledExternally={disableRecordingButton}
+				subLabel={buttonSubLabel}
 				on:click={handleRecordingToggle}
 				on:preload={handlePreload}
 			/>
@@ -196,6 +254,7 @@
 		position: relative;
 		z-index: 10;
 	}
+
 
 	/* Common animation for fading elements in */
 	.animate-fadeIn {

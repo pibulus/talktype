@@ -48,40 +48,38 @@ export function detectDeviceCapabilities() {
 		storage: null
 	};
 
-	// Determine device tier
+	// Determine device tier and recommended model
+	const isMobileDevice = capabilities.platform.isMobile;
 	let tier = 'medium';
-	let recommendedModel = 'tiny'; // Start with tiny for progressive loading
-	let reason = 'Progressive loading from tiny';
+	let recommendedModel = 'tiny';
+	let reason = 'Defaulting to tiny until heuristics run';
 
-	// High-end device detection – TEMP: using tiny while investigating performance
-	if (capabilities.memory >= 8 && capabilities.cores >= 8) {
-		tier = 'high';
-		recommendedModel = 'tiny'; // TEMP: testing performance
-		reason = 'High-end device, testing tiny model performance';
-	}
-	// Mid-high tier (good memory but maybe no WebGPU)
-	else if (capabilities.memory >= 6 && capabilities.cores >= 6) {
-		tier = 'medium-high';
-		recommendedModel = 'tiny'; // TEMP: testing performance
-		reason = 'Good specs, testing tiny model';
-	}
-	// Standard mid-tier
-	else if (capabilities.memory >= 4) {
-		tier = 'medium';
-		recommendedModel = 'tiny'; // TEMP: testing performance
-		reason = 'Standard device, testing tiny model';
-	}
-	// Low-mid tier
-	else if (capabilities.memory >= 2) {
-		tier = 'low-medium';
+	if (!isMobileDevice) {
+		if (capabilities.memory >= 12 || (capabilities.memory >= 8 && capabilities.cores >= 8)) {
+			tier = 'ultra-high';
+			recommendedModel = 'small';
+			reason = '>= 8 cores and >= 8GB RAM (desktop class)';
+		} else if (capabilities.memory >= 6 && capabilities.cores >= 6) {
+			tier = 'desktop-high';
+			recommendedModel = 'small';
+			reason = '>= 6 cores and >= 6GB RAM';
+		} else if (capabilities.memory >= 4 && capabilities.cores >= 4) {
+			tier = 'desktop-medium';
+			recommendedModel = 'small';
+			reason = '>= 4 cores and >= 4GB RAM';
+		} else if (capabilities.memory >= 3) {
+			tier = 'desktop-low';
+			recommendedModel = 'tiny';
+			reason = 'Desktop memory under 4GB';
+		} else {
+			tier = 'desktop-constraint';
+			recommendedModel = 'tiny';
+			reason = 'Desktop with < 3GB RAM';
+		}
+	} else {
+		tier = 'mobile-low';
 		recommendedModel = 'tiny';
-		reason = 'Limited memory, using tiny model';
-	}
-	// Low-end or mobile devices
-	else if (capabilities.platform.isMobile || capabilities.memory < 2) {
-		tier = 'low';
-		recommendedModel = 'tiny';
-		reason = capabilities.platform.isMobile ? 'Mobile device' : 'Low memory device';
+		reason = 'Mobile device constraints (Safari/Android)';
 	}
 
 	// Special cases
@@ -114,7 +112,7 @@ export function detectDeviceCapabilities() {
 		loadingStrategy: {
 			initial: 'tiny', // Always start with tiny for instant experience
 			target: recommendedModel, // Load this in background
-			fallback: tier === 'low' ? null : 'small' // Fallback if target fails
+			fallback: tier.includes('low') ? null : 'small' // Fallback if target fails
 		}
 	};
 }

@@ -8,6 +8,11 @@ import { userPreferences } from '../../infrastructure/stores';
 import { pipeline, env } from '@huggingface/transformers';
 import { convertToWAV as convertToRawAudio, needsConversion } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
+import {
+	prefetchModelAssets,
+	inspectModelCache,
+	shouldPrefetchWeightsForDevice
+} from './modelDownloader';
 
 // Configure Transformers.js environment IMMEDIATELY for optimal performance
 env.allowRemoteModels = true;
@@ -21,6 +26,10 @@ env.allowLocalModels = false;
 
 const ONNX_WASM_CDN = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.0/dist/';
 let onnxRuntimeConfigured = false;
+const TOKEN_IDS_EMPTY_ERROR = 'token_ids must be a non-empty array of integers';
+
+const isEmptyTokenError = (error) =>
+	typeof error?.message === 'string' && error.message.includes(TOKEN_IDS_EMPTY_ERROR);
 
 const configureOnnxRuntime = () => {
 	if (onnxRuntimeConfigured || typeof window === 'undefined') {
@@ -121,6 +130,7 @@ export class WhisperService {
 		this.transcriber = null;
 		this.modelLoadPromise = null;
 		this.isSupported = typeof window !== 'undefined';
+		this.weightPrefetchPromise = null;
 
 		// Initialize status
 		this.updateStatus({
@@ -196,6 +206,11 @@ export class WhisperService {
 			this.updateStatus({
 				selectedModel: modelKey,
 				progress: 10
+			});
+
+			const cacheSnapshotBefore = await this.primeModelCaches(modelConfig).catch((error) => {
+				console.warn('[WhisperService][Cache] Warmup skipped:', error?.message || error);
+				return null;
 			});
 
 			console.log(`🎯 Loading Whisper model: ${modelKey} (${modelConfig.name})`);
@@ -295,6 +310,15 @@ export class WhisperService {
 			});
 
 			console.log(`✨ Whisper model loaded successfully in ${loadTimeSeconds}s`);
+
+			inspectModelCache(modelConfig.id)
+				.then((snapshot) => {
+					console.log('[WhisperService][Cache] Snapshot after load:', snapshot);
+				})
+				.catch((error) => {
+					console.warn('[WhisperService][Cache] Snapshot failed:', error.message);
+				});
+
 			return { success: true, transcriber: this.transcriber };
 		} catch (error) {
 			console.error('Failed to load Whisper model:', error);
@@ -309,6 +333,55 @@ export class WhisperService {
 			this.modelLoadPromise = null;
 			return { success: false, error };
 		}
+	}
+
+	async primeModelCaches(modelConfig) {
+		if (typeof window === 'undefined') {
+			return null;
+		}
+
+		const repoId = modelConfig.id;
+		const snapshot = await inspectModelCache(repoId);
+		console.log('[WhisperService][Cache] Snapshot before load:', snapshot);
+
+		try {
+			const metadataPrefetch = await prefetchModelAssets(repoId, {
+				targets: ['metadata'],
+				timeoutMs: 20000
+			});
+			console.log('[WhisperService][Cache] Metadata prefetch complete:', metadataPrefetch);
+		} catch (error) {
+			console.warn(
+				'[WhisperService][Cache] Metadata prefetch failed:',
+				error?.message || error
+			);
+		}
+
+		if (shouldPrefetchWeightsForDevice(snapshot)) {
+			if (!this.weightPrefetchPromise) {
+				this.weightPrefetchPromise = prefetchModelAssets(repoId, {
+					targets: ['weights'],
+					timeoutMs: 120000,
+					priority: 'background'
+				})
+					.then((result) => {
+						console.log('[WhisperService][Cache] Weights prefetch finished:', result);
+					})
+					.catch((error) => {
+						console.warn(
+							'[WhisperService][Cache] Weights prefetch failed:',
+							error?.message || error
+						);
+					})
+					.finally(() => {
+						this.weightPrefetchPromise = null;
+					});
+			}
+		} else {
+			console.log('[WhisperService][Cache] Weight prefetch skipped (cached or constrained)');
+		}
+
+		return snapshot;
 	}
 
 	/**
@@ -518,7 +591,39 @@ export class WhisperService {
 			console.log('[Whisper]   Backend:', this.hasWebGPU ? 'webgpu' : 'wasm');
 			console.log('[Whisper]   Quantization:', this.hasWebGPU ? 'fp16' : 'INT8');
 
-			const result = await this.transcriber(processedAudio, transcriptionOptions);
+			let result;
+			try {
+				result = await this.transcriber(processedAudio, transcriptionOptions);
+			} catch (pipelineError) {
+				if (isEmptyTokenError(pipelineError)) {
+					console.warn(
+						'[Whisper] Decoder returned empty token ids, retrying with safer fallback options...'
+					);
+					const fallbackOptions = {
+						...transcriptionOptions,
+						return_timestamps: false,
+						condition_on_prev_tokens: false
+					};
+
+					if (!fallbackOptions.chunk_length_s || fallbackOptions.chunk_length_s > 20) {
+						fallbackOptions.chunk_length_s = 20;
+						fallbackOptions.stride_length_s = 3;
+					}
+
+					try {
+						result = await this.transcriber(processedAudio, fallbackOptions);
+						console.log('[Whisper] Empty-token fallback succeeded.');
+					} catch (fallbackError) {
+						console.error(
+							'[Whisper] Empty-token fallback also failed:',
+							fallbackError?.message || fallbackError
+						);
+						throw fallbackError;
+					}
+				} else {
+					throw pipelineError;
+				}
+			}
 
 			console.log('[Whisper] Raw transcription result:', result);
 
@@ -560,6 +665,7 @@ export class WhisperService {
 				error.message?.includes('OrtRun') ||
 				error.message?.includes('error code = 6') ||
 				error.message?.includes('ONNX');
+			const isEmptyTokenDecodeError = isEmptyTokenError(error);
 
 			// If ONNX error and we haven't retried yet, clear cache and retry
 			if (isONNXError && retryCount < MAX_RETRIES) {
@@ -584,9 +690,16 @@ export class WhisperService {
 			}
 
 			// Update status with error
-			const errorMessage = isONNXError
-				? 'Model error detected. Try clearing your browser cache (Settings > Privacy > Clear browsing data) and reload.'
-				: error.message || 'Failed to transcribe audio with Whisper';
+			let errorMessage;
+			if (isONNXError) {
+				errorMessage =
+					'Model error detected. Try clearing your browser cache (Settings > Privacy > Clear browsing data) and reload.';
+			} else if (isEmptyTokenDecodeError) {
+				errorMessage =
+					'Whisper could not decode that audio clip. Try a shorter recording or speak louder.';
+			} else {
+				errorMessage = error.message || 'Failed to transcribe audio with Whisper';
+			}
 
 			this.updateStatus({
 				isLoading: false,
