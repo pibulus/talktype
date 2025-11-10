@@ -6,6 +6,8 @@
 		loadAllTranscripts,
 		deleteTranscript,
 		clearAllTranscripts,
+		batchDownloadTranscripts,
+		exportAllTranscriptsJSON,
 		formatSize
 	} from '$lib/services/storage/transcriptStorage';
 	import { isPremium } from '$lib/services/premium/premiumService';
@@ -107,6 +109,26 @@
 		audio.play();
 	}
 
+	// Batch download all transcripts
+	async function handleBatchDownload() {
+		const count = await batchDownloadTranscripts();
+		window.dispatchEvent(
+			new CustomEvent('talktype:toast', {
+				detail: { message: `📦 Downloading ${count} transcript${count !== 1 ? 's' : ''}...`, type: 'success' }
+			})
+		);
+	}
+
+	// Export as JSON
+	async function handleExportJSON() {
+		await exportAllTranscriptsJSON();
+		window.dispatchEvent(
+			new CustomEvent('talktype:toast', {
+				detail: { message: '📄 Exported as JSON!', type: 'success' }
+			})
+		);
+	}
+
 	onMount(() => {
 		loadAllTranscripts();
 	});
@@ -147,9 +169,17 @@
 				</div>
 
 				{#if $transcriptHistory.length > 0}
-					<Button variant="ghost" size="sm" on:click={handleClearAll}>
-						{confirmClearAll ? '⚠️ Confirm?' : '🗑️ Clear All'}
-					</Button>
+					<div class="flex gap-2">
+						<Button variant="ghost" size="sm" on:click={handleBatchDownload} title="Download all as text files">
+							📦 Download All
+						</Button>
+						<Button variant="ghost" size="sm" on:click={handleExportJSON} title="Export as JSON">
+							📄 JSON
+						</Button>
+						<Button variant="ghost" size="sm" on:click={handleClearAll}>
+							{confirmClearAll ? '⚠️ Confirm?' : '🗑️ Clear All'}
+						</Button>
+					</div>
 				{/if}
 			</div>
 		</div>

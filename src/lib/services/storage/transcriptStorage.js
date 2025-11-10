@@ -275,6 +275,71 @@ export async function exportTranscriptsAsJSON() {
 }
 
 /**
+ * Batch download all transcripts as individual text files
+ * @returns {Promise<number>} - Number of files downloaded
+ */
+export async function batchDownloadTranscripts() {
+	const transcripts = await loadAllTranscripts();
+
+	if (transcripts.length === 0) {
+		return 0;
+	}
+
+	// Download each transcript as a text file
+	transcripts.forEach((transcript, index) => {
+		const date = new Date(transcript.timestamp).toISOString().slice(0, 10);
+		const filename = `transcript-${date}-${index + 1}.txt`;
+
+		// Create file content
+		let content = `TalkType Transcript\n`;
+		content += `Date: ${new Date(transcript.timestamp).toLocaleString()}\n`;
+		content += `Duration: ${transcript.duration}s\n`;
+		content += `Method: ${transcript.method}\n`;
+		content += `Style: ${transcript.promptStyle}\n`;
+		content += `Word Count: ${transcript.wordCount}\n`;
+		content += `\n${'='.repeat(50)}\n\n`;
+		content += transcript.text;
+
+		// Download file
+		const blob = new Blob([content], { type: 'text/plain' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = filename;
+
+		// Small delay between downloads to avoid browser blocking
+		setTimeout(() => {
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+		}, index * 200);
+	});
+
+	return transcripts.length;
+}
+
+/**
+ * Export all transcripts as a single JSON file
+ * @returns {Promise<boolean>}
+ */
+export async function exportAllTranscriptsJSON() {
+	const data = await exportTranscriptsAsJSON();
+
+	const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = `talktype-transcripts-${new Date().toISOString().slice(0, 10)}.json`;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+
+	return true;
+}
+
+/**
  * Format size in bytes to human-readable format
  * @param {number} bytes
  * @returns {string}
