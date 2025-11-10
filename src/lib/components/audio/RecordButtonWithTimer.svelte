@@ -67,6 +67,7 @@
 </script>
 
 {#if downloading}
+	<!-- Downloading: Indeterminate shimmer (can't track HuggingFace download) -->
 	<div
 		class="progress-container loading-state relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-gradient-to-r from-blue-200 to-indigo-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
 		role="status"
@@ -83,19 +84,22 @@
 		</div>
 	</div>
 {:else if transcribing}
+	<!-- Transcribing: Progress bar fills up (shows actual progress) -->
 	<div
-		class="progress-container loading-state relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-gradient-to-r from-amber-200 to-rose-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
+		class="progress-container relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
 		role="progressbar"
 		aria-label="Transcription progress"
 		aria-valuenow={progress}
 		aria-valuemin="0"
 		aria-valuemax="100"
 	>
-		<div class="loading-shimmer absolute inset-0"></div>
-		<div class="flex h-full items-center justify-center">
+		<div
+			class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
+			style="width: {progress}%;"
+		>
 			<span
-				class="loading-text relative z-10 text-xl font-bold text-black"
-				style="letter-spacing: 0.02em;"
+				class="relative z-10 text-xl font-bold text-black"
+				style="letter-spacing: 0.02em; text-shadow: 0 1px 2px rgba(0,0,0,0.1);"
 			>
 				Processing...
 			</span>
@@ -196,8 +200,8 @@
 		transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
 		transition-property: transform, box-shadow, background-image, background-position;
 
-		/* Solid opaque gradient - no transparency */
-		background: linear-gradient(to right, rgb(251, 191, 36), rgb(245, 158, 11));
+		/* Enhanced default gradient */
+		background-image: linear-gradient(to right, rgba(251, 191, 36, 1), rgba(245, 158, 11, 0.96));
 
 		/* Better default shadow */
 		box-shadow:
@@ -258,7 +262,7 @@
 
 	/* Non-recording hover effect */
 	.record-button:not(.recording-active):hover:not(:disabled) {
-		background: linear-gradient(to right, rgb(252, 211, 77), rgb(251, 191, 36));
+		background-image: linear-gradient(to right, rgba(252, 211, 77, 1), rgba(251, 191, 36, 1));
 	}
 
 	/* Active/pressed state */
@@ -272,7 +276,7 @@
 
 	/* Non-recording active effect */
 	.record-button:not(.recording-active):active:not(:disabled) {
-		background: linear-gradient(to right, rgb(245, 158, 11), rgb(234, 88, 12));
+		background-image: linear-gradient(to right, rgba(245, 158, 11, 1), rgba(234, 88, 12, 0.95));
 	}
 
 	/* Button press animation */
@@ -461,15 +465,19 @@
 		position: relative;
 		overflow: hidden;
 
-		/* More visible progress gradient */
-		background: linear-gradient(
-			to right,
-			rgb(251, 191, 36) 0%,
-			rgb(251, 191, 36) var(--progress, 0%),
-			rgba(251, 191, 36, 0.3) calc(var(--progress, 0%) + 1%),
-			rgba(245, 158, 11, 0.15) 100%
-		);
+		/* Bright golden glow for normal recording state with noise texture */
+		background-image:
+			linear-gradient(
+				to right,
+				rgba(251, 191, 36, 1),
+				rgba(251, 191, 36, 1) var(--progress, 0%),
+				rgba(251, 191, 36, 0.5) calc(var(--progress, 0%) + 0.5%),
+				rgba(245, 158, 11, 0.4) 100%
+			),
+			/* Subtle noise texture overlay */
+				url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.07'/%3E%3C/svg%3E");
 
+		background-size: 100% 100%;
 		box-shadow:
 			0 4px 15px -1px rgba(251, 191, 36, 0.35),
 			inset 0 0 10px rgba(251, 191, 36, 0.2),
@@ -477,29 +485,10 @@
 		border: 1px solid rgba(251, 191, 36, 0.3);
 		/* Smoother & faster transitions for clearer state changes */
 		transition:
-			background 0.3s ease-out,
+			background-image 0.3s ease-out,
 			box-shadow 0.3s ease-out,
 			border 0.3s ease-out,
 			transform 0.2s ease;
-	}
-
-	/* Add a pseudo-element for the progress bar effect */
-	.recording-active::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		bottom: 0;
-		width: var(--progress, 0%);
-		background: linear-gradient(to right, rgba(251, 191, 36, 0.9), rgba(252, 211, 77, 0.9));
-		transition: width 0.3s ease-out;
-		z-index: 0;
-	}
-
-	/* Ensure text stays above the progress bar */
-	.recording-active .cta-text {
-		position: relative;
-		z-index: 1;
 	}
 
 	/* Animated edge for progress indicator - commented out as not displaying correctly
@@ -527,43 +516,23 @@
   }
   */
 
-	/* Warning state with visible progress */
+	/* Simple warning/danger gradients - keeping these simpler since the advanced effects aren't visible */
 	.recording-warning {
-		background: linear-gradient(
+		background-image: linear-gradient(
 			to right,
-			rgba(251, 146, 60, 0.15) 0%,
-			rgba(251, 146, 60, 0.15) 100%
+			rgb(251, 146, 60) var(--progress, 0%),
+			rgba(251, 146, 60, 0.5) var(--progress, 0%),
+			rgba(234, 88, 12, 0.3) 100%
 		);
 	}
 
-	.recording-warning::before {
-		background: linear-gradient(to right, rgba(251, 146, 60, 0.9), rgba(254, 178, 108, 0.9));
-	}
-
-	/* Danger state with visible progress */
 	.recording-danger {
-		background: linear-gradient(to right, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.15) 100%);
-		animation: pulse-danger 1s ease-in-out infinite;
-	}
-
-	.recording-danger::before {
-		background: linear-gradient(to right, rgba(239, 68, 68, 0.9), rgba(248, 113, 113, 0.9));
-	}
-
-	@keyframes pulse-danger {
-		0%,
-		100% {
-			box-shadow:
-				0 4px 15px -1px rgba(239, 68, 68, 0.35),
-				inset 0 0 10px rgba(239, 68, 68, 0.2),
-				0 0 20px rgba(239, 68, 68, 0.2);
-		}
-		50% {
-			box-shadow:
-				0 4px 20px -1px rgba(239, 68, 68, 0.5),
-				inset 0 0 15px rgba(239, 68, 68, 0.3),
-				0 0 30px rgba(239, 68, 68, 0.3);
-		}
+		background-image: linear-gradient(
+			to right,
+			rgb(239, 68, 68) var(--progress, 0%),
+			rgba(239, 68, 68, 0.5) var(--progress, 0%),
+			rgba(220, 38, 38, 0.3) 100%
+		);
 	}
 
 	.button-content {
