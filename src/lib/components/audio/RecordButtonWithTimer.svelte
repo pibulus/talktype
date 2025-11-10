@@ -1,5 +1,11 @@
 <script>
-	import { ANIMATION, CTA_PHRASES, COPY_MESSAGES, getRandomFromArray } from '$lib/constants';
+	import {
+		ANIMATION,
+		CTA_PHRASES,
+		COPY_MESSAGES,
+		BUTTON_LABELS,
+		getRandomFromArray
+	} from '$lib/constants';
 
 	// Props
 	export let recording = false;
@@ -79,7 +85,7 @@
 				class="loading-text relative z-10 text-xl font-bold text-black"
 				style="letter-spacing: 0.02em;"
 			>
-				Downloading offline model...
+				{BUTTON_LABELS.DOWNLOADING}
 			</span>
 		</div>
 	</div>
@@ -101,7 +107,7 @@
 				class="relative z-10 text-xl font-bold text-black"
 				style="letter-spacing: 0.02em; text-shadow: 0 1px 2px rgba(0,0,0,0.1);"
 			>
-				Processing...
+				{BUTTON_LABELS.PROCESSING}
 			</span>
 		</div>
 	</div>

@@ -7,6 +7,7 @@ import { get } from 'svelte/store';
 import { whisperService, whisperStatus } from './whisper/whisperService';
 import { userPreferences } from '../infrastructure/stores';
 import { browser } from '$app/environment';
+import { STORAGE_KEYS } from '$lib/constants';
 
 class SimpleHybridService {
 	constructor() {
@@ -68,7 +69,7 @@ class SimpleHybridService {
 	 */
 	async transcribeAudio(audioBlob) {
 		// Check privacy mode preference
-		const privacyMode = localStorage.getItem('talktype_privacy_mode') === 'true';
+		const privacyMode = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
 
 		// Privacy mode: Use offline Whisper only (desktop only)
 		if (privacyMode) {
@@ -86,13 +87,13 @@ class SimpleHybridService {
 
 			if (this.whisperReady) {
 				console.log('🔒 Privacy Mode: Using offline Whisper');
-				localStorage.setItem('last_transcription_method', 'whisper');
+				localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
 				return await whisperService.transcribeAudio(audioBlob);
 			} else if (this.whisperLoadPromise) {
 				console.log('🔒 Privacy Mode: Waiting for Whisper to load...');
 				const result = await this.whisperLoadPromise;
 				if (result.success) {
-					localStorage.setItem('last_transcription_method', 'whisper');
+					localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
 					return await whisperService.transcribeAudio(audioBlob);
 				}
 				throw new Error('Privacy mode enabled but offline model failed to load');
@@ -103,7 +104,7 @@ class SimpleHybridService {
 
 		// Normal mode: Use Gemini API (fast, reliable, works)
 		console.log('☁️ Using Gemini API for transcription');
-		localStorage.setItem('last_transcription_method', 'gemini');
+		localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'gemini');
 		return await this.transcribeWithGemini(audioBlob);
 	}
 

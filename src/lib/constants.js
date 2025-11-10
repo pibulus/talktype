@@ -25,6 +25,8 @@ export const STORAGE_KEYS = {
 	CUSTOM_PROMPT: 'talktype-custom-prompt',
 	AUTO_SAVE: 'talktype-auto-save',
 	DEBUG_MODE: 'talktype-debug-mode',
+	PRIVACY_MODE: 'talktype_privacy_mode', // Offline Whisper mode
+	LAST_TRANSCRIPTION_METHOD: 'last_transcription_method', // Track which service was used
 
 	// PWA Related
 	TRANSCRIPTION_COUNT: 'talktype-transcription-count',
@@ -128,6 +130,13 @@ export const ANIMATION = {
 				'#e879f9'
 			]
 		}
+	},
+
+	// Model Download & Loading
+	MODEL: {
+		AUTO_LOAD_DELAY: 3000, // Auto-load models after 3s if no interaction
+		DOWNLOAD_RETRY_DELAY: 2000, // Initial retry delay (exponential backoff)
+		MAX_RETRIES: 4 // Maximum number of download retries
 	}
 };
 
@@ -150,6 +159,24 @@ export const SERVICE_EVENTS = {
 		ERROR: 'transcription:error',
 		COPIED: 'transcription:copied',
 		SHARED: 'transcription:shared'
+	},
+
+	// Model/Whisper Service Events
+	MODEL: {
+		DOWNLOAD_STARTED: 'model:downloadStarted',
+		DOWNLOAD_PROGRESS: 'model:downloadProgress',
+		DOWNLOAD_COMPLETED: 'model:downloadCompleted',
+		DOWNLOAD_ERROR: 'model:downloadError',
+		LOAD_STARTED: 'model:loadStarted',
+		LOAD_COMPLETED: 'model:loadCompleted',
+		LOAD_ERROR: 'model:loadError'
+	},
+
+	// Settings Events
+	SETTINGS: {
+		CHANGED: 'talktype-setting-changed', // Custom event dispatched when settings change
+		PRIVACY_MODE_CHANGED: 'settings:privacyModeChanged',
+		THEME_CHANGED: 'settings:themeChanged'
 	},
 
 	// UI Component Events
@@ -175,6 +202,14 @@ export const CTA_PHRASES = [
 	'Talk to Me',
 	'Ready When You Are'
 ];
+
+// Button State Labels
+export const BUTTON_LABELS = {
+	DOWNLOADING: 'Downloading offline model...',
+	PROCESSING: 'Processing...',
+	RECORDING: 'Stop Recording',
+	DEFAULT: 'Start Recording'
+};
 
 // Clipboard Success Messages
 export const COPY_MESSAGES = [

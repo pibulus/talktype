@@ -9,6 +9,7 @@
 	import RecordingStatus from './RecordingStatus.svelte';
 	import TranscriptionEffects from './TranscriptionEffects.svelte';
 	import { memoize } from '$lib/utils/performanceUtils';
+	import { STORAGE_KEYS, ANIMATION, SERVICE_EVENTS } from '$lib/constants';
 	import {
 		initializeServices,
 		// Stores
@@ -84,14 +85,15 @@
 	let hasUserInteracted = false;
 	let modelLoadStarted = false;
 
-	// Start background model load after first user interaction OR after 3 seconds
+	// Start background model load after first user interaction OR after configured delay
 	// This gives us the best of both worlds - fast initial page load but models ready when needed
 	function startModelLoading() {
 		if (modelLoadStarted) return;
 
 		// Only download if privacy mode is enabled
-		const privacyMode = typeof localStorage !== 'undefined'
-			&& localStorage.getItem('talktype_privacy_mode') === 'true';
+		const privacyMode =
+			typeof localStorage !== 'undefined' &&
+			localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
 
 		if (!privacyMode) {
 			console.log('⏭️ Privacy mode not enabled - skipping model download');
@@ -138,7 +140,7 @@
 
 		// Listen for privacy mode toggle from Settings
 		if (typeof window !== 'undefined') {
-			window.addEventListener('talktype-setting-changed', handlePrivacyModeChange);
+			window.addEventListener(SERVICE_EVENTS.SETTINGS.CHANGED, handlePrivacyModeChange);
 		}
 
 		// Wait for first user interaction before loading models
@@ -148,14 +150,16 @@
 			window.addEventListener('touchstart', handleFirstInteraction, { once: true });
 			window.addEventListener('keydown', handleFirstInteraction, { once: true });
 
-			// Also start loading after 3 seconds if no interaction
+			// Also start loading after configured delay if no interaction
 			// This ensures models are ready when user needs them
 			setTimeout(() => {
 				if (!modelLoadStarted) {
-					console.log('⏰ Auto-starting model load after 3s delay');
+					console.log(
+						`⏰ Auto-starting model load after ${ANIMATION.MODEL.AUTO_LOAD_DELAY / 1000}s delay`
+					);
 					startModelLoading();
 				}
-			}, 3000);
+			}, ANIMATION.MODEL.AUTO_LOAD_DELAY);
 		}
 
 		// Subscribe to permission denied state to show error modal
@@ -177,7 +181,7 @@
 
 		// Remove event listeners
 		if (typeof window !== 'undefined') {
-			window.removeEventListener('talktype-setting-changed', handlePrivacyModeChange);
+			window.removeEventListener(SERVICE_EVENTS.SETTINGS.CHANGED, handlePrivacyModeChange);
 			window.removeEventListener('click', handleFirstInteraction);
 			window.removeEventListener('touchstart', handleFirstInteraction);
 			window.removeEventListener('keydown', handleFirstInteraction);

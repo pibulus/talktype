@@ -11,6 +11,7 @@
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import KeyboardShortcutsInfo from './settings/KeyboardShortcutsInfo.svelte';
 	import SupportSection from './settings/SupportSection.svelte';
+	import { STORAGE_KEYS, SERVICE_EVENTS } from '$lib/constants';
 
 	export let closeModal = () => {};
 
@@ -52,14 +53,14 @@
 		selectedPromptStyle = geminiService.getPromptStyle();
 
 		// Get privacy mode value from localStorage
-		privacyModeValue = localStorage.getItem('talktype_privacy_mode') === 'true';
+		privacyModeValue = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
 
 		// Set up event listeners for the modal
 		const modal = document.getElementById('settings_modal');
 		if (modal) {
 			modal.addEventListener('open', () => {
 				selectedPromptStyle = geminiService.getPromptStyle();
-				privacyModeValue = localStorage.getItem('talktype_privacy_mode') === 'true';
+				privacyModeValue = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
 			});
 		}
 
@@ -119,9 +120,9 @@
 	function handlePrivacyModeChange(e) {
 		// e.detail contains the boolean value from Toggle component
 		privacyModeValue = e.detail;
-		localStorage.setItem('talktype_privacy_mode', privacyModeValue.toString());
+		localStorage.setItem(STORAGE_KEYS.PRIVACY_MODE, privacyModeValue.toString());
 		window.dispatchEvent(
-			new CustomEvent('talktype-setting-changed', {
+			new CustomEvent(SERVICE_EVENTS.SETTINGS.CHANGED, {
 				detail: { setting: 'privacyMode', value: privacyModeValue }
 			})
 		);
