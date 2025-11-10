@@ -2,6 +2,7 @@
 	import { promptStyle, customPrompt } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { PROMPT_STYLES } from '$lib/constants';
+	import { isPremium } from '$lib/services/premium/premiumService';
 
 	// Props
 	export let selectedPromptStyle = 'standard';
@@ -51,11 +52,22 @@
 		standard: 'Clean, professional tone',
 		surlyPirate: 'Pirate lingo & swagger',
 		quillAndInk: 'Victorian literature style',
-		custom: 'Your own instructions'
+		custom: 'Your own instructions (Premium)'
 	};
 
 	// Handle style selection
 	function handleStyleClick(style) {
+		// Check if custom prompt requires premium
+		if (style === 'custom' && !$isPremium) {
+			// Show premium modal
+			window.dispatchEvent(
+				new CustomEvent('talktype:show-premium-modal', {
+					detail: { feature: 'customPrompts' }
+				})
+			);
+			return;
+		}
+
 		if (style === 'custom') {
 			// Show custom input and switch to custom mode
 			showCustomInput = true;
@@ -93,7 +105,7 @@
 				class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {selectedPromptStyle ===
 				style
 					? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
-					: ''}"
+					: ''} {style === 'custom' && !$isPremium ? 'locked' : ''}"
 				on:click={() => handleStyleClick(style)}
 				aria-label={styleNames[style] || style}
 				title={styleTooltips[style]}
@@ -119,6 +131,13 @@
 						class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-400 text-xs text-white shadow-sm"
 					>
 						✓
+					</div>
+				{:else if style === 'custom' && !$isPremium}
+					<div
+						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xs shadow-sm"
+						title="Premium feature"
+					>
+						⭐
 					</div>
 				{/if}
 			</button>
@@ -146,6 +165,16 @@
 		box-shadow:
 			0 0 0 2px rgba(249, 168, 212, 0.4),
 			0 4px 8px rgba(249, 168, 212, 0.2);
+	}
+
+	.locked {
+		opacity: 0.6;
+		cursor: pointer;
+	}
+
+	.locked:hover {
+		opacity: 0.8;
+		border-color: #f59e0b !important;
 	}
 
 	textarea {

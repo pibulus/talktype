@@ -1,28 +1,46 @@
 <script>
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
+	import { isPremium } from '$lib/services/premium/premiumService';
 
 	export let currentTheme;
 	export let onThemeChange;
 
-	// Theme options
+	// Theme options with premium flag
 	const vibeOptions = [
 		{
 			id: 'peach',
-			name: 'Peach'
+			name: 'Peach',
+			premium: false
 		},
 		{
 			id: 'mint',
-			name: 'Mint'
+			name: 'Mint',
+			premium: true
 		},
 		{
 			id: 'bubblegum',
-			name: 'Bubblegum'
+			name: 'Bubblegum',
+			premium: true
 		},
 		{
 			id: 'rainbow',
-			name: 'Rainbow'
+			name: 'Rainbow',
+			premium: true
 		}
 	];
+
+	function handleThemeClick(vibe) {
+		// Check if theme requires premium
+		if (vibe.premium && !$isPremium) {
+			// Show premium modal/toast
+			window.dispatchEvent(new CustomEvent('talktype:show-premium-modal', {
+				detail: { feature: 'customThemes', themeName: vibe.name }
+			}));
+			return;
+		}
+
+		onThemeChange(vibe.id);
+	}
 </script>
 
 <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -31,9 +49,9 @@
 			class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {currentTheme ===
 			vibe.id
 				? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
-				: ''}"
+				: ''} {vibe.premium && !$isPremium ? 'locked' : ''}"
 			data-vibe-type={vibe.id}
-			on:click={() => onThemeChange(vibe.id)}
+			on:click={() => handleThemeClick(vibe)}
 		>
 			<div class="preview-container mb-2">
 				<!-- Use the original DisplayGhost component with masking -->
@@ -57,6 +75,13 @@
 				>
 					✓
 				</div>
+			{:else if vibe.premium && !$isPremium}
+				<div
+					class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xs shadow-sm"
+					title="Premium theme"
+				>
+					⭐
+				</div>
 			{/if}
 		</button>
 	{/each}
@@ -67,6 +92,16 @@
 		box-shadow:
 			0 0 0 2px rgba(249, 168, 212, 0.4),
 			0 4px 8px rgba(249, 168, 212, 0.2);
+	}
+
+	.locked {
+		opacity: 0.6;
+		cursor: pointer;
+	}
+
+	.locked:hover {
+		opacity: 0.8;
+		border-color: #f59e0b !important;
 	}
 
 	/* Ghost preview styling */
