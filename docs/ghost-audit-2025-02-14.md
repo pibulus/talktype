@@ -2,14 +2,14 @@
 
 ## Current State Snapshot
 - **Runtime Ghost (`Ghost.svelte`)** now consumes SSR-injected theme CSS and a single `fullyReady` flag. Hydration flicker is gone, and only the intro action controls the appear-from-dot animation.
-- **Display Ghost (`DisplayGhost.svelte`)** still depends on legacy CSS (`ghost-animations.css`, `ghost-themes.css`) and the JS `gradientAnimator`. It does not use the theme store, so theme definitions live in two places.
-- **Theme Data** sits in `themeStore.js`, but the same color constants are duplicated inside `ghost-themes.css`. Any color tweak requires changing both files.
+- **Display Ghost (`DisplayGhost.svelte`)** still depends on legacy CSS (`ghost-animations.css`) and the JS `gradientAnimator`. Theme variables now come from the shared store, so colors are consistent, but the animation stack is still split.
+- **Theme Data** now lives exclusively in `themeStore.js` and the SSR style block, so any future color change only needs to touch that helper.
 - **Global Style Element** uses a hardcoded `#ghost-theme-vars` ID. Multiple embeds (e.g., marketing site + widget) would currently fight over the same element.
 
 ## Tech Debt & Recommendations
-1. **Unify Theme Sources**
-   - Delete `ghost-themes.css` after migrating `DisplayGhost` to read from the store helper. Export a lightweight `getThemeCssFor(tag = 'style')` utility so both components render identical variables.
-   - Blocked by: updating `DisplayGhost` to import `generateThemeCssVariables` and drop the static CSS file.
+1. **Expose Theme Provider Helpers**
+   - Ship a tiny `GhostThemeProvider` (or export the `ensureGhostThemeStyles()` helper) so other apps can embed the shared CSS without copying layout logic.
+   - Reuse the helper inside SvelteKit layout to avoid duplicating the `<style>` tag code.
 
 2. **Converge Animation Layers**
    - `DisplayGhost` still imports `ghost-animations.css` + `gradientAnimator.js`. These files are effectively dead code for the main ghost. Either archive them in `/legacy` or refactor so both components share the optimized CSS.
@@ -30,7 +30,7 @@
    - `README.md`, `CHARACTER_SYSTEM.md`, and `CSS_CONFLICTS_ANALYSIS.md` still reference the old CSS pipeline. Update them once DisplayGhost migrates so contributors know to touch the store helper instead of SCSS files.
 
 ## Next Steps
-1. Migrate `DisplayGhost` to the store helper and delete `ghost-themes.css` / `ghost-animations.css` after confirming no other module depends on them.
+1. Migrate `DisplayGhost` to the optimized animation pipeline and delete `ghost-animations.css` after confirming no other module depends on it.
 2. Introduce a `GhostThemeProvider` (context or simple helper) that lets any layout or host app render the style block with optional scoping.
 3. Backfill an integration test for the flicker scenario to prevent regressions.
 

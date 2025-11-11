@@ -1,6 +1,5 @@
 <script>
 	import './ghost-animations.css';
-	import './ghost-themes.css';
 	import ghostPathsUrl from './ghost-paths.svg?url';
 	import {
 		initGradientAnimation,

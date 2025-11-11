@@ -29,7 +29,6 @@ The Ghost component system consists of several interconnected files:
 /src/lib/components/ghost/
 ├── Ghost.svelte           # Main component implementation
 ├── ghost-animations.css   # Animation keyframes and behaviors
-├── ghost-themes.css       # Color definitions and theme variables
 ├── ghost-paths.svg        # SVG path definitions for the ghost shape
 ├── animationConfig.js     # Animation parameters and timing configuration
 ├── gradientAnimator.js    # JS animation logic for gradients
@@ -499,7 +498,7 @@ Common issues and their solutions:
 
 2. **Animation conflicts**: Check for overlapping animations targeting the same properties. Use `void element.offsetWidth` to force reflow between animation changes.
 
-3. **Theme colors not updating**: Verify CSS variables are properly defined in ghost-themes.css and being correctly referenced in both CSS and JavaScript animations.
+3. **Theme colors not updating**: Ensure the global `<style id="ghost-theme-vars">` (rendered via `generateAllThemeCssVariables()` in `themeStore.js`) is present so the CSS variables exist before the ghost renders.
 
 4. **Gradient flickering**: Simplify animations by either using CSS or JavaScript exclusively for color transitions, not both simultaneously.
 

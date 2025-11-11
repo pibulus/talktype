@@ -69,8 +69,7 @@ const {
 
 ### Theming System
 
-- **`themeStore.js`** - Color theme management
-- **`ghost-themes.css`** - CSS color variables
+- **`themeStore.js`** - Color theme management and CSS-variable generator (`generateAllThemeCssVariables`)
 - **`gradientAnimator.js`** - Dynamic gradient effects
 
 ### Configuration

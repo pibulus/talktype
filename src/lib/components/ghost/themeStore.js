@@ -110,6 +110,12 @@ if (browser) {
 	});
 }
 
+function getGlobalAnimationVariables() {
+	return `\n/* Global Animation Configuration */\n` +
+		`--ghost-wobble-duration: ${WOBBLE_CONFIG.DURATION / 1000}s;\n` +
+		`--ghost-special-duration: ${SPECIAL_CONFIG.DURATION / 1000}s;\n`;
+}
+
 export function generateThemeCssVariables(themeName = FALLBACK_THEME) {
 	const safeTheme = themeColors[themeName] ? themeName : FALLBACK_THEME;
 	let cssVars = '';
@@ -214,16 +220,21 @@ export function generateThemeCssVariables(themeName = FALLBACK_THEME) {
 		}
 	}
 
-	cssVars += `\n/* Wobble Configuration */\n`;
-	cssVars += `--ghost-wobble-duration: ${WOBBLE_CONFIG.DURATION / 1000}s;\n`;
-
-	cssVars += `\n/* Special Animation Configuration */\n`;
-	cssVars += `--ghost-special-duration: ${SPECIAL_CONFIG.DURATION / 1000}s;\n`;
-
 	return cssVars;
 }
 
-const cssVariables = derived(theme, ($theme) => generateThemeCssVariables($theme));
+export function generateAllThemeCssVariables() {
+	return (
+		Object.keys(themeColors)
+			.map((themeName) => generateThemeCssVariables(themeName))
+			.join('\n') + getGlobalAnimationVariables()
+	);
+}
+
+const cssVariables = derived(
+	theme,
+	($theme) => `${generateThemeCssVariables($theme)}${getGlobalAnimationVariables()}`
+);
 
 // Function to set a new theme
 function setTheme(newTheme) {
