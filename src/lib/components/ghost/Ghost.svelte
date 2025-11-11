@@ -30,7 +30,6 @@
 	let leftEye;
 	let rightEye;
 	let backgroundElement;
-	let ghostStyleElement;
 	let ghostWobbleGroup;
 	let lastRecordingState = false;
 	let lastProcessingState = false;
@@ -39,22 +38,26 @@
 	let unsubscribeTheme;
 	let wakeUpBlinkTriggered = false;
 	let eyeTracker;
-	let ghostInitialized = false; // Prevent rendering until fully initialized
+	let fullyReady = false; // Single initialization flag - prevents ALL rendering until ready
 
 	// === REACTIVE DECLARATIONS ===
+	// All reactive logic gated by fullyReady to prevent cascade during initialization
 	$: animationsEnabled = $appActive;
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 	$: gradientId = getGradientId(currentTheme);
-	$: isGhostReady = ghostInitialized && browser && componentsLoaded && !!ghostSvg && !!currentTheme;
 
-	// React to recording state changes
-	$: if (browser && isRecording !== lastRecordingState) {
+	// Simplified ready check - only needs browser, ghostSvg, and fullyReady flag
+	$: isGhostReady = fullyReady && browser && !!ghostSvg && !!currentTheme;
+
+	// React to recording state changes ONLY when fully ready
+	$: if (fullyReady && browser && isRecording !== lastRecordingState) {
 		ghostStateStore.setRecording(isRecording);
 		lastRecordingState = isRecording;
 	}
 
-	// Monitor theme changes
-	$: if (currentTheme && ghostSvg && browser) {
+	// Theme changes trigger visual updates ONLY when fully ready
+	// NOTE: CSS variables now injected at layout level, so no injection needed here
+	$: if (fullyReady && currentTheme && ghostSvg && browser) {
 		applyThemeChanges();
 	}
 
@@ -100,6 +103,8 @@
 	}
 
 	// Apply theme changes when they occur
+	// NOTE: CSS variables are now injected at layout level (+layout.svelte)
+	// This function only handles visual reflow to ensure smooth transitions
 	function applyThemeChanges() {
 		if (!browser || !ghostSvg || !currentTheme) return;
 
@@ -116,21 +121,9 @@
 			forceReflow(shapeElem);
 		}
 
-		// Create or update dynamic styles element
-		let ghostStyleElement = document.getElementById('ghost-dynamic-styles');
-		if (!ghostStyleElement) {
-			ghostStyleElement = document.createElement('style');
-			ghostStyleElement.id = 'ghost-dynamic-styles';
-			document.head.appendChild(ghostStyleElement);
-		}
-
-		// Get CSS variables from the store
-		const gradientVars = $cssVariables;
-		ghostStyleElement.textContent = `:root {\n  ${gradientVars}\n}`;
-
 		// Log theme change if in debug mode
 		if (debug) {
-			console.log('[Ghost] Theme changed, styles updated');
+			console.log('[Ghost] Theme changed, reflow applied');
 		}
 	}
 
@@ -141,11 +134,7 @@
 			unsubscribeTheme();
 		}
 
-		// Remove dynamic styles
-		if (ghostStyleElement) {
-			ghostStyleElement.remove();
-			ghostStyleElement = null;
-		}
+		// NOTE: No ghost style element to remove - CSS variables now managed at layout level
 
 		// Reset ghost state
 		ghostStateStore.reset();
@@ -187,16 +176,14 @@
 		}
 	}
 
-	// Variables to track component loading state
-	let componentsLoaded = false;
-
-	// Setup on mount
+	// Setup on mount with simplified initialization sequence
 	onMount(() => {
 		// Set initial values to prevent unnecessary updates
 		lastRecordingState = isRecording;
 		lastProcessingState = isProcessing;
 
-		// Initial setup operations
+		// CRITICAL: Setup theme subscription FIRST to ensure currentTheme is correct
+		// This happens before setting fullyReady to prevent theme change flash
 		setDebugMode();
 		setupThemeSubscription();
 
@@ -249,12 +236,11 @@
 				ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 			}
 
-			// Mark component as loaded
-			componentsLoaded = true;
-
-			// Set initialized flag after all setup is complete (prevents render flashing)
+			// FINAL STEP: Set fullyReady flag after all setup is complete
+			// This prevents any reactive cascade during initialization
+			// Single requestAnimationFrame ensures one clean render with all resources ready
 			requestAnimationFrame(() => {
-				ghostInitialized = true;
+				fullyReady = true;
 			});
 
 			// Add global event listeners for waking up / resetting inactivity
@@ -354,12 +340,11 @@
 		xmlns:xlink="http://www.w3.org/1999/xlink"
 		class="ghost-svg theme-{currentTheme} {animationClass}"
 		pointer-events="none"
-		class:initializing={!ghostInitialized}
+		class:visible={fullyReady}
 		class:recording={$ghostStateStore.isRecording}
 		class:spin={$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG}
 		class:asleep={$ghostStateStore.current === ANIMATION_STATES.ASLEEP}
 		class:waking-up={$ghostStateStore.current === ANIMATION_STATES.WAKING_UP}
-		class:ready={isGhostReady}
 		class:debug-animation={debugAnim}
 	>
 		<defs>
@@ -372,7 +357,7 @@
 				bind:this={ghostWobbleGroup}
 				class="ghost-wobble-group"
 				id="ghost-wobble-group"
-				use:initialGhostAnimation={componentsLoaded && $ghostStateStore.isFirstVisit
+				use:initialGhostAnimation={fullyReady && $ghostStateStore.isFirstVisit
 					? { blinkService, leftEye, rightEye, debug, oneTimeOnly: true }
 					: undefined}
 				on:initialAnimationComplete={handleInitialAnimationComplete}

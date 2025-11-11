@@ -15,11 +15,11 @@ export const GRADIENT_DEFS = {
 		x2: '100%',
 		y2: '100%',
 		stops: [
-			{ offset: '0%', color: 'var(--ghost-peach-start)' },
-			{ offset: '35%', color: 'var(--ghost-peach-mid1)' },
-			{ offset: '65%', color: 'var(--ghost-peach-mid2)' },
-			{ offset: '85%', color: 'var(--ghost-peach-mid3)' },
-			{ offset: '100%', color: 'var(--ghost-peach-end)' }
+			{ offset: '0%', color: 'var(--ghost-peach-start, #ff60e0)' },
+			{ offset: '35%', color: 'var(--ghost-peach-mid1, #ff82ca)' },
+			{ offset: '65%', color: 'var(--ghost-peach-mid2, #ff9a85)' },
+			{ offset: '85%', color: 'var(--ghost-peach-mid3, #ffb060)' },
+			{ offset: '100%', color: 'var(--ghost-peach-end, #ffcf40)' }
 		]
 	},
 	mint: {
@@ -30,11 +30,11 @@ export const GRADIENT_DEFS = {
 		x2: '100%',
 		y2: '100%',
 		stops: [
-			{ offset: '0%', color: 'var(--ghost-mint-start)' },
-			{ offset: '35%', color: 'var(--ghost-mint-mid1)' },
-			{ offset: '65%', color: 'var(--ghost-mint-mid2)' },
-			{ offset: '85%', color: 'var(--ghost-mint-mid3)' },
-			{ offset: '100%', color: 'var(--ghost-mint-end)' }
+			{ offset: '0%', color: 'var(--ghost-mint-start, #0ac5ef)' },
+			{ offset: '35%', color: 'var(--ghost-mint-mid1, #22d3ed)' },
+			{ offset: '65%', color: 'var(--ghost-mint-mid2, #2dd4bf)' },
+			{ offset: '85%', color: 'var(--ghost-mint-mid3, #4ade80)' },
+			{ offset: '100%', color: 'var(--ghost-mint-end, #a3e635)' }
 		]
 	},
 	bubblegum: {
@@ -45,11 +45,11 @@ export const GRADIENT_DEFS = {
 		x2: '100%',
 		y2: '100%',
 		stops: [
-			{ offset: '0%', color: 'var(--ghost-bubblegum-start)' },
-			{ offset: '35%', color: 'var(--ghost-bubblegum-mid1)' },
-			{ offset: '65%', color: 'var(--ghost-bubblegum-mid2)' },
-			{ offset: '85%', color: 'var(--ghost-bubblegum-mid3)' },
-			{ offset: '100%', color: 'var(--ghost-bubblegum-end)' }
+			{ offset: '0%', color: 'var(--ghost-bubblegum-start, #c026d3)' },
+			{ offset: '35%', color: 'var(--ghost-bubblegum-mid1, #a855f7)' },
+			{ offset: '65%', color: 'var(--ghost-bubblegum-mid2, #8b5cf6)' },
+			{ offset: '85%', color: 'var(--ghost-bubblegum-mid3, #6366f1)' },
+			{ offset: '100%', color: 'var(--ghost-bubblegum-end, #3b82f6)' }
 		]
 	},
 	rainbow: {
@@ -60,11 +60,11 @@ export const GRADIENT_DEFS = {
 		x2: '100%',
 		y2: '100%',
 		stops: [
-			{ offset: '0%', color: 'var(--ghost-rainbow-start)' },
-			{ offset: '25%', color: 'var(--ghost-rainbow-mid1)' },
-			{ offset: '50%', color: 'var(--ghost-rainbow-mid2)' },
-			{ offset: '75%', color: 'var(--ghost-rainbow-mid3)' },
-			{ offset: '100%', color: 'var(--ghost-rainbow-end)' }
+			{ offset: '0%', color: 'var(--ghost-rainbow-start, #ff0080)' },
+			{ offset: '25%', color: 'var(--ghost-rainbow-mid1, #ff8c00)' },
+			{ offset: '50%', color: 'var(--ghost-rainbow-mid2, #ffed00)' },
+			{ offset: '75%', color: 'var(--ghost-rainbow-mid3, #00ff80)' },
+			{ offset: '100%', color: 'var(--ghost-rainbow-end, #00bfff)' }
 		]
 	}
 };
