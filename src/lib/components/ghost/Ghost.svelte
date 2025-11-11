@@ -1,5 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
+	import { get } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import { appActive } from '$lib/services/infrastructure';
 
@@ -7,7 +8,7 @@
 	import ghostPathsUrl from './ghost-paths.svg?url';
 	import { ANIMATION_STATES, CSS_CLASSES, PULSE_CONFIG, EYE_CONFIG } from './animationConfig.js';
 
-	import { ghostStateStore, theme as localTheme, cssVariables } from './stores/index.js';
+	import { ghostStateStore, theme as localTheme } from './stores/index.js';
 	import { animationService, blinkService } from './services/index.js';
 	import { forceReflow } from './utils/animationUtils.js';
 	import { initialGhostAnimation } from './actions/initialGhostAnimation.js';
@@ -26,36 +27,63 @@
 	export let opacity = 1;
 	export let scale = 1;
 	export let clickable = true;
+	const FALLBACK_THEME = 'peach';
+	const resolveThemeSource = () => externalTheme || localTheme;
+	const normalizeTheme = (themeValue) =>
+		typeof themeValue === 'string' && themeValue.length > 0 ? themeValue : FALLBACK_THEME;
+	const readThemeValue = (source) => {
+		if (source && typeof source.subscribe === 'function') {
+			return normalizeTheme(get(source));
+		}
+
+		return normalizeTheme(source);
+	};
+
 	let ghostSvg;
 	let leftEye;
 	let rightEye;
 	let backgroundElement;
-	let ghostStyleElement;
 	let ghostWobbleGroup;
 	let lastRecordingState = false;
 	let lastProcessingState = false;
-	let currentTheme = 'peach'; // Initialize immediately to prevent black silhouette flash
-	let themeStore = externalTheme || localTheme;
+	let activeThemeSource = resolveThemeSource();
+	let currentTheme = readThemeValue(activeThemeSource);
+	let pendingTheme = currentTheme;
 	let unsubscribeTheme;
 	let wakeUpBlinkTriggered = false;
 	let eyeTracker;
-	let ghostInitialized = false; // Prevent rendering until fully initialized
+	let fullyReady = false; // Single initialization flag - prevents ALL rendering until ready
 
 	// === REACTIVE DECLARATIONS ===
-	$: animationsEnabled = $appActive;
-	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
-	$: gradientId = getGradientId(currentTheme);
-	$: isGhostReady = ghostInitialized && browser && componentsLoaded && !!ghostSvg && !!currentTheme;
+	let gradientId = getGradientId(currentTheme);
+	let animationClass = 'animations-paused';
+	let isGhostReady = false;
+	let containerOpacity = 0;
+	let svgVisibility = 'hidden';
+	let svgOpacity = 0;
 
-	// React to recording state changes
-	$: if (browser && isRecording !== lastRecordingState) {
-		ghostStateStore.setRecording(isRecording);
-		lastRecordingState = isRecording;
+	$: gradientId = getGradientId(currentTheme || FALLBACK_THEME);
+
+	// Simplified ready check - prevent any visual output until everything is ready
+	$: {
+		const ready = fullyReady && browser && !!ghostSvg && !!currentTheme;
+		isGhostReady = ready;
+		containerOpacity = ready ? opacity : 0;
+		svgVisibility = ready ? 'visible' : 'hidden';
+		svgOpacity = ready ? 1 : 0;
 	}
 
-	// Monitor theme changes
-	$: if (currentTheme && ghostSvg && browser) {
-		applyThemeChanges();
+	$: animationClass = isGhostReady && $appActive ? 'animations-enabled' : 'animations-paused';
+
+	// Swap subscriptions if parent swaps external theme store
+	$: if (fullyReady) {
+		subscribeToThemeChanges(resolveThemeSource());
+	}
+
+	// React to recording state changes ONLY when fully ready
+	$: if (isGhostReady && browser && isRecording !== lastRecordingState) {
+		ghostStateStore.setRecording(isRecording);
+		lastRecordingState = isRecording;
 	}
 
 	function setDebugMode() {
@@ -64,18 +92,48 @@
 		}
 	}
 
-	// Watch for changes to externalTheme prop in a safer way
-	function setupThemeSubscription() {
-		// Clean up previous subscription if it exists
-		if (unsubscribeTheme) unsubscribeTheme();
+	function commitThemeChange() {
+		const nextTheme = normalizeTheme(pendingTheme);
+		if (currentTheme !== nextTheme) {
+			currentTheme = nextTheme;
+		}
 
-		// Update the theme store reference
-		themeStore = externalTheme || localTheme;
+		if (browser && ghostSvg) {
+			applyThemeChanges();
+		}
+	}
 
-		// Create new subscription
-		unsubscribeTheme = themeStore.subscribe((value) => {
-			currentTheme = value;
-		});
+	function subscribeToThemeChanges(source) {
+		const isStoreSource = source && typeof source.subscribe === 'function';
+
+		if (isStoreSource) {
+			if (activeThemeSource === source && unsubscribeTheme) {
+				return;
+			}
+
+			if (unsubscribeTheme) {
+				unsubscribeTheme();
+			}
+
+			activeThemeSource = source;
+			unsubscribeTheme = source.subscribe((value) => {
+				pendingTheme = normalizeTheme(value);
+				if (fullyReady) {
+					commitThemeChange();
+				}
+			});
+		} else {
+			if (unsubscribeTheme) {
+				unsubscribeTheme();
+				unsubscribeTheme = undefined;
+			}
+
+			activeThemeSource = source;
+			pendingTheme = readThemeValue(source);
+			if (fullyReady) {
+				commitThemeChange();
+			}
+		}
 	}
 
 	// Sync state to store only when local props actually change
@@ -100,6 +158,8 @@
 	}
 
 	// Apply theme changes when they occur
+	// NOTE: CSS variables are now injected at layout level (+layout.svelte)
+	// This function only handles visual reflow to ensure smooth transitions
 	function applyThemeChanges() {
 		if (!browser || !ghostSvg || !currentTheme) return;
 
@@ -116,21 +176,9 @@
 			forceReflow(shapeElem);
 		}
 
-		// Create or update dynamic styles element
-		let ghostStyleElement = document.getElementById('ghost-dynamic-styles');
-		if (!ghostStyleElement) {
-			ghostStyleElement = document.createElement('style');
-			ghostStyleElement.id = 'ghost-dynamic-styles';
-			document.head.appendChild(ghostStyleElement);
-		}
-
-		// Get CSS variables from the store
-		const gradientVars = $cssVariables;
-		ghostStyleElement.textContent = `:root {\n  ${gradientVars}\n}`;
-
 		// Log theme change if in debug mode
 		if (debug) {
-			console.log('[Ghost] Theme changed, styles updated');
+			console.log('[Ghost] Theme changed, reflow applied');
 		}
 	}
 
@@ -141,11 +189,7 @@
 			unsubscribeTheme();
 		}
 
-		// Remove dynamic styles
-		if (ghostStyleElement) {
-			ghostStyleElement.remove();
-			ghostStyleElement = null;
-		}
+		// NOTE: No ghost style element to remove - CSS variables now managed at layout level
 
 		// Reset ghost state
 		ghostStateStore.reset();
@@ -187,18 +231,15 @@
 		}
 	}
 
-	// Variables to track component loading state
-	let componentsLoaded = false;
-
-	// Setup on mount
+	// Setup on mount with simplified initialization sequence
 	onMount(() => {
 		// Set initial values to prevent unnecessary updates
 		lastRecordingState = isRecording;
 		lastProcessingState = isProcessing;
 
-		// Initial setup operations
 		setDebugMode();
-		setupThemeSubscription();
+		pendingTheme = readThemeValue(resolveThemeSource());
+		currentTheme = pendingTheme;
 
 		if (browser) {
 			// Initialize element references for services
@@ -249,12 +290,14 @@
 				ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 			}
 
-			// Mark component as loaded
-			componentsLoaded = true;
-
-			// Set initialized flag after all setup is complete (prevents render flashing)
+			// FINAL STEP: Ensure theme commits once DOM nodes exist, then mark ready
+			// Theme subscription is deferred until after the first paint is locked in
 			requestAnimationFrame(() => {
-				ghostInitialized = true;
+				const latestThemeSource = resolveThemeSource();
+				pendingTheme = readThemeValue(latestThemeSource);
+				commitThemeChange();
+				subscribeToThemeChanges(latestThemeSource);
+				fullyReady = true;
 			});
 
 			// Add global event listeners for waking up / resetting inactivity
@@ -330,8 +373,8 @@
       {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
       {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
-      {!clickable ? 'ghost-non-clickable' : ''}"
-	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
+      {!isGhostReady || !clickable ? 'ghost-non-clickable' : ''}"
+	style="width: {width}; height: {height}; opacity: {containerOpacity}; transform: scale({scale});"
 	on:click={() => {
 		if (clickable) {
 			handleClick();
@@ -354,13 +397,14 @@
 		xmlns:xlink="http://www.w3.org/1999/xlink"
 		class="ghost-svg theme-{currentTheme} {animationClass}"
 		pointer-events="none"
-		class:initializing={!ghostInitialized}
+		class:visible={isGhostReady}
 		class:recording={$ghostStateStore.isRecording}
 		class:spin={$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG}
 		class:asleep={$ghostStateStore.current === ANIMATION_STATES.ASLEEP}
 		class:waking-up={$ghostStateStore.current === ANIMATION_STATES.WAKING_UP}
-		class:ready={isGhostReady}
 		class:debug-animation={debugAnim}
+		style:visibility={svgVisibility}
+		style:opacity={svgOpacity}
 	>
 		<defs>
 			<GradientDefs />
@@ -372,7 +416,7 @@
 				bind:this={ghostWobbleGroup}
 				class="ghost-wobble-group"
 				id="ghost-wobble-group"
-				use:initialGhostAnimation={componentsLoaded && $ghostStateStore.isFirstVisit
+				use:initialGhostAnimation={isGhostReady && $ghostStateStore.isFirstVisit
 					? { blinkService, leftEye, rightEye, debug, oneTimeOnly: true }
 					: undefined}
 				on:initialAnimationComplete={handleInitialAnimationComplete}
