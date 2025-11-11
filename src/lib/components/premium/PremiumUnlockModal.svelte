@@ -6,6 +6,7 @@
 	import { Button } from '$lib/components/shared';
 	import { PRICING, PRICING_MESSAGES } from '$lib/config/pricing';
 	import CampaignCountdown from '$lib/components/shared/CampaignCountdown.svelte';
+	import { analytics } from '$lib/services/analytics';
 
 	export let closeModal = () => {};
 	export let feature = null; // Which feature triggered the modal
@@ -102,6 +103,9 @@
 		isProcessing = true;
 		errorMessage = '';
 
+		// Track payment start
+		analytics.startPayment(price, currency);
+
 		try {
 			let sourceId;
 
@@ -138,6 +142,9 @@
 				// Payment successful!
 				unlockCode = data.unlockCode;
 				paymentSuccess = true;
+
+				// Track successful payment
+				analytics.completePayment(price, currency, unlockCode);
 
 				// Unlock premium features locally and save the code
 				unlockPremiumFeatures(null, unlockCode);
@@ -186,6 +193,9 @@
 	}
 
 	onMount(async () => {
+		// Track modal view
+		analytics.viewPremiumModal(feature);
+
 		// Log which feature triggered the modal
 		if (feature) {
 			console.log('Premium modal opened for feature:', feature);

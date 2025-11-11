@@ -11,6 +11,7 @@
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { STORAGE_KEYS, SERVICE_EVENTS } from '$lib/constants';
 	import { PRICING } from '$lib/config/pricing';
+	import { analytics } from '$lib/services/analytics';
 
 	export let closeModal = () => {};
 
@@ -141,6 +142,9 @@
 			const data = await response.json();
 
 			if (data.valid) {
+				// Track successful code validation
+				analytics.validateUnlockCode(true);
+
 				// Code is valid - unlock premium and save the code!
 				unlockPremiumFeatures(data.unlockDate, unlockCode.trim());
 
@@ -158,6 +162,8 @@
 				showCodeEntry = false;
 				unlockCode = '';
 			} else {
+				// Track failed validation
+				analytics.validateUnlockCode(false);
 				codeError = data.error || 'Invalid unlock code';
 			}
 		} catch (error) {

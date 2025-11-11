@@ -1,6 +1,7 @@
 <script>
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { isPremium } from '$lib/services/premium/premiumService';
+	import { analytics } from '$lib/services/analytics';
 
 	export let currentTheme;
 	export let onThemeChange;
@@ -32,6 +33,9 @@
 	function handleThemeClick(vibe) {
 		// Check if theme requires premium
 		if (vibe.premium && !$isPremium) {
+			// Track locked feature click
+			analytics.clickLockedFeature(`theme_${vibe.id}`);
+
 			// Show premium modal/toast
 			window.dispatchEvent(new CustomEvent('talktype:show-premium-modal', {
 				detail: { feature: 'customThemes', themeName: vibe.name }
