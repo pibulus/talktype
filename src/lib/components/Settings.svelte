@@ -4,7 +4,7 @@
 	import { geminiService } from '$lib/services/geminiService';
 	import { installPromptEvent } from '$lib/stores/pwa';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
-	import { isPremium } from '$lib/services/premium/premiumService';
+	import { isPremium, unlockPremiumFeatures } from '$lib/services/premium/premiumService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
@@ -18,6 +18,12 @@
 	let autoRecordValue = false;
 	let selectedPromptStyle = 'standard';
 	let privacyModeValue = false;
+
+	// Unlock code state
+	let showCodeEntry = false;
+	let unlockCode = '';
+	let codeError = '';
+	let codeValidating = false;
 
 	// Store subscriptions
 	const unsubscribeTheme = theme.subscribe((value) => {
@@ -105,6 +111,58 @@
 
 	function handleModalClose() {
 		closeModal();
+	}
+
+	function toggleCodeEntry() {
+		showCodeEntry = !showCodeEntry;
+		unlockCode = '';
+		codeError = '';
+	}
+
+	async function validateUnlockCode() {
+		if (!unlockCode.trim()) {
+			codeError = 'Please enter an unlock code';
+			return;
+		}
+
+		codeValidating = true;
+		codeError = '';
+
+		try {
+			const response = await fetch('/api/validate-code', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ code: unlockCode.trim() })
+			});
+
+			const data = await response.json();
+
+			if (data.valid) {
+				// Code is valid - unlock premium!
+				unlockPremiumFeatures(data.unlockDate);
+
+				// Show success message
+				window.dispatchEvent(
+					new CustomEvent('talktype:toast', {
+						detail: {
+							message: '🎉 Premium unlocked successfully!',
+							type: 'success'
+						}
+					})
+				);
+
+				// Reset form
+				showCodeEntry = false;
+				unlockCode = '';
+			} else {
+				codeError = data.error || 'Invalid unlock code';
+			}
+		} catch (error) {
+			console.error('Code validation error:', error);
+			codeError = 'Failed to validate code. Please try again.';
+		} finally {
+			codeValidating = false;
+		}
 	}
 </script>
 
@@ -324,9 +382,60 @@
 						⭐ Unlock for $9 (One-Time)
 					</button>
 
-					<div class="text-center">
-						<span class="text-xs italic text-gray-500">vs $10+/month subscriptions elsewhere</span>
+					<!-- Already Premium? Enter Code -->
+					<div class="pt-2">
+						<button
+							class="text-xs text-gray-600 hover:text-gray-800 underline"
+							on:click={toggleCodeEntry}
+						>
+							{showCodeEntry ? '← Back' : '🔑 Already Premium? Enter Code'}
+						</button>
+
+						{#if showCodeEntry}
+							<div class="mt-2 space-y-2 rounded-lg border border-gray-300 bg-white p-3">
+								<label for="unlock-code" class="block text-xs font-medium text-gray-700">
+									Enter your unlock code
+								</label>
+								<input
+									id="unlock-code"
+									type="text"
+									bind:value={unlockCode}
+									placeholder="TALK-XXXX-XXXX"
+									class="w-full rounded border border-gray-300 px-2 py-1 text-sm uppercase focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-200"
+									on:keydown={(e) => e.key === 'Enter' && validateUnlockCode()}
+								/>
+
+								{#if codeError}
+									<p class="text-xs text-red-600">❌ {codeError}</p>
+								{/if}
+
+								<button
+									class="btn btn-sm w-full border-amber-400 bg-amber-50 hover:bg-amber-100"
+									on:click={validateUnlockCode}
+									disabled={codeValidating}
+								>
+									{#if codeValidating}
+										<span class="flex items-center justify-center gap-1">
+											<span class="loading loading-spinner loading-xs"></span>
+											Validating...
+										</span>
+									{:else}
+										✓ Validate Code
+									{/if}
+								</button>
+
+								<p class="text-xs text-gray-500 text-center">
+									Code works on all your devices
+								</p>
+							</div>
+						{/if}
 					</div>
+
+					{#if !showCodeEntry}
+						<div class="text-center">
+							<span class="text-xs italic text-gray-500">vs $10+/month subscriptions elsewhere</span>
+						</div>
+					{/if}
 				</div>
 			{/if}
 
