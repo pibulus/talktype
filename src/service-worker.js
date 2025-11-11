@@ -85,6 +85,11 @@ self.addEventListener('fetch', (event) => {
 			}
 		}
 
+		// Skip service worker for PostHog analytics (let it fail gracefully)
+		if (url.href.includes('posthog.com') || url.href.includes('i.posthog.com')) {
+			return fetch(event.request);
+		}
+
 		// for everything else, try the network first, but
 		// fall back to the cache if we're offline
 		try {

@@ -56,8 +56,8 @@ export function detectDeviceCapabilities() {
 	// High-end device detection
 	if (capabilities.memory >= 8 && capabilities.cores >= 8) {
 		tier = 'high';
-		recommendedModel = 'medium'; // Medium is more practical than large
-		reason = 'High-end device, using medium for balance';
+		recommendedModel = 'small'; // Small is fast enough, medium too slow
+		reason = 'High-end device, using small for speed';
 	}
 	// Mid-high tier (good memory but maybe no WebGPU)
 	else if (capabilities.memory >= 6 && capabilities.cores >= 6) {
