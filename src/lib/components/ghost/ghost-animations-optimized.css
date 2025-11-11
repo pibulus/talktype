@@ -245,17 +245,22 @@
    ======================================== */
 
 .ghost-container.spin #ghost-spin-pivot {
-	animation: ghost-spin 2s cubic-bezier(0.34, 1.56, 0.64, 1);
+	animation: ghost-spin 1.2s ease-in-out;
 }
 
+/* Spin 360° in place - no translation, stays centered */
 @keyframes ghost-spin {
-	0%,
-	100% {
+	0% {
 		transform: rotate(0deg);
 	}
-	50% {
-		transform: rotate(180deg) scale(1.1);
+	100% {
+		transform: rotate(360deg);
 	}
+}
+
+/* Ensure spin pivot stays centered */
+#ghost-spin-pivot {
+	transform-origin: center center;
 }
 
 /* ========================================
