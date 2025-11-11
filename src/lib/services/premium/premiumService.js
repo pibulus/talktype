@@ -9,6 +9,7 @@ import { browser } from '$app/environment';
 // Storage key for premium status
 const PREMIUM_STORAGE_KEY = 'talktype_premium_unlocked';
 const PREMIUM_UNLOCK_DATE_KEY = 'talktype_premium_unlock_date';
+const PREMIUM_UNLOCK_CODE_KEY = 'talktype_premium_unlock_code';
 
 // Premium status store
 export const premiumStatus = writable({
@@ -45,8 +46,9 @@ export function initializePremiumStatus() {
 /**
  * Unlock premium features
  * @param {string|null} existingUnlockDate - Optional existing unlock date
+ * @param {string|null} unlockCode - Optional unlock code to save
  */
-export function unlockPremiumFeatures(existingUnlockDate = null) {
+export function unlockPremiumFeatures(existingUnlockDate = null, unlockCode = null) {
 	const unlockDate = existingUnlockDate || new Date().toISOString();
 
 	// Update store
@@ -67,10 +69,22 @@ export function unlockPremiumFeatures(existingUnlockDate = null) {
 	if (browser) {
 		localStorage.setItem(PREMIUM_STORAGE_KEY, 'true');
 		localStorage.setItem(PREMIUM_UNLOCK_DATE_KEY, unlockDate);
+		if (unlockCode) {
+			localStorage.setItem(PREMIUM_UNLOCK_CODE_KEY, unlockCode);
+		}
 	}
 
 	console.log('✨ Premium features unlocked!', unlockDate);
 	return true;
+}
+
+/**
+ * Get the saved unlock code (if available)
+ * @returns {string|null}
+ */
+export function getUnlockCode() {
+	if (!browser) return null;
+	return localStorage.getItem(PREMIUM_UNLOCK_CODE_KEY);
 }
 
 /**

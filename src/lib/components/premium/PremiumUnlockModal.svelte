@@ -36,13 +36,19 @@
 			return;
 		}
 
+		// Use correct Square SDK URL based on environment
+		const squareUrl = dev
+			? 'https://sandbox.web.squarecdn.com/v1/square.js'  // Sandbox for testing
+			: 'https://web.squarecdn.com/v1/square.js';          // Production
+
 		// Load Square SDK script
 		return new Promise((resolve, reject) => {
 			const script = document.createElement('script');
-			script.src = 'https://sandbox.web.squarecdn.com/v1/square.js'; // Use sandbox for dev
+			script.src = squareUrl;
 			script.async = true;
 			script.onload = () => {
 				squareLoaded = true;
+				console.log(`✓ Square SDK loaded (${dev ? 'sandbox' : 'production'} mode)`);
 				resolve();
 			};
 			script.onerror = reject;
@@ -129,8 +135,8 @@
 				unlockCode = data.unlockCode;
 				paymentSuccess = true;
 
-				// Unlock premium features locally
-				unlockPremiumFeatures();
+				// Unlock premium features locally and save the code
+				unlockPremiumFeatures(null, unlockCode);
 
 				// Show success toast
 				window.dispatchEvent(

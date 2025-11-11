@@ -4,7 +4,7 @@
 	import { geminiService } from '$lib/services/geminiService';
 	import { installPromptEvent } from '$lib/stores/pwa';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
-	import { isPremium, unlockPremiumFeatures } from '$lib/services/premium/premiumService';
+	import { isPremium, unlockPremiumFeatures, getUnlockCode } from '$lib/services/premium/premiumService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
@@ -24,6 +24,8 @@
 	let unlockCode = '';
 	let codeError = '';
 	let codeValidating = false;
+	let showMyCode = false;
+	let myUnlockCode = '';
 
 	// Store subscriptions
 	const unsubscribeTheme = theme.subscribe((value) => {
@@ -138,8 +140,8 @@
 			const data = await response.json();
 
 			if (data.valid) {
-				// Code is valid - unlock premium!
-				unlockPremiumFeatures(data.unlockDate);
+				// Code is valid - unlock premium and save the code!
+				unlockPremiumFeatures(data.unlockDate, unlockCode.trim());
 
 				// Show success message
 				window.dispatchEvent(
@@ -162,6 +164,28 @@
 			codeError = 'Failed to validate code. Please try again.';
 		} finally {
 			codeValidating = false;
+		}
+	}
+
+	function toggleMyCode() {
+		showMyCode = !showMyCode;
+		if (showMyCode) {
+			myUnlockCode = getUnlockCode() || 'No code saved';
+		}
+	}
+
+	function copyMyCode() {
+		const code = getUnlockCode();
+		if (code) {
+			navigator.clipboard.writeText(code);
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: {
+						message: '📋 Code copied to clipboard!',
+						type: 'success'
+					}
+				})
+			);
 		}
 	}
 </script>
@@ -329,6 +353,36 @@
 							<span class="text-green-600">✓</span>
 							<span>Batch download & export</span>
 						</div>
+					</div>
+
+					<!-- View My Code Button -->
+					<div class="pt-2">
+						<button
+							class="text-xs text-gray-600 hover:text-gray-800 underline"
+							on:click={toggleMyCode}
+						>
+							{showMyCode ? '← Hide Code' : '🔑 View My Unlock Code'}
+						</button>
+
+						{#if showMyCode}
+							<div class="mt-2 space-y-2 rounded-lg border border-green-300 bg-green-50 p-3">
+								<p class="text-xs font-medium text-gray-700">Your Unlock Code:</p>
+								<div class="rounded bg-white p-2 text-center">
+									<code class="text-sm font-bold tracking-wider text-gray-800">{myUnlockCode}</code>
+								</div>
+								{#if myUnlockCode !== 'No code saved'}
+									<button
+										class="btn btn-xs w-full border-green-400 bg-green-100 hover:bg-green-200"
+										on:click={copyMyCode}
+									>
+										📋 Copy Code
+									</button>
+									<p class="text-xs text-gray-500 text-center">
+										Use this code to unlock on other devices
+									</p>
+								{/if}
+							</div>
+						{/if}
 					</div>
 
 					<div class="pt-1 text-center">
