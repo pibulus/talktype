@@ -236,6 +236,21 @@ const cssVariables = derived(
 	($theme) => `${generateThemeCssVariables($theme)}${getGlobalAnimationVariables()}`
 );
 
+export function ensureGhostThemeStyles(options = {}) {
+	if (!browser) return () => {};
+	const { elementId = 'ghost-theme-vars', target = document.head } = options;
+	let styleElement = document.getElementById(elementId);
+	if (!styleElement) {
+		styleElement = document.createElement('style');
+		styleElement.id = elementId;
+		target.appendChild(styleElement);
+	}
+
+	styleElement.textContent = `:root {\n${generateAllThemeCssVariables()}\n}`;
+
+	return () => {};
+}
+
 // Function to set a new theme
 function setTheme(newTheme) {
 	if (Object.values(THEMES).includes(newTheme)) {
@@ -264,6 +279,8 @@ export {
 	getThemeColor,
 	themeColors,
 	generateThemeCssVariables,
+	generateAllThemeCssVariables,
+	ensureGhostThemeStyles,
 	getInitialTheme,
 	FALLBACK_THEME
 };

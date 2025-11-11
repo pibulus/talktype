@@ -28,7 +28,7 @@ The Ghost component system consists of several interconnected files:
 ```
 /src/lib/components/ghost/
 ├── Ghost.svelte           # Main component implementation
-├── ghost-animations.css   # Animation keyframes and behaviors
+├── ghost-animations-optimized.css   # Animation keyframes and behaviors
 ├── ghost-paths.svg        # SVG path definitions for the ghost shape
 ├── animationConfig.js     # Animation parameters and timing configuration
 ├── gradientAnimator.js    # JS animation logic for gradients

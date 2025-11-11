@@ -1,18 +1,12 @@
 <script>
-	import './ghost-animations.css';
+	import './ghost-animations-optimized.css';
 	import ghostPathsUrl from './ghost-paths.svg?url';
-	import {
-		initGradientAnimation,
-		cleanupAnimation,
-		cleanupAllAnimations
-	} from './gradientAnimator';
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 
 	// Direct theme prop - no store subscription
 	export let theme = 'peach';
 	export let size = '40px';
 	export let seed = Math.floor(Math.random() * 10000);
-	export let disableJsAnimation = false; // Option to disable JS animation for performance
 
 	// DOM references
 	let ghostSvg;
@@ -76,14 +70,6 @@
 
 	// Lifecycle
 	onMount(() => {
-		// Initialize gradient animation for current theme (if not disabled)
-		if (ghostSvg && !disableJsAnimation) {
-			const svgElement = ghostSvg.querySelector('svg');
-			if (svgElement) {
-				initGradientAnimation(theme, svgElement);
-			}
-		}
-
 		// Start blinking (always enable this for visual consistency)
 		scheduleBlink();
 
@@ -93,10 +79,6 @@
 
 	onDestroy(() => {
 		clearTimeout(blinkTimeoutId);
-		// Only clean up animations if they were initialized
-		if (!disableJsAnimation) {
-			cleanupAllAnimations();
-		}
 	});
 
 	// Event dispatcher
@@ -120,7 +102,7 @@
 			xmlns="http://www.w3.org/2000/svg"
 			xmlns:xlink="http://www.w3.org/1999/xlink"
 			class="ghost-svg theme-{theme}"
-			class:ready={isGhostReady}
+			class:visible={isGhostReady}
 		>
 			<defs>
 				<linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -209,27 +191,6 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-	}
-
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
-	}
-
-	.ghost-svg {
-		width: 100%;
-		height: 100%;
-		max-width: 100%;
-		max-height: 100%;
-		opacity: 0; /* Initially hidden */
-	}
-
-	.ghost-svg.ready {
-		animation: fadeIn 0.3s ease-out forwards;
 	}
 
 	.ghost-layer {

@@ -17,7 +17,7 @@ src/app.css (main entry)
 
 Component-level imports:
 └── src/lib/components/ghost/Ghost.svelte
-    └── import './ghost-animations.css'
+    └── import './ghost-animations-optimized.css'
 ```
 
 ## ⚠️ Identified Conflicts
@@ -55,7 +55,7 @@ Component-level imports:
 
 #### Broken/Missing Animations
 
-- **flash-transition** (ghost-animations.css:117)
+- **flash-transition** (ghost-animations-optimized.css)
   - Referenced but NEVER defined
   - Causes :active state to fail
   - Already commented out, needs removal
@@ -79,7 +79,7 @@ Component-level imports:
 2. **Tailwind components** (includes DaisyUI)
 3. **Tailwind utilities**
 4. **Typography.css**
-5. **Component-specific CSS** (ghost-animations.css) loaded per-component
+5. **Component-specific CSS** (ghost-animations-optimized.css) loaded per-component
 
 ### 6. **Specificity Battles**
 
@@ -115,12 +115,12 @@ html.modal-active {
 
 - Multiple pulse animations defined:
   - `pulse-glow` (app.css)
-  - `ghost-pulse` (ghost-animations.css)
+  - `ghost-pulse` (ghost-animations-optimized.css)
   - Various theme-specific pulses
 
 #### Unnecessary !important Usage
 
-- `filter: brightness(1.3) !important` (ghost-animations.css:118)
+- `filter: brightness(1.3) !important` (ghost-animations-optimized.css)
 - Modal scroll handling uses !important unnecessarily
 
 ## 🎯 Recommended Fixes
