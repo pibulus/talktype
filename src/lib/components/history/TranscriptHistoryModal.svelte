@@ -4,6 +4,7 @@
 		transcriptHistory,
 		storageStats,
 		loadAllTranscripts,
+		updateTranscript,
 		deleteTranscript,
 		clearAllTranscripts,
 		batchDownloadTranscripts,
@@ -17,6 +18,8 @@
 	export let closeModal = () => {};
 
 	let confirmClearAll = false;
+	let editingId = null;
+	let editText = '';
 
 	// Format timestamp to readable date
 	function formatDate(timestamp) {
@@ -76,6 +79,33 @@
 		a.click();
 		document.body.removeChild(a);
 		URL.revokeObjectURL(url);
+	}
+
+	// Start editing a transcript
+	function startEdit(transcript) {
+		editingId = transcript.id;
+		editText = transcript.text;
+	}
+
+	// Save edited transcript
+	async function saveEdit(id) {
+		if (editText.trim()) {
+			await updateTranscript(id, editText.trim());
+			editingId = null;
+			editText = '';
+
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: { message: '✏️ Transcript updated!', type: 'success' }
+				})
+			);
+		}
+	}
+
+	// Cancel editing
+	function cancelEdit() {
+		editingId = null;
+		editText = '';
 	}
 
 	// Delete a transcript
@@ -247,43 +277,78 @@
 
 								<!-- Actions -->
 								<div class="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-									{#if transcript.audioBlob}
+									{#if editingId !== transcript.id}
+										{#if transcript.audioBlob}
+											<button
+												class="btn btn-ghost btn-xs"
+												on:click={() => playAudio(transcript.audioBlob)}
+												title="Play audio"
+											>
+												🔊
+											</button>
+										{/if}
 										<button
 											class="btn btn-ghost btn-xs"
-											on:click={() => playAudio(transcript.audioBlob)}
-											title="Play audio"
+											on:click={() => startEdit(transcript)}
+											title="Edit"
 										>
-											🔊
+											✏️
+										</button>
+										<button
+											class="btn btn-ghost btn-xs"
+											on:click={() => copyTranscript(transcript.text)}
+											title="Copy text"
+										>
+											📋
+										</button>
+										<button
+											class="btn btn-ghost btn-xs"
+											on:click={() => downloadTranscript(transcript)}
+											title="Download"
+										>
+											💾
+										</button>
+										<button
+											class="btn btn-ghost btn-xs text-error"
+											on:click={() => handleDelete(transcript.id)}
+											title="Delete"
+										>
+											🗑️
 										</button>
 									{/if}
-									<button
-										class="btn btn-ghost btn-xs"
-										on:click={() => copyTranscript(transcript.text)}
-										title="Copy text"
-									>
-										📋
-									</button>
-									<button
-										class="btn btn-ghost btn-xs"
-										on:click={() => downloadTranscript(transcript)}
-										title="Download"
-									>
-										💾
-									</button>
-									<button
-										class="btn btn-ghost btn-xs text-error"
-										on:click={() => handleDelete(transcript.id)}
-										title="Delete"
-									>
-										🗑️
-									</button>
 								</div>
 							</div>
 
 							<!-- Transcript Text -->
-							<div class="max-h-24 overflow-y-auto rounded bg-gray-50 p-2">
-								<p class="text-sm text-gray-700">{transcript.text}</p>
-							</div>
+							{#if editingId === transcript.id}
+								<!-- Edit Mode -->
+								<div class="space-y-2">
+									<textarea
+										bind:value={editText}
+										class="w-full rounded border border-pink-200 bg-white p-2 text-sm focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
+										rows="4"
+									></textarea>
+									<div class="flex justify-end gap-2">
+										<button
+											class="btn btn-ghost btn-xs"
+											on:click={cancelEdit}
+										>
+											Cancel
+										</button>
+										<button
+											class="btn btn-primary btn-xs"
+											on:click={() => saveEdit(transcript.id)}
+										>
+											Save
+										</button>
+									</div>
+								</div>
+							{:else}
+								<!-- View Mode -->
+								<div class="max-h-24 overflow-y-auto rounded bg-gray-50 p-2">
+									<p class="text-sm text-gray-700">{transcript.text}</p>
+								</div>
+							{/if}
 						</div>
 					{/each}
 				</div>

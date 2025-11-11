@@ -147,6 +147,59 @@ export async function loadAllTranscripts() {
 }
 
 /**
+ * Update a transcript's text
+ * @param {number} id - Transcript ID
+ * @param {string} newText - Updated transcript text
+ * @returns {Promise<boolean>}
+ */
+export async function updateTranscript(id, newText) {
+	try {
+		const database = await initDB();
+		const transaction = database.transaction([STORE_NAME], 'readwrite');
+		const store = transaction.objectStore(STORE_NAME);
+
+		return new Promise((resolve, reject) => {
+			// First get the existing transcript
+			const getRequest = store.get(id);
+
+			getRequest.onsuccess = () => {
+				const transcript = getRequest.result;
+				if (!transcript) {
+					reject(new Error('Transcript not found'));
+					return;
+				}
+
+				// Update the text and word count
+				transcript.text = newText;
+				transcript.wordCount = newText ? newText.split(/\s+/).length : 0;
+
+				// Save the updated transcript
+				const putRequest = store.put(transcript);
+
+				putRequest.onsuccess = () => {
+					console.log('✏️ Transcript updated:', id);
+					loadAllTranscripts(); // Refresh the list
+					resolve(true);
+				};
+
+				putRequest.onerror = () => {
+					console.error('Failed to update transcript:', putRequest.error);
+					reject(putRequest.error);
+				};
+			};
+
+			getRequest.onerror = () => {
+				console.error('Failed to get transcript:', getRequest.error);
+				reject(getRequest.error);
+			};
+		});
+	} catch (error) {
+		console.error('Error updating transcript:', error);
+		return false;
+	}
+}
+
+/**
  * Delete a transcript by ID
  * @param {number} id - Transcript ID
  * @returns {Promise<boolean>}
