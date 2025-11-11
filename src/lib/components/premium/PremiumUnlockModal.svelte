@@ -5,6 +5,7 @@
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
 	import { Button } from '$lib/components/shared';
 	import { PRICING, PRICING_MESSAGES } from '$lib/config/pricing';
+	import CampaignCountdown from '$lib/components/shared/CampaignCountdown.svelte';
 
 	export let closeModal = () => {};
 	export let feature = null; // Which feature triggered the modal
@@ -291,9 +292,12 @@
 					</div>
 
 					{#if hasDiscount}
-						<!-- Launch Special Badge -->
-						<div class="mb-2 inline-block animate-pulse rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
-							{PRICING.launchSpecial.message} • First {PRICING.launchSpecial.limit} Customers
+						<!-- Launch Special Badge with Real Countdown -->
+						<div class="mb-2 flex flex-col items-center gap-1">
+							<div class="inline-block animate-pulse rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
+								{PRICING.launchSpecial.message}
+							</div>
+							<CampaignCountdown variant="badge" />
 						</div>
 					{/if}
 

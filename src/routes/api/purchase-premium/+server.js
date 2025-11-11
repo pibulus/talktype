@@ -6,6 +6,7 @@
 import { json } from '@sveltejs/kit';
 import { dev } from '$app/environment';
 import { generateUnlockCode, storeUnlockCode } from '$lib/server/unlockCodeStore';
+import { recordCampaignSale } from '$lib/server/campaignTracker';
 
 // Square API configuration
 const SQUARE_API_URL = dev
@@ -49,11 +50,19 @@ export async function POST({ request }) {
 				environment: 'development'
 			});
 
+			// Record campaign sale
+			const campaignStatus = recordCampaignSale({
+				paymentId: 'dev-test-payment',
+				amount,
+				email: email || null
+			});
+
 			return json({
 				success: true,
 				unlockCode,
 				paymentId: 'dev-test-payment',
-				message: 'Development payment - code generated'
+				message: 'Development payment - code generated',
+				campaign: campaignStatus
 			});
 		}
 
@@ -115,11 +124,19 @@ export async function POST({ request }) {
 				receiptUrl: payment.receipt_url
 			});
 
+			// Record campaign sale
+			const campaignStatus = recordCampaignSale({
+				paymentId: payment.id,
+				amount: payment.amount_money.amount / 100,
+				email: email || null
+			});
+
 			return json({
 				success: true,
 				unlockCode,
 				paymentId: payment.id,
-				receiptUrl: payment.receipt_url
+				receiptUrl: payment.receipt_url,
+				campaign: campaignStatus
 			});
 		}
 
