@@ -10,6 +10,7 @@
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { STORAGE_KEYS, SERVICE_EVENTS } from '$lib/constants';
+	import { PRICING } from '$lib/config/pricing';
 
 	export let closeModal = () => {};
 
@@ -397,7 +398,12 @@
 					<div class="flex items-center justify-between">
 						<h4 class="text-sm font-bold text-gray-700">Unlock Premium</h4>
 						<span class="badge badge-sm gap-1 border-amber-300 bg-amber-100 font-medium text-amber-700">
-							<span class="text-[10px]">⭐</span> $9 Once
+							{#if PRICING.hasDiscount}
+								<span class="text-[10px]">🎉</span> ${PRICING.currentPrice}
+								<span class="text-[9px] line-through opacity-60">${PRICING.basePrice}</span>
+							{:else}
+								<span class="text-[10px]">⭐</span> ${PRICING.currentPrice} Once
+							{/if}
 						</span>
 					</div>
 
@@ -433,7 +439,11 @@
 							}, 100);
 						}}
 					>
-						⭐ Unlock for $9 (One-Time)
+						{#if PRICING.hasDiscount}
+							🎉 Get Launch Special - ${PRICING.currentPrice}!
+						{:else}
+							⭐ Unlock for ${PRICING.currentPrice} (One-Time)
+						{/if}
 					</button>
 
 					<!-- Already Premium? Enter Code -->

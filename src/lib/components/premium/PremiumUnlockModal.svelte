@@ -4,13 +4,16 @@
 	import { unlockPremiumFeatures, getPremiumFeatures } from '$lib/services/premium/premiumService';
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
 	import { Button } from '$lib/components/shared';
+	import { PRICING, PRICING_MESSAGES } from '$lib/config/pricing';
 
 	export let closeModal = () => {};
 	export let feature = null; // Which feature triggered the modal
 
 	const features = getPremiumFeatures();
-	const price = 9.00;
-	const currency = 'AUD';
+	const price = PRICING.currentPrice;
+	const currency = PRICING.currency;
+	const hasDiscount = PRICING.hasDiscount;
+	const basePrice = PRICING.basePrice;
 
 	// State management
 	let isProcessing = false;
@@ -286,12 +289,35 @@
 							<span class="text-3xl">⭐</span>
 						</div>
 					</div>
+
+					{#if hasDiscount}
+						<!-- Launch Special Badge -->
+						<div class="mb-2 inline-block animate-pulse rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
+							{PRICING.launchSpecial.message} • First {PRICING.launchSpecial.limit} Customers
+						</div>
+					{/if}
+
 					<h3 id="premium_modal_title" class="mb-2 text-3xl font-black tracking-tight text-gray-800">
 						Unlock Premium
 					</h3>
-					<p class="text-lg font-semibold text-amber-600">
-						One-time payment • <span class="text-2xl">${price} {currency}</span> • Lifetime access
-					</p>
+
+					<div class="text-lg font-semibold text-amber-600">
+						{#if hasDiscount}
+							<!-- Show discounted price with strikethrough -->
+							<div class="flex items-center justify-center gap-2">
+								<span class="text-base text-gray-400 line-through">${basePrice} {currency}</span>
+								<span class="text-3xl font-black text-rose-600">${price} {currency}</span>
+								<span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-bold text-rose-700">
+									Save ${PRICING.launchSpecial.savings}!
+								</span>
+							</div>
+							<p class="mt-1 text-sm text-gray-600">
+								One-time payment • Lifetime access
+							</p>
+						{:else}
+							One-time payment • <span class="text-2xl">${price} {currency}</span> • Lifetime access
+						{/if}
+					</div>
 				</div>
 
 				<!-- Features Grid -->
@@ -317,8 +343,13 @@
 						<h4 class="mb-2 font-bold text-pink-700">💰 Why One-Time?</h4>
 						<p class="text-sm text-gray-700">
 							We hate subscription fatigue! Pay <strong>${price} {currency} once</strong> and keep all features
-							forever. Competitors charge $10+/month for the same features - we think that's BS. 🎯
+							forever. Competitors charge $10+/month ($120+/year) for the same features - we think that's BS. 🎯
 						</p>
+						{#if hasDiscount}
+							<p class="mt-2 text-xs font-semibold text-pink-700">
+								⚡ At launch price, you save ${(120 - price).toFixed(0)} in first year vs subscriptions!
+							</p>
+						{/if}
 					</div>
 
 					<!-- Privacy Message -->
