@@ -5,6 +5,8 @@ import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
 import { gradientAnimations, shapeAnimations } from './gradientConfig';
 import { WOBBLE_CONFIG, SPECIAL_CONFIG } from './animationConfig'; // Import WOBBLE_CONFIG and SPECIAL_CONFIG
 
+export const FALLBACK_THEME = THEMES.PEACH;
+
 // Theme configuration - color palette definitions
 const themeColors = {
 	peach: {
@@ -88,11 +90,11 @@ const themeColors = {
 };
 
 // Get theme from localStorage or use default
-function getInitialTheme() {
-	if (!browser) return THEMES.PEACH;
+export function getInitialTheme() {
+	if (!browser) return FALLBACK_THEME;
 
 	const storedTheme = StorageUtils.getItem(STORAGE_KEYS.THEME);
-	return storedTheme && Object.values(THEMES).includes(storedTheme) ? storedTheme : THEMES.PEACH;
+	return storedTheme && Object.values(THEMES).includes(storedTheme) ? storedTheme : FALLBACK_THEME;
 }
 
 // Create the main theme store
@@ -108,129 +110,120 @@ if (browser) {
 	});
 }
 
-// Generate CSS variables for current theme
-const cssVariables = derived(theme, ($theme) => {
+export function generateThemeCssVariables(themeName = FALLBACK_THEME) {
+	const safeTheme = themeColors[themeName] ? themeName : FALLBACK_THEME;
 	let cssVars = '';
 
-	// Get theme colors
-	const colors = themeColors[$theme];
+	const colors = themeColors[safeTheme];
 	if (!colors) return cssVars;
 
-	// Get animation config
-	const animConfig = gradientAnimations[$theme];
-	const shapeConfig = shapeAnimations[$theme];
+	const animConfig = gradientAnimations[safeTheme];
+	const shapeConfig = shapeAnimations[safeTheme];
 
-	// Add base theme colors
-	cssVars += `--ghost-${$theme}-start: ${colors.start};\n`;
-	cssVars += `--ghost-${$theme}-start-bright: ${colors.startBright};\n`;
-	cssVars += `--ghost-${$theme}-mid1: ${colors.mid1};\n`;
-	cssVars += `--ghost-${$theme}-mid1-bright: ${colors.mid1Bright};\n`;
-	cssVars += `--ghost-${$theme}-mid2: ${colors.mid2};\n`;
-	cssVars += `--ghost-${$theme}-mid2-bright: ${colors.mid2Bright};\n`;
-	cssVars += `--ghost-${$theme}-mid3: ${colors.mid3};\n`;
-	cssVars += `--ghost-${$theme}-mid3-bright: ${colors.mid3Bright};\n`;
-	cssVars += `--ghost-${$theme}-end: ${colors.end};\n`;
-	cssVars += `--ghost-${$theme}-end-bright: ${colors.endBright};\n`;
+	cssVars += `--ghost-${safeTheme}-start: ${colors.start};\n`;
+	cssVars += `--ghost-${safeTheme}-start-bright: ${colors.startBright};\n`;
+	cssVars += `--ghost-${safeTheme}-mid1: ${colors.mid1};\n`;
+	cssVars += `--ghost-${safeTheme}-mid1-bright: ${colors.mid1Bright};\n`;
+	cssVars += `--ghost-${safeTheme}-mid2: ${colors.mid2};\n`;
+	cssVars += `--ghost-${safeTheme}-mid2-bright: ${colors.mid2Bright};\n`;
+	cssVars += `--ghost-${safeTheme}-mid3: ${colors.mid3};\n`;
+	cssVars += `--ghost-${safeTheme}-mid3-bright: ${colors.mid3Bright};\n`;
+	cssVars += `--ghost-${safeTheme}-end: ${colors.end};\n`;
+	cssVars += `--ghost-${safeTheme}-end-bright: ${colors.endBright};\n`;
 
-	// Add glow colors
-	cssVars += `--ghost-${$theme}-glow-primary: ${colors.glowPrimary};\n`;
-	cssVars += `--ghost-${$theme}-glow-secondary: ${colors.glowSecondary};\n`;
-	cssVars += `--ghost-${$theme}-glow-tertiary: ${colors.glowTertiary};\n`;
+	cssVars += `--ghost-${safeTheme}-glow-primary: ${colors.glowPrimary};\n`;
+	cssVars += `--ghost-${safeTheme}-glow-secondary: ${colors.glowSecondary};\n`;
+	cssVars += `--ghost-${safeTheme}-glow-tertiary: ${colors.glowTertiary};\n`;
 
 	if (colors.glowQuaternary) {
-		cssVars += `--ghost-${$theme}-glow-quaternary: ${colors.glowQuaternary};\n`;
-		cssVars += `--ghost-${$theme}-glow-quinary: ${colors.glowQuinary};\n`;
-		cssVars += `--ghost-${$theme}-glow-senary: ${colors.glowSenary};\n`;
+		cssVars += `--ghost-${safeTheme}-glow-quaternary: ${colors.glowQuaternary};\n`;
+		cssVars += `--ghost-${safeTheme}-glow-quinary: ${colors.glowQuinary};\n`;
+		cssVars += `--ghost-${safeTheme}-glow-senary: ${colors.glowSenary};\n`;
 	}
 
-	// Add shadow colors
-	cssVars += `--ghost-${$theme}-shadow-color: ${colors.shadowColor};\n`;
-	cssVars += `--ghost-${$theme}-shadow-color-bright: ${colors.shadowColorBright};\n`;
-	cssVars += `--ghost-${$theme}-shadow-color-brightest: ${colors.shadowColorBrightest};\n`;
+	cssVars += `--ghost-${safeTheme}-shadow-color: ${colors.shadowColor};\n`;
+	cssVars += `--ghost-${safeTheme}-shadow-color-bright: ${colors.shadowColorBright};\n`;
+	cssVars += `--ghost-${safeTheme}-shadow-color-brightest: ${colors.shadowColorBrightest};\n`;
 
 	if (colors.shadowColorBrighter) {
-		cssVars += `--ghost-${$theme}-shadow-color-brighter: ${colors.shadowColorBrighter};\n`;
+		cssVars += `--ghost-${safeTheme}-shadow-color-brighter: ${colors.shadowColorBrighter};\n`;
 	}
 
 	if (colors.shadowColorBrightAlt) {
-		cssVars += `--ghost-${$theme}-shadow-color-bright-alt: ${colors.shadowColorBrightAlt};\n`;
+		cssVars += `--ghost-${safeTheme}-shadow-color-bright-alt: ${colors.shadowColorBrightAlt};\n`;
 	}
 
-	// Add animation parameters
 	if (animConfig) {
-		// Position animation parameters
 		if (animConfig.position) {
-			cssVars += `--ghost-${$theme}-position-speed: ${animConfig.position.speed};\n`;
-			cssVars += `--ghost-${$theme}-position-amplitude: ${animConfig.position.amplitude}%;\n`;
+			cssVars += `--ghost-${safeTheme}-position-speed: ${animConfig.position.speed};\n`;
+			cssVars += `--ghost-${safeTheme}-position-amplitude: ${animConfig.position.amplitude}%;\n`;
 		}
 
-		// Add stop positions for reference
 		if (animConfig.stopPositions) {
-			cssVars += `--ghost-${$theme}-stop-positions: "${animConfig.stopPositions.join(',')}";\n`;
+			cssVars += `--ghost-${safeTheme}-stop-positions: "${animConfig.stopPositions.join(',')}";\n`;
 		}
 	}
 
-	// Add shape animation parameters
 	if (shapeConfig) {
-		cssVars += `--ghost-${$theme}-flow-duration: ${shapeConfig.flowDuration}s;\n`;
-		cssVars += `--ghost-${$theme}-flow-ease: ${shapeConfig.flowEase};\n`;
+		cssVars += `--ghost-${safeTheme}-flow-duration: ${shapeConfig.flowDuration}s;\n`;
+		cssVars += `--ghost-${safeTheme}-flow-ease: ${shapeConfig.flowEase};\n`;
 
 		if (shapeConfig.filter) {
 			if (shapeConfig.filter.hueRotate) {
-				cssVars += `--ghost-${$theme}-hue-rotate-min: ${shapeConfig.filter.hueRotate.min}deg;\n`;
-				cssVars += `--ghost-${$theme}-hue-rotate-max: ${shapeConfig.filter.hueRotate.max}deg;\n`;
+				cssVars += `--ghost-${safeTheme}-hue-rotate-min: ${shapeConfig.filter.hueRotate.min}deg;\n`;
+				cssVars += `--ghost-${safeTheme}-hue-rotate-max: ${shapeConfig.filter.hueRotate.max}deg;\n`;
 
 				if (shapeConfig.filter.hueRotate.isFullCycle) {
-					cssVars += `--ghost-${$theme}-hue-rotate-full-cycle: true;\n`;
+					cssVars += `--ghost-${safeTheme}-hue-rotate-full-cycle: true;\n`;
 				}
 			}
 
 			if (shapeConfig.filter.saturate) {
-				cssVars += `--ghost-${$theme}-saturate-min: ${shapeConfig.filter.saturate.min};\n`;
-				cssVars += `--ghost-${$theme}-saturate-max: ${shapeConfig.filter.saturate.max};\n`;
+				cssVars += `--ghost-${safeTheme}-saturate-min: ${shapeConfig.filter.saturate.min};\n`;
+				cssVars += `--ghost-${safeTheme}-saturate-max: ${shapeConfig.filter.saturate.max};\n`;
 			}
 
 			if (shapeConfig.filter.brightness) {
-				cssVars += `--ghost-${$theme}-brightness-min: ${shapeConfig.filter.brightness.min};\n`;
-				cssVars += `--ghost-${$theme}-brightness-max: ${shapeConfig.filter.brightness.max};\n`;
+				cssVars += `--ghost-${safeTheme}-brightness-min: ${shapeConfig.filter.brightness.min};\n`;
+				cssVars += `--ghost-${safeTheme}-brightness-max: ${shapeConfig.filter.brightness.max};\n`;
 			}
 		}
 
 		if (shapeConfig.scale) {
-			cssVars += `--ghost-${$theme}-scale-min: ${shapeConfig.scale.min};\n`;
-			cssVars += `--ghost-${$theme}-scale-mid: ${shapeConfig.scale.mid};\n`;
-			cssVars += `--ghost-${$theme}-scale-steps: ${shapeConfig.scale.steps};\n`;
+			cssVars += `--ghost-${safeTheme}-scale-min: ${shapeConfig.scale.min};\n`;
+			cssVars += `--ghost-${safeTheme}-scale-mid: ${shapeConfig.scale.mid};\n`;
+			cssVars += `--ghost-${safeTheme}-scale-steps: ${shapeConfig.scale.steps};\n`;
 		}
 
 		if (shapeConfig.rotation) {
-			cssVars += `--ghost-${$theme}-rotation-min: ${shapeConfig.rotation.min}deg;\n`;
-			cssVars += `--ghost-${$theme}-rotation-max: ${shapeConfig.rotation.max}deg;\n`;
+			cssVars += `--ghost-${safeTheme}-rotation-min: ${shapeConfig.rotation.min}deg;\n`;
+			cssVars += `--ghost-${safeTheme}-rotation-max: ${shapeConfig.rotation.max}deg;\n`;
 		}
 
 		if (shapeConfig.shadow) {
-			cssVars += `--ghost-${$theme}-shadow-enabled: ${shapeConfig.shadow.enabled};\n`;
-			cssVars += `--ghost-${$theme}-shadow-radius-min: ${shapeConfig.shadow.radius.min}px;\n`;
-			cssVars += `--ghost-${$theme}-shadow-radius-max: ${shapeConfig.shadow.radius.max}px;\n`;
-			cssVars += `--ghost-${$theme}-shadow-opacity-min: ${shapeConfig.shadow.opacity.min};\n`;
-			cssVars += `--ghost-${$theme}-shadow-opacity-max: ${shapeConfig.shadow.opacity.max};\n`;
+			cssVars += `--ghost-${safeTheme}-shadow-enabled: ${shapeConfig.shadow.enabled};\n`;
+			cssVars += `--ghost-${safeTheme}-shadow-radius-min: ${shapeConfig.shadow.radius.min}px;\n`;
+			cssVars += `--ghost-${safeTheme}-shadow-radius-max: ${shapeConfig.shadow.radius.max}px;\n`;
+			cssVars += `--ghost-${safeTheme}-shadow-opacity-min: ${shapeConfig.shadow.opacity.min};\n`;
+			cssVars += `--ghost-${safeTheme}-shadow-opacity-max: ${shapeConfig.shadow.opacity.max};\n`;
 		}
 
 		if (shapeConfig.transform && shapeConfig.transform.y) {
-			cssVars += `--ghost-${$theme}-transform-y-min: ${shapeConfig.transform.y.min}px;\n`;
-			cssVars += `--ghost-${$theme}-transform-y-max: ${shapeConfig.transform.y.max}px;\n`;
+			cssVars += `--ghost-${safeTheme}-transform-y-min: ${shapeConfig.transform.y.min}px;\n`;
+			cssVars += `--ghost-${safeTheme}-transform-y-max: ${shapeConfig.transform.y.max}px;\n`;
 		}
 	}
 
-	// Add wobble duration from config
 	cssVars += `\n/* Wobble Configuration */\n`;
-	cssVars += `--ghost-wobble-duration: ${WOBBLE_CONFIG.DURATION / 1000}s;\n`; // Convert ms to s
+	cssVars += `--ghost-wobble-duration: ${WOBBLE_CONFIG.DURATION / 1000}s;\n`;
 
-	// Add special animation duration from config
 	cssVars += `\n/* Special Animation Configuration */\n`;
-	cssVars += `--ghost-special-duration: ${SPECIAL_CONFIG.DURATION / 1000}s;\n`; // Convert ms to s
+	cssVars += `--ghost-special-duration: ${SPECIAL_CONFIG.DURATION / 1000}s;\n`;
 
 	return cssVars;
-});
+}
+
+const cssVariables = derived(theme, ($theme) => generateThemeCssVariables($theme));
 
 // Function to set a new theme
 function setTheme(newTheme) {
@@ -253,4 +246,13 @@ function getThemeColor(themeName, position, bright = false) {
 	return theme[colorKey] || null;
 }
 
-export { theme, cssVariables, setTheme, getThemeColor, themeColors };
+export {
+	theme,
+	cssVariables,
+	setTheme,
+	getThemeColor,
+	themeColors,
+	generateThemeCssVariables,
+	getInitialTheme,
+	FALLBACK_THEME
+};

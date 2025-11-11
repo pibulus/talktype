@@ -8,7 +8,7 @@
 	import ghostPathsUrl from './ghost-paths.svg?url';
 	import { ANIMATION_STATES, CSS_CLASSES, PULSE_CONFIG, EYE_CONFIG } from './animationConfig.js';
 
-	import { ghostStateStore, theme as localTheme } from './stores/index.js';
+import { ghostStateStore, theme as localTheme, FALLBACK_THEME } from './stores/index.js';
 	import { animationService, blinkService } from './services/index.js';
 	import { forceReflow } from './utils/animationUtils.js';
 	import { initialGhostAnimation } from './actions/initialGhostAnimation.js';
@@ -24,10 +24,9 @@
 	export let externalTheme = null;
 	export let width = '100%';
 	export let height = '100%';
-	export let opacity = 1;
-	export let scale = 1;
-	export let clickable = true;
-	const FALLBACK_THEME = 'peach';
+export let opacity = 1;
+export let scale = 1;
+export let clickable = true;
 	const resolveThemeSource = () => externalTheme || localTheme;
 	const normalizeTheme = (themeValue) =>
 		typeof themeValue === 'string' && themeValue.length > 0 ? themeValue : FALLBACK_THEME;
@@ -58,20 +57,11 @@
 	let gradientId = getGradientId(currentTheme);
 	let animationClass = 'animations-paused';
 	let isGhostReady = false;
-	let containerOpacity = 0;
-	let svgVisibility = 'hidden';
-	let svgOpacity = 0;
 
 	$: gradientId = getGradientId(currentTheme || FALLBACK_THEME);
 
 	// Simplified ready check - prevent any visual output until everything is ready
-	$: {
-		const ready = fullyReady && browser && !!ghostSvg && !!currentTheme;
-		isGhostReady = ready;
-		containerOpacity = ready ? opacity : 0;
-		svgVisibility = ready ? 'visible' : 'hidden';
-		svgOpacity = ready ? 1 : 0;
-	}
+	$: isGhostReady = fullyReady && browser && !!ghostSvg && !!currentTheme;
 
 	$: animationClass = isGhostReady && $appActive ? 'animations-enabled' : 'animations-paused';
 
@@ -374,7 +364,7 @@
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
       {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
       {!isGhostReady || !clickable ? 'ghost-non-clickable' : ''}"
-	style="width: {width}; height: {height}; opacity: {containerOpacity}; transform: scale({scale});"
+	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
 	on:click={() => {
 		if (clickable) {
 			handleClick();
@@ -403,8 +393,6 @@
 		class:asleep={$ghostStateStore.current === ANIMATION_STATES.ASLEEP}
 		class:waking-up={$ghostStateStore.current === ANIMATION_STATES.WAKING_UP}
 		class:debug-animation={debugAnim}
-		style:visibility={svgVisibility}
-		style:opacity={svgOpacity}
 	>
 		<defs>
 			<GradientDefs />
