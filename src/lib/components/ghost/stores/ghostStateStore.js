@@ -421,13 +421,17 @@ function createGhostStateStore() {
 	 */
 	function checkAndSetFirstVisit() {
 		if (browser) {
-			const firstVisit = !document.body.hasAttribute('data-ghost-animated');
+			// Use sessionStorage for first-visit detection (survives reload, not browser restart)
+			const hasSeenGhost = sessionStorage.getItem('ghost-seen');
+			const firstVisit = !hasSeenGhost;
+
 			if (firstVisit) {
 				debugLog('First visit detected, updating store.');
+				sessionStorage.setItem('ghost-seen', 'true');
 				_state.update((s) => ({ ...s, isFirstVisit: true }));
 				return true;
 			} else {
-				// Ensure store reflects non-first visit if attribute is present
+				// Ensure store reflects non-first visit
 				_state.update((s) => ({ ...s, isFirstVisit: false }));
 			}
 		}

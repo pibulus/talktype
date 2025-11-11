@@ -34,17 +34,18 @@
 	let ghostWobbleGroup;
 	let lastRecordingState = false;
 	let lastProcessingState = false;
-	let currentTheme;
+	let currentTheme = 'peach'; // Initialize immediately to prevent black silhouette flash
 	let themeStore = externalTheme || localTheme;
 	let unsubscribeTheme;
 	let wakeUpBlinkTriggered = false;
 	let eyeTracker;
+	let ghostInitialized = false; // Prevent rendering until fully initialized
 
 	// === REACTIVE DECLARATIONS ===
 	$: animationsEnabled = $appActive;
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 	$: gradientId = getGradientId(currentTheme);
-	$: isGhostReady = browser && componentsLoaded && !!ghostSvg && !!currentTheme;
+	$: isGhostReady = ghostInitialized && browser && componentsLoaded && !!ghostSvg && !!currentTheme;
 
 	// React to recording state changes
 	$: if (browser && isRecording !== lastRecordingState) {
@@ -251,6 +252,11 @@
 			// Mark component as loaded
 			componentsLoaded = true;
 
+			// Set initialized flag after all setup is complete (prevents render flashing)
+			requestAnimationFrame(() => {
+				ghostInitialized = true;
+			});
+
 			// Add global event listeners for waking up / resetting inactivity
 			document.addEventListener('mousemove', handleUserInteraction, { passive: true });
 			document.addEventListener('pointerdown', handleUserInteraction, { passive: true });
@@ -348,6 +354,7 @@
 		xmlns:xlink="http://www.w3.org/1999/xlink"
 		class="ghost-svg theme-{currentTheme} {animationClass}"
 		pointer-events="none"
+		class:initializing={!ghostInitialized}
 		class:recording={$ghostStateStore.isRecording}
 		class:spin={$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG}
 		class:asleep={$ghostStateStore.current === ANIMATION_STATES.ASLEEP}

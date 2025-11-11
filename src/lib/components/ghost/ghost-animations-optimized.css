@@ -11,6 +11,17 @@
 	transition: transform 0.3s ease;
 }
 
+/* Initialization states - prevent flash during mount */
+.ghost-svg.initializing {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.ghost-svg.ready {
+	opacity: 1;
+	transition: opacity 0.2s ease-in;
+}
+
 .ghost-wobble-group {
 	transform-origin: center center;
 	will-change: auto; /* Only set during animation */

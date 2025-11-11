@@ -67,6 +67,11 @@ export class WhisperService {
 		this.updateStatus({
 			supportsWhisper: this.isSupported
 		});
+
+		// Check for cached model to prevent "downloading" flash
+		if (this.isSupported) {
+			this.detectCachedModel();
+		}
 	}
 
 	/**
@@ -74,6 +79,32 @@ export class WhisperService {
 	 */
 	updateStatus(updates) {
 		whisperStatus.update((current) => ({ ...current, ...updates }));
+	}
+
+	/**
+	 * Check IndexedDB for cached models to avoid false "downloading" state
+	 */
+	async detectCachedModel() {
+		try {
+			const dbName = 'transformers-cache';
+			const request = indexedDB.open(dbName);
+
+			request.onsuccess = (event) => {
+				const db = event.target.result;
+				// Check if database has object stores (indicating cached models)
+				if (db.objectStoreNames.length > 0) {
+					console.log('🎯 Cached Whisper model detected');
+					this.updateStatus({ isLoaded: true, progress: 100 });
+				}
+				db.close();
+			};
+
+			request.onerror = () => {
+				// Silent fail - will load normally if no cache detected
+			};
+		} catch (e) {
+			// Silent fail - will load normally
+		}
 	}
 
 	/**

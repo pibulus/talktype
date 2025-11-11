@@ -446,5 +446,5 @@
 			installPromptEvent={$deferredInstallPrompt}
 			on:closeprompt={closePwaInstallPrompt}
 		/>
-	</div}
+	</div>
 {/if}

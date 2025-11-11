@@ -12,6 +12,7 @@ export default defineConfig({
 		exclude: ['@google/generative-ai'] // Never bundle AI package client-side
 	},
 	ssr: {
-		noExternal: process.env.NODE_ENV === 'production' ? ['@google/generative-ai'] : []
+		noExternal: process.env.NODE_ENV === 'production' ? ['@google/generative-ai'] : [],
+		external: ['sharp', '@xenova/transformers'] // Exclude from SSR - browser-only transcription
 	}
 });
