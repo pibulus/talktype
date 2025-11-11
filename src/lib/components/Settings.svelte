@@ -1,33 +1,21 @@
 <script>
 	import { onMount } from 'svelte';
-	import { theme, autoRecord, autoSave, applyTheme, promptStyle } from '$lib';
+	import { theme, autoRecord, applyTheme, promptStyle } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { installPromptEvent } from '$lib/stores/pwa';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
+	import { isPremium } from '$lib/services/premium/premiumService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
-	import { Toggle, Button } from './shared';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
-	import KeyboardShortcutsInfo from './settings/KeyboardShortcutsInfo.svelte';
-	import SupportSection from './settings/SupportSection.svelte';
 	import { STORAGE_KEYS, SERVICE_EVENTS } from '$lib/constants';
 
 	export let closeModal = () => {};
 
-	// Tab management
-	let activeTab = 'general';
-	const tabs = [
-		{ id: 'general', label: 'General', icon: '⚙️' },
-		{ id: 'transcription', label: 'Transcription', icon: '🎙️' },
-		{ id: 'shortcuts', label: 'Shortcuts', icon: '⌨️' },
-		{ id: 'about', label: 'About', icon: 'ℹ️' }
-	];
-
 	// State management
 	let selectedVibe;
 	let autoRecordValue = false;
-	let autoSaveValue = false;
 	let selectedPromptStyle = 'standard';
 	let privacyModeValue = false;
 
@@ -38,10 +26,6 @@
 
 	const unsubscribeAutoRecord = autoRecord.subscribe((value) => {
 		autoRecordValue = value === 'true';
-	});
-
-	const unsubscribeAutoSave = autoSave.subscribe((value) => {
-		autoSaveValue = value === 'true';
 	});
 
 	const unsubscribePromptStyle = promptStyle.subscribe((value) => {
@@ -55,20 +39,10 @@
 		// Get privacy mode value from localStorage
 		privacyModeValue = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
 
-		// Set up event listeners for the modal
-		const modal = document.getElementById('settings_modal');
-		if (modal) {
-			modal.addEventListener('open', () => {
-				selectedPromptStyle = geminiService.getPromptStyle();
-				privacyModeValue = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
-			});
-		}
-
 		// Clean up subscriptions on component destroy
 		return () => {
 			unsubscribeTheme();
 			unsubscribeAutoRecord();
-			unsubscribeAutoSave();
 			unsubscribePromptStyle();
 		};
 	});
@@ -95,9 +69,8 @@
 		);
 	}
 
-	function handleAutoRecordChange(e) {
-		// e.detail contains the boolean value from Toggle component
-		autoRecordValue = e.detail;
+	function toggleAutoRecord() {
+		autoRecordValue = !autoRecordValue;
 		autoRecord.set(autoRecordValue.toString());
 		window.dispatchEvent(
 			new CustomEvent('talktype-setting-changed', {
@@ -106,20 +79,8 @@
 		);
 	}
 
-	function handleAutoSaveChange(e) {
-		// e.detail contains the boolean value from Toggle component
-		autoSaveValue = e.detail;
-		autoSave.set(autoSaveValue.toString());
-		window.dispatchEvent(
-			new CustomEvent('talktype-setting-changed', {
-				detail: { setting: 'autoSave', value: autoSaveValue }
-			})
-		);
-	}
-
-	function handlePrivacyModeChange(e) {
-		// e.detail contains the boolean value from Toggle component
-		privacyModeValue = e.detail;
+	function togglePrivacyMode() {
+		privacyModeValue = !privacyModeValue;
 		localStorage.setItem(STORAGE_KEYS.PRIVACY_MODE, privacyModeValue.toString());
 		window.dispatchEvent(
 			new CustomEvent(SERVICE_EVENTS.SETTINGS.CHANGED, {
@@ -149,12 +110,13 @@
 
 <dialog
 	id="settings_modal"
-	class="modal fixed z-[999] overflow-hidden"
+	class="modal fixed z-50"
+	style="overflow: hidden !important; z-index: 999;"
 	aria-labelledby="settings_modal_title"
 	aria-modal="true"
 >
 	<div
-		class="animate-modal-enter modal-box relative max-h-[85vh] w-[95%] max-w-2xl overflow-hidden rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
+		class="animate-modal-enter modal-box relative max-h-[80vh] w-[95%] max-w-md overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl md:max-w-lg"
 	>
 		<form method="dialog">
 			<ModalCloseButton
@@ -165,207 +127,261 @@
 			/>
 		</form>
 
-		<!-- Header -->
-		<div class="mb-4 flex items-center gap-2 border-b border-pink-100 pb-3">
-			<div
-				class="flex h-8 w-8 items-center justify-center rounded-full border border-pink-200/60 bg-gradient-to-br from-white to-pink-50 shadow-sm"
-			>
-				<DisplayGhost width="24px" height="24px" theme={$theme} seed={54321} />
-			</div>
-			<h3 id="settings_modal_title" class="text-xl font-black tracking-tight text-gray-800">
-				Settings
-			</h3>
-		</div>
-
-		<!-- Tabs -->
-		<div class="tabs-boxed tabs mb-4 bg-pink-50/50">
-			{#each tabs as tab}
-				<button
-					class="tab {activeTab === tab.id ? 'tab-active' : ''}"
-					on:click={() => (activeTab = tab.id)}
+		<div class="animate-fadeUp space-y-4">
+			<!-- Header -->
+			<div class="mb-1 flex items-center gap-2">
+				<div
+					class="flex h-8 w-8 items-center justify-center rounded-full border border-pink-200/60 bg-gradient-to-br from-white to-pink-50 shadow-sm"
 				>
-					<span class="mr-1">{tab.icon}</span>
-					{tab.label}
-				</button>
-			{/each}
-		</div>
-
-		<!-- Tab Content -->
-		<div class="animate-fadeUp max-h-[calc(85vh-180px)] overflow-y-auto">
-			{#if activeTab === 'general'}
-				<div class="space-y-4">
-					<!-- Vibes Section -->
-					<section class="space-y-2">
-						<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">Vibes</h3>
-						<ThemeSelector currentTheme={selectedVibe} onThemeChange={changeVibe} />
-					</section>
-
-					<div class="divider my-2 opacity-10"></div>
-
-					<!-- Automagic Section -->
-					<section class="space-y-3">
-						<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">Automagic</h3>
-						<Toggle
-							label="Auto-Record on Start"
-							description="Start recording immediately when you open TalkType"
-							bind:checked={autoRecordValue}
-							on:change={handleAutoRecordChange}
-						/>
-						<Toggle
-							label="Auto-Save Transcripts"
-							description="Automatically save all your transcriptions"
-							bind:checked={autoSaveValue}
-							on:change={handleAutoSaveChange}
-						/>
-					</section>
-
-					<!-- PWA Install -->
-					{#if $installPromptEvent}
-						<div class="divider my-2 opacity-10"></div>
-						<section class="space-y-2">
-							<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">
-								Install App
-							</h3>
-							<Button variant="primary" fullWidth on:click={handleInstallClick}>
-								📦 Install TalkType
-							</Button>
-						</section>
-					{/if}
+					<DisplayGhost width="24px" height="24px" theme={selectedVibe} seed={54321} />
 				</div>
-			{:else if activeTab === 'transcription'}
-				<div class="space-y-4">
-					<!-- Personality Section -->
-					<section class="space-y-2">
-						<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">
-							Ghost Personality
-						</h3>
-						<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
-					</section>
+				<h3 id="settings_modal_title" class="text-xl font-black tracking-tight text-gray-800">
+					Settings
+				</h3>
+			</div>
 
-					<div class="divider my-2 opacity-10"></div>
+			<!-- Settings Section -->
+			<div class="mb-2 space-y-2">
+				<h4 class="text-sm font-bold text-gray-700">Settings</h4>
 
-					<!-- Privacy Mode -->
-					<section class="space-y-2">
-						<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">
-							Privacy Settings
-						</h3>
-						<Toggle
-							id="privacy_mode"
-							label="🔒 Offline Mode (Desktop Only)"
-							description="Download and use offline Whisper model (downloads ~95MB, works without internet)"
-							bind:checked={privacyModeValue}
-							on:change={handlePrivacyModeChange}
-						/>
-
-						<!-- Download Progress Indicator -->
-						{#if $whisperStatus.isLoading && privacyModeValue}
-							<div class="rounded-lg border-2 border-blue-300 bg-blue-50/80 p-3">
-								<div class="mb-2 flex items-center justify-between">
-									<p class="text-sm font-semibold text-blue-700">
-										📥 Downloading offline model...
-									</p>
-								</div>
-								<!-- Indeterminate progress bar -->
-								<div class="h-2 overflow-hidden rounded-full bg-blue-200">
-									<div
-										class="indeterminate-progress h-full w-1/3 bg-gradient-to-r from-blue-400 to-blue-600"
-									></div>
-								</div>
-								<p class="mt-2 text-xs text-blue-600">
-									The start button will show progress. You can close this modal and the download will continue.
-								</p>
-							</div>
-						{/if}
-
-						<!-- Model Loaded Success -->
-						{#if $whisperStatus.isLoaded && privacyModeValue}
-							<div class="rounded-lg border-2 border-green-300 bg-green-50/80 p-3">
-								<p class="text-sm font-semibold text-green-700">
-									✅ Offline model ready! Your transcriptions are completely private.
-								</p>
-							</div>
-						{/if}
-
-						<div class="rounded-lg bg-blue-50/50 p-3">
-							<p class="text-xs text-gray-600">
-								{#if privacyModeValue}
-									<strong>🖥️ Desktop offline mode:</strong> All transcriptions stay on your device.
-									Uses Distil-Whisper for fast, private transcription.
-								{:else}
-									<strong>☁️ Online mode:</strong> Fast Gemini API transcription. Works on all devices.
-								{/if}
-							</p>
-							<p class="mt-2 text-xs text-gray-500">
-								<strong>Note:</strong> Offline mode only works on desktop browsers. Mobile devices
-								use online API due to memory constraints.
-							</p>
+				<!-- Auto-Record Toggle -->
+				<div
+					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
+				>
+					<div>
+						<span class="text-sm font-medium text-gray-700">Auto-Record on Start</span>
+						<p class="mt-0.5 text-xs text-gray-500">
+							Start recording immediately when you open TalkType
+						</p>
+					</div>
+					<label class="flex cursor-pointer items-center">
+						<span class="sr-only"
+							>Auto-Record Toggle {autoRecordValue ? 'Enabled' : 'Disabled'}</span
+						>
+						<div class="relative">
+							<input
+								type="checkbox"
+								class="sr-only"
+								checked={autoRecordValue}
+								on:change={toggleAutoRecord}
+							/>
+							<div
+								class={`h-5 w-10 rounded-full ${autoRecordValue ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}
+							></div>
+							<div
+								class={`absolute left-0.5 top-0.5 h-4 w-4 transform rounded-full bg-white transition-all duration-200 ${autoRecordValue ? 'translate-x-5' : ''}`}
+							></div>
 						</div>
-					</section>
-
-					<div class="divider my-2 opacity-10"></div>
-
-					<!-- Model Settings -->
-					<section class="space-y-2">
-						<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">
-							How It Works
-						</h3>
-						<div class="rounded-lg bg-white/50 p-3">
-							<p class="text-sm text-gray-600">
-								By default, TalkType uses Gemini API for instant, accurate transcription.
-							</p>
-							<ul class="mt-2 space-y-1 text-xs text-gray-500">
-								<li>• <strong>Online mode (default):</strong> Fast, accurate, works everywhere</li>
-								<li>
-									• <strong>Offline mode:</strong> Downloads Whisper model for complete privacy (no
-									cloud)
-								</li>
-								<li>• Switch anytime in settings - your choice!</li>
-							</ul>
-						</div>
-					</section>
+					</label>
 				</div>
-			{:else if activeTab === 'shortcuts'}
-				<div class="space-y-4">
-					<KeyboardShortcutsInfo />
-				</div>
-			{:else if activeTab === 'about'}
-				<div class="space-y-4">
-					<SupportSection />
 
-					<div class="divider my-2 opacity-10"></div>
-
-					<!-- Version Info -->
-					<section class="space-y-2">
-						<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">Version</h3>
-						<div class="rounded-lg bg-white/50 p-3">
-							<p class="text-sm font-medium text-gray-700">TalkType v2.0</p>
-							<p class="mt-1 text-xs text-gray-500">Progressive Transcription Edition</p>
-							<p class="mt-2 text-xs text-gray-400">Made with 💗 by Pablo</p>
+				<!-- Privacy Mode Toggle -->
+				<div
+					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
+				>
+					<div>
+						<span class="text-sm font-medium text-gray-700">🔒 Offline Mode</span>
+						<p class="mt-0.5 text-xs text-gray-500">
+							Download Whisper model for completely private transcription
+						</p>
+					</div>
+					<label class="flex cursor-pointer items-center">
+						<span class="sr-only"
+							>Privacy Mode Toggle {privacyModeValue ? 'Enabled' : 'Disabled'}</span
+						>
+						<div class="relative">
+							<input
+								type="checkbox"
+								class="sr-only"
+								checked={privacyModeValue}
+								on:change={togglePrivacyMode}
+							/>
+							<div
+								class={`h-5 w-10 rounded-full ${privacyModeValue ? 'bg-purple-400' : 'bg-gray-200'} transition-all duration-200`}
+							></div>
+							<div
+								class={`absolute left-0.5 top-0.5 h-4 w-4 transform rounded-full bg-white transition-all duration-200 ${privacyModeValue ? 'translate-x-5' : ''}`}
+							></div>
 						</div>
-					</section>
+					</label>
+				</div>
+
+				<!-- Download Progress (if loading) -->
+				{#if $whisperStatus.isLoading && privacyModeValue}
+					<div class="rounded-lg border border-blue-200 bg-blue-50/80 p-2">
+						<p class="text-xs font-medium text-blue-700">📥 Downloading model...</p>
+						<div class="mt-1 h-1 overflow-hidden rounded-full bg-blue-200">
+							<div
+								class="indeterminate-progress h-full w-1/3 bg-gradient-to-r from-blue-400 to-blue-600"
+							></div>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Model Loaded Success -->
+				{#if $whisperStatus.isLoaded && privacyModeValue}
+					<div class="rounded-lg border border-green-200 bg-green-50/80 p-2">
+						<p class="text-xs font-medium text-green-700">
+							✅ Offline model ready! Completely private.
+						</p>
+					</div>
+				{/if}
+			</div>
+
+			<!-- Vibe Selector Section -->
+			<div class="space-y-2">
+				<h4 class="text-sm font-bold text-gray-700">Choose Your Vibe</h4>
+				<ThemeSelector currentTheme={selectedVibe} onThemeChange={changeVibe} />
+			</div>
+
+			<!-- Prompt Style Selection Section -->
+			<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
+
+			<!-- Premium Features Section (if premium) OR Upsell (if free) -->
+			{#if $isPremium}
+				<!-- Premium User - Show Active Features -->
+				<div
+					class="space-y-2 rounded-lg border border-green-200 bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-3 shadow-sm"
+				>
+					<div class="flex items-center justify-between">
+						<h4 class="text-sm font-bold text-gray-700">Premium Features</h4>
+						<span class="badge badge-sm gap-1 border-green-300 bg-green-100 font-medium text-green-700">
+							<span class="text-[10px]">✓</span> Active
+						</span>
+					</div>
+
+					<div class="space-y-1.5 pt-1 text-xs text-gray-600">
+						<div class="flex items-center gap-1.5">
+							<span class="text-green-600">✓</span>
+							<span>10-minute recordings (vs 60s free)</span>
+						</div>
+						<div class="flex items-center gap-1.5">
+							<span class="text-green-600">✓</span>
+							<span>Premium themes (Mint, Bubblegum, Rainbow)</span>
+						</div>
+						<div class="flex items-center gap-1.5">
+							<span class="text-green-600">✓</span>
+							<span>Custom transcription prompts</span>
+						</div>
+						<div class="flex items-center gap-1.5">
+							<span class="text-green-600">✓</span>
+							<span>Save transcripts + audio to history</span>
+						</div>
+						<div class="flex items-center gap-1.5">
+							<span class="text-green-600">✓</span>
+							<span>Batch download & export</span>
+						</div>
+					</div>
+
+					<div class="pt-1 text-center">
+						<span class="text-xs italic text-gray-500">Thank you for supporting TalkType! 💜</span>
+					</div>
+				</div>
+			{:else}
+				<!-- Free User - Show Upgrade Option -->
+				<div
+					class="space-y-2 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50/50 to-orange-50/50 p-3 shadow-sm"
+				>
+					<div class="flex items-center justify-between">
+						<h4 class="text-sm font-bold text-gray-700">Unlock Premium</h4>
+						<span class="badge badge-sm gap-1 border-amber-300 bg-amber-100 font-medium text-amber-700">
+							<span class="text-[10px]">⭐</span> $9 Once
+						</span>
+					</div>
+
+					<div class="space-y-1.5 pt-1 text-xs text-gray-600">
+						<div class="flex items-center gap-1.5">
+							<span class="text-amber-600">⭐</span>
+							<span>10-minute recordings (10x longer!)</span>
+						</div>
+						<div class="flex items-center gap-1.5">
+							<span class="text-amber-600">⭐</span>
+							<span>Premium ghost themes</span>
+						</div>
+						<div class="flex items-center gap-1.5">
+							<span class="text-amber-600">⭐</span>
+							<span>Custom transcription styles</span>
+						</div>
+						<div class="flex items-center gap-1.5">
+							<span class="text-amber-600">⭐</span>
+							<span>Save & edit transcript history</span>
+						</div>
+						<div class="flex items-center gap-1.5">
+							<span class="text-amber-600">⭐</span>
+							<span>Batch download everything</span>
+						</div>
+					</div>
+
+					<button
+						class="btn btn-sm mt-2 w-full border-none bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:from-amber-500 hover:to-orange-600"
+						on:click={() => {
+							handleModalClose();
+							setTimeout(() => {
+								document.getElementById('premium_modal')?.showModal();
+							}, 100);
+						}}
+					>
+						⭐ Unlock for $9 (One-Time)
+					</button>
+
+					<div class="text-center">
+						<span class="text-xs italic text-gray-500">vs $10+/month subscriptions elsewhere</span>
+					</div>
 				</div>
 			{/if}
+
+			<!-- PWA Install (if available) -->
+			{#if $installPromptEvent}
+				<div class="space-y-2">
+					<h4 class="text-sm font-bold text-gray-700">Install App</h4>
+					<button
+						class="btn btn-sm w-full border border-pink-200 bg-pink-50 hover:bg-pink-100"
+						on:click={handleInstallClick}
+					>
+						📦 Install TalkType
+					</button>
+				</div>
+			{/if}
+
+			<!-- Footer -->
+			<div class="border-t border-pink-100 pt-2 text-center">
+				<p class="text-xs text-gray-500">TalkType • Made with 💜 by Dennis & Pablo</p>
+			</div>
 		</div>
 	</div>
+
+	<button
+		class="modal-backdrop bg-black/40"
+		on:click|self|preventDefault|stopPropagation={() => {
+			const modal = document.getElementById('settings_modal');
+			if (modal) {
+				modal.close();
+				setTimeout(handleModalClose, 50);
+			}
+		}}
+		on:keydown={(e) => e.key === 'Enter' && handleModalClose()}
+		aria-label="Close modal"
+	></button>
 </dialog>
 
 <style>
-	.tab {
-		@apply flex-1 transition-all duration-200;
+	.animate-fadeUp {
+		animation: fadeUp 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 	}
-	.tab-active {
-		@apply bg-white text-pink-600 shadow-sm;
-	}
+
 	.animate-modal-enter {
 		animation: modalSlideUp 0.3s ease-out;
 	}
-	.animate-fadeUp {
-		animation: fadeUp 0.2s ease-out;
-	}
 
-	/* Indeterminate progress bar animation */
-	.indeterminate-progress {
-		animation: indeterminate 1.5s ease-in-out infinite;
+	@keyframes fadeUp {
+		0% {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+		100% {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	@keyframes modalSlideUp {
@@ -379,15 +395,9 @@
 		}
 	}
 
-	@keyframes fadeUp {
-		from {
-			transform: translateY(10px);
-			opacity: 0;
-		}
-		to {
-			transform: translateY(0);
-			opacity: 1;
-		}
+	/* Indeterminate progress bar animation */
+	.indeterminate-progress {
+		animation: indeterminate 1.5s ease-in-out infinite;
 	}
 
 	@keyframes indeterminate {
@@ -398,7 +408,7 @@
 			transform: translateX(0%);
 		}
 		100% {
-			transform: translateX(300%);
+			transform: translateX(100%);
 		}
 	}
 </style>
