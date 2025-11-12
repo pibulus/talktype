@@ -22,7 +22,7 @@ Use the provided script at `scripts/generate-splash-screens.js`:
 
 ```bash
 # Install dependencies
-npm install sharp
+npm install sharp --no-save   # optional; use npx sharp if you prefer
 
 # Run the script
 node scripts/generate-splash-screens.js

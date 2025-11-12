@@ -151,7 +151,7 @@ TalkType will show you an installation prompt after you've used it a few times. 
 Use the existing helper scripts so everything stays consistent:
 
 ```bash
-npm install sharp --save-dev
+npm install sharp --no-save   # only when you need to regenerate assets
 
 # Core icons (192/512 + maskable + apple touch)
 node scripts/generate-basic-icons.js
