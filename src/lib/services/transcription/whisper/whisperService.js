@@ -380,7 +380,7 @@ export class WhisperService {
 				// Use stable generation settings
 				temperature: 0,
 				do_sample: false,
-				return_timestamps: true,
+				return_timestamps: false, // Disabled for speed - we only need text
 
 				// Speed optimizations with minimal accuracy loss
 				beam_size: 1, // Greedy search is 2-3x faster than beam search
