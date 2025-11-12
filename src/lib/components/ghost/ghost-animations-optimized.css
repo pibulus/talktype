@@ -11,13 +11,14 @@
 	transition: transform 0.3s ease;
 }
 
-/* Initialization states - prevent flash during mount */
-.ghost-svg.initializing {
+/* Initialization state - prevent flash during mount */
+/* Ghost is hidden until fullyReady flag is set (single atomic render) */
+.ghost-svg:not(.visible) {
 	opacity: 0;
 	pointer-events: none;
 }
 
-.ghost-svg.ready {
+.ghost-svg.visible {
 	opacity: 1;
 	transition: opacity 0.2s ease-in;
 }
