@@ -12,7 +12,6 @@
 - `ThemeSelector` - Choose visual themes (lib/components/settings/ThemeSelector.svelte)
 - `TranscriptionStyleSelector` - Configure transcription prompt styles (lib/components/settings/TranscriptionStyleSelector.svelte)
 - `Confetti` - Celebration confetti effect (lib/components/ui/effects/Confetti.svelte)
-- `AppBadge` - App branding badge (lib/components/ui/AppBadge.svelte)
 - `AppSuffix` - App suffix branding (lib/components/ui/AppSuffix.svelte)
 
 ## Services
