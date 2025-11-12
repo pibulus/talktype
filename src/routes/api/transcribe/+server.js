@@ -4,8 +4,17 @@ import { GEMINI_API_KEY } from '$env/static/private';
 
 // Initialize Gemini (server-side only)
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-// Using Gemini 2.5 Flash - proven 6.7% WER on real-world tests, $0.14/hr
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+// Using Gemini 2.5 Flash with optimized generation config for speed
+const model = genAI.getGenerativeModel({
+	model: 'gemini-2.5-flash',
+	generationConfig: {
+		temperature: 0.2, // Lower temperature for more deterministic transcription
+		topP: 0.8, // Focused responses for accuracy
+		topK: 40, // Limit token selection for speed
+		candidateCount: 1, // Only need one transcription
+		maxOutputTokens: 8192 // Reasonable limit for transcriptions
+	}
+});
 
 // Helper to convert base64 to generative part
 function base64ToGenerativePart(base64Data, mimeType) {
@@ -21,7 +30,7 @@ function base64ToGenerativePart(base64Data, mimeType) {
 function getTranscriptionPrompt(style = 'standard') {
 	const prompts = {
 		standard:
-			"Transcribe this audio file accurately and completely. Remove filler words like 'um', 'uh', 'like' when they don't add meaning. IMPORTANT: If you detect the same phrase repeating multiple times (like 'So we have a lot of options' repeated 3+ times), this is likely an audio loop or echo - transcribe it only ONCE and continue with the rest. Fix any repetitions, loops, or echo artifacts in the speech. Return ONLY the clean transcription text, nothing else.",
+			'Transcribe this audio accurately. Remove filler words. If a phrase repeats 3+ times, transcribe it only once. Return only the clean transcription.',
 		surlyPirate:
 			'Transcribe this audio file accurately, but rewrite it in the style of a surly pirate. Use pirate slang, expressions, and attitude. Arr! Return only the pirate-style transcription, no additional text.',
 		leetSpeak:
@@ -75,58 +84,20 @@ export async function POST({ request }) {
 			`[API /transcribe] ✅ Transcription complete: ${transcription.length} chars, text: "${transcription.substring(0, 100)}..."`
 		);
 
-		// Aggressive hallucination detection and cleanup
-		// Split into sentences and check for exact repetitions
+		// Fast sentence-level deduplication (O(n) instead of O(n²))
 		const sentences = transcription.match(/[^.!?]+[.!?]+/g) || [transcription];
-		const cleanedSentences = [];
 		const seenSentences = new Set();
+		const cleanedSentences = [];
 
 		for (const sentence of sentences) {
 			const trimmed = sentence.trim();
-			// If we've seen this exact sentence before, it's likely a hallucination loop
-			if (!seenSentences.has(trimmed)) {
+			if (trimmed && !seenSentences.has(trimmed)) {
 				cleanedSentences.push(trimmed);
 				seenSentences.add(trimmed);
-			} else {
-				console.warn(`[Gemini API] Removed duplicate sentence: "${trimmed}"`);
 			}
-		}
-
-		// If we removed a lot of duplicates, the model was definitely hallucinating
-		if (sentences.length > cleanedSentences.length * 2) {
-			console.error(
-				`[Gemini API] Heavy hallucination detected: ${sentences.length} sentences reduced to ${cleanedSentences.length}`
-			);
 		}
 
 		transcription = cleanedSentences.join(' ');
-
-		// Check for obvious repetition patterns (improved detection)
-		const words = transcription.split(' ');
-		if (words.length > 10) {
-			// Check for repetitions of different phrase lengths (3-7 words)
-			for (let phraseLength = 3; phraseLength <= 7; phraseLength++) {
-				for (let i = 0; i < words.length - phraseLength * 2; i++) {
-					const phrase = words.slice(i, i + phraseLength).join(' ');
-					const nextPhrase = words.slice(i + phraseLength, i + phraseLength * 2).join(' ');
-
-					if (phrase === nextPhrase) {
-						// Check if it repeats a third time
-						const thirdPhrase = words.slice(i + phraseLength * 2, i + phraseLength * 3).join(' ');
-						if (phrase === thirdPhrase) {
-							console.warn(`[Gemini API] Detected repetition: "${phrase}" repeats 3+ times`);
-							// Remove excessive repetitions (keep only one instance)
-							const pattern = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-							const cleanedTranscription = transcription.replace(
-								new RegExp(`(${pattern}\\s*){2,}`, 'gi'),
-								phrase + ' '
-							);
-							return json({ transcription: cleanedTranscription.trim() });
-						}
-					}
-				}
-			}
-		}
 
 		console.log('[API /transcribe] Sending response to client');
 		return json({ transcription });
