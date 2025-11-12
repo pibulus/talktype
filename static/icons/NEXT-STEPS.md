@@ -16,7 +16,7 @@ node scripts/generate-maskable-icon.js
 node scripts/generate-splash-screens.js
 ```
 
-All scripts rely on `sharp`, so install it first (`npm install sharp --save-dev`). The generated files land in `static/icons/`, `static/`, and `static/splash/` ready for Lighthouse audits.
+The scripts shell out to `sharp`. When you need to regenerate assets run `npx sharp --version` first (which auto-installs a temporary copy) or `npm install sharp --no-save`. No need to keep it in package.json.
 
 Before shipping, run through this checklist:
 - [ ] Generate the icons you changed (commit the PNGs)
