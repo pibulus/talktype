@@ -5,6 +5,7 @@ Quick guide to enable analytics tracking for TalkType.
 ## Why PostHog?
 
 Tracks the **80/20** - only what matters for revenue:
+
 - **Conversion funnel**: How many see premium modal → start payment → complete
 - **Feature discovery**: Which locked features drive upgrades
 - **Campaign performance**: Countdown views vs conversions
@@ -16,6 +17,7 @@ Tracks the **80/20** - only what matters for revenue:
 ### 1. Get PostHog Account
 
 Already have one? Great! If not:
+
 - Visit https://app.posthog.com/signup
 - Free tier: 1M events/month (more than enough)
 
@@ -47,6 +49,7 @@ Analytics will automatically initialize on app load. Check your PostHog dashboar
 ## Events Being Tracked
 
 ### Conversion Funnel
+
 - `premium_modal_viewed` - User opens premium modal
   - Properties: `triggered_by` (which locked feature they clicked)
 - `payment_started` - User clicks "Pay" button
@@ -56,22 +59,27 @@ Analytics will automatically initialize on app load. Check your PostHog dashboar
   - Sets user property: `is_premium: true`
 
 ### Feature Discovery
+
 - `locked_feature_clicked` - User clicks locked theme/prompt
   - Properties: `feature` (e.g., `theme_mint`, `custom_prompt`)
 
 ### Campaign
+
 - `campaign_countdown_viewed` - User sees launch special countdown
   - Properties: `remaining`, `total`, `percentage_sold`
 
 ### Engagement
+
 - `transcription_completed` - Successful transcription
   - Properties: `method` (gemini/whisper), `duration_seconds`, `word_count`
 
 ### Multi-Device
+
 - `unlock_code_validated` - User enters unlock code on new device
   - Properties: `success` (true/false)
 
 ### Retention
+
 - `pwa_installed` - User installs as PWA
 - `transcript_history_viewed` - User opens history (premium feature)
   - Properties: `transcript_count`
@@ -79,45 +87,54 @@ Analytics will automatically initialize on app load. Check your PostHog dashboar
 ## Key Metrics to Watch
 
 ### Conversion Rate
+
 ```
 Visitors → Premium Modal → Payment Start → Payment Complete
 ```
 
 **What to track:**
+
 - % who see modal
 - % who start payment (high drop-off = pricing issue)
 - % who complete (high drop-off = payment UX issue)
 
 ### Feature-to-Revenue
+
 ```
 Which locked features → highest conversion?
 ```
 
 **What to track:**
+
 - `triggered_by` property on `premium_modal_viewed`
 - If "theme_mint" drives 50% of upgrades, that's your killer feature!
 
 ### Campaign Performance
+
 ```
 Countdown urgency → conversion lift?
 ```
 
 **What to track:**
+
 - Do users convert more when <10 spots left?
 - Compare conversion rate at 95/100 vs 10/100 remaining
 
 ### Multi-Device Adoption
+
 ```
 How many use unlock code on 2nd device?
 ```
 
 **What to track:**
+
 - `unlock_code_validated` events
 - Each event = user is using TalkType on multiple devices (good retention signal!)
 
 ## Privacy
 
 Settings in `analytics.js`:
+
 ```javascript
 {
   autocapture: false,            // Only track what we explicitly tell it
@@ -131,11 +148,13 @@ We track **what** users do (clicked premium modal), not **what** they transcribe
 ## Debugging
 
 Check browser console for:
+
 ```
 📊 Analytics: PostHog initialized
 ```
 
 If you see:
+
 ```
 📊 Analytics: Not configured (missing VITE_POSTHOG_KEY)
 ```
@@ -145,12 +164,13 @@ If you see:
 ## Advanced: Custom Events
 
 Add your own tracking:
+
 ```javascript
 import { analytics } from '$lib/services/analytics';
 
 // Track anything
 analytics.track('custom_event_name', {
-  property: 'value'
+	property: 'value'
 });
 ```
 
@@ -161,11 +181,13 @@ Remove `VITE_POSTHOG_KEY` from `.env` and app works normally without tracking.
 ## Cost
 
 PostHog free tier:
+
 - 1M events/month
 - Unlimited users
 - 1 year data retention
 
 For TalkType:
+
 - ~10 events per user session
 - 100,000 monthly users = 1M events
 - You'll hit revenue before you hit limits 😉

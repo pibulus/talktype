@@ -11,6 +11,7 @@
 TalkType is **launch-ready** with a solid progressive transcription architecture. The codebase is clean, well-organized, and implements best practices for PWA, offline support, and model management.
 
 **Key Strengths:**
+
 - ✅ Progressive transcription pipeline (Web Speech → Tiny → Optimal)
 - ✅ PWA fully implemented with offline support
 - ✅ Smart device-aware model selection
@@ -19,6 +20,7 @@ TalkType is **launch-ready** with a solid progressive transcription architecture
 - ✅ Download feedback on record button AND Settings modal
 
 **Minor Items for Launch:**
+
 - Review dual PWA store systems (minor redundancy)
 - Consider adding explicit model cache management UI
 - Test offline mode end-to-end on various devices
@@ -32,6 +34,7 @@ TalkType is **launch-ready** with a solid progressive transcription architecture
 TalkType uses **@xenova/transformers** (transformers.js) to run **ONNX-format Distil-Whisper models** entirely in the browser.
 
 **What is ONNX?**
+
 - ONNX (Open Neural Network Exchange) is an optimized format for running neural networks
 - Distil-Whisper models are converted to ONNX for browser compatibility
 - Runs using WASM (CPU) or WebGPU (10-100x faster GPU acceleration)
@@ -40,14 +43,15 @@ TalkType uses **@xenova/transformers** (transformers.js) to run **ONNX-format Di
 
 TalkType offers **4 models** with automatic device-based selection:
 
-| Model ID | HuggingFace ID | Size | Speed | Languages | Use Case |
-|----------|---------------|------|-------|-----------|----------|
-| **tiny** | Xenova/whisper-tiny.en | 117MB | 1x | English | iOS/mobile fallback |
-| **small** | distil-whisper/distil-small.en | 95MB | 5.6x | English | 🎯 **RECOMMENDED** desktop |
-| **medium** | distil-whisper/distil-medium.en | 150MB | 5.6x | English | High-end desktop (>4GB RAM) |
-| **large** | distil-whisper/distil-large-v3 | 750MB | 5.6x | 99 languages | Pro multilingual mode |
+| Model ID   | HuggingFace ID                  | Size  | Speed | Languages    | Use Case                    |
+| ---------- | ------------------------------- | ----- | ----- | ------------ | --------------------------- |
+| **tiny**   | Xenova/whisper-tiny.en          | 117MB | 1x    | English      | iOS/mobile fallback         |
+| **small**  | distil-whisper/distil-small.en  | 95MB  | 5.6x  | English      | 🎯 **RECOMMENDED** desktop  |
+| **medium** | distil-whisper/distil-medium.en | 150MB | 5.6x  | English      | High-end desktop (>4GB RAM) |
+| **large**  | distil-whisper/distil-large-v3  | 750MB | 5.6x  | 99 languages | Pro multilingual mode       |
 
 **Key Benefits:**
+
 - **Distil-Whisper**: 5.6x faster than regular Whisper with only 2-4% accuracy loss
 - **Device-aware**: Automatically selects optimal model based on RAM and platform
 - **WebGPU-ready**: When browsers enable WebGPU, users get 10-100x speed boost
@@ -57,27 +61,31 @@ TalkType offers **4 models** with automatic device-based selection:
 **File: `src/lib/services/transcription/whisper/whisperService.js`**
 
 1. **Environment Configuration** (lines 13-18):
+
 ```javascript
 env.allowRemoteModels = true;
-env.useBrowserCache = true;    // Persist models across sessions
-env.useIndexedDB = true;       // Store in browser database
+env.useBrowserCache = true; // Persist models across sessions
+env.useIndexedDB = true; // Store in browser database
 ```
 
 2. **Model Download** (lines 198-203):
+
 ```javascript
 this.transcriber = await pipeline(
-  'automatic-speech-recognition',
-  modelConfig.id,  // e.g., 'distil-whisper/distil-small.en'
-  pipelineOptions
+	'automatic-speech-recognition',
+	modelConfig.id, // e.g., 'distil-whisper/distil-small.en'
+	pipelineOptions
 );
 ```
 
 3. **Progress Tracking** (lines 182-195):
+
 - `downloading`: HuggingFace CDN download (can't get granular %)
 - `loading`: Loading into memory (90% progress)
 - `ready`: Model initialized (95% progress)
 
 4. **Storage**:
+
 - Models cached in IndexedDB database: `transformers-cache`
 - Service worker caches ONNX files in `whisper-models-v1` cache
 - Persists across sessions (no re-download needed)
@@ -87,21 +95,23 @@ this.transcriber = await pipeline(
 **File: `src/lib/services/transcription/whisper/modelRegistry.js`**
 
 Auto-selection logic (lines 198-223):
+
 ```javascript
 function autoSelectModel() {
-  const device = detectDeviceCapabilities();
+	const device = detectDeviceCapabilities();
 
-  // iOS: Use tiny (memory constraints)
-  // Android <4GB: Use tiny or small
-  // Desktop <3GB: Use small
-  // Desktop ≥3GB: Use medium
-  // Pro users: Use large (multilingual)
+	// iOS: Use tiny (memory constraints)
+	// Android <4GB: Use tiny or small
+	// Desktop <3GB: Use small
+	// Desktop ≥3GB: Use medium
+	// Pro users: Use large (multilingual)
 
-  return recommendedId;
+	return recommendedId;
 }
 ```
 
 **Smart Chunking** (whisperService.js lines 365-400):
+
 - Long audio (>30s) is chunked to prevent memory issues
 - iOS: Conservative 10s chunks
 - Android: Adaptive based on RAM
@@ -116,12 +126,14 @@ function autoSelectModel() {
 **✅ FULLY IMPLEMENTED** with two store systems:
 
 #### Store System 1: `src/lib/services/pwa/pwaService.js`
+
 - Comprehensive service with transcription counting
 - Install prompt timing (shows after 5 transcriptions)
 - Platform detection (iOS, Android, Chrome, Safari, Firefox, Edge)
 - Confidence scoring to detect if app is already installed
 
 #### Store System 2: `src/lib/stores/pwa.js`
+
 - Simpler store focused on `installPromptEvent`
 - Writable store for install prompt state
 
@@ -132,6 +144,7 @@ function autoSelectModel() {
 **File: `src/service-worker.js`**
 
 **✅ Features:**
+
 - Caches all app assets (build + static files)
 - Special cache for ONNX models (`whisper-models-v1`)
 - Intercepts HuggingFace CDN requests for offline support
@@ -139,6 +152,7 @@ function autoSelectModel() {
 - Version-based cache invalidation
 
 **Cache Strategy:**
+
 ```javascript
 // Line 6-7
 const MODELS_CACHE = 'whisper-models-v1';
@@ -146,8 +160,8 @@ const RUNTIME_CACHE = 'runtime-v1';
 
 // Lines 67-86: Special handling for Whisper models
 if (url.href.includes('huggingface.co') || url.href.includes('.onnx')) {
-  // Cache models for offline use
-  // Return 503 if offline and not cached
+	// Cache models for offline use
+	// Return 503 if offline and not cached
 }
 ```
 
@@ -156,12 +170,14 @@ if (url.href.includes('huggingface.co') || url.href.includes('.onnx')) {
 **File: `src/lib/components/pwa/PwaInstallPrompt.svelte`**
 
 **Features:**
+
 - Shows after 5 transcriptions
 - Platform-specific instructions
 - Detects if already installed
 - Uses `beforeinstallprompt` event
 
 **Settings Integration:**
+
 - "Install App" button appears in Settings modal (General tab)
 - Only shows if `installPromptEvent` is available
 - Lines 222-232 in Settings.svelte
@@ -175,6 +191,7 @@ if (url.href.includes('huggingface.co') || url.href.includes('.onnx')) {
 3. **Runtime**: Dynamic content cached with network-first strategy
 
 **How it works:**
+
 1. User enables Privacy Mode → triggers model download
 2. Model downloads from HuggingFace CDN
 3. Service worker intercepts and caches ONNX files
@@ -193,29 +210,30 @@ if (url.href.includes('huggingface.co') || url.href.includes('.onnx')) {
 
 ```svelte
 {#if $whisperStatus.isLoading && privacyModeValue}
-  <div class="rounded-lg border-2 border-blue-300 bg-blue-50/80 p-3">
-    <p class="text-sm font-semibold text-blue-700">
-      📥 Downloading offline model...
-    </p>
-    <!-- Indeterminate progress bar -->
-    <div class="h-2 overflow-hidden rounded-full bg-blue-200">
-      <div class="indeterminate-progress h-full w-1/3 bg-gradient-to-r from-blue-400 to-blue-600">
-      </div>
-    </div>
-    <p class="mt-2 text-xs text-blue-600">
-      The start button will show progress. You can close this modal and the download will continue.
-    </p>
-  </div>
+	<div class="rounded-lg border-2 border-blue-300 bg-blue-50/80 p-3">
+		<p class="text-sm font-semibold text-blue-700">📥 Downloading offline model...</p>
+		<!-- Indeterminate progress bar -->
+		<div class="h-2 overflow-hidden rounded-full bg-blue-200">
+			<div
+				class="indeterminate-progress h-full w-1/3 bg-gradient-to-r from-blue-400 to-blue-600"
+			></div>
+		</div>
+		<p class="mt-2 text-xs text-blue-600">
+			The start button will show progress. You can close this modal and the download will continue.
+		</p>
+	</div>
 {/if}
 ```
 
 **How it works:**
+
 1. Shows when `whisperStatus.isLoading` is true
 2. Uses **indeterminate** progress bar (animated sliding bar)
 3. Honest about what we can track (no fake percentages)
 4. Directs user to check the record button for more info
 
 **Why it looks "not working":**
+
 - It's an **indeterminate** animation (no percentage)
 - This is CORRECT because HuggingFace CDN doesn't provide reliable progress
 - The record button provides better visual feedback (fills the whole button)
@@ -233,6 +251,7 @@ TalkType has **two transcription backends** that work seamlessly:
 **File: `src/routes/api/transcribe/+server.js`**
 
 **Features:**
+
 - Uses Gemini 2.5 Flash model (6.7% WER, $0.14/hr)
 - Instant transcription (no model loading)
 - Works on ALL devices (including mobile)
@@ -251,6 +270,7 @@ TalkType has **two transcription backends** that work seamlessly:
 **File: `src/lib/services/transcription/whisper/whisperService.js`**
 
 **Features:**
+
 - 100% offline (no cloud, no internet)
 - Uses Distil-Whisper ONNX models
 - WebGPU-accelerated when available
@@ -292,6 +312,7 @@ The record button is the **central feedback hub** with 5 distinct states:
 5. **Clipboard Success** - Green checkmark animation
 
 **Key Design Decision:**
+
 - Downloading uses **indeterminate shimmer** (honest about tracking limits)
 - Transcribing uses **fill-up bar** (we CAN track this progress)
 - User loves this "magic button" approach - keeps all feedback in one place!
@@ -318,35 +339,36 @@ All magic strings and timing values centralized:
 
 ```javascript
 export const STORAGE_KEYS = {
-  PRIVACY_MODE: 'talktype_privacy_mode',
-  LAST_TRANSCRIPTION_METHOD: 'last_transcription_method',
-  THEME: 'talktype-theme',
-  PROMPT_STYLE: 'talktype-prompt-style',
-  // ... more
+	PRIVACY_MODE: 'talktype_privacy_mode',
+	LAST_TRANSCRIPTION_METHOD: 'last_transcription_method',
+	THEME: 'talktype-theme',
+	PROMPT_STYLE: 'talktype-prompt-style'
+	// ... more
 };
 
 export const ANIMATION = {
-  MODEL: {
-    AUTO_LOAD_DELAY: 3000,
-    DOWNLOAD_RETRY_DELAY: 2000,
-    MAX_RETRIES: 4
-  },
-  // ... more
+	MODEL: {
+		AUTO_LOAD_DELAY: 3000,
+		DOWNLOAD_RETRY_DELAY: 2000,
+		MAX_RETRIES: 4
+	}
+	// ... more
 };
 
 export const BUTTON_LABELS = {
-  DOWNLOADING: 'Downloading offline model...',
-  PROCESSING: 'Processing...',
-  // ... more
+	DOWNLOADING: 'Downloading offline model...',
+	PROCESSING: 'Processing...'
+	// ... more
 };
 
 export const SERVICE_EVENTS = {
-  MODEL: { DOWNLOAD_STARTED: 'model:downloadStarted', /* ... */ },
-  SETTINGS: { CHANGED: 'talktype-setting-changed', /* ... */ }
+	MODEL: { DOWNLOAD_STARTED: 'model:downloadStarted' /* ... */ },
+	SETTINGS: { CHANGED: 'talktype-setting-changed' /* ... */ }
 };
 ```
 
 **Adopted throughout:**
+
 - ✅ AudioToText.svelte
 - ✅ RecordButtonWithTimer.svelte
 - ✅ Settings.svelte
@@ -355,6 +377,7 @@ export const SERVICE_EVENTS = {
 ### Store Architecture
 
 **Central Store:** `src/lib/index.js`
+
 ```javascript
 export const theme = createLocalStorageStore('talktype-theme', 'peach');
 export const isRecording = writable(false);
@@ -363,22 +386,24 @@ export const promptStyle = createLocalStorageStore('talktype-prompt-style', 'sta
 ```
 
 **Service Stores:** `src/lib/services/infrastructure/stores.js`
+
 ```javascript
 export const userPreferences = createUserPreferences();
 export const transcriptionState = writable({
-  isTranscribing: false,
-  progress: 0
+	isTranscribing: false,
+	progress: 0
 });
 ```
 
 **Whisper Store:** `src/lib/services/transcription/whisper/whisperService.js`
+
 ```javascript
 export const whisperStatus = writable({
-  isLoaded: false,
-  isLoading: false,
-  progress: 0,
-  error: null,
-  selectedModel: 'tiny'
+	isLoaded: false,
+	isLoading: false,
+	progress: 0,
+	error: null,
+	selectedModel: 'tiny'
 });
 ```
 
@@ -422,6 +447,7 @@ src/lib/services/
 ### 🔍 RECOMMENDED TESTING
 
 #### High Priority:
+
 1. **End-to-End Offline Flow**
    - [ ] Enable privacy mode on desktop Chrome/Edge
    - [ ] Wait for model download (watch record button)
@@ -442,6 +468,7 @@ src/lib/services/
    - [ ] Custom prompt functionality
 
 #### Medium Priority:
+
 4. **Browser Compatibility**
    - [ ] Chrome/Edge (primary target)
    - [ ] Firefox (WebGPU status: experimental)
@@ -458,6 +485,7 @@ src/lib/services/
    - [ ] Out of memory on low-end device
 
 #### Low Priority:
+
 7. **Edge Cases**
    - [ ] Very long recordings (>5 minutes)
    - [ ] Very short recordings (<1 second)
@@ -508,23 +536,27 @@ src/lib/services/
 ### Current Status:
 
 **Model Download Times** (on 50 Mbps connection):
+
 - Tiny (117MB): ~20 seconds
 - Small (95MB): ~15 seconds
 - Medium (150MB): ~25 seconds
 - Large (750MB): ~2 minutes
 
 **Transcription Speed** (30s audio):
+
 - Gemini API: ~2-3 seconds (instant)
 - Whisper tiny (WASM): ~15-20 seconds
 - Whisper small (WASM): ~3-5 seconds (5.6x faster)
 - Whisper small (WebGPU): ~0.3-0.5 seconds (10-100x faster!) 🚀
 
 **Accuracy:**
+
 - Gemini 2.5 Flash: 6.7% WER (word error rate)
 - Distil-Whisper small: ~4% loss vs Large (production-ready)
 - Distil-Whisper medium: ~2% loss vs Large (excellent)
 
 **Storage Usage:**
+
 - IndexedDB (transformers-cache): ~95-150MB (depends on model)
 - Service Worker cache: ~10-20MB (app assets)
 - Total: ~110-170MB for full offline functionality
@@ -554,6 +586,7 @@ TalkType is **ready for launch** with the current codebase. The architecture is 
 ### Marketing Copy Validation:
 
 Your CLAUDE.md marketing points are **100% accurate**:
+
 - ✅ "Progressive quality": Instant start → invisible upgrades
 - ✅ "Distil-Whisper models": 6x faster, 50% smaller ✅ (Actually 5.6x faster based on research)
 - ✅ "Multi-language Pro mode": 9+ languages ✅ (Actually 99 languages with distil-large-v3!)
@@ -568,6 +601,7 @@ Your CLAUDE.md marketing points are **100% accurate**:
 Congratulations on building your **first app!** 🎊
 
 TalkType is **impressively well-architected** for a first project:
+
 - Clean separation of concerns (services, stores, components)
 - Thoughtful progressive enhancement
 - Honest user feedback (no fake progress bars)
@@ -577,6 +611,7 @@ TalkType is **impressively well-architected** for a first project:
 The codebase is **launch-ready**. The "confusion" you mentioned is natural after intense development, but the architecture is actually quite clean and well-organized now.
 
 **Next Steps:**
+
 1. Run the testing checklist (section 7)
 2. Deploy to production
 3. Monitor real-world usage
@@ -588,5 +623,5 @@ Ship it! 🚀
 
 ---
 
-*Generated by Claude Code Audit System*
-*Branch: claude/whisper-infra-diagnostics-011CUzGMUessEeQL4FvKfPgi*
+_Generated by Claude Code Audit System_
+_Branch: claude/whisper-infra-diagnostics-011CUzGMUessEeQL4FvKfPgi_

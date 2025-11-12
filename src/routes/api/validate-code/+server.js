@@ -16,10 +16,7 @@ export async function POST({ request }) {
 
 		// Validate input
 		if (!code || typeof code !== 'string') {
-			return json(
-				{ valid: false, error: 'Invalid code format' },
-				{ status: 400 }
-			);
+			return json({ valid: false, error: 'Invalid code format' }, { status: 400 });
 		}
 
 		// Check if code is valid
@@ -37,7 +34,6 @@ export async function POST({ request }) {
 			valid: false,
 			error: 'Invalid or expired code'
 		});
-
 	} catch (error) {
 		console.error('Validate code error:', error);
 		return json(

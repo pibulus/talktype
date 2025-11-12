@@ -37,9 +37,11 @@
 			analytics.clickLockedFeature(`theme_${vibe.id}`);
 
 			// Show premium modal/toast
-			window.dispatchEvent(new CustomEvent('talktype:show-premium-modal', {
-				detail: { feature: 'customThemes', themeName: vibe.name }
-			}));
+			window.dispatchEvent(
+				new CustomEvent('talktype:show-premium-modal', {
+					detail: { feature: 'customThemes', themeName: vibe.name }
+				})
+			);
 			return;
 		}
 

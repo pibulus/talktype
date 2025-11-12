@@ -10,16 +10,16 @@ export const PRICING = {
 	// 2. Create separate USD/AUD configs
 	// 3. Update Square payment to use correct currency
 	// For now: Keeping it simple with single currency
-	basePrice: 19.00,
+	basePrice: 19.0,
 	currency: 'AUD', // Australian Dollars ($9 AUD ≈ $6 USD)
 
 	// Launch special pricing
 	launchSpecial: {
 		enabled: true,
-		price: 9.00,
+		price: 9.0,
 		limit: 100, // First 100 customers (tracked in real-time!)
 		message: '🎉 Launch Special',
-		savings: 10.00 // How much they save
+		savings: 10.0 // How much they save
 	},
 
 	// Display helpers

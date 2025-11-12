@@ -430,12 +430,12 @@
 
 <!-- Premium Unlock Modal - lazy loaded -->
 {#if PremiumUnlockModal}
-	<svelte:component this={PremiumUnlockModal} closeModal={closeModal} />
+	<svelte:component this={PremiumUnlockModal} {closeModal} />
 {/if}
 
 <!-- Transcript History Modal - lazy loaded -->
 {#if TranscriptHistoryModal}
-	<svelte:component this={TranscriptHistoryModal} closeModal={closeModal} />
+	<svelte:component this={TranscriptHistoryModal} {closeModal} />
 {/if}
 
 <!-- PWA Install Prompt -->

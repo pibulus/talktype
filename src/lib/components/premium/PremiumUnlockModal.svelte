@@ -43,8 +43,8 @@
 
 		// Use correct Square SDK URL based on environment
 		const squareUrl = dev
-			? 'https://sandbox.web.squarecdn.com/v1/square.js'  // Sandbox for testing
-			: 'https://web.squarecdn.com/v1/square.js';          // Production
+			? 'https://sandbox.web.squarecdn.com/v1/square.js' // Sandbox for testing
+			: 'https://web.squarecdn.com/v1/square.js'; // Production
 
 		// Load Square SDK script
 		return new Promise((resolve, reject) => {
@@ -87,7 +87,6 @@
 			payments = window.Square.payments(appId);
 			card = await payments.card();
 			await card.attach('#card-container');
-
 		} catch (error) {
 			console.error('Failed to initialize Square payment:', error);
 			errorMessage = 'Failed to load payment form';
@@ -161,7 +160,6 @@
 			} else {
 				throw new Error(data.error || 'Payment failed');
 			}
-
 		} catch (error) {
 			console.error('Payment error:', error);
 			errorMessage = error.message || 'Payment failed. Please try again.';
@@ -244,12 +242,8 @@
 							<span class="text-4xl">🎉</span>
 						</div>
 					</div>
-					<h3 class="mb-2 text-3xl font-black tracking-tight text-gray-800">
-						Premium Unlocked!
-					</h3>
-					<p class="text-lg text-gray-600">
-						All features are now available on this device
-					</p>
+					<h3 class="mb-2 text-3xl font-black tracking-tight text-gray-800">Premium Unlocked!</h3>
+					<p class="text-lg text-gray-600">All features are now available on this device</p>
 				</div>
 
 				<!-- Unlock Code Display -->
@@ -258,12 +252,7 @@
 					<div class="mb-3 rounded-lg bg-white p-4 text-center">
 						<code class="text-2xl font-bold tracking-wider text-gray-800">{unlockCode}</code>
 					</div>
-					<button
-						on:click={copyCode}
-						class="btn btn-sm btn-success w-full"
-					>
-						📋 Copy Code
-					</button>
+					<button on:click={copyCode} class="btn btn-success btn-sm w-full"> 📋 Copy Code </button>
 				</div>
 
 				<!-- Instructions -->
@@ -279,12 +268,7 @@
 					</ol>
 				</div>
 
-				<Button
-					variant="primary"
-					fullWidth
-					on:click={handleModalClose}
-					class="text-lg font-bold"
-				>
+				<Button variant="primary" fullWidth on:click={handleModalClose} class="text-lg font-bold">
 					✨ Start Using Premium
 				</Button>
 			</div>
@@ -304,14 +288,19 @@
 					{#if hasDiscount}
 						<!-- Launch Special Badge with Real Countdown -->
 						<div class="mb-2 flex flex-col items-center gap-1">
-							<div class="inline-block animate-pulse rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1 text-xs font-bold text-white shadow-lg">
+							<div
+								class="inline-block animate-pulse rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1 text-xs font-bold text-white shadow-lg"
+							>
 								{PRICING.launchSpecial.message}
 							</div>
 							<CampaignCountdown variant="badge" />
 						</div>
 					{/if}
 
-					<h3 id="premium_modal_title" class="mb-2 text-3xl font-black tracking-tight text-gray-800">
+					<h3
+						id="premium_modal_title"
+						class="mb-2 text-3xl font-black tracking-tight text-gray-800"
+					>
 						Unlock Premium
 					</h3>
 
@@ -325,9 +314,7 @@
 									Save ${PRICING.launchSpecial.savings}!
 								</span>
 							</div>
-							<p class="mt-1 text-sm text-gray-600">
-								One-time payment • Lifetime access
-							</p>
+							<p class="mt-1 text-sm text-gray-600">One-time payment • Lifetime access</p>
 						{:else}
 							One-time payment • <span class="text-2xl">${price} {currency}</span> • Lifetime access
 						{/if}
@@ -356,8 +343,9 @@
 					<div class="mt-6 rounded-lg border-2 border-pink-200 bg-pink-50/50 p-4">
 						<h4 class="mb-2 font-bold text-pink-700">💰 Why One-Time?</h4>
 						<p class="text-sm text-gray-700">
-							We hate subscription fatigue! Pay <strong>${price} {currency} once</strong> and keep all features
-							forever. Competitors charge $10+/month ($120+/year) for the same features - we think that's BS. 🎯
+							We hate subscription fatigue! Pay <strong>${price} {currency} once</strong> and keep all
+							features forever. Competitors charge $10+/month ($120+/year) for the same features - we
+							think that's BS. 🎯
 						</p>
 						{#if hasDiscount}
 							<p class="mt-2 text-xs font-semibold text-pink-700">
@@ -398,7 +386,8 @@
 
 					{#if dev && !squareLoaded}
 						<div class="mb-4 rounded-lg bg-yellow-50 p-3 text-sm text-yellow-800">
-							🧪 <strong>Development Mode:</strong> Square SDK not loaded. Click "Pay" to generate a test unlock code.
+							🧪 <strong>Development Mode:</strong> Square SDK not loaded. Click "Pay" to generate a
+							test unlock code.
 						</div>
 					{/if}
 
@@ -424,7 +413,8 @@
 							</span>
 						{:else}
 							<span class="flex items-center justify-center gap-2">
-								💳 Pay ${price} {currency}
+								💳 Pay ${price}
+								{currency}
 							</span>
 						{/if}
 					</Button>

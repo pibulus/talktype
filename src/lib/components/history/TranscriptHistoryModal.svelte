@@ -144,7 +144,10 @@
 		const count = await batchDownloadTranscripts();
 		window.dispatchEvent(
 			new CustomEvent('talktype:toast', {
-				detail: { message: `📦 Downloading ${count} transcript${count !== 1 ? 's' : ''}...`, type: 'success' }
+				detail: {
+					message: `📦 Downloading ${count} transcript${count !== 1 ? 's' : ''}...`,
+					type: 'success'
+				}
 			})
 		);
 	}
@@ -200,7 +203,12 @@
 
 				{#if $transcriptHistory.length > 0}
 					<div class="flex gap-2">
-						<Button variant="ghost" size="sm" on:click={handleBatchDownload} title="Download all as text files">
+						<Button
+							variant="ghost"
+							size="sm"
+							on:click={handleBatchDownload}
+							title="Download all as text files"
+						>
 							📦 Download All
 						</Button>
 						<Button variant="ghost" size="sm" on:click={handleExportJSON} title="Export as JSON">
@@ -329,16 +337,8 @@
 										rows="4"
 									></textarea>
 									<div class="flex justify-end gap-2">
-										<button
-											class="btn btn-ghost btn-xs"
-											on:click={cancelEdit}
-										>
-											Cancel
-										</button>
-										<button
-											class="btn btn-primary btn-xs"
-											on:click={() => saveEdit(transcript.id)}
-										>
+										<button class="btn btn-ghost btn-xs" on:click={cancelEdit}> Cancel </button>
+										<button class="btn btn-primary btn-xs" on:click={() => saveEdit(transcript.id)}>
 											Save
 										</button>
 									</div>

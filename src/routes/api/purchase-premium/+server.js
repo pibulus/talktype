@@ -31,10 +31,7 @@ export async function POST({ request }) {
 
 		// Validate input
 		if (!sourceId || !amount) {
-			return json(
-				{ success: false, error: 'Missing required fields' },
-				{ status: 400 }
-			);
+			return json({ success: false, error: 'Missing required fields' }, { status: 400 });
 		}
 
 		// In development, skip Square API and generate code immediately
@@ -69,10 +66,7 @@ export async function POST({ request }) {
 		// Production: Process real Square payment
 		if (!SQUARE_ACCESS_TOKEN || !SQUARE_LOCATION_ID) {
 			console.error('Square credentials not configured');
-			return json(
-				{ success: false, error: 'Payment system not configured' },
-				{ status: 500 }
-			);
+			return json({ success: false, error: 'Payment system not configured' }, { status: 500 });
 		}
 
 		// Call Square Payments API
@@ -80,7 +74,7 @@ export async function POST({ request }) {
 			method: 'POST',
 			headers: {
 				'Square-Version': '2024-01-18',
-				'Authorization': `Bearer ${SQUARE_ACCESS_TOKEN}`,
+				Authorization: `Bearer ${SQUARE_ACCESS_TOKEN}`,
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify({
@@ -148,7 +142,6 @@ export async function POST({ request }) {
 			},
 			{ status: 400 }
 		);
-
 	} catch (error) {
 		console.error('Purchase premium error:', error);
 		return json(

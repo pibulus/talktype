@@ -5,6 +5,7 @@ This guide explains how to set up Square payments for TalkType premium unlocks.
 ## Overview
 
 TalkType uses Square Web Payments SDK for secure payment processing. When a user pays $9 AUD:
+
 1. Square processes the payment securely
 2. Backend generates a unique unlock code (e.g., `TALK-AB34-XY89`)
 3. User receives the code to unlock premium on all devices
@@ -27,11 +28,13 @@ Visit [Square Developer Dashboard](https://developer.squareup.com/apps)
 You'll need **three** values:
 
 #### Production Credentials (for live payments):
+
 - **Application ID**: Found in "Credentials" tab (starts with `sq0idp-`)
 - **Access Token**: Found in "Production" section (starts with `EAAAE...`)
 - **Location ID**: Found in "Locations" tab
 
 #### Sandbox Credentials (for testing):
+
 - **Sandbox Application ID**: Found in "Credentials" tab under "Sandbox"
 - **Sandbox Access Token**: Found in "Sandbox" section
 - **Sandbox Location ID**: Found in "Locations" tab under "Sandbox"
@@ -60,11 +63,13 @@ VITE_SQUARE_APP_ID=your_square_application_id_here
 The app automatically uses **Sandbox credentials** in development mode (`npm run dev`).
 
 **Test without Square setup:**
+
 - If Square credentials aren't configured, the app falls back to demo mode
 - Click "Pay $9 AUD" to generate a test unlock code
 - Use code `TALK-TEST-CODE` to test validation
 
 **Test with Square Sandbox:**
+
 1. Add Sandbox credentials to `.env`
 2. Use Square's [test card numbers](https://developer.squareup.com/docs/devtools/sandbox/payments):
    - Card: `4111 1111 1111 1111`
@@ -125,21 +130,22 @@ Unlock codes are stored in `src/lib/server/data/unlock-codes.json`:
 
 ```json
 {
-  "codes": {
-    "TALK-AB34-XY89": {
-      "paymentId": "sq0payment-123...",
-      "amount": 9.00,
-      "currency": "AUD",
-      "email": "user@example.com",
-      "createdAt": "2025-01-15T12:00:00.000Z",
-      "usedCount": 2,
-      "lastUsedAt": "2025-01-16T08:30:00.000Z"
-    }
-  }
+	"codes": {
+		"TALK-AB34-XY89": {
+			"paymentId": "sq0payment-123...",
+			"amount": 9.0,
+			"currency": "AUD",
+			"email": "user@example.com",
+			"createdAt": "2025-01-15T12:00:00.000Z",
+			"usedCount": 2,
+			"lastUsedAt": "2025-01-16T08:30:00.000Z"
+		}
+	}
 }
 ```
 
 **Features:**
+
 - Unlimited device unlocks per code
 - Tracks usage count and last used date
 - Simple JSON storage (no database needed)
@@ -155,6 +161,7 @@ Unlock codes are stored in `src/lib/server/data/unlock-codes.json`:
 ## Pricing
 
 Square charges:
+
 - **2.2% + 30¢** per online transaction in Australia
 - For a $9 AUD payment: ~$0.50 fee
 - Your net: ~$8.50 per sale
@@ -168,15 +175,18 @@ Square charges:
 ## Troubleshooting
 
 ### "Square SDK not loaded"
+
 - Check your `VITE_SQUARE_APP_ID` is set correctly
 - Ensure you're using the correct environment (Sandbox vs Production)
 
 ### "Payment failed"
+
 - Verify your Access Token and Location ID match
 - Check Square Dashboard for payment errors
 - Ensure test cards have future expiry dates
 
 ### "Invalid unlock code"
+
 - Check `src/lib/server/data/unlock-codes.json` exists
 - Verify code format: `TALK-XXXX-XXXX`
 - Use `TALK-TEST-CODE` for development testing

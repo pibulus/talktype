@@ -111,9 +111,11 @@ if (browser) {
 }
 
 function getGlobalAnimationVariables() {
-	return `\n/* Global Animation Configuration */\n` +
+	return (
+		`\n/* Global Animation Configuration */\n` +
 		`--ghost-wobble-duration: ${WOBBLE_CONFIG.DURATION / 1000}s;\n` +
-		`--ghost-special-duration: ${SPECIAL_CONFIG.DURATION / 1000}s;\n`;
+		`--ghost-special-duration: ${SPECIAL_CONFIG.DURATION / 1000}s;\n`
+	);
 }
 
 export function generateThemeCssVariables(themeName = FALLBACK_THEME) {
@@ -272,15 +274,14 @@ function getThemeColor(themeName, position, bright = false) {
 	return theme[colorKey] || null;
 }
 
+// Only export items NOT already exported with 'export const/function' above
 export {
 	theme,
 	cssVariables,
 	setTheme,
 	getThemeColor,
-	themeColors,
-	generateThemeCssVariables,
-	generateAllThemeCssVariables,
-	ensureGhostThemeStyles,
-	getInitialTheme,
-	FALLBACK_THEME
+	themeColors
+	// NOTE: generateThemeCssVariables, generateAllThemeCssVariables,
+	// ensureGhostThemeStyles, getInitialTheme, FALLBACK_THEME
+	// are already exported individually above - don't duplicate!
 };

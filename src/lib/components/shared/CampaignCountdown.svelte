@@ -80,7 +80,6 @@
 			{/if}
 			<span>{status.remaining} / {status.total} left</span>
 		</span>
-
 	{:else if variant === 'banner'}
 		<!-- Banner style - full width with urgency -->
 		<div
@@ -101,7 +100,8 @@
 				</div>
 			{:else}
 				<div class="text-sm">
-					<span class="font-bold">{status.remaining}</span> of {status.total} {status.config.name} spots remaining
+					<span class="font-bold">{status.remaining}</span> of {status.total}
+					{status.config.name} spots remaining
 				</div>
 			{/if}
 
@@ -118,7 +118,6 @@
 				</div>
 			{/if}
 		</div>
-
 	{:else}
 		<!-- Compact style - default -->
 		<div
@@ -140,7 +139,9 @@
 	{/if}
 {:else if loading}
 	<!-- Loading state -->
-	<div class="inline-flex items-center gap-2 rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-500">
+	<div
+		class="inline-flex items-center gap-2 rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-500"
+	>
 		<div class="loading loading-spinner loading-xs"></div>
 		<span>Loading...</span>
 	</div>

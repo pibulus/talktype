@@ -8,7 +8,7 @@
 	import ghostPathsUrl from './ghost-paths.svg?url';
 	import { ANIMATION_STATES, CSS_CLASSES, PULSE_CONFIG, EYE_CONFIG } from './animationConfig.js';
 
-import { ghostStateStore, theme as localTheme, FALLBACK_THEME } from './stores/index.js';
+	import { ghostStateStore, theme as localTheme, FALLBACK_THEME } from './stores/index.js';
 	import { animationService, blinkService } from './services/index.js';
 	import { forceReflow } from './utils/animationUtils.js';
 	import { initialGhostAnimation } from './actions/initialGhostAnimation.js';
@@ -24,9 +24,9 @@ import { ghostStateStore, theme as localTheme, FALLBACK_THEME } from './stores/i
 	export let externalTheme = null;
 	export let width = '100%';
 	export let height = '100%';
-export let opacity = 1;
-export let scale = 1;
-export let clickable = true;
+	export let opacity = 1;
+	export let scale = 1;
+	export let clickable = true;
 	const resolveThemeSource = () => externalTheme || localTheme;
 	const normalizeTheme = (themeValue) =>
 		typeof themeValue === 'string' && themeValue.length > 0 ? themeValue : FALLBACK_THEME;

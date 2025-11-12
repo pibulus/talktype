@@ -1,10 +1,15 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { browser } from '$app/environment';
 	import { theme, autoRecord, applyTheme, promptStyle } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { installPromptEvent } from '$lib/stores/pwa';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
-	import { isPremium, unlockPremiumFeatures, getUnlockCode } from '$lib/services/premium/premiumService';
+	import {
+		isPremium,
+		unlockPremiumFeatures,
+		getUnlockCode
+	} from '$lib/services/premium/premiumService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
@@ -29,74 +34,86 @@
 	let showMyCode = false;
 	let myUnlockCode = '';
 
-	// Store subscriptions
-	const unsubscribeTheme = theme.subscribe((value) => {
-		selectedVibe = value;
-	});
-
-	const unsubscribeAutoRecord = autoRecord.subscribe((value) => {
-		autoRecordValue = value === 'true';
-	});
-
-	const unsubscribePromptStyle = promptStyle.subscribe((value) => {
-		selectedPromptStyle = value;
-	});
+	// Store unsubscribe functions
+	let unsubscribeTheme;
+	let unsubscribeAutoRecord;
+	let unsubscribePromptStyle;
 
 	onMount(() => {
-		// Get currently selected prompt style from the service
-		selectedPromptStyle = geminiService.getPromptStyle();
+		// Subscribe to stores only in browser
+		unsubscribeTheme = theme.subscribe((value) => {
+			selectedVibe = value;
+		});
 
-		// Get privacy mode value from localStorage
-		privacyModeValue = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
+		unsubscribeAutoRecord = autoRecord.subscribe((value) => {
+			autoRecordValue = value === 'true';
+		});
 
-		// Clean up subscriptions on component destroy
-		return () => {
-			unsubscribeTheme();
-			unsubscribeAutoRecord();
-			unsubscribePromptStyle();
-		};
+		unsubscribePromptStyle = promptStyle.subscribe((value) => {
+			selectedPromptStyle = value;
+		});
+
+		// Get privacy mode value from localStorage (browser only)
+		if (browser) {
+			privacyModeValue = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
+		}
+	});
+
+	onDestroy(() => {
+		// Clean up subscriptions
+		if (unsubscribeTheme) unsubscribeTheme();
+		if (unsubscribeAutoRecord) unsubscribeAutoRecord();
+		if (unsubscribePromptStyle) unsubscribePromptStyle();
 	});
 
 	// Handlers
 	function changeVibe(vibeId) {
 		selectedVibe = vibeId;
 		applyTheme(vibeId);
-		window.dispatchEvent(
-			new CustomEvent('talktype-setting-changed', {
-				detail: { setting: 'theme', value: vibeId }
-			})
-		);
+		if (browser) {
+			window.dispatchEvent(
+				new CustomEvent('talktype-setting-changed', {
+					detail: { setting: 'theme', value: vibeId }
+				})
+			);
+		}
 	}
 
 	function changePromptStyle(style) {
 		selectedPromptStyle = style;
 		geminiService.setPromptStyle(style);
 		promptStyle.set(style);
-		window.dispatchEvent(
-			new CustomEvent('talktype-setting-changed', {
-				detail: { setting: 'promptStyle', value: style }
-			})
-		);
+		if (browser) {
+			window.dispatchEvent(
+				new CustomEvent('talktype-setting-changed', {
+					detail: { setting: 'promptStyle', value: style }
+				})
+			);
+		}
 	}
 
 	function toggleAutoRecord() {
 		autoRecordValue = !autoRecordValue;
 		autoRecord.set(autoRecordValue.toString());
-		window.dispatchEvent(
-			new CustomEvent('talktype-setting-changed', {
-				detail: { setting: 'autoRecord', value: autoRecordValue }
-			})
-		);
+		if (browser) {
+			window.dispatchEvent(
+				new CustomEvent('talktype-setting-changed', {
+					detail: { setting: 'autoRecord', value: autoRecordValue }
+				})
+			);
+		}
 	}
 
 	function togglePrivacyMode() {
 		privacyModeValue = !privacyModeValue;
-		localStorage.setItem(STORAGE_KEYS.PRIVACY_MODE, privacyModeValue.toString());
-		window.dispatchEvent(
-			new CustomEvent(SERVICE_EVENTS.SETTINGS.CHANGED, {
-				detail: { setting: 'privacyMode', value: privacyModeValue }
-			})
-		);
+		if (browser) {
+			localStorage.setItem(STORAGE_KEYS.PRIVACY_MODE, privacyModeValue.toString());
+			window.dispatchEvent(
+				new CustomEvent(SERVICE_EVENTS.SETTINGS.CHANGED, {
+					detail: { setting: 'privacyMode', value: privacyModeValue }
+				})
+			);
+		}
 	}
 
 	async function handleInstallClick() {
@@ -149,14 +166,16 @@
 				unlockPremiumFeatures(data.unlockDate, unlockCode.trim());
 
 				// Show success message
-				window.dispatchEvent(
-					new CustomEvent('talktype:toast', {
-						detail: {
-							message: '🎉 Premium unlocked successfully!',
-							type: 'success'
-						}
-					})
-				);
+				if (browser) {
+					window.dispatchEvent(
+						new CustomEvent('talktype:toast', {
+							detail: {
+								message: '🎉 Premium unlocked successfully!',
+								type: 'success'
+							}
+						})
+					);
+				}
 
 				// Reset form
 				showCodeEntry = false;
@@ -181,15 +200,29 @@
 		}
 	}
 
-	function copyMyCode() {
+	async function copyMyCode() {
+		if (!browser) return;
+
 		const code = getUnlockCode();
-		if (code) {
-			navigator.clipboard.writeText(code);
+		if (!code) return;
+
+		try {
+			await navigator.clipboard.writeText(code);
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
 					detail: {
 						message: '📋 Code copied to clipboard!',
 						type: 'success'
+					}
+				})
+			);
+		} catch (err) {
+			console.error('Failed to copy code:', err);
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: {
+						message: '❌ Failed to copy code',
+						type: 'error'
 					}
 				})
 			);
@@ -231,8 +264,6 @@
 
 			<!-- Settings Section -->
 			<div class="mb-2 space-y-2">
-				<h4 class="text-sm font-bold text-gray-700">Settings</h4>
-
 				<!-- Auto-Record Toggle -->
 				<div
 					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
@@ -324,7 +355,10 @@
 			</div>
 
 			<!-- Prompt Style Selection Section -->
-			<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
+			<div class="space-y-2">
+				<h4 class="text-sm font-bold text-gray-700">Choose Transcription Style</h4>
+				<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
+			</div>
 
 			<!-- Premium Features Section (if premium) OR Upsell (if free) -->
 			{#if $isPremium}
@@ -334,7 +368,9 @@
 				>
 					<div class="flex items-center justify-between">
 						<h4 class="text-sm font-bold text-gray-700">Premium Features</h4>
-						<span class="badge badge-sm gap-1 border-green-300 bg-green-100 font-medium text-green-700">
+						<span
+							class="badge badge-sm gap-1 border-green-300 bg-green-100 font-medium text-green-700"
+						>
 							<span class="text-[10px]">✓</span> Active
 						</span>
 					</div>
@@ -365,7 +401,7 @@
 					<!-- View My Code Button -->
 					<div class="pt-2">
 						<button
-							class="text-xs text-gray-600 hover:text-gray-800 underline"
+							class="text-xs text-gray-600 underline hover:text-gray-800"
 							on:click={toggleMyCode}
 						>
 							{showMyCode ? '← Hide Code' : '🔑 View My Unlock Code'}
@@ -384,7 +420,7 @@
 									>
 										📋 Copy Code
 									</button>
-									<p class="text-xs text-gray-500 text-center">
+									<p class="text-center text-xs text-gray-500">
 										Use this code to unlock on other devices
 									</p>
 								{/if}
@@ -399,11 +435,13 @@
 			{:else}
 				<!-- Free User - Show Upgrade Option -->
 				<div
-					class="space-y-2 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50/50 to-orange-50/50 p-3 shadow-sm"
+					class="space-y-2 rounded-lg border-2 border-amber-300 bg-gradient-to-r from-amber-100/80 to-orange-100/80 p-3 shadow-md"
 				>
 					<div class="flex items-center justify-between">
 						<h4 class="text-sm font-bold text-gray-700">Unlock Premium</h4>
-						<span class="badge badge-sm gap-1 border-amber-300 bg-amber-100 font-medium text-amber-700">
+						<span
+							class="badge badge-sm gap-1 border-amber-300 bg-amber-100 font-medium text-amber-700"
+						>
 							{#if PRICING.hasDiscount}
 								<span class="text-[10px]">🎉</span> ${PRICING.currentPrice}
 								<span class="text-[9px] line-through opacity-60">${PRICING.basePrice}</span>
@@ -440,9 +478,11 @@
 						class="btn btn-sm mt-2 w-full border-none bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:from-amber-500 hover:to-orange-600"
 						on:click={() => {
 							handleModalClose();
-							setTimeout(() => {
-								document.getElementById('premium_modal')?.showModal();
-							}, 100);
+							if (browser) {
+								setTimeout(() => {
+									document.getElementById('premium_modal')?.showModal();
+								}, 100);
+							}
 						}}
 					>
 						{#if PRICING.hasDiscount}
@@ -455,7 +495,7 @@
 					<!-- Already Premium? Enter Code -->
 					<div class="pt-2">
 						<button
-							class="text-xs text-gray-600 hover:text-gray-800 underline"
+							class="text-xs text-gray-600 underline hover:text-gray-800"
 							on:click={toggleCodeEntry}
 						>
 							{showCodeEntry ? '← Back' : '🔑 Already Premium? Enter Code'}
@@ -494,37 +534,31 @@
 									{/if}
 								</button>
 
-								<p class="text-xs text-gray-500 text-center">
-									Code works on all your devices
-								</p>
+								<p class="text-center text-xs text-gray-500">Code works on all your devices</p>
 							</div>
 						{/if}
 					</div>
-
-					{#if !showCodeEntry}
-						<div class="text-center">
-							<span class="text-xs italic text-gray-500">vs $10+/month subscriptions elsewhere</span>
-						</div>
-					{/if}
 				</div>
 			{/if}
 
-			<!-- PWA Install (if available) -->
-			{#if $installPromptEvent}
-				<div class="space-y-2">
-					<h4 class="text-sm font-bold text-gray-700">Install App</h4>
+			<!-- PWA Install Section -->
+			<div class="space-y-2">
+				<h4 class="text-sm font-bold text-gray-700">Install as App</h4>
+				{#if $installPromptEvent}
 					<button
 						class="btn btn-sm w-full border border-pink-200 bg-pink-50 hover:bg-pink-100"
 						on:click={handleInstallClick}
 					>
 						📦 Install TalkType
 					</button>
-				</div>
-			{/if}
-
-			<!-- Footer -->
-			<div class="border-t border-pink-100 pt-2 text-center">
-				<p class="text-xs text-gray-500">TalkType • Made with 💜 by Dennis & Pablo</p>
+				{:else}
+					<div class="rounded-lg border border-pink-100 bg-pink-50/50 p-2">
+						<p class="text-xs text-gray-600">
+							Install TalkType from your browser menu for offline access and a native app
+							experience.
+						</p>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -532,10 +566,12 @@
 	<button
 		class="modal-backdrop bg-black/40"
 		on:click|self|preventDefault|stopPropagation={() => {
-			const modal = document.getElementById('settings_modal');
-			if (modal) {
-				modal.close();
-				setTimeout(handleModalClose, 50);
+			if (browser) {
+				const modal = document.getElementById('settings_modal');
+				if (modal) {
+					modal.close();
+					setTimeout(handleModalClose, 50);
+				}
 			}
 		}}
 		on:keydown={(e) => e.key === 'Enter' && handleModalClose()}

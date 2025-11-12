@@ -29,7 +29,7 @@ export const CAMPAIGN_CONFIG = {
 
 	// Display settings
 	showCountdown: true,
-	urgencyThreshold: 10, // Show urgency when this many spots left
+	urgencyThreshold: 10 // Show urgency when this many spots left
 };
 
 /**

@@ -15,8 +15,14 @@ const CODES_FILE = path.join(DATA_DIR, 'unlock-codes.json');
  */
 export function generateUnlockCode() {
 	const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid confusing chars (0,O,1,I)
-	const segment1 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-	const segment2 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+	const segment1 = Array.from(
+		{ length: 4 },
+		() => chars[Math.floor(Math.random() * chars.length)]
+	).join('');
+	const segment2 = Array.from(
+		{ length: 4 },
+		() => chars[Math.floor(Math.random() * chars.length)]
+	).join('');
 	return `TALK-${segment1}-${segment2}`;
 }
 
@@ -115,9 +121,7 @@ export function getCodeStats() {
 	return {
 		totalCodes: codes.length,
 		totalUses: codes.reduce((sum, code) => sum + code.usedCount, 0),
-		recentCodes: codes
-			.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-			.slice(0, 10)
+		recentCodes: codes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10)
 	};
 }
 
@@ -129,7 +133,7 @@ export function createTestCode() {
 		const testCode = 'TALK-TEST-CODE';
 		storeUnlockCode(testCode, {
 			paymentId: 'test-payment',
-			amount: 9.00,
+			amount: 9.0,
 			currency: 'AUD',
 			email: 'test@example.com'
 		});

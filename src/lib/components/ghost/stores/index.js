@@ -8,7 +8,14 @@
 export { ghostStateStore } from './ghostStateStore.js';
 
 // Export the main theme store instance and related functions/values
-export { theme, cssVariables, setTheme, getThemeColor, themeColors } from '../themeStore.js';
+export {
+	theme,
+	cssVariables,
+	setTheme,
+	getThemeColor,
+	themeColors,
+	FALLBACK_THEME
+} from '../themeStore.js';
 
 // Consumers can access derived stores via ghostStateStore.currentState, ghostStateStore.isRecording etc.
 // or use $ghostStateStore.current, $ghostStateStore.isRecording etc.
