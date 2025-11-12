@@ -119,32 +119,43 @@ class SimpleHybridService {
 			// Get current prompt style
 			const promptStyle = get(userPreferences).promptStyle || 'standard';
 
-			// Call the API endpoint
-			const response = await fetch('/api/transcribe', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					audioData: base64Audio,
-					mimeType: audioBlob.type || 'audio/webm',
-					promptStyle: promptStyle
-				})
-			});
+			// Create abort controller for timeout (30s max for transcription)
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-			if (!response.ok) {
-				const error = await response.json();
-				throw new Error(error.error || 'API transcription failed');
+			try {
+				// Call the API endpoint with timeout and keepalive
+				const response = await fetch('/api/transcribe', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						audioData: base64Audio,
+						mimeType: audioBlob.type || 'audio/webm',
+						promptStyle: promptStyle
+					}),
+					signal: controller.signal,
+					keepalive: true // Reuse HTTP connections for faster requests
+				});
+
+				clearTimeout(timeoutId);
+
+				if (!response.ok) {
+					const error = await response.json();
+					throw new Error(error.error || 'API transcription failed');
+				}
+
+				const { transcription } = await response.json();
+				return transcription;
+			} catch (fetchError) {
+				clearTimeout(timeoutId);
+
+				if (fetchError.name === 'AbortError') {
+					throw new Error('Transcription took too long (30s timeout). Try a shorter recording?');
+				}
+				throw fetchError;
 			}
-
-			const { transcription } = await response.json();
-
-			// Check if Whisper finished loading while we were transcribing
-			if (this.whisperReady) {
-				console.log('💡 Whisper is now ready for next transcription!');
-			}
-
-			return transcription;
 		} catch (error) {
 			console.error('Gemini API transcription error:', error);
 
@@ -160,6 +171,7 @@ class SimpleHybridService {
 			throw error;
 		}
 	}
+
 
 	/**
 	 * Convert blob to base64 string

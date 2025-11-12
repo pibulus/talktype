@@ -198,7 +198,11 @@ export class AudioService {
 
 				for (const mimeType of mimeTypes) {
 					if (!mimeType || MediaRecorder.isTypeSupported(mimeType)) {
-						mediaRecorderOptions = mimeType ? { mimeType } : undefined;
+						// Optimize bitrate for speech (48kbps = 50% smaller files vs default 128kbps)
+						// Speech transcription doesn't need high quality audio
+						mediaRecorderOptions = mimeType
+							? { mimeType, audioBitsPerSecond: 48000 }
+							: { audioBitsPerSecond: 48000 };
 						break;
 					}
 				}
