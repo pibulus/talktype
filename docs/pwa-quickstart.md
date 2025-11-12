@@ -146,43 +146,27 @@ TalkType will show you an installation prompt after you've used it a few times. 
    - Enable offline mode in DevTools
    - Verify offline page appears
 
-## Icon Generation Snippet
+## Icon Generation
 
-```javascript
-import sharp from 'sharp';
-import fs from 'fs';
-import path from 'path';
+Use the existing helper scripts so everything stays consistent:
 
-// Source icon (SVG or high-res PNG)
-const sourceIcon = './static/app-icon.svg';
-// Required sizes
-const sizes = [192, 512];
+```bash
+npm install sharp --save-dev
 
-// Generate app icons
-sizes.forEach((size) => {
-	sharp(sourceIcon).resize(size, size).png().toFile(`./static/icons/icon-${size}x${size}.png`);
-});
+# Core icons (192/512 + maskable + apple touch)
+node scripts/generate-basic-icons.js
 
-// Generate apple-touch-icon
-sharp(sourceIcon).resize(180, 180).png().toFile('./static/apple-touch-icon.png');
+# Favicons for light/dark tabs
+node scripts/generate-favicon.js
 
-// Generate favicon
-sharp(sourceIcon).resize(32, 32).png().toFile('./static/favicon.png');
+# Maskable icon with safe padding
+node scripts/generate-maskable-icon.js
 
-// Generate OG image
-sharp(sourceIcon)
-	.resize(900, 900, { fit: 'contain' })
-	.extend({
-		top: 0,
-		bottom: 0,
-		left: 150,
-		right: 150,
-		background: { r: 255, g: 255, b: 255, alpha: 1 }
-	})
-	.resize(1200, 630, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
-	.png()
-	.toFile('./static/og-image.png');
+# Splash screens & marketing shots (optional)
+node scripts/generate-splash-screens.js
 ```
+
+Each script reads from the SVG sources in `static/` and overwrites the PNGs in `static/icons/`. See `static/icons/NEXT-STEPS.md` for the full checklist.
 
 ## Quick Checklist
 
