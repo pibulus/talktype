@@ -1,6 +1,6 @@
 import { simpleHybridService } from './simpleHybridService';
 import { transcriptionState, transcriptionActions, uiActions } from '../infrastructure/stores';
-import { COPY_MESSAGES, ATTRIBUTION, getRandomFromArray } from '$lib/constants';
+import { COPY_MESSAGES, getRandomFromArray } from '$lib/constants';
 import { get } from 'svelte/store';
 
 export const TranscriptionEvents = {
@@ -129,12 +129,9 @@ export class TranscriptionService {
 		}
 
 		try {
-			// Add attribution
-			const textWithAttribution = `${text}\n\n${ATTRIBUTION.SIMPLE_TAG}`;
-
 			// Try the modern clipboard API first
 			if (navigator.clipboard && window.isSecureContext) {
-				await navigator.clipboard.writeText(textWithAttribution);
+				await navigator.clipboard.writeText(text);
 				uiActions.showClipboardSuccess();
 				uiActions.setScreenReaderMessage('Transcript copied to clipboard');
 				return true;
@@ -142,7 +139,7 @@ export class TranscriptionService {
 
 			// Fallback: Use document.execCommand (legacy method)
 			const textArea = document.createElement('textarea');
-			textArea.value = textWithAttribution;
+			textArea.value = text;
 			textArea.style.position = 'fixed';
 			textArea.style.opacity = '0';
 			document.body.appendChild(textArea);
@@ -191,13 +188,10 @@ export class TranscriptionService {
 				throw new Error('Web Share API not supported');
 			}
 
-			// Add attribution
-			const textWithAttribution = `${text}${ATTRIBUTION.SHARE_POSTFIX}`;
-
 			// Share using Web Share API
 			await navigator.share({
 				title: 'TalkType Transcription',
-				text: textWithAttribution
+				text: text
 			});
 
 			uiActions.showClipboardSuccess();

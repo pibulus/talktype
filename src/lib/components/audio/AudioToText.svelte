@@ -248,7 +248,6 @@
 						transcript={$transcriptionText}
 						{responsiveFontSize}
 						on:copy={handleTranscriptEvent}
-						on:share={handleTranscriptEvent}
 						on:focus={handleTranscriptEvent}
 					/>
 				{/if}

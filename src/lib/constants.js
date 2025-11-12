@@ -229,13 +229,6 @@ export const COPY_MESSAGES = [
 	'Saved to clipboard! 🎊'
 ];
 
-// Attribution Tags
-export const ATTRIBUTION = {
-	SIMPLE_TAG: '𝘛𝘳𝘢𝘯𝘴𝘤𝘳𝘪𝘣𝘦𝘥 𝘣𝘺 𝘛𝘢𝘭𝘬𝘛𝘺𝘱𝘦 👻',
-	SHARE_POSTFIX: '\n\n𝘛𝘳𝘢𝘯𝘴𝘤𝘳𝘪𝘣𝘦𝘥 𝘣𝘺 𝘛𝘢𝘭𝘬𝘛𝘺𝘱𝘦 👻',
-	FOCUS_RECOVERY_MESSAGE: 'Click in window first, then copy again! 🔍'
-};
-
 // Offline Haikus
 export const OFFLINE_HAIKUS = [
 	`Connection is lost
