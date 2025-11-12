@@ -50,26 +50,26 @@ export function detectDeviceCapabilities() {
 
 	// Determine device tier
 	let tier = 'medium';
-	let recommendedModel = 'tiny'; // Start with tiny for progressive loading
-	let reason = 'Progressive loading from tiny';
+	let recommendedModel = 'tiny'; // Default to tiny for fastest performance
+	let reason = 'Fast offline transcription with tiny model';
 
 	// High-end device detection
 	if (capabilities.memory >= 8 && capabilities.cores >= 8) {
 		tier = 'high';
-		recommendedModel = 'small'; // Small is fast enough, medium too slow
-		reason = 'High-end device, using small for speed';
+		recommendedModel = 'tiny'; // Prioritize speed over accuracy
+		reason = 'High-end device, using tiny for maximum speed';
 	}
 	// Mid-high tier (good memory but maybe no WebGPU)
 	else if (capabilities.memory >= 6 && capabilities.cores >= 6) {
 		tier = 'medium-high';
-		recommendedModel = 'small';
-		reason = 'Good specs, using small model';
+		recommendedModel = 'tiny';
+		reason = 'Using tiny model for fast transcription';
 	}
 	// Standard mid-tier
 	else if (capabilities.memory >= 4) {
 		tier = 'medium';
-		recommendedModel = 'small';
-		reason = 'Standard device with adequate memory';
+		recommendedModel = 'tiny';
+		reason = 'Using tiny model for optimal speed';
 	}
 	// Low-mid tier
 	else if (capabilities.memory >= 2) {
@@ -113,8 +113,8 @@ export function detectDeviceCapabilities() {
 		// Progressive loading strategy
 		loadingStrategy: {
 			initial: 'tiny', // Always start with tiny for instant experience
-			target: recommendedModel, // Load this in background
-			fallback: tier === 'low' ? null : 'small' // Fallback if target fails
+			target: 'tiny', // Use tiny for fastest offline transcription
+			fallback: null // No fallback needed when using tiny
 		}
 	};
 }
