@@ -13,7 +13,7 @@
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
-	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
+import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { STORAGE_KEYS, SERVICE_EVENTS } from '$lib/constants';
 	import { PRICING } from '$lib/config/pricing';
 	import { analytics } from '$lib/services/analytics';
