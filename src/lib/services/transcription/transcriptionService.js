@@ -2,6 +2,7 @@ import { simpleHybridService } from './simpleHybridService';
 import { transcriptionState, transcriptionActions, uiActions } from '../infrastructure/stores';
 import { COPY_MESSAGES, getRandomFromArray } from '$lib/constants';
 import { get } from 'svelte/store';
+import { getLatestRecordingDraft, deleteRecordingDraft } from '../audio/recordingRecoveryStore';
 
 export const TranscriptionEvents = {
 	TRANSCRIPTION_STARTED: 'transcription:started',
@@ -44,6 +45,9 @@ export class TranscriptionService {
 			// Update transcription state with completed text
 			transcriptionActions.completeTranscription(transcriptText);
 
+			// Recording successfully processed - clear recovery draft
+			await this.#clearPendingRecordingDraft();
+
 			// Auto-copy to clipboard after successful transcription
 			setTimeout(() => {
 				this.copyToClipboard(transcriptText);
@@ -67,6 +71,27 @@ export class TranscriptionService {
 
 			throw error;
 		}
+	}
+
+	async retryPendingRecording() {
+		if (!this.browser) {
+			throw new Error('Retry only available in browser environment');
+		}
+
+		const pending = get(transcriptionState).pendingRecording;
+		if (!pending?.id) {
+			throw new Error('No saved recording available to retry.');
+		}
+
+		const draft = await getLatestRecordingDraft({ includeBlob: true });
+
+		if (!draft?.blob) {
+			transcriptionActions.clearPendingRecording();
+			throw new Error('Saved recording was missing audio data. Please record again.');
+		}
+
+		uiActions.clearErrorMessage();
+		return await this.transcribeAudio(draft.blob);
 	}
 
 	startProgressAnimation() {
@@ -240,6 +265,18 @@ export class TranscriptionService {
 			navigator.share &&
 			typeof navigator.share === 'function'
 		);
+	}
+
+	async #clearPendingRecordingDraft() {
+		if (!this.browser) return;
+
+		try {
+			await deleteRecordingDraft();
+		} catch (error) {
+			console.warn('Failed to delete recording draft:', error);
+		}
+
+		transcriptionActions.clearPendingRecording();
 	}
 }
 
