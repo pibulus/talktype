@@ -466,30 +466,57 @@ export class WhisperService {
 			console.log('[Whisper]   Model:', currentStatus.selectedModel);
 			console.log('[Whisper]   ONNX device:', this.hasWebGPU ? 'webgpu' : 'wasm');
 
+			console.log('[Whisper] 🚀 About to call transcriber with:', {
+				audioLength: processedAudio.length,
+				options: transcriptionOptions
+			});
+
 			const result = await this.transcriber(processedAudio, transcriptionOptions);
 
+			console.log('[Whisper] ✅ Transcriber returned!');
 			console.log('[Whisper] Raw transcription result:', result);
 			console.log('[Whisper] Result type:', typeof result);
 			console.log('[Whisper] Result keys:', result ? Object.keys(result) : 'null');
 			console.log('[Whisper] Result.text:', result?.text);
+			console.log('[Whisper] Result.text length:', result?.text?.length);
 			console.log('[Whisper] Result is array:', Array.isArray(result));
 			if (Array.isArray(result)) {
 				console.log('[Whisper] Array length:', result.length);
 				console.log('[Whisper] First element:', result[0]);
 			}
 
+			// Check if result has chunks property (common with timestamps disabled)
+			if (result?.chunks) {
+				console.log('[Whisper] Result.chunks:', result.chunks);
+			}
+
 			this.updateStatus({ isLoading: false, progress: 100 });
 
-			// Extract text from result (handle both formats)
+			// Extract text from result (handle multiple formats from Transformers.js)
 			let text = '';
+			console.log('[Whisper] 🔍 Extracting text from result...');
+
 			if (typeof result === 'string') {
+				console.log('[Whisper] Result is string');
 				text = result;
 			} else if (result?.text) {
+				console.log('[Whisper] Using result.text');
 				text = result.text;
-			} else if (Array.isArray(result) && result[0]?.text) {
-				// Handle array of chunks with timestamps
-				text = result.map((chunk) => chunk.text).join(' ');
+			} else if (Array.isArray(result)) {
+				console.log('[Whisper] Result is array with', result.length, 'elements');
+				if (result.length > 0 && result[0]?.text) {
+					// Handle array of chunks with timestamps
+					text = result.map((chunk) => chunk.text).join(' ');
+				} else if (result.length > 0 && typeof result[0] === 'string') {
+					// Handle array of strings
+					text = result.join(' ');
+				}
+			} else if (result?.chunks && Array.isArray(result.chunks)) {
+				console.log('[Whisper] Using result.chunks');
+				text = result.chunks.map((chunk) => chunk.text || chunk).join(' ');
 			}
+
+			console.log('[Whisper] Extracted text before cleaning:', text ? `"${text.substring(0, 100)}..."` : '(empty)');
 
 			// Clean up text to remove excessive repetitions
 			text = this.cleanRepetitions(text);
