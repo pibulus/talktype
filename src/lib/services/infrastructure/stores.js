@@ -42,7 +42,8 @@ export const transcriptionState = writable({
 	progress: 0,
 	text: '',
 	error: null,
-	timestamp: null
+	timestamp: null,
+	pendingRecording: null
 });
 
 // UI state
@@ -233,6 +234,20 @@ export const transcriptionActions = {
 			...current,
 			errorMessage: `Transcription error: ${error || 'Unknown error'}`
 		}));
+	},
+
+	setPendingRecording(pending) {
+		transcriptionState.update((current) => ({
+			...current,
+			pendingRecording: pending
+		}));
+	},
+
+	clearPendingRecording() {
+		transcriptionState.update((current) => ({
+			...current,
+			pendingRecording: null
+		}));
 	}
 };
 
@@ -311,7 +326,8 @@ export function resetStores() {
 		progress: 0,
 		text: '',
 		error: null,
-		timestamp: null
+		timestamp: null,
+		pendingRecording: null
 	});
 
 	uiState.set({

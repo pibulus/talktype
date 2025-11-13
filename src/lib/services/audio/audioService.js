@@ -1,6 +1,13 @@
 import { AudioStateManager, AudioStates } from './audioStates';
-import { audioState, audioActions, uiActions } from '../infrastructure/stores';
+import {
+	audioState,
+	audioActions,
+	uiActions,
+	recordingState,
+	transcriptionActions
+} from '../infrastructure/stores';
 import { get } from 'svelte/store';
+import { saveRecordingDraft } from './recordingRecoveryStore';
 
 export const AudioEvents = {
 	RECORDING_STARTED: 'audio:recordingStarted',
@@ -316,7 +323,7 @@ export class AudioService {
 
 			// Add a small delay to ensure final audio chunk is captured
 			setTimeout(() => {
-				this.mediaRecorder.onstop = () => {
+				this.mediaRecorder.onstop = async () => {
 					// Create the Blob from this.audioChunks, which now contains all chunks
 					// including the final one from the last dataavailable event.
 					const audioBlob = new Blob(this.audioChunks, { type: mimeType });
@@ -341,6 +348,9 @@ export class AudioService {
 
 					this.audioChunks = [];
 					this.mediaRecorder = null;
+
+					// Persist a recovery copy before returning control
+					await this.#persistRecordingDraft(audioBlob, mimeType);
 
 					// Ensure state is properly reset
 					this.stateManager.setState(AudioStates.IDLE);
@@ -367,6 +377,34 @@ export class AudioService {
 				}
 			}, 100); // Small delay to ensure final chunk is captured
 		});
+	}
+
+	async #persistRecordingDraft(audioBlob, mimeType) {
+		if (typeof window === 'undefined' || !audioBlob) return;
+
+		try {
+			const durationFromStore = get(recordingState)?.duration;
+			const duration =
+				typeof durationFromStore === 'number' ? durationFromStore : audioBlob.size / 2000;
+
+			const draft = await saveRecordingDraft(audioBlob, {
+				mimeType,
+				size: audioBlob.size,
+				duration
+			});
+
+			if (draft) {
+				transcriptionActions.setPendingRecording({
+					id: draft.id,
+					createdAt: draft.createdAt,
+					duration,
+					size: audioBlob.size,
+					mimeType
+				});
+			}
+		} catch (error) {
+			console.warn('[AudioService] Failed to persist recording draft:', error.message);
+		}
 	}
 
 	async cleanup() {
