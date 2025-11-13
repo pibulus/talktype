@@ -61,6 +61,9 @@ class SimpleHybridService {
 			.catch((err) => {
 				console.warn('Whisper load failed:', err);
 				return { success: false, error: err };
+			})
+			.finally(() => {
+				this.whisperLoadPromise = null;
 			});
 	}
 
