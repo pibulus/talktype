@@ -26,6 +26,7 @@ if (env.backends.onnx?.webgpu) {
 }
 
 const SAMPLE_RATE = 16000;
+const WARMUP_SECONDS = 0.25; // short silent clip to JIT the WASM kernels
 
 // Public status store (UI reads this for spinner/error state)
 export const whisperStatus = writable({
@@ -63,6 +64,7 @@ export class WhisperService {
 		this.transcriber = null;
 		this.modelLoadPromise = null;
 		this.isSupported = typeof window !== 'undefined';
+		this.hasWarmedUp = false;
 
 		this.updateStatus({ supportsWhisper: this.isSupported });
 	}
@@ -118,9 +120,11 @@ export class WhisperService {
 				}
 			});
 
+			await this.#warmupTranscriber();
+
 			const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
 			const totalSecs = (((endTime - loadStart) || 0) / 1000).toFixed(2);
-			console.log(`[WhisperService] Model ready in ${totalSecs}s (WASM).`);
+			console.log(`[WhisperService] Model ready in ${totalSecs}s (WASM, warmed).`);
 
 			this.updateStatus({ isLoaded: true, isLoading: false, progress: 100 });
 			this.modelLoadPromise = null;
@@ -131,6 +135,27 @@ export class WhisperService {
 			this.transcriber = null;
 			this.modelLoadPromise = null;
 			return { success: false, error };
+		}
+	}
+
+	async #warmupTranscriber() {
+		if (!this.transcriber || this.hasWarmedUp) {
+			return;
+		}
+
+		try {
+			const warmupSamples = Math.max(1, Math.floor(SAMPLE_RATE * WARMUP_SECONDS));
+			const silence = new Float32Array(warmupSamples); // zeroed buffer
+			await this.transcriber(silence, {
+				task: 'transcribe',
+				return_timestamps: false,
+				temperature: 0,
+				do_sample: false
+			});
+			this.hasWarmedUp = true;
+		} catch (error) {
+			// Warmup is best-effort; don't surface to UI
+			console.warn('[WhisperService] Warmup run failed (continuing):', error?.message || error);
 		}
 	}
 
@@ -215,6 +240,7 @@ export class WhisperService {
 
 		this.transcriber = null;
 		this.modelLoadPromise = null;
+		this.hasWarmedUp = false;
 		this.updateStatus({ isLoaded: false, progress: 0 });
 	}
 
