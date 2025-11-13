@@ -43,7 +43,7 @@ function openDatabase() {
 	return dbPromise;
 }
 
-export async function saveRecordingDraft(blob, metadata = {}) {
+export async function saveRecordingDraft(blob, metadata = {}, floatSamples = null) {
 	const db = await openDatabase();
 	if (!db || !blob) return null;
 
@@ -55,7 +55,8 @@ export async function saveRecordingDraft(blob, metadata = {}) {
 			id: STORE_KEY,
 			createdAt: Date.now(),
 			blob,
-			metadata
+			metadata,
+			floatSamples: floatSamples instanceof Float32Array ? floatSamples : null
 		};
 
 		const request = store.put(record);
@@ -74,7 +75,7 @@ export async function saveRecordingDraft(blob, metadata = {}) {
 	});
 }
 
-export async function getLatestRecordingDraft(options = { includeBlob: false }) {
+export async function getLatestRecordingDraft(options = { includeBlob: false, includeFloat: false }) {
 	const db = await openDatabase();
 	if (!db) return null;
 
@@ -90,12 +91,15 @@ export async function getLatestRecordingDraft(options = { includeBlob: false }) 
 				return;
 			}
 
+			const payload = { id: record.id, createdAt: record.createdAt, metadata: record.metadata };
 			if (options.includeBlob) {
-				resolve(record);
-			} else {
-				const { id, createdAt, metadata } = record;
-				resolve({ id, createdAt, metadata });
+				payload.blob = record.blob;
 			}
+			if (options.includeFloat && record.floatSamples instanceof Float32Array) {
+				payload.floatSamples = record.floatSamples;
+			}
+
+			resolve(payload);
 		};
 
 		request.onerror = () => {

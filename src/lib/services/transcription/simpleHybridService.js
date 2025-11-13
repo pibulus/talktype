@@ -14,6 +14,7 @@ class SimpleHybridService {
 		this.whisperReady = false;
 		this.whisperLoadPromise = null;
 		this.isDesktop = this.detectDesktop();
+		this.geminiQueue = Promise.resolve();
 
 		// Subscribe to whisper status
 		if (browser) {
@@ -115,19 +116,21 @@ class SimpleHybridService {
 	 * Transcribe using Gemini API
 	 */
 	async transcribeWithGemini(audioBlob) {
+		this.geminiQueue = this.geminiQueue
+			.catch(() => {})
+			.then(() => this._transcribeWithGeminiInternal(audioBlob));
+
+		return this.geminiQueue;
+	}
+
+	async _transcribeWithGeminiInternal(audioBlob) {
 		try {
-			// Convert blob to base64
 			const base64Audio = await this.blobToBase64(audioBlob);
-
-			// Get current prompt style
 			const promptStyle = get(userPreferences).promptStyle || 'standard';
-
-			// Create abort controller for timeout (30s max for transcription)
 			const controller = new AbortController();
 			const timeoutId = setTimeout(() => controller.abort(), 30000);
 
 			try {
-				// Call the API endpoint with timeout and keepalive
 				const response = await fetch('/api/transcribe', {
 					method: 'POST',
 					headers: {
@@ -136,10 +139,10 @@ class SimpleHybridService {
 					body: JSON.stringify({
 						audioData: base64Audio,
 						mimeType: audioBlob.type || 'audio/webm',
-						promptStyle: promptStyle
+						promptStyle
 					}),
 					signal: controller.signal,
-					keepalive: true // Reuse HTTP connections for faster requests
+					keepalive: true
 				});
 
 				clearTimeout(timeoutId);
@@ -162,7 +165,6 @@ class SimpleHybridService {
 		} catch (error) {
 			console.error('Gemini API transcription error:', error);
 
-			// If API fails and Whisper is still loading, wait for it
 			if (this.whisperLoadPromise && !this.whisperReady) {
 				console.log('⏳ API failed, waiting for Whisper to load...');
 				const result = await this.whisperLoadPromise;

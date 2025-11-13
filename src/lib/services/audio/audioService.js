@@ -6,6 +6,7 @@ import {
 	recordingState,
 	transcriptionActions
 } from '../infrastructure/stores';
+import { convertToWAV as convertToRawAudio } from '../transcription/whisper/audioConverter';
 import { get } from 'svelte/store';
 import { saveRecordingDraft } from './recordingRecoveryStore';
 
@@ -349,8 +350,10 @@ export class AudioService {
 					this.audioChunks = [];
 					this.mediaRecorder = null;
 
-					// Persist a recovery copy before returning control
-					await this.#persistRecordingDraft(audioBlob, mimeType);
+					// Persist a recovery copy before returning control (fire-and-forget)
+					this.#persistRecordingDraft(audioBlob, mimeType).catch((error) =>
+						console.warn('[AudioService] Failed to persist recording draft:', error)
+					);
 
 					// Ensure state is properly reset
 					this.stateManager.setState(AudioStates.IDLE);
@@ -387,11 +390,26 @@ export class AudioService {
 			const duration =
 				typeof durationFromStore === 'number' ? durationFromStore : audioBlob.size / 2000;
 
-			const draft = await saveRecordingDraft(audioBlob, {
-				mimeType,
-				size: audioBlob.size,
-				duration
-			});
+			let floatAudio = null;
+			try {
+				floatAudio = await convertToRawAudio(audioBlob);
+			} catch (conversionError) {
+				console.warn(
+					'[AudioService] Failed to generate Float32 audio for draft:',
+					conversionError?.message || conversionError
+				);
+			}
+
+			const draft = await saveRecordingDraft(
+				audioBlob,
+				{
+					mimeType,
+					size: audioBlob.size,
+					duration,
+					sampleRate: 16000
+				},
+				floatAudio
+			);
 
 			if (draft) {
 				transcriptionActions.setPendingRecording({

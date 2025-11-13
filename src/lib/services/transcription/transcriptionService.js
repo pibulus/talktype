@@ -83,15 +83,17 @@ export class TranscriptionService {
 			throw new Error('No saved recording available to retry.');
 		}
 
-		const draft = await getLatestRecordingDraft({ includeBlob: true });
+		const draft = await getLatestRecordingDraft({ includeBlob: true, includeFloat: true });
 
-		if (!draft?.blob) {
+		const audioInput = draft?.floatSamples instanceof Float32Array ? draft.floatSamples : draft?.blob;
+
+		if (!audioInput) {
 			transcriptionActions.clearPendingRecording();
 			throw new Error('Saved recording was missing audio data. Please record again.');
 		}
 
 		uiActions.clearErrorMessage();
-		return await this.transcribeAudio(draft.blob);
+		return await this.transcribeAudio(audioInput);
 	}
 
 	async restorePendingRecordingDraft() {
