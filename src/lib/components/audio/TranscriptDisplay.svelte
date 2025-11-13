@@ -1,5 +1,5 @@
 <script>
-	import { ANIMATION, ATTRIBUTION } from '$lib/constants';
+	import { ANIMATION } from '$lib/constants';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import Ghost from '$lib/components/ghost/Ghost.svelte';
 
@@ -54,16 +54,6 @@
 				);
 			});
 		}
-	}
-
-	// Browser feature detection
-	function isWebShareSupported() {
-		return (
-			typeof window !== 'undefined' &&
-			typeof navigator !== 'undefined' &&
-			navigator.share &&
-			typeof navigator.share === 'function'
-		);
 	}
 
 	onMount(() => {
@@ -159,30 +149,13 @@
 					</div>
 				</div>
 
-				<!-- Footer area with scroll indicator and share button -->
+				<!-- Footer area with scroll indicator -->
 				<div class="transcript-footer-area relative w-full">
 					<!-- Scroll indicator - only visible when scrollable -->
 					{#if isScrollable}
 						<div
 							class="scroll-indicator-bottom pointer-events-none absolute left-0 right-0 top-[-32px] z-10"
 						></div>
-					{/if}
-
-					<!-- Share button area - aligned to the right edge -->
-					{#if isWebShareSupported()}
-						<div
-							class="transcript-button-area relative z-20 w-full rounded-b-[2rem] bg-white/90 py-3 pb-5"
-						>
-							<div class="flex w-full justify-end pr-7 sm:pr-10">
-								<button
-									class="share-btn-text rounded-full bg-gradient-to-r from-indigo-50 to-purple-100 px-5 py-2 text-sm font-medium text-indigo-600 shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 active:scale-95"
-									on:click|preventDefault={() => dispatch('share', { text: getEditedTranscript() })}
-									aria-label="Share transcript"
-								>
-									Share
-								</button>
-							</div>
-						</div>
 					{/if}
 				</div>
 			</div>
