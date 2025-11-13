@@ -469,6 +469,14 @@ export class WhisperService {
 			const result = await this.transcriber(processedAudio, transcriptionOptions);
 
 			console.log('[Whisper] Raw transcription result:', result);
+			console.log('[Whisper] Result type:', typeof result);
+			console.log('[Whisper] Result keys:', result ? Object.keys(result) : 'null');
+			console.log('[Whisper] Result.text:', result?.text);
+			console.log('[Whisper] Result is array:', Array.isArray(result));
+			if (Array.isArray(result)) {
+				console.log('[Whisper] Array length:', result.length);
+				console.log('[Whisper] First element:', result[0]);
+			}
 
 			this.updateStatus({ isLoading: false, progress: 100 });
 
@@ -556,6 +564,8 @@ export class WhisperService {
 
 			// Detect and remove phrase-level repetitions
 			for (let i = 0; i < words.length; i++) {
+				let foundRepetition = false;
+
 				// Look for patterns of 3-10 words that repeat
 				for (let len = 3; len <= Math.min(10, words.length - i); len++) {
 					const currentPhrase = words.slice(i, i + len).join(' ');
@@ -575,12 +585,16 @@ export class WhisperService {
 					if (matches >= 2) {
 						cleanedWords.push(...words.slice(i, i + len));
 						i += len * (matches + 1) - 1; // Skip all repetitions
+						foundRepetition = true;
 						break;
 					}
 				}
 
-				// If no repetition pattern found, add the word
-				if (i < words.length && !cleanedWords.includes(words[i])) {
+				// If no repetition pattern found, add the word normally
+				// FIXED: Removed !cleanedWords.includes() check that was incorrectly
+				// removing all duplicate words, even legitimate ones in natural speech
+				// (e.g., "the dog and the cat" was becoming "the dog and cat")
+				if (!foundRepetition && i < words.length) {
 					cleanedWords.push(words[i]);
 				}
 			}
