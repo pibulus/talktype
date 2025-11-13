@@ -67,6 +67,7 @@ export class WhisperService {
 		this.hasWarmedUp = false;
 
 		this.updateStatus({ supportsWhisper: this.isSupported });
+		this.#ensurePersistentStorage();
 	}
 
 	updateStatus(updates) {
@@ -260,6 +261,26 @@ export class WhisperService {
 			request.onerror = () => reject(request.error);
 			request.onblocked = () => reject(new Error('Cache clear blocked by another tab'));
 		});
+	}
+
+	async #ensurePersistentStorage() {
+		if (typeof navigator === 'undefined' || !navigator.storage) {
+			return;
+		}
+
+		try {
+			const { storage } = navigator;
+			if (typeof storage.persist !== 'function' || typeof storage.persisted !== 'function') {
+				return;
+			}
+
+			const alreadyPersisted = await storage.persisted();
+			if (!alreadyPersisted) {
+				await storage.persist();
+			}
+		} catch (error) {
+			console.warn('[WhisperService] Persistent storage request failed:', error?.message || error);
+		}
 	}
 }
 

@@ -6,29 +6,58 @@
 /**
  * Convert audio blob to raw Float32Array for Whisper processing
  */
-export async function convertToWAV(audioBlob) {
+let sharedAudioContextPromise;
+
+async function getSharedAudioContext() {
 	if (typeof window === 'undefined') {
 		throw new Error('Audio conversion only available in browser environment');
 	}
 
-	const AudioContext = window.AudioContext || window.webkitAudioContext;
-	if (!AudioContext) {
+	const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+	if (!AudioContextClass) {
 		throw new Error('Web Audio API not supported');
 	}
 
-	// Create AudioContext with 16kHz sample rate for Whisper compatibility
-	const audioContext = new AudioContext({ sampleRate: 16000 });
-
-	try {
-		const arrayBuffer = await audioBlob.arrayBuffer();
-		const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-		const processedAudio = processAudioForWhisper(audioBuffer);
-
-		return processedAudio;
-	} finally {
-		await audioContext.close();
+	if (!sharedAudioContextPromise) {
+		sharedAudioContextPromise = (async () => {
+			const context = new AudioContextClass({ sampleRate: 16000 });
+			context.addEventListener?.('statechange', () => {
+				if (context.state === 'closed') {
+					sharedAudioContextPromise = null;
+				}
+			});
+			return context;
+		})().catch((error) => {
+			sharedAudioContextPromise = null;
+			throw error;
+		});
 	}
+
+	const audioContext = await sharedAudioContextPromise;
+	if (audioContext.state === 'closed') {
+		sharedAudioContextPromise = null;
+		return getSharedAudioContext();
+	}
+
+	if (audioContext.state === 'suspended') {
+		try {
+			await audioContext.resume();
+		} catch (error) {
+			console.warn('[AudioConverter] Failed to resume AudioContext:', error?.message || error);
+		}
+	}
+
+	return audioContext;
+}
+
+/**
+ * Convert audio blob to raw Float32Array for Whisper processing
+ */
+export async function convertToWAV(audioBlob) {
+	const audioContext = await getSharedAudioContext();
+	const arrayBuffer = await audioBlob.arrayBuffer();
+	const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+	return processAudioForWhisper(audioBuffer);
 }
 
 /**
