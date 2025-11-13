@@ -6,8 +6,7 @@
 import { get } from 'svelte/store';
 import { CTA_PHRASES, ANIMATION } from '$lib/constants';
 import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
-import { transcriptionState, transcriptionActions } from '../infrastructure/stores';
-import { getLatestRecordingDraft } from './recordingRecoveryStore';
+import { transcriptionState } from '../infrastructure/stores';
 
 export class RecordingControlsService {
 	constructor(dependencies) {
@@ -22,9 +21,6 @@ export class RecordingControlsService {
 		this.currentCtaIndex = 0;
 		this.onPreloadRequest = null;
 
-		if (typeof window !== 'undefined') {
-			this.restorePendingRecordingDraft();
-		}
 	}
 
 	setGhostComponent(ghostComponent) {
@@ -264,20 +260,6 @@ export class RecordingControlsService {
 		this.onPreloadRequest = null;
 	}
 
-	async restorePendingRecordingDraft() {
-		try {
-			const draft = await getLatestRecordingDraft({ includeBlob: false });
-			if (draft?.id) {
-				transcriptionActions.setPendingRecording({
-					id: draft.id,
-					createdAt: draft.createdAt,
-					...(draft.metadata || {})
-				});
-			}
-		} catch (error) {
-			console.warn('[RecordingControlsService] Failed to restore recording draft:', error);
-		}
-	}
 }
 
 export function createRecordingControlsService(dependencies) {

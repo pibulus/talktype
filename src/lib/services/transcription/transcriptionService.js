@@ -94,6 +94,25 @@ export class TranscriptionService {
 		return await this.transcribeAudio(draft.blob);
 	}
 
+	async restorePendingRecordingDraft() {
+		if (!this.browser) {
+			return;
+		}
+
+		try {
+			const draft = await getLatestRecordingDraft({ includeBlob: false });
+			if (draft?.id) {
+				transcriptionActions.setPendingRecording({
+					id: draft.id,
+					createdAt: draft.createdAt,
+					...(draft.metadata || {})
+				});
+			}
+		} catch (error) {
+			console.warn('[TranscriptionService] Failed to restore pending recording:', error);
+		}
+	}
+
 	startProgressAnimation() {
 		let progress = 0;
 		const animate = () => {

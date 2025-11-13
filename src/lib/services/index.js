@@ -52,6 +52,12 @@ export function initializeServices(options = {}) {
 	// Reset stores to initial state
 	resetStores();
 
+	if (typeof window !== 'undefined') {
+		transcriptionServiceInstance
+			.restorePendingRecordingDraft()
+			.catch((error) => console.warn('Failed to restore pending recording:', error));
+	}
+
 	// Enable debugging if requested
 	if (debug) {
 		eventBusInstance.setDebug(true);
