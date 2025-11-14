@@ -13,16 +13,16 @@
 			name: 'Peach',
 			premium: false
 		},
-		{
-			id: 'mint',
-			name: 'Mint',
-			premium: true
-		},
-		{
-			id: 'bubblegum',
-			name: 'Bubblegum',
-			premium: true
-		},
+	{
+		id: 'mint',
+		name: 'Mint',
+		premium: false
+	},
+	{
+		id: 'bubblegum',
+		name: 'Bubblegum',
+		premium: false
+	},
 		{
 			id: 'rainbow',
 			name: 'Rainbow',
