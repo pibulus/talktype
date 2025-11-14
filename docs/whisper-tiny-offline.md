@@ -2,21 +2,23 @@
 
 ## Trigger Path
 
-- Privacy Mode toggle (`localStorage[STORAGE_KEYS.PRIVACY_MODE] === 'true'`) forces the hybrid service into offline mode.
-- `simpleHybridService.startBackgroundLoad()` preloads Whisper when privacy mode is true and the device is detected as desktop.
-- Once `whisperStatus.isLoaded` flips true, every call flows through `whisperService.transcribeAudio()`.
+- Privacy Mode toggle (`localStorage[STORAGE_KEYS.PRIVACY_MODE] === 'true'`) forces the hybrid service into offline mode on desktop clients.
+- `simpleHybridService.startBackgroundLoad()` kicks off the WASM preload and keeps `whisperLoadPromise` cleared once the attempt resolves so repeated toggles stay responsive.
+- Once `whisperStatus.isLoaded` flips true, every recording sends audio into `whisperService.transcribeAudio()`.
 
 ## Model Selection + Runtime
 
-- Default `userPreferences.whisperModel` is `tiny`; `modelRegistry` maps it to `Xenova/whisper-tiny.en` (117 MB English-only INT8 build) and sets it as the always-on fallback.
-- `whisperService.preloadModel()` pins `env.useIndexedDB`/`env.useBrowserCache` so the tiny ONNX stays in persistent storage.
-- Device detection uses `checkWebGPUSupport()` to pick WebGPU (preferred) or WASM backends; dtype is fp32/q4 on GPU and q8 on WASM.
-- Transcription options clamp generation to greedy (beam_size 1, temperature 0) and skip timestamps/language detection for English tiny.
+- Default `userPreferences.whisperModel` is `tiny`; `modelRegistry` resolves it to `Xenova/whisper-tiny.en` (117 MB English-only INT8 build) and keeps it as the single offline choice.
+- Transformers.js is configured for WASM only: `env.useIndexedDB` + `env.useBrowserCache` are always on, `env.backends.onnx.wasm.numThreads` is tuned to 4/thread cap, and the WebGPU path is explicitly disabled so the model never loads on that backend.
+- After the pipeline loads we run a 0.25 s silent warm-up inference to prime the kernels (`WhisperService.#warmupTranscriber()`), which keeps the next real transcription fast.
+- Persistent storage is requested via `navigator.storage.persist()` so the ONNX cache and saved recording drafts survive longer in browsers.
+- Transcription options land on greedy decode (beam_size 1, temperature 0, no timestamps); every inference takes a Float32Array directly.
 
-## Known Instability
+## Recovery Flow
 
-- Current repro: first two recordings succeed, third returns `{ text: '' }` even though audio validation/metrics look healthy (5.44s, 0.7 peak, 0.044 avg).
-- Logs show WebGPU execution, clean tensor stats, but empty decoder output without thrown errors, suggesting cached decoder state or ONNX session reuse issues after multiple runs.
-- Hard refresh + cache clear (IndexedDB) temporarily restores behavior—points toward stale session buffers rather than audio conversion.
+- Every completed recording now stores its blob plus the converted Float32Array in `talktype-recordings.pending-recordings`. `TranscriptionService.restorePendingRecordingDraft()` runs when services initialize so the UI always knows if a draft exists.
+- `RecordingStatus` surfaces a retry card with duration + “saved x ago” info whenever `transcriptionState.pendingRecording` is populated, letting users retry without re-pressing the record button.
+- `TranscriptionService.retryPendingRecording()` prefers the cached Float32Array; if not available it falls back to reusing the blob, keeping retries instant and avoiding extra decoding work.
+- Gemini API calls are serialized through `simpleHybridService.geminiQueue`, so clicks that happen in rapid succession wait their turn instead of flooding `/api/transcribe`.
 
 _Recorded Oct 2025 to give the next LLM context on how Whisper Tiny is wired into privacy mode and why we're debugging blank outputs._
