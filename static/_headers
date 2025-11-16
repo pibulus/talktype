@@ -1,0 +1,44 @@
+# Netlify Headers for TalkType PWA
+# These headers enhance security and optimize PWA performance
+
+# Global security headers
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(self), geolocation=(), payment=(self)
+
+# Service Worker - never cache
+/service-worker.js
+  Cache-Control: public, max-age=0, must-revalidate
+  Content-Type: application/javascript
+
+# Web App Manifest - validate on each request
+/manifest.json
+  Cache-Control: public, max-age=0, must-revalidate
+  Content-Type: application/manifest+json
+
+# Static assets - cache forever with content hash
+/_app/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Icons and images - long cache
+/icons/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.png
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+
+/*.webp
+  Cache-Control: public, max-age=31536000, immutable
+
+# Offline fallback page
+/offline.html
+  Cache-Control: public, max-age=86400, must-revalidate

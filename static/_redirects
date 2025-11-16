@@ -1,0 +1,5 @@
+# Netlify Redirects for TalkType
+# https://docs.netlify.com/routing/redirects/
+
+# SPA fallback - let SvelteKit handle all routes
+/*    /.netlify/functions/render    200

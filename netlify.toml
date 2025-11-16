@@ -1,0 +1,11 @@
+# Netlify Configuration for TalkType PWA
+# https://docs.netlify.com/configure-builds/file-based-configuration/
+# Note: @sveltejs/adapter-netlify handles most configuration automatically
+
+[build]
+  command = "npm run build"
+  # publish directory is set automatically by adapter
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps --ignore-scripts"
