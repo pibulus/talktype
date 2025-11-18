@@ -7,6 +7,7 @@
 	// Props
 	export let selectedPromptStyle = 'standard';
 	export let changePromptStyle = () => {};
+	export let privacyModeValue = false;
 
 	// State for custom prompt
 	let showCustomInput = false;
@@ -14,6 +15,13 @@
 
 	// Subscribe to custom prompt store
 	$: if ($customPrompt) customPromptText = $customPrompt;
+
+	// Auto-switch to standard when offline mode is enabled with non-standard style
+	$: if (privacyModeValue && selectedPromptStyle !== 'standard') {
+		selectedPromptStyle = 'standard';
+		changePromptStyle('standard');
+		showCustomInput = false;
+	}
 
 	// Available styles - only 3 options now
 	const availableStyles = [
@@ -47,16 +55,29 @@
 		custom: 'Custom'
 	};
 
-	// Style tooltips
-	const styleTooltips = {
+	// Style tooltips - dynamic based on offline mode
+	$: styleTooltips = {
 		standard: 'Clean, professional tone',
-		surlyPirate: 'Pirate lingo & swagger',
-		quillAndInk: 'Victorian literature style',
-		custom: 'Your own instructions (Premium)'
+		surlyPirate: privacyModeValue ? 'Only available with online mode' : 'Pirate lingo & swagger',
+		quillAndInk: privacyModeValue ? 'Only available with online mode' : 'Victorian literature style',
+		custom: privacyModeValue ? 'Only available with online mode' : 'Your own instructions (Premium)'
 	};
 
 	// Handle style selection
 	function handleStyleClick(style) {
+		// Block non-standard styles when offline mode is enabled
+		if (privacyModeValue && style !== 'standard') {
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: {
+						message: '🔒 Custom styles only work with online mode. Disable offline mode to use custom prompts.',
+						type: 'info'
+					}
+				})
+			);
+			return;
+		}
+
 		// Check if custom prompt requires premium
 		if (style === 'custom' && !$isPremium) {
 			// Show premium modal
@@ -99,17 +120,27 @@
 </script>
 
 <div>
+	<!-- Offline mode info banner -->
+	{#if privacyModeValue}
+		<div class="mb-2 rounded-lg border border-purple-200 bg-purple-50/80 p-2">
+			<p class="text-xs text-purple-700">
+				🔒 <strong>Offline mode:</strong> Custom transcription styles require online Gemini API. Standard transcription uses local Whisper model.
+			</p>
+		</div>
+	{/if}
+
 	<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
 		{#each availableStyles as style}
 			<button
 				class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {selectedPromptStyle ===
 				style
 					? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
-					: ''} {style === 'custom' && !$isPremium ? 'locked' : ''}"
+					: ''} {(style === 'custom' && !$isPremium) || (privacyModeValue && style !== 'standard') ? 'locked' : ''}"
 				on:click={() => handleStyleClick(style)}
 				aria-label={styleNames[style] || style}
 				title={styleTooltips[style]}
 				data-style-type={style}
+				disabled={privacyModeValue && style !== 'standard'}
 			>
 				<div class="preview-container mb-2">
 					<div class="preview-ghost-wrapper relative h-12 w-12">
@@ -131,6 +162,13 @@
 						class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-400 text-xs text-white shadow-sm"
 					>
 						✓
+					</div>
+				{:else if privacyModeValue && style !== 'standard'}
+					<div
+						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-xs shadow-sm"
+						title="Requires online mode"
+					>
+						🔒
 					</div>
 				{:else if style === 'custom' && !$isPremium}
 					<div
@@ -169,12 +207,20 @@
 
 	.locked {
 		opacity: 0.6;
-		cursor: pointer;
+		cursor: not-allowed;
 	}
 
 	.locked:hover {
-		opacity: 0.8;
-		border-color: #f59e0b !important;
+		opacity: 0.7;
+	}
+
+	button:disabled {
+		cursor: not-allowed;
+		pointer-events: auto;
+	}
+
+	button:disabled:hover {
+		box-shadow: none;
 	}
 
 	textarea {

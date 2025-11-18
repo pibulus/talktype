@@ -357,7 +357,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 			<!-- Prompt Style Selection Section -->
 			<div class="space-y-2">
 				<h4 class="text-sm font-bold text-gray-700">Choose Transcription Style</h4>
-				<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} />
+				<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} {privacyModeValue} />
 			</div>
 
 			<!-- Premium Features Section (if premium) OR Upsell (if free) -->
