@@ -37,12 +37,12 @@ export const PULSE_CONFIG = {
 
 export const EYE_CONFIG = {
 	CLOSED_SCALE: 0.05, // Scale factor when eyes are closed
-	X_MULTIPLIER: 4, // Horizontal movement multiplier for eyes
-	Y_MULTIPLIER: 2, // Vertical movement multiplier for eyes
+	X_MULTIPLIER: 6, // Horizontal movement multiplier for eyes (increased for better visibility)
+	Y_MULTIPLIER: 3, // Vertical movement multiplier for eyes (increased for better visibility)
 	X_DIVISOR: 3, // Divisor for max horizontal tracking distance
 	Y_DIVISOR: 3, // Divisor for max vertical tracking distance
 	DEAD_ZONE: 0.05, // Dead zone for eye movement (0-1)
-	SMOOTHING: 0.35, // Smoothing factor for eye movement (0-1) - Higher = more responsive
+	SMOOTHING: 0.45, // Smoothing factor for eye movement (0-1) - Higher = more responsive
 	REACT_DELAY: 500, // Delay before reacting to transcript (ms)
 	TEXT_THRESHOLD: 20, // Threshold for "long" transcript reactions
 	BLINK_TRANSITION: '0.075s cubic-bezier(0.4, 0.0, 0.2, 1)' // Transition for smooth eye blinks

@@ -174,6 +174,42 @@ export function performDoubleBlink(elements, onComplete) {
 }
 
 /**
+ * Perform an asymmetric blink animation (one eye bigger/smaller than the other)
+ * This creates a playful "tripping balls" effect
+ *
+ * @param {Object} elements - DOM element references
+ * @param {Function} onComplete - Optional callback when blink completes
+ */
+export function performAsymmetricBlink(elements, onComplete) {
+	const { leftEye, rightEye } = elements;
+
+	// Get current eye position for proper restoration
+	const state = get(ghostStateStore);
+	const { x, y } = state.eyePosition;
+
+	// Generate random scales for each eye (0.3 to 1.0)
+	const leftScale = 0.3 + Math.random() * 0.7;
+	const rightScale = 0.3 + Math.random() * 0.7;
+
+	// Apply asymmetric scales while maintaining eye position
+	const xTransform = x * EYE_CONFIG.X_MULTIPLIER;
+	const yTransform = y * EYE_CONFIG.Y_MULTIPLIER;
+
+	leftEye.style.transform = `translate(${xTransform}px, ${yTransform}px) scaleY(${leftScale})`;
+	rightEye.style.transform = `translate(${xTransform}px, ${yTransform}px) scaleY(${rightScale})`;
+
+	// Return to normal after duration
+	setTimeout(() => {
+		// Restore normal transforms
+		applyEyeTransforms(leftEye, rightEye);
+
+		if (onComplete) {
+			onComplete();
+		}
+	}, 300);
+}
+
+/**
  * Apply random ambient blinking in idle state
  *
  * @param {Object} elements - DOM element references
@@ -208,7 +244,10 @@ export function applyRandomBlinkEffect(elements, config = {}) {
 			// Execute blink based on random chance
 			const blinkTypeRandom = seedRandom(seed, blinkCounter++, 0, 1);
 
-			if (blinkTypeRandom < BLINK_CONFIG.DOUBLE_CHANCE) {
+			// 2% chance for asymmetric "tripping balls" blink
+			if (blinkTypeRandom < 0.02) {
+				performAsymmetricBlink(elements, () => scheduleNextBlink());
+			} else if (blinkTypeRandom < 0.02 + BLINK_CONFIG.DOUBLE_CHANCE) {
 				performDoubleBlink(elements, () => scheduleNextBlink());
 			} else {
 				performSingleBlink(elements, () => scheduleNextBlink());
@@ -369,6 +408,7 @@ export default {
 	applyEyeTransforms,
 	performSingleBlink,
 	performDoubleBlink,
+	performAsymmetricBlink,
 	applyRandomBlinkEffect,
 	applyRhythmicBlinkEffect,
 	applyQuickBlinkEffect,

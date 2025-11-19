@@ -134,17 +134,18 @@
 
 /* ========================================
    WOBBLE ANIMATIONS - Simplified
+   Applied to parent element to avoid conflict with recording-pulse
    ======================================== */
 
-.ghost-wobble-group.wobble-left {
+#ghost-spin-pivot.wobble-left {
 	animation: ghost-wobble-left 0.4s ease-out;
 }
 
-.ghost-wobble-group.wobble-right {
+#ghost-spin-pivot.wobble-right {
 	animation: ghost-wobble-right 0.4s ease-out;
 }
 
-.ghost-wobble-group.wobble-both {
+#ghost-spin-pivot.wobble-both {
 	animation: ghost-wobble-both 0.6s ease-out;
 }
 
@@ -182,6 +183,95 @@
 }
 
 /* ========================================
+   SLEEP & WAKE ANIMATIONS - Enhanced personality
+   ======================================== */
+
+/* Falling asleep - gradual eye closing with drowsy progression */
+.ghost-container.asleep .ghost-eye {
+	animation: ghost-falling-asleep 5s ease-in-out 1 forwards;
+	transform-origin: center center;
+}
+
+/* Waking up - shake the whole ghost */
+.ghost-container.waking-up #ghost-spin-pivot {
+	animation: ghost-wake-up-shake 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+	transform-origin: center center;
+}
+
+/* Waking up - blink eyes open */
+.ghost-container.waking-up .ghost-eye {
+	animation: ghost-wake-up-blink 0.8s ease-in-out 1 forwards;
+	transform-origin: center center;
+}
+
+/* Gentle ambient floating for idle state */
+.ghost-container:not(.recording):not(.asleep) .ghost-wobble-group {
+	animation: gentle-float 3s ease-in-out infinite;
+	animation-delay: 1.5s;
+}
+
+@keyframes gentle-float {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-3px);
+	}
+}
+
+@keyframes ghost-falling-asleep {
+	0% {
+		transform: scaleY(1);
+	}
+	40% {
+		transform: scaleY(0.5);
+	}
+	70% {
+		transform: scaleY(0.3);
+	}
+	100% {
+		transform: scaleY(0.15);
+	}
+}
+
+@keyframes ghost-wake-up-shake {
+	10%,
+	90% {
+		transform: translate3d(-1px, 0, 0) scale(1.01) rotate(-0.5deg);
+	}
+	20%,
+	80% {
+		transform: translate3d(2px, 0, 0) scale(0.99) rotate(0.5deg);
+	}
+	30%,
+	50%,
+	70% {
+		transform: translate3d(-3px, 0, 0) scale(1.02) rotate(-0.8deg);
+	}
+	40%,
+	60% {
+		transform: translate3d(3px, 0, 0) scale(0.98) rotate(0.8deg);
+	}
+	100% {
+		transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+	}
+}
+
+@keyframes ghost-wake-up-blink {
+	0%,
+	50% {
+		transform: scaleY(0.05);
+	}
+	70% {
+		transform: scaleY(1.2);
+	}
+	100% {
+		transform: scaleY(1);
+	}
+}
+
+/* ========================================
    INITIAL LOAD - Single animation
    ======================================== */
 
@@ -212,7 +302,7 @@
 
 .ghost-eye {
 	transform-origin: center center;
-	transition: transform 0.08s cubic-bezier(0.4, 0, 0.2, 1);
+	/* No transition - JS smoothing handles eye movement for better responsiveness */
 }
 
 /* Blink uses scaleY only (GPU accelerated) */
@@ -231,12 +321,47 @@
 }
 
 /* ========================================
-   HOVER STATES - Simple scale
+   HOVER STATES - Glow and continuous animation
    ======================================== */
 
 .ghost-container:hover .ghost-svg {
-	transform: scale(1.02) translateY(-2px);
-	transition: transform 0.3s ease;
+	animation: ghost-hover 1.2s ease-in-out infinite alternate;
+}
+
+/* Multi-layer drop-shadow glow on hover per theme */
+.ghost-container:hover.theme-peach {
+	filter: drop-shadow(0 0 20px rgba(255, 130, 170, 0.85))
+		drop-shadow(0 0 30px rgba(255, 160, 180, 0.7))
+		drop-shadow(0 0 45px rgba(255, 180, 190, 0.5));
+}
+
+.ghost-container:hover.theme-mint {
+	filter: drop-shadow(0 0 20px rgba(80, 235, 170, 0.85))
+		drop-shadow(0 0 30px rgba(60, 220, 240, 0.65))
+		drop-shadow(0 0 45px rgba(130, 255, 140, 0.5));
+}
+
+.ghost-container:hover.theme-bubblegum {
+	filter: drop-shadow(0 0 20px rgba(210, 120, 255, 0.85))
+		drop-shadow(0 0 30px rgba(255, 110, 180, 0.65))
+		drop-shadow(0 0 45px rgba(170, 190, 255, 0.5));
+}
+
+.ghost-container:hover.theme-rainbow {
+	filter: drop-shadow(0 0 20px rgba(180, 130, 255, 0.85))
+		drop-shadow(0 0 30px rgba(130, 160, 255, 0.7))
+		drop-shadow(0 0 45px rgba(140, 180, 255, 0.6))
+		drop-shadow(0 0 60px rgba(160, 220, 255, 0.5))
+		drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
+}
+
+@keyframes ghost-hover {
+	0% {
+		transform: scale(1.005) translateY(0);
+	}
+	100% {
+		transform: scale(1.015) translateY(-3px);
+	}
 }
 
 /* ========================================

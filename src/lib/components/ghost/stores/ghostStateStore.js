@@ -220,17 +220,17 @@ function createGhostStateStore() {
 	 * @returns {void}
 	 */
 	function applyWobbleAnimation(type) {
-		const wobbleGroup = document.getElementById('ghost-wobble-group');
-		if (!wobbleGroup) {
-			debugLog(`[Wobble] Could not find #ghost-wobble-group element for ${type}`, 'warn');
+		const spinPivot = document.getElementById('ghost-spin-pivot');
+		if (!spinPivot) {
+			debugLog(`[Wobble] Could not find #ghost-spin-pivot element for ${type}`, 'warn');
 			return;
 		}
 
 		// Check if initial load is running before cleaning
-		const hasInitialLoad = wobbleGroup.classList.contains('initial-load-effect');
+		const hasInitialLoad = spinPivot.classList.contains('initial-load-effect');
 
 		// Clean up any existing animation classes first, including initial load
-		wobbleGroup.classList.remove(
+		spinPivot.classList.remove(
 			'initial-load-effect',
 			'wobble-left',
 			'wobble-right',
@@ -243,23 +243,23 @@ function createGhostStateStore() {
 		// Small delay if initial load effect was present to let animation settle
 		if (hasInitialLoad) {
 			setTimeout(() => {
-				wobbleGroup.classList.add(wobbleClass);
+				spinPivot.classList.add(wobbleClass);
 				debugLog(`[Wobble] Applied ${wobbleClass} after initial load delay`);
 			}, 150);
 			return;
 		}
 
 		// Force reflow before adding class
-		void wobbleGroup.offsetWidth;
-		wobbleGroup.classList.add(wobbleClass);
-		debugLog(`[Wobble] Applied ${wobbleClass} to wobble group`);
+		void spinPivot.offsetWidth;
+		spinPivot.classList.add(wobbleClass);
+		debugLog(`[Wobble] Applied ${wobbleClass} to spin pivot`);
 
 		// Schedule cleanup
 		const timeoutKey = `${type}WobbleCleanup`;
 		const timeoutId = setTimeout(() => {
-			wobbleGroup.classList.remove(wobbleClass);
+			spinPivot.classList.remove(wobbleClass);
 			clearStateTimeout(timeoutKey);
-			debugLog(`[Wobble] Removed ${wobbleClass} from wobble group`);
+			debugLog(`[Wobble] Removed ${wobbleClass} from spin pivot`);
 		}, WOBBLE_CONFIG.DURATION + 50);
 
 		// Store timeout ID for potential cleanup
