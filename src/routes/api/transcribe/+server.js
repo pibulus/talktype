@@ -1,32 +1,21 @@
 import { json } from '@sveltejs/kit';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { GEMINI_API_KEY } from '$env/static/private';
 
-// Initialize Gemini (server-side only)
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-// Using Gemini 2.5 Flash with optimized generation config for speed
-const model = genAI.getGenerativeModel({
-	model: 'gemini-2.5-flash',
-	generationConfig: {
-		temperature: 0.2, // Lower temperature for more deterministic transcription
-		topP: 0.8, // Focused responses for accuracy
-		topK: 40, // Limit token selection for speed
-		candidateCount: 1, // Only need one transcription
-		maxOutputTokens: 8192 // Reasonable limit for transcriptions
-	}
-});
+const MODEL_ID = 'gemini-2.5-flash-lite';
+const GENERATION_CONFIG = {
+	temperature: 0.2,
+	topP: 0.8,
+	topK: 40,
+	candidateCount: 1,
+	maxOutputTokens: 8192
+};
 
-// Helper to convert base64 to generative part
-function base64ToGenerativePart(base64Data, mimeType) {
-	return {
-		inlineData: {
-			data: base64Data,
-			mimeType: mimeType
-		}
-	};
-}
+const genAI =
+	GEMINI_API_KEY && GEMINI_API_KEY.length > 0
+		? new GoogleGenAI({ apiKey: GEMINI_API_KEY })
+		: null;
 
-// Get the transcription prompt based on style
 function getTranscriptionPrompt(style = 'standard') {
 	const prompts = {
 		standard:
@@ -40,87 +29,107 @@ function getTranscriptionPrompt(style = 'standard') {
 		codeWhisperer:
 			'Transcribe this audio file accurately and completely, but reformat it into clear, structured, technical language suitable for a coding prompt. Remove redundancies, organize thoughts logically, use precise technical terminology, and structure content with clear sections. Return only the optimized, programmer-friendly transcription.',
 		quillAndInk:
-			'Transcribe this audio file with the eloquence and stylistic flourishes of a 19th century Victorian novelist, in the vein of Jane Austen or Charles Dickens. Employ elaborate sentences, period-appropriate vocabulary, literary devices, and a generally formal and ornate prose style. The transcription should maintain the original meaning but transform the manner of expression entirely.'
+			'Transcribe this audio file with the eloquence and stylistic flourishes of a 19th century Victorian novelist, in the vein of Jane Austen or Charles Dickens. Employ elaborate sentences, period-appropriate vocabulary, literary devices, and a generally formal and ornate prose style. The transcription should maintain the original meaning but transform the manner of expression entirely.',
+		pirateProphet:
+			'Transcribe this audio file as the voice of a salty prophet. Keep the original meaning while wrapping it in a short, mystical pirate tone with cryptic warnings.',
+		diarist:
+			'Transcribe this exactly as spoken and label distinct speaker turns (Speaker 1 / Speaker 2). Include timestamps [HH:MM:SS] every 30 seconds.'
 	};
 
 	return prompts[style] || prompts.standard;
 }
 
 export async function POST({ request }) {
-	console.log('[API /transcribe] Request received');
-	try {
-		const { audioData, mimeType, promptStyle } = await request.json();
-		console.log('[API /transcribe] Parsed request body');
+	if (!genAI) {
+		return json({ error: 'Server Error: Missing Gemini API key' }, { status: 500 });
+	}
 
-		if (!audioData || !mimeType) {
-			console.error('[API /transcribe] Missing audioData or mimeType');
+	try {
+		const formData = await request.formData();
+		const file = formData.get('audio_file');
+		const promptStyle = formData.get('prompt_style')?.toString() || 'standard';
+
+		if (!file || typeof file === 'string' || typeof file.arrayBuffer !== 'function') {
+			console.error('[API /transcribe] Missing or invalid audio file');
 			return json(
 				{
-					error: "Hmm, looks like the audio didn't make it through. Mind trying that again?"
+					error: "Hmm, looks like the audio file didn't make it through. Mind trying that again?"
 				},
 				{ status: 400 }
 			);
 		}
 
-		// Log audio size for debugging
-		const audioSizeKB = ((audioData.length * 0.75) / 1024).toFixed(2);
+		const mimeType = file.type || 'audio/webm';
+		const displayName = file.name || `recording-${Date.now()}`;
+		const audioSizeKB = typeof file.size === 'number' ? (file.size / 1024).toFixed(2) : 'unknown';
+
 		console.log(
-			`[API /transcribe] Processing audio: ${audioSizeKB}KB, type: ${mimeType}, style: ${promptStyle}`
+			`[API /transcribe] Received ${audioSizeKB}KB of ${mimeType} (${displayName}), preferred style: ${promptStyle}`
 		);
 
-		// Get the appropriate prompt for the style
 		const prompt = getTranscriptionPrompt(promptStyle);
 
-		// Convert audio data to format Gemini expects
-		const audioPart = base64ToGenerativePart(audioData, mimeType);
-
-		// Generate transcription
-		console.log('[API /transcribe] Calling Gemini API...');
-		const result = await model.generateContent([prompt, audioPart]);
-		let transcription = result.response.text();
-
-		// Log transcription length for debugging repetition issues
-		console.log(
-			`[API /transcribe] ✅ Transcription complete: ${transcription.length} chars, text: "${transcription.substring(0, 100)}..."`
-		);
-
-		// Fast sentence-level deduplication (O(n) instead of O(n²))
-		const sentences = transcription.match(/[^.!?]+[.!?]+/g) || [transcription];
-		const seenSentences = new Set();
-		const cleanedSentences = [];
-
-		for (const sentence of sentences) {
-			const trimmed = sentence.trim();
-			if (trimmed && !seenSentences.has(trimmed)) {
-				cleanedSentences.push(trimmed);
-				seenSentences.add(trimmed);
+		const uploadResult = await genAI.files.upload({
+			file,
+			config: {
+				mimeType,
+				displayName
 			}
+		});
+
+		if (!uploadResult?.uri) {
+			throw new Error('File upload to Gemini failed');
 		}
 
-		transcription = cleanedSentences.join(' ');
+		console.log('[API /transcribe] Uploaded audio to Gemini');
 
-		console.log('[API /transcribe] Sending response to client');
+		const result = await genAI.models.generateContent({
+			model: MODEL_ID,
+			contents: [
+				{
+					parts: [
+						{ text: prompt },
+						{
+							fileData: {
+								mimeType: uploadResult.mimeType || mimeType,
+								fileUri: uploadResult.uri
+							}
+						}
+					]
+				}
+			],
+			config: GENERATION_CONFIG
+		});
+
+		let transcription = result.text || '';
+
+		if (!transcription && result.candidates?.length) {
+			const candidate = result.candidates[0];
+			const parts = candidate.content?.parts || [];
+			transcription = parts
+				.map((part) => (part.text ? part.text.trim() : ''))
+				.filter(Boolean)
+				.join(' ');
+		}
+
+		console.log('[API /transcribe] ✅ Transcription complete');
+
 		return json({ transcription });
 	} catch (error) {
-		console.error('[API /transcribe] ❌ Error:', error.message, error.stack);
+		console.error('[API /transcribe] ❌ Error:', error);
 
-		// Friendly error messages based on the error type
 		let friendlyMessage = 'Oops, the ghost got a bit confused there. Give it another shot?';
 
-		if (error.message?.includes('quota')) {
+		const message = error?.message?.toString()?.toLowerCase() ?? '';
+		if (message.includes('quota') || message.includes('limit')) {
 			friendlyMessage =
-				"The ghost needs a quick breather - we've hit our daily limit. Try again tomorrow?";
-		} else if (error.message?.includes('network')) {
+				"The ghost needs a quick breather - we've hit our limit. Try again in a moment?";
+		} else if (message.includes('network')) {
 			friendlyMessage = "Can't reach the transcription service right now. Check your internet?";
-		} else if (error.message?.includes('timeout')) {
+		} else if (message.includes('timeout')) {
 			friendlyMessage = 'That took longer than expected. Maybe try a shorter recording?';
 		}
 
-		return json(
-			{
-				error: friendlyMessage
-			},
-			{ status: 500 }
-		);
+		return json({ error: friendlyMessage }, { status: 500 });
 	}
 }

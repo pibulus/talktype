@@ -125,22 +125,18 @@ class SimpleHybridService {
 
 	async _transcribeWithGeminiInternal(audioBlob) {
 		try {
-			const base64Audio = await this.blobToBase64(audioBlob);
 			const promptStyle = get(userPreferences).promptStyle || 'standard';
 			const controller = new AbortController();
 			const timeoutId = setTimeout(() => controller.abort(), 30000);
 
 			try {
+				const formData = new FormData();
+				formData.append('audio_file', audioBlob, `recording-${Date.now()}.webm`);
+				formData.append('prompt_style', promptStyle);
+
 				const response = await fetch('/api/transcribe', {
 					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify({
-						audioData: base64Audio,
-						mimeType: audioBlob.type || 'audio/webm',
-						promptStyle
-					}),
+					body: formData,
 					signal: controller.signal,
 					keepalive: true
 				});
@@ -148,7 +144,7 @@ class SimpleHybridService {
 				clearTimeout(timeoutId);
 
 				if (!response.ok) {
-					const error = await response.json();
+					const error = await response.json().catch(() => ({}));
 					throw new Error(error.error || 'API transcription failed');
 				}
 
@@ -156,7 +152,6 @@ class SimpleHybridService {
 				return transcription;
 			} catch (fetchError) {
 				clearTimeout(timeoutId);
-
 				if (fetchError.name === 'AbortError') {
 					throw new Error('Transcription took too long (30s timeout). Try a shorter recording?');
 				}
@@ -175,23 +170,6 @@ class SimpleHybridService {
 
 			throw error;
 		}
-	}
-
-
-	/**
-	 * Convert blob to base64 string
-	 */
-	async blobToBase64(blob) {
-		return new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onloadend = () => {
-				// Remove the data URL prefix to get just the base64 string
-				const base64 = reader.result.split(',')[1];
-				resolve(base64);
-			};
-			reader.onerror = reject;
-			reader.readAsDataURL(blob);
-		});
 	}
 
 	/**
