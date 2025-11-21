@@ -36,6 +36,10 @@ npm run dev
 npm run dev -- --open
 ```
 
+> 🔐 **New**: the first time you trigger any Gemini-powered feature, the browser
+> will prompt you for the `API_AUTH_TOKEN` from `.env`. The token is only used
+> to open an HttpOnly session cookie so random clients can’t drain your quota.
+
 ## Building
 
 To create a production version of your app:

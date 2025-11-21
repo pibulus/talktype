@@ -1,3 +1,5 @@
+import { ensureApiSession } from './apiSession.js';
+
 // Animation generation service - uses server-side API
 export const animationGenerationService = {
 	async generateAnimation(description) {
@@ -5,6 +7,7 @@ export const animationGenerationService = {
 			console.log('🎭 Generating animation...');
 
 			// Call server-side API endpoint
+			await ensureApiSession();
 			const response = await fetch('/api/generate-animation', {
 				method: 'POST',
 				headers: {

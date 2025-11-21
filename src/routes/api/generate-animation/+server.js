@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '$env/static/private';
+import { guardRequest } from '$lib/server/requestGuard.js';
 
 // Initialize Gemini (server-side only)
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -58,9 +59,14 @@ function cleanMarkdownResponse(text) {
 	return text;
 }
 
-export async function POST({ request }) {
+export async function POST(event) {
 	try {
-		const { description } = await request.json();
+		const guardResponse = guardRequest(event);
+		if (guardResponse) {
+			return guardResponse;
+		}
+
+		const { description } = await event.request.json();
 
 		if (!description) {
 			return json(

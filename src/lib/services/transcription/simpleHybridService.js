@@ -8,6 +8,7 @@ import { whisperService, whisperStatus } from './whisper/whisperService';
 import { userPreferences } from '../infrastructure/stores';
 import { browser } from '$app/environment';
 import { STORAGE_KEYS } from '$lib/constants';
+import { ensureApiSession } from '../apiSession.js';
 
 class SimpleHybridService {
 	constructor() {
@@ -130,6 +131,7 @@ class SimpleHybridService {
 			const timeoutId = setTimeout(() => controller.abort(), 30000);
 
 			try {
+				await ensureApiSession();
 				const formData = new FormData();
 				formData.append('audio_file', audioBlob, `recording-${Date.now()}.webm`);
 				formData.append('prompt_style', promptStyle);

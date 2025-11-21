@@ -1,6 +1,8 @@
 import { json } from '@sveltejs/kit';
 import { GoogleGenAI } from '@google/genai';
+import { env } from '$env/dynamic/private';
 import { GEMINI_API_KEY } from '$env/static/private';
+import { guardRequest } from '$lib/server/requestGuard.js';
 
 const MODEL_ID = 'gemini-2.5-flash-lite';
 const GENERATION_CONFIG = {
@@ -15,6 +17,7 @@ const genAI =
 	GEMINI_API_KEY && GEMINI_API_KEY.length > 0
 		? new GoogleGenAI({ apiKey: GEMINI_API_KEY })
 		: null;
+const MAX_UPLOAD_BYTES = Number(env.MAX_UPLOAD_BYTES ?? `${50 * 1024 * 1024}`);
 
 function getTranscriptionPrompt(style = 'standard') {
 	const prompts = {
@@ -39,13 +42,18 @@ function getTranscriptionPrompt(style = 'standard') {
 	return prompts[style] || prompts.standard;
 }
 
-export async function POST({ request }) {
+export async function POST(event) {
 	if (!genAI) {
 		return json({ error: 'Server Error: Missing Gemini API key' }, { status: 500 });
 	}
 
 	try {
-		const formData = await request.formData();
+		const guardResponse = guardRequest(event);
+		if (guardResponse) {
+			return guardResponse;
+		}
+
+		const formData = await event.request.formData();
 		const file = formData.get('audio_file');
 		const promptStyle = formData.get('prompt_style')?.toString() || 'standard';
 
@@ -59,6 +67,16 @@ export async function POST({ request }) {
 			);
 		}
 
+		if (typeof file.size === 'number' && file.size > MAX_UPLOAD_BYTES) {
+			const mb = (MAX_UPLOAD_BYTES / 1024 / 1024).toFixed(1);
+			return json(
+				{
+					error: `That file is a bit too chunky. Please keep recordings under ${mb} MB so the ghost can chew through them.`
+				},
+				{ status: 413 }
+			);
+		}
+
 		const mimeType = file.type || 'audio/webm';
 		const displayName = file.name || `recording-${Date.now()}`;
 		const audioSizeKB = typeof file.size === 'number' ? (file.size / 1024).toFixed(2) : 'unknown';
@@ -69,52 +87,66 @@ export async function POST({ request }) {
 
 		const prompt = getTranscriptionPrompt(promptStyle);
 
-		const uploadResult = await genAI.files.upload({
-			file,
-			config: {
-				mimeType,
-				displayName
-			}
-		});
+		let uploadedFileName = null;
 
-		if (!uploadResult?.uri) {
-			throw new Error('File upload to Gemini failed');
-		}
-
-		console.log('[API /transcribe] Uploaded audio to Gemini');
-
-		const result = await genAI.models.generateContent({
-			model: MODEL_ID,
-			contents: [
-				{
-					parts: [
-						{ text: prompt },
-						{
-							fileData: {
-								mimeType: uploadResult.mimeType || mimeType,
-								fileUri: uploadResult.uri
-							}
-						}
-					]
+		try {
+			const uploadResult = await genAI.files.upload({
+				file,
+				config: {
+					mimeType,
+					displayName
 				}
-			],
-			config: GENERATION_CONFIG
-		});
+			});
 
-		let transcription = result.text || '';
+			if (!uploadResult?.uri) {
+				throw new Error('File upload to Gemini failed');
+			}
 
-		if (!transcription && result.candidates?.length) {
-			const candidate = result.candidates[0];
-			const parts = candidate.content?.parts || [];
-			transcription = parts
-				.map((part) => (part.text ? part.text.trim() : ''))
-				.filter(Boolean)
-				.join(' ');
+			uploadedFileName = uploadResult?.name ?? uploadResult?.file?.name ?? null;
+
+			console.log('[API /transcribe] Uploaded audio to Gemini');
+
+			const result = await genAI.models.generateContent({
+				model: MODEL_ID,
+				contents: [
+					{
+						parts: [
+							{ text: prompt },
+							{
+								fileData: {
+									mimeType: uploadResult.mimeType || mimeType,
+									fileUri: uploadResult.uri
+								}
+							}
+						]
+					}
+				],
+				config: GENERATION_CONFIG
+			});
+
+			let transcription = result.text || '';
+
+			if (!transcription && result.candidates?.length) {
+				const candidate = result.candidates[0];
+				const parts = candidate.content?.parts || [];
+				transcription = parts
+					.map((part) => (part.text ? part.text.trim() : ''))
+					.filter(Boolean)
+					.join(' ');
+			}
+
+			console.log('[API /transcribe] ✅ Transcription complete');
+
+			return json({ transcription });
+		} finally {
+			if (uploadedFileName) {
+				try {
+					await genAI.files.delete(uploadedFileName);
+				} catch (cleanupError) {
+					console.warn('⚠️ Failed to delete Gemini file', uploadedFileName, cleanupError);
+				}
+			}
 		}
-
-		console.log('[API /transcribe] ✅ Transcription complete');
-
-		return json({ transcription });
 	} catch (error) {
 		console.error('[API /transcribe] ❌ Error:', error);
 
