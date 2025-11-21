@@ -85,7 +85,9 @@ export class TranscriptionService {
 
 		const draft = await getLatestRecordingDraft({ includeBlob: true, includeFloat: true });
 
-		const audioInput = draft?.floatSamples instanceof Float32Array ? draft.floatSamples : draft?.blob;
+		const audioInput =
+			draft?.blob ??
+			(draft?.floatSamples instanceof Float32Array ? draft.floatSamples : null);
 
 		if (!audioInput) {
 			transcriptionActions.clearPendingRecording();
