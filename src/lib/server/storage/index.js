@@ -1,7 +1,7 @@
 import { dev } from '$app/environment';
 import path from 'path';
 import { FileSystemAdapter } from './FileSystemAdapter.js';
-import { MemoryAdapter } from './MemoryAdapter.js';
+import { NetlifyBlobsAdapter } from './NetlifyBlobsAdapter.js';
 
 // Factory to get the appropriate storage adapter
 function createStorage() {
@@ -10,9 +10,9 @@ function createStorage() {
 		console.log('📂 [Storage] Using FileSystemAdapter (Dev)');
 		return new FileSystemAdapter(dataDir);
 	} else {
-		// TODO: Replace with persistent storage (Redis, Blob, DB) for production
-		console.log('🧠 [Storage] Using MemoryAdapter (Prod - Ephemeral)');
-		return new MemoryAdapter();
+		// Production: Use Netlify Blobs for persistent storage
+		console.log('📦 [Storage] Using NetlifyBlobsAdapter (Production)');
+		return new NetlifyBlobsAdapter();
 	}
 }
 
