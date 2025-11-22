@@ -1,36 +1,46 @@
 import { env } from '$env/dynamic/private';
-import { SESSION_COOKIE_NAME, validateSession } from './sessionStore.js';
-
-const allowedOrigins = (env.ALLOWED_ORIGINS ?? 'http://localhost:5173')
-	.split(',')
-	.map((origin) => origin.trim())
-	.filter(Boolean);
+import { createSession, validateSession } from './cookieStore.js';
+import { get as getRate, set as setRate, clearExpired } from './fileStore.js';
+import { json } from '@sveltejs/kit';
 
 const RATE_LIMIT_WINDOW_MS = Number(env.API_RATE_WINDOW_MS ?? '60000');
 const RATE_LIMIT_MAX = Number(env.API_RATE_LIMIT ?? '60');
 const authToken = env.API_AUTH_TOKEN?.trim() ?? null;
 
-const rateMap = new Map();
-
-export function guardRequest(event) {
+export async function guardRequest(event) {
 	if (!authToken) {
 		return null;
 	}
 
-	const authResponse = enforceAuth(event);
+	const authResponse = await enforceAuth(event);
 	if (authResponse) return authResponse;
 
-	const originResponse = enforceOrigin(event);
-	if (originResponse) return originResponse;
-
-	const rateResponse = enforceRateLimit(event);
+	const rateResponse = await enforceRateLimit(event);
 	if (rateResponse) return rateResponse;
 
 	return null;
 }
 
-function enforceAuth(event) {
-	if (validateSession(event.cookies.get(SESSION_COOKIE_NAME))) {
+export async function checkSession(event) {
+	if (!authToken) {
+		return true; // Auth is disabled
+	}
+	return await validateSession(event);
+}
+
+export async function verifyTokenAndCreateSession(token, event) {
+	if (!authToken) {
+		throw new Error('Auth not configured');
+	}
+	if (!token || token.trim() !== authToken) {
+		return false;
+	}
+	await createSession(event);
+	return true;
+}
+
+async function enforceAuth(event) {
+	if (await validateSession(event)) {
 		return null;
 	}
 
@@ -53,22 +63,16 @@ function enforceAuth(event) {
 	return null;
 }
 
-function enforceOrigin(event) {
-	if (allowedOrigins.length === 0) return null;
-	const origin = event.request.headers.get('origin');
-	if (!origin) return null;
-	if (allowedOrigins.includes(origin)) return null;
-	return jsonResponse({ error: 'Origin not allowed' }, 403);
-}
-
-function enforceRateLimit(event) {
+async function enforceRateLimit(event) {
 	if (RATE_LIMIT_MAX <= 0 || RATE_LIMIT_WINDOW_MS <= 0) {
 		return null;
 	}
 
 	const key = getClientKey(event);
 	const now = Date.now();
-	const entry = rateMap.get(key) ?? { count: 0, windowStart: now };
+	
+	await clearExpired(RATE_LIMIT_WINDOW_MS); // Clean up expired entries before processing
+	let entry = (await getRate(key)) ?? { count: 0, windowStart: now };
 
 	if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
 		entry.count = 0;
@@ -76,7 +80,7 @@ function enforceRateLimit(event) {
 	}
 
 	entry.count += 1;
-	rateMap.set(key, entry);
+	await setRate(key, entry);
 
 	if (entry.count > RATE_LIMIT_MAX) {
 		return jsonResponse(
@@ -106,7 +110,7 @@ function getClientKey(event) {
 }
 
 function unauthorizedResponse() {
-	return jsonResponse({ error: 'Unauthorized' }, 401);
+	return json({ error: 'Unauthorized' }, { status: 401 });
 }
 
 function jsonResponse(body, status) {
@@ -115,3 +119,4 @@ function jsonResponse(body, status) {
 		headers: { 'Content-Type': 'application/json' }
 	});
 }
+

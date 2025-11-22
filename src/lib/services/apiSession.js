@@ -1,3 +1,5 @@
+import { showModal, hideModal } from '$lib/stores/modal';
+
 let inFlightSession = null;
 
 export async function ensureApiSession() {
@@ -13,7 +15,7 @@ export async function ensureApiSession() {
 			return;
 		}
 
-		await promptForToken();
+		await promptForTokenWithModal();
 	})().finally(() => {
 		inFlightSession = null;
 	});
@@ -21,20 +23,35 @@ export async function ensureApiSession() {
 	return inFlightSession;
 }
 
-async function promptForToken() {
-	const token = window.prompt('Enter the API auth token to use TalkType:')?.trim();
+function promptForTokenWithModal() {
+    return new Promise((resolve, reject) => {
+        const props = {
+            onSubmit: async (token) => {
+                try {
+                    const response = await fetch('/api/auth', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token })
+                    });
 
-	if (!token) {
-		throw new Error('API auth token is required to continue.');
-	}
-
-	const response = await fetch('/api/auth', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ token })
-	});
-
-	if (!response.ok) {
-		throw new Error('Invalid API auth token');
-	}
+                    if (!response.ok) {
+                        throw new Error('Invalid API auth token');
+                    }
+                    
+                    hideModal();
+                    resolve();
+                } catch (error) {
+                    // TODO: Show error in the modal
+                    console.error(error);
+                    reject(error);
+                }
+            },
+            onClose: () => {
+                hideModal();
+                reject(new Error('API auth token is required to continue.'));
+            }
+        };
+        showModal('auth', props);
+    });
 }
+

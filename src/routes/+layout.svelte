@@ -3,8 +3,17 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { cssVariables } from '$lib/components/ghost/themeStore';
+	import { modal } from '$lib/stores/modal';
+	import { AboutModal, AuthModal, ExtensionModal, IntroModal } from '$lib/components/modals';
 
 	let { children } = $props();
+
+	const modals = {
+		about: AboutModal,
+		auth: AuthModal,
+		extension: ExtensionModal,
+		intro: IntroModal
+	};
 
 	// ===================================================================
 	// PRE-INITIALIZE THEME CSS VARIABLES
@@ -38,3 +47,8 @@
 </script>
 
 {@render children()}
+
+{#if $modal}
+	<svelte:component this={modals[$modal.name]} {...$modal.props} />
+{/if}
+
