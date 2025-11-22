@@ -2,11 +2,15 @@ import { env } from '$env/dynamic/private';
 import { createSession, validateSession } from './cookieStore.js';
 import { enforceRateLimit } from './rateLimiter.js';
 import { json } from '@sveltejs/kit';
+import crypto from 'node:crypto';
+
 const authToken = env.API_AUTH_TOKEN?.trim() ?? null;
 
 export async function guardRequest(event) {
+	// Fail-closed: If auth token is missing, deny everything
 	if (!authToken) {
-		return null;
+		console.error('🚨 CRITICAL: API_AUTH_TOKEN is not set. Refusing to serve requests.');
+		return json({ error: 'Server configuration error' }, { status: 500 });
 	}
 
 	const authResponse = await enforceAuth(event);
@@ -20,7 +24,7 @@ export async function guardRequest(event) {
 
 export async function checkSession(event) {
 	if (!authToken) {
-		return true; // Auth is disabled
+		return false; // Auth disabled = no valid session possible
 	}
 	return await validateSession(event);
 }
@@ -29,9 +33,21 @@ export async function verifyTokenAndCreateSession(token, event) {
 	if (!authToken) {
 		throw new Error('Auth not configured');
 	}
-	if (!token || token.trim() !== authToken) {
+	
+	if (!token) return false;
+
+	// Timing-safe comparison
+	const tokenBuffer = Buffer.from(token);
+	const authBuffer = Buffer.from(authToken);
+
+	if (tokenBuffer.length !== authBuffer.length) {
 		return false;
 	}
+
+	if (!crypto.timingSafeEqual(tokenBuffer, authBuffer)) {
+		return false;
+	}
+
 	await createSession(event);
 	return true;
 }
@@ -50,7 +66,19 @@ async function enforceAuth(event) {
 
 	const token = rawHeader.startsWith('Bearer ') ? rawHeader.slice(7).trim() : rawHeader.trim();
 
-	if (!token || token !== authToken) {
+	if (!token) {
+		return unauthorizedResponse();
+	}
+
+	// Timing-safe comparison
+	const tokenBuffer = Buffer.from(token);
+	const authBuffer = Buffer.from(authToken);
+
+	if (tokenBuffer.length !== authBuffer.length) {
+		return unauthorizedResponse();
+	}
+
+	if (!crypto.timingSafeEqual(tokenBuffer, authBuffer)) {
 		return unauthorizedResponse();
 	}
 

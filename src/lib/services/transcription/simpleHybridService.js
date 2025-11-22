@@ -149,7 +149,13 @@ class SimpleHybridService {
 			try {
 				await ensureApiSession();
 				const formData = new FormData();
-				formData.append('audio_file', audioBlob, `recording-${Date.now()}.webm`);
+				
+				// Detect extension from blob type
+				const mimeType = audioBlob.type || 'audio/webm';
+				const ext = mimeType.split('/')[1]?.split(';')[0] || 'webm';
+				const filename = `recording-${Date.now()}.${ext}`;
+				
+				formData.append('audio_file', audioBlob, filename);
 				formData.append('prompt_style', promptStyle);
 
 				const response = await fetch('/api/transcribe', {

@@ -4,15 +4,12 @@
  * This is designed to be portable across multiple apps!
  * Just copy this file and adjust the config.
  *
- * No Supabase needed - uses simple JSON storage
- * For real-time updates, swap JSON with Supabase/Firebase later
+ * Uses abstract storage adapter (FS in dev, Memory in prod)
  */
 
-import fs from 'fs';
-import path from 'path';
+import { storage } from './storage/index.js';
 
-const DATA_DIR = path.join(process.cwd(), 'src/lib/server/data');
-const CAMPAIGN_FILE = path.join(DATA_DIR, 'campaign-stats.json');
+const STORAGE_KEY = 'campaign-stats';
 
 /**
  * Campaign Configuration
@@ -35,52 +32,31 @@ export const CAMPAIGN_CONFIG = {
 /**
  * Get or initialize campaign data
  */
-function getCampaignData() {
-	try {
-		if (!fs.existsSync(DATA_DIR)) {
-			fs.mkdirSync(DATA_DIR, { recursive: true });
-		}
-
-		if (!fs.existsSync(CAMPAIGN_FILE)) {
-			const initialData = {
-				totalSales: 0,
-				campaignSales: 0,
-				lastUpdated: new Date().toISOString(),
-				salesHistory: []
-			};
-			fs.writeFileSync(CAMPAIGN_FILE, JSON.stringify(initialData, null, 2));
-			return initialData;
-		}
-
-		const data = fs.readFileSync(CAMPAIGN_FILE, 'utf-8');
-		return JSON.parse(data);
-	} catch (error) {
-		console.error('Error loading campaign data:', error);
-		return { totalSales: 0, campaignSales: 0, salesHistory: [] };
+async function getCampaignData() {
+	const data = await storage.get(STORAGE_KEY);
+	if (!data) {
+		return {
+			totalSales: 0,
+			campaignSales: 0,
+			lastUpdated: new Date().toISOString(),
+			salesHistory: []
+		};
 	}
+	return data;
 }
 
 /**
  * Save campaign data
  */
-function saveCampaignData(data) {
-	try {
-		if (!fs.existsSync(DATA_DIR)) {
-			fs.mkdirSync(DATA_DIR, { recursive: true });
-		}
-		fs.writeFileSync(CAMPAIGN_FILE, JSON.stringify(data, null, 2));
-		return true;
-	} catch (error) {
-		console.error('Error saving campaign data:', error);
-		return false;
-	}
+async function saveCampaignData(data) {
+	return await storage.set(STORAGE_KEY, data);
 }
 
 /**
  * Record a sale (call this when payment succeeds)
  */
-export function recordCampaignSale(metadata = {}) {
-	const data = getCampaignData();
+export async function recordCampaignSale(metadata = {}) {
+	const data = await getCampaignData();
 
 	// Increment counters
 	data.totalSales++;
@@ -98,7 +74,7 @@ export function recordCampaignSale(metadata = {}) {
 
 	data.lastUpdated = new Date().toISOString();
 
-	saveCampaignData(data);
+	await saveCampaignData(data);
 
 	return {
 		campaignSale: data.campaignSales <= CAMPAIGN_CONFIG.limit,
@@ -110,8 +86,8 @@ export function recordCampaignSale(metadata = {}) {
  * Get campaign status (call from API endpoint)
  * This is what the frontend requests
  */
-export function getCampaignStatus() {
-	const data = getCampaignData();
+export async function getCampaignStatus() {
+	const data = await getCampaignData();
 	const remaining = Math.max(0, CAMPAIGN_CONFIG.limit - data.campaignSales);
 	const isActive = remaining > 0 && !CAMPAIGN_CONFIG.forceEnded;
 
@@ -132,24 +108,24 @@ export function getCampaignStatus() {
 /**
  * Manually end campaign (call this to disable launch special)
  */
-export function endCampaign() {
+export async function endCampaign() {
 	CAMPAIGN_CONFIG.forceEnded = true;
-	const data = getCampaignData();
+	const data = await getCampaignData();
 	data.campaignEnded = new Date().toISOString();
-	saveCampaignData(data);
+	await saveCampaignData(data);
 	console.log('📊 Campaign manually ended');
 }
 
 /**
  * Reset campaign (for testing)
  */
-export function resetCampaign() {
+export async function resetCampaign() {
 	const data = {
 		totalSales: 0,
 		campaignSales: 0,
 		lastUpdated: new Date().toISOString(),
 		salesHistory: []
 	};
-	saveCampaignData(data);
+	await saveCampaignData(data);
 	console.log('🔄 Campaign reset');
 }

@@ -1,14 +1,12 @@
 /**
  * Unlock Code Storage Service
- * Simple JSON-based storage for premium unlock codes
+ * Uses abstract storage adapter (FS in dev, Memory in prod)
  */
 
-import fs from 'fs';
-import path from 'path';
 import { dev } from '$app/environment';
+import { storage } from './storage/index.js';
 
-const DATA_DIR = path.join(process.cwd(), 'src/lib/server/data');
-const CODES_FILE = path.join(DATA_DIR, 'unlock-codes.json');
+const STORAGE_KEY = 'unlock-codes';
 
 /**
  * Generate a random unlock code in format: TALK-XXXX-XXXX
@@ -27,53 +25,31 @@ export function generateUnlockCode() {
 }
 
 /**
- * Load unlock codes from JSON file
+ * Load unlock codes from storage
  */
-function loadCodes() {
-	try {
-		if (!fs.existsSync(DATA_DIR)) {
-			fs.mkdirSync(DATA_DIR, { recursive: true });
-		}
-
-		if (!fs.existsSync(CODES_FILE)) {
-			// Initialize with empty codes object
-			const initialData = { codes: {} };
-			fs.writeFileSync(CODES_FILE, JSON.stringify(initialData, null, 2));
-			return initialData;
-		}
-
-		const data = fs.readFileSync(CODES_FILE, 'utf-8');
-		return JSON.parse(data);
-	} catch (error) {
-		console.error('Error loading unlock codes:', error);
+async function loadCodes() {
+	const data = await storage.get(STORAGE_KEY);
+	if (!data) {
 		return { codes: {} };
 	}
+	return data;
 }
 
 /**
- * Save unlock codes to JSON file
+ * Save unlock codes to storage
  */
-function saveCodes(data) {
-	try {
-		if (!fs.existsSync(DATA_DIR)) {
-			fs.mkdirSync(DATA_DIR, { recursive: true });
-		}
-		fs.writeFileSync(CODES_FILE, JSON.stringify(data, null, 2));
-		return true;
-	} catch (error) {
-		console.error('Error saving unlock codes:', error);
-		return false;
-	}
+async function saveCodes(data) {
+	return await storage.set(STORAGE_KEY, data);
 }
 
 /**
  * Store a new unlock code
  * @param {string} code - The unlock code
  * @param {object} metadata - Payment metadata (paymentId, amount, etc.)
- * @returns {boolean} Success status
+ * @returns {Promise<boolean>} Success status
  */
-export function storeUnlockCode(code, metadata = {}) {
-	const data = loadCodes();
+export async function storeUnlockCode(code, metadata = {}) {
+	const data = await loadCodes();
 
 	data.codes[code] = {
 		...metadata,
@@ -82,16 +58,16 @@ export function storeUnlockCode(code, metadata = {}) {
 		lastUsedAt: null
 	};
 
-	return saveCodes(data);
+	return await saveCodes(data);
 }
 
 /**
  * Validate an unlock code
  * @param {string} code - The code to validate
- * @returns {object} { valid: boolean, metadata?: object }
+ * @returns {Promise<object>} { valid: boolean, metadata?: object }
  */
-export function validateUnlockCode(code) {
-	const data = loadCodes();
+export async function validateUnlockCode(code) {
+	const data = await loadCodes();
 
 	// Normalize code (remove spaces, uppercase)
 	const normalizedCode = code.toUpperCase().replace(/\s/g, '');
@@ -100,7 +76,7 @@ export function validateUnlockCode(code) {
 		// Code exists - mark as used
 		data.codes[normalizedCode].usedCount++;
 		data.codes[normalizedCode].lastUsedAt = new Date().toISOString();
-		saveCodes(data);
+		await saveCodes(data);
 
 		return {
 			valid: true,
@@ -114,8 +90,8 @@ export function validateUnlockCode(code) {
 /**
  * Get statistics about unlock codes (for admin/debugging)
  */
-export function getCodeStats() {
-	const data = loadCodes();
+export async function getCodeStats() {
+	const data = await loadCodes();
 	const codes = Object.values(data.codes);
 
 	return {
@@ -128,10 +104,10 @@ export function getCodeStats() {
 /**
  * Development helper - create a test code
  */
-export function createTestCode() {
+export async function createTestCode() {
 	if (dev) {
 		const testCode = 'TALK-TEST-CODE';
-		storeUnlockCode(testCode, {
+		await storeUnlockCode(testCode, {
 			paymentId: 'test-payment',
 			amount: 9.0,
 			currency: 'AUD',
@@ -144,6 +120,7 @@ export function createTestCode() {
 
 // Initialize test code in development
 if (dev) {
-	createTestCode();
-	console.log('🔑 Dev unlock code available: TALK-TEST-CODE');
+	createTestCode().then(() => {
+		console.log('🔑 Dev unlock code available: TALK-TEST-CODE');
+	});
 }
