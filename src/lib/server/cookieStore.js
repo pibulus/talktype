@@ -1,25 +1,42 @@
 import { env } from '$env/dynamic/private';
+import { Buffer } from 'node:buffer';
 
 const SESSION_TTL_MS = Number(env.API_SESSION_TTL_MS ?? `${4 * 60 * 60 * 1000}`);
 export const SESSION_COOKIE_NAME = 'talktype_session';
 
-const secret = env.API_COOKIE_SECRET;
-if (!secret) {
-	throw new Error('API_COOKIE_SECRET environment variable is not set. Please provide a long, random string.');
+const encoder = new TextEncoder();
+
+function requireSecret() {
+	const secret = env.API_COOKIE_SECRET;
+	if (!secret) {
+		throw new Error(
+			'API_COOKIE_SECRET environment variable is not set. Please provide a long, random string.'
+		);
+	}
+	return secret;
 }
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
-
 async function getCryptoKey() {
-	const keyMaterial = await crypto.subtle.importKey(
+	const secret = requireSecret();
+	return crypto.subtle.importKey(
 		'raw',
 		encoder.encode(secret),
 		{ name: 'HMAC', hash: 'SHA-256' },
 		false,
 		['sign', 'verify']
 	);
-	return keyMaterial;
+}
+
+function encodeBase64(input) {
+	return Buffer.from(input).toString('base64');
+}
+
+function decodeBase64ToString(input) {
+	return Buffer.from(input, 'base64').toString('utf8');
+}
+
+function decodeBase64ToBuffer(input) {
+	return Buffer.from(input, 'base64');
 }
 
 export async function createSession(event) {
@@ -28,13 +45,10 @@ export async function createSession(event) {
 	const data = { expiry };
 	const dataStr = JSON.stringify(data);
 
-	const signature = await crypto.subtle.sign(
-		'HMAC',
-		key,
-		encoder.encode(dataStr)
-	);
+	const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(dataStr));
+	const signatureBuffer = Buffer.from(new Uint8Array(signature));
 
-	const signedCookie = `${btoa(dataStr)}.${btoa(String.fromCharCode(...new Uint8Array(signature)))}`;
+	const signedCookie = `${encodeBase64(dataStr)}.${encodeBase64(signatureBuffer)}`;
 
 	event.cookies.set(SESSION_COOKIE_NAME, signedCookie, {
 		path: '/',
@@ -54,8 +68,9 @@ export async function validateSession(event) {
 	const [dataStr, signatureStr] = parts;
 
 	try {
-		const data = JSON.parse(atob(dataStr));
-		const signature = Uint8Array.from(atob(signatureStr), c => c.charCodeAt(0));
+		const dataJson = decodeBase64ToString(dataStr);
+		const data = JSON.parse(dataJson);
+		const signature = decodeBase64ToBuffer(signatureStr);
 
 		const key = await getCryptoKey();
 		const isValid = await crypto.subtle.verify(
@@ -70,7 +85,7 @@ export async function validateSession(event) {
 
 		return true;
 	} catch (error) {
-		console.error("Error validating session:", error);
+		console.error('Error validating session:', error);
 		return false;
 	}
 }

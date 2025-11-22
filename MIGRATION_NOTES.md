@@ -3,7 +3,7 @@
 We just hardened Conversation Mapper’s AI endpoints. Here’s what TalkType should import next time I open a session:
 
 1. **Server-side auth guard**
-   - Conversation Mapper now requires a shared `API_AUTH_TOKEN`, stores it as an HttpOnly cookie via `/api/auth`, and rate-limits/allow-lists origins (`conversation_mapper_fresh/services/requestGuard.ts`).  
+   - Conversation Mapper now requires a shared `API_AUTH_TOKEN`, stores it as an HttpOnly cookie via `/api/auth`, and rate-limits/allow-lists origins via a centralized `authService`.
    - TalkType’s `/api/transcribe` currently accepts any POST; copy the guard + session flow so random clients can’t burn the Gemini quota.
 
 2. **Gemini upload cleanup**

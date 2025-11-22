@@ -209,12 +209,6 @@
 
 	export const recording = isRecording; // Export the isRecording store
 
-	// Handle when model is required
-	function handleModelRequired() {
-		// Model initialization is now handled through the whisperService
-		console.log('Model required - initialization handled by whisperService');
-	}
-
 	function handleModelReady() {
 		modelReady = true;
 	}
@@ -231,7 +225,6 @@
 			{onPreloadRequest}
 			{isPremiumUser}
 			{modelReady}
-			onModelRequired={handleModelRequired}
 			on:recordingStateChanged
 			on:error
 			on:preload

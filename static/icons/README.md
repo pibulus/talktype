@@ -1,8 +1,8 @@
 # TalkType PWA Icons
 
-Icon PNGs in this folder are generated from the SVG sources in `static/` using the helper scripts under `scripts/`.
+Icon PNGs in this folder are exported manually from the Ghost Icon kit (Figma) or from the layered SVGs under `static/`. There are no build scripts anymore—when an icon changes, export the PNG at the correct size, drop it in this folder, and commit the file.
 
-See `static/icons/NEXT-STEPS.md` for the canonical instructions (which script to run, checklist before shipping, etc.). This README just documents the required sizes so designers know what files belong here.
+See `static/icons/NEXT-STEPS.md` for the canonical checklist (export order, manifest updates, install tests, etc.). This README just documents the required sizes so designers know what files belong here.
 
 ## Required Sizes
 

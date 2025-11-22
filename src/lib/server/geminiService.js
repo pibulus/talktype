@@ -1,21 +1,11 @@
 import { GoogleGenAI } from '@google/genai';
-import { env } from '$env/dynamic/private';
-import { GEMINI_API_KEY } from '$env/static/private';
 import { getTranscriptionPrompt } from '$lib/prompts';
+import { GEMINI_MODELS, GEMINI_GENERATION_CONFIG, geminiApiKey } from '$lib/server/geminiConfig.js';
 
-const MODEL_ID = 'gemini-2.5-flash-lite';
-const GENERATION_CONFIG = {
-	temperature: 0.2,
-	topP: 0.8,
-	topK: 40,
-	candidateCount: 1,
-	maxOutputTokens: 8192
-};
+const MODEL_ID = GEMINI_MODELS.transcription;
+const GENERATION_CONFIG = GEMINI_GENERATION_CONFIG.transcription;
 
-const genAI =
-	GEMINI_API_KEY && GEMINI_API_KEY.length > 0
-		? new GoogleGenAI({ apiKey: GEMINI_API_KEY })
-		: null;
+const genAI = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
 
 export async function transcribeAudio(file, promptStyle) {
 	if (!genAI) {
@@ -60,7 +50,7 @@ export async function transcribeAudio(file, promptStyle) {
 					]
 				}
 			],
-			config: GENERATION_CONFIG
+			generationConfig: GENERATION_CONFIG
 		});
 
 		let transcription = result.text || '';

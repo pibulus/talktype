@@ -148,25 +148,15 @@ TalkType will show you an installation prompt after you've used it a few times. 
 
 ## Icon Generation
 
-Use the existing helper scripts so everything stays consistent:
+Icons are exported manually—no build scripts or `sharp` dependency required anymore:
 
-```bash
-npm install sharp --no-save   # only when you need to regenerate assets
+1. Open the Ghost Icon Figma file (link in `docs/ghost-icon-reference.md`).
+2. Export the required sizes (see `static/icons/README.md`) as 1× PNG.
+3. Export both light/dark favicons and the maskable 512×512 variants.
+4. Replace the PNGs under `static/icons/` and update `static/manifest.json` if any filenames change.
+5. Capture splash/marketing shots manually (or reuse prior exports) and drop them in `static/icons/` as needed.
 
-# Core icons (192/512 + maskable + apple touch)
-node scripts/generate-basic-icons.js
-
-# Favicons for light/dark tabs
-node scripts/generate-favicon.js
-
-# Maskable icon with safe padding
-node scripts/generate-maskable-icon.js
-
-# Splash screens & marketing shots (optional)
-node scripts/generate-splash-screens.js
-```
-
-Each script reads from the SVG sources in `static/` and overwrites the PNGs in `static/icons/`. See `static/icons/NEXT-STEPS.md` for the full checklist.
+`static/icons/NEXT-STEPS.md` has the detailed checklist (install tests, Lighthouse pass, etc.).
 
 ## Quick Checklist
 

@@ -26,7 +26,6 @@
 	export let ghostComponent = null;
 	export let onPreloadRequest = null;
 	export let isPremiumUser = false;
-	export let onModelRequired = () => {};
 	export let modelReady = false;
 
 	// Local state

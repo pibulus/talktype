@@ -39,6 +39,25 @@ npm run dev -- --open
 > 🔐 **New**: the first time you trigger any Gemini-powered feature, the browser
 > will prompt you for the `API_AUTH_TOKEN` from `.env`. The token is only used
 > to open an HttpOnly session cookie so random clients can’t drain your quota.
+>
+> Set `API_AUTH_TOKEN` and `API_COOKIE_SECRET` (any 32+ char random string) in
+> your `.env`, and tweak `API_RATE_LIMIT`, `API_RATE_WINDOW_MS`, or
+> `API_SESSION_TTL_MS` if you need different defaults.
+
+## Deploying (Netlify)
+
+We ship with `@sveltejs/adapter-netlify` and a `netlify.toml` that points Netlify at the correct build output. To deploy:
+
+1. **Install deps**: `npm install`
+2. **Set environment variables** in Netlify → Site settings → Environment:
+   - `VITE_GEMINI_API_KEY`
+   - `API_AUTH_TOKEN`
+   - `API_COOKIE_SECRET` (32+ random chars)
+   - Optional: `API_RATE_LIMIT`, `API_RATE_WINDOW_MS`, `API_SESSION_TTL_MS`, `MAX_UPLOAD_BYTES`, `API_COOKIE_SECURE=true`
+3. **Build command**: `npm run build`
+4. **Publish directory**: Netlify auto-detects `.svelte-kit/output/client` via the adapter (no manual override needed)
+
+Hit “Deploy” and Netlify will generate the serverless functions + static assets automatically.
 
 ## Building
 

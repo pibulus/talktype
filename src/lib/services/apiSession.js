@@ -1,4 +1,4 @@
-import { showModal, hideModal } from '$lib/stores/modal';
+import { promptForApiToken } from '$lib/services/authModalService';
 
 let inFlightSession = null;
 
@@ -15,43 +15,10 @@ export async function ensureApiSession() {
 			return;
 		}
 
-		await promptForTokenWithModal();
+		await promptForApiToken();
 	})().finally(() => {
 		inFlightSession = null;
 	});
 
 	return inFlightSession;
 }
-
-function promptForTokenWithModal() {
-    return new Promise((resolve, reject) => {
-        const props = {
-            onSubmit: async (token) => {
-                try {
-                    const response = await fetch('/api/auth', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Invalid API auth token');
-                    }
-                    
-                    hideModal();
-                    resolve();
-                } catch (error) {
-                    // TODO: Show error in the modal
-                    console.error(error);
-                    reject(error);
-                }
-            },
-            onClose: () => {
-                hideModal();
-                reject(new Error('API auth token is required to continue.'));
-            }
-        };
-        showModal('auth', props);
-    });
-}
-

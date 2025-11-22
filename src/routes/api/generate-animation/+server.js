@@ -1,11 +1,11 @@
 import { json } from '@sveltejs/kit';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GEMINI_API_KEY } from '$env/static/private';
-import { guardRequest } from '$lib/server/requestGuard.js';
+import { guardRequest } from '$lib/server/authService.js';
+import { GEMINI_MODELS, geminiApiKey } from '$lib/server/geminiConfig.js';
 
 // Initialize Gemini (server-side only)
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+const genAI = new GoogleGenerativeAI(geminiApiKey);
+const model = genAI.getGenerativeModel({ model: GEMINI_MODELS.animation });
 
 // Animation generation prompt
 const ANIMATION_PROMPT = `Generate a CSS animation for a ghost SVG based on this description: '{{description}}'. Return a JSON object with the following structure:
@@ -61,7 +61,7 @@ function cleanMarkdownResponse(text) {
 
 export async function POST(event) {
 	try {
-		const guardResponse = guardRequest(event);
+		const guardResponse = await guardRequest(event);
 		if (guardResponse) {
 			return guardResponse;
 		}

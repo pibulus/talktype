@@ -3,51 +3,12 @@
 This folder contains various scripts for TalkType development, including:
 
 1. **Meta-Development Script** (`dev.js`) - Task management for AI-driven development workflows
-2. **Icon Generation Scripts** - Tools for creating favicons and PWA assets
+2. **Model Compression Utilities** (`compress-models.sh`) - Optional helper for shipping smaller Whisper weights
+3. **Codex Hooks** (`codex/init.sh`) - Shortcuts for spinning up the AI workflow
 
-## Icon Generation Scripts
-
-### `generate-favicon.js`
-
-Creates a 32x32 PNG favicon from the ghost SVG icon.
-
-```bash
-node scripts/generate-favicon.js
-```
-
-### `generate-theme-favicon.js`
-
-Creates theme-aware favicon variants that adapt to light and dark mode.
-
-```bash
-node scripts/generate-theme-favicon.js
-```
-
-This generates:
-
-- `favicon-light.png` - Black ghost for light theme
-- `favicon-dark.png` - White ghost for dark theme
-- `favicon.png` - Gray ghost as fallback
-
-### `generate-maskable-icon.js`
-
-Creates theme-aware maskable icon variants with proper padding for Android adaptive icons.
-
-```bash
-node scripts/generate-maskable-icon.js
-```
-
-This generates:
-
-- `icon-maskable-512x512.png` - Gray ghost for general use
-- `icon-maskable-light-512x512.png` - Black ghost for light theme
-- `icon-maskable-dark-512x512.png` - White ghost for dark theme
-
-All icon generation scripts require the `sharp` package:
-
-```bash
-npm install sharp --save-dev
-```
+> **Heads‑up:** the old Sharp-based icon scripts have been retired (and Sharp was removed
+> from `package.json`). Icons are exported manually from the Ghost Icon Figma file—see
+> `static/icons/NEXT-STEPS.md` for the current checklist.
 
 ## Meta-Development Script
 

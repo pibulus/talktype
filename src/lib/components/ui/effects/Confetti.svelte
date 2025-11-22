@@ -1,9 +1,7 @@
 <script>
-	import { onMount, createEventDispatcher } from 'svelte';
-	import confetti from 'canvas-confetti';
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { ANIMATION } from '$lib/constants';
 
-	// Props with defaults
 	export let targetSelector = null;
 	export let duration = ANIMATION.CONFETTI.ANIMATION_DURATION;
 	export let colors = ANIMATION.CONFETTI.COLORS;
@@ -11,67 +9,114 @@
 
 	const dispatch = createEventDispatcher();
 
-	onMount(() => {
-		// Fire confetti effect
-		fireConfetti();
+	let pieces = [];
+	let origin = { x: 50, y: 15 };
+	let timeoutId;
 
-		// Dispatch complete event after animation duration
-		setTimeout(() => {
+	onMount(() => {
+		updateOrigin();
+		pieces = Array.from({ length: particleCount }, (_, index) => createPiece(index));
+
+		timeoutId = setTimeout(() => {
 			dispatch('complete');
 		}, duration);
 	});
 
-	function fireConfetti() {
-		let originX = 0.5; // Center of screen by default
-		let originY = 0.1; // Near the top by default
+	onDestroy(() => {
+		if (timeoutId) clearTimeout(timeoutId);
+	});
 
-		// If target selector provided, use its position
-		if (targetSelector && typeof document !== 'undefined') {
-			const targetElement = document.querySelector(targetSelector);
-
-			if (targetElement) {
-				const rect = targetElement.getBoundingClientRect();
-				const windowWidth = window.innerWidth;
-				const windowHeight = window.innerHeight;
-
-				// Calculate center point relative to viewport (0-1 range)
-				originX = (rect.left + rect.width / 2) / windowWidth;
-				originY = rect.top / windowHeight;
-			}
+	function updateOrigin() {
+		if (!targetSelector || typeof document === 'undefined') {
+			return;
 		}
 
-		// Fire the main burst of confetti with more impact - exploding from behind the ghost
-		confetti({
-			particleCount: Math.floor(particleCount * 0.75),
-			spread: 120, // Even wider spread for more coverage around ghost
-			origin: { x: originX, y: Math.max(0.1, originY) }, // Use ghost's position directly
-			colors,
-			startVelocity: 40, // Moderate velocity for natural effect
-			gravity: 0.9, // Slightly reduced gravity for longer hang time
-			ticks: 400,
-			shapes: ['square', 'circle'],
-			scalar: 1.2, // Slightly larger particles
-			zIndex: 1000,
-			disableForReducedMotion: true
-		});
+		const targetElement = document.querySelector(targetSelector);
+		if (!targetElement) return;
 
-		// Add a second burst from the other side of ghost for a more balanced effect
-		setTimeout(() => {
-			confetti({
-				particleCount: Math.floor(particleCount * 0.25), // Fewer particles in second burst
-				spread: 100, // Wider spread
-				origin: { x: originX + 0.1, y: Math.max(0.1, originY) }, // From other side of ghost
-				colors,
-				startVelocity: 35, // Moderate velocity
-				gravity: 0.7, // Lower gravity for longer hang time
-				ticks: 350,
-				shapes: ['square', 'circle'],
-				scalar: 1.1,
-				zIndex: 1000,
-				disableForReducedMotion: true
-			});
-		}, 50); // Very quick follow-up for cohesive effect
+		const rect = targetElement.getBoundingClientRect();
+		const windowWidth = window.innerWidth || 1;
+		const windowHeight = window.innerHeight || 1;
+
+		origin = {
+			x: ((rect.left + rect.width / 2) / windowWidth) * 100,
+			y: (Math.max(rect.top, 40) / windowHeight) * 100
+		};
+	}
+
+	function createPiece(id) {
+		return {
+			id,
+			color: colors[id % colors.length],
+			delay: Math.random() * 0.2,
+			duration: 0.9 + Math.random() * 0.9,
+			drift: (Math.random() - 0.5) * 40,
+			offset: (Math.random() - 0.5) * 12,
+			rotateStart: Math.random() * 360,
+			rotateEnd: Math.random() * 720
+		};
 	}
 </script>
 
-<!-- This component has no visual markup, just fires the confetti effect on mount -->
+<div class="confetti-overlay" aria-hidden="true">
+	{#each pieces as piece (piece.id)}
+		<span
+			class="confetti-piece"
+			style={`--origin-x:${origin.x}; --origin-y:${origin.y}; --offset-x:${piece.offset}; --drift:${piece.drift}; --delay:${piece.delay}s; --duration:${piece.duration}s; --rotate-start:${piece.rotateStart}deg; --rotate-end:${piece.rotateEnd}deg; background:${piece.color};`}
+		></span>
+	{/each}
+</div>
+
+<style>
+	.confetti-overlay {
+		position: fixed;
+		inset: 0;
+		pointer-events: none;
+		z-index: 1000;
+		overflow: hidden;
+	}
+
+	.confetti-piece {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 8px;
+		height: 14px;
+		border-radius: 2px;
+		opacity: 0;
+		will-change: transform, opacity;
+		animation: confettiFall var(--duration) ease-out forwards;
+		animation-delay: var(--delay);
+		transform: translate(
+				calc(var(--origin-x) * 1vw),
+				calc(var(--origin-y) * 1vh)
+			)
+			rotate(var(--rotate-start));
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.confetti-piece {
+			display: none;
+		}
+	}
+
+	@keyframes confettiFall {
+		0% {
+			opacity: 1;
+			transform: translate(
+					calc(var(--origin-x) * 1vw + var(--offset-x) * 0.1vw),
+					calc(var(--origin-y) * 1vh)
+				)
+				rotate(var(--rotate-start));
+		}
+
+		100% {
+			opacity: 0;
+			transform: translate(
+					calc((var(--origin-x) + var(--offset-x)) * 1vw + var(--drift) * 0.1vw),
+					calc(var(--origin-y) * 1vh + 40vh)
+				)
+				rotate(var(--rotate-end));
+		}
+	}
+</style>

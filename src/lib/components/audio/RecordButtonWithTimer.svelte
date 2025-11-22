@@ -286,7 +286,7 @@
 	}
 
 	/* Button press animation */
-	.button-press {
+	:global(.button-press) {
 		animation: button-press 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
 	}
 
@@ -557,44 +557,10 @@
 		letter-spacing: 0.01em;
 	}
 
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
-	}
-
-	.animate-fadeIn {
-		animation: fadeIn 0.3s ease-in-out;
-	}
-
-	/* Subtle pulse animation for danger state */
-	@keyframes pulse-subtle {
-		0%,
-		100% {
-			opacity: 1;
-			transform: scale(1);
-		}
-		50% {
-			opacity: 0.8;
-			transform: scale(1.02);
-		}
-	}
-
-	.animate-pulse-subtle {
-		animation: pulse-subtle 1.2s ease-in-out infinite;
-	}
-
 	/* Responsive adjustments for mobile */
 	@media (max-width: 640px) {
 		.button-content {
 			font-size: 0.95em;
-		}
-
-		.timer-display {
-			font-size: 0.9em;
 		}
 	}
 </style>

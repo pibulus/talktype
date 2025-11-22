@@ -23,7 +23,7 @@
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
 		"@lhci/cli": "^0.14.0",
-		"@sveltejs/adapter-vercel": "^5.5.2",
+		"@sveltejs/adapter-netlify": "5.2.4",
 		"@sveltejs/kit": "^2.16.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
 		"@tailwindcss/container-queries": "^0.1.1",

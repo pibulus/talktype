@@ -49,6 +49,8 @@
 {@render children()}
 
 {#if $modal}
-	<svelte:component this={modals[$modal.name]} {...$modal.props} />
+	{@const ActiveModal = modals[$modal.name]}
+	{#if ActiveModal}
+		<ActiveModal {...$modal.props} />
+	{/if}
 {/if}
-
