@@ -14,7 +14,7 @@ class SimpleHybridService {
 	constructor() {
 		this.whisperReady = false;
 		this.whisperLoadPromise = null;
-		this.isDesktop = this.detectDesktop();
+		this.deviceProfile = this.detectDeviceProfile();
 		this.geminiQueue = Promise.resolve();
 
 		// Subscribe to whisper status
@@ -26,32 +26,45 @@ class SimpleHybridService {
 	}
 
 	/**
-	 * Detect if device is desktop (not mobile) for offline Whisper support
-	 * Mobile has memory constraints and iOS has known memory leaks
+	 * Detect device characteristics for offline mode decisions
 	 */
-	detectDesktop() {
-		if (!browser) return false;
+	detectDeviceProfile() {
+		if (!browser) {
+			return {
+				isMobile: false,
+				memory: 4,
+				description: 'SSR environment'
+			};
+		}
+
 		const ua = navigator.userAgent;
 		const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
-		return !isMobile;
+		const memory = navigator.deviceMemory || 4;
+
+		return {
+			isMobile,
+			memory,
+			description: isMobile
+				? 'Mobile device detected - forcing Tiny model for stability'
+				: 'Desktop-class device',
+			caution: isMobile || memory < 3
+		};
 	}
 
 	/**
 	 * Start loading Whisper in the background (only called when privacy mode enabled)
-	 * Only works on desktop - mobile uses Gemini API
+	 * Mobile devices are supported, but we always force the Tiny model for stability.
 	 */
 	async startBackgroundLoad() {
 		if (this.whisperLoadPromise || this.whisperReady) {
 			return; // Already loading or loaded
 		}
 
-		// Desktop-only: Mobile has memory constraints
-		if (!this.isDesktop) {
-			console.log('📱 Mobile device detected - offline mode not available (use online API)');
-			return { success: false, error: 'Mobile not supported' };
-		}
-
-		console.log('🖥️  Desktop detected - Loading Whisper model for offline transcription...');
+		const logPrefix = this.deviceProfile.isMobile ? '📱' : '🖥️';
+		console.log(
+			`${logPrefix} Loading Whisper model for offline transcription...`,
+			this.deviceProfile.description
+		);
 		this.whisperLoadPromise = whisperService
 			.preloadModel()
 			.then((result) => {
@@ -67,6 +80,8 @@ class SimpleHybridService {
 			.finally(() => {
 				this.whisperLoadPromise = null;
 			});
+
+		return this.whisperLoadPromise;
 	}
 
 	/**
@@ -76,15 +91,8 @@ class SimpleHybridService {
 		// Check privacy mode preference
 		const privacyMode = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
 
-		// Privacy mode: Use offline Whisper only (desktop only)
+		// Privacy mode: Use offline Whisper only (desktop + mobile allowed)
 		if (privacyMode) {
-			// Check if desktop
-			if (!this.isDesktop) {
-				throw new Error(
-					'Offline mode not available on mobile. Mobile has memory constraints that prevent reliable offline transcription. Please disable offline mode or use a desktop browser.'
-				);
-			}
-
 			// Start loading Whisper if not already
 			if (!this.whisperReady && !this.whisperLoadPromise) {
 				this.startBackgroundLoad();
@@ -101,9 +109,17 @@ class SimpleHybridService {
 					localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
 					return await whisperService.transcribeAudio(audioBlob);
 				}
-				throw new Error('Privacy mode enabled but offline model failed to load');
+				throw new Error(
+					this.deviceProfile.isMobile
+						? 'Offline mode could not initialize on this device. Try again or disable Privacy Mode.'
+						: 'Privacy mode enabled but offline model failed to load'
+				);
 			} else {
-				throw new Error('Privacy mode enabled but offline model not available');
+				throw new Error(
+					this.deviceProfile.isMobile
+						? 'Offline mode could not initialize on this device. Try again or disable Privacy Mode.'
+						: 'Privacy mode enabled but offline model not available'
+				);
 			}
 		}
 
