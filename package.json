@@ -53,7 +53,8 @@
 		"@google/generative-ai": "^0.21.0",
 		"@netlify/blobs": "10.4.1",
 		"@xenova/transformers": "^2.17.2",
-		"daisyui": "^4.12.23"
+		"daisyui": "^4.12.23",
+		"sharp": "^0.33.5"
 	}
 
 }
