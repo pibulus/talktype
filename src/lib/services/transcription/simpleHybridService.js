@@ -184,12 +184,30 @@ class SimpleHybridService {
 		} catch (error) {
 			console.error('Gemini API transcription error:', error);
 
-			if (this.whisperLoadPromise && !this.whisperReady) {
-				console.log('⏳ API failed, waiting for Whisper to load...');
-				const result = await this.whisperLoadPromise;
-				if (result.success) {
-					return await whisperService.transcribeAudio(audioBlob);
+			// Fallback to offline Whisper if API fails
+			console.log('⚠️ API failed, falling back to offline Whisper...');
+			
+			// Ensure Whisper is loaded
+			if (!this.whisperReady) {
+				console.log('⏳ Waiting for Whisper to load...');
+				if (!this.whisperLoadPromise) {
+					this.startBackgroundLoad();
 				}
+				
+				try {
+					const result = await (this.whisperLoadPromise || Promise.resolve({ success: this.whisperReady }));
+					if (!result.success && !this.whisperReady) {
+						throw new Error('Offline fallback failed: Whisper model could not be loaded.');
+					}
+				} catch (loadError) {
+					console.error('Whisper load failed during fallback:', loadError);
+					throw error; // Throw original API error if fallback fails
+				}
+			}
+
+			if (this.whisperReady) {
+				console.log('✅ Whisper ready, starting offline transcription...');
+				return await whisperService.transcribeAudio(audioBlob);
 			}
 
 			throw error;

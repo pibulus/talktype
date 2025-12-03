@@ -66,6 +66,7 @@
 	</div>
 {/if}
 
+<!-- 
 {#if pendingRecording}
 	<div
 		class="recovery-card mx-auto mt-3 w-full max-w-[540px] rounded-2xl border border-pink-100 bg-white/90 p-4 text-center shadow-md"
@@ -93,6 +94,7 @@
 		</button>
 	</div>
 {/if}
+-->
 
 <!-- Screen reader only status announcements -->
 <div role="status" aria-live="polite" aria-atomic="true" class="sr-only">
