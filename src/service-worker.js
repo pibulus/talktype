@@ -12,13 +12,6 @@ const ASSETS = [
 	...files // everything in `static`
 ];
 
-// Cache durations
-const CACHE_DURATIONS = {
-	models: 30 * 24 * 60 * 60 * 1000, // 30 days for ML models
-	cdn: 7 * 24 * 60 * 60 * 1000, // 7 days for CDN resources
-	api: 60 * 1000 // 1 minute for API responses
-};
-
 // Install service worker
 self.addEventListener('install', (event) => {
 	// Create a new cache and add all files to it
@@ -85,8 +78,8 @@ self.addEventListener('fetch', (event) => {
 			}
 		}
 
-		// Skip service worker for PostHog analytics (let it fail gracefully)
-		if (url.href.includes('posthog.com') || url.href.includes('i.posthog.com')) {
+		// Skip service worker for Umami analytics
+		if (url.href.includes('cloud.umami.is')) {
 			return fetch(event.request);
 		}
 

@@ -1,156 +1,73 @@
 /**
- * Analytics Service - PostHog Integration
- * Tracks critical events for conversion optimization
- *
- * 80/20 Rule: Track only what matters for revenue
- *
- * Setup:
- *   npm install posthog-js
- *   Add VITE_POSTHOG_KEY to .env
+ * Analytics Service - Umami Integration
+ * Privacy-focused, cookie-free analytics
  */
 
 import { browser } from '$app/environment';
 
-const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY;
-const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com';
-
-let initialized = false;
-let posthog = null;
-
 /**
- * Initialize PostHog (call once on app load)
- */
-export async function initAnalytics() {
-	if (!browser || !POSTHOG_KEY) {
-		// console.log('📊 Analytics: Not configured (missing VITE_POSTHOG_KEY)');
-		return;
-	}
-
-	if (initialized) return;
-
-	try {
-		// Dynamically import PostHog (graceful fallback if not installed)
-		const module = await import('posthog-js');
-		posthog = module.default;
-
-		posthog.init(POSTHOG_KEY, {
-			api_host: POSTHOG_HOST,
-			// Privacy-first settings
-			autocapture: false, // We'll track manually
-			capture_pageview: true,
-			disable_session_recording: true, // Respect privacy
-			// Performance
-			loaded: () => {
-				// console.log('📊 Analytics: PostHog initialized');
-				initialized = true;
-			}
-		});
-	} catch {
-		// console.warn('📊 Analytics: PostHog not available (install with: npm install posthog-js)');
-		// App continues to work without analytics
-	}
-}
-
-/**
- * Track event (safe wrapper)
+ * Track event (safe wrapper for Umami)
  */
 function track(eventName, properties = {}) {
-	if (!browser || !initialized) return;
+	if (!browser || !window.umami) return;
 
 	try {
-		posthog.capture(eventName, properties);
+		window.umami.track(eventName, properties);
 	} catch (error) {
-		console.error('Analytics track error:', error);
+		console.warn('Analytics track error:', error);
 	}
 }
 
 /**
- * === CRITICAL EVENTS (80/20) ===
- * These drive business decisions
+ * === CRITICAL EVENTS ===
  */
-
-// 1. CONVERSION FUNNEL
 export const analytics = {
 	// Premium funnel
 	viewPremiumModal(feature = null) {
-		track('premium_modal_viewed', {
-			triggered_by: feature, // Which locked feature they clicked
-			timestamp: new Date().toISOString()
-		});
+		track('premium_modal_viewed', { feature });
 	},
 
 	startPayment(amount, currency) {
-		track('payment_started', {
-			amount,
-			currency,
-			timestamp: new Date().toISOString()
-		});
+		track('payment_started', { amount, currency });
 	},
 
-	completePayment(amount, currency, unlockCode) {
-		track('payment_completed', {
-			amount,
-			currency,
-			unlock_code: unlockCode,
-			timestamp: new Date().toISOString()
-		});
-		// Identify as premium user
-		if (initialized) {
-			posthog.setPersonProperties({
-				is_premium: true,
-				unlock_date: new Date().toISOString()
-			});
-		}
+	completePayment(amount, currency) {
+		track('payment_completed', { amount, currency });
 	},
 
 	// Campaign performance
 	viewCampaignCountdown(remaining, total) {
-		track('campaign_countdown_viewed', {
-			remaining,
-			total,
-			percentage_sold: Math.round(((total - remaining) / total) * 100)
-		});
+		track('campaign_countdown_viewed', { remaining, total });
 	},
 
-	// 2. ENGAGEMENT
+	// Engagement
 	completeTranscription(method, duration, wordCount) {
-		track('transcription_completed', {
-			method, // 'gemini' | 'whisper'
-			duration_seconds: duration,
-			word_count: wordCount
-		});
+		track('transcription_completed', { method, duration, wordCount });
 	},
 
-	// 3. FEATURE USAGE (what drives conversions?)
+	// Feature usage
 	clickLockedFeature(featureName) {
-		track('locked_feature_clicked', {
-			feature: featureName // 'theme', 'custom_prompt', 'extended_recording'
-		});
+		track('locked_feature_clicked', { feature: featureName });
 	},
 
-	// 4. RETENTION
+	// Retention
 	installPWA() {
 		track('pwa_installed');
 	},
 
 	viewTranscriptHistory(transcriptCount) {
-		track('transcript_history_viewed', {
-			transcript_count: transcriptCount
-		});
+		track('transcript_history_viewed', { transcript_count: transcriptCount });
 	},
 
-	// 5. UNLOCK CODE USAGE (multi-device tracking)
+	// Unlock code usage
 	validateUnlockCode(success) {
-		track('unlock_code_validated', {
-			success,
-			timestamp: new Date().toISOString()
-		});
+		track('unlock_code_validated', { success });
 	}
 };
 
-// Auto-initialize if key is present
-if (browser && POSTHOG_KEY) {
-	initAnalytics();
+// No init needed for Umami (script tag handles it)
+export function initAnalytics() {
+	// No-op
 }
 
 export default analytics;
