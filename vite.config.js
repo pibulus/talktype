@@ -13,6 +13,6 @@ export default defineConfig({
 	},
 	ssr: {
 		noExternal: process.env.NODE_ENV === 'production' ? ['@google/generative-ai'] : [],
-		external: ['sharp', '@xenova/transformers'] // Exclude from SSR - browser-only transcription
+		external: ['@xenova/transformers'] // Exclude from SSR - browser-only transcription
 	}
 });
