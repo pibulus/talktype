@@ -96,7 +96,7 @@
 			localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
 
 		if (!privacyMode) {
-			console.log('⏭️ Privacy mode not enabled - skipping model download');
+			// console.log('⏭️ Privacy mode not enabled - skipping model download');
 			return;
 		}
 
@@ -104,7 +104,7 @@
 
 		// Start progressive model loading
 		import('$lib/services/transcription/simpleHybridService').then(({ simpleHybridService }) => {
-			console.log('🚀 Starting progressive Whisper model download...');
+			// console.log('🚀 Starting progressive Whisper model download...');
 			simpleHybridService.startBackgroundLoad();
 		});
 	}
@@ -128,7 +128,7 @@
 	function handlePrivacyModeChange(event) {
 		const { setting, value } = event.detail;
 		if (setting === 'privacyMode' && value === true) {
-			console.log('🔒 Privacy mode enabled - starting model download immediately');
+			// console.log('🔒 Privacy mode enabled - starting model download immediately');
 			startModelLoading();
 		}
 	}
@@ -154,9 +154,9 @@
 			// This ensures models are ready when user needs them
 			setTimeout(() => {
 				if (!modelLoadStarted) {
-					console.log(
-						`⏰ Auto-starting model load after ${ANIMATION.MODEL.AUTO_LOAD_DELAY / 1000}s delay`
-					);
+					// console.log(
+					// 	`⏰ Auto-starting model load after ${ANIMATION.MODEL.AUTO_LOAD_DELAY / 1000}s delay`
+					// );
 					startModelLoading();
 				}
 			}, ANIMATION.MODEL.AUTO_LOAD_DELAY);

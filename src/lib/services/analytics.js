@@ -22,7 +22,7 @@ let posthog = null;
  */
 export async function initAnalytics() {
 	if (!browser || !POSTHOG_KEY) {
-		console.log('📊 Analytics: Not configured (missing VITE_POSTHOG_KEY)');
+		// console.log('📊 Analytics: Not configured (missing VITE_POSTHOG_KEY)');
 		return;
 	}
 
@@ -40,13 +40,13 @@ export async function initAnalytics() {
 			capture_pageview: true,
 			disable_session_recording: true, // Respect privacy
 			// Performance
-			loaded: (ph) => {
-				console.log('📊 Analytics: PostHog initialized');
+			loaded: () => {
+				// console.log('📊 Analytics: PostHog initialized');
 				initialized = true;
 			}
 		});
-	} catch (error) {
-		console.warn('📊 Analytics: PostHog not available (install with: npm install posthog-js)');
+	} catch {
+		// console.warn('📊 Analytics: PostHog not available (install with: npm install posthog-js)');
 		// App continues to work without analytics
 	}
 }
