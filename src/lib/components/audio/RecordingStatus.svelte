@@ -148,12 +148,4 @@
 			font-size: 0.85rem;
 		}
 	}
-
-	.recovery-card {
-		backdrop-filter: blur(6px);
-	}
-
-	.retry-button {
-		min-width: 180px;
-	}
 </style>

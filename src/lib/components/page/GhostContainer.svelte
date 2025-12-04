@@ -62,7 +62,7 @@
 
 <!-- Ghost Icon -->
 <div
-	class="ghost-icon-wrapper mb-4 h-36 w-36 sm:h-40 sm:w-40 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64"
+	class="ghost-icon-wrapper mb-4 h-44 w-44 sm:h-48 sm:w-48 md:mb-0 md:h-56 md:w-56 lg:h-64 lg:w-64"
 >
 	<Ghost
 		bind:this={ghostComponent}

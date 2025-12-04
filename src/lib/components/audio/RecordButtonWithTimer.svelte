@@ -100,15 +100,11 @@
 		aria-valuemax="100"
 	>
 		<div
-			class="progress-bar flex h-full items-center justify-center bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
+			class="progress-bar h-full bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
 			style="width: {progress}%;"
 		>
-			<span
-				class="relative z-10 text-xl font-bold text-black"
-				style="letter-spacing: 0.02em; text-shadow: 0 1px 2px rgba(0,0,0,0.1);"
-			>
-				{BUTTON_LABELS.PROCESSING}
-			</span>
+			<!-- Visual-only progress bar, no text needed -->
+			<span class="sr-only">Processing {progress}%</span>
 		</div>
 	</div>
 {:else}

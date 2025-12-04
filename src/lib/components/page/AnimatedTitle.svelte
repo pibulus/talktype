@@ -66,7 +66,7 @@
 
 <!-- Updated subheadline with improved typography and brand voice -->
 <p
-	class="slide-in-subtitle mx-auto mb-6 mt-5 max-w-prose cursor-default select-none text-center text-base font-normal leading-relaxed tracking-wide text-gray-700/85 sm:mb-7 sm:mt-6 sm:text-lg md:text-xl lg:text-2xl"
+	class="slide-in-subtitle mx-auto mb-6 mt-3 max-w-prose cursor-default select-none text-center text-sm font-medium leading-relaxed tracking-normal text-gray-600 sm:mb-7 sm:mt-6 sm:text-lg sm:font-normal sm:tracking-wide sm:text-gray-700/85 md:text-xl lg:text-2xl"
 >
 	{subtitle}
 </p>

@@ -1,8 +1,7 @@
 import { env } from '$env/dynamic/private';
 
 export const GEMINI_MODELS = {
-	transcription: 'gemini-2.5-flash-lite',
-	animation: 'gemini-2.0-flash-exp'
+	transcription: 'gemini-2.5-flash-lite'
 };
 
 export const GEMINI_GENERATION_CONFIG = {

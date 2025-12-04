@@ -360,206 +360,169 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 				<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} {privacyModeValue} />
 			</div>
 
-			<!-- Premium Features Section (if premium) OR Upsell (if free) -->
-			{#if $isPremium}
-				<!-- Premium User - Show Active Features -->
-				<div
-					class="space-y-2 rounded-lg border border-green-200 bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-3 shadow-sm"
-				>
-					<div class="flex items-center justify-between">
-						<h4 class="text-sm font-bold text-gray-700">Premium Features</h4>
-						<span
-							class="badge badge-sm gap-1 border-green-300 bg-green-100 font-medium text-green-700"
-						>
-							<span class="text-[10px]">✓</span> Active
-						</span>
-					</div>
-
-					<div class="space-y-1.5 pt-1 text-xs text-gray-600">
-						<div class="flex items-center gap-1.5">
-							<span class="text-green-600">✓</span>
-							<span>10-minute recordings (vs 60s free)</span>
-						</div>
-						<div class="flex items-center gap-1.5">
-							<span class="text-green-600">✓</span>
-							<span>Premium themes (Mint, Bubblegum, Rainbow)</span>
-						</div>
-						<div class="flex items-center gap-1.5">
-							<span class="text-green-600">✓</span>
-							<span>Custom transcription prompts</span>
-						</div>
-						<div class="flex items-center gap-1.5">
-							<span class="text-green-600">✓</span>
-							<span>Save transcripts + audio to history</span>
-						</div>
-						<div class="flex items-center gap-1.5">
-							<span class="text-green-600">✓</span>
-							<span>Batch download & export</span>
-						</div>
-					</div>
-
-					<!-- View My Code Button -->
-					<div class="pt-2">
-						<button
-							class="text-xs text-gray-600 underline hover:text-gray-800"
-							on:click={toggleMyCode}
-						>
-							{showMyCode ? '← Hide Code' : '🔑 View My Unlock Code'}
-						</button>
-
-						{#if showMyCode}
-							<div class="mt-2 space-y-2 rounded-lg border border-green-300 bg-green-50 p-3">
-								<p class="text-xs font-medium text-gray-700">Your Unlock Code:</p>
-								<div class="rounded bg-white p-2 text-center">
-									<code class="text-sm font-bold tracking-wider text-gray-800">{myUnlockCode}</code>
-								</div>
-								{#if myUnlockCode !== 'No code saved'}
-									<button
-										class="btn btn-xs w-full border-green-400 bg-green-100 hover:bg-green-200"
-										on:click={copyMyCode}
-									>
-										📋 Copy Code
-									</button>
-									<p class="text-center text-xs text-gray-500">
-										Use this code to unlock on other devices
-									</p>
-								{/if}
-							</div>
-						{/if}
-					</div>
-
-					<div class="pt-1 text-center">
-						<span class="text-xs italic text-gray-500">Thank you for supporting TalkType! 💜</span>
-					</div>
-				</div>
-			{:else}
-				<!-- Free User - Show Upgrade Option -->
-				<div
-					class="space-y-2 rounded-lg border-2 border-amber-300 bg-gradient-to-r from-amber-100/80 to-orange-100/80 p-3 shadow-md"
-				>
-					<div class="flex items-center justify-between">
-						<h4 class="text-sm font-bold text-gray-700">Unlock Premium</h4>
-						<span
-							class="badge badge-sm gap-1 border-amber-300 bg-amber-100 font-medium text-amber-700"
-						>
-							{#if PRICING.hasDiscount}
-								<span class="text-[10px]">🎉</span> ${PRICING.currentPrice}
-								<span class="text-[9px] line-through opacity-60">${PRICING.basePrice}</span>
-							{:else}
-								<span class="text-[10px]">⭐</span> ${PRICING.currentPrice} Once
-							{/if}
-						</span>
-					</div>
-
-					<div class="space-y-1.5 pt-1 text-xs text-gray-600">
-						<div class="flex items-center gap-1.5">
-							<span class="text-amber-600">⭐</span>
-							<span>10-minute recordings (10x longer!)</span>
-						</div>
-						<div class="flex items-center gap-1.5">
-							<span class="text-amber-600">⭐</span>
-							<span>Premium ghost themes</span>
-						</div>
-						<div class="flex items-center gap-1.5">
-							<span class="text-amber-600">⭐</span>
-							<span>Custom transcription styles</span>
-						</div>
-						<div class="flex items-center gap-1.5">
-							<span class="text-amber-600">⭐</span>
-							<span>Save & edit transcript history</span>
-						</div>
-						<div class="flex items-center gap-1.5">
-							<span class="text-amber-600">⭐</span>
-							<span>Batch download everything</span>
-						</div>
-					</div>
-
-					<button
-						class="btn btn-sm mt-2 w-full border-none bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:from-amber-500 hover:to-orange-600"
-						on:click={() => {
-							handleModalClose();
-							if (browser) {
-								setTimeout(() => {
-									document.getElementById('premium_modal')?.showModal();
-								}, 100);
-							}
-						}}
+			<!-- Support TalkType Section - TEMPORARILY HIDDEN (set false to true to enable) -->
+			{#if false}
+				{#if $isPremium}
+					<!-- Supporter - Show Active Goodies -->
+					<div
+						class="space-y-2 rounded-lg border border-green-200 bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-3 shadow-sm"
 					>
-						{#if PRICING.hasDiscount}
-							🎉 Get Launch Special - ${PRICING.currentPrice}!
-						{:else}
-							⭐ Unlock for ${PRICING.currentPrice} (One-Time)
-						{/if}
-					</button>
+						<div class="flex items-center justify-between">
+							<h4 class="text-sm font-bold text-gray-700">You're a Ghost Friend!</h4>
+							<span
+								class="badge badge-sm gap-1 border-green-300 bg-green-100 font-medium text-green-700"
+							>
+								<span class="text-[10px]">👻</span> Unlocked
+							</span>
+						</div>
 
-					<!-- Already Premium? Enter Code -->
-					<div class="pt-2">
-						<button
-							class="text-xs text-gray-600 underline hover:text-gray-800"
-							on:click={toggleCodeEntry}
-						>
-							{showCodeEntry ? '← Back' : '🔑 Already Premium? Enter Code'}
-						</button>
+						<p class="text-xs text-gray-500">Thanks for keeping the ghost afloat. You've got all the goodies:</p>
 
-						{#if showCodeEntry}
-							<div class="mt-2 space-y-2 rounded-lg border border-gray-300 bg-white p-3">
-								<label for="unlock-code" class="block text-xs font-medium text-gray-700">
-									Enter your unlock code
-								</label>
-								<input
-									id="unlock-code"
-									type="text"
-									bind:value={unlockCode}
-									placeholder="TALK-XXXX-XXXX"
-									class="w-full rounded border border-gray-300 px-2 py-1 text-sm uppercase focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-200"
-									on:keydown={(e) => e.key === 'Enter' && validateUnlockCode()}
-								/>
+						<div class="space-y-1.5 pt-1 text-xs text-gray-600">
+							<div class="flex items-center gap-1.5">
+								<span class="text-green-600">✓</span>
+								<span>10-minute recordings</span>
+							</div>
+							<div class="flex items-center gap-1.5">
+								<span class="text-green-600">✓</span>
+								<span>Extra ghost themes</span>
+							</div>
+							<div class="flex items-center gap-1.5">
+								<span class="text-green-600">✓</span>
+								<span>Transcript history & export</span>
+							</div>
+						</div>
 
-								{#if codeError}
-									<p class="text-xs text-red-600">❌ {codeError}</p>
-								{/if}
+						<!-- View My Code Button -->
+						<div class="pt-2">
+							<button
+								class="text-xs text-gray-600 underline hover:text-gray-800"
+								on:click={toggleMyCode}
+							>
+								{showMyCode ? '← Hide Code' : '🔑 View My Unlock Code'}
+							</button>
 
-								<button
-									class="btn btn-sm w-full border-amber-400 bg-amber-50 hover:bg-amber-100"
-									on:click={validateUnlockCode}
-									disabled={codeValidating}
-								>
-									{#if codeValidating}
-										<span class="flex items-center justify-center gap-1">
-											<span class="loading loading-spinner loading-xs"></span>
-											Validating...
-										</span>
-									{:else}
-										✓ Validate Code
+							{#if showMyCode}
+								<div class="mt-2 space-y-2 rounded-lg border border-green-300 bg-green-50 p-3">
+									<p class="text-xs font-medium text-gray-700">Your Unlock Code:</p>
+									<div class="rounded bg-white p-2 text-center">
+										<code class="text-sm font-bold tracking-wider text-gray-800">{myUnlockCode}</code>
+									</div>
+									{#if myUnlockCode !== 'No code saved'}
+										<button
+											class="btn btn-xs w-full border-green-400 bg-green-100 hover:bg-green-200"
+											on:click={copyMyCode}
+										>
+											📋 Copy Code
+										</button>
+										<p class="text-center text-xs text-gray-500">
+											Works on all your devices
+										</p>
 									{/if}
-								</button>
+								</div>
+							{/if}
+						</div>
 
-								<p class="text-center text-xs text-gray-500">Code works on all your devices</p>
-							</div>
-						{/if}
+						<div class="pt-1 text-center">
+							<span class="text-xs italic text-pink-500">You're helping keep the web spooky. 💜</span>
+						</div>
 					</div>
-				</div>
-			{/if}
-
-			<!-- PWA Install Section -->
-			<div class="space-y-2">
-				<h4 class="text-sm font-bold text-gray-700">Install as App</h4>
-				{#if $installPromptEvent}
-					<button
-						class="btn btn-sm w-full border border-pink-200 bg-pink-50 hover:bg-pink-100"
-						on:click={handleInstallClick}
-					>
-						📦 Install TalkType
-					</button>
 				{:else}
-					<div class="rounded-lg border border-pink-100 bg-pink-50/50 p-2">
-						<p class="text-xs text-gray-600">
-							Install TalkType from your browser menu for offline access and a native app
-							experience.
-						</p>
+					<!-- Free User - Support TalkType -->
+					<div
+						class="space-y-2 rounded-lg border-2 border-amber-300 bg-gradient-to-r from-amber-100/80 to-orange-100/80 p-3 shadow-md"
+					>
+						<div class="flex items-center justify-between">
+							<h4 class="text-sm font-bold text-gray-700">Support TalkType</h4>
+							<span
+								class="badge badge-sm gap-1 border-amber-300 bg-amber-100 font-medium text-amber-700"
+							>
+								<span class="text-[10px]">👻</span> ${PRICING.currentPrice} once
+							</span>
+						</div>
+
+						<p class="text-xs text-gray-600">Keep the ghost afloat and unlock all the goodies:</p>
+
+						<div class="space-y-1.5 pt-1 text-xs text-gray-600">
+							<div class="flex items-center gap-1.5">
+								<span class="text-amber-600">✨</span>
+								<span>10-minute recordings (10x longer!)</span>
+							</div>
+							<div class="flex items-center gap-1.5">
+								<span class="text-amber-600">✨</span>
+								<span>Extra ghost themes</span>
+							</div>
+							<div class="flex items-center gap-1.5">
+								<span class="text-amber-600">✨</span>
+								<span>Save & export transcript history</span>
+							</div>
+						</div>
+
+						<button
+							class="btn btn-sm mt-2 w-full border-none bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:from-amber-500 hover:to-orange-600"
+							on:click={() => {
+								handleModalClose();
+								if (browser) {
+									setTimeout(() => {
+										document.getElementById('premium_modal')?.showModal();
+									}, 100);
+								}
+							}}
+						>
+							Support for ${PRICING.currentPrice}
+						</button>
+
+						<p class="pt-1 text-center text-xs italic text-pink-500">Help keep the web spooky.</p>
+
+						<!-- Already supported? Enter Code -->
+						<div class="pt-1">
+							<button
+								class="text-xs text-gray-600 underline hover:text-gray-800"
+								on:click={toggleCodeEntry}
+							>
+								{showCodeEntry ? '← Back' : '🔑 Already supported? Enter code'}
+							</button>
+
+							{#if showCodeEntry}
+								<div class="mt-2 space-y-2 rounded-lg border border-gray-300 bg-white p-3">
+									<label for="unlock-code" class="block text-xs font-medium text-gray-700">
+										Enter your unlock code
+									</label>
+									<input
+										id="unlock-code"
+										type="text"
+										bind:value={unlockCode}
+										placeholder="TALK-XXXX-XXXX"
+										class="w-full rounded border border-gray-300 px-2 py-1 text-sm uppercase focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-200"
+										on:keydown={(e) => e.key === 'Enter' && validateUnlockCode()}
+									/>
+
+									{#if codeError}
+										<p class="text-xs text-red-600">❌ {codeError}</p>
+									{/if}
+
+									<button
+										class="btn btn-sm w-full border-amber-400 bg-amber-50 hover:bg-amber-100"
+										on:click={validateUnlockCode}
+										disabled={codeValidating}
+									>
+										{#if codeValidating}
+											<span class="flex items-center justify-center gap-1">
+												<span class="loading loading-spinner loading-xs"></span>
+												Validating...
+											</span>
+										{:else}
+											✓ Validate Code
+										{/if}
+									</button>
+
+									<p class="text-center text-xs text-gray-500">Works on all your devices</p>
+								</div>
+							{/if}
+						</div>
 					</div>
 				{/if}
-			</div>
+			{/if}
 		</div>
 	</div>
 
