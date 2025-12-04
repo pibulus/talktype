@@ -1,7 +1,7 @@
 {
 	"name": "TalkType",
 	"short_name": "TalkType",
-	"description": "Voice-to-text that doesn't suck. Spooky good, freaky fast.",
+	"description": "100% Private. Instant Start. You click the ghost, we do the most.",
 	"start_url": "/?source=pwa",
 	"display": "standalone",
 	"background_color": "#FFF6E6",
