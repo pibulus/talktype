@@ -1,16 +1,17 @@
 import { GoogleGenAI } from '@google/genai';
 import { getTranscriptionPrompt } from '$lib/prompts';
-import { GEMINI_MODELS, GEMINI_GENERATION_CONFIG, geminiApiKey } from '$lib/server/geminiConfig.js';
+import { GEMINI_MODELS, GEMINI_GENERATION_CONFIG, getGeminiApiKey } from '$lib/server/geminiConfig.js';
 
 const MODEL_ID = GEMINI_MODELS.transcription;
 const GENERATION_CONFIG = GEMINI_GENERATION_CONFIG.transcription;
 
-const genAI = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
-
 export async function transcribeAudio(file, promptStyle) {
-	if (!genAI) {
+	const apiKey = getGeminiApiKey();
+	if (!apiKey) {
 		throw new Error('Server Error: Missing Gemini API key');
 	}
+
+	const genAI = new GoogleGenAI({ apiKey });
 
 	const mimeType = file.type || 'audio/webm';
 	const displayName = file.name || `recording-${Date.now()}`;

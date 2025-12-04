@@ -1,4 +1,4 @@
-import { GEMINI_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 export const GEMINI_MODELS = {
 	transcription: 'gemini-2.5-flash-lite',
@@ -15,4 +15,10 @@ export const GEMINI_GENERATION_CONFIG = {
 	}
 };
 
-export const geminiApiKey = GEMINI_API_KEY ?? '';
+export function getGeminiApiKey() {
+	const key = env.GEMINI_API_KEY;
+	if (!key) {
+		console.warn('GEMINI_API_KEY is missing in environment variables');
+	}
+	return key || '';
+}

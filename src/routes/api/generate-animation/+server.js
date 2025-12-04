@@ -1,11 +1,9 @@
 import { json } from '@sveltejs/kit';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { guardRequest } from '$lib/server/authService.js';
-import { GEMINI_MODELS, geminiApiKey } from '$lib/server/geminiConfig.js';
+import { GEMINI_MODELS, getGeminiApiKey } from '$lib/server/geminiConfig.js';
 
-// Initialize Gemini (server-side only)
-const genAI = new GoogleGenerativeAI(geminiApiKey);
-const model = genAI.getGenerativeModel({ model: GEMINI_MODELS.animation });
+// Animation generation prompt
 
 // Animation generation prompt
 const ANIMATION_PROMPT = `Generate a CSS animation for a ghost SVG based on this description: '{{description}}'. Return a JSON object with the following structure:
@@ -79,6 +77,14 @@ export async function POST(event) {
 
 		// Generate the prompt with the description
 		const prompt = ANIMATION_PROMPT.replace('{{description}}', description);
+
+		// Initialize Gemini
+		const apiKey = getGeminiApiKey();
+		if (!apiKey) {
+			throw new Error('Missing Gemini API key');
+		}
+		const genAI = new GoogleGenerativeAI(apiKey);
+		const model = genAI.getGenerativeModel({ model: GEMINI_MODELS.animation });
 
 		// Generate animation
 		const result = await model.generateContent(prompt);
