@@ -1,6 +1,7 @@
 <script>
 	import { ANIMATION } from '$lib/constants';
 	import { createEventDispatcher, onMount } from 'svelte';
+	import Ghost from '$lib/components/ghost/Ghost.svelte';
 
 	// Props
 	export let transcript = '';
@@ -112,26 +113,15 @@
 				aria-label="Copy transcript to clipboard"
 				bind:this={copyButtonRef}
 			>
-				<!-- Lightweight SVG ghost icon instead of full component -->
-				<svg
-					viewBox="0 0 100 100"
-					class="h-full w-full"
-					style="pointer-events: none;"
-					xmlns="http://www.w3.org/2000/svg"
-				>
-					<path
-						d="M50 20 C30 20 20 35 20 50 L20 75 L25 75 L25 82 C25 84 27 85 28.5 84 L35 78 L65 78 L71.5 84 C73 85 75 84 75 82 L75 75 L80 75 L80 50 C80 35 70 20 50 20 Z"
-						fill="url(#ghostGradient)"
+				<!-- Use the original Ghost component -->
+				<div class="h-full w-full p-0.5">
+					<Ghost 
+						width="100%" 
+						height="100%" 
+						clickable={false} 
+						externalTheme="peach"
 					/>
-					<circle cx="38" cy="48" r="4" fill="white" />
-					<circle cx="62" cy="48" r="4" fill="white" />
-					<defs>
-						<linearGradient id="ghostGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-							<stop offset="0%" stop-color="#f9a8d4" />
-							<stop offset="100%" stop-color="#c084fc" />
-						</linearGradient>
-					</defs>
-				</svg>
+				</div>
 
 				<!-- Smart tooltip - only shows for first few hovers -->
 				{#if showCopyTooltip}

@@ -11,7 +11,7 @@
 		getUnlockCode
 	} from '$lib/services/premium/premiumService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
-	import { ModalCloseButton } from './modals/index.js';
+	import { ModalCloseButton, InstallPwaModal } from './modals/index.js';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { STORAGE_KEYS, SERVICE_EVENTS } from '$lib/constants';
@@ -376,6 +376,28 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 					</label>
 				</div>
 
+				<!-- Install App Button -->
+				<div
+					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
+				>
+					<div>
+						<span class="text-sm font-medium text-gray-700">📱 Install App</span>
+						<p class="mt-0.5 text-xs text-gray-500">
+							Add to Home Screen for the best experience
+						</p>
+					</div>
+					<button 
+						class="btn btn-xs border-pink-200 bg-pink-50 text-pink-600 hover:bg-pink-100"
+						on:click={() => {
+							if (browser) {
+								document.getElementById('install_pwa_modal')?.showModal();
+							}
+						}}
+					>
+						Install
+					</button>
+				</div>
+
 				<!-- Download Progress (if loading) -->
 				{#if $whisperStatus.isLoading && privacyModeValue}
 					<div class="rounded-lg border border-blue-200 bg-blue-50/80 p-2">
@@ -591,6 +613,15 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 		aria-label="Close modal"
 	></button>
 </dialog>
+
+<!-- Install Instructions Modal -->
+<InstallPwaModal 
+	closeModal={() => {
+		if (browser) {
+			document.getElementById('install_pwa_modal')?.close();
+		}
+	}} 
+/>
 
 <style>
 	.animate-fadeUp {
