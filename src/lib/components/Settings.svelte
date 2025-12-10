@@ -11,7 +11,8 @@
 		getUnlockCode
 	} from '$lib/services/premium/premiumService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
-	import { ModalCloseButton, InstallPwaModal } from './modals/index.js';
+	import { ModalCloseButton } from './modals/index.js';
+	import PwaInstall from '$lib/components/pwa/PwaInstall.svelte';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { STORAGE_KEYS, SERVICE_EVENTS } from '$lib/constants';
@@ -34,6 +35,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 	let codeValidating = false;
 	let showMyCode = false;
 	let myUnlockCode = '';
+	let pwaInstallComponent;
 
 	// Store unsubscribe functions
 	let unsubscribeTheme;
@@ -391,11 +393,9 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 						<button 
 							class="btn btn-xs border-pink-200 bg-pink-50 text-pink-600 hover:bg-pink-100"
 							on:click={() => {
-								if ($installPromptEvent) {
-									handleInstallClick();
-								} else if (browser) {
-									analytics.viewInstallModal('manual_trigger');
-									document.getElementById('install_pwa_modal')?.showModal();
+								if (pwaInstallComponent) {
+									analytics.viewInstallModal('pwa-install-component');
+									pwaInstallComponent.showDialog();
 								}
 							}}
 						>
@@ -620,14 +620,8 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 	></button>
 </dialog>
 
-<!-- Install Instructions Modal -->
-<InstallPwaModal 
-	closeModal={() => {
-		if (browser) {
-			document.getElementById('install_pwa_modal')?.close();
-		}
-	}} 
-/>
+<!-- PWA Install Component -->
+<PwaInstall bind:this={pwaInstallComponent} />
 
 <style>
 	.animate-fadeUp {

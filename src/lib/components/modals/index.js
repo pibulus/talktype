@@ -3,4 +3,4 @@ export { default as AuthModal } from './AuthModal.svelte';
 export { default as ExtensionModal } from './ExtensionModal.svelte';
 export { default as IntroModal } from './IntroModal.svelte';
 export { default as ModalCloseButton } from './ModalCloseButton.svelte';
-export { default as InstallPwaModal } from './InstallPwaModal.svelte';
+
