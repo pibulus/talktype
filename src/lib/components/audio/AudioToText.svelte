@@ -80,6 +80,12 @@
 				console.error('Failed to copy to clipboard:', err);
 			}
 		}
+		// Handle edit event
+		if (type === 'edit' && detail?.text !== undefined) {
+			import('$lib/services/infrastructure/stores').then(({ transcriptionActions }) => {
+				transcriptionActions.updateText(detail.text);
+			});
+		}
 		// Forward other events to child components as needed
 	}
 

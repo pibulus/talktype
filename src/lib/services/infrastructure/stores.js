@@ -204,6 +204,13 @@ export const transcriptionActions = {
 		}));
 	},
 
+	updateText(text) {
+		transcriptionState.update((current) => ({
+			...current,
+			text
+		}));
+	},
+
 	completeTranscription(text) {
 		transcriptionState.update((current) => ({
 			...current,

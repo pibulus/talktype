@@ -171,7 +171,10 @@
 								message: 'You can edit this transcript. Use keyboard to make changes.'
 							});
 						}}
-						on:blur={checkScrollable}
+						on:blur={() => {
+							dispatch('edit', { text: getEditedTranscript() });
+							checkScrollable();
+						}}
 					>
 						<!-- Content set via innerText in reactive statement to avoid cursor jumping -->
 					</div>

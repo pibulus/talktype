@@ -34,7 +34,8 @@ export function createEyeTracking(customConfig = {}) {
 		cleanupHandler: null,
 		lastFrameTime: 0, // For throttling
 		cachedGhostRect: null, // Cache getBoundingClientRect result
-		rafId: null // Track RAF for cleanup
+		rafId: null, // Track RAF for cleanup
+		lastEvent: null // Store latest mouse event for throttling
 	};
 
 	/**
@@ -95,9 +96,11 @@ export function createEyeTracking(customConfig = {}) {
 
 		// Throttled update function using RAF
 		const throttledUpdate = (event) => {
-			// Cancel any pending RAF
+			state.lastEvent = event;
+			
+			// If a frame is already requested, don't request another one
 			if (state.rafId) {
-				cancelAnimationFrame(state.rafId);
+				return;
 			}
 
 			// Schedule update for next frame
@@ -119,9 +122,15 @@ export function createEyeTracking(customConfig = {}) {
 				const ghostCenterX = ghostRect.left + ghostRect.width / 2;
 				const ghostCenterY = ghostRect.top + ghostRect.height / 2;
 
-				// Calculate distance from mouse to ghost center
-				const distanceX = event.clientX - ghostCenterX;
-				const distanceY = event.clientY - ghostCenterY;
+				// Use the latest event data
+				const currentEvent = state.lastEvent;
+				if (!currentEvent) {
+					state.rafId = null;
+					return;
+				}
+
+				const distanceX = currentEvent.clientX - ghostCenterX;
+				const distanceY = currentEvent.clientY - ghostCenterY;
 
 				// Calculate normalized position (-1 to 1)
 				const maxDistanceX = window.innerWidth / config.maxDistanceX;
