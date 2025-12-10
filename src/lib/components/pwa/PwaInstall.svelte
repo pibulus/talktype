@@ -37,7 +37,8 @@
 	manual-chrome="true"
 	disable-chrome="true"
 	manifest-url="/manifest.json"
-	install-description="Install TalkType for the best experience. It's free, private, and looks great."
+	install-description="Keep your ghost handy. 👻&#10;&#10;Add TalkType to your home screen. One tap and you’re talking — no browser, no search, just your words and your vibe.&#10;&#10;It’s fast, it’s private, and it works offline."
+	styles='{{"--tint-color": "#f472b6"}}'
 ></pwa-install>
 
 <style>

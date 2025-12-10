@@ -385,9 +385,9 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 						class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
 					>
 						<div>
-							<span class="text-sm font-medium text-gray-700">📱 Install App</span>
+							<span class="text-sm font-medium text-gray-700">✨ Keep TalkType Close</span>
 							<p class="mt-0.5 text-xs text-gray-500">
-								Add to Home Screen for the best experience
+								Save to your Home Screen
 							</p>
 						</div>
 						<button 
@@ -399,7 +399,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 								}
 							}}
 						>
-							Install
+							Tap to Save
 						</button>
 					</div>
 				{/if}
