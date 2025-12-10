@@ -18,7 +18,14 @@ function createTranscriptionStore() {
 		
 		// Initialize connection with a temporary key
 		connect: async () => {
-			update(s => ({ ...s, connecting: true, error: null }));
+			// Reset state before connecting
+			update(s => ({ 
+				...s, 
+				connecting: true, 
+				error: null,
+				transcript: '',
+				interim: ''
+			}));
 			
 			try {
 				// 1. Get temp key from our server

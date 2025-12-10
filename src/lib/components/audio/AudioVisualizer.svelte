@@ -233,7 +233,7 @@
 				fallbackAnimating = true;
 				updateFallbackVisualizer();
 			}
-		} else if (recording && analyser) {
+		} else if (recording) {
 			// Start optimized visualizer with auto-pause
 			history = Array(historyLength).fill(0);
 			visualizerAnimation.start();

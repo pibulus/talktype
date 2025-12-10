@@ -123,28 +123,29 @@ class SimpleHybridService {
 			}
 		}
 
-		// Normal mode: Use Gemini API (fast, reliable, works)
-		console.log('☁️ Using Gemini API for transcription');
-		localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'gemini');
-		return await this.transcribeWithGemini(audioBlob);
+		// Normal mode: Use Cloud API (Deepgram)
+		console.log('☁️ Using Cloud API for transcription');
+		localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'cloud');
+		return await this.transcribeWithCloud(audioBlob);
 	}
 
 	/**
-	 * Transcribe using Gemini API
+	 * Transcribe using Cloud API
 	 */
-	async transcribeWithGemini(audioBlob) {
+	async transcribeWithCloud(audioBlob) {
 		this.geminiQueue = this.geminiQueue
 			.catch(() => {})
-			.then(() => this._transcribeWithGeminiInternal(audioBlob));
+			.then(() => this._transcribeWithCloudInternal(audioBlob));
 
 		return this.geminiQueue;
 	}
 
-	async _transcribeWithGeminiInternal(audioBlob) {
+	async _transcribeWithCloudInternal(audioBlob) {
 		try {
 			const promptStyle = get(userPreferences).promptStyle || 'standard';
 			const controller = new AbortController();
-			const timeoutId = setTimeout(() => controller.abort(), 30000);
+			// Increase timeout to 60s for longer recordings
+			const timeoutId = setTimeout(() => controller.abort(), 60000);
 
 			try {
 				await ensureApiSession();
@@ -161,8 +162,7 @@ class SimpleHybridService {
 				const response = await fetch('/api/transcribe', {
 					method: 'POST',
 					body: formData,
-					signal: controller.signal,
-					keepalive: true
+					signal: controller.signal
 				});
 
 				clearTimeout(timeoutId);
@@ -177,12 +177,12 @@ class SimpleHybridService {
 			} catch (fetchError) {
 				clearTimeout(timeoutId);
 				if (fetchError.name === 'AbortError') {
-					throw new Error('Transcription took too long (30s timeout). Try a shorter recording?');
+					throw new Error('Transcription took too long (60s timeout). Try a shorter recording?');
 				}
 				throw fetchError;
 			}
 		} catch (error) {
-			console.error('Gemini API transcription error:', error);
+			console.error('Cloud API transcription error:', error);
 
 			// Don't auto-fallback to Whisper - let user explicitly enable Privacy Mode if they want offline
 			// This prevents unexpected downloads and keeps Gemini API as clean default
@@ -197,7 +197,7 @@ class SimpleHybridService {
 		return {
 			whisperReady: this.whisperReady,
 			usingAPI: !this.whisperReady,
-			method: this.whisperReady ? 'Offline (Whisper)' : 'Online (Gemini API)'
+			method: this.whisperReady ? 'Offline (Whisper)' : 'Online (Deepgram)'
 		};
 	}
 }

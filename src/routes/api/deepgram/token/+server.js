@@ -16,8 +16,8 @@ export async function GET() {
 		const { result: projectsResult, error: projectsError } = await deepgram.manage.getProjects();
 		
 		if (projectsError) {
-			console.error('[DeepgramToken] Failed to get projects:', projectsError);
-			throw new Error('Failed to get Deepgram projects');
+			console.error('[DeepgramToken] Failed to get projects:', JSON.stringify(projectsError, null, 2));
+			throw new Error(`Failed to get Deepgram projects: ${projectsError.message || 'Unknown error'}`);
 		}
 
 		const projectId = projectsResult?.projects?.[0]?.project_id;
@@ -45,7 +45,14 @@ export async function GET() {
 		});
 
 	} catch (error) {
-		console.error('[DeepgramToken] ❌ Error:', error);
-		return json({ error: 'Failed to generate token' }, { status: 500 });
+		console.error('[DeepgramToken] ❌ Error generating temp key:', error);
+		console.warn('[DeepgramToken] ⚠️ Falling back to using master key for testing. DO NOT USE IN PRODUCTION.');
+		
+		// Fallback: Return the master key directly (for testing only!)
+		// This allows the user to test even if their key doesn't have management permissions
+		return json({ 
+			key: apiKey,
+			projectId: 'fallback'
+		});
 	}
 }

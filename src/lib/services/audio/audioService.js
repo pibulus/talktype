@@ -240,8 +240,9 @@ export class AudioService {
 				if (event.data.size > 0) {
 					this.audioChunks.push(event.data);
 					
-					// Stream to Deepgram if Live Mode is enabled
-					if (get(liveMode) === 'true') {
+					// Stream to Deepgram if Live Mode is enabled AND Privacy Mode is disabled
+					const privacyMode = typeof localStorage !== 'undefined' && localStorage.getItem('privacyMode') === 'true';
+					if (get(liveMode) === 'true' && !privacyMode) {
 						transcriptionStore.send(event.data);
 					}
 				}
@@ -258,8 +259,9 @@ export class AudioService {
 				mimeType: this.mediaRecorder.mimeType || 'audio/webm'
 			}));
 
-			// Connect to Deepgram if Live Mode is enabled
-			if (get(liveMode) === 'true') {
+			// Connect to Deepgram if Live Mode is enabled AND Privacy Mode is disabled
+			const privacyMode = typeof localStorage !== 'undefined' && localStorage.getItem('privacyMode') === 'true';
+			if (get(liveMode) === 'true' && !privacyMode) {
 				transcriptionStore.connect().catch(err => {
 					console.error('[AudioService] Failed to connect to Deepgram:', err);
 					// Don't fail recording, just fallback to batch
