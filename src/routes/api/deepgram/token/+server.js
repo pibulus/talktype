@@ -16,7 +16,7 @@ export async function GET() {
 		const { result: projectsResult, error: projectsError } = await deepgram.manage.getProjects();
 		
 		if (projectsError) {
-			console.error('[DeepgramToken] Failed to get projects:', JSON.stringify(projectsError, null, 2));
+			// console.error('[DeepgramToken] Failed to get projects:', JSON.stringify(projectsError, null, 2));
 			throw new Error(`Failed to get Deepgram projects: ${projectsError.message || 'Unknown error'}`);
 		}
 
@@ -35,7 +35,10 @@ export async function GET() {
 		});
 
 		if (newKeyError) {
-			console.error('[DeepgramToken] Failed to create key:', newKeyError);
+			// Only log full error if it's NOT a scope issue (which we expect for personal keys)
+			if (newKeyError.status !== 403) {
+				console.error('[DeepgramToken] Failed to create key:', newKeyError);
+			}
 			throw new Error('Failed to create temporary key');
 		}
 

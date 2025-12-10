@@ -49,7 +49,7 @@
 			<div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
 				<div class="mb-2 flex items-center gap-2">
 					<span class="text-xl">🍎</span>
-					<h4 class="font-bold text-gray-800">iPhone / iPad</h4>
+					<h4 class="font-bold text-gray-800">iPhone / iPad (Safari or Chrome)</h4>
 				</div>
 				<ol class="ml-4 list-decimal space-y-2 text-sm text-gray-600">
 					<li>Tap the <span class="font-bold text-blue-600">Share</span> button (box with arrow)</li>
@@ -93,6 +93,7 @@
 
 	<button
 		class="modal-backdrop bg-black/40 backdrop-blur-sm"
+		aria-label="Close modal"
 		on:click|self|preventDefault|stopPropagation={() => {
 			if (browser) {
 				const modal = document.getElementById('install_pwa_modal');

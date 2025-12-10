@@ -17,6 +17,7 @@
 		uiState,
 		uiActions
 	} from '$lib/services';
+	import { liveMode } from '$lib';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import { CTA_PHRASES } from '$lib/constants';
 
@@ -154,8 +155,8 @@
 		</div>
 	</div>
 
-	<!-- Audio visualizer - only show when recording -->
-	{#if $isRecording}
+	<!-- Audio visualizer - only show when recording AND NOT in Live Mode -->
+	{#if $isRecording && $liveMode !== 'true'}
 		<div class="visualizer-section mt-6 flex w-full justify-center">
 			<div class="wrapper-container flex w-full justify-center">
 				<div

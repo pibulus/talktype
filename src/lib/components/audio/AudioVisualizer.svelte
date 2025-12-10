@@ -201,7 +201,11 @@
 
 		// Use waveformData from audioService store (no need for separate analyser!)
 		const dataArray = $waveformData;
-		if (!dataArray || dataArray.length === 0) return;
+		if (!dataArray || dataArray.length === 0) {
+            // console.log('[AudioVisualizer] No waveform data');
+            return;
+        }
+        // console.log('[AudioVisualizer] Got data:', dataArray[0], dataArray[10]);
 
 		// Calculate average level from waveformData (Uint8Array with 0-255 values)
 		let sum = 0;

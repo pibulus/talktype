@@ -261,9 +261,9 @@
 				class="content-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
 			>
 				<!-- Transcript Display -->
-				{#if $transcriptionText && (!$isRecording || $liveMode === 'true')}
+				{#if ($transcriptionText || $liveMode === 'true') && (!$isRecording || $liveMode === 'true')}
 					<TranscriptDisplay
-						transcript={$transcriptionText}
+						transcript={$transcriptionText || ($isRecording ? 'Listening...' : '')}
 						{responsiveFontSize}
 						on:copy={handleTranscriptEvent}
 						on:focus={handleTranscriptEvent}
