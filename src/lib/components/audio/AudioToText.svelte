@@ -19,6 +19,8 @@
 		hasPermissionError,
 		uiActions
 	} from '$lib/services';
+	import { liveMode } from '$lib';
+	import { transcriptionStore } from '$lib/stores/transcriptionStore';
 	import { whisperStatus } from '../../services/transcription/whisper/whisperService';
 
 	// Props - simplified interface
@@ -33,6 +35,16 @@
 
 	// Subscribe to whisper status to track when model is ready
 	$: modelReady = $whisperStatus.isLoaded;
+
+	// Sync streaming text to global store
+	$: if ($liveMode === 'true' && ($transcriptionStore.transcript || $transcriptionStore.interim)) {
+		const fullText = ($transcriptionStore.transcript + ' ' + $transcriptionStore.interim).trim();
+		if (fullText) {
+			import('$lib/services/infrastructure/stores').then(({ transcriptionActions }) => {
+				transcriptionActions.updateText(fullText);
+			});
+		}
+	}
 
 	// Component references
 	let recordingControlsRef;
@@ -249,7 +261,7 @@
 				class="content-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
 			>
 				<!-- Transcript Display -->
-				{#if $transcriptionText && !$isRecording}
+				{#if $transcriptionText && (!$isRecording || $liveMode === 'true')}
 					<TranscriptDisplay
 						transcript={$transcriptionText}
 						{responsiveFontSize}

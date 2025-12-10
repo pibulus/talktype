@@ -1,7 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { theme, autoRecord, applyTheme, promptStyle } from '$lib';
+	import { theme, autoRecord, applyTheme, promptStyle, liveMode } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { installPromptEvent } from '$lib/stores/pwa';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
@@ -25,6 +25,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 	let autoRecordValue = false;
 	let selectedPromptStyle = 'standard';
 	let privacyModeValue = false;
+	let liveModeValue = false;
 
 	// Unlock code state
 	let showCodeEntry = false;
@@ -38,6 +39,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 	let unsubscribeTheme;
 	let unsubscribeAutoRecord;
 	let unsubscribePromptStyle;
+	let unsubscribeLiveMode;
 
 	onMount(() => {
 		// Subscribe to stores only in browser
@@ -53,6 +55,10 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 			selectedPromptStyle = value;
 		});
 
+		unsubscribeLiveMode = liveMode.subscribe((value) => {
+			liveModeValue = value === 'true';
+		});
+
 		// Get privacy mode value from localStorage (browser only)
 		if (browser) {
 			privacyModeValue = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
@@ -64,6 +70,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 		if (unsubscribeTheme) unsubscribeTheme();
 		if (unsubscribeAutoRecord) unsubscribeAutoRecord();
 		if (unsubscribePromptStyle) unsubscribePromptStyle();
+		if (unsubscribeLiveMode) unsubscribeLiveMode();
 	});
 
 	// Handlers
@@ -111,6 +118,18 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 			window.dispatchEvent(
 				new CustomEvent(SERVICE_EVENTS.SETTINGS.CHANGED, {
 					detail: { setting: 'privacyMode', value: privacyModeValue }
+				})
+			);
+		}
+	}
+
+	function toggleLiveMode() {
+		liveModeValue = !liveModeValue;
+		liveMode.set(liveModeValue.toString());
+		if (browser) {
+			window.dispatchEvent(
+				new CustomEvent('talktype-setting-changed', {
+					detail: { setting: 'liveMode', value: liveModeValue }
 				})
 			);
 		}
@@ -321,6 +340,37 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 							></div>
 							<div
 								class={`absolute left-0.5 top-0.5 h-4 w-4 transform rounded-full bg-white transition-all duration-200 ${privacyModeValue ? 'translate-x-5' : ''}`}
+							></div>
+						</div>
+					</label>
+				</div>
+
+				<!-- Live Mode Toggle -->
+				<div
+					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
+				>
+					<div>
+						<span class="text-sm font-medium text-gray-700">⚡ Live Mode</span>
+						<p class="mt-0.5 text-xs text-gray-500">
+							See text appear as you speak (Online only)
+						</p>
+					</div>
+					<label class="flex cursor-pointer items-center">
+						<span class="sr-only"
+							>Live Mode Toggle {liveModeValue ? 'Enabled' : 'Disabled'}</span
+						>
+						<div class="relative">
+							<input
+								type="checkbox"
+								class="sr-only"
+								checked={liveModeValue}
+								on:change={toggleLiveMode}
+							/>
+							<div
+								class={`h-5 w-10 rounded-full ${liveModeValue ? 'bg-blue-400' : 'bg-gray-200'} transition-all duration-200`}
+							></div>
+							<div
+								class={`absolute left-0.5 top-0.5 h-4 w-4 transform rounded-full bg-white transition-all duration-200 ${liveModeValue ? 'translate-x-5' : ''}`}
 							></div>
 						</div>
 					</label>
