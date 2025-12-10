@@ -28,6 +28,7 @@
 
 	// Service instances
 	let unsubscribers = [];
+	let activeTimeouts = [];
 	let modelReady = false;
 
 	// Subscribe to whisper status to track when model is ready
@@ -71,9 +72,10 @@
 				// Set clipboard success state
 				uiActions.setClipboardSuccess(true);
 				// Reset after 2 seconds
-				setTimeout(() => {
+				const timeoutId = setTimeout(() => {
 					uiActions.setClipboardSuccess(false);
 				}, 2000);
+				activeTimeouts.push(timeoutId);
 			} catch (err) {
 				console.error('Failed to copy to clipboard:', err);
 			}
@@ -152,7 +154,7 @@
 
 			// Also start loading after configured delay if no interaction
 			// This ensures models are ready when user needs them
-			setTimeout(() => {
+			const delayTimeoutId = setTimeout(() => {
 				if (!modelLoadStarted) {
 					// console.log(
 					// 	`⏰ Auto-starting model load after ${ANIMATION.MODEL.AUTO_LOAD_DELAY / 1000}s delay`
@@ -160,6 +162,7 @@
 					startModelLoading();
 				}
 			}, ANIMATION.MODEL.AUTO_LOAD_DELAY);
+			activeTimeouts.push(delayTimeoutId);
 		}
 
 		// Subscribe to permission denied state to show error modal
@@ -178,6 +181,10 @@
 	onDestroy(() => {
 		// Unsubscribe from all subscriptions
 		unsubscribers.forEach((unsub) => unsub());
+
+		// Clear all active timeouts
+		activeTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+		activeTimeouts = [];
 
 		// Remove event listeners
 		if (typeof window !== 'undefined') {
