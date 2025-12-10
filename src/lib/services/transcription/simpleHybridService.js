@@ -184,32 +184,8 @@ class SimpleHybridService {
 		} catch (error) {
 			console.error('Gemini API transcription error:', error);
 
-			// Fallback to offline Whisper if API fails
-			console.log('⚠️ API failed, falling back to offline Whisper...');
-			
-			// Ensure Whisper is loaded
-			if (!this.whisperReady) {
-				console.log('⏳ Waiting for Whisper to load...');
-				if (!this.whisperLoadPromise) {
-					this.startBackgroundLoad();
-				}
-				
-				try {
-					const result = await (this.whisperLoadPromise || Promise.resolve({ success: this.whisperReady }));
-					if (!result.success && !this.whisperReady) {
-						throw new Error('Offline fallback failed: Whisper model could not be loaded.');
-					}
-				} catch (loadError) {
-					console.error('Whisper load failed during fallback:', loadError);
-					throw error; // Throw original API error if fallback fails
-				}
-			}
-
-			if (this.whisperReady) {
-				console.log('✅ Whisper ready, starting offline transcription...');
-				return await whisperService.transcribeAudio(audioBlob);
-			}
-
+			// Don't auto-fallback to Whisper - let user explicitly enable Privacy Mode if they want offline
+			// This prevents unexpected downloads and keeps Gemini API as clean default
 			throw error;
 		}
 	}

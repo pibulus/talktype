@@ -55,8 +55,9 @@
 		exponent = 0.5;
 		detectedDevice = 'Mac';
 	} else {
-		// Default settings for other platforms
-		scalingFactor = 2000;
+		// Default settings for other platforms (Windows/Linux)
+		// Reduced from 2000 to 80 for much better sensitivity
+		scalingFactor = 80;
 		offset = 80;
 		exponent = 0.5;
 		detectedDevice = 'PC';
