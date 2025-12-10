@@ -3,7 +3,7 @@
 	import { browser } from '$app/environment';
 	import { theme, autoRecord, applyTheme, promptStyle, liveMode } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
-	import { installPromptEvent } from '$lib/stores/pwa';
+	import { installPromptEvent, isPwaInstalled } from '$lib/stores/pwa';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import {
 		isPremium,
@@ -140,6 +140,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 			try {
 				$installPromptEvent.prompt();
 				const { outcome } = await $installPromptEvent.userChoice;
+				analytics.installPWA(outcome);
 				if (outcome === 'accepted') {
 					$installPromptEvent = null;
 				}
@@ -376,27 +377,32 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 					</label>
 				</div>
 
-				<!-- Install App Button -->
-				<div
-					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
-				>
-					<div>
-						<span class="text-sm font-medium text-gray-700">📱 Install App</span>
-						<p class="mt-0.5 text-xs text-gray-500">
-							Add to Home Screen for the best experience
-						</p>
-					</div>
-					<button 
-						class="btn btn-xs border-pink-200 bg-pink-50 text-pink-600 hover:bg-pink-100"
-						on:click={() => {
-							if (browser) {
-								document.getElementById('install_pwa_modal')?.showModal();
-							}
-						}}
+				<!-- Install App Button (Only if not installed) -->
+				{#if !$isPwaInstalled}
+					<div
+						class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
 					>
-						Install
-					</button>
-				</div>
+						<div>
+							<span class="text-sm font-medium text-gray-700">📱 Install App</span>
+							<p class="mt-0.5 text-xs text-gray-500">
+								Add to Home Screen for the best experience
+							</p>
+						</div>
+						<button 
+							class="btn btn-xs border-pink-200 bg-pink-50 text-pink-600 hover:bg-pink-100"
+							on:click={() => {
+								if ($installPromptEvent) {
+									handleInstallClick();
+								} else if (browser) {
+									analytics.viewInstallModal('manual_trigger');
+									document.getElementById('install_pwa_modal')?.showModal();
+								}
+							}}
+						>
+							Install
+						</button>
+					</div>
+				{/if}
 
 				<!-- Download Progress (if loading) -->
 				{#if $whisperStatus.isLoading && privacyModeValue}

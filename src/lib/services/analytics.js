@@ -51,8 +51,12 @@ export const analytics = {
 	},
 
 	// Retention
-	installPWA() {
-		track('pwa_installed');
+	installPWA(outcome = 'accepted') {
+		track('pwa_install_outcome', { outcome });
+	},
+
+	viewInstallModal(platform) {
+		track('pwa_install_modal_viewed', { platform });
 	},
 
 	viewTranscriptHistory(transcriptCount) {

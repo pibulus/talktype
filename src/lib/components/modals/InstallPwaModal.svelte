@@ -3,7 +3,20 @@
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { browser } from '$app/environment';
 
+	import { onMount } from 'svelte';
+
 	export let closeModal = () => {};
+
+	let isIOS = false;
+	let isAndroid = false;
+
+	onMount(() => {
+		if (browser) {
+			const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+			isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+			isAndroid = /android/i.test(userAgent);
+		}
+	});
 
 	function handleClose() {
 		closeModal();
@@ -45,41 +58,60 @@
 		</div>
 
 		<div class="space-y-6 px-6 py-6">
-			<!-- iOS Instructions -->
-			<div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-				<div class="mb-2 flex items-center gap-2">
-					<span class="text-xl">🍎</span>
-					<h4 class="font-bold text-gray-800">iPhone / iPad (Safari or Chrome)</h4>
+			<!-- Platform Specific Instructions -->
+			{#if isIOS}
+				<div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+					<div class="mb-2 flex items-center gap-2">
+						<span class="text-xl">🍎</span>
+						<h4 class="font-bold text-gray-800">iPhone / iPad (Safari or Chrome)</h4>
+					</div>
+					<ol class="ml-4 list-decimal space-y-2 text-sm text-gray-600">
+						<li>Tap the <span class="font-bold text-blue-600">Share</span> button (box with arrow)</li>
+						<li>Scroll down and tap <span class="font-bold text-gray-800">Add to Home Screen</span></li>
+						<li>Tap <span class="font-bold text-blue-600">Add</span> in the top right</li>
+					</ol>
 				</div>
-				<ol class="ml-4 list-decimal space-y-2 text-sm text-gray-600">
-					<li>Tap the <span class="font-bold text-blue-600">Share</span> button (box with arrow)</li>
-					<li>Scroll down and tap <span class="font-bold text-gray-800">Add to Home Screen</span></li>
-					<li>Tap <span class="font-bold text-blue-600">Add</span> in the top right</li>
-				</ol>
-			</div>
+			{:else if isAndroid}
+				<div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+					<div class="mb-2 flex items-center gap-2">
+						<span class="text-xl">🤖</span>
+						<h4 class="font-bold text-gray-800">Android</h4>
+					</div>
+					<ol class="ml-4 list-decimal space-y-2 text-sm text-gray-600">
+						<li>Tap the <span class="font-bold text-gray-800">three dots</span> menu</li>
+						<li>Tap <span class="font-bold text-gray-800">Install App</span> or <span class="font-bold text-gray-800">Add to Home Screen</span></li>
+						<li>Follow the prompt to install</li>
+					</ol>
+				</div>
+			{:else}
+				<div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+					<div class="mb-2 flex items-center gap-2">
+						<span class="text-xl">💻</span>
+						<h4 class="font-bold text-gray-800">Desktop</h4>
+					</div>
+					<p class="text-sm text-gray-600">
+						Click the <span class="font-bold text-gray-800">Install icon</span> in your browser's address bar (usually on the right side).
+					</p>
+				</div>
+			{/if}
 
-			<!-- Android Instructions -->
-			<div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-				<div class="mb-2 flex items-center gap-2">
-					<span class="text-xl">🤖</span>
-					<h4 class="font-bold text-gray-800">Android</h4>
-				</div>
-				<ol class="ml-4 list-decimal space-y-2 text-sm text-gray-600">
-					<li>Tap the <span class="font-bold text-gray-800">three dots</span> menu</li>
-					<li>Tap <span class="font-bold text-gray-800">Install App</span> or <span class="font-bold text-gray-800">Add to Home Screen</span></li>
-					<li>Follow the prompt to install</li>
-				</ol>
-			</div>
-
-			<!-- Desktop Instructions -->
-			<div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-				<div class="mb-2 flex items-center gap-2">
-					<span class="text-xl">💻</span>
-					<h4 class="font-bold text-gray-800">Desktop</h4>
-				</div>
-				<p class="text-sm text-gray-600">
-					Click the <span class="font-bold text-gray-800">Install icon</span> in your browser's address bar (usually on the right side).
-				</p>
+			<!-- Why Install Section -->
+			<div class="mt-4 rounded-2xl border border-pink-100 bg-pink-50/50 p-4">
+				<h4 class="mb-2 font-bold text-gray-800">Why Install?</h4>
+				<ul class="space-y-2 text-sm text-gray-600">
+					<li class="flex items-start gap-2">
+						<span class="mt-0.5 text-pink-500">⚡️</span>
+						<span><strong>Instant Access:</strong> Launch directly from your home screen.</span>
+					</li>
+					<li class="flex items-start gap-2">
+						<span class="mt-0.5 text-pink-500">🔒</span>
+						<span><strong>Offline Privacy:</strong> Use Privacy Mode completely offline.</span>
+					</li>
+					<li class="flex items-start gap-2">
+						<span class="mt-0.5 text-pink-500">📱</span>
+						<span><strong>Fullscreen:</strong> More space for your thoughts.</span>
+					</li>
+				</ul>
 			</div>
 
 			<button
@@ -88,6 +120,7 @@
 			>
 				Got it!
 			</button>
+		</div>
 		</div>
 	</div>
 
