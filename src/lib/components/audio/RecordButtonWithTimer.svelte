@@ -19,17 +19,34 @@
 
 	// Element refs
 	let recordButtonElement;
+	let animationTimeout = null;
+
+	// Cleanup on destroy
+	import { onDestroy } from 'svelte';
+	onDestroy(() => {
+		if (animationTimeout) {
+			clearTimeout(animationTimeout);
+			animationTimeout = null;
+		}
+	});
 
 	// Handlers
 	export function animateButtonPress() {
 		if (recordButtonElement) {
+			// Clear any pending animation timeout
+			if (animationTimeout) {
+				clearTimeout(animationTimeout);
+				animationTimeout = null;
+			}
+
 			recordButtonElement.classList.remove('button-press');
 			void recordButtonElement.offsetWidth; // Force reflow
 			recordButtonElement.classList.add('button-press');
-			setTimeout(() => {
+			animationTimeout = setTimeout(() => {
 				if (recordButtonElement) {
 					recordButtonElement.classList.remove('button-press');
 				}
+				animationTimeout = null;
 			}, ANIMATION.BUTTON.PRESS_DURATION);
 		}
 	}
@@ -55,10 +72,22 @@
 		return timeLimit - recordingDuration;
 	}
 
-	// Reactive variables for timer states
-	$: timeRemaining = getTimeRemaining();
-	$: isWarning = timeRemaining <= ANIMATION.RECORDING.WARNING_THRESHOLD;
-	$: isDanger = timeRemaining <= ANIMATION.RECORDING.DANGER_THRESHOLD;
+	// Reactive variables for timer states (compute only when needed)
+	$: timeRemaining = recording ? getTimeRemaining() : 0;
+	$: isWarning = recording && timeRemaining <= ANIMATION.RECORDING.WARNING_THRESHOLD;
+	$: isDanger = recording && timeRemaining <= ANIMATION.RECORDING.DANGER_THRESHOLD;
+
+	// Pre-compute progress percentage for inline style
+	$: progressPercentage = recording
+		? Math.min(
+				(recordingDuration /
+					(isPremiumUser
+						? ANIMATION.RECORDING.PREMIUM_LIMIT
+						: ANIMATION.RECORDING.FREE_LIMIT)) *
+					100,
+				100
+			)
+		: 0;
 
 	// Format timer display (MM:SS)
 	function formatTime(seconds) {
@@ -120,7 +149,7 @@
 			? 'recording-warning'
 			: ''} {isDanger && recording ? 'recording-danger' : ''}"
 		style="min-width: 280px; min-height: 64px; transform-origin: center center; position: relative; {recording
-			? `--progress: ${Math.min((recordingDuration / (isPremiumUser ? ANIMATION.RECORDING.PREMIUM_LIMIT : ANIMATION.RECORDING.FREE_LIMIT)) * 100, 100)}%`
+			? `--progress: ${progressPercentage}%`
 			: ''}"
 		on:click={() => dispatch('click')}
 		on:mouseenter={() => dispatch('preload')}
@@ -212,33 +241,6 @@
 			inset 0 1px 0 rgba(255, 255, 255, 0.15);
 	}
 
-	/* Shimmer effect for the button - commented out as not displaying correctly
-  .record-button::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -50%;
-    width: 25%;
-    height: 100%;
-    background: linear-gradient(
-      to right, 
-      rgba(255, 255, 255, 0) 0%, 
-      rgba(255, 255, 255, 0.1) 50%, 
-      rgba(255, 255, 255, 0) 100%
-    );
-    transform: skewX(-25deg);
-    animation: shimmer 3s infinite;
-    filter: blur(5px);
-    opacity: 0.7;
-    pointer-events: none;
-  }
-  
-  @keyframes shimmer {
-    0% { transform: translateX(-100%) skewX(-25deg); }
-    100% { transform: translateX(500%) skewX(-25deg); }
-  }
-  */
-
 	/* Focus state */
 	.record-button:focus {
 		outline: none;
@@ -311,7 +313,7 @@
 		transform-origin: center;
 	}
 
-	/* Clean progress bar styling */
+	/* Progress container styling */
 	.progress-container {
 		position: relative;
 		overflow: hidden;
@@ -434,34 +436,6 @@
 		}
 	}
 
-	/* Progress bar styling */
-	.progress-container {
-		position: relative;
-		overflow: hidden;
-		transition: all 0.3s ease;
-	}
-
-	.progress-bar {
-		position: absolute;
-		top: 0;
-		left: 0;
-		height: 100%;
-		transition: width 0.3s ease;
-		animation: pulse-glow 1.5s infinite ease-in-out;
-	}
-
-	@keyframes pulse-glow {
-		0% {
-			box-shadow: inset 0 0 5px rgba(255, 190, 60, 0.5);
-		}
-		50% {
-			box-shadow: inset 0 0 15px rgba(255, 190, 60, 0.8);
-		}
-		100% {
-			box-shadow: inset 0 0 5px rgba(255, 190, 60, 0.5);
-		}
-	}
-
 	/* Whole-button progress indicator */
 	.recording-active {
 		position: relative;
@@ -493,32 +467,7 @@
 			transform 0.2s ease;
 	}
 
-	/* Animated edge for progress indicator - commented out as not displaying correctly
-  .recording-active::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: calc(var(--progress, 0%) - 1%);
-    width: 2%;
-    background: linear-gradient(to right, 
-      rgba(255, 255, 255, 0), 
-      rgba(255, 255, 255, 0.4), 
-      rgba(255, 255, 255, 0)
-    );
-    opacity: 0.8;
-    filter: blur(3px);
-    animation: pulse-edge 1.5s infinite alternate ease-in-out;
-    pointer-events: none;
-  }
-  
-  @keyframes pulse-edge {
-    0% { opacity: 0.3; }
-    100% { opacity: 0.8; }
-  }
-  */
-
-	/* Simple warning/danger gradients - keeping these simpler since the advanced effects aren't visible */
+	/* Warning/danger gradients */
 	.recording-warning {
 		background-image: linear-gradient(
 			to right,

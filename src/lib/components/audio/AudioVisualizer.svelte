@@ -1,16 +1,13 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { appActive, shouldAnimateStore } from '$lib/services/infrastructure';
+	import { appActive, waveformData } from '$lib/services/infrastructure';
 	import { createAnimationController } from '$lib/utils/performanceUtils';
 
 	// Audio visualization configuration
-	let audioDataArray;
-	let animationFrameId;
 	let audioLevel = 0;
 	let history = []; // Array to store audio level history
 	const historyLength = 30; // Number of bars to display in history
-	let analyser;
-	let audioContext;
+	let animationFrameId;
 	let recording = false; // Track recording state within the component
 
 	// Reactive animation state
@@ -63,39 +60,12 @@
 		detectedDevice = 'PC';
 	}
 
-	// ===== STANDARD AUDIO VISUALIZER =====
-	async function initStandardVisualizer() {
-		try {
-			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-			// Explicitly handle user gesture for Safari
-			if (typeof window !== 'undefined' && window.document) {
-				window.document.addEventListener(
-					'click',
-					() => {
-						if (audioContext && audioContext.state === 'suspended') {
-							audioContext.resume();
-						}
-					},
-					{ once: true }
-				);
-			}
-
-			audioContext = new (window.AudioContext || window.webkitAudioContext)();
-			analyser = audioContext.createAnalyser();
-			const source = audioContext.createMediaStreamSource(stream);
-			source.connect(analyser);
-			analyser.fftSize = 256;
-
-			recording = true;
-			startVisualizer();
-		} catch (error) {
-			console.error('Error accessing microphone for visualizer:', error);
-			recording = false;
-
-			// Fallback to the simulated visualizer if standard fails
-			initFallbackVisualizer();
-		}
+	// ===== STANDARD AUDIO VISUALIZER (using waveformData from audioService) =====
+	function initStandardVisualizer() {
+		// No need to create separate stream - audioService already provides waveformData!
+		recording = true;
+		history = Array(historyLength).fill(0);
+		startVisualizer();
 	}
 
 	// ===== FALLBACK VISUALIZER FOR SAFARI/IOS =====
@@ -214,13 +184,13 @@
 		animationFrameId = requestAnimationFrame(updateFallbackVisualizer);
 	}
 
-	// ===== STANDARD VISUALIZER UPDATE LOGIC =====
+	// ===== STANDARD VISUALIZER UPDATE LOGIC (using waveformData from store) =====
 	let frameSkipCounter = 0;
 	const frameSkipRate = 2; // Adjust this value to control the speed (higher value = slower animation)
 
 	// Create optimized animation controller that auto-pauses when tab is hidden
 	const visualizerAnimation = createAnimationController(() => {
-		if (!recording || !analyser) return;
+		if (!recording) return;
 
 		// Skip frames to slow down the animation
 		if (frameSkipCounter < frameSkipRate) {
@@ -229,18 +199,23 @@
 		}
 		frameSkipCounter = 0;
 
-		const bufferLength = analyser.frequencyBinCount;
-		audioDataArray = new Float32Array(bufferLength);
-		analyser.getFloatFrequencyData(audioDataArray);
+		// Use waveformData from audioService store (no need for separate analyser!)
+		const dataArray = $waveformData;
+		if (!dataArray || dataArray.length === 0) return;
+
+		// Calculate average level from waveformData (Uint8Array with 0-255 values)
 		let sum = 0;
-		for (let i = 0; i < bufferLength; i++) {
-			sum += audioDataArray[i];
+		for (let i = 0; i < dataArray.length; i++) {
+			sum += dataArray[i];
 		}
-		let linearLevel = Math.max(0, sum / bufferLength + offset); // Calculate linear level first
-		let nonLinearLevel = Math.pow(linearLevel, exponent); // Apply power function for non-linear scaling
+		let averageLevel = sum / dataArray.length;
+
+		// Apply scaling for visualization (dataArray values are 0-255)
+		let linearLevel = Math.max(0, averageLevel - (255 - offset));
+		let nonLinearLevel = Math.pow(linearLevel, exponent);
 		audioLevel = Math.max(
 			0,
-			Math.min(100, nonLinearLevel * (100 / Math.pow(scalingFactor, exponent))) // Rescale non-linear level
+			Math.min(100, nonLinearLevel * (100 / Math.pow(scalingFactor, exponent)))
 		);
 
 		// Update history - add new level to the start, remove oldest if history is too long
@@ -249,11 +224,6 @@
 			history.pop();
 		}
 	});
-
-	function updateVisualizer() {
-		// Legacy function kept for compatibility
-		// Now handled by animation controller
-	}
 
 	// ===== COMMON CONTROL FUNCTIONS =====
 	function startVisualizer() {
@@ -282,18 +252,14 @@
 		} else {
 			// Stop optimized animation controller
 			visualizerAnimation.stop();
-			// Standard cleanup for legacy code
+			// Standard cleanup
 			if (typeof animationFrameId === 'number') {
 				cancelAnimationFrame(animationFrameId);
 				clearTimeout(animationFrameId);
 			}
 			audioLevel = 0;
 			history = [];
-			if (audioContext) {
-				audioContext.close();
-				audioContext = null;
-				analyser = null;
-			}
+			// No audioContext to clean up - we're using audioService's stream!
 		}
 	}
 
@@ -314,7 +280,7 @@
 				if (!fallbackAnimating) {
 					startVisualizer();
 				}
-			} else if (analyser) {
+			} else {
 				startVisualizer();
 			}
 		} else if (!recording) {
