@@ -193,30 +193,6 @@ dialog.modal::backdrop {
 /* ===================================================================
    COMMON ANIMATIONS - Namespaced with tt- prefix
    =================================================================== */
-/* Fade up animation for modal content */
-@keyframes tt-fadeUp {
-	0% {
-		opacity: 0;
-		transform: translateY(8px);
-	}
-	100% {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
-/* Fade in animation for content */
-@keyframes tt-fadeIn {
-	0% {
-		opacity: 0;
-		transform: translateY(8px);
-	}
-	100% {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
 /* Slow pulse animation */
 @keyframes tt-pulse-slow {
 	0%,
