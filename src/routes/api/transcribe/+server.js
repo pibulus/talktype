@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { guardRequest } from '$lib/server/authService.js';
-import { transcribeAudio } from '$lib/server/geminiService.js';
+import { transcribeAudio } from '$lib/server/deepgramService.js';
 
 const MAX_UPLOAD_BYTES = Number(env.MAX_UPLOAD_BYTES ?? `${50 * 1024 * 1024}`);
 
