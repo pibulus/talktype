@@ -1,5 +1,6 @@
 import { simpleHybridService } from './simpleHybridService';
 import { transcriptionState, transcriptionActions, uiActions } from '../infrastructure/stores';
+import { analytics } from '../analytics';
 import { COPY_MESSAGES, getRandomFromArray } from '$lib/constants';
 import { get } from 'svelte/store';
 import { getLatestRecordingDraft, deleteRecordingDraft } from '../audio/recordingRecoveryStore';
@@ -182,6 +183,7 @@ export class TranscriptionService {
 				await navigator.clipboard.writeText(text);
 				uiActions.showClipboardSuccess();
 				uiActions.setScreenReaderMessage('Transcript copied to clipboard');
+				analytics.copyTranscript(text.split(/\s+/).length);
 				return true;
 			}
 
@@ -200,6 +202,7 @@ export class TranscriptionService {
 			if (success) {
 				uiActions.showClipboardSuccess();
 				uiActions.setScreenReaderMessage('Transcript copied to clipboard');
+				analytics.copyTranscript(text.split(/\s+/).length);
 			} else {
 				uiActions.setScreenReaderMessage(
 					'Unable to copy. Please try clicking in the window first.'
@@ -244,6 +247,7 @@ export class TranscriptionService {
 
 			uiActions.showClipboardSuccess();
 			uiActions.setScreenReaderMessage('Transcript shared successfully');
+			analytics.shareTranscript('web-share', text.split(/\s+/).length);
 			return true;
 		} catch (error) {
 			// Don't treat user cancellation as an error

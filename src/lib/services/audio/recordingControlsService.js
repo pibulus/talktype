@@ -7,6 +7,7 @@ import { get } from 'svelte/store';
 import { CTA_PHRASES, ANIMATION } from '$lib/constants';
 import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
 import { transcriptionState } from '../infrastructure/stores';
+import { analytics } from '../analytics';
 
 export class RecordingControlsService {
 	constructor(dependencies) {
@@ -161,6 +162,11 @@ export class RecordingControlsService {
 						const timeoutId = setTimeout(() => this._incrementTranscriptionCount(), 0);
 						this.activeTimeouts.push(timeoutId);
 					}
+
+					// Track successful transcription
+					// We use 'whisper-local' as the method since that's what this service does
+					const wordCount = transcriptText.trim().split(/\s+/).length;
+					analytics.completeTranscription('whisper-local', estimatedDurationSeconds, wordCount);
 				} catch (transcriptionError) {
 					console.error('❌ Transcription error:', transcriptionError);
 					const friendlyMessage = transcriptionError.message.includes('network')
@@ -245,7 +251,7 @@ export class RecordingControlsService {
 		if (!browser) return;
 
 		try {
-			const newCount = this.pwaService.incrementTranscriptionCount();
+			this.pwaService.incrementTranscriptionCount();
 			// Could dispatch event here if needed
 		} catch (error) {
 			console.error('Error incrementing transcription count:', error);

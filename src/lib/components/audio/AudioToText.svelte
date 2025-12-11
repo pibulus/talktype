@@ -19,6 +19,7 @@
 		hasPermissionError,
 		uiActions
 	} from '$lib/services';
+	import { analytics } from '$lib/services/analytics';
 	import { liveMode } from '$lib';
 	import { transcriptionStore } from '$lib/stores/transcriptionStore';
 	import { whisperStatus } from '../../services/transcription/whisper/whisperService';
@@ -88,6 +89,7 @@
 					uiActions.setClipboardSuccess(false);
 				}, 2000);
 				activeTimeouts.push(timeoutId);
+				analytics.copyTranscript(detail.text.split(/\s+/).length);
 			} catch (err) {
 				console.error('Failed to copy to clipboard:', err);
 			}

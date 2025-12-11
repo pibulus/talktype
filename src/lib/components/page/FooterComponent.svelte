@@ -1,17 +1,21 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
+	import { analytics } from '$lib/services/analytics';
 
 	const dispatch = createEventDispatcher();
 
 	function showAbout() {
+		analytics.viewModal('about');
 		dispatch('showAbout');
 	}
 
 	function showSettings() {
+		analytics.viewModal('settings');
 		dispatch('showSettings');
 	}
 
 	function showHistory() {
+		analytics.viewModal('history');
 		dispatch('showHistory');
 	}
 
