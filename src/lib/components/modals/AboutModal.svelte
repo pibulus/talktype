@@ -12,7 +12,7 @@
 	aria-modal="true"
 >
 	<div
-		class="modal-box max-h-[80vh] overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
+		class="modal-box w-[92%] max-h-[85vh] overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
 	>
 		<form method="dialog">
 			<ModalCloseButton {closeModal} label="Close about modal" modalId="about_modal" />
@@ -33,7 +33,7 @@
 			<div
 				class="rounded-lg border border-pink-200/60 bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 shadow-sm"
 			>
-				<p class="text-sm leading-relaxed text-gray-700">
+				<p class="text-base leading-relaxed text-gray-700">
 					TalkType is a minimalist voice-to-text tool that transforms your speech into text
 					effortlessly. Built with love by two friends who think tech should be <span
 						class="font-medium text-pink-600">simple</span

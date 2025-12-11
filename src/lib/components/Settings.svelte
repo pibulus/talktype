@@ -260,7 +260,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 	aria-modal="true"
 >
 	<div
-		class="animate-modal-enter modal-box relative max-h-[80vh] w-[95%] max-w-md overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl md:max-w-lg"
+		class="animate-modal-enter modal-box relative max-h-[85vh] w-[92%] max-w-md overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl md:max-w-lg"
 	>
 		<form method="dialog">
 			<ModalCloseButton
@@ -288,11 +288,11 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 			<div class="mb-2 space-y-2">
 				<!-- Auto-Record Toggle -->
 				<div
-					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
+					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
 				>
 					<div>
-						<span class="text-sm font-medium text-gray-700">Auto-Record on Start</span>
-						<p class="mt-0.5 text-xs text-gray-500">
+						<span class="text-base font-medium text-gray-700">Auto-Record on Start</span>
+						<p class="mt-0.5 text-sm text-gray-500">
 							Start recording immediately when you open TalkType
 						</p>
 					</div>
@@ -308,10 +308,10 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 								on:change={toggleAutoRecord}
 							/>
 							<div
-								class={`h-5 w-10 rounded-full ${autoRecordValue ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}
+								class={`h-6 w-11 rounded-full ${autoRecordValue ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}
 							></div>
 							<div
-								class={`absolute left-0.5 top-0.5 h-4 w-4 transform rounded-full bg-white transition-all duration-200 ${autoRecordValue ? 'translate-x-5' : ''}`}
+								class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${autoRecordValue ? 'translate-x-5' : ''}`}
 							></div>
 						</div>
 					</label>
@@ -319,11 +319,11 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 
 				<!-- Privacy Mode Toggle -->
 				<div
-					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
+					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
 				>
 					<div>
-						<span class="text-sm font-medium text-gray-700">🔒 Offline Mode</span>
-						<p class="mt-0.5 text-xs text-gray-500">
+						<span class="text-base font-medium text-gray-700">🔒 Offline Mode</span>
+						<p class="mt-0.5 text-sm text-gray-500">
 							Download Whisper model for completely private transcription
 						</p>
 					</div>
@@ -339,10 +339,10 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 								on:change={togglePrivacyMode}
 							/>
 							<div
-								class={`h-5 w-10 rounded-full ${privacyModeValue ? 'bg-purple-400' : 'bg-gray-200'} transition-all duration-200`}
+								class={`h-6 w-11 rounded-full ${privacyModeValue ? 'bg-purple-400' : 'bg-gray-200'} transition-all duration-200`}
 							></div>
 							<div
-								class={`absolute left-0.5 top-0.5 h-4 w-4 transform rounded-full bg-white transition-all duration-200 ${privacyModeValue ? 'translate-x-5' : ''}`}
+								class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${privacyModeValue ? 'translate-x-5' : ''}`}
 							></div>
 						</div>
 					</label>
@@ -350,11 +350,11 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 
 				<!-- Live Mode Toggle -->
 				<div
-					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
+					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
 				>
 					<div>
-						<span class="text-sm font-medium text-gray-700">⚡ Live Mode</span>
-						<p class="mt-0.5 text-xs text-gray-500">
+						<span class="text-base font-medium text-gray-700">⚡ Live Mode</span>
+						<p class="mt-0.5 text-sm text-gray-500">
 							See text appear as you speak (Online only)
 						</p>
 					</div>
@@ -370,10 +370,10 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 								on:change={toggleLiveMode}
 							/>
 							<div
-								class={`h-5 w-10 rounded-full ${liveModeValue ? 'bg-blue-400' : 'bg-gray-200'} transition-all duration-200`}
+								class={`h-6 w-11 rounded-full ${liveModeValue ? 'bg-blue-400' : 'bg-gray-200'} transition-all duration-200`}
 							></div>
 							<div
-								class={`absolute left-0.5 top-0.5 h-4 w-4 transform rounded-full bg-white transition-all duration-200 ${liveModeValue ? 'translate-x-5' : ''}`}
+								class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${liveModeValue ? 'translate-x-5' : ''}`}
 							></div>
 						</div>
 					</label>
@@ -382,16 +382,16 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 				<!-- Install App Button (Only if not installed) -->
 				{#if !$isPwaInstalled}
 					<div
-						class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
+						class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
 					>
 						<div>
-							<span class="text-sm font-medium text-gray-700">✨ Keep TalkType Close</span>
-							<p class="mt-0.5 text-xs text-gray-500">
+							<span class="text-base font-medium text-gray-700">✨ Keep TalkType Close</span>
+							<p class="mt-0.5 text-sm text-gray-500">
 								Save to your Home Screen
 							</p>
 						</div>
 						<button 
-							class="btn btn-xs border-pink-200 bg-pink-50 text-pink-600 hover:bg-pink-100"
+							class="btn btn-sm border-pink-200 bg-pink-50 text-pink-600 hover:bg-pink-100"
 							on:click={() => {
 								if (pwaInstallComponent) {
 									analytics.viewInstallModal('pwa-install-component');

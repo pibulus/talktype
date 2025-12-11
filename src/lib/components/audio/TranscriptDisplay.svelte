@@ -144,11 +144,11 @@
 			>
 				<!-- Content Area - scrollable -->
 				<div
-					class="transcript-content-area z-5 relative max-h-[320px] w-full overflow-y-auto px-7 pb-8 pt-6 sm:px-10 sm:pb-10 sm:pt-7"
+					class="transcript-content-area z-5 relative max-h-[50vh] w-full overflow-y-auto px-5 pb-8 pt-6 sm:max-h-[320px] sm:px-10 sm:pb-10 sm:pt-7"
 					bind:this={transcriptBoxRef}
 				>
 					<div
-						class={`transcript-text ${responsiveFontSize} custom-transcript-text animate-text-appear mb-3 text-left font-mono`}
+						class={`transcript-text ${responsiveFontSize} custom-transcript-text animate-text-appear mb-3 break-words text-left font-mono`}
 						contenteditable="true"
 						role="textbox"
 						aria-label="Transcript editor"

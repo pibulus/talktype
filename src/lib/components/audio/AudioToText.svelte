@@ -64,7 +64,7 @@
 			} else if (wordCount <= 50) {
 				return 'text-sm sm:text-base md:text-lg';
 			} else {
-				return 'text-xs sm:text-sm md:text-base';
+				return 'text-sm sm:text-base md:text-lg';
 			}
 		},
 		(text) => (text ? text.length : 0)
