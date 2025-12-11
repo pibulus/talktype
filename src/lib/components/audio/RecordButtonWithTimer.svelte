@@ -1,8 +1,5 @@
 <script>
 	import {
-		ANIMATION,
-		CTA_PHRASES,
-		COPY_MESSAGES,
 		getRandomFromArray
 	} from '$lib/constants';
 	import DownloadingState from './states/DownloadingState.svelte';
@@ -14,8 +11,11 @@
 	export let downloading = false; // Model downloading state
 	export let clipboardSuccess = false;
 	export let recordingDuration = 0;
-	export let isPremiumUser = false;
-	export let buttonLabel = CTA_PHRASES[0];
+	export let maxDuration = 300; // Default 5 minutes
+	export let warningThreshold = 60; // Seconds remaining to show warning
+	export let dangerThreshold = 10; // Seconds remaining to show danger
+	export let buttonLabel = 'Start Recording';
+	export let successMessages = ['Copied!'];
 	export let progress = 0; // For transcription progress
 
 	// Element refs
@@ -60,34 +60,21 @@
 		}
 	}
 
-	// Generate a random success message for the clipboard
 	function getRandomCopyMessage() {
-		return getRandomFromArray(COPY_MESSAGES);
+		return getRandomFromArray(successMessages);
 	}
 
-	// Calculate time remaining
 	function getTimeRemaining() {
-		const timeLimit = isPremiumUser
-			? ANIMATION.RECORDING.PREMIUM_LIMIT
-			: ANIMATION.RECORDING.FREE_LIMIT;
-		return timeLimit - recordingDuration;
+		return maxDuration - recordingDuration;
 	}
 
 	// Reactive variables for timer states (compute only when needed)
 	$: timeRemaining = recording ? getTimeRemaining() : 0;
-	$: isWarning = recording && timeRemaining <= ANIMATION.RECORDING.WARNING_THRESHOLD;
-	$: isDanger = recording && timeRemaining <= ANIMATION.RECORDING.DANGER_THRESHOLD;
+	$: isWarning = recording && timeRemaining <= warningThreshold;
+	$: isDanger = recording && timeRemaining <= dangerThreshold;
 
-	// Pre-compute progress percentage for inline style
 	$: progressPercentage = recording
-		? Math.min(
-				(recordingDuration /
-					(isPremiumUser
-						? ANIMATION.RECORDING.PREMIUM_LIMIT
-						: ANIMATION.RECORDING.FREE_LIMIT)) *
-					100,
-				100
-			)
+		? Math.min((recordingDuration / maxDuration) * 100, 100)
 		: 0;
 
 	// Format timer display (MM:SS)
@@ -180,7 +167,7 @@
 						</span>
 						<span class="sr-only">
 							{#if recording}
-								{formatTime(recordingDuration)} of {formatTime(ANIMATION.RECORDING.FREE_LIMIT)}
+								{formatTime(recordingDuration)} of {formatTime(maxDuration)}
 							{/if}
 						</span>
 					</span>

@@ -19,7 +19,7 @@
 	} from '$lib/services';
 	import { liveMode } from '$lib';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
-	import { CTA_PHRASES } from '$lib/constants';
+	import { CTA_PHRASES, ANIMATION, COPY_MESSAGES } from '$lib/constants';
 
 	const dispatch = createEventDispatcher();
 
@@ -147,7 +147,12 @@
 				clipboardSuccess={$uiState.clipboardSuccess}
 				recordingDuration={$recordingDuration}
 				progress={$transcriptionProgress}
-				{isPremiumUser}
+				maxDuration={isPremiumUser
+					? ANIMATION.RECORDING.PREMIUM_LIMIT
+					: ANIMATION.RECORDING.FREE_LIMIT}
+				warningThreshold={ANIMATION.RECORDING.WARNING_THRESHOLD}
+				dangerThreshold={ANIMATION.RECORDING.DANGER_THRESHOLD}
+				successMessages={COPY_MESSAGES}
 				{buttonLabel}
 				on:click={handleRecordingToggle}
 				on:preload={handlePreload}
