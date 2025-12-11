@@ -53,7 +53,6 @@ export async function POST(event) {
 			transcription = await transcribeAudio(file);
 		} else {
 			console.log(`[API /transcribe] Routing to Gemini (${promptStyle})`);
-			console.log(`[API /transcribe] Routing to Gemini (${promptStyle})`);
 			// Dynamically import Gemini service to keep initial load light
 
 			const { transcribeAudio: transcribeWithGemini } = await import(

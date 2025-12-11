@@ -429,7 +429,7 @@
 			<!-- Prompt Style Selection Section -->
 			<div class="space-y-2">
 				<h4 class="text-sm font-bold text-gray-700">Choose Transcription Style</h4>
-				<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} {privacyModeValue} />
+				<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} {privacyModeValue} {liveModeValue} />
 			</div>
 
 			<!-- Support TalkType Section - TEMPORARILY HIDDEN (set false to true to enable) -->

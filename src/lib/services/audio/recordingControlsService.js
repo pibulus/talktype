@@ -8,6 +8,8 @@ import { CTA_PHRASES, ANIMATION } from '$lib/constants';
 import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
 import { transcriptionState } from '../infrastructure/stores';
 import { analytics } from '../analytics';
+import { liveMode } from '$lib';
+import { transcriptionStore } from '$lib/stores/transcriptionStore';
 
 export class RecordingControlsService {
 	constructor(dependencies) {
@@ -137,7 +139,35 @@ export class RecordingControlsService {
 					return;
 				}
 
-				// Transcribe the audio with proper error handling
+				// Check if Live Mode already captured a transcript
+				const liveModeEnabled = get(liveMode) === 'true';
+				const liveTranscript = liveModeEnabled ? transcriptionStore.getTranscript() : '';
+
+				// Skip batch transcription if Live Mode has valid content
+				if (liveModeEnabled && liveTranscript.trim().length > 0) {
+					console.log('[RecordingControlsService] Live Mode captured transcript - skipping batch');
+					
+					// Scroll to show transcript if needed
+					scrollToBottomIfNeeded({
+						threshold: 300,
+						delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY
+					});
+
+					// Increment the transcription count for PWA prompt
+					if (browser && 'requestIdleCallback' in window) {
+						window.requestIdleCallback(() => this._incrementTranscriptionCount());
+					} else {
+						const timeoutId = setTimeout(() => this._incrementTranscriptionCount(), 0);
+						this.activeTimeouts.push(timeoutId);
+					}
+
+					// Track successful transcription
+					const wordCount = liveTranscript.trim().split(/\s+/).length;
+					analytics.completeTranscription('deepgram-live', estimatedDurationSeconds, wordCount);
+					return;
+				}
+
+				// Transcribe the audio with proper error handling (batch mode)
 				try {
 					const transcriptText = await this.transcriptionService.transcribeAudio(audioBlob);
 					console.log('[RecordingControlsService] Transcription result:', transcriptText);
@@ -163,9 +193,8 @@ export class RecordingControlsService {
 					}
 
 					// Track successful transcription
-					// We use 'whisper-local' as the method since that's what this service does
 					const wordCount = transcriptText.trim().split(/\s+/).length;
-					analytics.completeTranscription('whisper-local', estimatedDurationSeconds, wordCount);
+					analytics.completeTranscription('cloud-batch', estimatedDurationSeconds, wordCount);
 				} catch (transcriptionError) {
 					console.error('❌ Transcription error:', transcriptionError);
 					const friendlyMessage = transcriptionError.message.includes('network')

@@ -141,6 +141,13 @@ function createTranscriptionStore() {
 				transcript: '',
 				interim: ''
 			});
+		},
+
+		// Get current transcript value (for checking if live mode captured anything)
+		getTranscript: () => {
+			let current;
+			subscribe((s) => (current = s))();
+			return current?.transcript || '';
 		}
 	};
 }
