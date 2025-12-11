@@ -322,9 +322,9 @@
 					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
 				>
 					<div>
-						<span class="text-base font-medium text-gray-700">🔒 Offline Mode</span>
+						<span class="text-base font-medium text-gray-700">Offline Mode</span>
 						<p class="mt-0.5 text-sm text-gray-500">
-							Download Whisper model for completely private transcription
+							Completely private transcription on your device
 						</p>
 					</div>
 					<label class="flex cursor-pointer items-center">
@@ -353,8 +353,8 @@
 					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
 				>
 					<div>
-						<span class="text-base font-medium text-gray-700">⚡ Live Mode</span>
-						<p class="mt-0.5 text-sm text-gray-500">See text appear as you speak (Online only)</p>
+						<span class="text-base font-medium text-gray-700">Live Mode</span>
+						<p class="mt-0.5 text-sm text-gray-500">See text appear as you speak</p>
 					</div>
 					<label class="flex cursor-pointer items-center">
 						<span class="sr-only">Live Mode Toggle {liveModeValue ? 'Enabled' : 'Disabled'}</span>
@@ -375,13 +375,13 @@
 					</label>
 				</div>
 
-				<!-- Install App Button (Only if not installed) -->
+				<!-- Install App Button - COMMENTED OUT FOR NOW
 				{#if !$isPwaInstalled}
 					<div
 						class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
 					>
 						<div>
-							<span class="text-base font-medium text-gray-700">✨ Keep TalkType Close</span>
+							<span class="text-base font-medium text-gray-700">Keep TalkType Close</span>
 							<p class="mt-0.5 text-sm text-gray-500">Save to your Home Screen</p>
 						</div>
 						<button
@@ -397,6 +397,7 @@
 						</button>
 					</div>
 				{/if}
+				-->
 
 				<!-- Download Progress (if loading) -->
 				{#if $whisperStatus.isLoading && privacyModeValue}

@@ -2,6 +2,7 @@
 	import { ANIMATION } from '$lib/constants';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import Ghost from '$lib/components/ghost/Ghost.svelte';
+	import { theme } from '$lib';
 
 	// Props
 	export let transcript = '';
@@ -102,7 +103,7 @@
 >
 	<div class="wrapper-container flex w-full justify-center">
 		<div class="transcript-box-container relative mx-auto w-[95%] max-w-[580px] px-0 sm:w-full">
-			<!-- Copy button with simple ghost icon (no heavy component) -->
+			<!-- Copy button with themed ghost icon -->
 			<button
 				class="copy-btn share-chip absolute -top-4 right-1 z-[200] h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95 sm:-right-4 sm:-top-4"
 				on:click|preventDefault={() => dispatch('copy', { text: getEditedTranscript() })}
@@ -113,9 +114,9 @@
 				aria-label="Copy transcript to clipboard"
 				bind:this={copyButtonRef}
 			>
-				<!-- Use the original Ghost component -->
+				<!-- Ghost icon using the app's current theme -->
 				<div class="h-full w-full p-0.5">
-					<Ghost width="100%" height="100%" clickable={false} externalTheme="peach" />
+					<Ghost width="100%" height="100%" clickable={false} externalTheme={$theme} />
 				</div>
 
 				<!-- Smart tooltip - only shows for first few hovers -->
