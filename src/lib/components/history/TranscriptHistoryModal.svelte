@@ -226,14 +226,13 @@
 		<div class="max-h-[calc(85vh-140px)] overflow-y-auto">
 			{#if !$isPremium}
 				<!-- Support prompt -->
-				<div class="rounded-lg border-2 border-amber-200 bg-amber-50 p-4 text-center">
-					<p class="mb-2 text-2xl">👻</p>
-					<h4 class="mb-2 font-bold text-gray-800">Keep the Ghost Afloat</h4>
-					<p class="mb-1 text-sm text-gray-600">
-						Support TalkType and unlock all sorts of goodies — longer recordings, extra themes,
-						transcript history, and more.
+				<div class="rounded-lg border-2 border-pink-200 bg-gradient-to-br from-pink-50 to-purple-50 p-5 text-center">
+					<p class="mb-3 text-4xl">👻</p>
+					<h4 class="mb-2 text-xl font-black text-gray-800">Support the Ghost</h4>
+					<p class="mb-4 text-sm leading-relaxed text-gray-700">
+						Longer recordings (10x!), extra themes, saved history, and more.
+						Feed the ghost, get the goodies.
 					</p>
-					<p class="mb-3 text-xs font-medium text-pink-500">Help keep the web spooky.</p>
 					<Button
 						variant="primary"
 						on:click={() => {
@@ -241,7 +240,7 @@
 							document.getElementById('premium_modal').showModal();
 						}}
 					>
-						Support TalkType
+						See the Goodies
 					</Button>
 				</div>
 			{:else if $transcriptHistory.length === 0}

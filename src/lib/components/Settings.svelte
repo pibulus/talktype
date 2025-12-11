@@ -449,8 +449,8 @@
 							</span>
 						</div>
 
-						<p class="text-xs text-gray-500">
-							Thanks for keeping the ghost afloat. You've got all the goodies:
+						<p class="text-xs leading-relaxed text-gray-600">
+							Ghost fed! You've got all the goodies:
 						</p>
 
 						<div class="space-y-1.5 pt-1 text-xs text-gray-600">
@@ -499,44 +499,44 @@
 						</div>
 
 						<div class="pt-1 text-center">
-							<span class="text-xs italic text-pink-500"
-								>You're helping keep the web spooky. 💜</span
+							<span class="text-xs italic text-purple-600"
+								>Thanks for the support! Say hi to your ghost friend. 👻</span
 							>
 						</div>
 					</div>
 				{:else}
-					<!-- Free User - Support TalkType -->
+					<!-- Free User - Support the Ghost -->
 					<div
-						class="space-y-2 rounded-lg border-2 border-amber-300 bg-gradient-to-r from-amber-100/80 to-orange-100/80 p-3 shadow-md"
+						class="space-y-2 rounded-lg border-2 border-pink-300 bg-gradient-to-br from-pink-50/90 to-purple-50/90 p-3 shadow-md"
 					>
 						<div class="flex items-center justify-between">
-							<h4 class="text-sm font-bold text-gray-700">Support TalkType</h4>
+							<h4 class="text-sm font-bold text-gray-800">Support the Ghost</h4>
 							<span
-								class="badge badge-sm gap-1 border-amber-300 bg-amber-100 font-medium text-amber-700"
+								class="badge badge-sm gap-1 border-purple-300 bg-purple-100 font-medium text-purple-700"
 							>
 								<span class="text-[10px]">👻</span> ${PRICING.currentPrice} once
 							</span>
 						</div>
 
-						<p class="text-xs text-gray-600">Keep the ghost afloat and unlock all the goodies:</p>
+						<p class="text-xs leading-relaxed text-gray-600">Get fun goodies that make your ghost friend even better:</p>
 
 						<div class="space-y-1.5 pt-1 text-xs text-gray-600">
 							<div class="flex items-center gap-1.5">
-								<span class="text-amber-600">✨</span>
+								<span class="text-purple-600">✨</span>
 								<span>10-minute recordings (10x longer!)</span>
 							</div>
 							<div class="flex items-center gap-1.5">
-								<span class="text-amber-600">✨</span>
+								<span class="text-purple-600">✨</span>
 								<span>Extra ghost themes</span>
 							</div>
 							<div class="flex items-center gap-1.5">
-								<span class="text-amber-600">✨</span>
+								<span class="text-purple-600">✨</span>
 								<span>Save & export transcript history</span>
 							</div>
 						</div>
 
 						<button
-							class="btn btn-sm mt-2 w-full border-none bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:from-amber-500 hover:to-orange-600"
+							class="btn btn-sm mt-2 w-full border-none bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-600 hover:to-purple-700"
 							on:click={() => {
 								handleModalClose();
 								if (browser) {
@@ -549,7 +549,6 @@
 							Support for ${PRICING.currentPrice}
 						</button>
 
-						<p class="pt-1 text-center text-xs italic text-pink-500">Help keep the web spooky.</p>
 
 						<!-- Already supported? Enter Code -->
 						<div class="pt-1">
