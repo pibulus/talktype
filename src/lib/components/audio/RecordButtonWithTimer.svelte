@@ -3,9 +3,10 @@
 		ANIMATION,
 		CTA_PHRASES,
 		COPY_MESSAGES,
-		BUTTON_LABELS,
 		getRandomFromArray
 	} from '$lib/constants';
+	import DownloadingState from './states/DownloadingState.svelte';
+	import TranscribingState from './states/TranscribingState.svelte';
 
 	// Props
 	export let recording = false;
@@ -102,53 +103,22 @@
 </script>
 
 {#if downloading}
-	<!-- Downloading: Indeterminate shimmer (can't track HuggingFace download) -->
-	<div
-		class="progress-container loading-state relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-gradient-to-r from-blue-200 to-indigo-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
-		role="status"
-		aria-label="Downloading offline model"
-	>
-		<div class="loading-shimmer absolute inset-0"></div>
-		<div class="flex h-full items-center justify-center">
-			<span
-				class="loading-text relative z-10 text-xl font-bold text-black"
-				style="letter-spacing: 0.02em;"
-			>
-				{BUTTON_LABELS.DOWNLOADING}
-			</span>
-		</div>
-	</div>
+	<DownloadingState />
 {:else if transcribing}
-	<!-- Transcribing: Progress bar fills up (shows actual progress) -->
-	<div
-		class="progress-container relative mx-auto h-[64px] w-[75%] max-w-[420px] overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
-		role="progressbar"
-		aria-label="Transcription progress"
-		aria-valuenow={progress}
-		aria-valuemin="0"
-		aria-valuemax="100"
-	>
-		<div
-			class="progress-bar h-full bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
-			style="width: {progress}%;"
-		>
-			<!-- Visual-only progress bar, no text needed -->
-			<span class="sr-only">Processing {progress}%</span>
-		</div>
-	</div>
+	<TranscribingState {progress} />
 {:else}
 	<button
 		bind:this={recordButtonElement}
-		class="record-button duration-400 w-[75%] rounded-full transition-all ease-out sm:w-[85%] {clipboardSuccess
+		class="record-button duration-400 w-[90%] rounded-full transition-all ease-out sm:w-[85%] {clipboardSuccess
 			? 'notification-pulse border border-purple-200 bg-purple-50 text-black'
-			: 'text-black'} mx-auto max-w-[420px] px-6 py-5 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:py-5 sm:text-xl md:text-2xl {!recording &&
+			: 'text-black'} mx-auto flex h-[64px] min-w-[280px] max-w-[420px] items-center justify-center px-6 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:text-xl md:text-2xl {!recording &&
 		buttonLabel === 'Start Recording' &&
 		!clipboardSuccess
 			? 'pulse-subtle'
 			: ''} {recording ? 'recording-active' : ''} {isWarning && recording
 			? 'recording-warning'
 			: ''} {isDanger && recording ? 'recording-danger' : ''}"
-		style="min-width: 280px; min-height: 64px; transform-origin: center center; position: relative; {recording
+		style="transform-origin: center center; position: relative; {recording
 			? `--progress: ${progressPercentage}%`
 			: ''}"
 		on:click={() => dispatch('click')}
@@ -311,86 +281,6 @@
 	.pulse-subtle {
 		animation: button-breathe 3.5s ease-in-out infinite;
 		transform-origin: center;
-	}
-
-	/* Progress container styling */
-	.progress-container {
-		position: relative;
-		overflow: hidden;
-		transition: all 0.3s ease;
-	}
-
-	/* Loading state styles */
-	.loading-state {
-		animation: pulse-loading 2s ease-in-out infinite;
-	}
-
-	.loading-shimmer {
-		background: linear-gradient(
-			90deg,
-			transparent 0%,
-			rgba(255, 255, 255, 0.4) 50%,
-			transparent 100%
-		);
-		animation: shimmer-loading 1.5s ease-in-out infinite;
-	}
-
-	.loading-text {
-		animation: pulse-text 1.5s ease-in-out infinite;
-	}
-
-	@keyframes shimmer-loading {
-		0% {
-			transform: translateX(-100%);
-		}
-		100% {
-			transform: translateX(100%);
-		}
-	}
-
-	@keyframes pulse-loading {
-		0%,
-		100% {
-			box-shadow:
-				0 4px 6px -1px rgba(251, 191, 36, 0.2),
-				0 2px 4px -1px rgba(0, 0, 0, 0.1);
-		}
-		50% {
-			box-shadow:
-				0 6px 10px -1px rgba(251, 191, 36, 0.3),
-				0 4px 6px -1px rgba(0, 0, 0, 0.15);
-		}
-	}
-
-	@keyframes pulse-text {
-		0%,
-		100% {
-			opacity: 0.8;
-		}
-		50% {
-			opacity: 1;
-		}
-	}
-
-	.progress-bar {
-		position: absolute;
-		top: 0;
-		left: 0;
-		height: 100%;
-		transition: width 0.3s ease;
-		animation: pulse-glow 1.5s infinite ease-in-out;
-	}
-
-	@keyframes pulse-glow {
-		0% {
-			box-shadow: inset 0 0 5px rgba(255, 190, 60, 0.5);
-		}
-		50% {
-			box-shadow: inset 0 0 15px rgba(255, 190, 60, 0.8);
-		}
-		100% {
-			box-shadow: inset 0 0 5px rgba(255, 190, 60, 0.5);
-		}
 	}
 
 	@keyframes button-breathe {
