@@ -2,7 +2,36 @@ import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { createClient } from '@deepgram/sdk';
 
-export async function GET() {
+// Simple in-memory rate limiter
+// Map<IP, { count: number, expiry: number }>
+const rateLimit = new Map();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 10; // 10 requests per minute
+
+function checkRateLimit(ip) {
+	const now = Date.now();
+	const record = rateLimit.get(ip);
+
+	if (!record || now > record.expiry) {
+		rateLimit.set(ip, { count: 1, expiry: now + RATE_LIMIT_WINDOW });
+		return true;
+	}
+
+	if (record.count >= MAX_REQUESTS_PER_WINDOW) {
+		return false;
+	}
+
+	record.count++;
+	return true;
+}
+
+export async function GET({ getClientAddress }) {
+	// 0. Rate Limiting
+	const clientIp = getClientAddress();
+	if (!checkRateLimit(clientIp)) {
+		return json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+	}
+
 	const apiKey = env.DEEPGRAM_API_KEY;
 	if (!apiKey) {
 		return json({ error: 'Server Error: Missing Deepgram API key' }, { status: 500 });
@@ -49,13 +78,9 @@ export async function GET() {
 
 	} catch (error) {
 		console.error('[DeepgramToken] ❌ Error generating temp key:', error);
-		console.warn('[DeepgramToken] ⚠️ Falling back to using master key for testing. DO NOT USE IN PRODUCTION.');
 		
-		// Fallback: Return the master key directly (for testing only!)
-		// This allows the user to test even if their key doesn't have management permissions
-		return json({ 
-			key: apiKey,
-			projectId: 'fallback'
-		});
+		// SECURE: Do NOT return the master key on error.
+		// If temp key generation fails, the user cannot use Live Mode.
+		return json({ error: 'Failed to generate temporary key' }, { status: 500 });
 	}
 }
