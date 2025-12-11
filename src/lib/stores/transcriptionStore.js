@@ -12,11 +12,12 @@ function createTranscriptionStore() {
 	let socket = null;
 	let audioBuffer = []; // Buffer chunks until connection is open
 	let isConnectionOpen = false;
+	let keepAliveInterval = null;
 
 	return {
 		subscribe,
 
-		// Initialize connection with a temporary key
+		// Initialize connection with API key
 		connect: async () => {
 			// Reset state before connecting
 			update((s) => ({
@@ -30,79 +31,72 @@ function createTranscriptionStore() {
 			isConnectionOpen = false;
 
 			try {
-				// 1. Get temp key from our server
-				console.log('[Deepgram] Fetching temporary key...');
+				// 1. Get API key from our server
 				const response = await fetch('/api/deepgram/token');
 				const data = await response.json();
 
 				if (!data.key) {
 					throw new Error(data.error || 'Failed to get Deepgram token');
 				}
-				console.log('[Deepgram] Got temporary key');
 
 				// 2. Connect via raw WebSocket using Sec-WebSocket-Protocol for auth
 				// This is Deepgram's recommended approach for browser connections
 				const wsUrl = `wss://api.deepgram.com/v1/listen?model=nova-3&smart_format=true&interim_results=true&punctuate=true`;
 				
-				console.log('[Deepgram] Opening WebSocket connection with protocol auth...');
 				// Pass 'token' and API key as subprotocols - Deepgram uses this for browser auth
 				socket = new WebSocket(wsUrl, ['token', data.key]);
 
 				socket.onopen = () => {
-					console.log('[Deepgram] ✅ WebSocket opened - flushing buffered audio');
+					console.log('[Deepgram] Connected');
 					isConnectionOpen = true;
 					update((s) => ({ ...s, connected: true, connecting: false }));
 					
 					// Flush any buffered audio chunks
 					if (audioBuffer.length > 0) {
-						console.log(`[Deepgram] Flushing ${audioBuffer.length} buffered chunks`);
 						audioBuffer.forEach((chunk) => {
 							socket.send(chunk);
 						});
 						audioBuffer = [];
 					}
+
+					// Start keep-alive to prevent NET-0001 timeout (10s without data)
+					keepAliveInterval = setInterval(() => {
+						if (socket?.readyState === WebSocket.OPEN) {
+							socket.send(JSON.stringify({ type: 'KeepAlive' }));
+						}
+					}, 5000);
 				};
 
-				socket.onclose = (event) => {
-					console.log('[Deepgram] WebSocket closed:', event.code, event.reason);
+				socket.onclose = () => {
 					isConnectionOpen = false;
+					clearInterval(keepAliveInterval);
 					update((s) => ({ ...s, connected: false, connecting: false }));
 				};
 
 				socket.onerror = (error) => {
-					console.error('[Deepgram] ❌ WebSocket error:', error);
+					console.error('[Deepgram] WebSocket error:', error);
 					update((s) => ({ ...s, error: 'WebSocket error', connecting: false }));
 				};
 
 				socket.onmessage = (event) => {
 					try {
 						const data = JSON.parse(event.data);
-						console.log('[Deepgram] 📨 Message received:', data.type, data);
 						
 						if (data.type === 'Results') {
 							const received = data.channel?.alternatives?.[0]?.transcript;
 							if (received && data.is_final) {
-								console.log('[Deepgram] ✅ Final transcript:', received);
 								update((s) => ({
 									...s,
 									transcript: s.transcript + (s.transcript ? ' ' : '') + received,
 									interim: ''
 								}));
 							} else if (received) {
-								console.log('[Deepgram] ⏳ Interim transcript:', received);
 								update((s) => ({ ...s, interim: received }));
 							}
-						} else if (data.type === 'Metadata') {
-							console.log('[Deepgram] 📊 Metadata:', data);
-						} else if (data.type === 'SpeechStarted') {
-							console.log('[Deepgram] 🎤 Speech started');
-						} else if (data.type === 'UtteranceEnd') {
-							console.log('[Deepgram] 🔚 Utterance end');
-						} else {
-							console.log('[Deepgram] ⚠️ Unknown message type:', data.type);
 						}
+						// Silently ignore Metadata, SpeechStarted, UtteranceEnd
 					} catch (e) {
-						console.error('[Deepgram] Failed to parse message:', e, event.data);
+						console.error('[Deepgram] Failed to parse message:', e);
 					}
 				};
 
@@ -115,19 +109,17 @@ function createTranscriptionStore() {
 		// Send audio data
 		send: (data) => {
 			if (isConnectionOpen && socket && socket.readyState === WebSocket.OPEN) {
-				console.log('[Deepgram] Sending audio chunk:', data.size, 'bytes');
 				socket.send(data);
 			} else if (socket) {
 				// Buffer the chunk until connection is ready
-				console.log('[Deepgram] Buffering audio chunk:', data.size, 'bytes (connection not ready)');
 				audioBuffer.push(data);
-			} else {
-				console.warn('[Deepgram] Cannot send - no connection');
 			}
+			// Silently ignore if no connection
 		},
 
 		// Close connection
 		disconnect: () => {
+			clearInterval(keepAliveInterval);
 			if (socket) {
 				// Send close frame to indicate we're done
 				if (socket.readyState === WebSocket.OPEN) {

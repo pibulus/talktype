@@ -244,7 +244,6 @@ export class AudioService {
 					const privacyMode =
 						typeof localStorage !== 'undefined' && localStorage.getItem('privacyMode') === 'true';
 					const liveModeEnabled = get(liveMode) === 'true';
-					console.log('[AudioService] ondataavailable - liveMode:', get(liveMode), 'privacyMode:', privacyMode, 'chunk size:', event.data.size);
 					if (liveModeEnabled && !privacyMode) {
 						transcriptionStore.send(event.data);
 					}
@@ -266,9 +265,7 @@ export class AudioService {
 			const privacyMode =
 				typeof localStorage !== 'undefined' && localStorage.getItem('privacyMode') === 'true';
 			const liveModeEnabled = get(liveMode) === 'true';
-			console.log('[AudioService] Checking Live Mode - enabled:', liveModeEnabled, 'privacyMode:', privacyMode);
 			if (liveModeEnabled && !privacyMode) {
-				console.log('[AudioService] 🎙️ Connecting to Deepgram for live streaming...');
 				transcriptionStore.connect().catch((err) => {
 					console.error('[AudioService] Failed to connect to Deepgram:', err);
 					// Don't fail recording, just fallback to batch
