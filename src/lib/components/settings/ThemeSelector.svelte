@@ -153,6 +153,14 @@
 		opacity: 1;
 	}
 
+	/* FIX: Remove filters and hardware acceleration on preview ghosts to prevent "dark splotches" on iOS */
+	.ghost-mask-wrapper :global(.display-ghost .ghost-container) {
+		filter: none !important;
+		will-change: auto !important;
+		transform: none !important;
+		backface-visibility: visible !important;
+	}
+
 	.vibe-option {
 		transition: all 0.2s ease-in-out;
 	}
