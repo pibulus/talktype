@@ -21,7 +21,6 @@ export class RecordingControlsService {
 		this.activeTimeouts = [];
 		this.currentCtaIndex = 0;
 		this.onPreloadRequest = null;
-
 	}
 
 	setGhostComponent(ghostComponent) {
@@ -265,7 +264,6 @@ export class RecordingControlsService {
 		this.ghostComponent = null;
 		this.onPreloadRequest = null;
 	}
-
 }
 
 export function createRecordingControlsService(dependencies) {

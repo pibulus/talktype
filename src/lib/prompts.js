@@ -20,3 +20,5 @@ export function getTranscriptionPrompt(style = 'standard') {
 
 	return prompts[style] || prompts.standard;
 }
+
+

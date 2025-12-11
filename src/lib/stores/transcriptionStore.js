@@ -15,23 +15,23 @@ function createTranscriptionStore() {
 
 	return {
 		subscribe,
-		
+
 		// Initialize connection with a temporary key
 		connect: async () => {
 			// Reset state before connecting
-			update(s => ({ 
-				...s, 
-				connecting: true, 
+			update((s) => ({
+				...s,
+				connecting: true,
 				error: null,
 				transcript: '',
 				interim: ''
 			}));
-			
+
 			try {
 				// 1. Get temp key from our server
 				const response = await fetch('/api/deepgram/token');
 				const data = await response.json();
-				
+
 				if (!data.key) {
 					throw new Error(data.error || 'Failed to get Deepgram token');
 				}
@@ -52,41 +52,41 @@ function createTranscriptionStore() {
 				// 4. Setup event listeners
 				connection.on('open', () => {
 					console.log('[Deepgram] Connection opened');
-					update(s => ({ ...s, connected: true, connecting: false }));
+					update((s) => ({ ...s, connected: true, connecting: false }));
 				});
 
 				connection.on('close', () => {
 					console.log('[Deepgram] Connection closed');
-					update(s => ({ ...s, connected: false, connecting: false }));
+					update((s) => ({ ...s, connected: false, connecting: false }));
 				});
 
 				connection.on('error', (err) => {
 					console.error('[Deepgram] Error:', err);
-					update(s => ({ ...s, error: err.message, connecting: false }));
+					update((s) => ({ ...s, error: err.message, connecting: false }));
 				});
 
 				connection.on('transcriptReceived', (data) => {
 					const received = data.channel.alternatives[0].transcript;
 					if (received && data.is_final) {
-						update(s => ({ 
-							...s, 
+						update((s) => ({
+							...s,
 							transcript: s.transcript + (s.transcript ? ' ' : '') + received,
-							interim: '' 
+							interim: ''
 						}));
 					} else if (received) {
-						update(s => ({ ...s, interim: received }));
+						update((s) => ({ ...s, interim: received }));
 					}
 				});
-
 			} catch (err) {
 				console.error('[Deepgram] Setup error:', err);
-				update(s => ({ ...s, error: err.message, connecting: false }));
+				update((s) => ({ ...s, error: err.message, connecting: false }));
 			}
 		},
 
 		// Send audio data
 		send: (data) => {
-			if (connection && connection.getReadyState() === 1) { // 1 = OPEN
+			if (connection && connection.getReadyState() === 1) {
+				// 1 = OPEN
 				connection.send(data);
 			}
 		},
@@ -97,7 +97,7 @@ function createTranscriptionStore() {
 				connection.finish();
 				connection = null;
 			}
-			update(s => ({ ...s, connected: false, interim: '' }));
+			update((s) => ({ ...s, connected: false, interim: '' }));
 		},
 
 		// Reset transcript

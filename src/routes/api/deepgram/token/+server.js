@@ -43,10 +43,12 @@ export async function GET({ getClientAddress }) {
 		// 1. Get the project ID (we need it to create a key)
 		// We assume the API key belongs to the first project returned
 		const { result: projectsResult, error: projectsError } = await deepgram.manage.getProjects();
-		
+
 		if (projectsError) {
 			// console.error('[DeepgramToken] Failed to get projects:', JSON.stringify(projectsError, null, 2));
-			throw new Error(`Failed to get Deepgram projects: ${projectsError.message || 'Unknown error'}`);
+			throw new Error(
+				`Failed to get Deepgram projects: ${projectsError.message || 'Unknown error'}`
+			);
 		}
 
 		const projectId = projectsResult?.projects?.[0]?.project_id;
@@ -57,11 +59,14 @@ export async function GET({ getClientAddress }) {
 
 		// 2. Create a temporary key
 		// Valid for 10 seconds, just enough to connect
-		const { result: newKeyResult, error: newKeyError } = await deepgram.manage.createProjectKey(projectId, {
-			comment: 'talktype-streaming-temp',
-			scopes: ['usage:write'],
-			time_to_live_in_seconds: 10
-		});
+		const { result: newKeyResult, error: newKeyError } = await deepgram.manage.createProjectKey(
+			projectId,
+			{
+				comment: 'talktype-streaming-temp',
+				scopes: ['usage:write'],
+				time_to_live_in_seconds: 10
+			}
+		);
 
 		if (newKeyError) {
 			// Only log full error if it's NOT a scope issue (which we expect for personal keys)
@@ -71,14 +76,13 @@ export async function GET({ getClientAddress }) {
 			throw new Error('Failed to create temporary key');
 		}
 
-		return json({ 
+		return json({
 			key: newKeyResult.key,
 			projectId: projectId // Optional, but might be useful
 		});
-
 	} catch (error) {
 		console.error('[DeepgramToken] ❌ Error generating temp key:', error);
-		
+
 		// SECURE: Do NOT return the master key on error.
 		// If temp key generation fails, the user cannot use Live Mode.
 		return json({ error: 'Failed to generate temporary key' }, { status: 500 });

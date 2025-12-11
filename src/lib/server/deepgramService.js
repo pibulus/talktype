@@ -7,14 +7,17 @@ export async function transcribeAudio(file) {
 	}
 
 	try {
-		const response = await fetch('https://api.deepgram.com/v1/listen?model=nova-3&smart_format=true&paragraphs=true', {
-			method: 'POST',
-			headers: {
-				'Authorization': `Token ${apiKey}`,
-				'Content-Type': file.type || 'audio/webm'
-			},
-			body: file
-		});
+		const response = await fetch(
+			'https://api.deepgram.com/v1/listen?model=nova-3&smart_format=true&paragraphs=true',
+			{
+				method: 'POST',
+				headers: {
+					Authorization: `Token ${apiKey}`,
+					'Content-Type': file.type || 'audio/webm'
+				},
+				body: file
+			}
+		);
 
 		if (!response.ok) {
 			const errorData = await response.json().catch(() => ({}));
@@ -23,7 +26,7 @@ export async function transcribeAudio(file) {
 		}
 
 		const data = await response.json();
-		
+
 		// Extract transcript from the response
 		// Deepgram response structure: results.channels[0].alternatives[0].transcript
 		const transcript = data?.results?.channels?.[0]?.alternatives?.[0]?.transcript;
@@ -35,7 +38,6 @@ export async function transcribeAudio(file) {
 
 		console.log('[DeepgramService] ✅ Transcription complete');
 		return transcript;
-
 	} catch (error) {
 		console.error('[DeepgramService] ❌ Error:', error);
 		throw error;

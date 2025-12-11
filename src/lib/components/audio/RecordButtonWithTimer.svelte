@@ -1,7 +1,5 @@
 <script>
-	import {
-		getRandomFromArray
-	} from '$lib/constants';
+	import { getRandomFromArray } from '$lib/constants';
 	import DownloadingState from './states/DownloadingState.svelte';
 	import TranscribingState from './states/TranscribingState.svelte';
 
@@ -73,9 +71,7 @@
 	$: isWarning = recording && timeRemaining <= warningThreshold;
 	$: isDanger = recording && timeRemaining <= dangerThreshold;
 
-	$: progressPercentage = recording
-		? Math.min((recordingDuration / maxDuration) * 100, 100)
-		: 0;
+	$: progressPercentage = recording ? Math.min((recordingDuration / maxDuration) * 100, 100) : 0;
 
 	// Format timer display (MM:SS)
 	function formatTime(seconds) {

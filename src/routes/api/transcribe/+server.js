@@ -15,6 +15,7 @@ export async function POST(event) {
 		const formData = await event.request.formData();
 		const file = formData.get('audio_file');
 		const promptStyle = formData.get('prompt_style')?.toString() || 'standard';
+		const customPrompt = formData.get('custom_prompt')?.toString() || '';
 
 		if (!file || typeof file === 'string' || typeof file.arrayBuffer !== 'function') {
 			console.error('[API /transcribe] Missing or invalid audio file');
@@ -42,10 +43,26 @@ export async function POST(event) {
 			`[API /transcribe] Received ${audioSizeKB}KB of ${file.type || 'audio/webm'}, preferred style: ${promptStyle}`
 		);
 
-		const transcription = await transcribeAudio(file, promptStyle);
-		
-		return json({ transcription });
+		let transcription = '';
 
+		// Routing Logic:
+		// 1. Standard -> Deepgram (High Accuracy)
+		// 2. Creative / Custom -> Gemini (High Vibe / Low Cost)
+		if (promptStyle === 'standard') {
+			console.log('[API /transcribe] Routing to Deepgram (Standard)');
+			transcription = await transcribeAudio(file);
+		} else {
+			console.log(`[API /transcribe] Routing to Gemini (${promptStyle})`);
+			console.log(`[API /transcribe] Routing to Gemini (${promptStyle})`);
+			// Dynamically import Gemini service to keep initial load light
+
+			const { transcribeAudio: transcribeWithGemini } = await import(
+				'$lib/server/geminiService.js'
+			);
+			transcription = await transcribeWithGemini(file, promptStyle, customPrompt);
+		}
+
+		return json({ transcription });
 	} catch (error) {
 		console.error('[API /transcribe] ❌ Error:', error);
 
@@ -60,8 +77,8 @@ export async function POST(event) {
 		} else if (message.includes('timeout')) {
 			friendlyMessage = 'That took longer than expected. Maybe try a shorter recording?';
 		} else if (message.includes('missing gemini api key')) {
-            friendlyMessage = 'Server Error: Missing Gemini API key';
-        }
+			friendlyMessage = 'Server Error: Missing Gemini API key';
+		}
 
 		return json({ error: friendlyMessage }, { status: 500 });
 	}

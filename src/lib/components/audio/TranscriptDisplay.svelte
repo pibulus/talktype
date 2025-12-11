@@ -115,12 +115,7 @@
 			>
 				<!-- Use the original Ghost component -->
 				<div class="h-full w-full p-0.5">
-					<Ghost 
-						width="100%" 
-						height="100%" 
-						clickable={false} 
-						externalTheme="peach"
-					/>
+					<Ghost width="100%" height="100%" clickable={false} externalTheme="peach" />
 				</div>
 
 				<!-- Smart tooltip - only shows for first few hovers -->

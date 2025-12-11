@@ -230,12 +230,7 @@ function createGhostStateStore() {
 		const hasInitialLoad = spinPivot.classList.contains('initial-load-effect');
 
 		// Clean up any existing animation classes first, including initial load
-		spinPivot.classList.remove(
-			'initial-load-effect',
-			'wobble-left',
-			'wobble-right',
-			'wobble-both'
-		);
+		spinPivot.classList.remove('initial-load-effect', 'wobble-left', 'wobble-right', 'wobble-both');
 
 		const wobbleClass =
 			type === 'start' ? WOBBLE_CONFIG.RECORDING_START_CLASS : WOBBLE_CONFIG.RECORDING_STOP_CLASS;

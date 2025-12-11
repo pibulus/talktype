@@ -28,7 +28,9 @@
 			class="container mx-auto flex flex-row items-center justify-center gap-1 sm:justify-between sm:gap-3"
 		>
 			<!-- Hide copyright on mobile, show on sm+ -->
-			<div class="copyright ml-4 hidden flex-wrap items-center justify-center sm:ml-6 sm:flex md:ml-8">
+			<div
+				class="copyright ml-4 hidden flex-wrap items-center justify-center sm:ml-6 sm:flex md:ml-8"
+			>
 				<span class="mr-1 text-sm font-medium tracking-tight">
 					© {footerYear} TalkType
 				</span>

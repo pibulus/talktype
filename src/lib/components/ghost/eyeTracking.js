@@ -97,7 +97,7 @@ export function createEyeTracking(customConfig = {}) {
 		// Throttled update function using RAF
 		const throttledUpdate = (event) => {
 			state.lastEvent = event;
-			
+
 			// If a frame is already requested, don't request another one
 			if (state.rafId) {
 				return;

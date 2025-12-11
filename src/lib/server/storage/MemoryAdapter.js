@@ -1,7 +1,9 @@
 export class MemoryAdapter {
 	constructor() {
 		this.store = new Map();
-		console.warn('⚠️ [MemoryAdapter] Using in-memory storage. Data will be lost on server restart/function termination.');
+		console.warn(
+			'⚠️ [MemoryAdapter] Using in-memory storage. Data will be lost on server restart/function termination.'
+		);
 	}
 
 	async get(key) {

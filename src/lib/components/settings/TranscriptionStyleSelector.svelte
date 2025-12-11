@@ -59,7 +59,9 @@
 	$: styleTooltips = {
 		standard: 'Clean, professional tone',
 		surlyPirate: privacyModeValue ? 'Only available with online mode' : 'Pirate lingo & swagger',
-		quillAndInk: privacyModeValue ? 'Only available with online mode' : 'Victorian literature style',
+		quillAndInk: privacyModeValue
+			? 'Only available with online mode'
+			: 'Victorian literature style',
 		custom: privacyModeValue ? 'Only available with online mode' : 'Your own instructions (Premium)'
 	};
 
@@ -70,7 +72,8 @@
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
 					detail: {
-						message: '🔒 Custom styles only work with online mode. Disable offline mode to use custom prompts.',
+						message:
+							'🔒 Custom styles only work with online mode. Disable offline mode to use custom prompts.',
 						type: 'info'
 					}
 				})
@@ -124,7 +127,8 @@
 	{#if privacyModeValue}
 		<div class="mb-2 rounded-lg border border-purple-200 bg-purple-50/80 p-2">
 			<p class="text-xs text-purple-700">
-				🔒 <strong>Offline mode:</strong> Custom transcription styles require online Gemini API. Standard transcription uses local Whisper model.
+				🔒 <strong>Offline mode:</strong> Custom transcription styles require online Gemini API. Standard
+				transcription uses local Whisper model.
 			</p>
 		</div>
 	{/if}
@@ -135,7 +139,9 @@
 				class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {selectedPromptStyle ===
 				style
 					? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
-					: ''} {(style === 'custom' && !$isPremium) || (privacyModeValue && style !== 'standard') ? 'locked' : ''}"
+					: ''} {(style === 'custom' && !$isPremium) || (privacyModeValue && style !== 'standard')
+					? 'locked'
+					: ''}"
 				on:click={() => handleStyleClick(style)}
 				aria-label={styleNames[style] || style}
 				title={styleTooltips[style]}

@@ -124,7 +124,7 @@ export class WhisperService {
 			await this.#warmupTranscriber();
 
 			const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
-			const totalSecs = (((endTime - loadStart) || 0) / 1000).toFixed(2);
+			const totalSecs = ((endTime - loadStart || 0) / 1000).toFixed(2);
 			console.log(`[WhisperService] Model ready in ${totalSecs}s (WASM, warmed).`);
 
 			this.updateStatus({ isLoaded: true, isLoading: false, progress: 100 });

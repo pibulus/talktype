@@ -87,10 +87,7 @@
 		will-change: transform, opacity;
 		animation: confettiFall var(--duration) ease-out forwards;
 		animation-delay: var(--delay);
-		transform: translate(
-				calc(var(--origin-x) * 1vw),
-				calc(var(--origin-y) * 1vh)
-			)
+		transform: translate(calc(var(--origin-x) * 1vw), calc(var(--origin-y) * 1vh))
 			rotate(var(--rotate-start));
 	}
 

@@ -6,6 +6,7 @@
 import { get } from 'svelte/store';
 import { whisperService, whisperStatus } from './whisper/whisperService';
 import { userPreferences } from '../infrastructure/stores';
+import { customPrompt } from '$lib';
 import { browser } from '$app/environment';
 import { STORAGE_KEYS } from '$lib/constants';
 import { ensureApiSession } from '../apiSession.js';
@@ -150,14 +151,22 @@ class SimpleHybridService {
 			try {
 				await ensureApiSession();
 				const formData = new FormData();
-				
+
 				// Detect extension from blob type
 				const mimeType = audioBlob.type || 'audio/webm';
 				const ext = mimeType.split('/')[1]?.split(';')[0] || 'webm';
 				const filename = `recording-${Date.now()}.${ext}`;
-				
+
 				formData.append('audio_file', audioBlob, filename);
 				formData.append('prompt_style', promptStyle);
+
+				// Add custom prompt text if style is custom
+				if (promptStyle === 'custom') {
+					const customPromptText = get(customPrompt);
+					if (customPromptText) {
+						formData.append('custom_prompt', customPromptText);
+					}
+				}
 
 				const response = await fetch('/api/transcribe', {
 					method: 'POST',

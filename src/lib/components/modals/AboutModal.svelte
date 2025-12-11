@@ -17,7 +17,7 @@
 	aria-modal="true"
 >
 	<div
-		class="modal-box w-[92%] max-h-[85vh] overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
+		class="modal-box max-h-[85vh] w-[92%] overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
 	>
 		<form method="dialog">
 			<ModalCloseButton {closeModal} label="Close about modal" modalId="about_modal" />

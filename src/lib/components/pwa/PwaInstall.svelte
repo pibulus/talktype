@@ -38,7 +38,7 @@
 	disable-chrome="true"
 	manifest-url="/manifest.json"
 	install-description="Keep your ghost handy. 👻&#10;&#10;Add TalkType to your home screen. One tap and you’re talking — no browser, no search, just your words and your vibe.&#10;&#10;It’s fast, it’s private, and it works offline."
-	styles='{{"--tint-color": "#f472b6"}}'
+	styles={{ '--tint-color': '#f472b6' }}
 ></pwa-install>
 
 <style>

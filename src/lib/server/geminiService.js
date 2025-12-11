@@ -1,11 +1,15 @@
 import { GoogleGenAI } from '@google/genai';
 import { getTranscriptionPrompt } from '$lib/prompts';
-import { GEMINI_MODELS, GEMINI_GENERATION_CONFIG, getGeminiApiKey } from '$lib/server/geminiConfig.js';
+import {
+	GEMINI_MODELS,
+	GEMINI_GENERATION_CONFIG,
+	getGeminiApiKey
+} from '$lib/server/geminiConfig.js';
 
 const MODEL_ID = GEMINI_MODELS.transcription;
 const GENERATION_CONFIG = GEMINI_GENERATION_CONFIG.transcription;
 
-export async function transcribeAudio(file, promptStyle) {
+export async function transcribeAudio(file, promptStyle, customPromptText = '') {
 	const apiKey = getGeminiApiKey();
 	if (!apiKey) {
 		throw new Error('Server Error: Missing Gemini API key');
@@ -15,7 +19,14 @@ export async function transcribeAudio(file, promptStyle) {
 
 	const mimeType = file.type || 'audio/webm';
 	const displayName = file.name || `recording-${Date.now()}`;
-	const prompt = getTranscriptionPrompt(promptStyle);
+
+	// Determine the prompt to use
+	let prompt = '';
+	if (promptStyle === 'custom' && customPromptText) {
+		prompt = customPromptText;
+	} else {
+		prompt = getTranscriptionPrompt(promptStyle);
+	}
 
 	let uploadedFileName = null;
 
@@ -34,7 +45,7 @@ export async function transcribeAudio(file, promptStyle) {
 
 		uploadedFileName = uploadResult?.name ?? uploadResult?.file?.name ?? null;
 
-		console.log('[GeminiService] Uploaded audio to Gemini');
+		console.log(`[GeminiService] Uploaded audio to Gemini. Style: ${promptStyle}`);
 
 		const result = await genAI.models.generateContent({
 			model: MODEL_ID,
@@ -78,3 +89,5 @@ export async function transcribeAudio(file, promptStyle) {
 		}
 	}
 }
+
+

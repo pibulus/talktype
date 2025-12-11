@@ -75,7 +75,9 @@ export async function saveRecordingDraft(blob, metadata = {}, floatSamples = nul
 	});
 }
 
-export async function getLatestRecordingDraft(options = { includeBlob: false, includeFloat: false }) {
+export async function getLatestRecordingDraft(
+	options = { includeBlob: false, includeFloat: false }
+) {
 	const db = await openDatabase();
 	if (!db) return null;
 

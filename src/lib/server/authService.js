@@ -10,10 +10,10 @@ export async function guardRequest(event) {
 	// If auth is configured, enforce it.
 	// If not configured (authToken is null), we allow the request (Open Mode).
 	if (authToken) {
-        // We can add back the checkSession logic here if we want to support password protection later
-        // For now, we just proceed as requested by the user
+		// We can add back the checkSession logic here if we want to support password protection later
+		// For now, we just proceed as requested by the user
 	}
-	
+
 	const rateResponse = await enforceRateLimit(event);
 	if (rateResponse) return rateResponse;
 
@@ -33,5 +33,5 @@ export async function verifyTokenAndCreateSession(_token, event) {
 
 // Helper to get the API key for internal use
 export function getApiKey() {
-    return authToken;
+	return authToken;
 }

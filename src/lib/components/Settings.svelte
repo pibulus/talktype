@@ -14,7 +14,7 @@
 	import { ModalCloseButton } from './modals/index.js';
 	import PwaInstall from '$lib/components/pwa/PwaInstall.svelte';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
-import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
+	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { STORAGE_KEYS, SERVICE_EVENTS } from '$lib/constants';
 	import { PRICING } from '$lib/config/pricing';
 	import { analytics } from '$lib/services/analytics';
@@ -354,14 +354,10 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 				>
 					<div>
 						<span class="text-base font-medium text-gray-700">⚡ Live Mode</span>
-						<p class="mt-0.5 text-sm text-gray-500">
-							See text appear as you speak (Online only)
-						</p>
+						<p class="mt-0.5 text-sm text-gray-500">See text appear as you speak (Online only)</p>
 					</div>
 					<label class="flex cursor-pointer items-center">
-						<span class="sr-only"
-							>Live Mode Toggle {liveModeValue ? 'Enabled' : 'Disabled'}</span
-						>
+						<span class="sr-only">Live Mode Toggle {liveModeValue ? 'Enabled' : 'Disabled'}</span>
 						<div class="relative">
 							<input
 								type="checkbox"
@@ -386,11 +382,9 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 					>
 						<div>
 							<span class="text-base font-medium text-gray-700">✨ Keep TalkType Close</span>
-							<p class="mt-0.5 text-sm text-gray-500">
-								Save to your Home Screen
-							</p>
+							<p class="mt-0.5 text-sm text-gray-500">Save to your Home Screen</p>
 						</div>
-						<button 
+						<button
 							class="btn btn-sm border-pink-200 bg-pink-50 text-pink-600 hover:bg-pink-100"
 							on:click={() => {
 								if (pwaInstallComponent) {
@@ -454,7 +448,9 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 							</span>
 						</div>
 
-						<p class="text-xs text-gray-500">Thanks for keeping the ghost afloat. You've got all the goodies:</p>
+						<p class="text-xs text-gray-500">
+							Thanks for keeping the ghost afloat. You've got all the goodies:
+						</p>
 
 						<div class="space-y-1.5 pt-1 text-xs text-gray-600">
 							<div class="flex items-center gap-1.5">
@@ -484,7 +480,9 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 								<div class="mt-2 space-y-2 rounded-lg border border-green-300 bg-green-50 p-3">
 									<p class="text-xs font-medium text-gray-700">Your Unlock Code:</p>
 									<div class="rounded bg-white p-2 text-center">
-										<code class="text-sm font-bold tracking-wider text-gray-800">{myUnlockCode}</code>
+										<code class="text-sm font-bold tracking-wider text-gray-800"
+											>{myUnlockCode}</code
+										>
 									</div>
 									{#if myUnlockCode !== 'No code saved'}
 										<button
@@ -493,16 +491,16 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 										>
 											📋 Copy Code
 										</button>
-										<p class="text-center text-xs text-gray-500">
-											Works on all your devices
-										</p>
+										<p class="text-center text-xs text-gray-500">Works on all your devices</p>
 									{/if}
 								</div>
 							{/if}
 						</div>
 
 						<div class="pt-1 text-center">
-							<span class="text-xs italic text-pink-500">You're helping keep the web spooky. 💜</span>
+							<span class="text-xs italic text-pink-500"
+								>You're helping keep the web spooky. 💜</span
+							>
 						</div>
 					</div>
 				{:else}
