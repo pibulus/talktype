@@ -21,8 +21,8 @@
 	// CSS class to control animation state
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 
-	// Safari/iOS detection
-	const userAgent = navigator.userAgent;
+	// Safari/iOS detection (guard against SSR where navigator is undefined)
+	const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 	const isAndroid = /Android/i.test(userAgent);
 	const isiPhone = /iPhone|iPad/i.test(userAgent);
 	const isMac = /Macintosh/i.test(userAgent);

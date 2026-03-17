@@ -1,4 +1,5 @@
 <script>
+	import { createEventDispatcher } from 'svelte';
 	import {
 		ANIMATION,
 		CTA_PHRASES,
@@ -6,6 +7,8 @@
 		BUTTON_LABELS,
 		getRandomFromArray
 	} from '$lib/constants';
+
+	const dispatch = createEventDispatcher();
 
 	// Props
 	export let recording = false;
@@ -67,9 +70,7 @@
 		return `${minutes}:${secs.toString().padStart(2, '0')}`;
 	}
 
-	// Event handling
-	import { createEventDispatcher } from 'svelte';
-	const dispatch = createEventDispatcher();
+
 </script>
 
 {#if downloading}
@@ -181,7 +182,7 @@
 						</span>
 						<span class="sr-only">
 							{#if recording}
-								{formatTime(recordingDuration)} of {formatTime(ANIMATION.RECORDING.FREE_LIMIT)}
+								{formatTime(recordingDuration)} of {formatTime(isPremiumUser ? ANIMATION.RECORDING.PREMIUM_LIMIT : ANIMATION.RECORDING.FREE_LIMIT)}
 							{/if}
 						</span>
 					</span>
@@ -431,34 +432,6 @@
 				0 0 18px 4px rgba(139, 92, 246, 0.3),
 				0 0 8px 2px rgba(139, 92, 246, 0.15);
 			transform: scale(1.003);
-		}
-	}
-
-	/* Progress bar styling */
-	.progress-container {
-		position: relative;
-		overflow: hidden;
-		transition: all 0.3s ease;
-	}
-
-	.progress-bar {
-		position: absolute;
-		top: 0;
-		left: 0;
-		height: 100%;
-		transition: width 0.3s ease;
-		animation: pulse-glow 1.5s infinite ease-in-out;
-	}
-
-	@keyframes pulse-glow {
-		0% {
-			box-shadow: inset 0 0 5px rgba(255, 190, 60, 0.5);
-		}
-		50% {
-			box-shadow: inset 0 0 15px rgba(255, 190, 60, 0.8);
-		}
-		100% {
-			box-shadow: inset 0 0 5px rgba(255, 190, 60, 0.5);
 		}
 	}
 
