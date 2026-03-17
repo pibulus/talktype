@@ -27,6 +27,7 @@ if (env.backends.onnx?.webgpu) {
 
 const SAMPLE_RATE = 16000;
 const WARMUP_SECONDS = 0.25; // short silent clip to JIT the WASM kernels
+const MODEL_LOAD_TIMEOUT_MS = 5 * 60 * 1000; // 5 minute timeout for model download+load
 
 // Public status store (UI reads this for spinner/error state)
 export const whisperStatus = writable({
@@ -75,7 +76,12 @@ export class WhisperService {
 	}
 
 	async preloadModel() {
-		if (this.transcriber) {
+		// Check if currently loaded model matches the requested one
+		const prefs = get(userPreferences);
+		const requestedModel = prefs.whisperModel || 'tiny';
+		const currentModel = get(whisperStatus).selectedModel;
+
+		if (this.transcriber && requestedModel === currentModel) {
 			return { success: true, transcriber: this.transcriber };
 		}
 
@@ -103,23 +109,40 @@ export class WhisperService {
 				throw new Error(`Unknown model: ${modelKey}`);
 			}
 
+			// Unload any previously loaded model to free memory before loading the new one
+			if (this.transcriber) {
+				console.log('[WhisperService] Unloading previous model before loading new one');
+				await this.unloadModel();
+			}
+
 			this.updateStatus({ selectedModel: modelKey, progress: 5 });
 			console.log(`[WhisperService] Loading ${modelConfig.name} (WASM only)…`);
 
 			const loadStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
 
-			this.transcriber = await pipeline('automatic-speech-recognition', modelConfig.id, {
+			// Race model loading against a timeout to prevent infinite hangs
+			const loadPromise = pipeline('automatic-speech-recognition', modelConfig.id, {
 				device: 'wasm',
 				dtype: 'q8',
 				progress_callback: (progress) => {
 					if (progress.status === 'downloading') {
-						const percent = Math.round((progress.loaded / progress.total) * 100);
-						this.updateStatus({ progress: percent });
+						const total = progress.total || 1; // Guard against division by zero
+						const percent = Math.round((progress.loaded / total) * 100);
+						this.updateStatus({ progress: Math.min(percent, 94) });
 					} else if (progress.status === 'ready') {
 						this.updateStatus({ progress: 95 });
 					}
 				}
 			});
+
+			const timeoutPromise = new Promise((_, reject) => {
+				setTimeout(
+					() => reject(new Error('Model download timed out. Check your connection and try again.')),
+					MODEL_LOAD_TIMEOUT_MS
+				);
+			});
+
+			this.transcriber = await Promise.race([loadPromise, timeoutPromise]);
 
 			await this.#warmupTranscriber();
 

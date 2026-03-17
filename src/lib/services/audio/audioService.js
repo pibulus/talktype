@@ -322,45 +322,47 @@ export class AudioService {
 				this.mediaRecorder.requestData();
 			}
 
-			// Add a small delay to ensure final audio chunk is captured
+			// Assign onstop BEFORE calling stop() to avoid race condition
+			// where stop fires synchronously and the handler isn't attached yet
+			this.mediaRecorder.onstop = async () => {
+				// Create the Blob from this.audioChunks, which now contains all chunks
+				// including the final one from the last dataavailable event.
+				const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+				console.log(
+					'[AudioService] Created audio blob:',
+					audioBlob.size,
+					'bytes, type:',
+					mimeType
+				);
+
+				// Update store with audio blob
+				audioActions.setAudioBlob(audioBlob, mimeType);
+
+				// Immediately stop all tracks to ensure browser recording indicator is removed
+				if (this.stream) {
+					this.stream.getTracks().forEach((track) => {
+						track.stop();
+					});
+					// Clear the stream reference
+					this.stream = null;
+				}
+
+				this.audioChunks = [];
+				this.mediaRecorder = null;
+
+				// Persist a recovery copy before returning control (fire-and-forget)
+				this.#persistRecordingDraft(audioBlob, mimeType).catch((error) =>
+					console.warn('[AudioService] Failed to persist recording draft:', error)
+				);
+
+				// Ensure state is properly reset
+				this.stateManager.setState(AudioStates.IDLE);
+
+				resolve(audioBlob);
+			};
+
+			// Small delay to ensure final audio chunk from requestData() is captured
 			setTimeout(() => {
-				this.mediaRecorder.onstop = async () => {
-					// Create the Blob from this.audioChunks, which now contains all chunks
-					// including the final one from the last dataavailable event.
-					const audioBlob = new Blob(this.audioChunks, { type: mimeType });
-					console.log(
-						'[AudioService] Created audio blob:',
-						audioBlob.size,
-						'bytes, type:',
-						mimeType
-					);
-
-					// Update store with audio blob
-					audioActions.setAudioBlob(audioBlob, mimeType);
-
-					// Immediately stop all tracks to ensure browser recording indicator is removed
-					if (this.stream) {
-						this.stream.getTracks().forEach((track) => {
-							track.stop();
-						});
-						// Clear the stream reference
-						this.stream = null;
-					}
-
-					this.audioChunks = [];
-					this.mediaRecorder = null;
-
-					// Persist a recovery copy before returning control (fire-and-forget)
-					this.#persistRecordingDraft(audioBlob, mimeType).catch((error) =>
-						console.warn('[AudioService] Failed to persist recording draft:', error)
-					);
-
-					// Ensure state is properly reset
-					this.stateManager.setState(AudioStates.IDLE);
-
-					resolve(audioBlob);
-				};
-
 				try {
 					this.mediaRecorder.stop();
 				} catch (error) {
@@ -491,9 +493,10 @@ export class AudioService {
 				await Promise.all(
 					tracks.map((track) => {
 						return new Promise((resolve) => {
+							// Assign onended BEFORE stop() to avoid race if it fires synchronously
 							track.onended = resolve;
-							track.stop();
 							setTimeout(resolve, 500);
+							track.stop();
 						});
 					})
 				);

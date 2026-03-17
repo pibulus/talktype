@@ -6,11 +6,13 @@
 	// Audio visualization configuration
 	let audioDataArray;
 	let animationFrameId;
+	let fallbackTimeoutId; // Separate ID for setTimeout to avoid mixing with RAF
 	let audioLevel = 0;
 	let history = []; // Array to store audio level history
 	const historyLength = 30; // Number of bars to display in history
 	let analyser;
 	let audioContext;
+	let mediaStream; // Store stream reference for cleanup
 	let recording = false; // Track recording state within the component
 
 	// Reactive animation state
@@ -66,6 +68,7 @@
 	async function initStandardVisualizer() {
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			mediaStream = stream; // Store reference for cleanup
 
 			// Explicitly handle user gesture for Safari
 			if (typeof window !== 'undefined' && window.document) {
@@ -124,7 +127,8 @@
 
 		if (!$appActive) {
 			// If app is inactive, schedule less frequent updates with reactive store value
-			animationFrameId = setTimeout(() => {
+			// Use separate timeout ID to avoid mixing setTimeout/RAF IDs
+			fallbackTimeoutId = setTimeout(() => {
 				animationFrameId = requestAnimationFrame(updateFallbackVisualizer);
 			}, 1000); // Check back in 1 second when inactive
 			return;
@@ -281,13 +285,22 @@
 		} else {
 			// Stop optimized animation controller
 			visualizerAnimation.stop();
-			// Standard cleanup for legacy code
+			// Clean up animation frame and any pending timeout separately
 			if (typeof animationFrameId === 'number') {
 				cancelAnimationFrame(animationFrameId);
-				clearTimeout(animationFrameId);
+				animationFrameId = null;
+			}
+			if (typeof fallbackTimeoutId === 'number') {
+				clearTimeout(fallbackTimeoutId);
+				fallbackTimeoutId = null;
 			}
 			audioLevel = 0;
 			history = [];
+			// Stop the media stream to release the microphone
+			if (mediaStream) {
+				mediaStream.getTracks().forEach((track) => track.stop());
+				mediaStream = null;
+			}
 			if (audioContext) {
 				audioContext.close();
 				audioContext = null;
@@ -325,10 +338,22 @@
 		fallbackAnimating = false;
 		stopVisualizer();
 
+		// Clean up the animation controller's visibilitychange listener
+		visualizerAnimation.destroy();
+
 		// Extra cleanup for any potential timeout/animation frame
 		if (typeof animationFrameId === 'number') {
 			cancelAnimationFrame(animationFrameId);
-			clearTimeout(animationFrameId);
+			animationFrameId = null;
+		}
+		if (typeof fallbackTimeoutId === 'number') {
+			clearTimeout(fallbackTimeoutId);
+			fallbackTimeoutId = null;
+		}
+		// Ensure media stream is released
+		if (mediaStream) {
+			mediaStream.getTracks().forEach((track) => track.stop());
+			mediaStream = null;
 		}
 	});
 </script>
