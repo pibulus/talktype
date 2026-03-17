@@ -62,12 +62,6 @@
 		}
 	}
 
-	// Force reflow helper
-	function forceReflow(element) {
-		if (!element) return;
-		void element.offsetWidth;
-	}
-
 	// Lifecycle
 	onMount(() => {
 		// Start blinking (always enable this for visual consistency)

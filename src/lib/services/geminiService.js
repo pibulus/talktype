@@ -1,3 +1,8 @@
+/**
+ * @module geminiService
+ * @description Client-side facade for Gemini API prompt style management.
+ */
+
 import { promptManager } from './promptManager';
 
 // The geminiService now only handles prompt styles

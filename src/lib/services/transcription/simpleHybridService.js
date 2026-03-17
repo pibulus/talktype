@@ -8,7 +8,10 @@ import { whisperService, whisperStatus } from './whisper/whisperService';
 import { userPreferences } from '../infrastructure/stores';
 import { browser } from '$app/environment';
 import { STORAGE_KEYS } from '$lib/constants';
+import { createLogger } from '$lib/utils/logger';
 import { ensureApiSession } from '../apiSession.js';
+
+const log = createLogger('HybridService');
 
 class SimpleHybridService {
 	constructor() {
@@ -61,7 +64,7 @@ class SimpleHybridService {
 		}
 
 		const logPrefix = this.deviceProfile.isMobile ? '📱' : '🖥️';
-		console.log(
+		log.log(
 			`${logPrefix} Loading Whisper model for offline transcription...`,
 			this.deviceProfile.description
 		);
@@ -69,12 +72,12 @@ class SimpleHybridService {
 			.preloadModel()
 			.then((result) => {
 				if (result.success) {
-					console.log('✅ Whisper model ready for offline use!');
+					log.log('✅ Whisper model ready for offline use!');
 				}
 				return result;
 			})
 			.catch((err) => {
-				console.warn('Whisper load failed:', err);
+				log.error('Whisper load failed:', err);
 				return { success: false, error: err };
 			})
 			.finally(() => {
@@ -99,11 +102,11 @@ class SimpleHybridService {
 			}
 
 			if (this.whisperReady) {
-				console.log('🔒 Privacy Mode: Using offline Whisper');
+				log.log('🔒 Privacy Mode: Using offline Whisper');
 				if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
 				return await whisperService.transcribeAudio(audioBlob);
 			} else if (this.whisperLoadPromise) {
-				console.log('🔒 Privacy Mode: Waiting for Whisper to load...');
+				log.log('🔒 Privacy Mode: Waiting for Whisper to load...');
 				const result = await this.whisperLoadPromise;
 				if (result.success) {
 					if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
@@ -124,7 +127,7 @@ class SimpleHybridService {
 		}
 
 		// Normal mode: Use Gemini API (fast, reliable, works)
-		console.log('☁️ Using Gemini API for transcription');
+		log.log('☁️ Using Gemini API for transcription');
 		if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'gemini');
 		return await this.transcribeWithGemini(audioBlob);
 	}
@@ -182,14 +185,14 @@ class SimpleHybridService {
 				throw fetchError;
 			}
 		} catch (error) {
-			console.error('Gemini API transcription error:', error);
+			log.error('Gemini API transcription error:', error);
 
 			// Fallback to offline Whisper if API fails
-			console.log('⚠️ API failed, falling back to offline Whisper...');
+			log.log('⚠️ API failed, falling back to offline Whisper...');
 			
 			// Ensure Whisper is loaded
 			if (!this.whisperReady) {
-				console.log('⏳ Waiting for Whisper to load...');
+				log.log('⏳ Waiting for Whisper to load...');
 				if (!this.whisperLoadPromise) {
 					this.startBackgroundLoad();
 				}
@@ -200,13 +203,13 @@ class SimpleHybridService {
 						throw new Error('Offline fallback failed: Whisper model could not be loaded.');
 					}
 				} catch (loadError) {
-					console.error('Whisper load failed during fallback:', loadError);
+					log.error('Whisper load failed during fallback:', loadError);
 					throw error; // Throw original API error if fallback fails
 				}
 			}
 
 			if (this.whisperReady) {
-				console.log('✅ Whisper ready, starting offline transcription...');
+				log.log('✅ Whisper ready, starting offline transcription...');
 				return await whisperService.transcribeAudio(audioBlob);
 			}
 

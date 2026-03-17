@@ -91,7 +91,7 @@ export function seedRandom(seed, counter, min, max) {
  * @returns {boolean} True if in browser environment
  */
 export function isBrowser() {
-	return browser && typeof window !== 'undefined' && typeof document !== 'undefined';
+	return browser;
 }
 
 /**

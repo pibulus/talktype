@@ -1,3 +1,8 @@
+/**
+ * @module eventBus
+ * @description Lightweight publish/subscribe event system for decoupled inter-module communication.
+ */
+
 export class EventBus {
 	constructor() {
 		this.listeners = new Map();
@@ -59,7 +64,6 @@ export class EventBus {
 
 	setDebug(enabled) {
 		this.debug = enabled;
-		console.log(`[EventBus] Debug mode ${enabled ? 'enabled' : 'disabled'}`);
 	}
 
 	getRegisteredEvents() {

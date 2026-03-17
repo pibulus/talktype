@@ -1,7 +1,15 @@
+/**
+ * @module stores
+ * @description Central Svelte stores managing audio, recording, transcription, and UI state across the app.
+ */
+
 import { writable, derived, get } from 'svelte/store';
 import { AudioStates } from '../audio/audioStates';
 import { ANIMATION } from '$lib/constants';
 import { browser } from '$app/environment';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('Stores');
 
 // Core audio state store
 export const audioState = writable({
@@ -167,7 +175,7 @@ export const audioActions = {
 
 		// For reliable auto-stop, we also immediately update the recording state
 		// so that subscribers can react to it
-		console.log('⏱️ Recording time limit reached, signaling automatic stop');
+		log.log('⏱️ Recording time limit reached, signaling automatic stop');
 	}
 };
 
@@ -339,8 +347,8 @@ export const transcriptionCompletedEvent = (() => {
 			currentState.text.trim() !== ''
 		) {
 			// Condition: Was transcribing, now finished, and there's actual text.
-			console.log(
-				'[Store DEBUG] transcriptionCompletedEvent: Firing with text -',
+			log.log(
+				'transcriptionCompletedEvent: Firing with text -',
 				currentState.text
 			);
 			set(currentState.text); // Emit the text value

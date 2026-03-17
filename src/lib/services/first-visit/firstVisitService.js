@@ -1,3 +1,8 @@
+/**
+ * @module firstVisitService
+ * @description Detects first-time visitors and triggers the introductory modal flow.
+ */
+
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
 import { StorageUtils } from '../infrastructure/storageUtils';

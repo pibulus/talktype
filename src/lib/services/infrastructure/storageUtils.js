@@ -1,3 +1,8 @@
+/**
+ * @module storageUtils
+ * @description SSR-safe localStorage wrapper with error handling for persistent key-value storage.
+ */
+
 import { browser } from '$app/environment';
 
 export class StorageUtils {

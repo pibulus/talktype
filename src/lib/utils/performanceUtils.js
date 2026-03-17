@@ -1,9 +1,17 @@
+/**
+ * @module performanceUtils
+ * @description Provides animation controllers, visibility tracking, and performance optimization helpers.
+ */
+
 // ===================================================================
 // PERFORMANCE UTILITIES - Optimization helpers
 // ===================================================================
 
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('Perf');
 
 /**
  * Store tracking document visibility
@@ -217,7 +225,7 @@ export function measurePerformance(name, fn) {
 	// Log in development
 	if (import.meta.env.DEV) {
 		const measure = performance.getEntriesByName(measureName)[0];
-		console.log(`⏱ ${name}: ${measure.duration.toFixed(2)}ms`);
+		log.log(`⏱ ${name}: ${measure.duration.toFixed(2)}ms`);
 	}
 
 	// Clean up marks

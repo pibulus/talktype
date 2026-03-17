@@ -1,3 +1,8 @@
+/**
+ * @module modalService
+ * @description Manages modal open/close state with scroll locking and layout shift prevention.
+ */
+
 import { browser } from '$app/environment';
 
 export class ModalService {

@@ -1,12 +1,21 @@
+/**
+ * @module recordingControlsService
+ * @description Orchestrates high-level recording control logic, UI interactions, and service coordination for the recording workflow.
+ */
+
 // ===================================================================
 // RECORDING CONTROLS SERVICE
 // Handles high-level recording control logic and UI interactions
 // ===================================================================
 
 import { get } from 'svelte/store';
+import { browser } from '$app/environment';
 import { CTA_PHRASES, ANIMATION } from '$lib/constants';
 import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
+import { createLogger } from '$lib/utils/logger';
 import { transcriptionState } from '../infrastructure/stores';
+
+const log = createLogger('RecordingControls');
 
 export class RecordingControlsService {
 	constructor(dependencies) {
@@ -87,7 +96,7 @@ export class RecordingControlsService {
 
 			// State is tracked through stores now
 		} catch (err) {
-			console.error('❌ Error in startRecording:', err);
+			log.error('❌ Error in startRecording:', err);
 			const friendlyMessage = err.message.includes('permission')
 				? 'Need microphone access - click allow when asked!'
 				: 'Recording hiccup - mind trying again?';
@@ -97,7 +106,6 @@ export class RecordingControlsService {
 
 	async stopRecording() {
 		const { isRecording } = this.stores;
-		const browser = typeof window !== 'undefined';
 
 		try {
 			// Get current recording state
@@ -113,11 +121,11 @@ export class RecordingControlsService {
 
 			// Stop recording and get the audio blob
 			const audioBlob = await this.audioService.stopRecording();
-			console.log('[RecordingControlsService] Got audio blob:', audioBlob);
+			log.log('[RecordingControlsService] Got audio blob:', audioBlob);
 
 			// Process the audio if we have data
 			if (audioBlob) {
-				console.log(
+				log.log(
 					'[RecordingControlsService] Starting transcription with blob size:',
 					audioBlob.size
 				);
@@ -128,7 +136,7 @@ export class RecordingControlsService {
 				const MIN_DURATION_SECONDS = 0.5; // Minimum half second
 
 				if (estimatedDurationSeconds < MIN_DURATION_SECONDS) {
-					console.warn(
+					log.warn(
 						`[RecordingControlsService] Recording too short: ~${estimatedDurationSeconds.toFixed(2)}s`
 					);
 					this.uiActions.setErrorMessage(
@@ -140,7 +148,7 @@ export class RecordingControlsService {
 				// Transcribe the audio with proper error handling
 				try {
 					const transcriptText = await this.transcriptionService.transcribeAudio(audioBlob);
-					console.log('[RecordingControlsService] Transcription result:', transcriptText);
+					log.log('[RecordingControlsService] Transcription result:', transcriptText);
 
 					// Stop ghost thinking animation after successful transcription
 					// COMMENTED OUT: These methods don't exist on ghost component
@@ -162,7 +170,7 @@ export class RecordingControlsService {
 						this.activeTimeouts.push(timeoutId);
 					}
 				} catch (transcriptionError) {
-					console.error('❌ Transcription error:', transcriptionError);
+					log.error('❌ Transcription error:', transcriptionError);
 					const friendlyMessage = transcriptionError.message.includes('network')
 						? "Can't reach the transcription service - check your connection?"
 						: 'The ghost got tongue-tied - give it another shot?';
@@ -179,7 +187,7 @@ export class RecordingControlsService {
 				this.uiActions.setErrorMessage("Didn't catch that - try recording again?");
 			}
 		} catch (err) {
-			console.error('❌ Error in stopRecording:', err);
+			log.error('❌ Error in stopRecording:', err);
 			const friendlyMessage = "Something went sideways - let's try that again!";
 			this.uiActions.setErrorMessage(friendlyMessage);
 		}
@@ -189,14 +197,14 @@ export class RecordingControlsService {
 		const { isRecording, transcriptionText } = this.stores;
 		const currentlyRecording = get(isRecording);
 
-		console.log(
+		log.log(
 			'[RecordingControlsService] toggleRecording called, currently recording:',
 			currentlyRecording
 		);
 
 		try {
 			if (currentlyRecording) {
-				console.log('[RecordingControlsService] Stopping recording...');
+				log.log('[RecordingControlsService] Stopping recording...');
 				// Haptic feedback for stop - single tap
 				if (this.hapticService) {
 					this.hapticService.stopRecording();
@@ -206,7 +214,7 @@ export class RecordingControlsService {
 				// Screen reader announcement
 				this.uiActions.setScreenReaderMessage('Recording stopped.');
 			} else {
-				console.log('[RecordingControlsService] Starting recording...');
+				log.log('[RecordingControlsService] Starting recording...');
 				// Haptic feedback for start - double pulse
 				if (this.hapticService) {
 					this.hapticService.startRecording();
@@ -222,7 +230,7 @@ export class RecordingControlsService {
 				this.uiActions.setScreenReaderMessage('Recording started. Speak now.');
 			}
 		} catch (err) {
-			console.error('Recording operation failed:', err);
+			log.error('Recording operation failed:', err);
 
 			// Show error message
 			const friendlyMessage = err.message.includes('permission')
@@ -241,14 +249,12 @@ export class RecordingControlsService {
 	}
 
 	_incrementTranscriptionCount() {
-		const browser = typeof window !== 'undefined';
 		if (!browser) return;
 
 		try {
-			const newCount = this.pwaService.incrementTranscriptionCount();
-			// Could dispatch event here if needed
+			this.pwaService.incrementTranscriptionCount();
 		} catch (error) {
-			console.error('Error incrementing transcription count:', error);
+			log.error('Error incrementing transcription count:', error);
 		}
 	}
 

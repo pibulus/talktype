@@ -5,6 +5,9 @@
 
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('Premium');
 
 // Storage key for premium status
 const PREMIUM_STORAGE_KEY = 'talktype_premium_unlocked';
@@ -39,7 +42,7 @@ export function initializePremiumStatus() {
 
 	if (isUnlocked) {
 		unlockPremiumFeatures(unlockDate);
-		console.log('🎉 Premium features active since:', unlockDate);
+		log.log('🎉 Premium features active since:', unlockDate);
 	}
 }
 
@@ -74,7 +77,7 @@ export function unlockPremiumFeatures(existingUnlockDate = null, unlockCode = nu
 		}
 	}
 
-	console.log('✨ Premium features unlocked!', unlockDate);
+	log.log('✨ Premium features unlocked!', unlockDate);
 	return true;
 }
 
@@ -164,7 +167,7 @@ export function resetPremiumStatus() {
 		}
 	});
 
-	console.log('🔓 Premium status reset');
+	log.log('🔓 Premium status reset');
 }
 
 // Initialize on import

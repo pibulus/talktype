@@ -4,7 +4,6 @@
 	import { theme, autoRecord, applyTheme, promptStyle } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
-	import { installPromptEvent } from '$lib/stores/pwa';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import {
 		isPremium,
@@ -115,20 +114,6 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 					detail: { setting: 'privacyMode', value: privacyModeValue }
 				})
 			);
-		}
-	}
-
-	async function handleInstallClick() {
-		if ($installPromptEvent) {
-			try {
-				$installPromptEvent.prompt();
-				const { outcome } = await $installPromptEvent.userChoice;
-				if (outcome === 'accepted') {
-					$installPromptEvent = null;
-				}
-			} catch (err) {
-				console.error('Install failed:', err);
-			}
 		}
 	}
 

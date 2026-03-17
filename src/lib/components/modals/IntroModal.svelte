@@ -1,5 +1,4 @@
 <script>
-	import { browser } from '$app/environment';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './index.js';
 

@@ -1,3 +1,8 @@
+/**
+ * @module audioStates
+ * @description Audio state machine constants and a state manager class for tracking recording lifecycle transitions.
+ */
+
 export const AudioStates = {
 	IDLE: 'idle',
 	INITIALIZING: 'initializing',

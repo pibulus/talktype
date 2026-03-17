@@ -1,3 +1,8 @@
+/**
+ * @module pwaService
+ * @description Manages PWA install prompt timing, detection, and user engagement tracking.
+ */
+
 import { browser } from '$app/environment';
 import { writable, derived } from 'svelte/store';
 import { StorageUtils } from '../infrastructure/storageUtils';

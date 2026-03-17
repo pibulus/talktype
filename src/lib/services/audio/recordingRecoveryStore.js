@@ -1,3 +1,8 @@
+/**
+ * @module recordingRecoveryStore
+ * @description IndexedDB-backed store for persisting recording drafts to enable recovery after unexpected interruptions.
+ */
+
 const DB_NAME = 'talktype-recordings';
 const STORE_NAME = 'pending-recordings';
 const STORE_KEY = 'latest';

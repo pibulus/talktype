@@ -1,3 +1,8 @@
+/**
+ * @module audioService
+ * @description Core audio capture service managing MediaRecorder, AudioContext, and waveform data for voice recording.
+ */
+
 import { AudioStateManager, AudioStates } from './audioStates';
 import {
 	audioState,
@@ -9,6 +14,10 @@ import {
 import { convertToWAV as convertToRawAudio } from '../transcription/whisper/audioConverter';
 import { get } from 'svelte/store';
 import { saveRecordingDraft } from './recordingRecoveryStore';
+import { browser } from '$app/environment';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('AudioService');
 
 export const AudioEvents = {
 	RECORDING_STARTED: 'audio:recordingStarted',
@@ -23,7 +32,7 @@ export class AudioService {
 		this.mediaRecorder = null;
 		this.audioChunks = [];
 		this.audioContext = null;
-		this.isIOS = typeof window !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent);
+		this.isIOS = browser && /iPhone|iPad|iPod/.test(navigator.userAgent);
 		this.stream = null;
 		this.analyser = null;
 		this.cleanupPromise = null;
@@ -32,7 +41,7 @@ export class AudioService {
 		this.stateManager = new AudioStateManager();
 
 		this.stateManager.addListener(({ oldState, newState, error }) => {
-			console.log(`Audio state changed: ${oldState} -> ${newState}`);
+			log.log(`Audio state changed: ${oldState} -> ${newState}`);
 
 			// Update the store instead of emitting event
 			audioActions.updateState(newState, error);
@@ -40,7 +49,7 @@ export class AudioService {
 	}
 
 	async initializeAudioContext() {
-		if (!this.audioContext && typeof window !== 'undefined') {
+		if (!this.audioContext && browser) {
 			const AudioContext = window.AudioContext || window.webkitAudioContext;
 			this.audioContext = new AudioContext();
 		}
@@ -49,9 +58,9 @@ export class AudioService {
 		if (this.audioContext?.state === 'suspended') {
 			try {
 				await this.audioContext.resume();
-				console.log('Audio context resumed successfully');
+				log.log('Audio context resumed successfully');
 			} catch (error) {
-				console.warn('Failed to resume audio context:', error.message);
+				log.warn('Failed to resume audio context:', error.message);
 				// Don't throw here - let the app continue and try again on user interaction
 			}
 		}
@@ -63,7 +72,7 @@ export class AudioService {
 			try {
 				await this.audioContext.resume();
 			} catch (error) {
-				console.warn('Second attempt to resume audio context failed:', error.message);
+				log.warn('Second attempt to resume audio context failed:', error.message);
 			}
 		}
 
@@ -85,7 +94,7 @@ export class AudioService {
 			if (this.isIOS) {
 				const contextReady = await this.initializeAudioContext();
 				if (!contextReady) {
-					console.warn('Audio context not ready, but continuing with permission request');
+					log.warn('Audio context not ready, but continuing with permission request');
 					// Don't throw - iOS sometimes needs the permission request to activate context
 				}
 
@@ -106,7 +115,7 @@ export class AudioService {
 						return { granted: false, error: new Error('No active audio stream after permission') };
 					}
 				} catch (iosSpecificError) {
-					console.warn(
+					log.warn(
 						'iOS specific constraints failed, trying fallback:',
 						iosSpecificError.message
 					);
@@ -141,7 +150,7 @@ export class AudioService {
 					};
 				}
 			} catch (detailedConstraintError) {
-				console.log(
+				log.log(
 					'Detailed constraints failed, falling back to simple audio:',
 					detailedConstraintError.message
 				);
@@ -161,7 +170,7 @@ export class AudioService {
 				}
 			}
 		} catch (error) {
-			console.error('Error requesting audio permissions:', error);
+			log.error('Error requesting audio permissions:', error);
 			return { granted: false, error };
 		}
 	}
@@ -253,7 +262,7 @@ export class AudioService {
 
 			return true;
 		} catch (error) {
-			console.error('Error starting recording:', error);
+			log.error('Error starting recording:', error);
 			this.stateManager.setState(AudioStates.ERROR, { error });
 
 			const friendlyMessage = error.message.includes('permission')
@@ -293,7 +302,7 @@ export class AudioService {
 				audioActions.setWaveformData(Array.from(dataArray));
 				this.animationFrameId = requestAnimationFrame(updateWaveform);
 			} catch (error) {
-				console.warn('Waveform monitoring error:', error.message);
+				log.warn('Waveform monitoring error:', error.message);
 				this.animationFrameId = null;
 			}
 		};
@@ -328,7 +337,7 @@ export class AudioService {
 				// Create the Blob from this.audioChunks, which now contains all chunks
 				// including the final one from the last dataavailable event.
 				const audioBlob = new Blob(this.audioChunks, { type: mimeType });
-				console.log(
+				log.log(
 					'[AudioService] Created audio blob:',
 					audioBlob.size,
 					'bytes, type:',
@@ -352,7 +361,7 @@ export class AudioService {
 
 				// Persist a recovery copy before returning control (fire-and-forget)
 				this.#persistRecordingDraft(audioBlob, mimeType).catch((error) =>
-					console.warn('[AudioService] Failed to persist recording draft:', error)
+					log.warn('[AudioService] Failed to persist recording draft:', error)
 				);
 
 				// Ensure state is properly reset
@@ -366,7 +375,7 @@ export class AudioService {
 				try {
 					this.mediaRecorder.stop();
 				} catch (error) {
-					console.warn('Error stopping MediaRecorder:', error.message);
+					log.warn('Error stopping MediaRecorder:', error.message);
 
 					// Ensure tracks are stopped even if MediaRecorder stop fails
 					if (this.stream) {
@@ -396,7 +405,7 @@ export class AudioService {
 			try {
 				floatAudio = await convertToRawAudio(audioBlob);
 			} catch (conversionError) {
-				console.warn(
+				log.warn(
 					'[AudioService] Failed to generate Float32 audio for draft:',
 					conversionError?.message || conversionError
 				);
@@ -423,7 +432,7 @@ export class AudioService {
 				});
 			}
 		} catch (error) {
-			console.warn('[AudioService] Failed to persist recording draft:', error.message);
+			log.warn('[AudioService] Failed to persist recording draft:', error.message);
 		}
 	}
 
@@ -482,7 +491,7 @@ export class AudioService {
 					try {
 						this.mediaRecorder.stop();
 					} catch (stopError) {
-						console.warn('Error stopping MediaRecorder:', stopError.message);
+						log.warn('Error stopping MediaRecorder:', stopError.message);
 						resolve();
 					}
 				});
@@ -508,7 +517,7 @@ export class AudioService {
 					try {
 						this.analyser.disconnect();
 					} catch (analyserError) {
-						console.warn('Error disconnecting analyser:', analyserError.message);
+						log.warn('Error disconnecting analyser:', analyserError.message);
 					}
 					this.analyser = null;
 				}
@@ -518,14 +527,14 @@ export class AudioService {
 						await this.audioContext.suspend();
 						await new Promise((resolve) => setTimeout(resolve, 100));
 					} catch (suspendError) {
-						console.warn('Error suspending iOS audio context:', suspendError.message);
+						log.warn('Error suspending iOS audio context:', suspendError.message);
 					}
 				}
 
 				try {
 					await this.audioContext.close();
 				} catch (closeError) {
-					console.warn('Error closing audio context:', closeError.message);
+					log.warn('Error closing audio context:', closeError.message);
 				}
 				this.audioContext = null;
 			}

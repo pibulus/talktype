@@ -1,7 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
 	import ModalCloseButton from './ModalCloseButton.svelte';
-	export let onSubmit = async (token) => ({ success: false, error: null });
+	// eslint-disable-next-line no-unused-vars
+	export let onSubmit = async (_token) => ({ success: false, error: null });
 	export let onClose = () => {};
 
 	let token = '';
@@ -10,11 +11,9 @@
 	let tokenInput;
 
 	onMount(() => {
-		if (typeof window !== 'undefined') {
-			queueMicrotask(() => {
-				tokenInput?.focus();
-			});
-		}
+		queueMicrotask(() => {
+			tokenInput?.focus();
+		});
 	});
 
 	async function handleSubmit() {

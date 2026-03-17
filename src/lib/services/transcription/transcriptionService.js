@@ -1,8 +1,17 @@
+/**
+ * @module transcriptionService
+ * @description Orchestrates audio transcription, clipboard operations, and text processing.
+ */
+
 import { simpleHybridService } from './simpleHybridService';
 import { transcriptionState, transcriptionActions, uiActions } from '../infrastructure/stores';
 import { COPY_MESSAGES, getRandomFromArray } from '$lib/constants';
 import { get } from 'svelte/store';
 import { getLatestRecordingDraft, deleteRecordingDraft } from '../audio/recordingRecoveryStore';
+import { browser } from '$app/environment';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('Transcription');
 
 export const TranscriptionEvents = {
 	TRANSCRIPTION_STARTED: 'transcription:started',
@@ -16,7 +25,7 @@ export const TranscriptionEvents = {
 export class TranscriptionService {
 	constructor(dependencies = {}) {
 		this.hybridService = dependencies.hybridService || simpleHybridService;
-		this.browser = typeof window !== 'undefined';
+		this.browser = browser;
 		this.lastTranscriptionTimestamp = null;
 	}
 
@@ -55,7 +64,7 @@ export class TranscriptionService {
 
 			return transcriptText;
 		} catch (error) {
-			console.error('Transcription hiccup:', error);
+			log.error('Transcription hiccup:', error);
 
 			// Friendly error message
 			let friendlyMessage = error.message;
@@ -113,7 +122,7 @@ export class TranscriptionService {
 				});
 			}
 		} catch (error) {
-			console.warn('[TranscriptionService] Failed to restore pending recording:', error);
+			log.warn('Failed to restore pending recording:', error);
 		}
 	}
 
@@ -157,21 +166,21 @@ export class TranscriptionService {
 	}
 
 	async copyToClipboard(text) {
-		console.log(
-			'[TranscriptionService] copyToClipboard called with:',
+		log.log(
+			'copyToClipboard called with:',
 			text ? text.substring(0, 50) + '...' : 'no text'
 		);
 
 		if (!text) {
 			text = get(transcriptionState).text;
-			console.log(
-				'[TranscriptionService] Using text from store:',
+			log.log(
+				'Using text from store:',
 				text ? text.substring(0, 50) + '...' : 'no text in store'
 			);
 		}
 
 		if (!text || text.trim() === '') {
-			console.log('[TranscriptionService] No text to copy, showing error');
+			log.log('No text to copy, showing error');
 			uiActions.setErrorMessage('Nothing to copy yet - record something first!');
 			return false;
 		}
@@ -208,7 +217,7 @@ export class TranscriptionService {
 
 			return success;
 		} catch (error) {
-			console.error('Clipboard copy error:', error);
+			log.error('Clipboard copy error:', error);
 
 			const friendlyMessage = "Couldn't copy to clipboard. Try clicking somewhere first?";
 			uiActions.setErrorMessage(friendlyMessage);
@@ -251,7 +260,7 @@ export class TranscriptionService {
 				return false;
 			}
 
-			console.error('Share error:', error);
+			log.error('Share error:', error);
 
 			// Try fallback to clipboard if sharing fails
 			if (error.message === 'Web Share API not supported') {
@@ -296,7 +305,7 @@ export class TranscriptionService {
 		try {
 			await deleteRecordingDraft();
 		} catch (error) {
-			console.warn('Failed to delete recording draft:', error);
+			log.warn('Failed to delete recording draft:', error);
 		}
 
 		transcriptionActions.clearPendingRecording();

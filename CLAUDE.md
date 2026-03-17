@@ -1,169 +1,113 @@
 # CLAUDE.md - TalkType Technical Documentation
 
-## 🚀 What Makes TalkType Special
+## What Is TalkType
 
-TalkType isn't just another transcription app - it's a **progressive, offline-first voice-to-text PWA** with:
+A **progressive, offline-first voice-to-text PWA** built with SvelteKit. The ghost mascot makes it delightful.
 
-- **Instant start**: Web Speech API for 0ms latency
-- **Progressive quality**: Invisible upgrades from tiny → optimal models
+- **Instant start**: Gemini API for online transcription, Whisper ONNX for offline
+- **Progressive quality**: Invisible model upgrades from tiny -> optimal
 - **Distil-Whisper models**: 6x faster, 50% smaller than regular Whisper
 - **Multi-language Pro mode**: 9+ languages with one toggle
-- **Delightful ghost personality**: Not just a tool, but a companion
-- **No subscription BS**: One-time $9 unlock vs competitors' $10+/month
-
-## 📦 Progressive Transcription Architecture
-
-### Three-Layer System
-
-1. **Instant Layer**: Web Speech API (0ms start, online-only)
-2. **Tiny Layer**: 20MB distil-tiny loads invisibly (2-3s)
-3. **Target Layer**: Auto-selected based on device RAM:
-   - <3GB RAM: distil-small (83MB)
-   - ≥3GB RAM: distil-medium (166MB)
-   - Pro mode: distil-large-v3 (750MB, 9+ languages)
-
-### Key Features
-
-- **WebGPU Ready**: 10-100x speed boost when available
-- **Offline-first**: All models run locally after download
-- **Smart caching**: Models persist across sessions
-- **Progressive enhancement**: Quality improves invisibly
+- **One-time $9 unlock**: No subscription — premium features are already shipped, payment flips a boolean
 
 ## Build & Development
 
-- `npm run dev` - Start development server with Vite HMR
-- `npm run build` - Production build with optimizations
-- `npm run preview` - Preview production build locally
-- `npm run format` - Run Prettier formatter
-- `npm run lint` - ESLint + Prettier checks
-- `npm run lighthouse` - Performance audit
+```bash
+npm run dev        # Dev server with Vite HMR
+npm run build      # Production build (Netlify adapter)
+npm run preview    # Preview production build
+npm run format     # Prettier (svelte + tailwind plugins)
+npm run lint       # ESLint + Prettier checks
+```
 
-## Code Style Guidelines
+## Project Structure
 
-- **Framework**: Use idiomatic Svelte patterns; this is a SvelteKit project
-- **JavaScript**: Standard JS (not TypeScript) with JSConfig for minimal type checking
-- **Formatting**: Prettier with svelte and tailwind plugins
-- **CSS**: Tailwind CSS with DaisyUI components
-- **Naming**: Use descriptive camelCase for variables, PascalCase for components
-- **Imports**: Use ES modules syntax, group imports by type
-- **Error Handling**: Avoid window reference errors in SSR context
-- **Component Structure**: Organize by functionality in lib/components
-- **Services**: External API interactions belong in lib/services
-- **Documentation**: Include JSDoc comments for functions
-- **Reactivity**: Use Svelte's reactive declarations and statements properly
+```
+src/
+  routes/              # SvelteKit pages + API endpoints
+    +page.svelte       # Main app page
+    api/
+      transcribe/      # Gemini transcription endpoint
+      purchase-premium/# Premium unlock endpoint
+  lib/
+    components/
+      audio/           # RecordingControls, AudioVisualizer, TranscriptDisplay
+      ghost/           # Ghost SVG character (themes, eye tracking, animations)
+      page/            # MainContainer, GhostContainer, ContentContainer, Footer
+      modals/          # AboutModal, ExtensionModal, IntroModal, AuthModal
+      premium/         # PremiumUnlockModal
+      history/         # TranscriptHistoryModal
+      layout/          # PageLayout wrapper
+      ui/              # AppSuffix, shared UI bits
+      pwa/             # PwaInstallPrompt
+    services/          # Business logic (see services/README.md)
+    stores/            # Additional Svelte stores (pwa.js)
+    utils/             # Logger, performance utils, scroll utils
+    constants/         # App-wide constants (STORAGE_KEYS, ANIMATION, etc.)
+    server/            # Server-only code (Gemini API, storage adapters)
+```
 
-## Ghost Component System
+## Code Style
 
-The Ghost component is the heart of TalkType's personality:
+- **Framework**: SvelteKit with Svelte 4 (reactive `$:` blocks, `createEventDispatcher`)
+- **Language**: Standard JS (not TypeScript), JSConfig for minimal type checking
+- **CSS**: Tailwind CSS + DaisyUI components
+- **Naming**: camelCase variables, PascalCase components
+- **Logging**: Use `createLogger(tag)` from `$lib/utils/logger` — silenced in production
+- **Browser guards**: Use `browser` from `$app/environment` (not `typeof window`)
+- **Error handling**: `console.error` for production errors; `log.log()` for dev-only info
+- **Tab size**: 2 spaces, Prettier on save, 100 char max width
 
-### Key Features
+## Architecture Quick Reference
 
-- **Reactive theming**: 4 themes (peach, mint, bubblegum, rainbow)
-- **State animations**: Wobbles when recording, blinks periodically
-- **SVG-based**: Scalable, performant, delightful
-- **Eye tracking**: Follows cursor subtly
+### Transcription Flow
 
-### Animation States
+```
+Record button -> RecordingControlsService -> AudioService (MediaRecorder)
+Stop button   -> AudioService.stop() -> audioBlob
+              -> SimpleHybridService.transcribe(audioBlob)
+                 -> Online: Gemini API (/api/transcribe endpoint)
+                 -> Offline/Privacy: Whisper (local ONNX via @xenova/transformers)
+              -> stores.transcriptionText updated -> TranscriptDisplay renders
+```
 
-- **Idle**: Gentle breathing effect
-- **Recording**: Wobble animation
-- **Processing**: Pulse effect
-- **Wake up**: Special blink sequence
+### State Management
 
-For detailed implementation, see `/src/lib/components/ghost/README.md`
+All UI state lives in `services/infrastructure/stores.js` as Svelte writable/derived stores:
+- `isRecording`, `recordingDuration` — recording state
+- `transcriptionText`, `transcriptionProgress` — transcription output
+- `errorMessage`, `hasPermissionError` — error state
+- `userPreferences` — theme, prompt style, privacy mode
 
-## PWA & Mobile Optimizations
+### Whisper Model Tiers
 
-### PWA Features
+| Tier | Model | Size | When |
+|------|-------|------|------|
+| Tiny | distil-tiny | 20MB | Loads invisibly in background |
+| Small | distil-small | 83MB | <3GB device RAM |
+| Medium | distil-medium | 166MB | >=3GB device RAM (default) |
+| Large | distil-large-v3 | 750MB | Pro mode (9+ languages) |
 
-- **Install prompt**: Shows after 5 transcriptions
-- **Offline support**: Full functionality with cached models
-- **App icons**: Custom ghost icons for all platforms
-- **Service worker**: Caches all assets and models
+### Ghost Component
 
-### Mobile Optimizations
+SVG-based mascot with personality — see `components/ghost/README.md`:
+- 4 themes: peach, mint, bubblegum, rainbow
+- States: idle (breathing), recording (wobble), processing (pulse), wake-up (blink)
+- Eye tracking follows cursor
 
-- **iOS safe areas**: Handles notched devices
-- **Touch targets**: 44px minimum (iOS HIG)
-- **Scroll behavior**: Prevents rubber-banding
-- **Viewport locking**: App-like experience
-- **Font scaling**: Prevents zoom on input focus
+## Key Patterns
 
-## Current Feature Status
+- **Services as singletons**: `export const fooService = new FooService()`
+- **Progressive loading**: Models download in background, never block UI
+- **Hybrid transcription**: Online-first with automatic offline fallback
+- **Privacy mode**: Skips Gemini entirely, Whisper-only
+- **PWA install prompt**: Shows after 5 transcriptions
+- **Premium "DLC on disc"**: All pro features ship to everyone, $9 unlocks them instantly
 
-### ✅ Completed
+## Important Context
 
-- Progressive transcription with Distil-Whisper models
-- PWA with offline support and install prompt
-- Mobile optimizations (iOS safe areas, touch targets)
-- Ghost personality with themes and animations
-- Auto-record on startup option
-- Clean architecture (removed 881 lines of dead code)
-- Hyperspeed downloads with parallel chunks
-- WebGPU detection and optimization ready
-
-### 🎯 Ready to Ship ($9 Unlock)
-
-- Save transcript history
-- Export transcripts
-- Custom filename builder
-- Pro language mode (9+ languages)
-
-## Performance Metrics
-
-- **Initial Load**: <2s with tiny model
-- **Transcription Start**: Instant (Web Speech) or 2-3s (Whisper)
-- **Lighthouse Score**: 85+ target
-- **Bundle Size**: Optimized with Vite
-- **PWA Score**: Full compliance
-
-## Important Project Context
-
-- **Branch Strategy**: `main` for stable, `feat/hyperspeed-downloads` has latest transcription work
-- **The Ghost Wobbles**: When recording - this is intentional and delightful
-- **Progressive Enhancement**: Quality improves invisibly - never make users wait
+- **The Ghost Wobbles**: When recording — intentional and delightful
+- **Progressive Enhancement**: Quality improves invisibly — never make users wait
 - **Joy-First Design**: If it's not fun, we're doing it wrong
-- **Business Model**: $9 one-time unlock > subscription vampire model
-- **Competition**: We're not the most powerful, we're the most delightful
-
-## Editor Configuration
-
-- Default branch: main
-- Code width: 80 characters preferred, 100 max
-- Tab size: 2 spaces
-- Format on save: Yes (Prettier)
-
-## 💰 Payment Model & Marketing Philosophy
-
-### "DLC Already on Disc" Approach
-
-// The entire Pro feature set is already built and deployed to every user
-// Payment ($9 one-time) simply flips a boolean to unlock features
-// This approach provides several benefits:
-
-- **Zero latency unlock**: Features activate instantly upon payment
-- **Try before buy**: Users can experience the free tier fully
-- **No server dependency**: Payment validation happens once, features work forever
-- **Ethical pricing**: One-time $9 unlock vs competitors' $10+/month subscriptions
-
-### Key Marketing Points
-
-// These differentiators make TalkType compelling vs competition:
-
-- **100% Private**: Everything stays on device, we never see or store transcripts
-- **Zero setup**: Works instantly in browser, no API keys or accounts needed
-- **Smart model selection**: Automatically picks optimal model for your device
-- **Progressive quality**: Starts with instant Web Speech, invisibly upgrades to Whisper
-- **Lifetime value**: $9 once, maintained forever with latest models
-- **Multi-language Pro**: Unlock 99 languages with specialized models
-- **Competitor comparison**: SuperWhisper charges $10/month for similar features
-
-### Technical Advantages for Marketing
-
-// These can be simplified for user-facing copy:
-
-- **Distil-Whisper models**: 6x faster, 50% smaller than regular Whisper
-- **WebGPU ready**: 10-100x speed improvements when browsers enable it
-- **Progressive transcription**: Web Speech → Tiny → Optimal model pipeline
-- **Device-aware**: Automatically adjusts to available memory/compute
-- **PWA installable**: Works like native app on phones and desktops
+- **iOS quirks**: Safari needs special MediaRecorder/AudioContext handling (see audioService.js)
+- **Deployment**: Netlify with `@sveltejs/adapter-netlify`

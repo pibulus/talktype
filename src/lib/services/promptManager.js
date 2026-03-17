@@ -1,6 +1,14 @@
+/**
+ * @module promptManager
+ * @description Manages prompt style selection, persistence, and custom prompt configuration for transcription.
+ */
+
 import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import { promptTemplates, applyTemplate } from './promptTemplates';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('PromptManager');
 
 // Create a store for the current prompt style
 const STORAGE_KEY = 'talktype-prompt-style';
@@ -18,7 +26,7 @@ const createPromptStyleStore = () => {
 			store.set(storedStyle);
 		} else if (storedStyle && !promptTemplates[storedStyle]) {
 			// Handle the case where a stored style is no longer available (like 'corporate')
-			console.log(`Stored prompt style '${storedStyle}' is no longer available, using default`);
+			log.log(`Stored prompt style '${storedStyle}' is no longer available, using default`);
 			localStorage.setItem(STORAGE_KEY, DEFAULT_STYLE);
 			store.set(DEFAULT_STYLE);
 		}
@@ -29,7 +37,7 @@ const createPromptStyleStore = () => {
 		...store,
 		setStyle: (style) => {
 			if (!promptTemplates[style]) {
-				console.error(`Prompt style '${style}' not found`);
+				log.error(`Prompt style '${style}' not found`);
 				return false;
 			}
 
@@ -68,14 +76,14 @@ export const promptManager = {
 
 		// Check if current style exists, if not, reset to default
 		if (!promptTemplates[currentStyle]) {
-			console.error(`Prompt style '${currentStyle}' not found, falling back to standard`);
+			log.error(`Prompt style '${currentStyle}' not found, falling back to standard`);
 			currentStyle = DEFAULT_STYLE;
 			// Update the store to prevent repeated errors
 			promptStyleStore.setStyle(DEFAULT_STYLE);
 		}
 
 		if (!promptTemplates[currentStyle][operation]) {
-			console.error(
+			log.error(
 				`Operation '${operation}' not found in style '${currentStyle}', falling back to standard`
 			);
 			return applyTemplate(promptTemplates.standard[operation].text, variables);

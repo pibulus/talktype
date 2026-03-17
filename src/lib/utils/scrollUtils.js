@@ -1,3 +1,8 @@
+/**
+ * @module scrollUtils
+ * @description Provides centralized scroll detection and smooth auto-scroll utilities.
+ */
+
 // ===================================================================
 // SCROLL UTILITIES - Centralized scroll handling
 // ===================================================================

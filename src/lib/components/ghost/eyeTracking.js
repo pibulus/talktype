@@ -38,7 +38,8 @@ export function createEyeTracking(customConfig = {}) {
 	 * Debug logger
 	 * @param {string} message - Debug message
 	 */
-	function log(message) {
+	// eslint-disable-next-line no-unused-vars
+	function log(_message) {
 		// Debug logging removed for production
 	}
 

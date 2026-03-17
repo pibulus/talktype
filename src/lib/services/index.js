@@ -1,13 +1,14 @@
+import { browser } from '$app/environment';
 import { eventBus as eventBusInstance } from './infrastructure/index';
 import { hapticService as hapticServiceInstance } from './infrastructure/index';
 import { audioService as audioServiceInstance } from './audio/audioService';
 import { transcriptionService as transcriptionServiceInstance } from './transcription/transcriptionService';
-import { modalService as modalServiceInstance } from './modals/modalService';
+import { modalService as modalServiceInstance } from './modalService';
 import { firstVisitService as firstVisitServiceInstance } from './first-visit/firstVisitService';
 import { pwaService as pwaServiceInstance } from './pwa/pwaService';
 import { resetStores } from './infrastructure/stores';
 export { eventBus, hapticService, StorageUtils } from './infrastructure/index';
-export { modalService } from './modals/modalService';
+export { modalService } from './modalService';
 export { firstVisitService, isFirstVisit } from './first-visit/firstVisitService';
 export {
 	pwaService,
@@ -52,7 +53,7 @@ export function initializeServices(options = {}) {
 	// Reset stores to initial state
 	resetStores();
 
-	if (typeof window !== 'undefined') {
+	if (browser) {
 		transcriptionServiceInstance
 			.restorePendingRecordingDraft()
 			.catch((error) => console.warn('Failed to restore pending recording:', error));

@@ -4,9 +4,12 @@
 	import { unlockPremiumFeatures, getPremiumFeatures } from '$lib/services/premium/premiumService';
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
 	import { Button } from '$lib/components/shared';
-	import { PRICING, PRICING_MESSAGES } from '$lib/config/pricing';
+	import { PRICING } from '$lib/config/pricing';
 	import CampaignCountdown from '$lib/components/shared/CampaignCountdown.svelte';
 	import { analytics } from '$lib/services/analytics';
+	import { createLogger } from '$lib/utils/logger';
+
+	const log = createLogger('PremiumModal');
 
 	export let closeModal = () => {};
 	export let feature = null; // Which feature triggered the modal
@@ -53,7 +56,7 @@
 			script.async = true;
 			script.onload = () => {
 				squareLoaded = true;
-				console.log(`✓ Square SDK loaded (${dev ? 'sandbox' : 'production'} mode)`);
+				log.log(`✓ Square SDK loaded (${dev ? 'sandbox' : 'production'} mode)`);
 				resolve();
 			};
 			script.onerror = reject;
@@ -66,7 +69,7 @@
 	 */
 	async function initializeSquarePayment() {
 		if (!squareLoaded || !window.Square) {
-			console.error('Square SDK not loaded');
+			log.error('Square SDK not loaded');
 			return;
 		}
 
@@ -80,7 +83,7 @@
 
 			// In development, use test app ID or skip card initialization
 			if (dev && !appId) {
-				console.log('🧪 Development mode: Square payment form disabled');
+				log.log('🧪 Development mode: Square payment form disabled');
 				return;
 			}
 
@@ -88,7 +91,7 @@
 			card = await payments.card();
 			await card.attach('#card-container');
 		} catch (error) {
-			console.error('Failed to initialize Square payment:', error);
+			log.error('Failed to initialize Square payment:', error);
 			errorMessage = 'Failed to load payment form';
 		}
 	}
@@ -110,7 +113,7 @@
 
 			// In development without Square setup, use test token
 			if (dev && !window.Square) {
-				console.log('🧪 Development mode: Using test payment');
+				log.log('🧪 Development mode: Using test payment');
 				sourceId = 'test-payment-token';
 			} else {
 				// Tokenize card
@@ -161,7 +164,7 @@
 				throw new Error(data.error || 'Payment failed');
 			}
 		} catch (error) {
-			console.error('Payment error:', error);
+			log.error('Payment error:', error);
 			errorMessage = error.message || 'Payment failed. Please try again.';
 		} finally {
 			isProcessing = false;
@@ -196,7 +199,7 @@
 
 		// Log which feature triggered the modal
 		if (feature) {
-			console.log('Premium modal opened for feature:', feature);
+			log.log('Premium modal opened for feature:', feature);
 		}
 
 		// Load Square SDK
@@ -204,10 +207,10 @@
 			await loadSquareSDK();
 			await initializeSquarePayment();
 		} catch (error) {
-			console.error('Square SDK load error:', error);
+			log.error('Square SDK load error:', error);
 			// In development, this is okay - we can use test mode
 			if (dev) {
-				console.log('🧪 Development mode: Square SDK failed, test mode available');
+				log.log('🧪 Development mode: Square SDK failed, test mode available');
 			}
 		}
 	});

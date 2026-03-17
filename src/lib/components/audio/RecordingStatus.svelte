@@ -7,54 +7,11 @@
 	import {
 		errorMessage,
 		uiState,
-		uiActions,
-		transcriptionState,
-		isTranscribing,
-		transcriptionService
+		uiActions
 	} from '$lib/services';
 
 	// Screen reader announcements
 	$: screenReaderMessage = $uiState.screenReaderMessage;
-	$: pendingRecording = $transcriptionState.pendingRecording;
-
-	let isRetrying = false;
-
-	function formatDuration(seconds) {
-		if (!seconds || Number.isNaN(seconds)) return null;
-		if (seconds >= 60) {
-			const minutes = Math.floor(seconds / 60);
-			const remaining = Math.round(seconds % 60);
-			return remaining > 0 ? `${minutes}m ${remaining}s` : `${minutes}m`;
-		}
-		return `${seconds.toFixed(1)}s`;
-	}
-
-	function formatRelativeTime(timestamp) {
-		if (!timestamp) return 'just now';
-		const deltaMs = Date.now() - timestamp;
-		const deltaSeconds = Math.max(0, Math.round(deltaMs / 1000));
-
-		if (deltaSeconds < 60) return `${deltaSeconds}s ago`;
-		const deltaMinutes = Math.round(deltaSeconds / 60);
-		if (deltaMinutes < 60) return `${deltaMinutes}m ago`;
-		const deltaHours = Math.round(deltaMinutes / 60);
-		return `${deltaHours}h ago`;
-	}
-
-	async function handleRetry() {
-		if (isRetrying || $isTranscribing) return;
-
-		try {
-			isRetrying = true;
-			uiActions.clearErrorMessage();
-			await transcriptionService.retryPendingRecording();
-		} catch (error) {
-			console.error('Retry transcription failed:', error);
-			uiActions.setErrorMessage(error.message || 'Retry failed - please record again.');
-		} finally {
-			isRetrying = false;
-		}
-	}
 </script>
 
 <!-- Error message display -->

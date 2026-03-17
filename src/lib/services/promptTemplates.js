@@ -1,3 +1,8 @@
+/**
+ * @module promptTemplates
+ * @description Defines prompt templates for different transcription styles (standard, pirate, leet speak, etc.).
+ */
+
 // Collection of different prompt templates organized by style
 
 export const promptTemplates = {

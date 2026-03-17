@@ -1,6 +1,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { appActive, shouldAnimateStore } from '$lib/services/infrastructure';
+	import { appActive } from '$lib/services/infrastructure';
 	import { createAnimationController } from '$lib/utils/performanceUtils';
 
 	// Audio visualization configuration
@@ -35,33 +35,24 @@
 	let scalingFactor;
 	let offset;
 	let exponent;
-	let detectedDevice = 'Unknown'; // Variable to store detected device
 
 	// Platform detection for default settings
 	if (isAndroid) {
-		// Android specific settings
 		scalingFactor = 40;
 		offset = 80;
 		exponent = 0.5;
-		detectedDevice = 'Android';
 	} else if (isiPhone) {
-		// iPhone specific settings
 		scalingFactor = 40;
 		offset = 80;
 		exponent = 0.2;
-		detectedDevice = 'iPhone';
 	} else if (isMac) {
-		// macOS specific settings
 		scalingFactor = 20;
 		offset = 100;
 		exponent = 0.5;
-		detectedDevice = 'Mac';
 	} else {
-		// Default settings for other platforms
 		scalingFactor = 2000;
 		offset = 80;
 		exponent = 0.5;
-		detectedDevice = 'PC';
 	}
 
 	// ===== STANDARD AUDIO VISUALIZER =====
@@ -71,17 +62,15 @@
 			mediaStream = stream; // Store reference for cleanup
 
 			// Explicitly handle user gesture for Safari
-			if (typeof window !== 'undefined' && window.document) {
-				window.document.addEventListener(
-					'click',
-					() => {
-						if (audioContext && audioContext.state === 'suspended') {
-							audioContext.resume();
-						}
-					},
-					{ once: true }
-				);
-			}
+			document.addEventListener(
+				'click',
+				() => {
+					if (audioContext && audioContext.state === 'suspended') {
+						audioContext.resume();
+					}
+				},
+				{ once: true }
+			);
 
 			audioContext = new (window.AudioContext || window.webkitAudioContext)();
 			analyser = audioContext.createAnalyser();
@@ -110,7 +99,6 @@
 	let silenceCountdown = 0;
 
 	function initFallbackVisualizer() {
-		// console.log('Using fallback visualizer for Safari/iOS');
 		history = Array(historyLength).fill(0);
 		fallbackAnimating = true;
 		recording = true;
@@ -252,11 +240,6 @@
 			history.pop();
 		}
 	});
-
-	function updateVisualizer() {
-		// Legacy function kept for compatibility
-		// Now handled by animation controller
-	}
 
 	// ===== COMMON CONTROL FUNCTIONS =====
 	function startVisualizer() {

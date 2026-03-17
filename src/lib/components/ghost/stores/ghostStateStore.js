@@ -12,7 +12,6 @@ import {
 	ANIMATION_STATES,
 	ANIMATION_TRANSITIONS,
 	ANIMATION_BEHAVIORS,
-	CSS_CLASSES,
 	WOBBLE_CONFIG, // Import WOBBLE_CONFIG
 	BLINK_CONFIG // Import BLINK_CONFIG
 } from '../animationConfig.js';
@@ -520,11 +519,7 @@ function createGhostStateStore() {
 	 * @param {boolean} enabled - Whether debug is enabled
 	 */
 	function setDebug(enabled) {
-		// ADD THESE LINES
-		const storeBefore = get(_state);
-		// END ADD
 		_state.update((s) => ({ ...s, debug: !!enabled })); // Ensure it's a boolean
-		// ADD THIS LINE
 	}
 
 	// Combined store with public API

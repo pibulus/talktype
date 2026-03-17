@@ -1,4 +1,12 @@
+/**
+ * @module hapticService
+ * @description Provides haptic vibration feedback for recording actions on supported mobile devices.
+ */
+
 import { VIBRATION } from '$lib/constants';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('Haptics');
 
 export class HapticService {
 	constructor() {
@@ -16,7 +24,7 @@ export class HapticService {
 			navigator.vibrate(pattern);
 			return true;
 		} catch (e) {
-			console.log(`Vibration failed: ${e.message}`);
+			log.log(`Vibration failed: ${e.message}`);
 			return false;
 		}
 	}

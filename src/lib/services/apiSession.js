@@ -1,3 +1,8 @@
+/**
+ * @module apiSession
+ * @description Ensures an authenticated API session exists, prompting for a token if needed.
+ */
+
 import { promptForApiToken } from '$lib/services/authModalService';
 
 let inFlightSession = null;

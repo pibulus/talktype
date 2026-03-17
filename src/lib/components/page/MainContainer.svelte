@@ -1,12 +1,12 @@
 <script>
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import GhostContainer from './GhostContainer.svelte';
 	import ContentContainer from './ContentContainer.svelte';
 	import FooterComponent from './FooterComponent.svelte';
 	import { geminiService } from '$lib/services/geminiService';
-	import { modalService } from '$lib/services/modals';
-	import { firstVisitService, isFirstVisit } from '$lib/services/first-visit';
+	import { modalService } from '$lib/services/modalService';
+	import { firstVisitService } from '$lib/services/first-visit';
 	import { pwaService, deferredInstallPrompt, showPwaInstallPrompt } from '$lib/services/pwa';
 	import { isRecording as recordingStore } from '$lib/services';
 	import { PageLayout } from '$lib/components/layout';
@@ -27,16 +27,13 @@
 	let TranscriptHistoryModal;
 	let loadingHistoryModal = false;
 
-	// Initialize transcription after a short delay
-	let hasInitializedTranscription = false;
-
 	let PwaInstallPrompt;
-	let loadingPwaPrompt = false;
 
 	let speechModelPreloaded = false;
 	let isProcessing = false;
+	// eslint-disable-next-line no-unused-vars
 	function debug(message) {
-		// console.log(`[MainContainer] ${message}`);
+		// Uncomment for development: console.log(`[MainContainer] ${message}`);
 	}
 
 	async function openSettingsModal() {
@@ -210,7 +207,6 @@
 
 		// The PWA service handles most of the logic, but we need to lazy-load the component
 		if ($showPwaInstallPrompt && !PwaInstallPrompt) {
-			loadingPwaPrompt = true;
 			debug('📱 Lazy loading PWA install prompt component...');
 
 			try {
@@ -221,8 +217,6 @@
 			} catch (err) {
 				console.error('Error loading PWA install prompt:', err);
 				debug(`Error loading PWA install prompt: ${err.message}`);
-			} finally {
-				loadingPwaPrompt = false;
 			}
 		}
 	}

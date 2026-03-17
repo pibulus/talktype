@@ -7,13 +7,16 @@
 	import ghostPathsUrl from './ghost-paths.svg?url';
 	import { ANIMATION_STATES, CSS_CLASSES, PULSE_CONFIG, EYE_CONFIG } from './animationConfig.js';
 
-	import { ghostStateStore, theme as localTheme, cssVariables } from './stores/index.js';
+	import { ghostStateStore, theme as localTheme } from './stores/index.js';
 	import { animationService, blinkService } from './services/index.js';
 	import { forceReflow } from './utils/animationUtils.js';
 	import { initialGhostAnimation } from './actions/initialGhostAnimation.js';
 	import { createEyeTracking } from './eyeTracking.js';
 	import GradientDefs from './GradientDefs.svelte';
 	import { getGradientId } from './gradients.js';
+	import { createLogger } from '$lib/utils/logger';
+
+	const log = createLogger('Ghost');
 
 	export let isRecording = false;
 	export let isProcessing = false;
@@ -32,7 +35,6 @@
 	let backgroundElement;
 	let ghostWobbleGroup;
 	let lastRecordingState = false;
-	let lastProcessingState = false;
 	let currentTheme = 'peach'; // Initialize immediately to prevent black silhouette flash
 	let themeStore = externalTheme || localTheme;
 	let unsubscribeTheme;
@@ -53,6 +55,11 @@
 	$: if (fullyReady && browser && isRecording !== lastRecordingState) {
 		ghostStateStore.setRecording(isRecording);
 		lastRecordingState = isRecording;
+	}
+
+	// React to processing state changes ONLY when fully ready
+	$: if (fullyReady && browser) {
+		ghostStateStore.setProcessing(isProcessing);
 	}
 
 	// Theme changes trigger visual updates ONLY when fully ready
@@ -81,27 +88,6 @@
 		});
 	}
 
-	// Sync state to store only when local props actually change
-	function syncStateToStore() {
-		if (!browser || !ghostSvg) return;
-
-		// Only update recording state if it has changed
-		if (isRecording !== lastRecordingState) {
-			// Update local tracking state first
-			lastRecordingState = isRecording;
-
-			// Inform the store about the state change.
-			// The store now handles the wobble sequence internally.
-			ghostStateStore.setRecording(isRecording);
-		}
-
-		// Only update processing state if it has changed
-		if (isProcessing !== lastProcessingState) {
-			lastProcessingState = isProcessing;
-			ghostStateStore.setProcessing(isProcessing);
-		}
-	}
-
 	// Apply theme changes when they occur
 	// NOTE: CSS variables are now injected at layout level (+layout.svelte)
 	// This function only handles visual reflow to ensure smooth transitions
@@ -123,7 +109,7 @@
 
 		// Log theme change if in debug mode
 		if (debug) {
-			console.log('[Ghost] Theme changed, reflow applied');
+			log.log('[Ghost] Theme changed, reflow applied');
 		}
 	}
 
@@ -180,7 +166,6 @@
 	onMount(() => {
 		// Set initial values to prevent unnecessary updates
 		lastRecordingState = isRecording;
-		lastProcessingState = isProcessing;
 
 		// CRITICAL: Setup theme subscription FIRST to ensure currentTheme is correct
 		// This happens before setting fullyReady to prevent theme change flash

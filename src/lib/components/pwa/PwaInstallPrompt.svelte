@@ -98,7 +98,7 @@
 				// Show the native browser install prompt
 
 				// This is a built-in browser API, not our custom UI
-				const result = await installPromptEvent.prompt();
+				await installPromptEvent.prompt();
 
 				// Wait for the user to respond to the prompt
 				const choiceResult = await installPromptEvent.userChoice;
@@ -106,8 +106,8 @@
 				if (choiceResult.outcome === 'accepted') {
 					pwaService.markAsInstalled();
 					close();
-				} else {
 				}
+				// User declined - no action needed
 
 				// Clear the saved prompt since it can only be used once
 				installPromptEvent = null;

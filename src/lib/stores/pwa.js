@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { browser } from '$app/environment';
 
 // Store for the PWA install prompt event
 export const installPromptEvent = writable(null);
@@ -7,7 +8,7 @@ export const installPromptEvent = writable(null);
 export const isPwaInstalled = writable(false);
 
 // Check if app is running as installed PWA
-if (typeof window !== 'undefined') {
+if (browser) {
 	// Check if running in standalone mode (installed PWA)
 	const isStandalone =
 		window.matchMedia('(display-mode: standalone)').matches ||

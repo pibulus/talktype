@@ -30,7 +30,6 @@
 	};
 
 	let loading = true;
-	let error = null;
 
 	async function fetchStatus() {
 		try {
@@ -38,13 +37,11 @@
 			if (response.ok) {
 				status = await response.json();
 				loading = false;
-				error = null;
 			} else {
 				throw new Error('Failed to fetch campaign status');
 			}
 		} catch (err) {
 			console.error('Campaign countdown error:', err);
-			error = err.message;
 			loading = false;
 		}
 	}

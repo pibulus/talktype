@@ -8,6 +8,10 @@ import { userPreferences } from '../../infrastructure/stores';
 import { pipeline, env } from '@xenova/transformers';
 import { convertToWAV as convertToRawAudio } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
+import { browser } from '$app/environment';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('WhisperService');
 
 // Configure transformers.js for maximum stability (WASM only)
 env.allowRemoteModels = true;
@@ -36,7 +40,7 @@ export const whisperStatus = writable({
 	progress: 0,
 	error: null,
 	selectedModel: 'tiny',
-	supportsWhisper: typeof window !== 'undefined'
+	supportsWhisper: browser
 });
 
 function summarizeSignal(float32) {
@@ -64,7 +68,7 @@ export class WhisperService {
 	constructor() {
 		this.transcriber = null;
 		this.modelLoadPromise = null;
-		this.isSupported = typeof window !== 'undefined';
+		this.isSupported = browser;
 		this.hasWarmedUp = false;
 
 		this.updateStatus({ supportsWhisper: this.isSupported });
@@ -111,12 +115,12 @@ export class WhisperService {
 
 			// Unload any previously loaded model to free memory before loading the new one
 			if (this.transcriber) {
-				console.log('[WhisperService] Unloading previous model before loading new one');
+				log.log('[WhisperService] Unloading previous model before loading new one');
 				await this.unloadModel();
 			}
 
 			this.updateStatus({ selectedModel: modelKey, progress: 5 });
-			console.log(`[WhisperService] Loading ${modelConfig.name} (WASM only)…`);
+			log.log(`[WhisperService] Loading ${modelConfig.name} (WASM only)…`);
 
 			const loadStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
 
@@ -148,13 +152,13 @@ export class WhisperService {
 
 			const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
 			const totalSecs = (((endTime - loadStart) || 0) / 1000).toFixed(2);
-			console.log(`[WhisperService] Model ready in ${totalSecs}s (WASM, warmed).`);
+			log.log(`[WhisperService] Model ready in ${totalSecs}s (WASM, warmed).`);
 
 			this.updateStatus({ isLoaded: true, isLoading: false, progress: 100 });
 			this.modelLoadPromise = null;
 			return { success: true, transcriber: this.transcriber };
 		} catch (error) {
-			console.error('[WhisperService] Failed to load model:', error);
+			log.error('[WhisperService] Failed to load model:', error);
 			this.updateStatus({ isLoaded: false, isLoading: false, progress: 0, error: error.message });
 			this.transcriber = null;
 			this.modelLoadPromise = null;
@@ -179,7 +183,7 @@ export class WhisperService {
 			this.hasWarmedUp = true;
 		} catch (error) {
 			// Warmup is best-effort; don't surface to UI
-			console.warn('[WhisperService] Warmup run failed (continuing):', error?.message || error);
+			log.warn('[WhisperService] Warmup run failed (continuing):', error?.message || error);
 		}
 	}
 
@@ -220,13 +224,13 @@ export class WhisperService {
 			try {
 				floatAudio = await convertToRawAudio(audioBlob);
 			} catch (conversionError) {
-				console.error('[WhisperService] Failed to convert audio for Whisper:', conversionError);
+				log.error('[WhisperService] Failed to convert audio for Whisper:', conversionError);
 				throw new Error('Could not prepare audio for transcription');
 			}
 		}
 
 		const stats = summarizeSignal(floatAudio);
-		console.log('[WhisperService] Transcribing clip:', stats);
+		log.log('[WhisperService] Transcribing clip:', stats);
 		this.updateStatus({ isLoading: true, progress: 30 });
 
 		const options = {
@@ -259,7 +263,7 @@ export class WhisperService {
 		try {
 			await this.transcriber.dispose?.();
 		} catch (error) {
-			console.warn('[WhisperService] dispose failed (continuing):', error);
+			log.warn('[WhisperService] dispose failed (continuing):', error);
 		}
 
 		this.transcriber = null;
@@ -302,7 +306,7 @@ export class WhisperService {
 				await storage.persist();
 			}
 		} catch (error) {
-			console.warn('[WhisperService] Persistent storage request failed:', error?.message || error);
+			log.warn('[WhisperService] Persistent storage request failed:', error?.message || error);
 		}
 	}
 }

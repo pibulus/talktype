@@ -1,5 +1,5 @@
 <script>
-	import { promptStyle, customPrompt } from '$lib';
+	import { customPrompt } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { PROMPT_STYLES } from '$lib/constants';
 	import { isPremium } from '$lib/services/premium/premiumService';
@@ -148,7 +148,8 @@
 							class="preview-icon-layers relative flex h-full w-full items-center justify-center"
 							style="pointer-events: none;"
 						>
-							{@html styleIcons[style] || ''}
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -- Safe: renders hardcoded SVG icons -->
+						{@html styleIcons[style] || ''}
 						</div>
 					</div>
 				</div>

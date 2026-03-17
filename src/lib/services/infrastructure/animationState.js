@@ -1,3 +1,8 @@
+/**
+ * @module animationState
+ * @description Manages animation pause/resume state based on document visibility to conserve resources.
+ */
+
 import { writable, derived } from 'svelte/store';
 
 // Create a store to track if app animations should be active

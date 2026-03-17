@@ -1,5 +1,5 @@
 <script>
-	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
 	import AudioToText from '../audio/AudioToText.svelte';
 	import AnimatedTitle from './AnimatedTitle.svelte';
 
@@ -11,30 +11,21 @@
 	// Event dispatcher to communicate with parent
 	const dispatch = createEventDispatcher();
 
-	// Animation state variables
-	let titleAnimationComplete = false;
-	let subtitleAnimationComplete = false;
-
 	// Component references
 	let audioToTextComponent;
 
 	// Debug helper
 	function debug(message) {
-		// Uncomment the line below during development for verbose logging
-		// console.log(`[ContentContainer] ${message}`);
+		if (import.meta.env.DEV) console.log(`[ContentContainer] ${message}`);
 	}
 
-	// Function to handle title animation complete
 	function handleTitleAnimationComplete() {
 		debug('Title animation complete');
-		titleAnimationComplete = true;
 		dispatch('titleAnimationComplete');
 	}
 
-	// Function to handle subtitle animation complete
 	function handleSubtitleAnimationComplete() {
 		debug('Subtitle animation complete');
-		subtitleAnimationComplete = true;
 		dispatch('subtitleAnimationComplete');
 	}
 

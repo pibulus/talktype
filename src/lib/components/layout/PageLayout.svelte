@@ -1,5 +1,4 @@
 <script>
-	import { onMount } from 'svelte';
 	export let title = 'TalkType | Spooky Good Voice-to-Text';
 	export let description =
 		'TalkType turns your voice into text. Clean, simple, and freaky fast voice typing. Free forever. Tap the ghost and start talking!';

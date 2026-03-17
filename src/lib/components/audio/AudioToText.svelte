@@ -4,6 +4,7 @@
 -->
 <script>
 	import { onMount, onDestroy } from 'svelte';
+	import { browser } from '$app/environment';
 	import RecordingControls from './RecordingControls.svelte';
 	import TranscriptDisplay from './TranscriptDisplay.svelte';
 	import RecordingStatus from './RecordingStatus.svelte';
@@ -92,11 +93,9 @@
 
 		// Only download if privacy mode is enabled
 		const privacyMode =
-			typeof localStorage !== 'undefined' &&
-			localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
+			browser && localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
 
 		if (!privacyMode) {
-			// console.log('⏭️ Privacy mode not enabled - skipping model download');
 			return;
 		}
 
@@ -104,7 +103,6 @@
 
 		// Start progressive model loading
 		import('$lib/services/transcription/simpleHybridService').then(({ simpleHybridService }) => {
-			// console.log('🚀 Starting progressive Whisper model download...');
 			simpleHybridService.startBackgroundLoad();
 		});
 	}
@@ -114,11 +112,9 @@
 		hasUserInteracted = true;
 
 		// Remove listeners after first interaction
-		if (typeof window !== 'undefined') {
-			window.removeEventListener('click', handleFirstInteraction);
-			window.removeEventListener('touchstart', handleFirstInteraction);
-			window.removeEventListener('keydown', handleFirstInteraction);
-		}
+		window.removeEventListener('click', handleFirstInteraction);
+		window.removeEventListener('touchstart', handleFirstInteraction);
+		window.removeEventListener('keydown', handleFirstInteraction);
 
 		// Start loading immediately on interaction
 		startModelLoading();
@@ -128,7 +124,6 @@
 	function handlePrivacyModeChange(event) {
 		const { setting, value } = event.detail;
 		if (setting === 'privacyMode' && value === true) {
-			// console.log('🔒 Privacy mode enabled - starting model download immediately');
 			startModelLoading();
 		}
 	}
@@ -139,28 +134,21 @@
 		initializeServices({ debug: false });
 
 		// Listen for privacy mode toggle from Settings
-		if (typeof window !== 'undefined') {
-			window.addEventListener(SERVICE_EVENTS.SETTINGS.CHANGED, handlePrivacyModeChange);
-		}
+		window.addEventListener(SERVICE_EVENTS.SETTINGS.CHANGED, handlePrivacyModeChange);
 
 		// Wait for first user interaction before loading models
 		// This prevents affecting Lighthouse/PageSpeed scores
-		if (typeof window !== 'undefined') {
-			window.addEventListener('click', handleFirstInteraction, { once: true });
-			window.addEventListener('touchstart', handleFirstInteraction, { once: true });
-			window.addEventListener('keydown', handleFirstInteraction, { once: true });
+		window.addEventListener('click', handleFirstInteraction, { once: true });
+		window.addEventListener('touchstart', handleFirstInteraction, { once: true });
+		window.addEventListener('keydown', handleFirstInteraction, { once: true });
 
-			// Also start loading after configured delay if no interaction
-			// This ensures models are ready when user needs them
-			setTimeout(() => {
-				if (!modelLoadStarted) {
-					// console.log(
-					// 	`⏰ Auto-starting model load after ${ANIMATION.MODEL.AUTO_LOAD_DELAY / 1000}s delay`
-					// );
-					startModelLoading();
-				}
-			}, ANIMATION.MODEL.AUTO_LOAD_DELAY);
-		}
+		// Also start loading after configured delay if no interaction
+		// This ensures models are ready when user needs them
+		setTimeout(() => {
+			if (!modelLoadStarted) {
+				startModelLoading();
+			}
+		}, ANIMATION.MODEL.AUTO_LOAD_DELAY);
 
 		// Subscribe to permission denied state to show error modal
 		const permissionUnsub = hasPermissionError.subscribe((denied) => {
@@ -180,12 +168,10 @@
 		unsubscribers.forEach((unsub) => unsub());
 
 		// Remove event listeners
-		if (typeof window !== 'undefined') {
-			window.removeEventListener(SERVICE_EVENTS.SETTINGS.CHANGED, handlePrivacyModeChange);
-			window.removeEventListener('click', handleFirstInteraction);
-			window.removeEventListener('touchstart', handleFirstInteraction);
-			window.removeEventListener('keydown', handleFirstInteraction);
-		}
+		window.removeEventListener(SERVICE_EVENTS.SETTINGS.CHANGED, handlePrivacyModeChange);
+		window.removeEventListener('click', handleFirstInteraction);
+		window.removeEventListener('touchstart', handleFirstInteraction);
+		window.removeEventListener('keydown', handleFirstInteraction);
 	});
 
 	// Export functions for external components
@@ -209,9 +195,6 @@
 
 	export const recording = isRecording; // Export the isRecording store
 
-	function handleModelReady() {
-		modelReady = true;
-	}
 </script>
 
 <!-- Main wrapper - simplified orchestrator layout -->

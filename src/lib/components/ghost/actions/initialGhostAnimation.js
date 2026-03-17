@@ -7,7 +7,7 @@
  * 3. Dispatches an 'initialAnimationComplete' event when the sequence is finished.
  */
 
-import { ANIMATION_TIMING, WOBBLE_CONFIG } from '../animationConfig.js';
+import { ANIMATION_TIMING } from '../animationConfig.js';
 
 export function initialGhostAnimation(node, initialParams) {
 	let blinkTimeoutId = null;

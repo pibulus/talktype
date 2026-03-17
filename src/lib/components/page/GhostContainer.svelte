@@ -1,6 +1,4 @@
 <script>
-	import { onMount, onDestroy } from 'svelte';
-	import { browser } from '$app/environment';
 	import Ghost from '$lib/components/ghost/Ghost.svelte';
 	import { theme as appTheme } from '$lib';
 
@@ -10,27 +8,6 @@
 
 	// Component references
 	let ghostComponent;
-
-	// Debug helper
-	function debug(message) {
-		// Uncomment the line below during development for verbose logging
-		// console.log(`[GhostContainer] ${message}`);
-	}
-
-	// DEPRECATED: Event forwarding no longer needed - Ghost uses custom window event
-	// Keeping function for backward compatibility but it's not called anymore
-	function handleToggleRecording() {
-		debug('[DEPRECATED] Toggle recording handler - should not be called');
-		// Ghost now dispatches 'talktype:toggle-recording' directly to window
-	}
-
-	// Public method to trigger ghost click for parent
-	export function triggerGhostClick() {
-		debug('Triggering ghost click');
-		handleToggleRecording();
-	}
-
-	// Removed start/stopWobbleAnimation functions - wobble is internal to Ghost component
 
 	// Ghost animation methods forwarded to component
 	export function pulse() {
@@ -50,8 +27,6 @@
 			ghostComponent.stopThinking();
 		}
 	}
-
-	// Removed forceWobble forwarding function
 
 	export function reactToTranscript(textLength) {
 		if (ghostComponent) {

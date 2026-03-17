@@ -5,6 +5,9 @@
  */
 
 import { env, AutoProcessor, AutoModelForAudioFrameClassification } from '@xenova/transformers';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('SileroVAD');
 
 // Configure for browser environment with caching
 env.allowRemoteModels = true;
@@ -48,7 +51,7 @@ export class SileroVADService {
 		this.isLoading = true;
 
 		try {
-			console.log('🎤 Loading Silero VAD model...');
+			log.log('🎤 Loading Silero VAD model...');
 
 			// Load the Silero VAD model from HuggingFace
 			// Using the ONNX version optimized for browsers
@@ -61,13 +64,13 @@ export class SileroVADService {
 			);
 
 			this.isLoaded = true;
-			console.log('✅ Silero VAD model loaded successfully');
+			log.log('✅ Silero VAD model loaded successfully');
 		} catch (error) {
-			console.error('Failed to load Silero VAD:', error);
+			log.error('Failed to load Silero VAD:', error);
 
 			// Fallback: Try alternative VAD model
 			try {
-				console.log('Trying alternative VAD model...');
+				log.log('Trying alternative VAD model...');
 				this.model = await AutoModelForAudioFrameClassification.from_pretrained(
 					'Xenova/silero-vad',
 					{
@@ -75,9 +78,9 @@ export class SileroVADService {
 					}
 				);
 				this.isLoaded = true;
-				console.log('✅ Alternative VAD model loaded');
+				log.log('✅ Alternative VAD model loaded');
 			} catch (fallbackError) {
-				console.error('VAD initialization failed:', fallbackError);
+				log.error('VAD initialization failed:', fallbackError);
 				throw new Error('Could not load VAD model');
 			}
 		} finally {
@@ -191,7 +194,7 @@ export class SileroVADService {
 
 			return probabilities;
 		} catch (error) {
-			console.warn('Model inference failed, using fallback VAD:', error);
+			log.warn('Model inference failed, using fallback VAD:', error);
 			return this.simpleVAD(frames);
 		}
 	}

@@ -1,7 +1,11 @@
 <script>
 	import { ANIMATION } from '$lib/constants';
+	import { browser } from '$app/environment';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import Ghost from '$lib/components/ghost/Ghost.svelte';
+	import { createLogger } from '$lib/utils/logger';
+
+	const log = createLogger('TranscriptDisplay');
 
 	// Props
 	export let transcript = '';
@@ -28,7 +32,7 @@
 
 	function handleTooltipMouseEnter() {
 		if (
-			typeof window !== 'undefined' &&
+			browser &&
 			window.innerWidth >= 640 &&
 			!hasUsedCopyButton &&
 			tooltipHoverCount < ANIMATION.COPY.TOOLTIP_MAX_COUNT
@@ -49,7 +53,7 @@
 				isScrollable = hasOverflow;
 
 				// Debug log to see what's happening
-				console.log(
+				log.log(
 					`Transcript scrollable: ${isScrollable}, scrollHeight: ${scrollHeight}, clientHeight: ${clientHeight}`
 				);
 			});
