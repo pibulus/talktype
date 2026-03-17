@@ -283,13 +283,7 @@
 		leftEye &&
 		rightEye
 	) {
-		wakeUpBlinkTriggered = true; // Set the flag immediately
-		// Use a minimal timeout to ensure the state change has settled and CSS is potentially updated
-		setTimeout(() => {
-			// No need to double-check state if we trust the flag
-			// The regular IDLE blink timer will start after this double blink completes
-			// or based on its own logic within blinkService.
-		}, 50); // Small delay (50ms)
+		wakeUpBlinkTriggered = true;
 	}
 
 	// Reset the flag when the ghost is no longer IDLE (meaning it went to sleep, started recording, etc.)

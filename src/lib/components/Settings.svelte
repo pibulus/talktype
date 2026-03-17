@@ -3,6 +3,7 @@
 	import { browser } from '$app/environment';
 	import { theme, autoRecord, applyTheme, promptStyle } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
+	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { installPromptEvent } from '$lib/stores/pwa';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import {
@@ -83,6 +84,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 		selectedPromptStyle = style;
 		geminiService.setPromptStyle(style);
 		promptStyle.set(style);
+		userPreferences.update((prefs) => ({ ...prefs, promptStyle: style }));
 		if (browser) {
 			window.dispatchEvent(
 				new CustomEvent('talktype-setting-changed', {
