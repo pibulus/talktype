@@ -41,9 +41,7 @@
 	$: if ($liveMode === 'true' && ($transcriptionStore.transcript || $transcriptionStore.interim)) {
 		const fullText = ($transcriptionStore.transcript + ' ' + $transcriptionStore.interim).trim();
 		if (fullText) {
-			import('$lib/services/infrastructure/stores').then(({ transcriptionActions }) => {
-				transcriptionActions.updateText(fullText);
-			});
+			transcriptionActions.updateText(fullText);
 		}
 	}
 
@@ -308,6 +306,13 @@
 		max-width: 100vw;
 		margin: 0 auto;
 		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+</style>
+ign: center;
 		display: flex;
 		flex-direction: column;
 		align-items: center;

@@ -4,7 +4,7 @@
 
 <!-- Downloading: Indeterminate shimmer (can't track HuggingFace download) -->
 <div
-	class="progress-container loading-state relative mx-auto flex h-[64px] w-[90%] max-w-[420px] items-center justify-center overflow-hidden rounded-full bg-gradient-to-r from-blue-200 to-indigo-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
+	class="progress-container loading-state relative mx-auto flex h-[64px] w-[90%] min-w-[280px] max-w-[420px] items-center justify-center overflow-hidden rounded-full bg-gradient-to-r from-blue-200 to-indigo-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
 	role="status"
 	aria-label="Downloading offline model"
 >

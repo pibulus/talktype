@@ -4,7 +4,7 @@
 
 <!-- Transcribing: Progress bar fills up (shows actual progress) -->
 <div
-	class="progress-container relative mx-auto flex h-[64px] w-[90%] max-w-[420px] items-center justify-center overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
+	class="progress-container relative mx-auto flex h-[64px] w-[90%] min-w-[280px] max-w-[420px] items-center justify-center overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
 	role="progressbar"
 	aria-label="Transcription progress"
 	aria-valuenow={progress}

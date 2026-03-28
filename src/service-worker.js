@@ -80,7 +80,12 @@ self.addEventListener('fetch', (event) => {
 
 		// Skip service worker for Umami analytics
 		if (url.href.includes('cloud.umami.is')) {
-			return fetch(event.request);
+			try {
+				return await fetch(event.request);
+			} catch (err) {
+				// Return a neutral response to avoid console error
+				return new Response(null, { status: 204 });
+			}
 		}
 
 		// for everything else, try the network first, but
