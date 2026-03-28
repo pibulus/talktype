@@ -51,7 +51,7 @@ export const APP_CONFIG = {
 	NAME: 'TalkType',
 	VERSION: '0.1.1',
 	DESCRIPTION: 'Fast, accurate, and free voice-to-text transcription',
-	AUTHORS: 'Dennis & Pablo'
+	AUTHORS: 'Pablo @ TalkType'
 };
 
 // Animation Timing (in ms)

@@ -83,7 +83,7 @@
 						class="hover:text-pink-600 hover:underline"
 						on:click={handleGithubClick}
 					>
-						Dennis & Pabs
+						Pablo @ TalkType
 					</a>
 				</div>
 			</div>
