@@ -176,6 +176,14 @@ export class TranscriptionService {
 			return false;
 		}
 
+		// Some browsers block clipboard writes when the window is unfocused
+		if (typeof document !== 'undefined' && typeof document.hasFocus === 'function') {
+			if (!document.hasFocus()) {
+				console.log('[TranscriptionService] Skipping auto-copy: document not focused');
+				return false;
+			}
+		}
+
 		try {
 			// Try the modern clipboard API first
 			if (navigator.clipboard && window.isSecureContext) {

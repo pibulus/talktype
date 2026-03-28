@@ -89,6 +89,23 @@ const themeColors = {
 	}
 };
 
+function camelToKebab(value) {
+	return value.replace(/([A-Z])/g, (match) => `-${match.toLowerCase()}`);
+}
+
+function buildBaseColorCss() {
+	let css = ':root {\n';
+	for (const [themeName, colors] of Object.entries(themeColors)) {
+		for (const [key, value] of Object.entries(colors)) {
+			if (typeof value !== 'string') continue;
+			const cssVar = `--ghost-${themeName}-${camelToKebab(key)}`;
+			css += `\t${cssVar}: ${value};\n`;
+		}
+	}
+	css += '}\n';
+	return css;
+}
+
 // Get theme from localStorage or use default
 export function getInitialTheme() {
 	if (!browser) return FALLBACK_THEME;
@@ -99,6 +116,17 @@ export function getInitialTheme() {
 
 // Create the main theme store
 const theme = writable(getInitialTheme());
+
+// Inject base color CSS variables once so gradients have defaults even before theme store kicks in
+if (browser) {
+	const STYLE_ID = 'ghost-theme-base-colors';
+	if (!document.getElementById(STYLE_ID)) {
+		const styleEl = document.createElement('style');
+		styleEl.id = STYLE_ID;
+		styleEl.textContent = buildBaseColorCss();
+		document.head.appendChild(styleEl);
+	}
+}
 
 // Save theme changes to localStorage
 if (browser) {

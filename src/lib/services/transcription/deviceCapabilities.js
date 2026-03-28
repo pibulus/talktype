@@ -53,7 +53,7 @@ export function detectDeviceCapabilities() {
 	let recommendedModel = 'tiny'; // Default to tiny for fastest performance
 	let reason = 'Fast offline transcription with tiny model';
 
-	// High-end device detection
+	// High-end device detection – TEMP: using tiny while investigating performance
 	if (capabilities.memory >= 8 && capabilities.cores >= 8) {
 		tier = 'high';
 		recommendedModel = 'tiny'; // Prioritize speed over accuracy
@@ -70,7 +70,6 @@ export function detectDeviceCapabilities() {
 		tier = 'medium';
 		recommendedModel = 'tiny';
 		reason = 'Using tiny model for optimal speed';
-	}
 	// Low-mid tier
 	else if (capabilities.memory >= 2) {
 		tier = 'low-medium';

@@ -4,7 +4,7 @@
  * Using ONNX model that works in browsers (~1MB)
  */
 
-import { env, AutoProcessor, AutoModelForAudioFrameClassification } from '@xenova/transformers';
+import { env, AutoProcessor, AutoModelForAudioFrameClassification } from '@huggingface/transformers';
 
 // Configure for browser environment with caching
 env.allowRemoteModels = true;
@@ -56,7 +56,7 @@ export class SileroVADService {
 			this.model = await AutoModelForAudioFrameClassification.from_pretrained(
 				'onnx-community/silero-vad',
 				{
-					quantized: true // Use quantized model for smaller size
+					dtype: 'q8' // Use quantized model for smaller size
 				}
 			);
 
@@ -71,7 +71,7 @@ export class SileroVADService {
 				this.model = await AutoModelForAudioFrameClassification.from_pretrained(
 					'Xenova/silero-vad',
 					{
-						quantized: true
+						dtype: 'q8'
 					}
 				);
 				this.isLoaded = true;

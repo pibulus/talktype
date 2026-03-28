@@ -69,7 +69,11 @@ const {
 
 ### Theming System
 
+<<<<<<< HEAD
 - **`themeStore.js`** - Color theme management and CSS-variable generator (`generateAllThemeCssVariables`)
+=======
+- **`themeStore.js`** - Color theme management and runtime CSS variable injection
+>>>>>>> pablos-ghost
 - **`gradientAnimator.js`** - Dynamic gradient effects
 
 ### Configuration

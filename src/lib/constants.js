@@ -28,12 +28,10 @@ export const STORAGE_KEYS = {
 	LIVE_MODE: 'talktype_live_mode',
 	LAST_TRANSCRIPTION_METHOD: 'last_transcription_method', // Track which service was used
 
-	// PWA Related
+	// PWA Related - simplified to minimum needed
 	TRANSCRIPTION_COUNT: 'talktype-transcription-count',
-	PWA_PROMPT_SHOWN: 'talktype-pwa-prompt-shown',
-	PWA_PROMPT_COUNT: 'talktype-pwa-prompt-count',
-	PWA_LAST_PROMPT_DATE: 'talktype-pwa-last-prompt-date',
-	PWA_INSTALLED: 'talktype-pwa-installed'
+	PWA_INSTALLED: 'talktype-pwa-installed',
+	PWA_DISMISSED: 'talktype-pwa-dismissed'
 };
 
 // Prompt Styles

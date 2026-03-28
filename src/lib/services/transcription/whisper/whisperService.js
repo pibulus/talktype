@@ -202,203 +202,7 @@ export class WhisperService {
 			if (!audioData.size) {
 				throw new Error('Audio blob is empty');
 			}
-<<<<<<< HEAD
 			return;
-=======
-
-			// Validate input blob
-			this.validateAudioData(audioBlob, 'input blob');
-
-			// Convert audio to Float32Array if needed for Whisper compatibility
-			let processedAudio = audioBlob;
-			if (needsConversion(audioBlob.type)) {
-				this.updateStatus({ isLoading: true, progress: 10 });
-
-				try {
-					processedAudio = await convertToRawAudio(audioBlob);
-					// Validate converted audio
-					this.validateAudioData(processedAudio, 'converted audio');
-				} catch (conversionError) {
-					console.warn('Audio conversion failed, using original format:', conversionError.message);
-					processedAudio = audioBlob;
-				}
-			}
-
-			// Perform transcription
-			this.updateStatus({ isLoading: true, progress: 20 });
-
-			// Calculate audio duration based on actual processed audio data
-			let audioDuration;
-			if (processedAudio instanceof Float32Array) {
-				// Audio is now resampled to 16kHz by AudioContext
-				audioDuration = processedAudio.length / 16000;
-			} else {
-				// For Blob, estimate from size
-				audioDuration = processedAudio.size / (16000 * 2);
-			}
-
-			// Get current model info for language detection
-			const prefs = get(userPreferences);
-			const modelKey = prefs.whisperModel || 'tiny';
-			const modelConfig = getModelInfo(modelKey);
-
-			// Configure transcription options for optimal speed/quality balance
-			const transcriptionOptions = {
-				// Use stable generation settings
-				temperature: 0,
-				do_sample: false,
-				return_timestamps: true,
-
-				// Speed optimizations with minimal accuracy loss
-				beam_size: 1, // Greedy search is 2-3x faster than beam search
-				patience: 1.0, // Standard patience for early stopping
-				length_penalty: 1.0, // No length penalty for natural output
-
-				// Language optimization (skip detection for English models)
-				language: modelConfig.id.includes('.en') ? 'en' : null,
-				task: 'transcribe' // Faster than 'translate'
-			};
-
-			// Smart chunking based on audio duration and device memory
-			const deviceMemory = navigator.deviceMemory || 4; // GB of RAM
-
-			if (audioDuration > 30) {
-				// Platform-specific chunking to prevent memory issues
-				const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-				const isAndroid = /Android/i.test(navigator.userAgent);
-
-				if (isIOS) {
-					// iOS has strict memory limits - use conservative chunking
-					transcriptionOptions.chunk_length_s = 10;
-					transcriptionOptions.stride_length_s = 2;
-					console.log('[Whisper] iOS detected: using conservative chunking');
-				} else if (isAndroid) {
-					// Android: adapt based on available memory
-					if (deviceMemory >= 4) {
-						transcriptionOptions.chunk_length_s = 20;
-						transcriptionOptions.stride_length_s = 3;
-					} else {
-						transcriptionOptions.chunk_length_s = 10;
-						transcriptionOptions.stride_length_s = 2;
-					}
-					console.log(`[Whisper] Android with ${deviceMemory}GB RAM: adaptive chunking`);
-				} else if (deviceMemory >= 8) {
-					// Desktop high-end: larger chunks for better context
-					transcriptionOptions.chunk_length_s = 30;
-					transcriptionOptions.stride_length_s = 5;
-				} else if (deviceMemory >= 4) {
-					// Desktop mid-range: balanced chunking
-					transcriptionOptions.chunk_length_s = 20;
-					transcriptionOptions.stride_length_s = 3;
-				} else {
-					// Low-end device: smaller chunks to prevent OOM
-					transcriptionOptions.chunk_length_s = 10;
-					transcriptionOptions.stride_length_s = 2;
-				}
-			}
-
-			// Debug logging for ONNX execution
-			console.log('[Whisper] 🎯 Starting ONNX transcription with configuration:');
-			console.log('[Whisper]   Options:', transcriptionOptions);
-			console.log('[Whisper]   Audio duration:', audioDuration.toFixed(2), 'seconds');
-			console.log('[Whisper]   Audio type:', processedAudio.constructor.name);
-
-			if (processedAudio instanceof Float32Array) {
-				console.log('[Whisper]   Tensor shape: [1,', processedAudio.length, '] (mono, 16kHz)');
-				console.log('[Whisper]   Sample rate: 16000 Hz');
-				console.log('[Whisper]   Samples:', processedAudio.length);
-
-				// Check signal characteristics
-			let maxAmplitude = 0;
-			let sumAmplitude = 0;
-			for (let i = 0; i < processedAudio.length; i++) {
-				const sampleAbs = Math.abs(processedAudio[i]);
-				if (sampleAbs > maxAmplitude) {
-					maxAmplitude = sampleAbs;
-				}
-				sumAmplitude += sampleAbs;
-			}
-			// Avoid spreading large arrays into Math.max to prevent stack overflows
-			const avgAmplitude =
-				processedAudio.length > 0 ? sumAmplitude / processedAudio.length : 0;
-
-				console.log('[Whisper]   Signal peak:', maxAmplitude.toFixed(4));
-				console.log('[Whisper]   Signal avg:', avgAmplitude.toFixed(4));
-			} else {
-				console.log('[Whisper]   Blob size:', processedAudio.size, 'bytes');
-			}
-
-			// Log ONNX configuration being used
-			const currentStatus = get(whisperStatus);
-			console.log('[Whisper]   Model:', currentStatus.selectedModel);
-			console.log('[Whisper]   ONNX device:', this.hasWebGPU ? 'webgpu' : 'wasm');
-
-			const result = await this.transcriber(processedAudio, transcriptionOptions);
-
-			console.log('[Whisper] Raw transcription result:', result);
-
-			this.updateStatus({ isLoading: false, progress: 100 });
-
-			// Extract text from result (handle both formats)
-			let text = '';
-			if (typeof result === 'string') {
-				text = result;
-			} else if (result?.text) {
-				text = result.text;
-			} else if (Array.isArray(result) && result[0]?.text) {
-				// Handle array of chunks with timestamps
-				text = result.map((chunk) => chunk.text).join(' ');
-			}
-
-			// Clean up text to remove excessive repetitions
-			text = this.cleanRepetitions(text);
-
-			console.log('[Whisper] Final text:', text);
-
-			return text;
-		} catch (error) {
-			console.error('Error transcribing with Whisper:', error);
-
-			// Detect ONNX Runtime errors (error code 6 = INVALID_ARGUMENT)
-			const isONNXError =
-				error.message?.includes('OrtRun') ||
-				error.message?.includes('error code = 6') ||
-				error.message?.includes('ONNX');
-
-			// If ONNX error and we haven't retried yet, clear cache and retry
-			if (isONNXError && retryCount < MAX_RETRIES) {
-				console.warn(
-					`[WhisperService] ONNX error detected (attempt ${retryCount + 1}/${MAX_RETRIES + 1}). Clearing cache and retrying...`
-				);
-
-				try {
-					// Clear the corrupted model cache
-					await this.clearModelCache();
-
-					// Wait a bit for IndexedDB to settle
-					await new Promise((resolve) => setTimeout(resolve, 500));
-
-					// Retry transcription with fresh model
-					console.log('[WhisperService] Retrying transcription with fresh model...');
-					return await this.transcribeAudio(audioBlob, retryCount + 1);
-				} catch (clearError) {
-					console.error('[WhisperService] Failed to clear cache and retry:', clearError);
-					// Continue to throw original error
-				}
-			}
-
-			// Update status with error
-			const errorMessage = isONNXError
-				? 'Model error detected. Try clearing your browser cache (Settings > Privacy > Clear browsing data) and reload.'
-				: error.message || 'Failed to transcribe audio with Whisper';
-
-			this.updateStatus({
-				isLoading: false,
-				error: errorMessage
-			});
-
-			throw new Error(`Failed to transcribe audio with Whisper: ${error.message}`);
->>>>>>> feat/best-of-ghost-whisper
 		}
 
 		throw new Error('Unsupported audio data type');
@@ -447,7 +251,33 @@ export class WhisperService {
 
 	cleanRepetitions(text) {
 		if (!text) return '';
-		return text.replace(/(\b.+?\b)(\s+\1)+/gi, '$1').trim();
+
+		const fallback = text.trim();
+		if (!fallback) return '';
+
+		// Keep punctuation by matching sentences/clauses with their trailing delimiters
+		const sentences = fallback.match(/[^.!?]+[.!?]*/g) || [fallback];
+		const cleanedSentences = [];
+
+		for (const rawSentence of sentences) {
+			const trimmed = rawSentence.trim();
+			if (!trimmed) continue;
+
+			// Collapse triple+ repeated words while keeping natural double emphases
+			const dedupedWords = trimmed.replace(/\b(\w+)(\s+\1\b){2,}/gi, '$1 $1');
+
+			// Skip consecutive duplicate sentences
+			const previous = cleanedSentences[cleanedSentences.length - 1];
+			if (previous && previous.replace(/[.!?]+$/, '') === dedupedWords.replace(/[.!?]+$/, '')) {
+				continue;
+			}
+
+			cleanedSentences.push(dedupedWords);
+		}
+
+		const cleaned = cleanedSentences.join(' ').replace(/\s{2,}/g, ' ').trim();
+
+		return cleaned || fallback;
 	}
 
 	async unloadModel() {

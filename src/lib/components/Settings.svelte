@@ -350,6 +350,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 					</label>
 				</div>
 
+<<<<<<< HEAD
 				<!-- Live Mode Toggle -->
 				<div
 					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
@@ -495,6 +496,28 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 											📋 Copy Code
 										</button>
 										<p class="text-center text-xs text-gray-500">Works on all your devices</p>
+=======
+						<!-- Download Progress Indicator -->
+						{#if $whisperStatus.isLoading && privacyModeValue}
+							<div class="rounded-lg border-2 border-blue-300 bg-blue-50/80 p-3">
+								<div class="mb-2 flex items-center justify-between">
+									<p class="text-sm font-semibold text-blue-700">📥 Downloading Whisper model...</p>
+									<span class="text-xs font-bold text-blue-600">{$whisperStatus.progress}%</span>
+								</div>
+								<div class="h-2 overflow-hidden rounded-full bg-blue-200">
+									<div
+										class="h-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-300"
+										style="width: {$whisperStatus.progress}%"
+									></div>
+								</div>
+								<p class="mt-2 text-xs text-blue-600">
+									{#if $whisperStatus.progress < 30}
+										Starting download... (~95MB)
+									{:else if $whisperStatus.progress < 90}
+										Downloading model files...
+									{:else}
+										Almost ready! Loading into memory...
+>>>>>>> pablos-ghost
 									{/if}
 								</div>
 							{/if}
@@ -535,6 +558,24 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 								<span class="text-purple-600">✨</span>
 								<span>Save & export transcript history</span>
 							</div>
+<<<<<<< HEAD
+=======
+						{/if}
+
+						<div class="rounded-lg bg-blue-50/50 p-3">
+							<p class="text-xs text-gray-600">
+								{#if privacyModeValue}
+									<strong>🖥️ Desktop offline mode:</strong> All transcriptions stay on your device. Uses
+									Distil-Whisper for fast, private transcription.
+								{:else}
+									<strong>☁️ Online mode:</strong> Fast Gemini API transcription. Works on all devices.
+								{/if}
+							</p>
+							<p class="mt-2 text-xs text-gray-500">
+								<strong>Note:</strong> Offline mode only works on desktop browsers. Mobile devices use
+								online API due to memory constraints.
+							</p>
+>>>>>>> pablos-ghost
 						</div>
 
 						<button
@@ -551,6 +592,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 							Support for ${PRICING.currentPrice}
 						</button>
 
+<<<<<<< HEAD
 
 						<!-- Already supported? Enter Code -->
 						<div class="pt-1">
@@ -597,6 +639,24 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 									<p class="text-center text-xs text-gray-500">Works on all your devices</p>
 								</div>
 							{/if}
+=======
+					<!-- Model Settings -->
+					<section class="space-y-2">
+						<h3 class="text-xs font-medium uppercase tracking-widest text-gray-500">
+							How It Works
+						</h3>
+						<div class="rounded-lg bg-white/50 p-3">
+							<p class="text-sm text-gray-600">
+								By default, TalkType uses Gemini API for instant, accurate transcription.
+							</p>
+							<ul class="mt-2 space-y-1 text-xs text-gray-500">
+								<li>• <strong>Online mode (default):</strong> Fast, accurate, works everywhere</li>
+								<li>
+									• <strong>Offline mode:</strong> Downloads Whisper model for complete privacy (no cloud)
+								</li>
+								<li>• Switch anytime in settings - your choice!</li>
+							</ul>
+>>>>>>> pablos-ghost
 						</div>
 					</div>
 				{/if}

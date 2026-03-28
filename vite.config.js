@@ -9,10 +9,16 @@ export default defineConfig({
 		strictPort: true // exits if port is already taken (no fallback)
 	},
 	optimizeDeps: {
-		exclude: ['@google/generative-ai'] // Never bundle AI package client-side
+		exclude: ['@google/generative-ai', 'sharp'] // Never bundle AI package client-side, exclude sharp
+	},
+	resolve: {
+		alias: {
+			// Use stubbed sharp for browser builds (transformers.js v3 added sharp for image processing)
+			sharp: process.env.NODE_ENV === 'production' ? './stubs/sharp/index.js' : './stubs/sharp/index.js'
+		}
 	},
 	ssr: {
 		noExternal: process.env.NODE_ENV === 'production' ? ['@google/generative-ai'] : [],
-		external: ['@xenova/transformers'] // Exclude from SSR - browser-only transcription
+		external: ['@xenova/transformers', 'sharp'] // Exclude from SSR
 	}
 });

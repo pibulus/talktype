@@ -6,16 +6,14 @@ import { browser } from '$app/environment';
 // Core audio state store
 export const audioState = writable({
 	state: AudioStates.IDLE,
-	error: null,
 	previousState: null,
 	timestamp: Date.now(),
 	mimeType: null,
 	waveformData: []
 });
 
-// Recording state
+// Recording state (removed isRecording - use audioState instead)
 export const recordingState = writable({
-	isRecording: false,
 	duration: 0,
 	audioBlob: null,
 	audioURL: null
@@ -26,9 +24,13 @@ export const transcriptionState = writable({
 	inProgress: false,
 	progress: 0,
 	text: '',
+<<<<<<< HEAD
 	error: null,
 	timestamp: null,
 	pendingRecording: null
+=======
+	timestamp: null
+>>>>>>> pablos-ghost
 });
 
 // UI state
@@ -79,21 +81,18 @@ export const waveformData = derived(audioState, ($state) => $state.waveformData 
 
 // Action functions to update the stores
 export const audioActions = {
-	updateState(state, error = null) {
+	updateState(state) {
 		audioState.update((current) => ({
 			...current,
 			previousState: current.state,
 			state,
-			error,
 			timestamp: Date.now()
 		}));
 
-		// Update recording state when audio state changes
+		// Start/stop timer based on recording state
 		if (state === AudioStates.RECORDING) {
-			recordingState.update((current) => ({ ...current, isRecording: true }));
 			this.startRecordingTimer();
 		} else if (state !== AudioStates.RECORDING) {
-			recordingState.update((current) => ({ ...current, isRecording: false }));
 			this.stopRecordingTimer();
 		}
 	},
@@ -177,9 +176,10 @@ export const transcriptionActions = {
 			...current,
 			inProgress: true,
 			progress: 0,
-			error: null,
 			timestamp: Date.now()
 		}));
+		// Clear any previous errors when starting new transcription
+		uiActions.clearErrorMessage();
 	},
 
 	updateProgress(progress) {
@@ -218,10 +218,10 @@ export const transcriptionActions = {
 		transcriptionState.update((current) => ({
 			...current,
 			inProgress: false,
-			progress: 0,
-			error
+			progress: 0
 		}));
 
+<<<<<<< HEAD
 		uiState.update((current) => ({
 			...current,
 			errorMessage: `Transcription error: ${error || 'Unknown error'}`
@@ -240,6 +240,10 @@ export const transcriptionActions = {
 			...current,
 			pendingRecording: null
 		}));
+=======
+		// Single place to set error
+		uiActions.setErrorMessage(`Transcription error: ${error || 'Unknown error'}`);
+>>>>>>> pablos-ghost
 	}
 };
 
@@ -299,7 +303,6 @@ export const uiActions = {
 export function resetStores() {
 	audioState.set({
 		state: AudioStates.IDLE,
-		error: null,
 		previousState: null,
 		timestamp: Date.now(),
 		mimeType: null,
@@ -307,7 +310,6 @@ export function resetStores() {
 	});
 
 	recordingState.set({
-		isRecording: false,
 		duration: 0,
 		audioBlob: null,
 		audioURL: null
@@ -317,7 +319,6 @@ export function resetStores() {
 		inProgress: false,
 		progress: 0,
 		text: '',
-		error: null,
 		timestamp: null,
 		pendingRecording: null
 	});
@@ -360,3 +361,4 @@ export const transcriptionCompletedEvent = (() => {
 
 	return { subscribe };
 })();
+;
