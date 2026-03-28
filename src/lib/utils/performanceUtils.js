@@ -3,7 +3,7 @@
 // ===================================================================
 
 import { browser } from '$app/environment';
-import { writable, derived } from 'svelte/store';
+import { writable } from 'svelte/store';
 
 /**
  * Store tracking document visibility
@@ -45,8 +45,9 @@ export function createAnimationController(callback) {
 	};
 
 	// Auto-pause when document hidden
+	let visibilityHandler;
 	if (browser) {
-		document.addEventListener('visibilitychange', () => {
+		visibilityHandler = () => {
 			if (document.hidden && isRunning) {
 				isPaused = true;
 				if (animationId) {
@@ -57,7 +58,8 @@ export function createAnimationController(callback) {
 				isPaused = false;
 				animate();
 			}
-		});
+		};
+		document.addEventListener('visibilitychange', visibilityHandler);
 	}
 
 	return {
@@ -74,6 +76,15 @@ export function createAnimationController(callback) {
 			if (animationId) {
 				cancelAnimationFrame(animationId);
 				animationId = null;
+			}
+		},
+
+		/** Remove the visibilitychange listener to prevent leaks */
+		destroy() {
+			this.stop();
+			if (browser && visibilityHandler) {
+				document.removeEventListener('visibilitychange', visibilityHandler);
+				visibilityHandler = null;
 			}
 		},
 

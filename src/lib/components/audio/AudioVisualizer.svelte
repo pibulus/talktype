@@ -4,10 +4,22 @@
 	import { createAnimationController } from '$lib/utils/performanceUtils';
 
 	// Audio visualization configuration
+<<<<<<< HEAD
 	let audioLevel = 0;
 	let history = []; // Array to store audio level history
 	const historyLength = 30; // Number of bars to display in history
 	let animationFrameId;
+=======
+	let audioDataArray;
+	let animationFrameId;
+	let fallbackTimeoutId; // Separate ID for setTimeout to avoid mixing with RAF
+	let audioLevel = 0;
+	let history = []; // Array to store audio level history
+	const historyLength = 30; // Number of bars to display in history
+	let analyser;
+	let audioContext;
+	let mediaStream; // Store stream reference for cleanup
+>>>>>>> main
 	let recording = false; // Track recording state within the component
 
 	// Reactive animation state
@@ -16,8 +28,8 @@
 	// CSS class to control animation state
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 
-	// Safari/iOS detection
-	const userAgent = navigator.userAgent;
+	// Safari/iOS detection (guard against SSR where navigator is undefined)
+	const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 	const isAndroid = /Android/i.test(userAgent);
 	const isiPhone = /iPhone|iPad/i.test(userAgent);
 	const isMac = /Macintosh/i.test(userAgent);
@@ -95,7 +107,8 @@
 
 		if (!$appActive) {
 			// If app is inactive, schedule less frequent updates with reactive store value
-			animationFrameId = setTimeout(() => {
+			// Use separate timeout ID to avoid mixing setTimeout/RAF IDs
+			fallbackTimeoutId = setTimeout(() => {
 				animationFrameId = requestAnimationFrame(updateFallbackVisualizer);
 			}, 1000); // Check back in 1 second when inactive
 			return;
@@ -256,10 +269,18 @@
 		} else {
 			// Stop optimized animation controller
 			visualizerAnimation.stop();
+<<<<<<< HEAD
 			// Standard cleanup
+=======
+			// Clean up animation frame and any pending timeout separately
+>>>>>>> main
 			if (typeof animationFrameId === 'number') {
 				cancelAnimationFrame(animationFrameId);
-				clearTimeout(animationFrameId);
+				animationFrameId = null;
+			}
+			if (typeof fallbackTimeoutId === 'number') {
+				clearTimeout(fallbackTimeoutId);
+				fallbackTimeoutId = null;
 			}
 			audioLevel = 0;
 			history = [];
@@ -296,10 +317,22 @@
 		fallbackAnimating = false;
 		stopVisualizer();
 
+		// Clean up the animation controller's visibilitychange listener
+		visualizerAnimation.destroy();
+
 		// Extra cleanup for any potential timeout/animation frame
 		if (typeof animationFrameId === 'number') {
 			cancelAnimationFrame(animationFrameId);
-			clearTimeout(animationFrameId);
+			animationFrameId = null;
+		}
+		if (typeof fallbackTimeoutId === 'number') {
+			clearTimeout(fallbackTimeoutId);
+			fallbackTimeoutId = null;
+		}
+		// Ensure media stream is released
+		if (mediaStream) {
+			mediaStream.getTracks().forEach((track) => track.stop());
+			mediaStream = null;
 		}
 	});
 </script>
@@ -389,6 +422,42 @@
 	}
 
 	/* Special animation for rainbow theme bars */
+	@keyframes rainbowBars {
+		0%,
+		100% {
+			filter: drop-shadow(0 0 2px rgba(255, 156, 227, 0.2));
+			transform: scale(1);
+		}
+		25% {
+			filter: drop-shadow(0 0 3px rgba(169, 255, 156, 0.2));
+			transform: scale(1.01);
+		}
+		50% {
+			filter: drop-shadow(0 0 3px rgba(156, 221, 255, 0.2));
+			transform: scale(1.02);
+		}
+		75% {
+			filter: drop-shadow(0 0 2px rgba(255, 234, 138, 0.2));
+			transform: scale(1.01);
+		}
+	}
+
+	@keyframes hueShift {
+		0% {
+			filter: hue-rotate(0deg) saturate(1.3) brightness(1.1);
+			background-position: 0% 0%;
+		}
+		50% {
+			filter: hue-rotate(180deg) saturate(1.35) brightness(1.125);
+			background-position: 0% 300%;
+		}
+		100% {
+			filter: hue-rotate(360deg) saturate(1.4) brightness(1.15);
+			background-position: 0% 600%;
+		}
+	}
+</style>
+*/
 	@keyframes rainbowBars {
 		0%,
 		100% {

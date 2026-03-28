@@ -324,7 +324,6 @@
 					debug('Auto-record enabled, attempting to start recording immediately');
 					try {
 						contentContainer.startRecording();
-						ghostContainer.startWobbleAnimation();
 						debug('Auto-record: Called startRecording()');
 					} catch (err) {
 						debug(`Auto-record: Error starting recording: ${err.message}`);

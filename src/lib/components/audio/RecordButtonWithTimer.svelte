@@ -1,7 +1,16 @@
 <script>
-	import { getRandomFromArray } from '$lib/constants';
+	import { createEventDispatcher } from 'svelte';
+	import {
+		ANIMATION,
+		CTA_PHRASES,
+		COPY_MESSAGES,
+		BUTTON_LABELS,
+		getRandomFromArray
+	} from '$lib/constants';
 	import DownloadingState from './states/DownloadingState.svelte';
 	import TranscribingState from './states/TranscribingState.svelte';
+
+	const dispatch = createEventDispatcher();
 
 	// Props
 	export let recording = false;
@@ -15,6 +24,7 @@
 	export let buttonLabel = 'Start Recording';
 	export let successMessages = ['Copied!'];
 	export let progress = 0; // For transcription progress
+	export let isPremiumUser = false;
 
 	// Element refs
 	let recordButtonElement;
@@ -80,9 +90,7 @@
 		return `${minutes}:${secs.toString().padStart(2, '0')}`;
 	}
 
-	// Event handling
-	import { createEventDispatcher } from 'svelte';
-	const dispatch = createEventDispatcher();
+
 </script>
 
 {#if downloading}
@@ -163,7 +171,7 @@
 						</span>
 						<span class="sr-only">
 							{#if recording}
-								{formatTime(recordingDuration)} of {formatTime(maxDuration)}
+								{formatTime(recordingDuration)} of {formatTime(isPremiumUser ? ANIMATION.RECORDING.PREMIUM_LIMIT : ANIMATION.RECORDING.FREE_LIMIT)}
 							{/if}
 						</span>
 					</span>

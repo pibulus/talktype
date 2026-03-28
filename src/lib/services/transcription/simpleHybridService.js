@@ -90,7 +90,7 @@ class SimpleHybridService {
 	 */
 	async transcribeAudio(audioBlob) {
 		// Check privacy mode preference
-		const privacyMode = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
+		const privacyMode = browser && localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
 
 		// Privacy mode: Use offline Whisper only (desktop + mobile allowed)
 		if (privacyMode) {
@@ -101,13 +101,13 @@ class SimpleHybridService {
 
 			if (this.whisperReady) {
 				console.log('🔒 Privacy Mode: Using offline Whisper');
-				localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
+				if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
 				return await whisperService.transcribeAudio(audioBlob);
 			} else if (this.whisperLoadPromise) {
 				console.log('🔒 Privacy Mode: Waiting for Whisper to load...');
 				const result = await this.whisperLoadPromise;
 				if (result.success) {
-					localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
+					if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
 					return await whisperService.transcribeAudio(audioBlob);
 				}
 				throw new Error(
@@ -126,7 +126,7 @@ class SimpleHybridService {
 
 		// Normal mode: Use Cloud API (Deepgram)
 		console.log('☁️ Using Cloud API for transcription');
-		localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'cloud');
+		if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'cloud');
 		return await this.transcribeWithCloud(audioBlob);
 	}
 

@@ -35,15 +35,7 @@
 	let currentCta = CTA_PHRASES[0];
 
 	// Reactive button label computation
-	$: buttonLabel = $isRecording ? 'Stop Recording' : $transcriptionText ? currentCta : currentCta;
-
-	// Debug logging for recording state
-	$: console.log(
-		'[RecordingControls] isRecording state:',
-		$isRecording,
-		'buttonLabel:',
-		buttonLabel
-	);
+	$: buttonLabel = $isRecording ? 'Stop Recording' : currentCta;
 
 	onMount(() => {
 		// Initialize services
@@ -80,18 +72,9 @@
 	});
 
 	async function handleRecordingToggle() {
-		console.log('[RecordingControls] handleRecordingToggle called, isRecording:', $isRecording);
-
-		if (!recordingControlsService) {
-			console.log('[RecordingControls] No recording service available');
-			return;
-		}
-
-		// The button is already disabled during model download
-		// No need to block here - visual feedback is handled by the button state
+		if (!recordingControlsService) return;
 
 		try {
-			console.log('[RecordingControls] Calling toggleRecording...');
 			await recordingControlsService.toggleRecording();
 
 			// Update CTA if we have transcription text

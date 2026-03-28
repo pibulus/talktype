@@ -3,21 +3,6 @@ import { AudioStates } from '../audio/audioStates';
 import { ANIMATION } from '$lib/constants';
 import { browser } from '$app/environment';
 
-// Import promptStyle store to keep userPreferences in sync
-let promptStyleStore;
-if (browser) {
-	import('$lib').then((lib) => {
-		promptStyleStore = lib.promptStyle;
-		// Subscribe to changes in the promptStyle store
-		promptStyleStore.subscribe((newStyle) => {
-			userPreferences.update((prefs) => ({
-				...prefs,
-				promptStyle: newStyle
-			}));
-		});
-	});
-}
-
 // Core audio state store
 export const audioState = writable({
 	state: AudioStates.IDLE,
