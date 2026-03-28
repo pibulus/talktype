@@ -246,6 +246,9 @@
 			// FINAL STEP: Set fullyReady flag after all setup is complete
 			// This prevents any reactive cascade during initialization
 			// Single requestAnimationFrame ensures one clean render with all resources ready
+			// FINAL STEP: Set fullyReady flag after all setup is complete
+			// This prevents any reactive cascade during initialization
+			// Single requestAnimationFrame ensures one clean render with all resources ready
 			readyRafId = requestAnimationFrame(() => {
 				fullyReady = true;
 				readyRafId = null;
