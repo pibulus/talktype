@@ -54,3 +54,4 @@ tasks.json
 tasks/ 
 **/.claude/settings.local.json
 *.md
+.claude/
