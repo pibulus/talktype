@@ -1,0 +1,38 @@
+
+> talktype@0.0.1 build
+> vite build
+
+vite v6.3.5 building SSR bundle for production...
+transforming...
+
+🌼   daisyUI 4.12.24
+├─ ✔︎ 2 themes added		https://daisyui.com/docs/themes
+╰─ ❤︎ Support daisyUI project:	https://opencollective.com/daisyui
+
+
+🌼   daisyUI 4.12.24
+├─ ✔︎ 2 themes added		https://daisyui.com/docs/themes
+╰─ ★ Star daisyUI on GitHub	https://github.com/saadeghi/daisyui
+
+✓ 311 modules transformed.
+✗ Build failed in 1.39s
+error during build:
+src/lib/components/audio/AudioVisualizer.svelte (3:21): "waveformData" is not exported by "src/lib/services/infrastructure/index.js", imported by "src/lib/components/audio/AudioVisualizer.svelte".
+file: /Users/pabloalvarado/Projects/active/apps/talktype/src/lib/components/audio/AudioVisualizer.svelte:3:21
+
+1: <script>
+2:   import { onMount, onDestroy } from 'svelte';
+3:   import { appActive, waveformData } from '$lib/services/infrastructure';
+                         ^
+4:   import { createAnimationController } from '$lib/utils/performanceUtils';
+
+    at getRollupError (file:///Users/pabloalvarado/Projects/active/apps/talktype/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
+    at error (file:///Users/pabloalvarado/Projects/active/apps/talktype/node_modules/rollup/dist/es/shared/parseAst.js:397:42)
+    at Module.error (file:///Users/pabloalvarado/Projects/active/apps/talktype/node_modules/rollup/dist/es/shared/node-entry.js:16877:16)
+    at Module.traceVariable (file:///Users/pabloalvarado/Projects/active/apps/talktype/node_modules/rollup/dist/es/shared/node-entry.js:17329:29)
+    at ModuleScope.findVariable (file:///Users/pabloalvarado/Projects/active/apps/talktype/node_modules/rollup/dist/es/shared/node-entry.js:14999:39)
+    at FunctionScope.findVariable (file:///Users/pabloalvarado/Projects/active/apps/talktype/node_modules/rollup/dist/es/shared/node-entry.js:5620:38)
+    at FunctionBodyScope.findVariable (file:///Users/pabloalvarado/Projects/active/apps/talktype/node_modules/rollup/dist/es/shared/node-entry.js:5620:38)
+    at ReturnValueScope.findVariable (file:///Users/pabloalvarado/Projects/active/apps/talktype/node_modules/rollup/dist/es/shared/node-entry.js:5620:38)
+    at FunctionBodyScope.findVariable (file:///Users/pabloalvarado/Projects/active/apps/talktype/node_modules/rollup/dist/es/shared/node-entry.js:5620:38)
+    at Identifier.bind (file:///Users/pabloalvarado/Projects/active/apps/talktype/node_modules/rollup/dist/es/shared/node-entry.js:5394:40)

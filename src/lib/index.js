@@ -66,6 +66,9 @@ export const customPrompt = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.CUSTO
 // Store for auto-save preference
 export const autoSave = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.AUTO_SAVE, 'true');
 
+// Store for live mode preference
+export const liveMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.LIVE_MODE, 'false');
+
 // Export all constants for use throughout the app
 export { CONSTANTS };
 

@@ -2,7 +2,12 @@
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { theme } from '$lib';
 	import { ModalCloseButton } from './index.js';
+	import { analytics } from '$lib/services/analytics';
 	export let closeModal;
+
+	function handleGithubClick() {
+		analytics.clickExternal('github-pibulus');
+	}
 </script>
 
 <dialog
@@ -12,7 +17,7 @@
 	aria-modal="true"
 >
 	<div
-		class="modal-box max-h-[80vh] overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
+		class="modal-box max-h-[85vh] w-[92%] overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
 	>
 		<form method="dialog">
 			<ModalCloseButton {closeModal} label="Close about modal" modalId="about_modal" />
@@ -33,7 +38,7 @@
 			<div
 				class="rounded-lg border border-pink-200/60 bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 shadow-sm"
 			>
-				<p class="text-sm leading-relaxed text-gray-700">
+				<p class="text-base leading-relaxed text-gray-700">
 					TalkType is a minimalist voice-to-text tool that transforms your speech into text
 					effortlessly. Built with love by two friends who think tech should be <span
 						class="font-medium text-pink-600">simple</span
@@ -70,7 +75,16 @@
 					<p class="text-xs text-gray-500">Made with ☕ in Melbourne, Australia</p>
 				</div>
 				<div class="flex items-center gap-2 text-xs font-medium text-gray-600">
-					<span class="animate-pulse text-pink-500">❤️</span> Dennis & Pabs
+					<span class="animate-pulse text-pink-500">❤️</span>
+					<a
+						href="https://github.com/pibulus"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="hover:text-pink-600 hover:underline"
+						on:click={handleGithubClick}
+					>
+						Dennis & Pabs
+					</a>
 				</div>
 			</div>
 		</div>

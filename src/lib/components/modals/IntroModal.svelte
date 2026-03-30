@@ -28,7 +28,7 @@
 	aria-modal="true"
 >
 	<div
-		class="intro-modal-box modal-box relative mx-auto w-[95%] max-w-[90vw] rounded-3xl border-0 bg-[#fff9ed] p-6 sm:max-w-md sm:p-8 md:max-w-lg md:p-10 lg:max-w-xl"
+		class="intro-modal-box modal-box relative mx-auto w-[92%] max-w-[90vw] rounded-3xl border-0 bg-[#fff9ed] p-5 sm:max-w-md sm:p-8 md:max-w-lg md:p-10 lg:max-w-xl"
 	>
 		<form method="dialog">
 			<ModalCloseButton
@@ -55,16 +55,16 @@
 			</h1>
 
 			<div class="space-y-3 sm:space-y-4">
-				<p class="text-sm font-medium leading-relaxed text-gray-700 sm:text-base md:text-lg">
+				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
 					🎯 <strong>100% Private</strong> — Everything stays on your device. We never see or store your
 					words.
 				</p>
 
-				<p class="text-sm font-medium leading-relaxed text-gray-700 sm:text-base md:text-lg">
+				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
 					⚡ <strong>Instant Start</strong> — Tap the ghost and talk. Works offline after first use.
 				</p>
 
-				<p class="text-sm font-medium leading-relaxed text-gray-700 sm:text-base md:text-lg">
+				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
 					✨ <strong>Pro for $9</strong> — One-time unlock. 9+ languages, export transcripts, extra ghost
 					vibes. Forever.
 				</p>

@@ -65,18 +65,18 @@
 
 			<div>
 				<label for="token-input" class="sr-only">API Token</label>
-					<input
-						id="token-input"
-						type="password"
-						bind:this={tokenInput}
-						bind:value={token}
-						placeholder="Enter token..."
-						class="w-full rounded-lg border border-gray-300 px-4 py-2 text-center text-sm focus:border-pink-400 focus:outline-none focus:ring-1 focus:ring-pink-200"
-						autocomplete="one-time-code"
-						required
-						disabled={submitting}
-					/>
-				</div>
+				<input
+					id="token-input"
+					type="password"
+					bind:this={tokenInput}
+					bind:value={token}
+					placeholder="Enter token..."
+					class="w-full rounded-lg border border-gray-300 px-4 py-2 text-center text-sm focus:border-pink-400 focus:outline-none focus:ring-1 focus:ring-pink-200"
+					autocomplete="one-time-code"
+					required
+					disabled={submitting}
+				/>
+			</div>
 
 			{#if errorMessage}
 				<p class="rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-600">

@@ -31,15 +31,21 @@ export function createEyeTracking(customConfig = {}) {
 		eyesClosed: false, // This will now reflect the store's state for internal logic if needed
 		tracked: null,
 		// eyesElement: null, // No longer needed for direct DOM manipulation by this service
-		cleanupHandler: null
+		cleanupHandler: null,
+		lastFrameTime: 0, // For throttling
+		cachedGhostRect: null, // Cache getBoundingClientRect result
+		rafId: null, // Track RAF for cleanup
+		lastEvent: null // Store latest mouse event for throttling
 	};
 
 	/**
-	 * Debug logger
+	 * Debug logger - only logs if debug mode is enabled
 	 * @param {string} message - Debug message
 	 */
 	function log(message) {
-		// Debug logging removed for production
+		if (config.debug) {
+			console.log(`[EyeTracking] ${message}`);
+		}
 	}
 
 	/**
@@ -83,54 +89,97 @@ export function createEyeTracking(customConfig = {}) {
 
 		log('Starting eye tracking');
 
-		// Add event listener for mouse movement
-		const handleMouseMove = (event) => {
-			const storeState = get(ghostStateStore);
-			// Check eyesClosed and isEyeTrackingEnabled from the central store
-			if (storeState.eyesClosed || !state.tracked || !storeState.isEyeTrackingEnabled) {
+		// Cache initial ghost rect
+		if (state.tracked) {
+			state.cachedGhostRect = state.tracked.getBoundingClientRect();
+		}
+
+		// Throttled update function using RAF
+		const throttledUpdate = (event) => {
+			state.lastEvent = event;
+
+			// If a frame is already requested, don't request another one
+			if (state.rafId) {
 				return;
 			}
 
-			// Calculate ghost position and size
-			const ghostRect = state.tracked.getBoundingClientRect();
-			const ghostCenterX = ghostRect.left + ghostRect.width / 2;
-			const ghostCenterY = ghostRect.top + ghostRect.height / 2;
+			// Schedule update for next frame
+			state.rafId = requestAnimationFrame(() => {
+				const storeState = get(ghostStateStore);
+				// Check eyesClosed and isEyeTrackingEnabled from the central store
+				if (storeState.eyesClosed || !state.tracked || !storeState.isEyeTrackingEnabled) {
+					state.rafId = null;
+					return;
+				}
 
-			// Calculate distance from mouse to ghost center
-			const distanceX = event.clientX - ghostCenterX;
-			const distanceY = event.clientY - ghostCenterY;
+				// Use cached rect (only update on resize)
+				const ghostRect = state.cachedGhostRect;
+				if (!ghostRect) {
+					state.rafId = null;
+					return;
+				}
 
-			// Calculate normalized position (-1 to 1)
-			const maxDistanceX = window.innerWidth / config.maxDistanceX;
-			const maxDistanceY = window.innerHeight / config.maxDistanceY;
-			const targetNormalizedX = Math.max(-1, Math.min(1, distanceX / maxDistanceX));
-			const targetNormalizedY = Math.max(-1, Math.min(1, distanceY / maxDistanceY));
+				const ghostCenterX = ghostRect.left + ghostRect.width / 2;
+				const ghostCenterY = ghostRect.top + ghostRect.height / 2;
 
-			// Apply smoothing for more natural movement to internal state
-			state.eyePositionX =
-				state.eyePositionX + (targetNormalizedX - state.eyePositionX) * config.eyeSensitivity;
-			state.eyePositionY =
-				state.eyePositionY + (targetNormalizedY - state.eyePositionY) * config.eyeSensitivity;
+				// Use the latest event data
+				const currentEvent = state.lastEvent;
+				if (!currentEvent) {
+					state.rafId = null;
+					return;
+				}
 
-			// Update the central store with the smoothed, normalized positions
-			ghostStateStore.setEyePosition(state.eyePositionX, state.eyePositionY);
+				const distanceX = currentEvent.clientX - ghostCenterX;
+				const distanceY = currentEvent.clientY - ghostCenterY;
 
-			if (config.debug && Math.random() < 0.01) {
-				// Log only occasionally to prevent spamming
-				log(
-					`Store eyePosition updated: X=${state.eyePositionX.toFixed(2)}, Y=${state.eyePositionY.toFixed(2)}`
-				);
+				// Calculate normalized position (-1 to 1)
+				const maxDistanceX = window.innerWidth / config.maxDistanceX;
+				const maxDistanceY = window.innerHeight / config.maxDistanceY;
+				const targetNormalizedX = Math.max(-1, Math.min(1, distanceX / maxDistanceX));
+				const targetNormalizedY = Math.max(-1, Math.min(1, distanceY / maxDistanceY));
+
+				// Apply smoothing for more natural movement to internal state
+				state.eyePositionX =
+					state.eyePositionX + (targetNormalizedX - state.eyePositionX) * config.eyeSensitivity;
+				state.eyePositionY =
+					state.eyePositionY + (targetNormalizedY - state.eyePositionY) * config.eyeSensitivity;
+
+				// Update the central store with the smoothed, normalized positions
+				ghostStateStore.setEyePosition(state.eyePositionX, state.eyePositionY);
+
+				state.rafId = null;
+
+				if (config.debug && Math.random() < 0.01) {
+					// Log only occasionally to prevent spamming
+					log(
+						`Store eyePosition updated: X=${state.eyePositionX.toFixed(2)}, Y=${state.eyePositionY.toFixed(2)}`
+					);
+				}
+			});
+		};
+
+		// Update cached rect on resize
+		const handleResize = () => {
+			if (state.tracked) {
+				state.cachedGhostRect = state.tracked.getBoundingClientRect();
 			}
 		};
 
-		// Add event listener
-		document.addEventListener('mousemove', handleMouseMove, { passive: true });
-		log('Mouse move event listener added');
+		// Add event listeners
+		document.addEventListener('mousemove', throttledUpdate, { passive: true });
+		window.addEventListener('resize', handleResize, { passive: true });
+		log('Mouse move and resize event listeners added');
 
 		// Store cleanup function
 		state.cleanupHandler = () => {
-			document.removeEventListener('mousemove', handleMouseMove);
-			log('Mouse move event listener removed');
+			// Cancel any pending RAF
+			if (state.rafId) {
+				cancelAnimationFrame(state.rafId);
+				state.rafId = null;
+			}
+			document.removeEventListener('mousemove', throttledUpdate);
+			window.removeEventListener('resize', handleResize);
+			log('Mouse move and resize event listeners removed');
 		};
 
 		state.isActive = true;
@@ -159,7 +208,13 @@ export function createEyeTracking(customConfig = {}) {
 	function cleanup() {
 		log('Cleaning up eye tracking');
 		stop();
+		// Cancel any pending RAF
+		if (state.rafId) {
+			cancelAnimationFrame(state.rafId);
+			state.rafId = null;
+		}
 		state.tracked = null;
+		state.cachedGhostRect = null;
 		// state.eyesElement = null; // Removed
 	}
 

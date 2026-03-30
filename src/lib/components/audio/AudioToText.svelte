@@ -19,6 +19,9 @@
 		hasPermissionError,
 		uiActions
 	} from '$lib/services';
+	import { analytics } from '$lib/services/analytics';
+	import { liveMode } from '$lib';
+	import { transcriptionStore } from '$lib/stores/transcriptionStore';
 	import { whisperStatus } from '../../services/transcription/whisper/whisperService';
 
 	// Props - simplified interface
@@ -28,10 +31,21 @@
 
 	// Service instances
 	let unsubscribers = [];
+	let activeTimeouts = [];
 	let modelReady = false;
 
 	// Subscribe to whisper status to track when model is ready
 	$: modelReady = $whisperStatus.isLoaded;
+
+	// Sync streaming text to global store
+	$: if ($liveMode === 'true' && ($transcriptionStore.transcript || $transcriptionStore.interim)) {
+		const fullText = ($transcriptionStore.transcript + ' ' + $transcriptionStore.interim).trim();
+		if (fullText) {
+			import('$lib/services/infrastructure/stores').then(({ transcriptionActions }) => {
+				transcriptionActions.updateText(fullText);
+			});
+		}
+	}
 
 	// Component references
 	let recordingControlsRef;
@@ -51,7 +65,7 @@
 			} else if (wordCount <= 50) {
 				return 'text-sm sm:text-base md:text-lg';
 			} else {
-				return 'text-xs sm:text-sm md:text-base';
+				return 'text-sm sm:text-base md:text-lg';
 			}
 		},
 		(text) => (text ? text.length : 0)
@@ -71,12 +85,20 @@
 				// Set clipboard success state
 				uiActions.setClipboardSuccess(true);
 				// Reset after 2 seconds
-				setTimeout(() => {
+				const timeoutId = setTimeout(() => {
 					uiActions.setClipboardSuccess(false);
 				}, 2000);
+				activeTimeouts.push(timeoutId);
+				analytics.copyTranscript(detail.text.split(/\s+/).length);
 			} catch (err) {
 				console.error('Failed to copy to clipboard:', err);
 			}
+		}
+		// Handle edit event
+		if (type === 'edit' && detail?.text !== undefined) {
+			import('$lib/services/infrastructure/stores').then(({ transcriptionActions }) => {
+				transcriptionActions.updateText(detail.text);
+			});
 		}
 		// Forward other events to child components as needed
 	}
@@ -152,7 +174,7 @@
 
 			// Also start loading after configured delay if no interaction
 			// This ensures models are ready when user needs them
-			setTimeout(() => {
+			const delayTimeoutId = setTimeout(() => {
 				if (!modelLoadStarted) {
 					// console.log(
 					// 	`⏰ Auto-starting model load after ${ANIMATION.MODEL.AUTO_LOAD_DELAY / 1000}s delay`
@@ -160,6 +182,7 @@
 					startModelLoading();
 				}
 			}, ANIMATION.MODEL.AUTO_LOAD_DELAY);
+			activeTimeouts.push(delayTimeoutId);
 		}
 
 		// Subscribe to permission denied state to show error modal
@@ -178,6 +201,10 @@
 	onDestroy(() => {
 		// Unsubscribe from all subscriptions
 		unsubscribers.forEach((unsub) => unsub());
+
+		// Clear all active timeouts
+		activeTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+		activeTimeouts = [];
 
 		// Remove event listeners
 		if (typeof window !== 'undefined') {
@@ -236,9 +263,9 @@
 				class="content-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
 			>
 				<!-- Transcript Display -->
-				{#if $transcriptionText && !$isRecording}
+				{#if ($transcriptionText || $liveMode === 'true') && (!$isRecording || $liveMode === 'true')}
 					<TranscriptDisplay
-						transcript={$transcriptionText}
+						transcript={$transcriptionText || ($isRecording ? 'Listening...' : '')}
 						{responsiveFontSize}
 						on:copy={handleTranscriptEvent}
 						on:focus={handleTranscriptEvent}

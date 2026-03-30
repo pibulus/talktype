@@ -28,11 +28,8 @@ export async function POST(event) {
 		}
 	} catch (error) {
 		console.error('Error in POST /api/auth:', error);
-		const message = error.message === 'Auth not configured' 
-			? 'Auth not configured' 
-			: 'Bad request';
+		const message = error.message === 'Auth not configured' ? 'Auth not configured' : 'Bad request';
 		const status = error.message === 'Auth not configured' ? 500 : 400;
 		return json({ error: message }, { status });
 	}
 }
-

@@ -9,6 +9,8 @@ import {
 import { convertToWAV as convertToRawAudio } from '../transcription/whisper/audioConverter';
 import { get } from 'svelte/store';
 import { saveRecordingDraft } from './recordingRecoveryStore';
+import { liveMode } from '$lib';
+import { transcriptionStore } from '$lib/stores/transcriptionStore';
 
 export const AudioEvents = {
 	RECORDING_STARTED: 'audio:recordingStarted',
@@ -237,6 +239,14 @@ export class AudioService {
 			this.mediaRecorder.ondataavailable = (event) => {
 				if (event.data.size > 0) {
 					this.audioChunks.push(event.data);
+
+					// Stream to Deepgram if Live Mode is enabled AND Privacy Mode is disabled
+					const privacyMode =
+						typeof localStorage !== 'undefined' && localStorage.getItem('privacyMode') === 'true';
+					const liveModeEnabled = get(liveMode) === 'true';
+					if (liveModeEnabled && !privacyMode) {
+						transcriptionStore.send(event.data);
+					}
 				}
 			};
 
@@ -250,6 +260,17 @@ export class AudioService {
 				...current,
 				mimeType: this.mediaRecorder.mimeType || 'audio/webm'
 			}));
+
+			// Connect to Deepgram if Live Mode is enabled AND Privacy Mode is disabled
+			const privacyMode =
+				typeof localStorage !== 'undefined' && localStorage.getItem('privacyMode') === 'true';
+			const liveModeEnabled = get(liveMode) === 'true';
+			if (liveModeEnabled && !privacyMode) {
+				transcriptionStore.connect().catch((err) => {
+					console.error('[AudioService] Failed to connect to Deepgram:', err);
+					// Don't fail recording, just fallback to batch
+				});
+			}
 
 			return true;
 		} catch (error) {
@@ -357,6 +378,9 @@ export class AudioService {
 
 				// Ensure state is properly reset
 				this.stateManager.setState(AudioStates.IDLE);
+
+				// Disconnect Deepgram
+				transcriptionStore.disconnect();
 
 				resolve(audioBlob);
 			};

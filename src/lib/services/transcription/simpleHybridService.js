@@ -6,6 +6,7 @@
 import { get } from 'svelte/store';
 import { whisperService, whisperStatus } from './whisper/whisperService';
 import { userPreferences } from '../infrastructure/stores';
+import { customPrompt } from '$lib';
 import { browser } from '$app/environment';
 import { STORAGE_KEYS } from '$lib/constants';
 import { ensureApiSession } from '../apiSession.js';
@@ -123,46 +124,54 @@ class SimpleHybridService {
 			}
 		}
 
-		// Normal mode: Use Gemini API (fast, reliable, works)
-		console.log('☁️ Using Gemini API for transcription');
-		if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'gemini');
-		return await this.transcribeWithGemini(audioBlob);
+		// Normal mode: Use Cloud API (Deepgram)
+		console.log('☁️ Using Cloud API for transcription');
+		if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'cloud');
+		return await this.transcribeWithCloud(audioBlob);
 	}
 
 	/**
-	 * Transcribe using Gemini API
+	 * Transcribe using Cloud API
 	 */
-	async transcribeWithGemini(audioBlob) {
+	async transcribeWithCloud(audioBlob) {
 		this.geminiQueue = this.geminiQueue
 			.catch(() => {})
-			.then(() => this._transcribeWithGeminiInternal(audioBlob));
+			.then(() => this._transcribeWithCloudInternal(audioBlob));
 
 		return this.geminiQueue;
 	}
 
-	async _transcribeWithGeminiInternal(audioBlob) {
+	async _transcribeWithCloudInternal(audioBlob) {
 		try {
 			const promptStyle = get(userPreferences).promptStyle || 'standard';
 			const controller = new AbortController();
-			const timeoutId = setTimeout(() => controller.abort(), 30000);
+			// Increase timeout to 60s for longer recordings
+			const timeoutId = setTimeout(() => controller.abort(), 60000);
 
 			try {
 				await ensureApiSession();
 				const formData = new FormData();
-				
+
 				// Detect extension from blob type
 				const mimeType = audioBlob.type || 'audio/webm';
 				const ext = mimeType.split('/')[1]?.split(';')[0] || 'webm';
 				const filename = `recording-${Date.now()}.${ext}`;
-				
+
 				formData.append('audio_file', audioBlob, filename);
 				formData.append('prompt_style', promptStyle);
+
+				// Add custom prompt text if style is custom
+				if (promptStyle === 'custom') {
+					const customPromptText = get(customPrompt);
+					if (customPromptText) {
+						formData.append('custom_prompt', customPromptText);
+					}
+				}
 
 				const response = await fetch('/api/transcribe', {
 					method: 'POST',
 					body: formData,
-					signal: controller.signal,
-					keepalive: true
+					signal: controller.signal
 				});
 
 				clearTimeout(timeoutId);
@@ -177,39 +186,15 @@ class SimpleHybridService {
 			} catch (fetchError) {
 				clearTimeout(timeoutId);
 				if (fetchError.name === 'AbortError') {
-					throw new Error('Transcription took too long (30s timeout). Try a shorter recording?');
+					throw new Error('Transcription took too long (60s timeout). Try a shorter recording?');
 				}
 				throw fetchError;
 			}
 		} catch (error) {
-			console.error('Gemini API transcription error:', error);
+			console.error('Cloud API transcription error:', error);
 
-			// Fallback to offline Whisper if API fails
-			console.log('⚠️ API failed, falling back to offline Whisper...');
-			
-			// Ensure Whisper is loaded
-			if (!this.whisperReady) {
-				console.log('⏳ Waiting for Whisper to load...');
-				if (!this.whisperLoadPromise) {
-					this.startBackgroundLoad();
-				}
-				
-				try {
-					const result = await (this.whisperLoadPromise || Promise.resolve({ success: this.whisperReady }));
-					if (!result.success && !this.whisperReady) {
-						throw new Error('Offline fallback failed: Whisper model could not be loaded.');
-					}
-				} catch (loadError) {
-					console.error('Whisper load failed during fallback:', loadError);
-					throw error; // Throw original API error if fallback fails
-				}
-			}
-
-			if (this.whisperReady) {
-				console.log('✅ Whisper ready, starting offline transcription...');
-				return await whisperService.transcribeAudio(audioBlob);
-			}
-
+			// Don't auto-fallback to Whisper - let user explicitly enable Privacy Mode if they want offline
+			// This prevents unexpected downloads and keeps Gemini API as clean default
 			throw error;
 		}
 	}
@@ -221,7 +206,7 @@ class SimpleHybridService {
 		return {
 			whisperReady: this.whisperReady,
 			usingAPI: !this.whisperReady,
-			method: this.whisperReady ? 'Offline (Whisper)' : 'Online (Gemini API)'
+			method: this.whisperReady ? 'Offline (Whisper)' : 'Online (Deepgram)'
 		};
 	}
 }

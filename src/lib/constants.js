@@ -20,12 +20,12 @@ export const STORAGE_KEYS = {
 	// Application Settings
 	THEME: 'talktype-vibe',
 	FIRST_VISIT: 'hasSeenTalkTypeIntro',
-	AUTO_RECORD: 'talktype-autoRecord',
-	PROMPT_STYLE: 'talktype-prompt-style',
-	CUSTOM_PROMPT: 'talktype-custom-prompt',
-	AUTO_SAVE: 'talktype-auto-save',
-	DEBUG_MODE: 'talktype-debug-mode',
+	AUTO_RECORD: 'talktype_auto_record',
+	PROMPT_STYLE: 'talktype_prompt_style',
+	CUSTOM_PROMPT: 'talktype_custom_prompt',
+	AUTO_SAVE: 'talktype_auto_save',
 	PRIVACY_MODE: 'talktype_privacy_mode', // Offline Whisper mode
+	LIVE_MODE: 'talktype_live_mode',
 	LAST_TRANSCRIPTION_METHOD: 'last_transcription_method', // Track which service was used
 
 	// PWA Related

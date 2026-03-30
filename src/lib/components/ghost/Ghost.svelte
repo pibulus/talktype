@@ -39,6 +39,7 @@
 	let wakeUpBlinkTriggered = false;
 	let eyeTracker;
 	let fullyReady = false; // Single initialization flag - prevents ALL rendering until ready
+	let readyRafId = null; // Track RAF for cleanup
 
 	// === REACTIVE DECLARATIONS ===
 	// All reactive logic gated by fullyReady to prevent cascade during initialization
@@ -129,6 +130,12 @@
 
 	// Clean up on destroy - ensure all animation resources are cleared
 	onDestroy(() => {
+		// Cancel pending RAF
+		if (readyRafId) {
+			cancelAnimationFrame(readyRafId);
+			readyRafId = null;
+		}
+
 		// Clean up theme store subscription
 		if (unsubscribeTheme) {
 			unsubscribeTheme();
@@ -239,8 +246,9 @@
 			// FINAL STEP: Set fullyReady flag after all setup is complete
 			// This prevents any reactive cascade during initialization
 			// Single requestAnimationFrame ensures one clean render with all resources ready
-			requestAnimationFrame(() => {
+			readyRafId = requestAnimationFrame(() => {
 				fullyReady = true;
+				readyRafId = null;
 			});
 
 			// Add global event listeners for waking up / resetting inactivity
@@ -283,7 +291,8 @@
 		leftEye &&
 		rightEye
 	) {
-		wakeUpBlinkTriggered = true;
+		wakeUpBlinkTriggered = true; // Set the flag immediately
+		// Blink service will handle the blink timing automatically when state becomes IDLE
 	}
 
 	// Reset the flag when the ghost is no longer IDLE (meaning it went to sleep, started recording, etc.)

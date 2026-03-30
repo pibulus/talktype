@@ -13,16 +13,16 @@
 			name: 'Peach',
 			premium: false
 		},
-	{
-		id: 'mint',
-		name: 'Mint',
-		premium: false
-	},
-	{
-		id: 'bubblegum',
-		name: 'Bubblegum',
-		premium: false
-	},
+		{
+			id: 'mint',
+			name: 'Mint',
+			premium: false
+		},
+		{
+			id: 'bubblegum',
+			name: 'Bubblegum',
+			premium: false
+		},
 		{
 			id: 'rainbow',
 			name: 'Rainbow',
@@ -151,6 +151,14 @@
 	.ghost-mask-wrapper :global(.ghost-bg) {
 		/* Ensure the ghost background doesn't show */
 		opacity: 1;
+	}
+
+	/* FIX: Remove filters and hardware acceleration on preview ghosts to prevent "dark splotches" on iOS */
+	.ghost-mask-wrapper :global(.display-ghost .ghost-container) {
+		filter: none !important;
+		will-change: auto !important;
+		transform: none !important;
+		backface-visibility: visible !important;
 	}
 
 	.vibe-option {

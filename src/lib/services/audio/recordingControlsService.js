@@ -7,6 +7,9 @@ import { get } from 'svelte/store';
 import { CTA_PHRASES, ANIMATION } from '$lib/constants';
 import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
 import { transcriptionState } from '../infrastructure/stores';
+import { analytics } from '../analytics';
+import { liveMode } from '$lib';
+import { transcriptionStore } from '$lib/stores/transcriptionStore';
 
 export class RecordingControlsService {
 	constructor(dependencies) {
@@ -20,7 +23,6 @@ export class RecordingControlsService {
 		this.activeTimeouts = [];
 		this.currentCtaIndex = 0;
 		this.onPreloadRequest = null;
-
 	}
 
 	setGhostComponent(ghostComponent) {
@@ -137,7 +139,35 @@ export class RecordingControlsService {
 					return;
 				}
 
-				// Transcribe the audio with proper error handling
+				// Check if Live Mode already captured a transcript
+				const liveModeEnabled = get(liveMode) === 'true';
+				const liveTranscript = liveModeEnabled ? transcriptionStore.getTranscript() : '';
+
+				// Skip batch transcription if Live Mode has valid content
+				if (liveModeEnabled && liveTranscript.trim().length > 0) {
+					console.log('[RecordingControlsService] Live Mode captured transcript - skipping batch');
+					
+					// Scroll to show transcript if needed
+					scrollToBottomIfNeeded({
+						threshold: 300,
+						delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY
+					});
+
+					// Increment the transcription count for PWA prompt
+					if (browser && 'requestIdleCallback' in window) {
+						window.requestIdleCallback(() => this._incrementTranscriptionCount());
+					} else {
+						const timeoutId = setTimeout(() => this._incrementTranscriptionCount(), 0);
+						this.activeTimeouts.push(timeoutId);
+					}
+
+					// Track successful transcription
+					const wordCount = liveTranscript.trim().split(/\s+/).length;
+					analytics.completeTranscription('deepgram-live', estimatedDurationSeconds, wordCount);
+					return;
+				}
+
+				// Transcribe the audio with proper error handling (batch mode)
 				try {
 					const transcriptText = await this.transcriptionService.transcribeAudio(audioBlob);
 					console.log('[RecordingControlsService] Transcription result:', transcriptText);
@@ -161,6 +191,10 @@ export class RecordingControlsService {
 						const timeoutId = setTimeout(() => this._incrementTranscriptionCount(), 0);
 						this.activeTimeouts.push(timeoutId);
 					}
+
+					// Track successful transcription
+					const wordCount = transcriptText.trim().split(/\s+/).length;
+					analytics.completeTranscription('cloud-batch', estimatedDurationSeconds, wordCount);
 				} catch (transcriptionError) {
 					console.error('❌ Transcription error:', transcriptionError);
 					const friendlyMessage = transcriptionError.message.includes('network')
@@ -245,7 +279,7 @@ export class RecordingControlsService {
 		if (!browser) return;
 
 		try {
-			const newCount = this.pwaService.incrementTranscriptionCount();
+			this.pwaService.incrementTranscriptionCount();
 			// Could dispatch event here if needed
 		} catch (error) {
 			console.error('Error incrementing transcription count:', error);
@@ -259,7 +293,6 @@ export class RecordingControlsService {
 		this.ghostComponent = null;
 		this.onPreloadRequest = null;
 	}
-
 }
 
 export function createRecordingControlsService(dependencies) {

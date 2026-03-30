@@ -1,18 +1,14 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { appActive, shouldAnimateStore } from '$lib/services/infrastructure';
+	import { appActive, waveformData } from '$lib/services/infrastructure';
 	import { createAnimationController } from '$lib/utils/performanceUtils';
 
 	// Audio visualization configuration
-	let audioDataArray;
-	let animationFrameId;
-	let fallbackTimeoutId; // Separate ID for setTimeout to avoid mixing with RAF
 	let audioLevel = 0;
 	let history = []; // Array to store audio level history
 	const historyLength = 30; // Number of bars to display in history
-	let analyser;
-	let audioContext;
-	let mediaStream; // Store stream reference for cleanup
+	let animationFrameId;
+	let fallbackTimeoutId; // Separate ID for setTimeout to avoid mixing with RAF
 	let recording = false; // Track recording state within the component
 
 	// Reactive animation state
@@ -57,47 +53,20 @@
 		exponent = 0.5;
 		detectedDevice = 'Mac';
 	} else {
-		// Default settings for other platforms
-		scalingFactor = 2000;
+		// Default settings for other platforms (Windows/Linux)
+		// Reduced from 2000 to 80 for much better sensitivity
+		scalingFactor = 80;
 		offset = 80;
 		exponent = 0.5;
 		detectedDevice = 'PC';
 	}
 
-	// ===== STANDARD AUDIO VISUALIZER =====
-	async function initStandardVisualizer() {
-		try {
-			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-			mediaStream = stream; // Store reference for cleanup
-
-			// Explicitly handle user gesture for Safari
-			if (typeof window !== 'undefined' && window.document) {
-				window.document.addEventListener(
-					'click',
-					() => {
-						if (audioContext && audioContext.state === 'suspended') {
-							audioContext.resume();
-						}
-					},
-					{ once: true }
-				);
-			}
-
-			audioContext = new (window.AudioContext || window.webkitAudioContext)();
-			analyser = audioContext.createAnalyser();
-			const source = audioContext.createMediaStreamSource(stream);
-			source.connect(analyser);
-			analyser.fftSize = 256;
-
-			recording = true;
-			startVisualizer();
-		} catch (error) {
-			console.error('Error accessing microphone for visualizer:', error);
-			recording = false;
-
-			// Fallback to the simulated visualizer if standard fails
-			initFallbackVisualizer();
-		}
+	// ===== STANDARD AUDIO VISUALIZER (using waveformData from audioService) =====
+	function initStandardVisualizer() {
+		// No need to create separate stream - audioService already provides waveformData!
+		recording = true;
+		history = Array(historyLength).fill(0);
+		startVisualizer();
 	}
 
 	// ===== FALLBACK VISUALIZER FOR SAFARI/IOS =====
@@ -217,13 +186,13 @@
 		animationFrameId = requestAnimationFrame(updateFallbackVisualizer);
 	}
 
-	// ===== STANDARD VISUALIZER UPDATE LOGIC =====
+	// ===== STANDARD VISUALIZER UPDATE LOGIC (using waveformData from store) =====
 	let frameSkipCounter = 0;
 	const frameSkipRate = 2; // Adjust this value to control the speed (higher value = slower animation)
 
 	// Create optimized animation controller that auto-pauses when tab is hidden
 	const visualizerAnimation = createAnimationController(() => {
-		if (!recording || !analyser) return;
+		if (!recording) return;
 
 		// Skip frames to slow down the animation
 		if (frameSkipCounter < frameSkipRate) {
@@ -232,18 +201,27 @@
 		}
 		frameSkipCounter = 0;
 
-		const bufferLength = analyser.frequencyBinCount;
-		audioDataArray = new Float32Array(bufferLength);
-		analyser.getFloatFrequencyData(audioDataArray);
-		let sum = 0;
-		for (let i = 0; i < bufferLength; i++) {
-			sum += audioDataArray[i];
+		// Use waveformData from audioService store (no need for separate analyser!)
+		const dataArray = $waveformData;
+		if (!dataArray || dataArray.length === 0) {
+			// console.log('[AudioVisualizer] No waveform data');
+			return;
 		}
-		let linearLevel = Math.max(0, sum / bufferLength + offset); // Calculate linear level first
-		let nonLinearLevel = Math.pow(linearLevel, exponent); // Apply power function for non-linear scaling
+		// console.log('[AudioVisualizer] Got data:', dataArray[0], dataArray[10]);
+
+		// Calculate average level from waveformData (Uint8Array with 0-255 values)
+		let sum = 0;
+		for (let i = 0; i < dataArray.length; i++) {
+			sum += dataArray[i];
+		}
+		let averageLevel = sum / dataArray.length;
+
+		// Apply scaling for visualization (dataArray values are 0-255)
+		let linearLevel = Math.max(0, averageLevel - (255 - offset));
+		let nonLinearLevel = Math.pow(linearLevel, exponent);
 		audioLevel = Math.max(
 			0,
-			Math.min(100, nonLinearLevel * (100 / Math.pow(scalingFactor, exponent))) // Rescale non-linear level
+			Math.min(100, nonLinearLevel * (100 / Math.pow(scalingFactor, exponent)))
 		);
 
 		// Update history - add new level to the start, remove oldest if history is too long
@@ -253,11 +231,6 @@
 		}
 	});
 
-	function updateVisualizer() {
-		// Legacy function kept for compatibility
-		// Now handled by animation controller
-	}
-
 	// ===== COMMON CONTROL FUNCTIONS =====
 	function startVisualizer() {
 		if (useFallbackVisualizer) {
@@ -266,7 +239,7 @@
 				fallbackAnimating = true;
 				updateFallbackVisualizer();
 			}
-		} else if (recording && analyser) {
+		} else if (recording) {
 			// Start optimized visualizer with auto-pause
 			history = Array(historyLength).fill(0);
 			visualizerAnimation.start();
@@ -296,16 +269,7 @@
 			}
 			audioLevel = 0;
 			history = [];
-			// Stop the media stream to release the microphone
-			if (mediaStream) {
-				mediaStream.getTracks().forEach((track) => track.stop());
-				mediaStream = null;
-			}
-			if (audioContext) {
-				audioContext.close();
-				audioContext = null;
-				analyser = null;
-			}
+			// No audioContext to clean up - we're using audioService's stream!
 		}
 	}
 
@@ -326,7 +290,7 @@
 				if (!fallbackAnimating) {
 					startVisualizer();
 				}
-			} else if (analyser) {
+			} else {
 				startVisualizer();
 			}
 		} else if (!recording) {
@@ -350,11 +314,7 @@
 			clearTimeout(fallbackTimeoutId);
 			fallbackTimeoutId = null;
 		}
-		// Ensure media stream is released
-		if (mediaStream) {
-			mediaStream.getTracks().forEach((track) => track.stop());
-			mediaStream = null;
-		}
+		// No media stream to release - audioService manages its own stream
 	});
 </script>
 

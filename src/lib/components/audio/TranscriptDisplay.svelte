@@ -2,6 +2,7 @@
 	import { ANIMATION } from '$lib/constants';
 	import { createEventDispatcher, onMount } from 'svelte';
 	import Ghost from '$lib/components/ghost/Ghost.svelte';
+	import { theme } from '$lib';
 
 	// Props
 	export let transcript = '';
@@ -39,21 +40,31 @@
 	}
 
 	// Check if content is scrollable and update UI accordingly
+	// Debounced to avoid excessive calls during resize
+	let checkScrollableTimeout;
 	function checkScrollable() {
 		if (transcriptBoxRef) {
+			// Debounce rapid calls
+			if (checkScrollableTimeout) {
+				cancelAnimationFrame(checkScrollableTimeout);
+			}
+
 			// Wait a tick for the element to fully render
-			requestAnimationFrame(() => {
+			checkScrollableTimeout = requestAnimationFrame(() => {
 				const scrollHeight = transcriptBoxRef.scrollHeight;
 				const clientHeight = transcriptBoxRef.clientHeight;
 				const hasOverflow = scrollHeight > clientHeight + 20; // Add buffer for more reliable detection
 				isScrollable = hasOverflow;
-
-				// Debug log to see what's happening
-				console.log(
-					`Transcript scrollable: ${isScrollable}, scrollHeight: ${scrollHeight}, clientHeight: ${clientHeight}`
-				);
+				checkScrollableTimeout = null;
 			});
 		}
+	}
+
+	// Safely update transcript content without breaking cursor position
+	// Only update if the element is not focused (user not actively editing)
+	$: if (editableTranscript && transcript && document.activeElement !== editableTranscript) {
+		editableTranscript.innerText = transcript;
+		checkScrollable();
 	}
 
 	onMount(() => {
@@ -70,9 +81,15 @@
 		}
 
 		return () => {
+			// Clean up RAF timeout
+			if (checkScrollableTimeout) {
+				cancelAnimationFrame(checkScrollableTimeout);
+			}
+			// Clean up ResizeObserver
 			if (transcriptBoxRef) {
 				resizeObserver.unobserve(transcriptBoxRef);
 			}
+			resizeObserver.disconnect();
 		};
 	});
 </script>
@@ -86,7 +103,7 @@
 >
 	<div class="wrapper-container flex w-full justify-center">
 		<div class="transcript-box-container relative mx-auto w-[95%] max-w-[580px] px-0 sm:w-full">
-			<!-- Ghost icon copy button positioned safely inside viewport -->
+			<!-- Copy button with themed ghost icon -->
 			<button
 				class="copy-btn share-chip absolute -top-4 right-1 z-[200] h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95 sm:-right-4 sm:-top-4"
 				on:click|preventDefault={() => dispatch('copy', { text: getEditedTranscript() })}
@@ -97,8 +114,9 @@
 				aria-label="Copy transcript to clipboard"
 				bind:this={copyButtonRef}
 			>
-				<div class="h-full w-full" style="pointer-events: none;">
-					<Ghost size="100%" clickable={false} class="copy-ghost" seed={42} />
+				<!-- Ghost icon using the app's current theme -->
+				<div class="h-full w-full p-0.5">
+					<Ghost width="100%" height="100%" clickable={false} externalTheme={$theme} />
 				</div>
 
 				<!-- Smart tooltip - only shows for first few hovers -->
@@ -122,11 +140,11 @@
 			>
 				<!-- Content Area - scrollable -->
 				<div
-					class="transcript-content-area z-5 relative max-h-[320px] w-full overflow-y-auto px-7 pb-8 pt-6 sm:px-10 sm:pb-10 sm:pt-7"
+					class="transcript-content-area z-5 relative max-h-[50vh] w-full overflow-y-auto px-5 pb-8 pt-6 sm:max-h-[320px] sm:px-10 sm:pb-10 sm:pt-7"
 					bind:this={transcriptBoxRef}
 				>
 					<div
-						class={`transcript-text ${responsiveFontSize} custom-transcript-text animate-text-appear mb-3 text-left font-mono`}
+						class={`transcript-text ${responsiveFontSize} custom-transcript-text animate-text-appear mb-3 break-words text-left font-mono`}
 						contenteditable="true"
 						role="textbox"
 						aria-label="Transcript editor"
@@ -139,8 +157,12 @@
 								message: 'You can edit this transcript. Use keyboard to make changes.'
 							});
 						}}
+						on:blur={() => {
+							dispatch('edit', { text: getEditedTranscript() });
+							checkScrollable();
+						}}
 					>
-						{transcript}
+						<!-- Content set via innerText in reactive statement to avoid cursor jumping -->
 					</div>
 
 					<!-- Hidden instructions for screen readers -->
@@ -176,8 +198,9 @@
 		flex-direction: column;
 		overflow: hidden; /* Contain all scrolling internally */
 		transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-		animation: subtle-breathe 10s infinite ease-in-out alternate;
+		animation: subtle-breathe 4s infinite ease-in-out alternate;
 		position: relative; /* For the pseudo-element highlight */
+		will-change: box-shadow; /* GPU hint for better performance */
 	}
 
 	/* Extremely subtle mouseover highlight effect */

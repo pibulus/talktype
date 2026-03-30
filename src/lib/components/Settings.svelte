@@ -1,10 +1,10 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { theme, autoRecord, applyTheme, promptStyle } from '$lib';
+	import { theme, autoRecord, applyTheme, promptStyle, liveMode } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
-	import { installPromptEvent } from '$lib/stores/pwa';
+	import { installPromptEvent, isPwaInstalled } from '$lib/stores/pwa';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import {
 		isPremium,
@@ -13,8 +13,9 @@
 	} from '$lib/services/premium/premiumService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
+	import PwaInstall from '$lib/components/pwa/PwaInstall.svelte';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
-import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
+	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { STORAGE_KEYS, SERVICE_EVENTS } from '$lib/constants';
 	import { PRICING } from '$lib/config/pricing';
 	import { analytics } from '$lib/services/analytics';
@@ -26,6 +27,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 	let autoRecordValue = false;
 	let selectedPromptStyle = 'standard';
 	let privacyModeValue = false;
+	let liveModeValue = false;
 
 	// Unlock code state
 	let showCodeEntry = false;
@@ -34,11 +36,13 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 	let codeValidating = false;
 	let showMyCode = false;
 	let myUnlockCode = '';
+	let pwaInstallComponent;
 
 	// Store unsubscribe functions
 	let unsubscribeTheme;
 	let unsubscribeAutoRecord;
 	let unsubscribePromptStyle;
+	let unsubscribeLiveMode;
 
 	onMount(() => {
 		// Subscribe to stores only in browser
@@ -54,6 +58,10 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 			selectedPromptStyle = value;
 		});
 
+		unsubscribeLiveMode = liveMode.subscribe((value) => {
+			liveModeValue = value === 'true';
+		});
+
 		// Get privacy mode value from localStorage (browser only)
 		if (browser) {
 			privacyModeValue = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
@@ -65,6 +73,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 		if (unsubscribeTheme) unsubscribeTheme();
 		if (unsubscribeAutoRecord) unsubscribeAutoRecord();
 		if (unsubscribePromptStyle) unsubscribePromptStyle();
+		if (unsubscribeLiveMode) unsubscribeLiveMode();
 	});
 
 	// Handlers
@@ -118,11 +127,24 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 		}
 	}
 
+	function toggleLiveMode() {
+		liveModeValue = !liveModeValue;
+		liveMode.set(liveModeValue.toString());
+		if (browser) {
+			window.dispatchEvent(
+				new CustomEvent('talktype-setting-changed', {
+					detail: { setting: 'liveMode', value: liveModeValue }
+				})
+			);
+		}
+	}
+
 	async function handleInstallClick() {
 		if ($installPromptEvent) {
 			try {
 				$installPromptEvent.prompt();
 				const { outcome } = await $installPromptEvent.userChoice;
+				analytics.installPWA(outcome);
 				if (outcome === 'accepted') {
 					$installPromptEvent = null;
 				}
@@ -240,7 +262,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 	aria-modal="true"
 >
 	<div
-		class="animate-modal-enter modal-box relative max-h-[80vh] w-[95%] max-w-md overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl md:max-w-lg"
+		class="animate-modal-enter modal-box relative max-h-[85vh] w-[92%] max-w-md overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl md:max-w-lg"
 	>
 		<form method="dialog">
 			<ModalCloseButton
@@ -268,11 +290,11 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 			<div class="mb-2 space-y-2">
 				<!-- Auto-Record Toggle -->
 				<div
-					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
+					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
 				>
 					<div>
-						<span class="text-sm font-medium text-gray-700">Auto-Record on Start</span>
-						<p class="mt-0.5 text-xs text-gray-500">
+						<span class="text-base font-medium text-gray-700">Auto-Record on Start</span>
+						<p class="mt-0.5 text-sm text-gray-500">
 							Start recording immediately when you open TalkType
 						</p>
 					</div>
@@ -288,10 +310,10 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 								on:change={toggleAutoRecord}
 							/>
 							<div
-								class={`h-5 w-10 rounded-full ${autoRecordValue ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}
+								class={`h-6 w-11 rounded-full ${autoRecordValue ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}
 							></div>
 							<div
-								class={`absolute left-0.5 top-0.5 h-4 w-4 transform rounded-full bg-white transition-all duration-200 ${autoRecordValue ? 'translate-x-5' : ''}`}
+								class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${autoRecordValue ? 'translate-x-5' : ''}`}
 							></div>
 						</div>
 					</label>
@@ -299,12 +321,12 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 
 				<!-- Privacy Mode Toggle -->
 				<div
-					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-200 hover:border-pink-200"
+					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
 				>
 					<div>
-						<span class="text-sm font-medium text-gray-700">🔒 Offline Mode</span>
-						<p class="mt-0.5 text-xs text-gray-500">
-							Download Whisper model for completely private transcription
+						<span class="text-base font-medium text-gray-700">Offline Mode</span>
+						<p class="mt-0.5 text-sm text-gray-500">
+							Completely private transcription on your device
 						</p>
 					</div>
 					<label class="flex cursor-pointer items-center">
@@ -319,14 +341,65 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 								on:change={togglePrivacyMode}
 							/>
 							<div
-								class={`h-5 w-10 rounded-full ${privacyModeValue ? 'bg-purple-400' : 'bg-gray-200'} transition-all duration-200`}
+								class={`h-6 w-11 rounded-full ${privacyModeValue ? 'bg-purple-400' : 'bg-gray-200'} transition-all duration-200`}
 							></div>
 							<div
-								class={`absolute left-0.5 top-0.5 h-4 w-4 transform rounded-full bg-white transition-all duration-200 ${privacyModeValue ? 'translate-x-5' : ''}`}
+								class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${privacyModeValue ? 'translate-x-5' : ''}`}
 							></div>
 						</div>
 					</label>
 				</div>
+
+				<!-- Live Mode Toggle -->
+				<div
+					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
+				>
+					<div>
+						<span class="text-base font-medium text-gray-700">Live Mode</span>
+						<p class="mt-0.5 text-sm text-gray-500">See text appear as you speak</p>
+					</div>
+					<label class="flex cursor-pointer items-center">
+						<span class="sr-only">Live Mode Toggle {liveModeValue ? 'Enabled' : 'Disabled'}</span>
+						<div class="relative">
+							<input
+								type="checkbox"
+								class="sr-only"
+								checked={liveModeValue}
+								on:change={toggleLiveMode}
+							/>
+							<div
+								class={`h-6 w-11 rounded-full ${liveModeValue ? 'bg-blue-400' : 'bg-gray-200'} transition-all duration-200`}
+							></div>
+							<div
+								class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${liveModeValue ? 'translate-x-5' : ''}`}
+							></div>
+						</div>
+					</label>
+				</div>
+
+				<!-- Install App Button - COMMENTED OUT FOR NOW
+				{#if !$isPwaInstalled}
+					<div
+						class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
+					>
+						<div>
+							<span class="text-base font-medium text-gray-700">Keep TalkType Close</span>
+							<p class="mt-0.5 text-sm text-gray-500">Save to your Home Screen</p>
+						</div>
+						<button
+							class="btn btn-sm border-pink-200 bg-pink-50 text-pink-600 hover:bg-pink-100"
+							on:click={() => {
+								if (pwaInstallComponent) {
+									analytics.viewInstallModal('pwa-install-component');
+									pwaInstallComponent.showDialog();
+								}
+							}}
+						>
+							Tap to Save
+						</button>
+					</div>
+				{/if}
+				-->
 
 				<!-- Download Progress (if loading) -->
 				{#if $whisperStatus.isLoading && privacyModeValue}
@@ -359,7 +432,7 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 			<!-- Prompt Style Selection Section -->
 			<div class="space-y-2">
 				<h4 class="text-sm font-bold text-gray-700">Choose Transcription Style</h4>
-				<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} {privacyModeValue} />
+				<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} {privacyModeValue} {liveModeValue} />
 			</div>
 
 			<!-- Support TalkType Section - TEMPORARILY HIDDEN (set false to true to enable) -->
@@ -378,7 +451,9 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 							</span>
 						</div>
 
-						<p class="text-xs text-gray-500">Thanks for keeping the ghost afloat. You've got all the goodies:</p>
+						<p class="text-xs text-gray-500">
+							Thanks for keeping the ghost afloat. You've got all the goodies:
+						</p>
 
 						<div class="space-y-1.5 pt-1 text-xs text-gray-600">
 							<div class="flex items-center gap-1.5">
@@ -408,7 +483,9 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 								<div class="mt-2 space-y-2 rounded-lg border border-green-300 bg-green-50 p-3">
 									<p class="text-xs font-medium text-gray-700">Your Unlock Code:</p>
 									<div class="rounded bg-white p-2 text-center">
-										<code class="text-sm font-bold tracking-wider text-gray-800">{myUnlockCode}</code>
+										<code class="text-sm font-bold tracking-wider text-gray-800"
+											>{myUnlockCode}</code
+										>
 									</div>
 									{#if myUnlockCode !== 'No code saved'}
 										<button
@@ -417,16 +494,16 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 										>
 											📋 Copy Code
 										</button>
-										<p class="text-center text-xs text-gray-500">
-											Works on all your devices
-										</p>
+										<p class="text-center text-xs text-gray-500">Works on all your devices</p>
 									{/if}
 								</div>
 							{/if}
 						</div>
 
 						<div class="pt-1 text-center">
-							<span class="text-xs italic text-pink-500">You're helping keep the web spooky. 💜</span>
+							<span class="text-xs italic text-pink-500"
+								>You're helping keep the web spooky. 💜</span
+							>
 						</div>
 					</div>
 				{:else}
@@ -543,6 +620,9 @@ import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.sv
 		aria-label="Close modal"
 	></button>
 </dialog>
+
+<!-- PWA Install Component -->
+<PwaInstall bind:this={pwaInstallComponent} />
 
 <style>
 	.animate-fadeUp {

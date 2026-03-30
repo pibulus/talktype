@@ -331,28 +331,23 @@
 /* Multi-layer drop-shadow glow on hover per theme */
 .ghost-container:hover.theme-peach {
 	filter: drop-shadow(0 0 20px rgba(255, 130, 170, 0.85))
-		drop-shadow(0 0 30px rgba(255, 160, 180, 0.7))
-		drop-shadow(0 0 45px rgba(255, 180, 190, 0.5));
+		drop-shadow(0 0 30px rgba(255, 160, 180, 0.7)) drop-shadow(0 0 45px rgba(255, 180, 190, 0.5));
 }
 
 .ghost-container:hover.theme-mint {
 	filter: drop-shadow(0 0 20px rgba(80, 235, 170, 0.85))
-		drop-shadow(0 0 30px rgba(60, 220, 240, 0.65))
-		drop-shadow(0 0 45px rgba(130, 255, 140, 0.5));
+		drop-shadow(0 0 30px rgba(60, 220, 240, 0.65)) drop-shadow(0 0 45px rgba(130, 255, 140, 0.5));
 }
 
 .ghost-container:hover.theme-bubblegum {
 	filter: drop-shadow(0 0 20px rgba(210, 120, 255, 0.85))
-		drop-shadow(0 0 30px rgba(255, 110, 180, 0.65))
-		drop-shadow(0 0 45px rgba(170, 190, 255, 0.5));
+		drop-shadow(0 0 30px rgba(255, 110, 180, 0.65)) drop-shadow(0 0 45px rgba(170, 190, 255, 0.5));
 }
 
 .ghost-container:hover.theme-rainbow {
 	filter: drop-shadow(0 0 20px rgba(180, 130, 255, 0.85))
-		drop-shadow(0 0 30px rgba(130, 160, 255, 0.7))
-		drop-shadow(0 0 45px rgba(140, 180, 255, 0.6))
-		drop-shadow(0 0 60px rgba(160, 220, 255, 0.5))
-		drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
+		drop-shadow(0 0 30px rgba(130, 160, 255, 0.7)) drop-shadow(0 0 45px rgba(140, 180, 255, 0.6))
+		drop-shadow(0 0 60px rgba(160, 220, 255, 0.5)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
 }
 
 @keyframes ghost-hover {

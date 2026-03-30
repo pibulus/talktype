@@ -45,14 +45,35 @@ export const analytics = {
 		track('transcription_completed', { method, duration, wordCount });
 	},
 
+	copyTranscript(wordCount) {
+		track('transcript_copied', { word_count: wordCount });
+	},
+
+	shareTranscript(method, wordCount) {
+		track('transcript_shared', { method, word_count: wordCount });
+	},
+
+	// UI Interactions
+	viewModal(modalName) {
+		track('modal_viewed', { modal: modalName });
+	},
+
+	clickExternal(destination) {
+		track('external_link_clicked', { destination });
+	},
+
 	// Feature usage
 	clickLockedFeature(featureName) {
 		track('locked_feature_clicked', { feature: featureName });
 	},
 
 	// Retention
-	installPWA() {
-		track('pwa_installed');
+	installPWA(outcome = 'accepted') {
+		track('pwa_install_outcome', { outcome });
+	},
+
+	viewInstallModal(platform) {
+		track('pwa_install_modal_viewed', { platform });
 	},
 
 	viewTranscriptHistory(transcriptCount) {

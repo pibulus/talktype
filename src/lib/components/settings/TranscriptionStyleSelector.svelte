@@ -8,6 +8,7 @@
 	export let selectedPromptStyle = 'standard';
 	export let changePromptStyle = () => {};
 	export let privacyModeValue = false;
+	export let liveModeValue = false;
 
 	// State for custom prompt
 	let showCustomInput = false;
@@ -16,8 +17,11 @@
 	// Subscribe to custom prompt store
 	$: if ($customPrompt) customPromptText = $customPrompt;
 
-	// Auto-switch to standard when offline mode is enabled with non-standard style
-	$: if (privacyModeValue && selectedPromptStyle !== 'standard') {
+	// Disable style selection when Live Mode or Privacy Mode is enabled
+	$: stylesDisabled = liveModeValue || privacyModeValue;
+
+	// Auto-switch to standard when styles are disabled
+	$: if (stylesDisabled && selectedPromptStyle !== 'standard') {
 		selectedPromptStyle = 'standard';
 		changePromptStyle('standard');
 		showCustomInput = false;
@@ -55,22 +59,49 @@
 		custom: 'Custom'
 	};
 
-	// Style tooltips - dynamic based on offline mode
+	// Style tooltips - dynamic based on disabled modes
 	$: styleTooltips = {
 		standard: 'Clean, professional tone',
-		surlyPirate: privacyModeValue ? 'Only available with online mode' : 'Pirate lingo & swagger',
-		quillAndInk: privacyModeValue ? 'Only available with online mode' : 'Victorian literature style',
-		custom: privacyModeValue ? 'Only available with online mode' : 'Your own instructions (Premium)'
+		surlyPirate: liveModeValue
+			? 'Live Mode uses standard transcription only'
+			: privacyModeValue
+				? 'Only available with online mode'
+				: 'Pirate lingo & swagger',
+		quillAndInk: liveModeValue
+			? 'Live Mode uses standard transcription only'
+			: privacyModeValue
+				? 'Only available with online mode'
+				: 'Victorian literature style',
+		custom: liveModeValue
+			? 'Live Mode uses standard transcription only'
+			: privacyModeValue
+				? 'Only available with online mode'
+				: 'Your own instructions (Premium)'
 	};
 
 	// Handle style selection
 	function handleStyleClick(style) {
+		// Block non-standard styles when Live Mode is enabled
+		if (liveModeValue && style !== 'standard') {
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: {
+						message:
+							'⚡ Live Mode streams directly to Deepgram using standard transcription. Disable Live Mode to use custom styles.',
+						type: 'info'
+					}
+				})
+			);
+			return;
+		}
+
 		// Block non-standard styles when offline mode is enabled
 		if (privacyModeValue && style !== 'standard') {
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
 					detail: {
-						message: '🔒 Custom styles only work with online mode. Disable offline mode to use custom prompts.',
+						message:
+							'🔒 Custom styles only work with online mode. Disable offline mode to use custom prompts.',
 						type: 'info'
 					}
 				})
@@ -120,11 +151,11 @@
 </script>
 
 <div>
-	<!-- Offline mode info banner -->
+	<!-- Offline mode info banner (only show for privacy mode) -->
 	{#if privacyModeValue}
 		<div class="mb-2 rounded-lg border border-purple-200 bg-purple-50/80 p-2">
 			<p class="text-xs text-purple-700">
-				🔒 <strong>Offline mode:</strong> Custom transcription styles require online Gemini API. Standard transcription uses local Whisper model.
+				🔒 <strong>Offline mode:</strong> Uses local Whisper model with standard transcription.
 			</p>
 		</div>
 	{/if}
@@ -135,12 +166,14 @@
 				class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {selectedPromptStyle ===
 				style
 					? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
-					: ''} {(style === 'custom' && !$isPremium) || (privacyModeValue && style !== 'standard') ? 'locked' : ''}"
+					: ''} {(style === 'custom' && !$isPremium) || (stylesDisabled && style !== 'standard')
+					? 'locked'
+					: ''}"
 				on:click={() => handleStyleClick(style)}
 				aria-label={styleNames[style] || style}
 				title={styleTooltips[style]}
 				data-style-type={style}
-				disabled={privacyModeValue && style !== 'standard'}
+				disabled={stylesDisabled && style !== 'standard'}
 			>
 				<div class="preview-container mb-2">
 					<div class="preview-ghost-wrapper relative h-12 w-12">
@@ -162,6 +195,13 @@
 						class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-400 text-xs text-white shadow-sm"
 					>
 						✓
+					</div>
+				{:else if liveModeValue && style !== 'standard'}
+					<div
+						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-xs shadow-sm"
+						title="Live Mode uses standard only"
+					>
+						⚡
 					</div>
 				{:else if privacyModeValue && style !== 'standard'}
 					<div
