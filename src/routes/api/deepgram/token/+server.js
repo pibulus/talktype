@@ -1,34 +1,14 @@
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { guardRequest } from '$lib/server/authService.js';
 
-// Simple in-memory rate limiter
-// Map<IP, { count: number, expiry: number }>
-const rateLimit = new Map();
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 10; // 10 requests per minute
+const DEEPGRAM_GRANT_URL = 'https://api.deepgram.com/v1/auth/grant';
+const TOKEN_TTL_SECONDS = 30;
 
-function checkRateLimit(ip) {
-	const now = Date.now();
-	const record = rateLimit.get(ip);
-
-	if (!record || now > record.expiry) {
-		rateLimit.set(ip, { count: 1, expiry: now + RATE_LIMIT_WINDOW });
-		return true;
-	}
-
-	if (record.count >= MAX_REQUESTS_PER_WINDOW) {
-		return false;
-	}
-
-	record.count++;
-	return true;
-}
-
-export async function GET({ getClientAddress }) {
-	// 0. Rate Limiting
-	const clientIp = getClientAddress();
-	if (!checkRateLimit(clientIp)) {
-		return json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+export async function GET(event) {
+	const guardResponse = await guardRequest(event);
+	if (guardResponse) {
+		return guardResponse;
 	}
 
 	const apiKey = env.DEEPGRAM_API_KEY;
@@ -36,15 +16,32 @@ export async function GET({ getClientAddress }) {
 		return json({ error: 'Server Error: Missing Deepgram API key' }, { status: 500 });
 	}
 
-	// For local development, just return the API key directly
-	// This is secure because:
-	// 1. Rate limiting protects against abuse
-	// 2. The key is only exposed to localhost
-	// 3. For production, you can implement temporary key generation
-	console.log('[DeepgramToken] Returning API key for live streaming');
-	
-	return json({
-		key: apiKey
-	});
-}
+	try {
+		const response = await fetch(DEEPGRAM_GRANT_URL, {
+			method: 'POST',
+			headers: {
+				Authorization: `Token ${apiKey}`,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ ttl_seconds: TOKEN_TTL_SECONDS })
+		});
 
+		const payload = await response.json().catch(() => ({}));
+
+		if (!response.ok || !payload.access_token) {
+			console.error('[DeepgramToken] Failed to mint temporary token:', payload);
+			return json(
+				{ error: 'Could not start live transcription right now.' },
+				{ status: response.status || 502 }
+			);
+		}
+
+		return json({
+			token: payload.access_token,
+			expires_in: payload.expires_in ?? TOKEN_TTL_SECONDS
+		});
+	} catch (error) {
+		console.error('[DeepgramToken] Error minting temporary token:', error);
+		return json({ error: 'Could not start live transcription right now.' }, { status: 502 });
+	}
+}

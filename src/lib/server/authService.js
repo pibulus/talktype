@@ -1,17 +1,25 @@
 import { env } from '$env/dynamic/private';
 import { createSession } from './cookieStore.js';
+import { validateSession } from './cookieStore.js';
 import { enforceRateLimit } from './rateLimiter.js';
 
 // If API_AUTH_TOKEN is not set, we default to "Open Mode" (no auth required)
 // This allows the app to work with the server-side GEMINI_API_KEY without user input
 const authToken = env.API_AUTH_TOKEN?.trim() || null;
 
+export function isAuthConfigured() {
+	return Boolean(authToken);
+}
+
 export async function guardRequest(event) {
-	// If auth is configured, enforce it.
-	// If not configured (authToken is null), we allow the request (Open Mode).
-	if (authToken) {
-		// We can add back the checkSession logic here if we want to support password protection later
-		// For now, we just proceed as requested by the user
+	if (isAuthConfigured()) {
+		const hasSession = await validateSession(event);
+		if (!hasSession) {
+			return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+				status: 401,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
 	}
 
 	const rateResponse = await enforceRateLimit(event);
@@ -20,13 +28,37 @@ export async function guardRequest(event) {
 	return null;
 }
 
-export async function checkSession() {
-	// Always return true since we are using server-side auth
-	return true;
+export async function checkSession(event) {
+	if (!isAuthConfigured()) {
+		return true;
+	}
+
+	if (!event) {
+		return false;
+	}
+
+	try {
+		return await validateSession(event);
+	} catch (error) {
+		console.error('[auth] Session validation failed:', error);
+		return false;
+	}
 }
 
-export async function verifyTokenAndCreateSession(_token, event) {
-	// Auto-approve
+export async function verifyTokenAndCreateSession(token, event) {
+	if (!isAuthConfigured()) {
+		await createSession(event);
+		return true;
+	}
+
+	if (!token || token.trim() !== authToken) {
+		return false;
+	}
+
+	if (!event) {
+		return false;
+	}
+
 	await createSession(event);
 	return true;
 }

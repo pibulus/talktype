@@ -17,7 +17,7 @@ function createTranscriptionStore() {
 	return {
 		subscribe,
 
-		// Initialize connection with API key
+		// Initialize connection with short-lived Deepgram token
 		connect: async () => {
 			// Reset state before connecting
 			update((s) => ({
@@ -31,20 +31,19 @@ function createTranscriptionStore() {
 			isConnectionOpen = false;
 
 			try {
-				// 1. Get API key from our server
+				// 1. Get a short-lived Deepgram token from our server
 				const response = await fetch('/api/deepgram/token');
 				const data = await response.json();
 
-				if (!data.key) {
+				if (!data.token) {
 					throw new Error(data.error || 'Failed to get Deepgram token');
 				}
 
-				// 2. Connect via raw WebSocket using Sec-WebSocket-Protocol for auth
-				// This is Deepgram's recommended approach for browser connections
+				// 2. Connect via raw WebSocket using Sec-WebSocket-Protocol auth
 				const wsUrl = `wss://api.deepgram.com/v1/listen?model=nova-3&smart_format=true&interim_results=true&punctuate=true`;
-				
-				// Pass 'token' and API key as subprotocols - Deepgram uses this for browser auth
-				socket = new WebSocket(wsUrl, ['token', data.key]);
+
+				// Deepgram recommends short-lived tokens for client-side realtime connections.
+				socket = new WebSocket(wsUrl, ['token', data.token]);
 
 				socket.onopen = () => {
 					console.log('[Deepgram] Connected');
