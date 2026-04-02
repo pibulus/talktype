@@ -11,7 +11,6 @@
 		exportAllTranscriptsJSON,
 		formatSize
 	} from '$lib/services/storage/transcriptStorage';
-	import { isPremium } from '$lib/services/premium/premiumService';
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
 	import { Button } from '$lib/components/shared';
 
@@ -224,27 +223,7 @@
 
 		<!-- Content -->
 		<div class="max-h-[calc(85vh-140px)] overflow-y-auto">
-			{#if !$isPremium}
-				<!-- Support prompt -->
-				<div class="rounded-lg border-2 border-amber-200 bg-amber-50 p-4 text-center">
-					<p class="mb-2 text-2xl">👻</p>
-					<h4 class="mb-2 font-bold text-gray-800">Keep the Ghost Afloat</h4>
-					<p class="mb-1 text-sm text-gray-600">
-						Support TalkType and unlock all sorts of goodies — longer recordings, extra themes,
-						transcript history, and more.
-					</p>
-					<p class="mb-3 text-xs font-medium text-pink-500">Help keep the web spooky.</p>
-					<Button
-						variant="primary"
-						on:click={() => {
-							closeModal();
-							document.getElementById('premium_modal').showModal();
-						}}
-					>
-						Support TalkType
-					</Button>
-				</div>
-			{:else if $transcriptHistory.length === 0}
+			{#if $transcriptHistory.length === 0}
 				<!-- Empty State -->
 				<div class="py-12 text-center">
 					<p class="mb-2 text-4xl opacity-30">📝</p>

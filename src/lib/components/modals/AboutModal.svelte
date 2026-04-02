@@ -40,7 +40,7 @@
 			>
 				<p class="text-base leading-relaxed text-gray-700">
 					TalkType is a minimalist voice-to-text tool that transforms your speech into text
-					effortlessly. Built with love by two friends who think tech should be <span
+					effortlessly. Built with love for people who think tech should be <span
 						class="font-medium text-pink-600">simple</span
 					>,
 					<span class="font-medium text-amber-600">delightful</span>, and actually
@@ -53,7 +53,7 @@
 				<ul class="space-y-1.5 text-sm text-gray-600">
 					<li class="flex items-start gap-2">
 						<span class="text-lg text-pink-500">⬩</span>
-						<span>We both think better by <span class="italic">talking</span>, not typing</span>
+						<span>Some ideas come out better by <span class="italic">talking</span>, not typing</span>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-lg text-pink-500">⬩</span>
@@ -83,7 +83,7 @@
 						class="hover:text-pink-600 hover:underline"
 						on:click={handleGithubClick}
 					>
-						Dennis & Pabs
+						Pablo / Pibulus
 					</a>
 				</div>
 			</div>

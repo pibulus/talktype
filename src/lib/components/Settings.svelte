@@ -6,18 +6,12 @@
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { installPromptEvent, isPwaInstalled } from '$lib/stores/pwa';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
-	import {
-		isPremium,
-		unlockPremiumFeatures,
-		getUnlockCode
-	} from '$lib/services/premium/premiumService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
 	import PwaInstall from '$lib/components/pwa/PwaInstall.svelte';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { STORAGE_KEYS, SERVICE_EVENTS } from '$lib/constants';
-	import { PRICING } from '$lib/config/pricing';
 	import { analytics } from '$lib/services/analytics';
 
 	export let closeModal = () => {};
@@ -29,13 +23,6 @@
 	let privacyModeValue = false;
 	let liveModeValue = false;
 
-	// Unlock code state
-	let showCodeEntry = false;
-	let unlockCode = '';
-	let codeError = '';
-	let codeValidating = false;
-	let showMyCode = false;
-	let myUnlockCode = '';
 	let pwaInstallComponent;
 
 	// Store unsubscribe functions
@@ -158,100 +145,6 @@
 		closeModal();
 	}
 
-	function toggleCodeEntry() {
-		showCodeEntry = !showCodeEntry;
-		unlockCode = '';
-		codeError = '';
-	}
-
-	async function validateUnlockCode() {
-		if (!unlockCode.trim()) {
-			codeError = 'Please enter an unlock code';
-			return;
-		}
-
-		codeValidating = true;
-		codeError = '';
-
-		try {
-			const response = await fetch('/api/validate-code', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ code: unlockCode.trim() })
-			});
-
-			const data = await response.json();
-
-			if (data.valid) {
-				// Track successful code validation
-				analytics.validateUnlockCode(true);
-
-				// Code is valid - unlock premium and save the code!
-				unlockPremiumFeatures(data.unlockDate, unlockCode.trim());
-
-				// Show success message
-				if (browser) {
-					window.dispatchEvent(
-						new CustomEvent('talktype:toast', {
-							detail: {
-								message: '🎉 Premium unlocked successfully!',
-								type: 'success'
-							}
-						})
-					);
-				}
-
-				// Reset form
-				showCodeEntry = false;
-				unlockCode = '';
-			} else {
-				// Track failed validation
-				analytics.validateUnlockCode(false);
-				codeError = data.error || 'Invalid unlock code';
-			}
-		} catch (error) {
-			console.error('Code validation error:', error);
-			codeError = 'Failed to validate code. Please try again.';
-		} finally {
-			codeValidating = false;
-		}
-	}
-
-	function toggleMyCode() {
-		showMyCode = !showMyCode;
-		if (showMyCode) {
-			myUnlockCode = getUnlockCode() || 'No code saved';
-		}
-	}
-
-	async function copyMyCode() {
-		if (!browser) return;
-
-		const code = getUnlockCode();
-		if (!code) return;
-
-		try {
-			await navigator.clipboard.writeText(code);
-			window.dispatchEvent(
-				new CustomEvent('talktype:toast', {
-					detail: {
-						message: '📋 Code copied to clipboard!',
-						type: 'success'
-					}
-				})
-			);
-		} catch (err) {
-			console.error('Failed to copy code:', err);
-			window.dispatchEvent(
-				new CustomEvent('talktype:toast', {
-					detail: {
-						message: '❌ Failed to copy code',
-						type: 'error'
-					}
-				})
-			);
-		}
-	}
 </script>
 
 <dialog
@@ -435,173 +328,6 @@
 				<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} {privacyModeValue} {liveModeValue} />
 			</div>
 
-			<!-- Support TalkType Section - TEMPORARILY HIDDEN (set false to true to enable) -->
-			{#if false}
-				{#if $isPremium}
-					<!-- Supporter - Show Active Goodies -->
-					<div
-						class="space-y-2 rounded-lg border border-green-200 bg-gradient-to-r from-green-50/50 to-emerald-50/50 p-3 shadow-sm"
-					>
-						<div class="flex items-center justify-between">
-							<h4 class="text-sm font-bold text-gray-700">You're a Ghost Friend!</h4>
-							<span
-								class="badge badge-sm gap-1 border-green-300 bg-green-100 font-medium text-green-700"
-							>
-								<span class="text-[10px]">👻</span> Unlocked
-							</span>
-						</div>
-
-						<p class="text-xs text-gray-500">
-							Thanks for keeping the ghost afloat. You've got all the goodies:
-						</p>
-
-						<div class="space-y-1.5 pt-1 text-xs text-gray-600">
-							<div class="flex items-center gap-1.5">
-								<span class="text-green-600">✓</span>
-								<span>10-minute recordings</span>
-							</div>
-							<div class="flex items-center gap-1.5">
-								<span class="text-green-600">✓</span>
-								<span>Extra ghost themes</span>
-							</div>
-							<div class="flex items-center gap-1.5">
-								<span class="text-green-600">✓</span>
-								<span>Transcript history & export</span>
-							</div>
-						</div>
-
-						<!-- View My Code Button -->
-						<div class="pt-2">
-							<button
-								class="text-xs text-gray-600 underline hover:text-gray-800"
-								on:click={toggleMyCode}
-							>
-								{showMyCode ? '← Hide Code' : '🔑 View My Unlock Code'}
-							</button>
-
-							{#if showMyCode}
-								<div class="mt-2 space-y-2 rounded-lg border border-green-300 bg-green-50 p-3">
-									<p class="text-xs font-medium text-gray-700">Your Unlock Code:</p>
-									<div class="rounded bg-white p-2 text-center">
-										<code class="text-sm font-bold tracking-wider text-gray-800"
-											>{myUnlockCode}</code
-										>
-									</div>
-									{#if myUnlockCode !== 'No code saved'}
-										<button
-											class="btn btn-xs w-full border-green-400 bg-green-100 hover:bg-green-200"
-											on:click={copyMyCode}
-										>
-											📋 Copy Code
-										</button>
-										<p class="text-center text-xs text-gray-500">Works on all your devices</p>
-									{/if}
-								</div>
-							{/if}
-						</div>
-
-						<div class="pt-1 text-center">
-							<span class="text-xs italic text-pink-500"
-								>You're helping keep the web spooky. 💜</span
-							>
-						</div>
-					</div>
-				{:else}
-					<!-- Free User - Support TalkType -->
-					<div
-						class="space-y-2 rounded-lg border-2 border-amber-300 bg-gradient-to-r from-amber-100/80 to-orange-100/80 p-3 shadow-md"
-					>
-						<div class="flex items-center justify-between">
-							<h4 class="text-sm font-bold text-gray-700">Support TalkType</h4>
-							<span
-								class="badge badge-sm gap-1 border-amber-300 bg-amber-100 font-medium text-amber-700"
-							>
-								<span class="text-[10px]">👻</span> ${PRICING.currentPrice} once
-							</span>
-						</div>
-
-						<p class="text-xs text-gray-600">Keep the ghost afloat and unlock all the goodies:</p>
-
-						<div class="space-y-1.5 pt-1 text-xs text-gray-600">
-							<div class="flex items-center gap-1.5">
-								<span class="text-amber-600">✨</span>
-								<span>10-minute recordings (10x longer!)</span>
-							</div>
-							<div class="flex items-center gap-1.5">
-								<span class="text-amber-600">✨</span>
-								<span>Extra ghost themes</span>
-							</div>
-							<div class="flex items-center gap-1.5">
-								<span class="text-amber-600">✨</span>
-								<span>Save & export transcript history</span>
-							</div>
-						</div>
-
-						<button
-							class="btn btn-sm mt-2 w-full border-none bg-gradient-to-r from-amber-400 to-orange-500 text-white hover:from-amber-500 hover:to-orange-600"
-							on:click={() => {
-								handleModalClose();
-								if (browser) {
-									setTimeout(() => {
-										document.getElementById('premium_modal')?.showModal();
-									}, 100);
-								}
-							}}
-						>
-							Support for ${PRICING.currentPrice}
-						</button>
-
-						<p class="pt-1 text-center text-xs italic text-pink-500">Help keep the web spooky.</p>
-
-						<!-- Already supported? Enter Code -->
-						<div class="pt-1">
-							<button
-								class="text-xs text-gray-600 underline hover:text-gray-800"
-								on:click={toggleCodeEntry}
-							>
-								{showCodeEntry ? '← Back' : '🔑 Already supported? Enter code'}
-							</button>
-
-							{#if showCodeEntry}
-								<div class="mt-2 space-y-2 rounded-lg border border-gray-300 bg-white p-3">
-									<label for="unlock-code" class="block text-xs font-medium text-gray-700">
-										Enter your unlock code
-									</label>
-									<input
-										id="unlock-code"
-										type="text"
-										bind:value={unlockCode}
-										placeholder="TALK-XXXX-XXXX"
-										class="w-full rounded border border-gray-300 px-2 py-1 text-sm uppercase focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-200"
-										on:keydown={(e) => e.key === 'Enter' && validateUnlockCode()}
-									/>
-
-									{#if codeError}
-										<p class="text-xs text-red-600">❌ {codeError}</p>
-									{/if}
-
-									<button
-										class="btn btn-sm w-full border-amber-400 bg-amber-50 hover:bg-amber-100"
-										on:click={validateUnlockCode}
-										disabled={codeValidating}
-									>
-										{#if codeValidating}
-											<span class="flex items-center justify-center gap-1">
-												<span class="loading loading-spinner loading-xs"></span>
-												Validating...
-											</span>
-										{:else}
-											✓ Validate Code
-										{/if}
-									</button>
-
-									<p class="text-center text-xs text-gray-500">Works on all your devices</p>
-								</div>
-							{/if}
-						</div>
-					</div>
-				{/if}
-			{/if}
 		</div>
 	</div>
 

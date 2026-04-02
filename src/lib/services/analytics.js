@@ -22,24 +22,6 @@ function track(eventName, properties = {}) {
  * === CRITICAL EVENTS ===
  */
 export const analytics = {
-	// Premium funnel
-	viewPremiumModal(feature = null) {
-		track('premium_modal_viewed', { feature });
-	},
-
-	startPayment(amount, currency) {
-		track('payment_started', { amount, currency });
-	},
-
-	completePayment(amount, currency) {
-		track('payment_completed', { amount, currency });
-	},
-
-	// Campaign performance
-	viewCampaignCountdown(remaining, total) {
-		track('campaign_countdown_viewed', { remaining, total });
-	},
-
 	// Engagement
 	completeTranscription(method, duration, wordCount) {
 		track('transcription_completed', { method, duration, wordCount });
@@ -62,11 +44,6 @@ export const analytics = {
 		track('external_link_clicked', { destination });
 	},
 
-	// Feature usage
-	clickLockedFeature(featureName) {
-		track('locked_feature_clicked', { feature: featureName });
-	},
-
 	// Retention
 	installPWA(outcome = 'accepted') {
 		track('pwa_install_outcome', { outcome });
@@ -78,11 +55,6 @@ export const analytics = {
 
 	viewTranscriptHistory(transcriptCount) {
 		track('transcript_history_viewed', { transcript_count: transcriptCount });
-	},
-
-	// Unlock code usage
-	validateUnlockCode(success) {
-		track('unlock_code_validated', { success });
 	}
 };
 

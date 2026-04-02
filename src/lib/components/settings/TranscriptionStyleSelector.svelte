@@ -2,7 +2,6 @@
 	import { promptStyle, customPrompt } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { PROMPT_STYLES } from '$lib/constants';
-	import { isPremium } from '$lib/services/premium/premiumService';
 
 	// Props
 	export let selectedPromptStyle = 'standard';
@@ -76,7 +75,7 @@
 			? 'Live Mode uses standard transcription only'
 			: privacyModeValue
 				? 'Only available with online mode'
-				: 'Your own instructions (Premium)'
+				: 'Your own transcription instructions'
 	};
 
 	// Handle style selection
@@ -104,17 +103,6 @@
 							'🔒 Custom styles only work with online mode. Disable offline mode to use custom prompts.',
 						type: 'info'
 					}
-				})
-			);
-			return;
-		}
-
-		// Check if custom prompt requires premium
-		if (style === 'custom' && !$isPremium) {
-			// Show premium modal
-			window.dispatchEvent(
-				new CustomEvent('talktype:show-premium-modal', {
-					detail: { feature: 'customPrompts' }
 				})
 			);
 			return;
@@ -166,7 +154,7 @@
 				class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {selectedPromptStyle ===
 				style
 					? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
-					: ''} {(style === 'custom' && !$isPremium) || (stylesDisabled && style !== 'standard')
+					: ''} {stylesDisabled && style !== 'standard'
 					? 'locked'
 					: ''}"
 				on:click={() => handleStyleClick(style)}
@@ -209,13 +197,6 @@
 						title="Requires online mode"
 					>
 						🔒
-					</div>
-				{:else if style === 'custom' && !$isPremium}
-					<div
-						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xs shadow-sm"
-						title="Premium feature"
-					>
-						⭐
 					</div>
 				{/if}
 			</button>

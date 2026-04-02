@@ -57,9 +57,9 @@
 	>
 		<form method="dialog" class="space-y-4" on:submit|preventDefault={handleSubmit}>
 			<div class="text-center">
-				<h3 id="auth-modal-title" class="text-lg font-bold">API Access</h3>
+				<h3 id="auth-modal-title" class="text-lg font-bold">Shared Access</h3>
 				<p id="auth-modal-description" class="py-2 text-sm text-gray-600">
-					Enter the shared API token to unlock the transcription endpoints.
+					Enter the shared access token to continue.
 				</p>
 			</div>
 

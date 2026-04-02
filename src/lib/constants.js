@@ -52,8 +52,8 @@ export const DEFAULT_PROMPT_STYLE = PROMPT_STYLES.STANDARD;
 export const APP_CONFIG = {
 	NAME: 'TalkType',
 	VERSION: '0.1.1',
-	DESCRIPTION: 'Fast, accurate, and free voice-to-text transcription',
-	AUTHORS: 'Dennis & Pablo'
+	DESCRIPTION: 'Fast voice-to-text with offline mode, live transcription, and saved history',
+	AUTHORS: 'Pablo Alvarado'
 };
 
 // Animation Timing (in ms)
@@ -79,8 +79,8 @@ export const ANIMATION = {
 
 	// Recording time limits
 	RECORDING: {
-		FREE_LIMIT: 60, // Maximum recording time in seconds for free users
-		PREMIUM_LIMIT: 600, // Maximum recording time in seconds for premium users
+		FREE_LIMIT: 600, // Default maximum recording time in seconds
+		PREMIUM_LIMIT: 600, // Legacy alias kept aligned with default limit
 		WARNING_THRESHOLD: 15, // Seconds remaining when to start showing warning
 		DANGER_THRESHOLD: 8, // Seconds remaining when to start showing danger state
 		ALMOST_DONE_THRESHOLD: 3, // Seconds remaining for final warning flash

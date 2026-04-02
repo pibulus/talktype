@@ -56,8 +56,8 @@
 
 			<div class="space-y-3 sm:space-y-4">
 				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
-					🎯 <strong>100% Private</strong> — Everything stays on your device. We never see or store your
-					words.
+					🎯 <strong>Private when you want it</strong> — Offline mode keeps everything on your device,
+					and live mode is there when you want speed.
 				</p>
 
 				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
@@ -65,8 +65,8 @@
 				</p>
 
 				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
-					✨ <strong>Pro for $9</strong> — One-time unlock. 9+ languages, export transcripts, extra ghost
-					vibes. Forever.
+					✨ <strong>Your words, your way</strong> — Save transcripts, switch styles, and keep the ghost
+					vibes without weird upsells.
 				</p>
 			</div>
 
