@@ -3,7 +3,7 @@
   Coordinates child components for recording and transcription functionality
 -->
 <script>
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import RecordingControls from './RecordingControls.svelte';
 	import TranscriptDisplay from './TranscriptDisplay.svelte';
 	import RecordingStatus from './RecordingStatus.svelte';
@@ -14,15 +14,21 @@
 		initializeServices,
 		// Stores
 		isRecording,
+		isTranscribing,
 		transcriptionText,
 		errorMessage,
 		hasPermissionError,
+		recordingState,
+		userPreferences,
 		uiActions
 	} from '$lib/services';
+	import { transcriptionCompletedEvent } from '$lib/services/infrastructure/stores';
 	import { analytics } from '$lib/services/analytics';
 	import { liveMode } from '$lib';
 	import { transcriptionStore } from '$lib/stores/transcriptionStore';
 	import { whisperStatus } from '../../services/transcription/whisper/whisperService';
+
+	const dispatch = createEventDispatcher();
 
 	// Props - simplified interface
 	export let ghostComponent = null;
@@ -195,6 +201,30 @@
 
 		// Add to unsubscribe list
 		unsubscribers.push(permissionUnsub);
+
+		// Subscribe to transcription completion to dispatch event for history saving
+		const completionUnsub = transcriptionCompletedEvent.subscribe((text) => {
+			if (text) {
+				const recState = $recordingState;
+				const prefs = $userPreferences;
+				const method =
+					typeof localStorage !== 'undefined'
+						? localStorage.getItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD) || 'gemini'
+						: 'gemini';
+
+				dispatch('transcriptionCompleted', {
+					count: 1,
+					transcript: {
+						text,
+						audioBlob: recState.audioBlob || null,
+						duration: recState.duration || 0,
+						promptStyle: prefs.promptStyle || 'standard',
+						method
+					}
+				});
+			}
+		});
+		unsubscribers.push(completionUnsub);
 	});
 
 	// Clean up subscriptions and services
@@ -235,10 +265,6 @@
 	}
 
 	export const recording = isRecording; // Export the isRecording store
-
-	function handleModelReady() {
-		modelReady = true;
-	}
 </script>
 
 <!-- Main wrapper - simplified orchestrator layout -->
@@ -258,7 +284,7 @@
 		/>
 
 		<!-- Dynamic content area - only render when there's content -->
-		{#if $isRecording || $transcriptionText || $errorMessage}
+		{#if $isRecording || $isTranscribing || $transcriptionText || $errorMessage}
 			<div
 				class="content-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
 			>
@@ -268,6 +294,7 @@
 						transcript={$transcriptionText || ($isRecording ? 'Listening...' : '')}
 						{responsiveFontSize}
 						on:copy={handleTranscriptEvent}
+						on:edit={handleTranscriptEvent}
 						on:focus={handleTranscriptEvent}
 					/>
 				{/if}
