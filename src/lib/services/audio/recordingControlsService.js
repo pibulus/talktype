@@ -6,7 +6,7 @@
 import { get } from 'svelte/store';
 import { CTA_PHRASES, ANIMATION } from '$lib/constants';
 import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
-import { transcriptionState } from '../infrastructure/stores';
+import { transcriptionState, transcriptionActions } from '../infrastructure/stores';
 import { analytics } from '../analytics';
 import { liveMode } from '$lib';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
@@ -146,7 +146,10 @@ export class RecordingControlsService {
 				// Skip batch transcription if Live Mode has valid content
 				if (liveModeEnabled && liveTranscript.trim().length > 0) {
 					console.log('[RecordingControlsService] Live Mode captured transcript - skipping batch');
-					
+
+					// Complete transcription so history gets saved via transcriptionCompletedEvent
+					transcriptionActions.completeTranscription(liveTranscript);
+
 					// Scroll to show transcript if needed
 					scrollToBottomIfNeeded({
 						threshold: 300,
