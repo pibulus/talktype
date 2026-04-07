@@ -102,7 +102,7 @@
 </script>
 
 <div
-	class="transcript-wrapper animate-fadeIn-from-top w-full"
+	class="transcript-wrapper animate-fadeIn w-full"
 	on:animationend={() => {
 		// No page scrolling needed anymore with fixed layout
 		checkScrollable();

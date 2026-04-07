@@ -144,7 +144,7 @@
 		<!-- App icon and title -->
 		<div class="prompt-header">
 			<div class="app-icon">
-				<img src="/icons/icon-192x192.png" alt="TalkType" width="48" height="48" />
+				<img src="/appicon/web/icon-192.png" alt="TalkType" width="48" height="48" />
 			</div>
 			<div class="app-info">
 				<h2 id="pwa-prompt-title">Install TalkType</h2>

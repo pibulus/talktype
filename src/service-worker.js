@@ -106,6 +106,14 @@ self.addEventListener('fetch', (event) => {
 				return response;
 			}
 
+			// For navigation requests, serve the offline fallback page
+			if (event.request.mode === 'navigate') {
+				const offlinePage = await cache.match('/offline.html');
+				if (offlinePage) {
+					return offlinePage;
+				}
+			}
+
 			// if there's no cache, then just error out
 			// as there is nothing we can do to respond to this request
 			throw err;

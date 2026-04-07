@@ -265,10 +265,6 @@
 	}
 
 	export const recording = isRecording; // Export the isRecording store
-
-	function handleModelReady() {
-		modelReady = true;
-	}
 </script>
 
 <!-- Main wrapper - simplified orchestrator layout -->
@@ -298,6 +294,7 @@
 						transcript={$transcriptionText || ($isRecording ? 'Listening...' : '')}
 						{responsiveFontSize}
 						on:copy={handleTranscriptEvent}
+						on:edit={handleTranscriptEvent}
 						on:focus={handleTranscriptEvent}
 					/>
 				{/if}
