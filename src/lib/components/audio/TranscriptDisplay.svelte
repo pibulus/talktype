@@ -1,6 +1,6 @@
 <script>
 	import { ANIMATION } from '$lib/constants';
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { createEventDispatcher, onMount, tick } from 'svelte';
 	import Ghost from '$lib/components/ghost/Ghost.svelte';
 	import { theme } from '$lib';
 
@@ -67,7 +67,14 @@
 		checkScrollable();
 	}
 
-	onMount(() => {
+	onMount(async () => {
+		// Ensure text is set after DOM is ready - handles cases where the
+		// reactive $: statement misses the initial bind:this timing
+		await tick();
+		if (editableTranscript && transcript) {
+			editableTranscript.innerText = transcript;
+		}
+
 		// Check if content is scrollable on mount
 		checkScrollable();
 

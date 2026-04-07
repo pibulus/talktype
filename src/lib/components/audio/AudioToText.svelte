@@ -14,6 +14,7 @@
 		initializeServices,
 		// Stores
 		isRecording,
+		isTranscribing,
 		transcriptionText,
 		errorMessage,
 		hasPermissionError,
@@ -287,7 +288,7 @@
 		/>
 
 		<!-- Dynamic content area - only render when there's content -->
-		{#if $isRecording || $transcriptionText || $errorMessage}
+		{#if $isRecording || $isTranscribing || $transcriptionText || $errorMessage}
 			<div
 				class="content-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
 			>
