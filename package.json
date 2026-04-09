@@ -1,7 +1,7 @@
 {
 	"name": "talktype",
 	"private": true,
-	"version": "0.0.1",
+	"version": "0.9.0",
 	"type": "module",
 	"scripts": {
 		"dev": "lsof -ti:5173 | xargs kill -9 2>/dev/null || true && vite dev --port 5173 --host",
