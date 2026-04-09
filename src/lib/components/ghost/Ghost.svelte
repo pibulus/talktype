@@ -12,10 +12,10 @@
 	import { forceReflow } from './utils/animationUtils.js';
 	import { initialGhostAnimation } from './actions/initialGhostAnimation.js';
 	import { createEyeTracking } from './eyeTracking.js';
-	import GradientDefs from './GradientDefs.svelte';
 	import { getGradientId } from './gradients.js';
 
 	export let isRecording = false;
+
 	export let isProcessing = false;
 	export let debug = false;
 	export let debugAnim = false;
@@ -349,12 +349,11 @@
 		class:asleep={$ghostStateStore.current === ANIMATION_STATES.ASLEEP}
 		class:waking-up={$ghostStateStore.current === ANIMATION_STATES.WAKING_UP}
 		class:debug-animation={debugAnim}
-	>
-		<defs>
-			<GradientDefs />
-		</defs>
+		>
+		<!-- Global gradient definitions are now in +layout.svelte -->
 
 		<!-- New wrapper group for wobble transform - ID is used by store -->
+
 		<g class="ghost-spin-pivot" id="ghost-spin-pivot">
 			<g
 				bind:this={ghostWobbleGroup}

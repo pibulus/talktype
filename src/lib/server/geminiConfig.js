@@ -1,9 +1,8 @@
 import { env } from '$env/dynamic/private';
 
 export const GEMINI_MODELS = {
-	transcription: 'gemini-2.5-flash-lite'
+        transcription: 'gemini-3.1-flash-lite-preview'
 };
-
 export const GEMINI_GENERATION_CONFIG = {
 	transcription: {
 		temperature: 0.2,

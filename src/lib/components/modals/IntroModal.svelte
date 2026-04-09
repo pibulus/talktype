@@ -74,7 +74,7 @@
 				class="relative w-full cursor-pointer rounded-xl border border-amber-300/50 bg-gradient-to-r from-amber-100 to-amber-200 px-4 py-3 text-center text-sm font-bold text-gray-800 shadow-md transition-all duration-300 hover:bg-gradient-to-r hover:from-amber-200 hover:to-amber-300 hover:text-gray-900 hover:shadow-lg active:scale-[0.98] sm:px-5 sm:py-4 sm:text-base md:text-lg"
 				on:click={handleActionButton}
 			>
-				You click the ghost, we do the most.
+				Tap the ghost and start talking.
 			</button>
 
 			<p class="py-2 text-center text-base font-bold text-pink-600 sm:text-lg md:text-xl">

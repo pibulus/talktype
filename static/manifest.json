@@ -1,7 +1,7 @@
 {
 	"name": "TalkType",
 	"short_name": "TalkType",
-	"description": "100% Private. Instant Start. You click the ghost, we do the most.",
+	"description": "100% Private. Instant Start. High-speed transcription that feels like magic.",
 	"start_url": "/?source=pwa",
 	"display": "standalone",
 	"background_color": "#FFF6E6",

@@ -49,19 +49,19 @@
 			</div>
 
 			<div>
-				<h4 class="mb-2 text-sm font-bold text-gray-700">Why we made this:</h4>
+				<h4 class="mb-2 text-sm font-bold text-gray-700">The TalkType philosophy:</h4>
 				<ul class="space-y-1.5 text-sm text-gray-600">
 					<li class="flex items-start gap-2">
 						<span class="text-lg text-pink-500">⬩</span>
-						<span>Some ideas come out better by <span class="italic">talking</span>, not typing</span>
+						<span>Ideas often flow better through <span class="italic">talking</span> than typing</span>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-lg text-pink-500">⬩</span>
-						<span>Other voice-typing tools are either expensive or clunky</span>
+						<span>Voice tools should be accessible, not clunky or expensive</span>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-lg text-pink-500">⬩</span>
-						<span>We wanted something beautiful that just works</span>
+						<span>Minimalist design combined with powerful, reliable performance</span>
 					</li>
 				</ul>
 			</div>

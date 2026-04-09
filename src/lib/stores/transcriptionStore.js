@@ -40,8 +40,17 @@ function createTranscriptionStore() {
 				}
 
 				// 2. Connect via raw WebSocket using Sec-WebSocket-Protocol auth
-				const wsUrl = `wss://api.deepgram.com/v1/listen?model=nova-3&smart_format=true&interim_results=true&punctuate=true`;
-
+				// Using 'flux' model for ultra-low latency conversational AI
+				// and 'utterance_end_ms' for smart turn detection
+				const params = new URLSearchParams({
+				        model: 'flux',
+				        smart_format: 'true',
+				        interim_results: 'true',
+				        punctuate: 'true',
+				        utterance_end_ms: '1000',
+				        vad_turn_delay_ms: '500'
+				});
+				const wsUrl = `wss://api.deepgram.com/v1/listen?${params.toString()}`;
 				// Deepgram recommends short-lived tokens for client-side realtime connections.
 				socket = new WebSocket(wsUrl, ['token', data.token]);
 

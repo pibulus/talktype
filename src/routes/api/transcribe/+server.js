@@ -69,9 +69,10 @@ export async function POST(event) {
 
 		const message = error?.message?.toString()?.toLowerCase() ?? '';
 		if (message.includes('quota') || message.includes('limit')) {
-			friendlyMessage =
-				"The ghost needs a quick breather - we've hit our limit. Try again in a moment?";
+		        friendlyMessage =
+		                "The ghost needs a breather - the limit has been reached. Try again in a moment?";
 		} else if (message.includes('network')) {
+
 			friendlyMessage = "Can't reach the transcription service right now. Check your internet?";
 		} else if (message.includes('timeout')) {
 			friendlyMessage = 'That took longer than expected. Maybe try a shorter recording?';

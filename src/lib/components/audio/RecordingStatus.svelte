@@ -72,7 +72,7 @@
 		class="recovery-card mx-auto mt-3 w-full max-w-[540px] rounded-2xl border border-pink-100 bg-white/90 p-4 text-center shadow-md"
 	>
 		<p class="text-sm text-gray-700">
-			We saved your last recording
+			The last recording was saved
 			{#if formatDuration(pendingRecording.duration)}
 				({formatDuration(pendingRecording.duration)})
 			{/if}

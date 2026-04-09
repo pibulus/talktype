@@ -108,12 +108,12 @@ export class RecordingControlsService {
 			}
 
 			// Make the ghost look like it's thinking hard
-			// COMMENTED OUT: These methods don't exist on ghost component
-			// if (this.ghostComponent && typeof this.ghostComponent.startThinking === 'function') {
-			// 	this.ghostComponent.startThinking();
-			// }
+			if (this.ghostComponent && typeof this.ghostComponent.startThinking === 'function') {
+			        this.ghostComponent.startThinking();
+			}
 
 			// Stop recording and get the audio blob
+
 			const audioBlob = await this.audioService.stopRecording();
 			console.log('[RecordingControlsService] Got audio blob:', audioBlob);
 
@@ -176,12 +176,12 @@ export class RecordingControlsService {
 					console.log('[RecordingControlsService] Transcription result:', transcriptText);
 
 					// Stop ghost thinking animation after successful transcription
-					// COMMENTED OUT: These methods don't exist on ghost component
-					// if (this.ghostComponent && typeof this.ghostComponent.stopThinking === 'function') {
-					// 	this.ghostComponent.stopThinking();
-					// }
+					if (this.ghostComponent && typeof this.ghostComponent.stopThinking === 'function') {
+					        this.ghostComponent.stopThinking();
+					}
 
 					// Scroll to show transcript if needed
+
 					scrollToBottomIfNeeded({
 						threshold: 300,
 						delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY

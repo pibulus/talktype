@@ -249,7 +249,7 @@ Connect and try again`,
 
 	`Whispers unheard now
 The ghost waits patiently
-Until we're online`
+Until connection returns`
 ];
 
 // Random haiku picker

@@ -5,9 +5,9 @@
 	import { cssVariables } from '$lib/components/ghost/themeStore';
 	import { modal } from '$lib/stores/modal';
 	import { AboutModal, AuthModal, ExtensionModal, IntroModal } from '$lib/components/modals';
+	import { GradientDefs } from '$lib/components/ghost';
 
 	let { children } = $props();
-
 	const modals = {
 		about: AboutModal,
 		auth: AuthModal,
@@ -49,8 +49,16 @@
 {@render children()}
 
 {#if $modal}
-	{@const ActiveModal = modals[$modal.name]}
-	{#if ActiveModal}
-		<ActiveModal {...$modal.props} />
-	{/if}
+        {@const ActiveModal = modals[$modal.name]}
+        {#if ActiveModal}
+                <ActiveModal {...$modal.props} />
+        {/if}
 {/if}
+
+<!-- Global SVG definitions for ghost gradients -->
+<svg style="position: absolute; width: 0; height: 0; overflow: hidden;" aria-hidden="true">
+        <defs>
+                <GradientDefs />
+        </defs>
+</svg>
+
