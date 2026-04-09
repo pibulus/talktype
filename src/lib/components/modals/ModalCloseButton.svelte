@@ -11,9 +11,9 @@
 
 	// Size classes mapping
 	const sizeClasses = {
-		sm: 'h-6 w-6 text-sm',
-		md: 'h-8 w-8 text-base',
-		lg: 'h-10 w-10 text-lg'
+		sm: 'h-11 w-11 text-sm',
+		md: 'h-11 w-11 text-base',
+		lg: 'h-12 w-12 text-lg'
 	};
 
 	// Get size classes based on the size prop

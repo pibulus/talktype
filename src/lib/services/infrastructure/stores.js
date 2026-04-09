@@ -3,6 +3,8 @@ import { AudioStates } from '../audio/audioStates';
 import { ANIMATION, STORAGE_KEYS } from '$lib/constants';
 import { browser } from '$app/environment';
 
+const forceSupporterMode = import.meta.env.PUBLIC_FORCE_SUPPORTER_MODE === 'true';
+
 // Core audio state store
 export const audioState = writable({
 	state: AudioStates.IDLE,
@@ -46,8 +48,8 @@ function createUserPreferences() {
 		? localStorage.getItem('talktype-prompt-style') || 'standard'
 		: 'standard';
 	const initialSupporterStatus = browser
-		? localStorage.getItem(STORAGE_KEYS.SUPPORTER) === 'true'
-		: false;
+		? forceSupporterMode || localStorage.getItem(STORAGE_KEYS.SUPPORTER) === 'true'
+		: forceSupporterMode;
 
 	return writable({
 		isSupporter: initialSupporterStatus,
@@ -58,13 +60,15 @@ function createUserPreferences() {
 export const userPreferences = createUserPreferences();
 
 export function setSupporterStatus(isSupporter) {
+	const resolvedSupporterStatus = forceSupporterMode ? true : isSupporter;
+
 	userPreferences.update((current) => ({
 		...current,
-		isSupporter
+		isSupporter: resolvedSupporterStatus
 	}));
 
 	if (browser) {
-		localStorage.setItem(STORAGE_KEYS.SUPPORTER, isSupporter ? 'true' : 'false');
+		localStorage.setItem(STORAGE_KEYS.SUPPORTER, resolvedSupporterStatus ? 'true' : 'false');
 	}
 }
 

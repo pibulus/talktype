@@ -67,7 +67,7 @@
 	aria-modal="true"
 >
 	<div
-		class="animate-modal-enter modal-box relative max-h-[85vh] w-[92%] max-w-md overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
+		class="animate-modal-enter modal-box relative max-h-[88vh] w-[94%] max-w-md overflow-y-auto rounded-[1.75rem] border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] px-5 py-6 shadow-xl sm:w-[92%]"
 	>
 		<form method="dialog">
 			<ModalCloseButton
@@ -121,7 +121,7 @@
 			<div class="flex flex-col gap-2 sm:flex-row">
 				<button
 					type="button"
-					class="btn flex-1 border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600"
+					class="btn min-h-12 flex-1 border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600"
 					on:click={handleUnlock}
 					disabled={isSubmitting}
 				>
@@ -129,7 +129,7 @@
 				</button>
 				<button
 					type="button"
-					class="btn btn-ghost flex-1 border border-pink-100 bg-white/70 text-gray-700 hover:bg-pink-50"
+					class="btn btn-ghost min-h-12 flex-1 border border-pink-100 bg-white/70 text-gray-700 hover:bg-pink-50"
 					on:click={handleClose}
 				>
 					Maybe later

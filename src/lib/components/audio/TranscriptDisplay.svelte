@@ -102,17 +102,17 @@
 </script>
 
 <div
-	class="transcript-wrapper animate-fadeIn w-full"
+	class="transcript-wrapper w-full animate-fadeIn"
 	on:animationend={() => {
 		// No page scrolling needed anymore with fixed layout
 		checkScrollable();
 	}}
 >
 	<div class="wrapper-container flex w-full justify-center">
-		<div class="transcript-box-container relative mx-auto w-[95%] max-w-[580px] px-0 sm:w-full">
+		<div class="transcript-box-container relative mx-auto w-[96%] max-w-[580px] px-0 sm:w-full">
 			<!-- Copy button with themed ghost icon -->
 			<button
-				class="copy-btn share-chip absolute -top-4 right-1 z-[200] h-10 w-10 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95 sm:-right-4 sm:-top-4"
+				class="copy-btn share-chip absolute -top-5 right-0 z-[200] h-11 w-11 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95 sm:-right-4 sm:-top-4 sm:h-10 sm:w-10"
 				on:click|preventDefault={() => dispatch('copy', { text: getEditedTranscript() })}
 				on:mouseenter={handleTooltipMouseEnter}
 				on:mouseleave={() => {
@@ -147,7 +147,7 @@
 			>
 				<!-- Content Area - scrollable -->
 				<div
-					class="transcript-content-area z-5 relative max-h-[50vh] w-full overflow-y-auto px-5 pb-8 pt-6 sm:max-h-[320px] sm:px-10 sm:pb-10 sm:pt-7"
+					class="transcript-content-area z-5 relative max-h-[52vh] w-full overflow-y-auto px-4 pb-8 pt-7 sm:max-h-[320px] sm:px-10 sm:pb-10 sm:pt-7"
 					bind:this={transcriptBoxRef}
 				>
 					<div
@@ -267,6 +267,8 @@
 		caret-color: rgba(236, 72, 153, 1); /* Darker, more visible cursor color */
 		/* Remove explicit font-size to allow Tailwind classes to work */
 		/* Base text size now handled by responsiveFontSize classes */
+		word-break: break-word;
+		font-size: clamp(1rem, 1.1rem + 0.25vw, 1.2rem);
 	}
 
 	/* Optimize spacing based on font size for better readability */
@@ -403,10 +405,24 @@
 
 	/* Mobile optimization */
 	@media (max-width: 600px) {
+		.transcript-box-container {
+			padding-top: 0.35rem;
+		}
+
 		.transcript-content-area {
-			max-height: 280px; /* Slightly smaller on mobile */
-			padding: 1.5rem;
+			max-height: min(46vh, 340px);
+			padding: 1.25rem 1rem 1.5rem;
 			scrollbar-width: none; /* Hide scrollbar on Firefox */
+		}
+
+		.custom-transcript-text {
+			font-size: clamp(1rem, 4.2vw, 1.25rem);
+			line-height: 1.72;
+		}
+
+		.copy-btn {
+			right: 0.35rem;
+			top: -1.1rem;
 		}
 
 		.transcript-content-area::-webkit-scrollbar {

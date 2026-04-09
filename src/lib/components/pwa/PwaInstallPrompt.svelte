@@ -232,7 +232,7 @@
 	}
 
 	.prompt-content {
-		padding: 16px;
+		padding: 18px;
 	}
 
 	.prompt-header {
@@ -292,7 +292,8 @@
 
 	.install-button {
 		width: 100%;
-		padding: 12px;
+		min-height: 48px;
+		padding: 13px 14px;
 		background: linear-gradient(to right, #ff9cef, #fbbf24);
 		border: none;
 		border-radius: 8px;
@@ -366,17 +367,36 @@
 
 	@media (max-width: 480px) {
 		.pwa-install-prompt {
-			width: calc(100% - 40px);
-			max-width: 360px;
+			width: calc(100% - 24px);
+			max-width: none;
 			margin: 0 auto;
 			left: 0;
 			right: 0;
-			bottom: 16px;
+			bottom: max(12px, env(safe-area-inset-bottom));
+			border-radius: 18px;
+		}
+
+		.prompt-content {
+			padding: 18px 16px calc(16px + env(safe-area-inset-bottom));
+		}
+
+		.prompt-header {
+			margin-bottom: 14px;
+		}
+
+		.app-info h2 {
+			font-size: 17px;
+		}
+
+		.prompt-description p,
+		.benefits-list li,
+		.platform-instructions {
+			font-size: 15px;
 		}
 
 		.pwa-install-prompt.corner {
-			left: 16px;
-			right: auto;
+			left: 12px;
+			right: 12px;
 		}
 	}
 </style>
