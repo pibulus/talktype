@@ -19,6 +19,11 @@
 		dispatch('showHistory');
 	}
 
+	function showExtension() {
+		analytics.viewModal('extension');
+		dispatch('showExtension');
+	}
+
 	async function shareApp() {
 		const shareData = {
 			title: 'TalkType',
@@ -61,6 +66,13 @@
 		aria-label="View Transcript History"
 	>
 		History
+	</button>
+	<button
+		class="btn btn-ghost btn-sm h-auto min-h-0 px-1.5 py-1.5 text-xs text-gray-600 shadow-none transition-all hover:bg-pink-50/50 hover:text-pink-500 sm:px-3 sm:py-2 sm:text-base"
+		on:click={showExtension}
+		aria-label="Open Chrome Extension info"
+	>
+		Extension
 	</button>
 	<button
 		class="btn btn-ghost btn-sm h-auto min-h-0 px-1.5 py-1.5 text-xs text-gray-600 shadow-none transition-all hover:bg-pink-50/50 hover:text-pink-500 sm:px-3 sm:py-2 sm:text-base"
