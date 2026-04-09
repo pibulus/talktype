@@ -13,6 +13,7 @@
 	import { fade } from 'svelte/transition';
 	import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
 	import { STORAGE_KEYS } from '$lib/constants';
+	import { userPreferences } from '$lib/services';
 
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
 	import { saveTranscript } from '$lib/services/storage/transcriptStorage';
@@ -22,6 +23,9 @@
 
 	let TranscriptHistoryModal;
 	let loadingHistoryModal = false;
+
+	let SupporterModal;
+	let loadingSupporterModal = false;
 
 	// Initialize transcription after a short delay
 	let hasInitializedTranscription = false;
@@ -188,7 +192,7 @@
 		const newCount = event.detail.count;
 		debug(`🔔 Transcription completed event received. Count: ${newCount}`);
 
-		if (event.detail.transcript) {
+		if (event.detail.transcript && $userPreferences.isSupporter) {
 			try {
 				await saveTranscript({
 					text: event.detail.transcript.text,
@@ -222,6 +226,30 @@
 		}
 	}
 
+	async function openSupporterModal() {
+		if (loadingSupporterModal) return;
+
+		if (!SupporterModal) {
+			loadingSupporterModal = true;
+			try {
+				const module = await import('../modals/SupporterModal.svelte');
+				SupporterModal = module.default;
+			} catch (err) {
+				console.error('Error loading supporter modal:', err);
+				return;
+			} finally {
+				loadingSupporterModal = false;
+			}
+		}
+
+		setTimeout(() => {
+			const modal = document.getElementById('supporter_modal');
+			if (modal) {
+				modal.showModal();
+			}
+		}, 10);
+	}
+
 	// Closes the PWA install prompt
 	function closePwaInstallPrompt() {
 		debug('ℹ️ PWA install prompt dismissed.');
@@ -231,6 +259,19 @@
 
 	// Open history modal
 	async function openHistoryModal() {
+		if (!$userPreferences.isSupporter) {
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: {
+						message: 'Supporter mode unlocks transcript history, downloads, and export.',
+						type: 'info'
+					}
+				})
+			);
+			openSupporterModal();
+			return;
+		}
+
 		if (loadingHistoryModal) return;
 
 		debug('Opening history modal');
@@ -265,6 +306,7 @@
 	// Event listener cleanup
 	let settingsListener;
 	let toggleRecordingListener;
+	let supporterModalListener;
 	let autoRecordTimeout;
 	let ghostClickRetryTimeout;
 
@@ -277,6 +319,9 @@
 			toggleRecordingListener = () => handleToggleRecording();
 			window.addEventListener('talktype:toggle-recording', toggleRecordingListener);
 			debug('Added listener for talktype:toggle-recording custom event');
+
+			supporterModalListener = () => openSupporterModal();
+			window.addEventListener('talktype:open-supporter-modal', supporterModalListener);
 		}
 
 		// Check for auto-record setting and start recording if enabled
@@ -315,7 +360,6 @@
 			};
 			window.addEventListener('talktype-setting-changed', settingsListener);
 			debug('Added listener for settings changes.');
-
 		}
 
 		// Check if first visit to show intro
@@ -330,6 +374,9 @@
 			if (browser && toggleRecordingListener) {
 				window.removeEventListener('talktype:toggle-recording', toggleRecordingListener);
 				debug('Removed toggle recording listener');
+			}
+			if (browser && supporterModalListener) {
+				window.removeEventListener('talktype:open-supporter-modal', supporterModalListener);
 			}
 			if (autoRecordTimeout) {
 				clearTimeout(autoRecordTimeout);
@@ -382,6 +429,10 @@
 <!-- Transcript History Modal - lazy loaded -->
 {#if TranscriptHistoryModal}
 	<svelte:component this={TranscriptHistoryModal} {closeModal} />
+{/if}
+
+{#if SupporterModal}
+	<svelte:component this={SupporterModal} {closeModal} />
 {/if}
 
 <!-- PWA Install Prompt -->

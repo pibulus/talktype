@@ -33,8 +33,6 @@
 	// Props - simplified interface
 	export let ghostComponent = null;
 	export let onPreloadRequest = null;
-	export let isPremiumUser = false;
-
 	// Service instances
 	let unsubscribers = [];
 	let activeTimeouts = [];
@@ -276,7 +274,6 @@
 			bind:this={recordingControlsRef}
 			{ghostComponent}
 			{onPreloadRequest}
-			{isPremiumUser}
 			{modelReady}
 			on:recordingStateChanged
 			on:error

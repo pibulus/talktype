@@ -8,6 +8,8 @@
 	export let changePromptStyle = () => {};
 	export let privacyModeValue = false;
 	export let liveModeValue = false;
+	export let isSupporter = false;
+	export let openSupporterModal = () => {};
 
 	// State for custom prompt
 	let showCustomInput = false;
@@ -26,79 +28,98 @@
 		showCustomInput = false;
 	}
 
+	$: if (!isSupporter && selectedPromptStyle !== 'standard') {
+		selectedPromptStyle = 'standard';
+		changePromptStyle('standard');
+		showCustomInput = false;
+	}
+
 	// Available styles - adding the fun ones back!
 	const availableStyles = [
-	        PROMPT_STYLES.STANDARD,
-	        PROMPT_STYLES.SURLY_PIRATE,
-	        PROMPT_STYLES.QUILL_AND_INK,
-	        PROMPT_STYLES.SPARKLE_POP,
-	        PROMPT_STYLES.LEET_SPEAK,
-	        'custom'
+		PROMPT_STYLES.STANDARD,
+		PROMPT_STYLES.SURLY_PIRATE,
+		PROMPT_STYLES.QUILL_AND_INK,
+		PROMPT_STYLES.SPARKLE_POP,
+		PROMPT_STYLES.LEET_SPEAK,
+		'custom'
 	];
 
 	// Style icons with pastel colors
 	const styleIcons = {
-	        standard: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-500">
+		standard: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-500">
 	        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
 	      </svg>`,
-	        surlyPirate: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-amber-500">
+		surlyPirate: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-amber-500">
 	           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
 	         </svg>`,
-	        quillAndInk: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-purple-400">
+		quillAndInk: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-purple-400">
 	           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
 	         </svg>`,
-	        sparklePop: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-400">
+		sparklePop: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-400">
 	           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4M4 19h4m12-12v4m-2-2h4m-5 12v4m-2-2h4" />
 	         </svg>`,
-	        leetSpeak: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-blue-500">
+		leetSpeak: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-blue-500">
 	           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
 	         </svg>`,
-	        custom: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-green-400">
+		custom: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-green-400">
 	        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
 	      </svg>`
 	};
 
 	// Style names
 	const styleNames = {
-	        standard: 'Standard',
-	        surlyPirate: 'Pirate',
-	        quillAndInk: 'Victorian',
-	        sparklePop: 'Sparkle',
-	        leetSpeak: 'L33t',
-	        custom: 'Custom'
+		standard: 'Standard',
+		surlyPirate: 'Pirate',
+		quillAndInk: 'Victorian',
+		sparklePop: 'Sparkle',
+		leetSpeak: 'L33t',
+		custom: 'Custom'
 	};
 
 	// Style tooltips - dynamic based on disabled modes
 	$: styleTooltips = {
-	        standard: 'Clean, professional tone',
-	        surlyPirate: liveModeValue
-	                ? 'Live Mode uses standard transcription only'
-	                : privacyModeValue
-	                        ? 'Only available with online mode'
-	                        : 'Pirate lingo & swagger',
-	        quillAndInk: liveModeValue
-	                ? 'Live Mode uses standard transcription only'
-	                : privacyModeValue
-	                        ? 'Only available with online mode'
-	                        : 'Victorian literature style',
-	        sparklePop: liveModeValue
-	                ? 'Live Mode uses standard transcription only'
-	                : privacyModeValue
-	                        ? 'Only available with online mode'
-	                        : 'Bubbly, emojis & vibes',
-	        leetSpeak: liveModeValue
-	                ? 'Live Mode uses standard transcription only'
-	                : privacyModeValue
-	                        ? 'Only available with online mode'
-	                        : 'H4ck3r 5p34k',
-	        custom: liveModeValue
-	                ? 'Live Mode uses standard transcription only'
-	                : privacyModeValue
-	                        ? 'Only available with online mode'
-	                        : 'Your own transcription instructions'
+		standard: 'Clean, professional tone',
+		surlyPirate: liveModeValue
+			? 'Live Mode uses standard transcription only'
+			: privacyModeValue
+				? 'Only available with online mode'
+				: 'Pirate lingo & swagger',
+		quillAndInk: liveModeValue
+			? 'Live Mode uses standard transcription only'
+			: privacyModeValue
+				? 'Only available with online mode'
+				: 'Victorian literature style',
+		sparklePop: liveModeValue
+			? 'Live Mode uses standard transcription only'
+			: privacyModeValue
+				? 'Only available with online mode'
+				: 'Bubbly, emojis & vibes',
+		leetSpeak: liveModeValue
+			? 'Live Mode uses standard transcription only'
+			: privacyModeValue
+				? 'Only available with online mode'
+				: 'H4ck3r 5p34k',
+		custom: liveModeValue
+			? 'Live Mode uses standard transcription only'
+			: privacyModeValue
+				? 'Only available with online mode'
+				: 'Your own transcription instructions'
 	};
 	// Handle style selection
 	function handleStyleClick(style) {
+		if (!isSupporter && style !== 'standard') {
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: {
+						message: 'Supporter mode unlocks custom transcription styles and prompts.',
+						type: 'info'
+					}
+				})
+			);
+			openSupporterModal();
+			return;
+		}
+
 		// Block non-standard styles when Live Mode is enabled
 		if (liveModeValue && style !== 'standard') {
 			window.dispatchEvent(
@@ -173,9 +194,7 @@
 				class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {selectedPromptStyle ===
 				style
 					? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
-					: ''} {stylesDisabled && style !== 'standard'
-					? 'locked'
-					: ''}"
+					: ''} {stylesDisabled && style !== 'standard' ? 'locked' : ''}"
 				on:click={() => handleStyleClick(style)}
 				aria-label={styleNames[style] || style}
 				title={styleTooltips[style]}
@@ -217,13 +236,20 @@
 					>
 						🔒
 					</div>
+				{:else if !isSupporter && style !== 'standard'}
+					<div
+						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-xs shadow-sm"
+						title="Requires supporter mode"
+					>
+						★
+					</div>
 				{/if}
 			</button>
 		{/each}
 	</div>
 
 	<!-- Custom prompt input area -->
-	{#if showCustomInput}
+	{#if showCustomInput && isSupporter}
 		<div class="animate-in slide-in-from-top-2 mt-3 space-y-2 duration-200">
 			<textarea
 				bind:value={customPromptText}
@@ -234,6 +260,12 @@
 				rows="3"
 			></textarea>
 			<p class="text-xs text-gray-500">Press Enter to save your custom prompt</p>
+		</div>
+	{:else if !isSupporter}
+		<div class="mt-3 rounded-lg border border-amber-200 bg-amber-50/80 p-3">
+			<p class="text-xs text-amber-800">
+				★ Supporter mode unlocks all alternate styles plus fully custom prompts.
+			</p>
 		</div>
 	{/if}
 </div>

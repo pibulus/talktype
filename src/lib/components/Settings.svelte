@@ -22,6 +22,7 @@
 	let selectedPromptStyle = 'standard';
 	let privacyModeValue = false;
 	let liveModeValue = false;
+	let isSupporterValue = false;
 
 	let pwaInstallComponent;
 
@@ -30,6 +31,7 @@
 	let unsubscribeAutoRecord;
 	let unsubscribePromptStyle;
 	let unsubscribeLiveMode;
+	let unsubscribeUserPreferences;
 
 	onMount(() => {
 		// Subscribe to stores only in browser
@@ -49,6 +51,10 @@
 			liveModeValue = value === 'true';
 		});
 
+		unsubscribeUserPreferences = userPreferences.subscribe((value) => {
+			isSupporterValue = value.isSupporter;
+		});
+
 		// Get privacy mode value from localStorage (browser only)
 		if (browser) {
 			privacyModeValue = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
@@ -61,6 +67,7 @@
 		if (unsubscribeAutoRecord) unsubscribeAutoRecord();
 		if (unsubscribePromptStyle) unsubscribePromptStyle();
 		if (unsubscribeLiveMode) unsubscribeLiveMode();
+		if (unsubscribeUserPreferences) unsubscribeUserPreferences();
 	});
 
 	// Handlers
@@ -145,6 +152,14 @@
 		closeModal();
 	}
 
+	function openSupporterModal() {
+		if (!browser) return;
+
+		handleModalClose();
+		setTimeout(() => {
+			window.dispatchEvent(new CustomEvent('talktype:open-supporter-modal'));
+		}, 75);
+	}
 </script>
 
 <dialog
@@ -316,6 +331,32 @@
 				{/if}
 			</div>
 
+			<div
+				class="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-4 shadow-sm"
+			>
+				<div class="flex items-start justify-between gap-4">
+					<div class="space-y-1">
+						<p class="text-sm font-semibold text-gray-800">Supporter mode</p>
+						<p class="text-sm text-gray-600">
+							Unlock transcript history, downloads, custom prompts, and longer sessions.
+						</p>
+						<p class="text-xs uppercase tracking-[0.18em] text-amber-600">
+							{isSupporterValue ? 'Unlocked' : 'One-time $9'}
+						</p>
+					</div>
+					<button
+						class={`btn btn-sm shrink-0 ${
+							isSupporterValue
+								? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+								: 'border-amber-200 bg-amber-100 text-amber-900 hover:bg-amber-200'
+						}`}
+						on:click={openSupporterModal}
+					>
+						{isSupporterValue ? 'Manage' : 'Unlock'}
+					</button>
+				</div>
+			</div>
+
 			<!-- Vibe Selector Section -->
 			<div class="space-y-2">
 				<h4 class="text-sm font-bold text-gray-700">Choose Your Vibe</h4>
@@ -325,9 +366,15 @@
 			<!-- Prompt Style Selection Section -->
 			<div class="space-y-2">
 				<h4 class="text-sm font-bold text-gray-700">Choose Transcription Style</h4>
-				<TranscriptionStyleSelector {selectedPromptStyle} {changePromptStyle} {privacyModeValue} {liveModeValue} />
+				<TranscriptionStyleSelector
+					{selectedPromptStyle}
+					{changePromptStyle}
+					{privacyModeValue}
+					{liveModeValue}
+					isSupporter={isSupporterValue}
+					{openSupporterModal}
+				/>
 			</div>
-
 		</div>
 	</div>
 

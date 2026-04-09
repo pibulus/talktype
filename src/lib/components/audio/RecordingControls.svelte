@@ -14,6 +14,7 @@
 		recordingDuration,
 		transcriptionText,
 		transcriptionProgress,
+		userPreferences,
 		uiState,
 		uiActions
 	} from '$lib/services';
@@ -26,7 +27,6 @@
 	// Props
 	export let ghostComponent = null;
 	export let onPreloadRequest = null;
-	export let isPremiumUser = false;
 	export let modelReady = false;
 
 	// Local state
@@ -130,8 +130,8 @@
 				clipboardSuccess={$uiState.clipboardSuccess}
 				recordingDuration={$recordingDuration}
 				progress={$transcriptionProgress}
-				maxDuration={isPremiumUser
-					? ANIMATION.RECORDING.PREMIUM_LIMIT
+				maxDuration={$userPreferences.isSupporter
+					? ANIMATION.RECORDING.SUPPORTER_LIMIT
 					: ANIMATION.RECORDING.FREE_LIMIT}
 				warningThreshold={ANIMATION.RECORDING.WARNING_THRESHOLD}
 				dangerThreshold={ANIMATION.RECORDING.DANGER_THRESHOLD}

@@ -23,6 +23,7 @@ export const STORAGE_KEYS = {
 	AUTO_RECORD: 'talktype_auto_record',
 	PROMPT_STYLE: 'talktype_prompt_style',
 	CUSTOM_PROMPT: 'talktype_custom_prompt',
+	SUPPORTER: 'talktype_supporter',
 	AUTO_SAVE: 'talktype_auto_save',
 	PRIVACY_MODE: 'talktype_privacy_mode', // Offline Whisper mode
 	LIVE_MODE: 'talktype_live_mode',
@@ -79,8 +80,9 @@ export const ANIMATION = {
 
 	// Recording time limits
 	RECORDING: {
-		FREE_LIMIT: 600, // Default maximum recording time in seconds
-		PREMIUM_LIMIT: 600, // Legacy alias kept aligned with default limit
+		FREE_LIMIT: 300, // Free recordings are capped at 5 minutes
+		SUPPORTER_LIMIT: 7200, // Effectively unlimited for supporter mode
+		PREMIUM_LIMIT: 7200, // Legacy alias kept aligned with supporter limit
 		WARNING_THRESHOLD: 15, // Seconds remaining when to start showing warning
 		DANGER_THRESHOLD: 8, // Seconds remaining when to start showing danger state
 		ALMOST_DONE_THRESHOLD: 3, // Seconds remaining for final warning flash

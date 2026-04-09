@@ -32,6 +32,7 @@ export {
 	transcriptionState,
 	uiState,
 	userPreferences,
+	setSupporterStatus,
 	isRecording,
 	isTranscribing,
 	transcriptionProgress,

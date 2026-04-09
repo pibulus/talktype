@@ -1,6 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
 import { AudioStates } from '../audio/audioStates';
-import { ANIMATION } from '$lib/constants';
+import { ANIMATION, STORAGE_KEYS } from '$lib/constants';
 import { browser } from '$app/environment';
 
 // Core audio state store
@@ -45,14 +45,28 @@ function createUserPreferences() {
 	const initialPromptStyle = browser
 		? localStorage.getItem('talktype-prompt-style') || 'standard'
 		: 'standard';
+	const initialSupporterStatus = browser
+		? localStorage.getItem(STORAGE_KEYS.SUPPORTER) === 'true'
+		: false;
 
 	return writable({
-		isPremiumUser: false,
+		isSupporter: initialSupporterStatus,
 		promptStyle: initialPromptStyle
 	});
 }
 
 export const userPreferences = createUserPreferences();
+
+export function setSupporterStatus(isSupporter) {
+	userPreferences.update((current) => ({
+		...current,
+		isSupporter
+	}));
+
+	if (browser) {
+		localStorage.setItem(STORAGE_KEYS.SUPPORTER, isSupporter ? 'true' : 'false');
+	}
+}
 
 // Derived stores for easier consumption
 export const isRecording = derived(
@@ -139,9 +153,9 @@ export const audioActions = {
 			}));
 
 			// Check if we've reached the time limit (still use integer for the limit check)
-			const isPremium = get(userPreferences).isPremiumUser;
-			const timeLimit = isPremium
-				? ANIMATION.RECORDING.PREMIUM_LIMIT
+			const isSupporter = get(userPreferences).isSupporter;
+			const timeLimit = isSupporter
+				? ANIMATION.RECORDING.SUPPORTER_LIMIT
 				: ANIMATION.RECORDING.FREE_LIMIT;
 
 			if (Math.floor(duration) >= timeLimit) {
