@@ -5,6 +5,9 @@
 
 import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('TranscriptStorage');
 
 const DB_NAME = 'TalkTypeTranscripts';
 const DB_VERSION = 1;
@@ -29,13 +32,13 @@ async function initDB() {
 		const request = indexedDB.open(DB_NAME, DB_VERSION);
 
 		request.onerror = () => {
-			console.error('Failed to open IndexedDB:', request.error);
+			log.error('Failed to open IndexedDB:', request.error);
 			reject(request.error);
 		};
 
 		request.onsuccess = () => {
 			db = request.result;
-			console.log('📚 Transcript storage initialized');
+			log.log('Transcript storage initialized');
 			resolve(db);
 		};
 
@@ -54,7 +57,7 @@ async function initDB() {
 				objectStore.createIndex('promptStyle', 'promptStyle', { unique: false });
 				objectStore.createIndex('method', 'method', { unique: false });
 
-				console.log('📦 Transcript storage schema created');
+				log.log('Transcript storage schema created');
 			}
 		};
 	});
@@ -86,19 +89,19 @@ export async function saveTranscript(transcript) {
 			const request = store.add(transcriptData);
 
 			request.onsuccess = () => {
-				console.log('💾 Transcript saved:', request.result);
+				log.log('Transcript saved:', request.result);
 				updateStats();
 				loadAllTranscripts(); // Refresh the list
 				resolve(request.result);
 			};
 
 			request.onerror = () => {
-				console.error('Failed to save transcript:', request.error);
+				log.error('Failed to save transcript:', request.error);
 				reject(request.error);
 			};
 		});
 	} catch (error) {
-		console.error('Error saving transcript:', error);
+		log.error('Error saving transcript:', error);
 		throw error;
 	}
 }
@@ -130,18 +133,18 @@ export async function loadAllTranscripts() {
 				} else {
 					// Done iterating
 					transcriptHistory.set(transcripts);
-					console.log(`📚 Loaded ${transcripts.length} transcripts from history`);
+					log.log(`Loaded ${transcripts.length} transcripts from history`);
 					resolve(transcripts);
 				}
 			};
 
 			request.onerror = () => {
-				console.error('Failed to load transcripts:', request.error);
+				log.error('Failed to load transcripts:', request.error);
 				reject(request.error);
 			};
 		});
 	} catch (error) {
-		console.error('Error loading transcripts:', error);
+		log.error('Error loading transcripts:', error);
 		return [];
 	}
 }
@@ -177,24 +180,24 @@ export async function updateTranscript(id, newText) {
 				const putRequest = store.put(transcript);
 
 				putRequest.onsuccess = () => {
-					console.log('✏️ Transcript updated:', id);
+					log.log('Transcript updated:', id);
 					loadAllTranscripts(); // Refresh the list
 					resolve(true);
 				};
 
 				putRequest.onerror = () => {
-					console.error('Failed to update transcript:', putRequest.error);
+					log.error('Failed to update transcript:', putRequest.error);
 					reject(putRequest.error);
 				};
 			};
 
 			getRequest.onerror = () => {
-				console.error('Failed to get transcript:', getRequest.error);
+				log.error('Failed to get transcript:', getRequest.error);
 				reject(getRequest.error);
 			};
 		});
 	} catch (error) {
-		console.error('Error updating transcript:', error);
+		log.error('Error updating transcript:', error);
 		return false;
 	}
 }
@@ -214,19 +217,19 @@ export async function deleteTranscript(id) {
 			const request = store.delete(id);
 
 			request.onsuccess = () => {
-				console.log('🗑️ Transcript deleted:', id);
+				log.log('Transcript deleted:', id);
 				updateStats();
 				loadAllTranscripts(); // Refresh the list
 				resolve(true);
 			};
 
 			request.onerror = () => {
-				console.error('Failed to delete transcript:', request.error);
+				log.error('Failed to delete transcript:', request.error);
 				reject(request.error);
 			};
 		});
 	} catch (error) {
-		console.error('Error deleting transcript:', error);
+		log.error('Error deleting transcript:', error);
 		return false;
 	}
 }
@@ -245,19 +248,19 @@ export async function clearAllTranscripts() {
 			const request = store.clear();
 
 			request.onsuccess = () => {
-				console.log('🗑️ All transcripts cleared');
+				log.log('All transcripts cleared');
 				transcriptHistory.set([]);
 				updateStats();
 				resolve(true);
 			};
 
 			request.onerror = () => {
-				console.error('Failed to clear transcripts:', request.error);
+				log.error('Failed to clear transcripts:', request.error);
 				reject(request.error);
 			};
 		});
 	} catch (error) {
-		console.error('Error clearing transcripts:', error);
+		log.error('Error clearing transcripts:', error);
 		return false;
 	}
 }
@@ -299,7 +302,7 @@ async function updateStats() {
 			}));
 		};
 	} catch (error) {
-		console.error('Error updating stats:', error);
+		log.error('Error updating stats:', error);
 	}
 }
 

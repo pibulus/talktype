@@ -4,6 +4,7 @@
 -->
 <script>
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { browser } from '$app/environment';
 	import RecordingControls from './RecordingControls.svelte';
 	import TranscriptDisplay from './TranscriptDisplay.svelte';
 	import RecordingStatus from './RecordingStatus.svelte';
@@ -117,9 +118,7 @@
 		if (modelLoadStarted) return;
 
 		// Only download if privacy mode is enabled
-		const privacyMode =
-			typeof localStorage !== 'undefined' &&
-			localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
+		const privacyMode = browser && localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
 
 		if (!privacyMode) {
 			// console.log('⏭️ Privacy mode not enabled - skipping model download');
@@ -140,7 +139,7 @@
 		hasUserInteracted = true;
 
 		// Remove listeners after first interaction
-		if (typeof window !== 'undefined') {
+		if (browser) {
 			window.removeEventListener('click', handleFirstInteraction);
 			window.removeEventListener('touchstart', handleFirstInteraction);
 			window.removeEventListener('keydown', handleFirstInteraction);
@@ -165,13 +164,13 @@
 		initializeServices({ debug: false });
 
 		// Listen for privacy mode toggle from Settings
-		if (typeof window !== 'undefined') {
+		if (browser) {
 			window.addEventListener(SERVICE_EVENTS.SETTINGS.CHANGED, handlePrivacyModeChange);
 		}
 
 		// Wait for first user interaction before loading models
 		// This prevents affecting Lighthouse/PageSpeed scores
-		if (typeof window !== 'undefined') {
+		if (browser) {
 			window.addEventListener('click', handleFirstInteraction, { once: true });
 			window.addEventListener('touchstart', handleFirstInteraction, { once: true });
 			window.addEventListener('keydown', handleFirstInteraction, { once: true });
@@ -205,10 +204,9 @@
 			if (text) {
 				const recState = $recordingState;
 				const prefs = $userPreferences;
-				const method =
-					typeof localStorage !== 'undefined'
-						? localStorage.getItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD) || 'gemini'
-						: 'gemini';
+				const method = browser
+					? localStorage.getItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD) || 'gemini'
+					: 'gemini';
 
 				dispatch('transcriptionCompleted', {
 					count: 1,
@@ -235,7 +233,7 @@
 		activeTimeouts = [];
 
 		// Remove event listeners
-		if (typeof window !== 'undefined') {
+		if (browser) {
 			window.removeEventListener(SERVICE_EVENTS.SETTINGS.CHANGED, handlePrivacyModeChange);
 			window.removeEventListener('click', handleFirstInteraction);
 			window.removeEventListener('touchstart', handleFirstInteraction);

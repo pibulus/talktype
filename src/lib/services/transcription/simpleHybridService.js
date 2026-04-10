@@ -10,6 +10,9 @@ import { customPrompt } from '$lib';
 import { browser } from '$app/environment';
 import { STORAGE_KEYS } from '$lib/constants';
 import { ensureApiSession } from '../apiSession.js';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('HybridService');
 
 class SimpleHybridService {
 	constructor() {
@@ -62,7 +65,7 @@ class SimpleHybridService {
 		}
 
 		const logPrefix = this.deviceProfile.isMobile ? '📱' : '🖥️';
-		console.log(
+		log.log(
 			`${logPrefix} Loading Whisper model for offline transcription...`,
 			this.deviceProfile.description
 		);
@@ -70,12 +73,12 @@ class SimpleHybridService {
 			.preloadModel()
 			.then((result) => {
 				if (result.success) {
-					console.log('✅ Whisper model ready for offline use!');
+					log.log('✅ Whisper model ready for offline use!');
 				}
 				return result;
 			})
 			.catch((err) => {
-				console.warn('Whisper load failed:', err);
+				log.warn('Whisper load failed:', err);
 				return { success: false, error: err };
 			})
 			.finally(() => {
@@ -100,11 +103,11 @@ class SimpleHybridService {
 			}
 
 			if (this.whisperReady) {
-				console.log('🔒 Privacy Mode: Using offline Whisper');
+				log.log('🔒 Privacy Mode: Using offline Whisper');
 				if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
 				return await whisperService.transcribeAudio(audioBlob);
 			} else if (this.whisperLoadPromise) {
-				console.log('🔒 Privacy Mode: Waiting for Whisper to load...');
+				log.log('🔒 Privacy Mode: Waiting for Whisper to load...');
 				const result = await this.whisperLoadPromise;
 				if (result.success) {
 					if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
@@ -125,7 +128,7 @@ class SimpleHybridService {
 		}
 
 		// Normal mode: Use Cloud API (Deepgram)
-		console.log('☁️ Using Cloud API for transcription');
+		log.log('☁️ Using Cloud API for transcription');
 		if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'cloud');
 		return await this.transcribeWithCloud(audioBlob);
 	}
@@ -191,7 +194,7 @@ class SimpleHybridService {
 				throw fetchError;
 			}
 		} catch (error) {
-			console.error('Cloud API transcription error:', error);
+			log.error('Cloud API transcription error:', error);
 
 			// Don't auto-fallback to Whisper - let user explicitly enable Privacy Mode if they want offline
 			// This prevents unexpected downloads and keeps Gemini API as clean default

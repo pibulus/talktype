@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import { eventBus as eventBusInstance } from './infrastructure/index';
 import { hapticService as hapticServiceInstance } from './infrastructure/index';
 import { audioService as audioServiceInstance } from './audio/audioService';
@@ -53,7 +54,7 @@ export function initializeServices(options = {}) {
 	// Reset stores to initial state
 	resetStores();
 
-	if (typeof window !== 'undefined') {
+	if (browser) {
 		transcriptionServiceInstance
 			.restorePendingRecordingDraft()
 			.catch((error) => console.warn('Failed to restore pending recording:', error));

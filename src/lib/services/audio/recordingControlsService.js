@@ -4,12 +4,16 @@
 // ===================================================================
 
 import { get } from 'svelte/store';
+import { browser } from '$app/environment';
 import { CTA_PHRASES, ANIMATION } from '$lib/constants';
 import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
 import { transcriptionState, transcriptionActions } from '../infrastructure/stores';
 import { analytics } from '../analytics';
 import { liveMode } from '$lib';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('RecordingControls');
 
 export class RecordingControlsService {
 	constructor(dependencies) {
@@ -89,7 +93,7 @@ export class RecordingControlsService {
 
 			// State is tracked through stores now
 		} catch (err) {
-			console.error('❌ Error in startRecording:', err);
+			log.error('Error in startRecording:', err);
 			const friendlyMessage = err.message.includes('permission')
 				? 'Need microphone access - click allow when asked!'
 				: 'Recording hiccup - mind trying again?';
@@ -99,7 +103,6 @@ export class RecordingControlsService {
 
 	async stopRecording() {
 		const { isRecording } = this.stores;
-		const browser = typeof window !== 'undefined';
 
 		try {
 			// Get current recording state
@@ -109,20 +112,17 @@ export class RecordingControlsService {
 
 			// Make the ghost look like it's thinking hard
 			if (this.ghostComponent && typeof this.ghostComponent.startThinking === 'function') {
-			        this.ghostComponent.startThinking();
+				this.ghostComponent.startThinking();
 			}
 
 			// Stop recording and get the audio blob
 
 			const audioBlob = await this.audioService.stopRecording();
-			console.log('[RecordingControlsService] Got audio blob:', audioBlob);
+			log.log('Got audio blob:', audioBlob);
 
 			// Process the audio if we have data
 			if (audioBlob) {
-				console.log(
-					'[RecordingControlsService] Starting transcription with blob size:',
-					audioBlob.size
-				);
+				log.log('Starting transcription with blob size:', audioBlob.size);
 
 				// Validate minimum recording duration (prevent processing tiny clips)
 				// Estimate duration: webm is roughly 16kbps = 2000 bytes/second
@@ -130,9 +130,7 @@ export class RecordingControlsService {
 				const MIN_DURATION_SECONDS = 0.5; // Minimum half second
 
 				if (estimatedDurationSeconds < MIN_DURATION_SECONDS) {
-					console.warn(
-						`[RecordingControlsService] Recording too short: ~${estimatedDurationSeconds.toFixed(2)}s`
-					);
+					log.warn(`Recording too short: ~${estimatedDurationSeconds.toFixed(2)}s`);
 					this.uiActions.setErrorMessage(
 						'Recording too short - try speaking for at least a second!'
 					);
@@ -145,7 +143,7 @@ export class RecordingControlsService {
 
 				// Skip batch transcription if Live Mode has valid content
 				if (liveModeEnabled && liveTranscript.trim().length > 0) {
-					console.log('[RecordingControlsService] Live Mode captured transcript - skipping batch');
+					log.log('Live Mode captured transcript - skipping batch');
 
 					// Complete transcription so history gets saved via transcriptionCompletedEvent
 					transcriptionActions.completeTranscription(liveTranscript);
@@ -173,11 +171,11 @@ export class RecordingControlsService {
 				// Transcribe the audio with proper error handling (batch mode)
 				try {
 					const transcriptText = await this.transcriptionService.transcribeAudio(audioBlob);
-					console.log('[RecordingControlsService] Transcription result:', transcriptText);
+					log.log('Transcription result:', transcriptText);
 
 					// Stop ghost thinking animation after successful transcription
 					if (this.ghostComponent && typeof this.ghostComponent.stopThinking === 'function') {
-					        this.ghostComponent.stopThinking();
+						this.ghostComponent.stopThinking();
 					}
 
 					// Scroll to show transcript if needed
@@ -199,7 +197,7 @@ export class RecordingControlsService {
 					const wordCount = transcriptText.trim().split(/\s+/).length;
 					analytics.completeTranscription('cloud-batch', estimatedDurationSeconds, wordCount);
 				} catch (transcriptionError) {
-					console.error('❌ Transcription error:', transcriptionError);
+					log.error('Transcription error:', transcriptionError);
 					const friendlyMessage = transcriptionError.message.includes('network')
 						? "Can't reach the transcription service - check your connection?"
 						: 'The ghost got tongue-tied - give it another shot?';
@@ -216,7 +214,7 @@ export class RecordingControlsService {
 				this.uiActions.setErrorMessage("Didn't catch that - try recording again?");
 			}
 		} catch (err) {
-			console.error('❌ Error in stopRecording:', err);
+			log.error('Error in stopRecording:', err);
 			const friendlyMessage = "Something went sideways - let's try that again!";
 			this.uiActions.setErrorMessage(friendlyMessage);
 		}
@@ -226,14 +224,11 @@ export class RecordingControlsService {
 		const { isRecording, transcriptionText } = this.stores;
 		const currentlyRecording = get(isRecording);
 
-		console.log(
-			'[RecordingControlsService] toggleRecording called, currently recording:',
-			currentlyRecording
-		);
+		log.log('toggleRecording called, currently recording:', currentlyRecording);
 
 		try {
 			if (currentlyRecording) {
-				console.log('[RecordingControlsService] Stopping recording...');
+				log.log('Stopping recording...');
 				// Haptic feedback for stop - single tap
 				if (this.hapticService) {
 					this.hapticService.stopRecording();
@@ -243,7 +238,7 @@ export class RecordingControlsService {
 				// Screen reader announcement
 				this.uiActions.setScreenReaderMessage('Recording stopped.');
 			} else {
-				console.log('[RecordingControlsService] Starting recording...');
+				log.log('Starting recording...');
 				// Haptic feedback for start - double pulse
 				if (this.hapticService) {
 					this.hapticService.startRecording();
@@ -259,7 +254,7 @@ export class RecordingControlsService {
 				this.uiActions.setScreenReaderMessage('Recording started. Speak now.');
 			}
 		} catch (err) {
-			console.error('Recording operation failed:', err);
+			log.error('Recording operation failed:', err);
 
 			// Show error message
 			const friendlyMessage = err.message.includes('permission')
@@ -278,14 +273,13 @@ export class RecordingControlsService {
 	}
 
 	_incrementTranscriptionCount() {
-		const browser = typeof window !== 'undefined';
 		if (!browser) return;
 
 		try {
 			this.pwaService.incrementTranscriptionCount();
 			// Could dispatch event here if needed
 		} catch (error) {
-			console.error('Error incrementing transcription count:', error);
+			log.error('Error incrementing transcription count:', error);
 		}
 	}
 

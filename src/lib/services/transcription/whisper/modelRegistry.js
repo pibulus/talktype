@@ -7,6 +7,9 @@ import { writable, get, derived } from 'svelte/store';
 import { userPreferences } from '../../infrastructure/stores';
 import { browser } from '$app/environment';
 import { detectDeviceCapabilities } from '../deviceCapabilities';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('ModelRegistry');
 
 // Default model collection - Using Distil-Whisper for 5.6x faster performance
 // Based on latest research (Oct 2025): distil-whisper models are production-ready
@@ -138,7 +141,7 @@ export function getModelInfo(modelId = 'tiny') {
 	const model = registry.models.find((m) => m.id === modelId) || registry.models[0];
 
 	if (!model) {
-		console.warn(`Model ${modelId} not found in registry, using first available model`);
+		log.warn(`Model ${modelId} not found in registry, using first available model`);
 		return getModelInfo(registry.models[0].id);
 	}
 
@@ -199,18 +202,18 @@ export function autoSelectModel() {
 	if (!browser) return 'tiny';
 
 	const device = detectDeviceCapabilities();
-	console.log('🔍 Device capabilities detected:', device);
+	log.log('Device capabilities detected:', device);
 
 	// Check if user has manually selected a model
 	const prefs = get(userPreferences);
 	if (prefs.modelManuallySelected) {
-		console.log('📌 Using user-selected model:', prefs.whisperModel);
+		log.log('Using user-selected model:', prefs.whisperModel);
 		return prefs.whisperModel;
 	}
 
 	// Use device recommendation
 	const recommendedId = device.recommendedModel;
-	console.log(`🎯 Auto-selecting model: ${recommendedId} (${device.reason})`);
+	log.log(`Auto-selecting model: ${recommendedId} (${device.reason})`);
 
 	// Update preferences with auto-selected model
 	userPreferences.update((p) => ({
