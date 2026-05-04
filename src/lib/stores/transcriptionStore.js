@@ -14,18 +14,43 @@ function createTranscriptionStore() {
 	let isConnectionOpen = false;
 	let isConnecting = false;
 	let keepAliveInterval = null;
+	let connectionId = 0;
+
+	function clearKeepAlive() {
+		if (keepAliveInterval) {
+			clearInterval(keepAliveInterval);
+			keepAliveInterval = null;
+		}
+	}
+
+	function closeActiveSocket(reason) {
+		clearKeepAlive();
+		connectionId += 1;
+
+		const socketToClose = socket;
+		socket = null;
+
+		if (!socketToClose) return;
+
+		socketToClose.onopen = null;
+		socketToClose.onmessage = null;
+		socketToClose.onerror = null;
+		socketToClose.onclose = null;
+
+		if (
+			socketToClose.readyState === WebSocket.OPEN ||
+			socketToClose.readyState === WebSocket.CONNECTING
+		) {
+			socketToClose.close(1000, reason);
+		}
+	}
 
 	return {
 		subscribe,
 
 		// Initialize connection with short-lived Deepgram token
 		connect: async () => {
-			if (socket) {
-				if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
-					socket.close(1000, 'Restarting live transcription');
-				}
-				socket = null;
-			}
+			closeActiveSocket('Restarting live transcription');
 
 			// Reset state before connecting
 			update((s) => ({
@@ -38,6 +63,7 @@ function createTranscriptionStore() {
 			audioBuffer = [];
 			isConnectionOpen = false;
 			isConnecting = true;
+			const currentConnectionId = connectionId;
 
 			try {
 				// 1. Get a short-lived Deepgram token from our server
@@ -46,6 +72,10 @@ function createTranscriptionStore() {
 
 				if (!data.token) {
 					throw new Error(data.error || 'Failed to get Deepgram token');
+				}
+
+				if (connectionId !== currentConnectionId || !isConnecting) {
+					return;
 				}
 
 				// 2. Connect via raw WebSocket using Sec-WebSocket-Protocol auth
@@ -61,9 +91,18 @@ function createTranscriptionStore() {
 				});
 				const wsUrl = `wss://api.deepgram.com/v1/listen?${params.toString()}`;
 				// Deepgram recommends short-lived tokens for client-side realtime connections.
-				socket = new WebSocket(wsUrl, ['token', data.token]);
+				const activeSocket = new WebSocket(wsUrl, ['token', data.token]);
+				socket = activeSocket;
 
-				socket.onopen = () => {
+				const isCurrentSocket = () =>
+					socket === activeSocket && connectionId === currentConnectionId;
+
+				activeSocket.onopen = () => {
+					if (!isCurrentSocket()) {
+						activeSocket.close(1000, 'Stale live transcription socket');
+						return;
+					}
+
 					console.log('[Deepgram] Connected');
 					isConnectionOpen = true;
 					isConnecting = false;
@@ -72,33 +111,41 @@ function createTranscriptionStore() {
 					// Flush any buffered audio chunks
 					if (audioBuffer.length > 0) {
 						audioBuffer.forEach((chunk) => {
-							socket.send(chunk);
+							activeSocket.send(chunk);
 						});
 						audioBuffer = [];
 					}
 
 					// Start keep-alive to prevent NET-0001 timeout (10s without data)
+					clearKeepAlive();
 					keepAliveInterval = setInterval(() => {
-						if (socket?.readyState === WebSocket.OPEN) {
-							socket.send(JSON.stringify({ type: 'KeepAlive' }));
+						if (isCurrentSocket() && activeSocket.readyState === WebSocket.OPEN) {
+							activeSocket.send(JSON.stringify({ type: 'KeepAlive' }));
 						}
 					}, 5000);
 				};
 
-				socket.onclose = () => {
+				activeSocket.onclose = () => {
+					if (!isCurrentSocket()) return;
+
 					isConnectionOpen = false;
 					isConnecting = false;
-					clearInterval(keepAliveInterval);
+					socket = null;
+					clearKeepAlive();
 					update((s) => ({ ...s, connected: false, connecting: false }));
 				};
 
-				socket.onerror = (error) => {
+				activeSocket.onerror = (error) => {
+					if (!isCurrentSocket()) return;
+
 					console.error('[Deepgram] WebSocket error:', error);
 					isConnecting = false;
 					update((s) => ({ ...s, error: 'WebSocket error', connecting: false }));
 				};
 
-				socket.onmessage = (event) => {
+				activeSocket.onmessage = (event) => {
+					if (!isCurrentSocket()) return;
+
 					try {
 						const data = JSON.parse(event.data);
 
@@ -120,6 +167,10 @@ function createTranscriptionStore() {
 					}
 				};
 			} catch (err) {
+				if (connectionId !== currentConnectionId) {
+					return;
+				}
+
 				console.error('[Deepgram] Setup error:', err);
 				isConnecting = false;
 				update((s) => ({ ...s, error: err.message, connecting: false }));
@@ -139,14 +190,7 @@ function createTranscriptionStore() {
 
 		// Close connection
 		disconnect: () => {
-			clearInterval(keepAliveInterval);
-			if (socket) {
-				// Send close frame to indicate we're done
-				if (socket.readyState === WebSocket.OPEN) {
-					socket.close(1000, 'Done recording');
-				}
-				socket = null;
-			}
+			closeActiveSocket('Done recording');
 			isConnectionOpen = false;
 			isConnecting = false;
 			audioBuffer = [];
