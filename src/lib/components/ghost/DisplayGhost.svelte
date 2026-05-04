@@ -6,7 +6,12 @@
 	// Direct theme prop - no store subscription
 	export let theme = 'peach';
 	export let size = '40px';
+	export let width = null;
+	export let height = null;
 	export let seed = Math.floor(Math.random() * 10000);
+	export let disableJsAnimation = false;
+
+	const validThemes = new Set(['peach', 'mint', 'bubblegum', 'rainbow']);
 
 	// DOM references
 	let ghostSvg;
@@ -17,7 +22,12 @@
 
 	// Simple blink animation with random timing based on seed
 	let blinkTimeoutId;
+	let openEyesTimeoutId;
 	let blinkCounter = 0;
+
+	$: resolvedTheme = validThemes.has(theme) ? theme : 'peach';
+	$: resolvedWidth = width || size;
+	$: resolvedHeight = height || size;
 
 	// Seeded random function
 	function seedRandom(min, max) {
@@ -39,7 +49,7 @@
 			updateEyes();
 
 			// Open eyes after short delay
-			setTimeout(() => {
+			openEyesTimeoutId = setTimeout(() => {
 				eyesClosed = false;
 				updateEyes();
 
@@ -62,16 +72,11 @@
 		}
 	}
 
-	// Force reflow helper
-	function forceReflow(element) {
-		if (!element) return;
-		void element.offsetWidth;
-	}
-
 	// Lifecycle
 	onMount(() => {
-		// Start blinking (always enable this for visual consistency)
-		scheduleBlink();
+		if (!disableJsAnimation) {
+			scheduleBlink();
+		}
 
 		// Mark component as loaded
 		componentsLoaded = true;
@@ -79,13 +84,14 @@
 
 	onDestroy(() => {
 		clearTimeout(blinkTimeoutId);
+		clearTimeout(openEyesTimeoutId);
 	});
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher();
 
 	// Reactive declaration for ghost ready state
-	$: isGhostReady = componentsLoaded && !!ghostSvg && !!theme;
+	$: isGhostReady = componentsLoaded && !!ghostSvg && !!resolvedTheme;
 
 	// Track previous ready state to dispatch event once
 	let wasReady = false;
@@ -95,14 +101,16 @@
 	}
 </script>
 
-<div class="display-ghost" style="width:{size}; height:{size};">
-	<div bind:this={ghostSvg} class="ghost-container theme-{theme}">
+<div class="display-ghost" style="width:{resolvedWidth}; height:{resolvedHeight};">
+	<div bind:this={ghostSvg} class="ghost-container theme-{resolvedTheme}">
 		<svg
 			viewBox="0 0 1024 1024"
 			xmlns="http://www.w3.org/2000/svg"
 			xmlns:xlink="http://www.w3.org/1999/xlink"
-			class="ghost-svg theme-{theme}"
+			class="ghost-svg theme-{resolvedTheme}"
 			class:visible={isGhostReady}
+			aria-hidden="true"
+			focusable="false"
 		>
 			<defs>
 				<linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -144,7 +152,7 @@
 					href={ghostPathsUrl + '#ghost-background'}
 					class="ghost-shape"
 					id="ghost-shape"
-					fill="url(#{theme}Gradient)"
+					fill="url(#{resolvedTheme}Gradient)"
 				/>
 			</g>
 
@@ -181,16 +189,33 @@
 <style>
 	.display-ghost {
 		position: relative;
-		overflow: hidden;
+		display: block;
+		flex: 0 0 auto;
+		overflow: visible;
+		line-height: 0;
 	}
 
 	.ghost-container {
 		position: relative;
 		width: 100%;
 		height: 100%;
+		min-width: 0;
+		min-height: 0;
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		overflow: visible;
+		background: transparent;
+	}
+
+	.ghost-svg {
+		display: block;
+		width: 100%;
+		height: 100%;
+		max-width: 100%;
+		max-height: 100%;
+		flex: 0 0 auto;
+		overflow: visible;
 	}
 
 	.ghost-layer {

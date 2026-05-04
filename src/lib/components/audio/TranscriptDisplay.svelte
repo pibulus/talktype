@@ -1,7 +1,7 @@
 <script>
 	import { ANIMATION } from '$lib/constants';
 	import { createEventDispatcher, onMount, tick } from 'svelte';
-	import Ghost from '$lib/components/ghost/Ghost.svelte';
+	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { theme } from '$lib';
 
 	// Props
@@ -37,6 +37,12 @@
 			showCopyTooltip = true;
 			tooltipHoverCount++;
 		}
+	}
+
+	function handleCopyClick() {
+		hasUsedCopyButton = true;
+		showCopyTooltip = false;
+		dispatch('copy', { text: getEditedTranscript() });
 	}
 
 	// Check if content is scrollable and update UI accordingly
@@ -113,7 +119,7 @@
 			<!-- Copy button with themed ghost icon -->
 			<button
 				class="copy-btn share-chip absolute -top-5 right-0 z-[200] h-11 w-11 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95 sm:-right-4 sm:-top-4 sm:h-10 sm:w-10"
-				on:click|preventDefault={() => dispatch('copy', { text: getEditedTranscript() })}
+				on:click|preventDefault={handleCopyClick}
 				on:mouseenter={handleTooltipMouseEnter}
 				on:mouseleave={() => {
 					showCopyTooltip = false;
@@ -123,7 +129,7 @@
 			>
 				<!-- Ghost icon using the app's current theme -->
 				<div class="h-full w-full p-0.5">
-					<Ghost width="100%" height="100%" clickable={false} externalTheme={$theme} />
+					<DisplayGhost theme={$theme} size="100%" disableJsAnimation={true} />
 				</div>
 
 				<!-- Smart tooltip - only shows for first few hovers -->

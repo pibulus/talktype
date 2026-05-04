@@ -12,6 +12,7 @@ function createTranscriptionStore() {
 	let socket = null;
 	let audioBuffer = []; // Buffer chunks until connection is open
 	let isConnectionOpen = false;
+	let isConnecting = false;
 	let keepAliveInterval = null;
 
 	return {
@@ -19,6 +20,13 @@ function createTranscriptionStore() {
 
 		// Initialize connection with short-lived Deepgram token
 		connect: async () => {
+			if (socket) {
+				if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+					socket.close(1000, 'Restarting live transcription');
+				}
+				socket = null;
+			}
+
 			// Reset state before connecting
 			update((s) => ({
 				...s,
@@ -29,6 +37,7 @@ function createTranscriptionStore() {
 			}));
 			audioBuffer = [];
 			isConnectionOpen = false;
+			isConnecting = true;
 
 			try {
 				// 1. Get a short-lived Deepgram token from our server
@@ -43,12 +52,12 @@ function createTranscriptionStore() {
 				// Using 'flux' model for ultra-low latency conversational AI
 				// and 'utterance_end_ms' for smart turn detection
 				const params = new URLSearchParams({
-				        model: 'flux',
-				        smart_format: 'true',
-				        interim_results: 'true',
-				        punctuate: 'true',
-				        utterance_end_ms: '1000',
-				        vad_turn_delay_ms: '500'
+					model: 'flux',
+					smart_format: 'true',
+					interim_results: 'true',
+					punctuate: 'true',
+					utterance_end_ms: '1000',
+					vad_turn_delay_ms: '500'
 				});
 				const wsUrl = `wss://api.deepgram.com/v1/listen?${params.toString()}`;
 				// Deepgram recommends short-lived tokens for client-side realtime connections.
@@ -57,8 +66,9 @@ function createTranscriptionStore() {
 				socket.onopen = () => {
 					console.log('[Deepgram] Connected');
 					isConnectionOpen = true;
+					isConnecting = false;
 					update((s) => ({ ...s, connected: true, connecting: false }));
-					
+
 					// Flush any buffered audio chunks
 					if (audioBuffer.length > 0) {
 						audioBuffer.forEach((chunk) => {
@@ -77,19 +87,21 @@ function createTranscriptionStore() {
 
 				socket.onclose = () => {
 					isConnectionOpen = false;
+					isConnecting = false;
 					clearInterval(keepAliveInterval);
 					update((s) => ({ ...s, connected: false, connecting: false }));
 				};
 
 				socket.onerror = (error) => {
 					console.error('[Deepgram] WebSocket error:', error);
+					isConnecting = false;
 					update((s) => ({ ...s, error: 'WebSocket error', connecting: false }));
 				};
 
 				socket.onmessage = (event) => {
 					try {
 						const data = JSON.parse(event.data);
-						
+
 						if (data.type === 'Results') {
 							const received = data.channel?.alternatives?.[0]?.transcript;
 							if (received && data.is_final) {
@@ -107,9 +119,9 @@ function createTranscriptionStore() {
 						console.error('[Deepgram] Failed to parse message:', e);
 					}
 				};
-
 			} catch (err) {
 				console.error('[Deepgram] Setup error:', err);
+				isConnecting = false;
 				update((s) => ({ ...s, error: err.message, connecting: false }));
 			}
 		},
@@ -118,7 +130,7 @@ function createTranscriptionStore() {
 		send: (data) => {
 			if (isConnectionOpen && socket && socket.readyState === WebSocket.OPEN) {
 				socket.send(data);
-			} else if (socket) {
+			} else if (socket || isConnecting) {
 				// Buffer the chunk until connection is ready
 				audioBuffer.push(data);
 			}
@@ -136,6 +148,7 @@ function createTranscriptionStore() {
 				socket = null;
 			}
 			isConnectionOpen = false;
+			isConnecting = false;
 			audioBuffer = [];
 			update((s) => ({ ...s, connected: false, interim: '' }));
 		},
@@ -149,6 +162,7 @@ function createTranscriptionStore() {
 				transcript: '',
 				interim: ''
 			});
+			audioBuffer = [];
 		},
 
 		// Get current transcript value (for checking if live mode captured anything)

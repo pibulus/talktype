@@ -60,8 +60,12 @@ class SimpleHybridService {
 	 * Mobile devices are supported, but we always force the Tiny model for stability.
 	 */
 	async startBackgroundLoad() {
-		if (this.whisperLoadPromise || this.whisperReady) {
-			return; // Already loading or loaded
+		if (this.whisperReady) {
+			return { success: true, alreadyLoaded: true };
+		}
+
+		if (this.whisperLoadPromise) {
+			return this.whisperLoadPromise;
 		}
 
 		const logPrefix = this.deviceProfile.isMobile ? '📱' : '🖥️';

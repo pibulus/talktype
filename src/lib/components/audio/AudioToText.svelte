@@ -21,10 +21,10 @@
 		hasPermissionError,
 		recordingState,
 		userPreferences,
-		uiActions
+		uiActions,
+		transcriptionService
 	} from '$lib/services';
 	import { transcriptionCompletedEvent } from '$lib/services/infrastructure/stores';
-	import { analytics } from '$lib/services/analytics';
 	import { liveMode } from '$lib';
 	import { transcriptionStore } from '$lib/stores/transcriptionStore';
 	import { whisperStatus } from '../../services/transcription/whisper/whisperService';
@@ -85,19 +85,7 @@
 
 		// Handle copy to clipboard
 		if (type === 'copy' && detail?.text) {
-			try {
-				await navigator.clipboard.writeText(detail.text);
-				// Set clipboard success state
-				uiActions.setClipboardSuccess(true);
-				// Reset after 2 seconds
-				const timeoutId = setTimeout(() => {
-					uiActions.setClipboardSuccess(false);
-				}, 2000);
-				activeTimeouts.push(timeoutId);
-				analytics.copyTranscript(detail.text.split(/\s+/).length);
-			} catch (err) {
-				console.error('Failed to copy to clipboard:', err);
-			}
+			await transcriptionService.copyToClipboard(detail.text);
 		}
 		// Handle edit event
 		if (type === 'edit' && detail?.text !== undefined) {
@@ -128,10 +116,19 @@
 		modelLoadStarted = true;
 
 		// Start progressive model loading
-		import('$lib/services/transcription/simpleHybridService').then(({ simpleHybridService }) => {
-			// console.log('🚀 Starting progressive Whisper model download...');
-			simpleHybridService.startBackgroundLoad();
-		});
+		import('$lib/services/transcription/simpleHybridService')
+			.then(({ simpleHybridService }) => {
+				// console.log('🚀 Starting progressive Whisper model download...');
+				return simpleHybridService.startBackgroundLoad();
+			})
+			.then((result) => {
+				if (!result?.success) {
+					modelLoadStarted = false;
+				}
+			})
+			.catch(() => {
+				modelLoadStarted = false;
+			});
 	}
 
 	function handleFirstInteraction() {

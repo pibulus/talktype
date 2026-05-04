@@ -5,7 +5,6 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { confettiService } from '$lib/services/effects/confettiService';
-	import { transcriptionService } from '$lib/services';
 	import { transcriptionState } from '$lib/services';
 
 	// Props
@@ -46,7 +45,7 @@
 			ghostComponent.stopThinking();
 		}
 
-		// Automatically copy to clipboard when transcription finishes
+		// Run lightweight completion effects when transcription finishes.
 		if (textToProcess) {
 			// Show confetti celebration as a random Easter egg
 			const confettiResult = await confettiService.triggerConfetti(targetSelector, () => {
@@ -58,11 +57,6 @@
 				confettiColors = confettiResult.config.colors;
 				showConfetti = true;
 			}
-
-			// Copy to clipboard with small delay to ensure UI updates
-			setTimeout(() => {
-				transcriptionService.copyToClipboard(textToProcess);
-			}, 100);
 		}
 	}
 

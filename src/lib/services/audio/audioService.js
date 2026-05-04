@@ -11,10 +11,12 @@ import { get } from 'svelte/store';
 import { saveRecordingDraft } from './recordingRecoveryStore';
 import { browser } from '$app/environment';
 import { liveMode } from '$lib';
+import { STORAGE_KEYS } from '$lib/constants';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { createLogger } from '$lib/utils/logger';
 
 const log = createLogger('AudioService');
+const IOS_PWA_WARM_STREAM_MS = 90 * 1000;
 
 export const AudioEvents = {
 	RECORDING_STARTED: 'audio:recordingStarted',
@@ -31,9 +33,11 @@ export class AudioService {
 		this.audioContext = null;
 		this.isIOS = browser && /iPhone|iPad|iPod/.test(navigator.userAgent);
 		this.stream = null;
+		this.source = null;
 		this.analyser = null;
 		this.cleanupPromise = null;
 		this.animationFrameId = null;
+		this.releaseStreamTimeout = null;
 
 		this.stateManager = new AudioStateManager();
 
@@ -46,7 +50,7 @@ export class AudioService {
 	}
 
 	async initializeAudioContext() {
-		if (!this.audioContext && browser) {
+		if ((!this.audioContext || this.audioContext.state === 'closed') && browser) {
 			const AudioContext = window.AudioContext || window.webkitAudioContext;
 			this.audioContext = new AudioContext();
 		}
@@ -86,6 +90,13 @@ export class AudioService {
 		try {
 			if (!(await this.checkMediaDevices())) {
 				throw new Error('MediaDevices API not available');
+			}
+
+			this.cancelWarmStreamRelease();
+
+			if (this.shouldKeepStreamWarm() && this.hasLiveStream()) {
+				log.log('Reusing warm iOS PWA microphone stream');
+				return { granted: true, stream: this.stream };
 			}
 
 			if (this.isIOS) {
@@ -175,6 +186,7 @@ export class AudioService {
 				await this.cleanup();
 			}
 
+			this.cancelWarmStreamRelease();
 			this.stateManager.setState(AudioStates.INITIALIZING);
 			this.stateManager.setState(AudioStates.REQUESTING_PERMISSIONS);
 
@@ -221,15 +233,13 @@ export class AudioService {
 				this.stream = stream;
 				this.mediaRecorder = new MediaRecorder(this.stream, mediaRecorderOptions);
 
-				if (!this.audioContext) {
-					const AudioContext = window.AudioContext || window.webkitAudioContext;
-					this.audioContext = new AudioContext();
-				}
+				await this.initializeAudioContext();
+				this.disconnectAudioGraph();
 
-				const source = this.audioContext.createMediaStreamSource(this.stream);
+				this.source = this.audioContext.createMediaStreamSource(this.stream);
 				this.analyser = this.audioContext.createAnalyser();
 				this.analyser.fftSize = 256;
-				source.connect(this.analyser);
+				this.source.connect(this.analyser);
 
 				this.startWaveformMonitoring();
 			} catch (mrError) {
@@ -243,7 +253,8 @@ export class AudioService {
 
 					// Stream to Deepgram if Live Mode is enabled AND Privacy Mode is disabled
 					const privacyMode =
-						typeof localStorage !== 'undefined' && localStorage.getItem('privacyMode') === 'true';
+						typeof localStorage !== 'undefined' &&
+						localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
 					const liveModeEnabled = get(liveMode) === 'true';
 					if (liveModeEnabled && !privacyMode) {
 						transcriptionStore.send(event.data);
@@ -264,7 +275,8 @@ export class AudioService {
 
 			// Connect to Deepgram if Live Mode is enabled AND Privacy Mode is disabled
 			const privacyMode =
-				typeof localStorage !== 'undefined' && localStorage.getItem('privacyMode') === 'true';
+				typeof localStorage !== 'undefined' &&
+				localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
 			const liveModeEnabled = get(liveMode) === 'true';
 			if (liveModeEnabled && !privacyMode) {
 				transcriptionStore.connect().catch((err) => {
@@ -355,13 +367,12 @@ export class AudioService {
 				// Update store with audio blob
 				audioActions.setAudioBlob(audioBlob, mimeType);
 
-				// Immediately stop all tracks to ensure browser recording indicator is removed
-				if (this.stream) {
-					this.stream.getTracks().forEach((track) => {
-						track.stop();
-					});
-					// Clear the stream reference
-					this.stream = null;
+				this.disconnectAudioGraph();
+
+				if (this.shouldKeepStreamWarm()) {
+					this.scheduleWarmStreamRelease();
+				} else {
+					this.stopStreamTracks();
 				}
 
 				this.audioChunks = [];
@@ -389,11 +400,11 @@ export class AudioService {
 					log.warn('Error stopping MediaRecorder:', error.message);
 
 					// Ensure tracks are stopped even if MediaRecorder stop fails
-					if (this.stream) {
-						this.stream.getTracks().forEach((track) => {
-							track.stop();
-						});
-						this.stream = null;
+					this.disconnectAudioGraph();
+					if (this.shouldKeepStreamWarm()) {
+						this.scheduleWarmStreamRelease();
+					} else {
+						this.stopStreamTracks();
 					}
 
 					// Force state reset on error
@@ -448,6 +459,8 @@ export class AudioService {
 	}
 
 	async cleanup() {
+		this.cancelWarmStreamRelease();
+
 		if (this.animationFrameId) {
 			cancelAnimationFrame(this.animationFrameId);
 			this.animationFrameId = null;
@@ -524,14 +537,7 @@ export class AudioService {
 			}
 
 			if (this.audioContext) {
-				if (this.analyser) {
-					try {
-						this.analyser.disconnect();
-					} catch (analyserError) {
-						log.warn('Error disconnecting analyser:', analyserError.message);
-					}
-					this.analyser = null;
-				}
+				this.disconnectAudioGraph();
 
 				if (this.isIOS) {
 					try {
@@ -558,6 +564,72 @@ export class AudioService {
 			}
 		} finally {
 			this.stateManager.setState(AudioStates.IDLE);
+		}
+	}
+
+	hasLiveStream() {
+		return (
+			this.stream?.active &&
+			this.stream.getAudioTracks().some((track) => track.readyState === 'live')
+		);
+	}
+
+	shouldKeepStreamWarm() {
+		if (!browser || !this.isIOS) return false;
+
+		return (
+			navigator.standalone === true ||
+			window.matchMedia?.('(display-mode: standalone)').matches === true
+		);
+	}
+
+	cancelWarmStreamRelease() {
+		if (this.releaseStreamTimeout) {
+			clearTimeout(this.releaseStreamTimeout);
+			this.releaseStreamTimeout = null;
+		}
+	}
+
+	scheduleWarmStreamRelease() {
+		this.cancelWarmStreamRelease();
+
+		this.releaseStreamTimeout = setTimeout(() => {
+			this.stopStreamTracks();
+			this.releaseStreamTimeout = null;
+		}, IOS_PWA_WARM_STREAM_MS);
+	}
+
+	stopStreamTracks() {
+		if (!this.stream) return;
+
+		this.stream.getTracks().forEach((track) => {
+			track.stop();
+		});
+		this.stream = null;
+	}
+
+	disconnectAudioGraph() {
+		if (this.animationFrameId) {
+			cancelAnimationFrame(this.animationFrameId);
+			this.animationFrameId = null;
+		}
+
+		if (this.source) {
+			try {
+				this.source.disconnect();
+			} catch (sourceError) {
+				log.warn('Error disconnecting audio source:', sourceError.message);
+			}
+			this.source = null;
+		}
+
+		if (this.analyser) {
+			try {
+				this.analyser.disconnect();
+			} catch (analyserError) {
+				log.warn('Error disconnecting analyser:', analyserError.message);
+			}
+			this.analyser = null;
 		}
 	}
 

@@ -75,6 +75,8 @@ export class RecordingControlsService {
 				inProgress: false
 			}));
 		}
+		transcriptionStore.disconnect();
+		transcriptionStore.reset();
 
 		// Scroll to bottom if needed after starting recording
 		scrollToBottomIfNeeded({
@@ -98,11 +100,14 @@ export class RecordingControlsService {
 				? 'Need microphone access - click allow when asked!'
 				: 'Recording hiccup - mind trying again?';
 			this.uiActions.setErrorMessage(friendlyMessage);
+			throw err;
 		}
 	}
 
 	async stopRecording() {
 		const { isRecording } = this.stores;
+
+		let thinkingStarted = false;
 
 		try {
 			// Get current recording state
@@ -113,6 +118,7 @@ export class RecordingControlsService {
 			// Make the ghost look like it's thinking hard
 			if (this.ghostComponent && typeof this.ghostComponent.startThinking === 'function') {
 				this.ghostComponent.startThinking();
+				thinkingStarted = true;
 			}
 
 			// Stop recording and get the audio blob
@@ -173,11 +179,6 @@ export class RecordingControlsService {
 					const transcriptText = await this.transcriptionService.transcribeAudio(audioBlob);
 					log.log('Transcription result:', transcriptText);
 
-					// Stop ghost thinking animation after successful transcription
-					if (this.ghostComponent && typeof this.ghostComponent.stopThinking === 'function') {
-						this.ghostComponent.stopThinking();
-					}
-
 					// Scroll to show transcript if needed
 
 					scrollToBottomIfNeeded({
@@ -202,12 +203,6 @@ export class RecordingControlsService {
 						? "Can't reach the transcription service - check your connection?"
 						: 'The ghost got tongue-tied - give it another shot?';
 					this.uiActions.setErrorMessage(friendlyMessage);
-
-					// Stop ghost thinking animation on error
-					// COMMENTED OUT: These methods don't exist on ghost component
-					// if (this.ghostComponent && typeof this.ghostComponent.stopThinking === 'function') {
-					// 	this.ghostComponent.stopThinking();
-					// }
 				}
 			} else {
 				// If no audio data, revert UI state
@@ -217,6 +212,14 @@ export class RecordingControlsService {
 			log.error('Error in stopRecording:', err);
 			const friendlyMessage = "Something went sideways - let's try that again!";
 			this.uiActions.setErrorMessage(friendlyMessage);
+		} finally {
+			if (
+				thinkingStarted &&
+				this.ghostComponent &&
+				typeof this.ghostComponent.stopThinking === 'function'
+			) {
+				this.ghostComponent.stopThinking();
+			}
 		}
 	}
 
@@ -287,6 +290,9 @@ export class RecordingControlsService {
 		// Clear all active timeouts
 		this.activeTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
 		this.activeTimeouts = [];
+		this.audioService?.cleanup?.().catch((error) => {
+			log.warn('Audio cleanup failed:', error?.message || error);
+		});
 		this.ghostComponent = null;
 		this.onPreloadRequest = null;
 	}

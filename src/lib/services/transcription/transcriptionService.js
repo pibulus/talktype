@@ -55,7 +55,7 @@ export class TranscriptionService {
 
 			// Auto-copy to clipboard after successful transcription
 			setTimeout(() => {
-				this.copyToClipboard(transcriptText);
+				this.copyToClipboard(transcriptText, { silent: true });
 			}, 100); // Small delay to ensure UI updates first
 
 			return transcriptText;
@@ -160,7 +160,8 @@ export class TranscriptionService {
 		requestAnimationFrame(complete);
 	}
 
-	async copyToClipboard(text) {
+	async copyToClipboard(text, options = {}) {
+		const { silent = false, showSuccess = true } = options;
 		log.log('copyToClipboard called with:', text ? text.substring(0, 50) + '...' : 'no text');
 
 		if (!text) {
@@ -170,17 +171,32 @@ export class TranscriptionService {
 
 		if (!text || text.trim() === '') {
 			log.log('No text to copy, showing error');
-			uiActions.setErrorMessage('Nothing to copy yet - record something first!');
+			if (!silent) {
+				uiActions.setErrorMessage('Nothing to copy yet - record something first!');
+			}
 			return false;
 		}
+
+		if (!this.browser || typeof document === 'undefined' || typeof navigator === 'undefined') {
+			if (!silent) {
+				uiActions.setErrorMessage('Clipboard is only available in your browser.');
+			}
+			return false;
+		}
+
+		const markCopied = () => {
+			if (showSuccess) {
+				uiActions.showClipboardSuccess();
+			}
+			uiActions.setScreenReaderMessage('Transcript copied to clipboard');
+			analytics.copyTranscript(text.split(/\s+/).length);
+		};
 
 		try {
 			// Try the modern clipboard API first
 			if (navigator.clipboard && window.isSecureContext) {
 				await navigator.clipboard.writeText(text);
-				uiActions.showClipboardSuccess();
-				uiActions.setScreenReaderMessage('Transcript copied to clipboard');
-				analytics.copyTranscript(text.split(/\s+/).length);
+				markCopied();
 				return true;
 			}
 
@@ -188,19 +204,21 @@ export class TranscriptionService {
 			const textArea = document.createElement('textarea');
 			textArea.value = text;
 			textArea.style.position = 'fixed';
+			textArea.style.top = '0';
+			textArea.style.left = '0';
 			textArea.style.opacity = '0';
+			textArea.setAttribute('readonly', '');
 			document.body.appendChild(textArea);
 			textArea.focus();
 			textArea.select();
+			textArea.setSelectionRange(0, textArea.value.length);
 
 			const success = document.execCommand('copy');
 			document.body.removeChild(textArea);
 
 			if (success) {
-				uiActions.showClipboardSuccess();
-				uiActions.setScreenReaderMessage('Transcript copied to clipboard');
-				analytics.copyTranscript(text.split(/\s+/).length);
-			} else {
+				markCopied();
+			} else if (!silent) {
 				uiActions.setScreenReaderMessage(
 					'Unable to copy. Please try clicking in the window first.'
 				);
@@ -208,6 +226,12 @@ export class TranscriptionService {
 
 			return success;
 		} catch (error) {
+			if (silent) {
+				log.warn('Auto-copy unavailable:', error?.message || error);
+				uiActions.setScreenReaderMessage('Transcript ready. Use the copy button if needed.');
+				return false;
+			}
+
 			log.error('Clipboard copy error:', error);
 
 			const friendlyMessage = "Couldn't copy to clipboard. Try clicking somewhere first?";
