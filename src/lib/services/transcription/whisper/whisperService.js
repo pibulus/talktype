@@ -3,31 +3,61 @@
  * Keeps a single transformers.js pipeline alive for reliable offline dictation.
  */
 
+import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
 import { userPreferences } from '../../infrastructure/stores';
-import { pipeline, env } from '@xenova/transformers';
 import { convertToWAV as convertToRawAudio } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
-
-// Configure transformers.js for maximum stability (WASM only)
-env.allowRemoteModels = true;
-env.useBrowserCache = true;
-env.useIndexedDB = true;
-if (env.backends?.onnx?.wasm) {
-	const hwThreads = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 2 : 2;
-	env.backends.onnx.wasm.numThreads = Math.min(4, hwThreads);
-	env.backends.onnx.wasm.simd = true;
-}
-
-env.backends = env.backends || {};
-if (env.backends.onnx?.webgpu) {
-	// Explicitly disable experimental WebGPU path for now
-	env.backends.onnx.webgpu = undefined;
-}
 
 const SAMPLE_RATE = 16000;
 const WARMUP_SECONDS = 0.25; // short silent clip to JIT the WASM kernels
 const MODEL_LOAD_TIMEOUT_MS = 5 * 60 * 1000; // 5 minute timeout for model download+load
+
+let transformersModulePromise = null;
+let transformersEnvConfigured = false;
+
+function configureTransformersEnv(env) {
+	if (!env || transformersEnvConfigured) return;
+
+	// Configure transformers.js for maximum stability (WASM only)
+	env.allowRemoteModels = true;
+	env.useBrowserCache = true;
+	env.useIndexedDB = true;
+	if (env.backends?.onnx?.wasm) {
+		const hwThreads = navigator.hardwareConcurrency || 2;
+		env.backends.onnx.wasm.numThreads = Math.min(4, hwThreads);
+		env.backends.onnx.wasm.simd = true;
+	}
+
+	env.backends = env.backends || {};
+	if (env.backends.onnx?.webgpu) {
+		// Explicitly disable experimental WebGPU path for now
+		env.backends.onnx.webgpu = undefined;
+	}
+
+	transformersEnvConfigured = true;
+}
+
+async function loadTransformersPipeline() {
+	if (!browser) {
+		throw new Error('Whisper is only available in browser environment.');
+	}
+
+	if (!transformersModulePromise) {
+		transformersModulePromise = import('@xenova/transformers')
+			.then((module) => {
+				configureTransformersEnv(module.env);
+				return module;
+			})
+			.catch((error) => {
+				transformersModulePromise = null;
+				throw error;
+			});
+	}
+
+	const { pipeline } = await transformersModulePromise;
+	return pipeline;
+}
 
 // Public status store (UI reads this for spinner/error state)
 export const whisperStatus = writable({
@@ -36,7 +66,7 @@ export const whisperStatus = writable({
 	progress: 0,
 	error: null,
 	selectedModel: 'tiny',
-	supportsWhisper: typeof window !== 'undefined'
+	supportsWhisper: browser
 });
 
 function summarizeSignal(float32) {
@@ -64,7 +94,7 @@ export class WhisperService {
 	constructor() {
 		this.transcriber = null;
 		this.modelLoadPromise = null;
-		this.isSupported = typeof window !== 'undefined';
+		this.isSupported = browser;
 		this.hasWarmedUp = false;
 
 		this.updateStatus({ supportsWhisper: this.isSupported });
@@ -119,6 +149,7 @@ export class WhisperService {
 			console.log(`[WhisperService] Loading ${modelConfig.name} (WASM only)…`);
 
 			const loadStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
+			const pipeline = await loadTransformersPipeline();
 
 			// Race model loading against a timeout to prevent infinite hangs
 			const loadPromise = pipeline('automatic-speech-recognition', modelConfig.id, {

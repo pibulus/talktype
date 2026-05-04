@@ -206,7 +206,7 @@
 							Start recording immediately when you open TalkType
 						</p>
 					</div>
-					<label class="flex cursor-pointer items-center">
+					<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
 						<span class="sr-only"
 							>Auto-Record Toggle {autoRecordValue ? 'Enabled' : 'Disabled'}</span
 						>
@@ -237,7 +237,7 @@
 							Completely private transcription on your device
 						</p>
 					</div>
-					<label class="flex cursor-pointer items-center">
+					<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
 						<span class="sr-only"
 							>Privacy Mode Toggle {privacyModeValue ? 'Enabled' : 'Disabled'}</span
 						>
@@ -266,7 +266,7 @@
 						<span class="text-base font-medium text-gray-700">Live Mode</span>
 						<p class="mt-0.5 text-sm text-gray-500">See text appear as you speak</p>
 					</div>
-					<label class="flex cursor-pointer items-center">
+					<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
 						<span class="sr-only">Live Mode Toggle {liveModeValue ? 'Enabled' : 'Disabled'}</span>
 						<div class="relative">
 							<input
@@ -345,7 +345,7 @@
 						</p>
 					</div>
 					<button
-						class={`btn btn-sm shrink-0 ${
+						class={`btn btn-sm min-h-11 shrink-0 px-4 ${
 							isSupporterValue
 								? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
 								: 'border-amber-200 bg-amber-100 text-amber-900 hover:bg-amber-200'

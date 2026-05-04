@@ -1,5 +1,4 @@
 <script>
-	import { browser } from '$app/environment';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './index.js';
 
@@ -28,7 +27,7 @@
 	aria-modal="true"
 >
 	<div
-		class="intro-modal-box modal-box relative mx-auto w-[92%] max-w-[90vw] rounded-3xl border-0 bg-[#fff9ed] p-5 sm:max-w-md sm:p-8 md:max-w-lg md:p-10 lg:max-w-xl"
+		class="intro-modal-box modal-box relative mx-auto w-[92%] max-w-[90vw] rounded-3xl border-0 bg-[#fff9ed] p-4 sm:max-w-md sm:p-8 md:max-w-lg md:p-10 lg:max-w-xl"
 	>
 		<form method="dialog">
 			<ModalCloseButton
@@ -40,9 +39,9 @@
 			/>
 		</form>
 
-		<div class="animate-tt-fadeIn space-y-5 sm:space-y-6 md:space-y-7">
-			<div class="mb-4 flex justify-center">
-				<div class="animate-tt-pulse-slow ghost-wrapper h-16 w-16">
+		<div class="animate-tt-fadeIn space-y-4 sm:space-y-5 md:space-y-6">
+			<div class="mb-3 flex justify-center sm:mb-4">
+				<div class="animate-tt-pulse-slow ghost-wrapper h-14 w-14 sm:h-16 sm:w-16">
 					<DisplayGhost size="100%" class="intro-ghost" seed={12345} />
 				</div>
 			</div>
@@ -51,22 +50,15 @@
 				id="intro_modal_title"
 				class="text-center text-2xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-3xl md:text-4xl lg:text-5xl"
 			>
-				TalkType's the best. <br /> Kick out the rest.
+				Tap the ghost. <br /> Talk it out.
 			</h1>
 
-			<div class="space-y-3 sm:space-y-4">
-				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
-					🎯 <strong>Private when you want it</strong> — Offline mode keeps everything on your device,
-					and live mode is there when you want speed.
+			<div class="space-y-2 text-center">
+				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg">
+					Fast voice-to-text, with a tiny bit of ghost energy.
 				</p>
-
-				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
-					⚡ <strong>Instant Start</strong> — Tap the ghost and talk. Works offline after first use.
-				</p>
-
-				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
-					✨ <strong>Your words, your way</strong> — Save transcripts, switch styles, and keep the ghost
-					vibes without weird upsells.
+				<p class="text-sm font-medium leading-relaxed text-gray-600 sm:text-base">
+					Use live mode for speed, or offline mode when you want everything kept on your device.
 				</p>
 			</div>
 
@@ -74,11 +66,11 @@
 				class="relative w-full cursor-pointer rounded-xl border border-amber-300/50 bg-gradient-to-r from-amber-100 to-amber-200 px-4 py-3 text-center text-sm font-bold text-gray-800 shadow-md transition-all duration-300 hover:bg-gradient-to-r hover:from-amber-200 hover:to-amber-300 hover:text-gray-900 hover:shadow-lg active:scale-[0.98] sm:px-5 sm:py-4 sm:text-base md:text-lg"
 				on:click={handleActionButton}
 			>
-				Tap the ghost and start talking.
+				Start talking
 			</button>
 
-			<p class="py-2 text-center text-base font-bold text-pink-600 sm:text-lg md:text-xl">
-				It's fast, it's fun, it's freaky good.
+			<p class="py-1 text-center text-sm font-bold text-pink-600 sm:text-base">
+				Fast, fun, freaky good.
 			</p>
 
 			<form method="dialog">
@@ -86,7 +78,7 @@
 					class="w-full rounded-full bg-gradient-to-r from-yellow-400 to-pink-400 px-4 py-2.5 text-base font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-6 sm:py-3 sm:text-lg"
 					on:click={markIntroAsSeen}
 				>
-					Let's Go! 🚀
+					Skip for now
 				</button>
 			</form>
 		</div>

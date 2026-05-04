@@ -39,35 +39,31 @@
 				class="rounded-lg border border-pink-200/60 bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 shadow-sm"
 			>
 				<p class="text-base leading-relaxed text-gray-700">
-					TalkType is a minimalist voice-to-text tool that transforms your speech into text
-					effortlessly. Built with love for people who think tech should be <span
-						class="font-medium text-pink-600">simple</span
-					>,
-					<span class="font-medium text-amber-600">delightful</span>, and actually
-					<span class="font-medium text-pink-600">helpful</span>.
+					TalkType turns voice into editable text. Tap the ghost, say the thing, tidy it up if you
+					want.
 				</p>
 			</div>
 
 			<div>
-				<h4 class="mb-2 text-sm font-bold text-gray-700">The TalkType philosophy:</h4>
+				<h4 class="mb-2 text-sm font-bold text-gray-700">The idea:</h4>
 				<ul class="space-y-1.5 text-sm text-gray-600">
 					<li class="flex items-start gap-2">
 						<span class="text-lg text-pink-500">⬩</span>
-						<span>Ideas often flow better through <span class="italic">talking</span> than typing</span>
+						<span>Live mode when speed matters</span>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-lg text-pink-500">⬩</span>
-						<span>Voice tools should be accessible, not clunky or expensive</span>
+						<span>Offline mode when privacy matters</span>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-lg text-pink-500">⬩</span>
-						<span>Minimalist design combined with powerful, reliable performance</span>
+						<span>No account wall, no subscription treadmill</span>
 					</li>
 				</ul>
 			</div>
 
 			<div class="border-l-3 my-2 ml-1 border-pink-300 py-1 pl-4 italic text-gray-600">
-				"A little bit of soul, a hint of chaos, and a deep love for clarity."
+				"A small voice tool with a ghost and decent manners."
 			</div>
 
 			<div class="flex items-end justify-between pt-2">
@@ -80,7 +76,7 @@
 						href="https://github.com/pibulus"
 						target="_blank"
 						rel="noopener noreferrer"
-						class="hover:text-pink-600 hover:underline"
+						class="inline-flex min-h-11 items-center hover:text-pink-600 hover:underline"
 						on:click={handleGithubClick}
 					>
 						Pablo / Pibulus
