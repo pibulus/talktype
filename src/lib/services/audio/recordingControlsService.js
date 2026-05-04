@@ -153,6 +153,7 @@ export class RecordingControlsService {
 
 					// Complete transcription so history gets saved via transcriptionCompletedEvent
 					transcriptionActions.completeTranscription(liveTranscript);
+					void this.transcriptionService.copyToClipboard(liveTranscript, { silent: true });
 
 					// Scroll to show transcript if needed
 					scrollToBottomIfNeeded({

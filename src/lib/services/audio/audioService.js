@@ -16,7 +16,7 @@ import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { createLogger } from '$lib/utils/logger';
 
 const log = createLogger('AudioService');
-const IOS_PWA_WARM_STREAM_MS = 90 * 1000;
+const IOS_PWA_WARM_STREAM_MS = 20 * 1000;
 
 export const AudioEvents = {
 	RECORDING_STARTED: 'audio:recordingStarted',
@@ -472,8 +472,12 @@ export class AudioService {
 
 		const currentState = this.stateManager.getState();
 		const allowedCleanupStates = [
+			AudioStates.INITIALIZING,
+			AudioStates.REQUESTING_PERMISSIONS,
+			AudioStates.READY,
 			AudioStates.RECORDING,
 			AudioStates.STOPPING,
+			AudioStates.CLEANING,
 			AudioStates.ERROR,
 			AudioStates.PAUSED
 		];

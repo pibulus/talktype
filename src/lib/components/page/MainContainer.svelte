@@ -1,12 +1,12 @@
 <script>
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import GhostContainer from './GhostContainer.svelte';
 	import ContentContainer from './ContentContainer.svelte';
 	import FooterComponent from './FooterComponent.svelte';
 	import { geminiService } from '$lib/services/geminiService';
 	import { modalService } from '$lib/services/modals';
-	import { firstVisitService, isFirstVisit } from '$lib/services/first-visit';
+	import { firstVisitService } from '$lib/services/first-visit';
 	import { pwaService, deferredInstallPrompt, showPwaInstallPrompt } from '$lib/services/pwa';
 	import { isRecording as recordingStore } from '$lib/services';
 	import { PageLayout } from '$lib/components/layout';
@@ -27,15 +27,11 @@
 	let SupporterModal;
 	let loadingSupporterModal = false;
 
-	// Initialize transcription after a short delay
-	let hasInitializedTranscription = false;
-
 	let PwaInstallPrompt;
-	let loadingPwaPrompt = false;
 
 	let speechModelPreloaded = false;
 	let isProcessing = false;
-	function debug(message) {
+	function debug() {
 		// console.log(`[MainContainer] ${message}`);
 	}
 
@@ -209,7 +205,6 @@
 
 		// The PWA service handles most of the logic, but we need to lazy-load the component
 		if ($showPwaInstallPrompt && !PwaInstallPrompt) {
-			loadingPwaPrompt = true;
 			debug('📱 Lazy loading PWA install prompt component...');
 
 			try {
@@ -220,8 +215,6 @@
 			} catch (err) {
 				console.error('Error loading PWA install prompt:', err);
 				debug(`Error loading PWA install prompt: ${err.message}`);
-			} finally {
-				loadingPwaPrompt = false;
 			}
 		}
 	}
@@ -327,11 +320,11 @@
 		// Check for auto-record setting and start recording if enabled
 		if (browser && StorageUtils.getBooleanItem(STORAGE_KEYS.AUTO_RECORD, false)) {
 			// Wait minimal time for component initialization
-			autoRecordTimeout = setTimeout(() => {
+			autoRecordTimeout = setTimeout(async () => {
 				if (contentContainer && !$recordingStore) {
 					debug('Auto-record enabled, attempting to start recording immediately');
 					try {
-						contentContainer.startRecording();
+						await contentContainer.startRecording();
 						debug('Auto-record: Called startRecording()');
 					} catch (err) {
 						debug(`Auto-record: Error starting recording: ${err.message}`);

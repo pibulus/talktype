@@ -241,19 +241,19 @@
 	// Export functions for external components
 	export function startRecording() {
 		if (recordingControlsRef) {
-			recordingControlsRef.startRecording();
+			return recordingControlsRef.startRecording();
 		}
 	}
 
 	export function stopRecording() {
 		if (recordingControlsRef) {
-			recordingControlsRef.stopRecording();
+			return recordingControlsRef.stopRecording();
 		}
 	}
 
 	export function toggleRecording() {
 		if (recordingControlsRef) {
-			recordingControlsRef.toggleRecording();
+			return recordingControlsRef.toggleRecording();
 		}
 	}
 
