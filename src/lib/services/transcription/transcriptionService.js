@@ -88,10 +88,8 @@ export class TranscriptionService {
 			throw new Error('No saved recording available to retry.');
 		}
 
-		const draft = await getLatestRecordingDraft({ includeBlob: true, includeFloat: true });
-
-		const audioInput =
-			draft?.blob ?? (draft?.floatSamples instanceof Float32Array ? draft.floatSamples : null);
+		const draft = await getLatestRecordingDraft({ includeBlob: true });
+		const audioInput = draft?.blob instanceof Blob ? draft.blob : null;
 
 		if (!audioInput) {
 			transcriptionActions.clearPendingRecording();

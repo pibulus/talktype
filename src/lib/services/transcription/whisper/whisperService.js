@@ -21,6 +21,7 @@ function configureTransformersEnv(env) {
 
 	// Configure transformers.js for maximum stability (WASM only)
 	env.allowRemoteModels = true;
+	env.allowLocalModels = false;
 	env.useBrowserCache = true;
 	env.useIndexedDB = true;
 	if (env.backends?.onnx?.wasm) {
