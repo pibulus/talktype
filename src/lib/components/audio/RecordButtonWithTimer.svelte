@@ -82,8 +82,6 @@
 		const secs = Math.floor(seconds % 60);
 		return `${minutes}:${secs.toString().padStart(2, '0')}`;
 	}
-
-
 </script>
 
 {#if downloading}

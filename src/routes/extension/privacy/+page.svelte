@@ -21,8 +21,8 @@
 				<h2 class="text-xl font-black">What the extension accesses</h2>
 				<p class="text-sm leading-relaxed text-gray-700 sm:text-base">
 					TalkType requests microphone access so it can record speech when you explicitly start a
-					recording. It also uses Chrome storage to save your API key, transcription style, and a few
-					preferences.
+					recording. It also uses Chrome storage to save your API key, transcription style, and a
+					few preferences.
 				</p>
 			</section>
 

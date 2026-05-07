@@ -31,7 +31,6 @@
 	let scalingFactor;
 	let offset;
 	let exponent;
-	let detectedDevice = 'Unknown'; // Variable to store detected device
 
 	// Platform detection for default settings
 	if (isAndroid) {
@@ -39,26 +38,22 @@
 		scalingFactor = 40;
 		offset = 80;
 		exponent = 0.5;
-		detectedDevice = 'Android';
 	} else if (isiPhone) {
 		// iPhone specific settings
 		scalingFactor = 40;
 		offset = 80;
 		exponent = 0.2;
-		detectedDevice = 'iPhone';
 	} else if (isMac) {
 		// macOS specific settings
 		scalingFactor = 20;
 		offset = 100;
 		exponent = 0.5;
-		detectedDevice = 'Mac';
 	} else {
 		// Default settings for other platforms (Windows/Linux)
 		// Reduced from 2000 to 80 for much better sensitivity
 		scalingFactor = 80;
 		offset = 80;
 		exponent = 0.5;
-		detectedDevice = 'PC';
 	}
 
 	// ===== STANDARD AUDIO VISUALIZER (using waveformData from audioService) =====

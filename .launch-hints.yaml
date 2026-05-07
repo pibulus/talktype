@@ -1,0 +1,37 @@
+# Launch hints for Launch Arsenal.
+# Project-facing launch metadata. Keep it sharp and human.
+name: talktype
+slug: talktype
+app_type: web-app
+audience: people who think faster by talking and want clean editable text
+problem: most transcription tools feel cold, slow, expensive, or too fiddly
+promise: A friendly transcription ghost. Tap, talk, tidy.
+cta: Try TalkType.
+differentiators:
+  - Starts fast in the browser
+  - Offline mode keeps transcription on device after model download
+  - Live mode streams text as you speak
+  - Installable PWA for phone and desktop
+  - One-time supporter unlock instead of subscription drag
+proof_points:
+  - Deepgram-backed cloud transcription tested through /api/transcribe
+  - Offline Whisper path tested in browser with a known ASR fixture
+  - Compact ghost icon system repaired for settings and copy controls
+  - Mobile modal and footer touch targets checked at 320, 375, 390, and 430px
+objections:
+  - Needs a real iPhone PWA pass before launch claims get too loud
+  - Offline first-run download can take time and should be explained softly
+keywords:
+  seed:
+    - talktype
+    - voice to text
+    - transcription
+    - offline transcription
+  audience: people who think faster by talking and want clean editable text
+  intent:
+    - dictate notes
+    - clean up spoken thoughts
+    - transcribe privately
+manual_notes:
+  - Keep copy short. Avoid corporate productivity language.
+  - Do not overclaim iPhone PWA behavior until a physical-device pass is done.

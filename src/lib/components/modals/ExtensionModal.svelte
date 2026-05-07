@@ -57,7 +57,11 @@
 						>
 					</li>
 					<li class="pb-1">Enable "Developer mode" in the top-right corner</li>
-					<li>Click "Load unpacked" and select the <code class="rounded-md bg-pink-100 px-1.5 py-0.5 font-mono text-pink-700">src</code> folder</li>
+					<li>
+						Click "Load unpacked" and select the <code
+							class="rounded-md bg-pink-100 px-1.5 py-0.5 font-mono text-pink-700">src</code
+						> folder
+					</li>
 				</ol>
 			</div>
 

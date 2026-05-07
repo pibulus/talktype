@@ -4,7 +4,6 @@
 	import { theme, autoRecord, applyTheme, promptStyle, liveMode } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
-	import { installPromptEvent, isPwaInstalled } from '$lib/stores/pwa';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
@@ -12,7 +11,6 @@
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { STORAGE_KEYS, SERVICE_EVENTS } from '$lib/constants';
-	import { analytics } from '$lib/services/analytics';
 
 	export let closeModal = () => {};
 
@@ -130,21 +128,6 @@
 					detail: { setting: 'liveMode', value: liveModeValue }
 				})
 			);
-		}
-	}
-
-	async function handleInstallClick() {
-		if ($installPromptEvent) {
-			try {
-				$installPromptEvent.prompt();
-				const { outcome } = await $installPromptEvent.userChoice;
-				analytics.installPWA(outcome);
-				if (outcome === 'accepted') {
-					$installPromptEvent = null;
-				}
-			} catch (err) {
-				console.error('Install failed:', err);
-			}
 		}
 	}
 

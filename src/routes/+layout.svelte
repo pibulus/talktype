@@ -49,16 +49,15 @@
 {@render children()}
 
 {#if $modal}
-        {@const ActiveModal = modals[$modal.name]}
-        {#if ActiveModal}
-                <ActiveModal {...$modal.props} />
-        {/if}
+	{@const ActiveModal = modals[$modal.name]}
+	{#if ActiveModal}
+		<ActiveModal {...$modal.props} />
+	{/if}
 {/if}
 
 <!-- Global SVG definitions for ghost gradients -->
 <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" aria-hidden="true">
-        <defs>
-                <GradientDefs />
-        </defs>
+	<defs>
+		<GradientDefs />
+	</defs>
 </svg>
-

@@ -31,7 +31,7 @@
 				try {
 					await indexedDB.deleteDatabase(name);
 					console.log(`Attempted to delete IndexedDB: ${name}`);
-				} catch (e) {
+				} catch {
 					// Ignore if doesn't exist
 				}
 			}

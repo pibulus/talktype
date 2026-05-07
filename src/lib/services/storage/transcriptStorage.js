@@ -3,7 +3,7 @@
  * Premium feature: Save and manage transcript history
  */
 
-import { writable, get } from 'svelte/store';
+import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 import { createLogger } from '$lib/utils/logger';
 

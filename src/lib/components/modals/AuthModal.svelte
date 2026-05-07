@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import ModalCloseButton from './ModalCloseButton.svelte';
-	export let onSubmit = async (token) => ({ success: false, error: null });
+	export let onSubmit = async () => ({ success: false, error: null });
 	export let onClose = () => {};
 
 	let token = '';

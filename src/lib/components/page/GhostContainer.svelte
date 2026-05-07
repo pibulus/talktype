@@ -1,6 +1,4 @@
 <script>
-	import { onMount, onDestroy } from 'svelte';
-	import { browser } from '$app/environment';
 	import Ghost from '$lib/components/ghost/Ghost.svelte';
 	import { theme as appTheme } from '$lib';
 
@@ -12,7 +10,7 @@
 	let ghostComponent;
 
 	// Debug helper
-	function debug(message) {
+	function debug() {
 		// Uncomment the line below during development for verbose logging
 		// console.log(`[GhostContainer] ${message}`);
 	}

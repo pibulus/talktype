@@ -45,15 +45,27 @@
 			</div>
 		</div>
 
-		<div class="rounded-[2rem] border border-pink-200 bg-gradient-to-br from-white via-pink-50/80 to-amber-50/80 p-6 shadow-md">
+		<div
+			class="rounded-[2rem] border border-pink-200 bg-gradient-to-br from-white via-pink-50/80 to-amber-50/80 p-6 shadow-md"
+		>
 			<h2 class="mb-4 text-2xl font-black tracking-tight">Install it</h2>
 			<ol class="space-y-3 pl-5 text-sm leading-relaxed text-gray-700 sm:text-base">
 				<li>Open the extension repo and download or clone it locally.</li>
-				<li>In Chrome, go to <code class="rounded bg-pink-100 px-1.5 py-0.5 text-pink-700">chrome://extensions</code>.</li>
+				<li>
+					In Chrome, go to <code class="rounded bg-pink-100 px-1.5 py-0.5 text-pink-700"
+						>chrome://extensions</code
+					>.
+				</li>
 				<li>Turn on <strong>Developer mode</strong>.</li>
 				<li>Click <strong>Load unpacked</strong>.</li>
-				<li>Select the extension’s <code class="rounded bg-pink-100 px-1.5 py-0.5 text-pink-700">src</code> folder.</li>
-				<li>Open the extension, add your Gemini key, test the mic, then dictate into any text field.</li>
+				<li>
+					Select the extension’s <code class="rounded bg-pink-100 px-1.5 py-0.5 text-pink-700"
+						>src</code
+					> folder.
+				</li>
+				<li>
+					Open the extension, add your Gemini key, test the mic, then dictate into any text field.
+				</li>
 			</ol>
 
 			<div class="mt-5 flex flex-col gap-3 sm:flex-row">

@@ -89,5 +89,3 @@ export async function transcribeAudio(file, promptStyle, customPromptText = '') 
 		}
 	}
 }
-
-

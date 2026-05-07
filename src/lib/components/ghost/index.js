@@ -14,22 +14,22 @@ export { Ghost, DisplayGhost, GradientDefs };
 
 // Character Animation Engine - For future apps
 export const CharacterSystem = {
-        // State management
-        stateStore: ghostStateStore,
-        themeStore: theme,
-        cssVariables,
+	// State management
+	stateStore: ghostStateStore,
+	themeStore: theme,
+	cssVariables,
 
-        // Animation services
-        animationService,
-        blinkService,
+	// Animation services
+	animationService,
+	blinkService,
 
-        // Eye tracking system
-        createEyeTracking
+	// Eye tracking system
+	createEyeTracking
 
-        // How to use in other apps:
-        // 1. Replace ghost-paths.svg with your shape (fruit, cloud, etc.)
-        // 2. Keep eye positions in your SVG
-        // 3. All animations/behaviors work with any shape
+	// How to use in other apps:
+	// 1. Replace ghost-paths.svg with your shape (fruit, cloud, etc.)
+	// 2. Keep eye positions in your SVG
+	// 3. All animations/behaviors work with any shape
 };
 
 // Default export
