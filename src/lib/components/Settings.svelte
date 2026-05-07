@@ -333,6 +333,7 @@
 								? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
 								: 'border-amber-200 bg-amber-100 text-amber-900 hover:bg-amber-200'
 						}`}
+						style="height: 44px; min-height: 44px;"
 						on:click={openSupporterModal}
 					>
 						{isSupporterValue ? 'Manage' : 'Unlock'}
