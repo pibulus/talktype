@@ -27,6 +27,7 @@ export class RecordingControlsService {
 		this.activeTimeouts = [];
 		this.currentCtaIndex = 0;
 		this.onPreloadRequest = null;
+		this.toggleInFlight = false;
 	}
 
 	setGhostComponent(ghostComponent) {
@@ -54,10 +55,9 @@ export class RecordingControlsService {
 	}
 
 	async startRecording() {
-		const { isRecording, transcriptionText } = this.stores;
+		const { isRecording, isTranscribing, transcriptionText } = this.stores;
 
-		// Don't start if we're already recording
-		if (get(isRecording)) return;
+		if (get(isRecording) || get(isTranscribing)) return;
 
 		// Try to preload the speech model if not already done
 		this.preloadSpeechModel();
@@ -140,19 +140,28 @@ export class RecordingControlsService {
 					this.uiActions.setErrorMessage(
 						'Recording too short - try speaking for at least a second!'
 					);
+					await this.transcriptionService.clearPendingRecordingDraft?.();
 					return;
 				}
 
-				// Check if Live Mode already captured a transcript
+				// Check if Live Mode already captured a complete transcript.
 				const liveModeEnabled = get(liveMode) === 'true';
-				const liveTranscript = liveModeEnabled ? transcriptionStore.getTranscript() : '';
+				const liveResult = liveModeEnabled ? await transcriptionStore.finish() : null;
+				const liveTranscript = liveResult?.text || '';
+				const canUseLiveTranscript =
+					liveModeEnabled &&
+					liveResult?.hasFinal &&
+					!liveResult.usedInterim &&
+					liveTranscript.trim().length > 0;
 
-				// Skip batch transcription if Live Mode has valid content
-				if (liveModeEnabled && liveTranscript.trim().length > 0) {
+				// Skip batch transcription only when Deepgram finalized the whole live transcript.
+				if (canUseLiveTranscript) {
 					log.log('Live Mode captured transcript - skipping batch');
 
 					// Complete transcription so history gets saved via transcriptionCompletedEvent
+					transcriptionActions.startTranscribing();
 					transcriptionActions.completeTranscription(liveTranscript);
+					await this.transcriptionService.clearPendingRecordingDraft?.();
 					void this.transcriptionService.copyToClipboard(liveTranscript, { silent: true });
 
 					// Scroll to show transcript if needed
@@ -173,6 +182,8 @@ export class RecordingControlsService {
 					const wordCount = liveTranscript.trim().split(/\s+/).length;
 					analytics.completeTranscription('deepgram-live', estimatedDurationSeconds, wordCount);
 					return;
+				} else if (liveModeEnabled && liveTranscript.trim().length > 0) {
+					log.log('Live Mode had unfinished interim text - using batch fallback');
 				}
 
 				// Transcribe the audio with proper error handling (batch mode)
@@ -225,10 +236,18 @@ export class RecordingControlsService {
 	}
 
 	async toggleRecording() {
-		const { isRecording, transcriptionText } = this.stores;
+		const { isRecording, isTranscribing, transcriptionText } = this.stores;
 		const currentlyRecording = get(isRecording);
+		const currentlyTranscribing = get(isTranscribing);
 
 		log.log('toggleRecording called, currently recording:', currentlyRecording);
+
+		if (this.toggleInFlight) {
+			this.uiActions.setScreenReaderMessage('Still working. Try again in a moment.');
+			return;
+		}
+
+		this.toggleInFlight = true;
 
 		try {
 			if (currentlyRecording) {
@@ -241,6 +260,8 @@ export class RecordingControlsService {
 				await this.stopRecording();
 				// Screen reader announcement
 				this.uiActions.setScreenReaderMessage('Recording stopped.');
+			} else if (currentlyTranscribing) {
+				this.uiActions.setScreenReaderMessage('Still transcribing. Try again in a moment.');
 			} else {
 				log.log('Starting recording...');
 				// Haptic feedback for start - double pulse
@@ -273,6 +294,8 @@ export class RecordingControlsService {
 
 			// Update screen reader status
 			this.uiActions.setScreenReaderMessage('Recording failed. Please try again.');
+		} finally {
+			this.toggleInFlight = false;
 		}
 	}
 

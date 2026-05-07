@@ -100,6 +100,10 @@ export class TranscriptionService {
 		return await this.transcribeAudio(audioInput);
 	}
 
+	async clearPendingRecordingDraft() {
+		await this.#clearPendingRecordingDraft();
+	}
+
 	async restorePendingRecordingDraft() {
 		if (!this.browser) {
 			return;

@@ -6,7 +6,6 @@ import {
 	recordingState,
 	transcriptionActions
 } from '../infrastructure/stores';
-import { convertToWAV as convertToRawAudio } from '../transcription/whisper/audioConverter';
 import { get } from 'svelte/store';
 import { saveRecordingDraft } from './recordingRecoveryStore';
 import { browser } from '$app/environment';
@@ -378,16 +377,11 @@ export class AudioService {
 				this.audioChunks = [];
 				this.mediaRecorder = null;
 
-				// Persist a recovery copy before returning control (fire-and-forget)
-				this.#persistRecordingDraft(audioBlob, mimeType).catch((error) =>
-					log.warn('Failed to persist recording draft:', error)
-				);
+				// Persist before transcription starts so success cleanup cannot race a late draft write.
+				await this.#persistRecordingDraft(audioBlob, mimeType);
 
 				// Ensure state is properly reset
 				this.stateManager.setState(AudioStates.IDLE);
-
-				// Disconnect Deepgram
-				transcriptionStore.disconnect();
 
 				resolve(audioBlob);
 			};
@@ -423,26 +417,12 @@ export class AudioService {
 			const duration =
 				typeof durationFromStore === 'number' ? durationFromStore : audioBlob.size / 2000;
 
-			let floatAudio = null;
-			try {
-				floatAudio = await convertToRawAudio(audioBlob);
-			} catch (conversionError) {
-				log.warn(
-					'Failed to generate Float32 audio for draft:',
-					conversionError?.message || conversionError
-				);
-			}
-
-			const draft = await saveRecordingDraft(
-				audioBlob,
-				{
-					mimeType,
-					size: audioBlob.size,
-					duration,
-					sampleRate: 16000
-				},
-				floatAudio
-			);
+			const draft = await saveRecordingDraft(audioBlob, {
+				mimeType,
+				size: audioBlob.size,
+				duration,
+				sampleRate: 16000
+			});
 
 			if (draft) {
 				transcriptionActions.setPendingRecording({
@@ -460,6 +440,7 @@ export class AudioService {
 
 	async cleanup() {
 		this.cancelWarmStreamRelease();
+		transcriptionStore.disconnect();
 
 		if (this.animationFrameId) {
 			cancelAnimationFrame(this.animationFrameId);

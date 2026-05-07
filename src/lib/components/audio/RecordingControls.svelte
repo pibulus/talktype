@@ -50,6 +50,7 @@
 			uiActions,
 			stores: {
 				isRecording,
+				isTranscribing,
 				transcriptionText
 			}
 		});

@@ -5,6 +5,7 @@
 	// Props passed from the parent
 	export let isRecording = false;
 	export let isProcessing = false;
+	export let clickable = true;
 
 	// Component references
 	let ghostComponent;
@@ -66,6 +67,7 @@
 		bind:this={ghostComponent}
 		{isRecording}
 		{isProcessing}
+		{clickable}
 		externalTheme={appTheme}
 		debug={false}
 	/>

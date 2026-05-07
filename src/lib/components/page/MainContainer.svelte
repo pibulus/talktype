@@ -8,7 +8,10 @@
 	import { modalService } from '$lib/services/modals';
 	import { firstVisitService } from '$lib/services/first-visit';
 	import { pwaService, deferredInstallPrompt, showPwaInstallPrompt } from '$lib/services/pwa';
-	import { isRecording as recordingStore } from '$lib/services';
+	import {
+		isRecording as recordingStore,
+		isTranscribing as transcribingStore
+	} from '$lib/services';
 	import { PageLayout } from '$lib/components/layout';
 	import { fade } from 'svelte/transition';
 	import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
@@ -136,12 +139,17 @@
 	function handleToggleRecording() {
 		debug('Toggle recording triggered via custom event');
 
+		if ($transcribingStore && !$recordingStore) {
+			debug('Ignoring ghost click while transcription is in progress');
+			return;
+		}
+
 		// Add null check for contentContainer
 		if (!contentContainer) {
 			console.warn('[MainContainer] contentContainer not ready yet');
 			// Try again after a short delay
 			ghostClickRetryTimeout = setTimeout(() => {
-				if (contentContainer) {
+				if (contentContainer && !$transcribingStore) {
 					contentContainer.toggleRecording();
 				} else {
 					console.error('[MainContainer] contentContainer still not available!');
@@ -382,7 +390,12 @@
 </script>
 
 <PageLayout>
-	<GhostContainer bind:this={ghostContainer} isRecording={$recordingStore} {isProcessing} />
+	<GhostContainer
+		bind:this={ghostContainer}
+		isRecording={$recordingStore}
+		isProcessing={isProcessing || $transcribingStore}
+		clickable={!$transcribingStore}
+	/>
 	<ContentContainer
 		bind:this={contentContainer}
 		ghostComponent={ghostContainer}

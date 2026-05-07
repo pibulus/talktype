@@ -1,12 +1,16 @@
 import { writable } from 'svelte/store';
 
+const DEFAULT_FINISH_GRACE_MS = 1200;
+
 function createTranscriptionStore() {
 	const { subscribe, set, update } = writable({
 		connected: false,
 		connecting: false,
 		error: null,
 		transcript: '', // Finalized transcript
-		interim: '' // Current interim result
+		interim: '', // Current interim result
+		lastFinalAt: null,
+		lastMessageAt: null
 	});
 
 	let socket = null;
@@ -43,6 +47,33 @@ function createTranscriptionStore() {
 		) {
 			socketToClose.close(1000, reason);
 		}
+	}
+
+	function getSnapshot() {
+		let current;
+		subscribe((state) => {
+			current = state;
+		})();
+		return current || {};
+	}
+
+	function buildResult(state) {
+		const finalText = (state.transcript || '').trim();
+		const interimText = (state.interim || '').trim();
+		const text = [finalText, interimText].filter(Boolean).join(' ').trim();
+
+		return {
+			text,
+			finalText,
+			interimText,
+			hasFinal: finalText.length > 0,
+			usedInterim: interimText.length > 0,
+			error: state.error || null
+		};
+	}
+
+	function wait(ms) {
+		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 
 	return {
@@ -155,10 +186,12 @@ function createTranscriptionStore() {
 								update((s) => ({
 									...s,
 									transcript: s.transcript + (s.transcript ? ' ' : '') + received,
-									interim: ''
+									interim: '',
+									lastFinalAt: Date.now(),
+									lastMessageAt: Date.now()
 								}));
 							} else if (received) {
-								update((s) => ({ ...s, interim: received }));
+								update((s) => ({ ...s, interim: received, lastMessageAt: Date.now() }));
 							}
 						}
 						// Silently ignore Metadata, SpeechStarted, UtteranceEnd
@@ -197,6 +230,31 @@ function createTranscriptionStore() {
 			update((s) => ({ ...s, connected: false, interim: '' }));
 		},
 
+		finish: async ({ graceMs = DEFAULT_FINISH_GRACE_MS } = {}) => {
+			const socketToFinish = socket;
+
+			if (socketToFinish?.readyState === WebSocket.OPEN) {
+				try {
+					socketToFinish.send(JSON.stringify({ type: 'CloseStream' }));
+				} catch (error) {
+					console.warn('[Deepgram] Failed to request final live transcript:', error);
+				}
+			}
+
+			if (socketToFinish) {
+				await wait(graceMs);
+			}
+
+			const result = buildResult(getSnapshot());
+			closeActiveSocket('Done recording');
+			isConnectionOpen = false;
+			isConnecting = false;
+			audioBuffer = [];
+			update((s) => ({ ...s, connected: false, connecting: false, interim: '' }));
+
+			return result;
+		},
+
 		// Reset transcript
 		reset: () => {
 			set({
@@ -204,7 +262,9 @@ function createTranscriptionStore() {
 				connecting: false,
 				error: null,
 				transcript: '',
-				interim: ''
+				interim: '',
+				lastFinalAt: null,
+				lastMessageAt: null
 			});
 			audioBuffer = [];
 		},
