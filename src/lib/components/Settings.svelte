@@ -328,7 +328,7 @@
 						</p>
 					</div>
 					<button
-						class={`btn btn-sm !h-11 !min-h-11 shrink-0 px-4 ${
+						class={`btn btn-sm !h-[44px] !min-h-[44px] shrink-0 px-4 ${
 							isSupporterValue
 								? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
 								: 'border-amber-200 bg-amber-100 text-amber-900 hover:bg-amber-200'
