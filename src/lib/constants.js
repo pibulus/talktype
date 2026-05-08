@@ -34,6 +34,7 @@ export const STORAGE_KEYS = {
 	PWA_PROMPT_SHOWN: 'talktype-pwa-prompt-shown',
 	PWA_PROMPT_COUNT: 'talktype-pwa-prompt-count',
 	PWA_LAST_PROMPT_DATE: 'talktype-pwa-last-prompt-date',
+	PWA_LAST_PROMPT_TRANSCRIPTION_COUNT: 'talktype-pwa-last-prompt-transcription-count',
 	PWA_INSTALLED: 'talktype-pwa-installed'
 };
 

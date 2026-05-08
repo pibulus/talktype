@@ -239,9 +239,9 @@
 	});
 
 	// Export functions for external components
-	export function startRecording() {
+	export function startRecording(options = {}) {
 		if (recordingControlsRef) {
-			return recordingControlsRef.startRecording();
+			return recordingControlsRef.startRecording(options);
 		}
 	}
 

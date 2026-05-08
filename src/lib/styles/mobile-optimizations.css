@@ -97,9 +97,10 @@ select {
 	}
 
 	/* Adjust for missing browser chrome */
+	.main,
 	.main-container {
-		height: 100vh;
-		height: -webkit-fill-available; /* iOS fix */
+		min-height: 100dvh;
+		min-height: -webkit-fill-available; /* iOS fix */
 	}
 }
 
@@ -159,12 +160,4 @@ body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	text-rendering: optimizeLegibility;
-}
-
-/* Disable user scaling but maintain accessibility */
-@viewport {
-	width: device-width;
-	initial-scale: 1;
-	maximum-scale: 1;
-	user-scalable: no;
 }

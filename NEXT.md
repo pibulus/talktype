@@ -11,6 +11,7 @@ What looks solid:
 - Full lint passes
 - Supporter mode wiring is in place
 - Mobile/modal polish is materially better than before
+- PWA install/autostart pass is in place: manifest screenshots/splash assets, better iOS/Android install prompts, stricter installed detection, shortcut-driven record launch, and safer auto-start timing
 - Server-side Gemini config now matches ZipList
 
 What still wants attention:
@@ -24,3 +25,7 @@ Obvious next moves:
 - Test installed PWA flow on phone, including microphone permission and auto-record behavior
 - Decide whether TalkType goes `1.0.0` after a few days of live use
 - Replace manual supporter code ops with a real payment -> code delivery flow
+
+## Diary
+
+- 2026-05-08 - Codex - PWA/mobile wrap: fixed installed-app detection, unified install prompt state, added manifest screenshots and iOS splash assets, improved iOS/Android install guidance, and made auto-start wait for first-run UI with mobile gesture fallback.

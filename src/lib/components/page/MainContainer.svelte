@@ -1,5 +1,5 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { browser } from '$app/environment';
 	import GhostContainer from './GhostContainer.svelte';
 	import ContentContainer from './ContentContainer.svelte';
@@ -310,9 +310,123 @@
 	let supporterModalListener;
 	let autoRecordTimeout;
 	let ghostClickRetryTimeout;
+	let autoStartGestureCleanup;
+	let autoStartVisibilityCleanup;
+
+	function getAutoStartSource() {
+		if (!browser) return null;
+
+		const params = new URLSearchParams(window.location.search);
+		if (params.get('action') === 'record') {
+			return 'launch-shortcut';
+		}
+
+		if (StorageUtils.getBooleanItem(STORAGE_KEYS.AUTO_RECORD, false)) {
+			return 'auto-start';
+		}
+
+		return null;
+	}
+
+	function hasOpenDialog() {
+		return browser && !!document.querySelector('dialog[open]');
+	}
+
+	function clearAutoStartGestureRetry() {
+		if (autoStartGestureCleanup) {
+			autoStartGestureCleanup();
+			autoStartGestureCleanup = null;
+		}
+	}
+
+	function clearAutoStartVisibilityRetry() {
+		if (autoStartVisibilityCleanup) {
+			autoStartVisibilityCleanup();
+			autoStartVisibilityCleanup = null;
+		}
+	}
+
+	function armAutoStartOnGesture(source) {
+		if (!browser || autoStartGestureCleanup) return;
+
+		const retry = () => {
+			clearAutoStartGestureRetry();
+			autoRecordTimeout = setTimeout(() => {
+				attemptAutoStart(source, { allowGestureRetry: false });
+			}, 0);
+		};
+
+		window.addEventListener('pointerup', retry, true);
+		window.addEventListener('keydown', retry, true);
+		autoStartGestureCleanup = () => {
+			window.removeEventListener('pointerup', retry, true);
+			window.removeEventListener('keydown', retry, true);
+		};
+	}
+
+	function armAutoStartOnVisibility(source) {
+		if (!browser || autoStartVisibilityCleanup) return;
+
+		const retry = () => {
+			if (document.visibilityState !== 'visible') return;
+			clearAutoStartVisibilityRetry();
+			autoRecordTimeout = setTimeout(() => {
+				attemptAutoStart(source, { allowGestureRetry: true });
+			}, 150);
+		};
+
+		document.addEventListener('visibilitychange', retry);
+		autoStartVisibilityCleanup = () => {
+			document.removeEventListener('visibilitychange', retry);
+		};
+	}
+
+	async function attemptAutoStart(source, { allowGestureRetry = true } = {}) {
+		if (!browser || !source) return false;
+
+		await tick();
+
+		if (!contentContainer) {
+			autoRecordTimeout = setTimeout(() => {
+				attemptAutoStart(source, { allowGestureRetry });
+			}, 100);
+			return false;
+		}
+
+		if ($recordingStore || $transcribingStore) {
+			return false;
+		}
+
+		if (document.visibilityState !== 'visible') {
+			armAutoStartOnVisibility(source);
+			return false;
+		}
+
+		if (hasOpenDialog()) {
+			autoRecordTimeout = setTimeout(() => {
+				attemptAutoStart(source, { allowGestureRetry });
+			}, 300);
+			return false;
+		}
+
+		try {
+			await contentContainer.startRecording({ source });
+			clearAutoStartGestureRetry();
+			clearAutoStartVisibilityRetry();
+			return true;
+		} catch (err) {
+			debug(`Auto-start failed: ${err?.message || err}`);
+			if (allowGestureRetry) {
+				armAutoStartOnGesture(source);
+			}
+			return false;
+		}
+	}
 
 	// Lifecycle hooks
-	onMount(async () => {
+	onMount(() => {
+		let destroyed = false;
+
 		// Settings modal is now truly lazy-loaded only when needed - no preloading
 
 		// Set up direct listener for ghost toggle recording event
@@ -323,26 +437,6 @@
 
 			supporterModalListener = () => openSupporterModal();
 			window.addEventListener('talktype:open-supporter-modal', supporterModalListener);
-		}
-
-		// Check for auto-record setting and start recording if enabled
-		if (browser && StorageUtils.getBooleanItem(STORAGE_KEYS.AUTO_RECORD, false)) {
-			// Wait minimal time for component initialization
-			autoRecordTimeout = setTimeout(async () => {
-				if (contentContainer && !$recordingStore) {
-					debug('Auto-record enabled, attempting to start recording immediately');
-					try {
-						await contentContainer.startRecording();
-						debug('Auto-record: Called startRecording()');
-					} catch (err) {
-						debug(`Auto-record: Error starting recording: ${err.message}`);
-					}
-				} else {
-					debug('Auto-record: Conditions not met (no component or already recording).');
-				}
-			}, 500); // Reduced delay - just enough for component initialization
-		} else {
-			debug('Auto-record not enabled or not in browser.');
 		}
 
 		// Listen for settings changes
@@ -363,11 +457,26 @@
 			debug('Added listener for settings changes.');
 		}
 
-		// Check if first visit to show intro
-		await firstVisitService.showIntroModal();
+		(async () => {
+			// Check if first visit to show intro
+			const introWasShown = await firstVisitService.showIntroModal();
+			if (destroyed) return;
+
+			const autoStartSource = getAutoStartSource();
+			if (autoStartSource) {
+				const startDelay = introWasShown ? 450 : 250;
+				autoRecordTimeout = setTimeout(() => {
+					attemptAutoStart(autoStartSource, { allowGestureRetry: true });
+				}, startDelay);
+			} else {
+				debug('Auto-start not requested.');
+			}
+		})();
 
 		// Return cleanup function
 		return () => {
+			destroyed = true;
+
 			if (browser && settingsListener) {
 				window.removeEventListener('talktype-setting-changed', settingsListener);
 				debug('Removed settings change listener');
@@ -385,6 +494,8 @@
 			if (ghostClickRetryTimeout) {
 				clearTimeout(ghostClickRetryTimeout);
 			}
+			clearAutoStartGestureRetry();
+			clearAutoStartVisibilityRetry();
 		};
 	});
 </script>

@@ -6,8 +6,8 @@ This directory contains screenshots for the TalkType PWA manifest.
 
 Place the following screenshots in this directory:
 
-1. `screenshot-1.png` - Desktop view (1280x720)
-2. `screenshot-mobile.png` - Mobile view (720x1280)
+1. `screenshot-wide.png` - Desktop view (1280x720)
+2. `screenshot-mobile.png` - Mobile view (390x844)
 
 ## How to Create Screenshots
 

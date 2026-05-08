@@ -2,8 +2,10 @@
 	"name": "TalkType",
 	"short_name": "TalkType",
 	"description": "100% Private. Instant Start. High-speed transcription that feels like magic.",
+	"id": "/?source=pwa",
 	"start_url": "/?source=pwa",
 	"display": "standalone",
+	"display_override": ["standalone", "minimal-ui", "browser"],
 	"background_color": "#FFF6E6",
 	"theme_color": "#FFF6E6",
 	"orientation": "portrait-primary",
@@ -39,11 +41,33 @@
 			"name": "Start Recording",
 			"short_name": "Record",
 			"description": "Start a new voice recording",
-			"url": "/?action=record",
+			"url": "/?action=record&source=shortcut",
 			"icons": [{ "src": "/appicon/web/icon-192.png", "sizes": "192x192" }]
 		}
 	],
-	"related_applications": [],
+	"screenshots": [
+		{
+			"src": "/screenshots/screenshot-mobile.png",
+			"sizes": "390x844",
+			"type": "image/png",
+			"form_factor": "narrow",
+			"label": "TalkType ready to record on mobile"
+		},
+		{
+			"src": "/screenshots/screenshot-wide.png",
+			"sizes": "1280x720",
+			"type": "image/png",
+			"form_factor": "wide",
+			"label": "TalkType voice transcription workspace"
+		}
+	],
+	"related_applications": [
+		{
+			"platform": "webapp",
+			"url": "/manifest.json",
+			"id": "/?source=pwa"
+		}
+	],
 	"prefer_related_applications": false,
 	"scope": "/",
 	"launch_handler": {

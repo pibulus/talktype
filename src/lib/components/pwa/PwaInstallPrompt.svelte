@@ -21,6 +21,7 @@
 	let isSafari = false;
 	let isFirefox = false;
 	let isEdge = false;
+	let isStandalone = false;
 
 	onMount(() => {
 		if (!browser) return;
@@ -33,6 +34,8 @@
 
 		// Set platform-specific instructions
 		setPlatformInstructions();
+
+		showPlatformInstructions = isIOS || !installPromptEvent;
 	});
 
 	/**
@@ -54,6 +57,10 @@
 		isSafari = /safari/.test(ua) && !isChrome; // Safari has "Safari" but Chrome also includes it
 		isFirefox = /firefox|fxios/.test(ua);
 		isEdge = /edg/.test(ua);
+		isStandalone =
+			window.matchMedia?.('(display-mode: standalone)').matches === true ||
+			navigator.standalone === true ||
+			document.referrer?.startsWith('android-app://');
 
 		// Set platform name for UI usage
 		if (isIOS) {
@@ -69,21 +76,24 @@
 	 * Sets platform-specific installation instructions
 	 */
 	function setPlatformInstructions() {
-		if (isIOS && isSafari) {
+		if (isStandalone) {
+			platformSpecificInstructions = 'TalkType is already running from your home screen.';
+		} else if (isIOS && isSafari) {
 			platformSpecificInstructions =
-				'Tap the share button in Safari, then select "Add to Home Screen"';
+				'Tap the Share button in Safari, then choose Add to Home Screen.';
+		} else if (isIOS) {
+			platformSpecificInstructions =
+				'Use the Share menu and choose Add to Home Screen. If that option is missing, open TalkType in Safari first.';
 		} else if (isAndroid && isChrome) {
 			platformSpecificInstructions =
-				'Tap the menu button in Chrome, then select "Add to Home Screen"';
+				'Tap Install when prompted, or use Chrome menu > Add to Home screen.';
 		} else if (isFirefox) {
 			platformSpecificInstructions =
-				'Tap the menu button in Firefox, then select "Add to Home Screen"';
+				'Open the browser menu, then choose Add to Home Screen if your browser offers it.';
 		} else if (isEdge) {
-			platformSpecificInstructions =
-				'Tap the menu button in Edge, then select "Add to Home Screen"';
+			platformSpecificInstructions = 'Tap Install when prompted, or use Edge menu > Add to phone.';
 		} else {
-			platformSpecificInstructions =
-				"Use your browser's menu to install this app to your home screen";
+			platformSpecificInstructions = "Use your browser's install or Add to Home Screen option.";
 		}
 	}
 
@@ -98,10 +108,12 @@
 				// Show the native browser install prompt
 
 				// This is a built-in browser API, not our custom UI
-				await installPromptEvent.prompt();
+				const promptResult = await installPromptEvent.prompt();
 
-				// Wait for the user to respond to the prompt
-				const choiceResult = await installPromptEvent.userChoice;
+				// Chromium has exposed both prompt() results and userChoice over time.
+				const choiceResult = installPromptEvent.userChoice
+					? await installPromptEvent.userChoice
+					: promptResult;
 
 				if (choiceResult.outcome === 'accepted') {
 					pwaService.markAsInstalled();
@@ -158,16 +170,16 @@
 				<div class="platform-instructions">
 					<p>{platformSpecificInstructions}</p>
 
-					<!-- iOS Safari specific visuals -->
-					{#if isIOS && isSafari}
+					<!-- iOS specific visuals -->
+					{#if isIOS}
 						<div class="ios-instructions">
 							<div class="ios-step">
-								<div class="ios-icon">1️⃣</div>
-								<span>Tap <span class="ios-share-icon">⬆️</span> below</span>
+								<div class="ios-icon">1</div>
+								<span>Tap the Share button</span>
 							</div>
 							<div class="ios-step">
-								<div class="ios-icon">2️⃣</div>
-								<span>Scroll and tap <b>Add to Home Screen</b></span>
+								<div class="ios-icon">2</div>
+								<span>Choose <b>Add to Home Screen</b></span>
 							</div>
 						</div>
 					{/if}
@@ -343,7 +355,16 @@
 	}
 
 	.ios-icon {
-		font-size: 16px;
+		display: inline-flex;
+		width: 24px;
+		height: 24px;
+		align-items: center;
+		justify-content: center;
+		border-radius: 999px;
+		background: #fff;
+		font-size: 13px;
+		font-weight: 700;
+		color: #444;
 	}
 
 	.ios-share-icon {

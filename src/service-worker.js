@@ -21,6 +21,7 @@ self.addEventListener('install', (event) => {
 	}
 
 	event.waitUntil(addFilesToCache());
+	self.skipWaiting();
 });
 
 // Activate service worker
@@ -35,7 +36,7 @@ self.addEventListener('activate', (event) => {
 		}
 	}
 
-	event.waitUntil(deleteOldCaches());
+	event.waitUntil(deleteOldCaches().then(() => self.clients.claim()));
 });
 
 // Fetch event

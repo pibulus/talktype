@@ -54,8 +54,9 @@ export class RecordingControlsService {
 		return CTA_PHRASES[this.currentCtaIndex];
 	}
 
-	async startRecording() {
+	async startRecording(options = {}) {
 		const { isRecording, isTranscribing, transcriptionText } = this.stores;
+		const isAutoStart = options.source === 'auto-start' || options.source === 'launch-shortcut';
 
 		if (get(isRecording) || get(isTranscribing)) return;
 
@@ -96,8 +97,11 @@ export class RecordingControlsService {
 			// State is tracked through stores now
 		} catch (err) {
 			log.error('Error in startRecording:', err);
-			const friendlyMessage = err.message.includes('permission')
-				? 'Need microphone access - click allow when asked!'
+			const errorMessage = err?.message || '';
+			const friendlyMessage = errorMessage.includes('permission')
+				? isAutoStart
+					? 'Tap Start Recording to finish microphone setup.'
+					: 'Need microphone access - click allow when asked!'
 				: 'Recording hiccup - mind trying again?';
 			this.uiActions.setErrorMessage(friendlyMessage);
 			throw err;
@@ -274,7 +278,7 @@ export class RecordingControlsService {
 					this.rotateToCta();
 				}
 
-				await this.startRecording();
+				await this.startRecording({ source: 'manual' });
 				// Screen reader announcement
 				this.uiActions.setScreenReaderMessage('Recording started. Speak now.');
 			}

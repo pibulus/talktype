@@ -1,10 +1,12 @@
 import { browser } from '$app/environment';
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 import { StorageUtils } from '../infrastructure/storageUtils';
 import { STORAGE_KEYS } from '../../constants';
 
 // PWA state configuration
 const PWA_INSTALL_PROMPT_THRESHOLD = 5;
+const PWA_REPROMPT_TRANSCRIPTION_DELTA = 5;
+const PWA_LATE_REPROMPT_TRANSCRIPTION_DELTA = 10;
 
 // PWA stores
 export const deferredInstallPrompt = writable(null);
@@ -31,7 +33,7 @@ export const shouldShowPrompt = derived(
 		// Check if on desktop - only show prompt on compatible platforms
 		const isMobile = browser ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) : false;
 		const isCompatibleDesktop = browser
-			? /Chrome/.test(navigator.userAgent) && !/Edge|Edg/.test(navigator.userAgent)
+			? /Chrome|Chromium|Edg/.test(navigator.userAgent) && !/Firefox/.test(navigator.userAgent)
 			: false;
 
 		if (!isMobile && !isCompatibleDesktop) return false;
@@ -39,6 +41,42 @@ export const shouldShowPrompt = derived(
 		return $count >= PWA_INSTALL_PROMPT_THRESHOLD;
 	}
 );
+
+function getPlatformInfo() {
+	if (!browser) {
+		return {
+			isIOS: false,
+			isAndroid: false,
+			isMobile: false,
+			isChromium: false,
+			isEdge: false,
+			isStandalone: false
+		};
+	}
+
+	const ua = navigator.userAgent || '';
+	const platform = navigator.platform || '';
+	const isIOS =
+		/iPhone|iPad|iPod/i.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+	const isAndroid = /Android/i.test(ua);
+	const isEdge = /Edg|EdgiOS|EdgA/i.test(ua);
+	const isChromium = /Chrome|Chromium|CriOS|SamsungBrowser/i.test(ua) && !/Firefox|FxiOS/i.test(ua);
+	const isStandalone =
+		window.matchMedia?.('(display-mode: standalone)').matches === true ||
+		window.matchMedia?.('(display-mode: fullscreen)').matches === true ||
+		window.matchMedia?.('(display-mode: minimal-ui)').matches === true ||
+		navigator.standalone === true ||
+		document.referrer?.startsWith('android-app://');
+
+	return {
+		isIOS,
+		isAndroid,
+		isMobile: isIOS || isAndroid,
+		isChromium,
+		isEdge,
+		isStandalone
+	};
+}
 
 export class PwaService {
 	constructor() {
@@ -79,9 +117,12 @@ export class PwaService {
 		const count = this.getTranscriptionCount();
 		transcriptionCount.set(count);
 
-		// Check if installed
-		const isInstalled = StorageUtils.getBooleanItem(STORAGE_KEYS.PWA_INSTALLED, false);
+		// Installed state means the current browser context is standalone, or a later
+		// platform API confirms a related web app is installed. Do not infer it from
+		// service workers or a manifest; every normal PWA-capable browser has those.
+		const isInstalled = this.isRunningStandalone();
 		isPwaInstalled.set(isInstalled);
+		StorageUtils.setItem(STORAGE_KEYS.PWA_INSTALLED, isInstalled ? 'true' : 'false');
 
 		this.log(`Initialized: count=${count}, installed=${isInstalled}`);
 	}
@@ -95,6 +136,10 @@ export class PwaService {
 			// Store the event for later use
 			deferredInstallPrompt.set(e);
 			this.log('Captured beforeinstallprompt event');
+
+			if (this.shouldShowPwaPrompt()) {
+				showPwaInstallPrompt.set(true);
+			}
 		});
 
 		// Listen for app installed event
@@ -140,7 +185,15 @@ export class PwaService {
 
 		try {
 			// Don't show if already installed
-			if (StorageUtils.getBooleanItem(STORAGE_KEYS.PWA_INSTALLED, false)) {
+			if (this.isRunningStandalone() || get(isPwaInstalled)) {
+				return false;
+			}
+
+			if (this.isDevelopmentEnvironment()) {
+				return false;
+			}
+
+			if (!this.canShowInstallHelp()) {
 				return false;
 			}
 
@@ -149,6 +202,10 @@ export class PwaService {
 			const hasShownPrompt = StorageUtils.getBooleanItem(STORAGE_KEYS.PWA_PROMPT_SHOWN, false);
 			const promptCount = StorageUtils.getNumberItem(STORAGE_KEYS.PWA_PROMPT_COUNT, 0);
 			const lastPromptDate = StorageUtils.getItem(STORAGE_KEYS.PWA_LAST_PROMPT_DATE);
+			const lastPromptTranscriptionCount = StorageUtils.getNumberItem(
+				STORAGE_KEYS.PWA_LAST_PROMPT_TRANSCRIPTION_COUNT,
+				0
+			);
 
 			// If we've never shown the prompt before, show it after threshold
 			if (!hasShownPrompt && count >= PWA_INSTALL_PROMPT_THRESHOLD) {
@@ -162,7 +219,10 @@ export class PwaService {
 					: 0;
 
 				// Show again after at least 3 days and 5 more transcriptions
-				if (daysSinceLastPrompt >= 3 && count >= 5) {
+				if (
+					daysSinceLastPrompt >= 3 &&
+					count >= lastPromptTranscriptionCount + PWA_REPROMPT_TRANSCRIPTION_DELTA
+				) {
 					return true;
 				}
 			}
@@ -174,7 +234,10 @@ export class PwaService {
 					: 0;
 
 				// Show again after at least 14 days and 10 more transcriptions
-				if (daysSinceLastPrompt >= 14 && count >= 10) {
+				if (
+					daysSinceLastPrompt >= 14 &&
+					count >= lastPromptTranscriptionCount + PWA_LATE_REPROMPT_TRANSCRIPTION_DELTA
+				) {
 					return true;
 				}
 			}
@@ -199,6 +262,10 @@ export class PwaService {
 
 			// Record the current date
 			StorageUtils.setItem(STORAGE_KEYS.PWA_LAST_PROMPT_DATE, new Date().toISOString());
+			StorageUtils.setItem(
+				STORAGE_KEYS.PWA_LAST_PROMPT_TRANSCRIPTION_COUNT,
+				this.getTranscriptionCount().toString()
+			);
 
 			this.log(`PWA installation prompt shown (count: ${promptCount + 1})`);
 		} catch (error) {
@@ -223,56 +290,17 @@ export class PwaService {
 
 		try {
 			// Skip PWA detection in development environments
-			const isDevelopment =
-				window.location.hostname === 'localhost' ||
-				window.location.hostname === '127.0.0.1' ||
-				window.location.port === '5173' ||
-				window.location.port === '4173';
-
-			if (isDevelopment) {
+			if (this.isDevelopmentEnvironment()) {
 				this.log('Development environment detected, bypassing PWA detection');
 				return false;
 			}
 
-			let confidenceScore = 0;
-			const confidenceThreshold = 2;
-
-			// Display mode checks (less weight now)
-			const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-			const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
-			const isMinimalUi = window.matchMedia('(display-mode: minimal-ui)').matches;
-			const iOSStandalone = navigator.standalone; // iOS specific
-
-			if (isStandalone || iOSStandalone) confidenceScore += 1;
-			if (isFullscreen || isMinimalUi) confidenceScore += 0.5;
-
-			// Web App Manifest check
-			const manifestLinks = document.querySelectorAll('link[rel="manifest"]');
-			if (manifestLinks.length > 0) confidenceScore += 0.5;
-
-			// Service Worker check (strong indicator)
-			if ('serviceWorker' in navigator) {
-				const registrations = await navigator.serviceWorker.getRegistrations();
-				if (registrations.length > 0) confidenceScore += 1.5;
-			}
-
-			// Check for installation event registration
-			if (StorageUtils.getBooleanItem(STORAGE_KEYS.PWA_PROMPT_SHOWN, false)) {
-				confidenceScore += 0.5;
-			}
-
-			// Check for device context (desktop needs more confidence)
-			const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-			const requiredConfidence = isMobile ? confidenceThreshold - 0.5 : confidenceThreshold;
-
-			const isPWA = confidenceScore >= requiredConfidence;
-
-			this.log(
-				`PWA detection: confidence=${confidenceScore}, threshold=${requiredConfidence}, isPWA=${isPWA}`
-			);
+			const isPWA = this.isRunningStandalone() || (await this.hasInstalledRelatedWebApp());
 
 			if (isPWA) {
 				this.markAsInstalled();
+			} else {
+				isPwaInstalled.set(false);
 			}
 
 			return isPWA;
@@ -285,6 +313,51 @@ export class PwaService {
 	dismissPrompt() {
 		// Simply update the store value to control component visibility
 		showPwaInstallPrompt.set(false);
+	}
+
+	isDevelopmentEnvironment() {
+		if (!browser) return false;
+
+		return (
+			window.location.hostname === 'localhost' ||
+			window.location.hostname === '127.0.0.1' ||
+			window.location.port === '5173' ||
+			window.location.port === '4173'
+		);
+	}
+
+	isRunningStandalone() {
+		return getPlatformInfo().isStandalone;
+	}
+
+	canShowInstallHelp() {
+		if (!browser) return false;
+
+		const platform = getPlatformInfo();
+		const hasNativePrompt = !!get(deferredInstallPrompt);
+
+		// iOS does not expose beforeinstallprompt, so manual instructions are the product path.
+		if (platform.isIOS) return true;
+
+		// Android Chromium usually provides the native prompt; other Android browsers can still use
+		// menu-based Add to Home Screen instructions.
+		if (platform.isAndroid) return true;
+
+		return hasNativePrompt && (platform.isChromium || platform.isEdge);
+	}
+
+	async hasInstalledRelatedWebApp() {
+		if (!browser || typeof navigator.getInstalledRelatedApps !== 'function') {
+			return false;
+		}
+
+		try {
+			const relatedApps = await navigator.getInstalledRelatedApps();
+			return relatedApps.some((app) => app.platform === 'webapp');
+		} catch (error) {
+			this.log(`Installed related app check failed: ${error.message}`);
+			return false;
+		}
 	}
 }
 

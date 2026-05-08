@@ -42,7 +42,7 @@ export class FirstVisitService {
 	}
 
 	showIntroModal(modalId = 'intro_modal', delay = 500) {
-		if (!browser || !this.checkFirstVisit()) return null;
+		if (!browser || !this.checkFirstVisit()) return Promise.resolve(false);
 
 		this.log('Scheduling intro modal to appear');
 
@@ -62,11 +62,10 @@ export class FirstVisitService {
 					};
 
 					modal.addEventListener('close', handleClose, { once: true });
-					resolve(modal);
 				} else {
 					console.error('Intro modal element not found');
 					this.log('Intro modal element not found');
-					resolve(null);
+					resolve(false);
 				}
 			}, delay);
 		});

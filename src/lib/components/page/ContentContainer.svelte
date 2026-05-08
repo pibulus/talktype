@@ -33,10 +33,10 @@
 	}
 
 	// Public methods for parent to access
-	export function startRecording() {
+	export function startRecording(options = {}) {
 		if (audioToTextComponent) {
 			debug('Starting recording from parent');
-			return audioToTextComponent.startRecording();
+			return audioToTextComponent.startRecording(options);
 		}
 	}
 

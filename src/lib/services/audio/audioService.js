@@ -30,7 +30,10 @@ export class AudioService {
 		this.mediaRecorder = null;
 		this.audioChunks = [];
 		this.audioContext = null;
-		this.isIOS = browser && /iPhone|iPad|iPod/.test(navigator.userAgent);
+		this.isIOS =
+			browser &&
+			(/iPhone|iPad|iPod/.test(navigator.userAgent) ||
+				(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 		this.stream = null;
 		this.source = null;
 		this.analyser = null;

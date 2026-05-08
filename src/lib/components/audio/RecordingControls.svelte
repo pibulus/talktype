@@ -102,9 +102,9 @@
 	}
 
 	// Export functions for external access
-	export async function startRecording() {
+	export async function startRecording(options = {}) {
 		if (recordingControlsService) {
-			await recordingControlsService.startRecording();
+			await recordingControlsService.startRecording(options);
 		}
 	}
 
