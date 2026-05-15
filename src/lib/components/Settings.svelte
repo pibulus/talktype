@@ -109,6 +109,10 @@
 
 	function togglePrivacyMode() {
 		privacyModeValue = !privacyModeValue;
+		if (privacyModeValue && liveModeValue) {
+			liveModeValue = false;
+			liveMode.set('false');
+		}
 		if (browser) {
 			localStorage.setItem(STORAGE_KEYS.PRIVACY_MODE, privacyModeValue.toString());
 			window.dispatchEvent(
@@ -121,6 +125,12 @@
 
 	function toggleLiveMode() {
 		liveModeValue = !liveModeValue;
+		if (liveModeValue && privacyModeValue) {
+			privacyModeValue = false;
+			if (browser) {
+				localStorage.setItem(STORAGE_KEYS.PRIVACY_MODE, 'false');
+			}
+		}
 		liveMode.set(liveModeValue.toString());
 		if (browser) {
 			window.dispatchEvent(
@@ -128,6 +138,13 @@
 					detail: { setting: 'liveMode', value: liveModeValue }
 				})
 			);
+			if (liveModeValue) {
+				window.dispatchEvent(
+					new CustomEvent(SERVICE_EVENTS.SETTINGS.CHANGED, {
+						detail: { setting: 'privacyMode', value: false }
+					})
+				);
+			}
 		}
 	}
 
@@ -216,9 +233,7 @@
 				>
 					<div>
 						<span class="text-base font-medium text-gray-700">Offline Mode</span>
-						<p class="mt-0.5 text-sm text-gray-500">
-							Completely private transcription on your device
-						</p>
+						<p class="mt-0.5 text-sm text-gray-500">Private Whisper, no cloud streaming</p>
 					</div>
 					<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
 						<span class="sr-only"
@@ -247,7 +262,7 @@
 				>
 					<div>
 						<span class="text-base font-medium text-gray-700">Live Mode</span>
-						<p class="mt-0.5 text-sm text-gray-500">See text appear as you speak</p>
+						<p class="mt-0.5 text-sm text-gray-500">Deepgram streaming text as you speak</p>
 					</div>
 					<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
 						<span class="sr-only">Live Mode Toggle {liveModeValue ? 'Enabled' : 'Disabled'}</span>

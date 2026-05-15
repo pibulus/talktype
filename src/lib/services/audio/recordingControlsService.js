@@ -5,7 +5,7 @@
 
 import { get } from 'svelte/store';
 import { browser } from '$app/environment';
-import { CTA_PHRASES, ANIMATION } from '$lib/constants';
+import { CTA_PHRASES, ANIMATION, STORAGE_KEYS } from '$lib/constants';
 import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
 import { transcriptionState, transcriptionActions } from '../infrastructure/stores';
 import { analytics } from '../analytics';
@@ -163,6 +163,9 @@ export class RecordingControlsService {
 					log.log('Live Mode captured transcript - skipping batch');
 
 					// Complete transcription so history gets saved via transcriptionCompletedEvent
+					if (browser) {
+						localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'deepgram-live');
+					}
 					transcriptionActions.startTranscribing();
 					transcriptionActions.completeTranscription(liveTranscript);
 					await this.transcriptionService.clearPendingRecordingDraft?.();

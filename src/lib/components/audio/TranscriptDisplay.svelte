@@ -8,6 +8,7 @@
 	export let transcript = '';
 	export let showCopyTooltip = false;
 	export let responsiveFontSize = 'text-base';
+	export let editable = true;
 
 	// Refs
 	let editableTranscript;
@@ -24,7 +25,7 @@
 
 	// Get the current editable content
 	export function getEditedTranscript() {
-		return editableTranscript ? editableTranscript.innerText : transcript;
+		return editable && editableTranscript ? editableTranscript.innerText : transcript;
 	}
 
 	function handleTooltipMouseEnter() {
@@ -66,9 +67,9 @@
 		}
 	}
 
-	// Safely update transcript content without breaking cursor position
-	// Only update if the element is not focused (user not actively editing)
-	$: if (editableTranscript && transcript && document.activeElement !== editableTranscript) {
+	// Safely update transcript content without breaking cursor position.
+	// During live streaming the box is read-only, so incoming text always wins.
+	$: if (editableTranscript && (!editable || document.activeElement !== editableTranscript)) {
 		editableTranscript.innerText = transcript;
 		checkScrollable();
 	}
@@ -158,20 +159,25 @@
 				>
 					<div
 						class={`transcript-text ${responsiveFontSize} custom-transcript-text animate-text-appear mb-3 break-words text-left font-mono`}
-						contenteditable="true"
+						contenteditable={editable ? 'true' : 'false'}
 						role="textbox"
-						aria-label="Transcript editor"
+						aria-label={editable ? 'Transcript editor' : 'Live transcript'}
 						aria-multiline="true"
+						aria-readonly={!editable}
 						tabindex="0"
 						aria-describedby="transcript-instructions"
 						bind:this={editableTranscript}
 						on:focus={() => {
-							dispatch('focus', {
-								message: 'You can edit this transcript. Use keyboard to make changes.'
-							});
+							if (editable) {
+								dispatch('focus', {
+									message: 'You can edit this transcript. Use keyboard to make changes.'
+								});
+							}
 						}}
 						on:blur={() => {
-							dispatch('edit', { text: getEditedTranscript() });
+							if (editable) {
+								dispatch('edit', { text: getEditedTranscript() });
+							}
 							checkScrollable();
 						}}
 					>
@@ -180,7 +186,9 @@
 
 					<!-- Hidden instructions for screen readers -->
 					<div id="transcript-instructions" class="sr-only">
-						Editable transcript. You can modify the text if needed.
+						{editable
+							? 'Editable transcript. You can modify the text if needed.'
+							: 'Live transcript updates while recording.'}
 					</div>
 				</div>
 

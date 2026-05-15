@@ -24,7 +24,10 @@
 		uiActions,
 		transcriptionService
 	} from '$lib/services';
-	import { transcriptionCompletedEvent } from '$lib/services/infrastructure/stores';
+	import {
+		transcriptionActions,
+		transcriptionCompletedEvent
+	} from '$lib/services/infrastructure/stores';
 	import { liveMode } from '$lib';
 	import { transcriptionStore } from '$lib/stores/transcriptionStore';
 	import { whisperStatus } from '../../services/transcription/whisper/whisperService';
@@ -46,9 +49,7 @@
 	$: if ($liveMode === 'true' && ($transcriptionStore.transcript || $transcriptionStore.interim)) {
 		const fullText = ($transcriptionStore.transcript + ' ' + $transcriptionStore.interim).trim();
 		if (fullText) {
-			import('$lib/services/infrastructure/stores').then(({ transcriptionActions }) => {
-				transcriptionActions.updateText(fullText);
-			});
+			transcriptionActions.updateText(fullText);
 		}
 	}
 
@@ -89,9 +90,7 @@
 		}
 		// Handle edit event
 		if (type === 'edit' && detail?.text !== undefined) {
-			import('$lib/services/infrastructure/stores').then(({ transcriptionActions }) => {
-				transcriptionActions.updateText(detail.text);
-			});
+			transcriptionActions.updateText(detail.text);
 		}
 		// Forward other events to child components as needed
 	}
@@ -285,6 +284,7 @@
 					<TranscriptDisplay
 						transcript={$transcriptionText || ($isRecording ? 'Listening...' : '')}
 						{responsiveFontSize}
+						editable={!$isRecording && !$isTranscribing}
 						on:copy={handleTranscriptEvent}
 						on:edit={handleTranscriptEvent}
 						on:focus={handleTranscriptEvent}

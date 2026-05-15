@@ -1,6 +1,30 @@
 import { writable } from 'svelte/store';
 
-const DEFAULT_FINISH_GRACE_MS = 1200;
+const DEEPGRAM_LIVE_URL = 'wss://api.deepgram.com/v1/listen';
+export const DEEPGRAM_TOKEN_PROTOCOL = 'bearer';
+const DEFAULT_FINISH_GRACE_MS = 2200;
+const MAX_BUFFERED_AUDIO_CHUNKS = 120;
+
+export function buildDeepgramLiveUrl() {
+	const params = new URLSearchParams({
+		model: 'nova-3',
+		language: 'en-US',
+		smart_format: 'true',
+		interim_results: 'true',
+		punctuate: 'true',
+		endpointing: '300',
+		utterance_end_ms: '1000',
+		vad_events: 'true'
+	});
+
+	return `${DEEPGRAM_LIVE_URL}?${params.toString()}`;
+}
+
+export function appendFinalTranscript(currentTranscript, nextTranscript) {
+	const cleanNext = (nextTranscript || '').trim();
+	if (!cleanNext) return currentTranscript || '';
+	return [currentTranscript, cleanNext].filter(Boolean).join(' ');
+}
 
 function createTranscriptionStore() {
 	const { subscribe, set, update } = writable({
@@ -109,20 +133,12 @@ function createTranscriptionStore() {
 					return;
 				}
 
-				// 2. Connect via raw WebSocket using Sec-WebSocket-Protocol auth
-				// Using 'flux' model for ultra-low latency conversational AI
-				// and 'utterance_end_ms' for smart turn detection
-				const params = new URLSearchParams({
-					model: 'flux',
-					smart_format: 'true',
-					interim_results: 'true',
-					punctuate: 'true',
-					utterance_end_ms: '1000',
-					vad_turn_delay_ms: '500'
-				});
-				const wsUrl = `wss://api.deepgram.com/v1/listen?${params.toString()}`;
+				// 2. Connect via raw WebSocket using Sec-WebSocket-Protocol auth.
+				// Nova-3 on /v1/listen is the best fit for continuous dictation:
+				// it supports interim results, smart formatting, and endpointing.
+				const wsUrl = buildDeepgramLiveUrl();
 				// Deepgram recommends short-lived tokens for client-side realtime connections.
-				const activeSocket = new WebSocket(wsUrl, ['token', data.token]);
+				const activeSocket = new WebSocket(wsUrl, [DEEPGRAM_TOKEN_PROTOCOL, data.token]);
 				socket = activeSocket;
 
 				const isCurrentSocket = () =>
@@ -185,7 +201,7 @@ function createTranscriptionStore() {
 							if (received && data.is_final) {
 								update((s) => ({
 									...s,
-									transcript: s.transcript + (s.transcript ? ' ' : '') + received,
+									transcript: appendFinalTranscript(s.transcript, received),
 									interim: '',
 									lastFinalAt: Date.now(),
 									lastMessageAt: Date.now()
@@ -193,6 +209,11 @@ function createTranscriptionStore() {
 							} else if (received) {
 								update((s) => ({ ...s, interim: received, lastMessageAt: Date.now() }));
 							}
+						} else if (data.type === 'Error') {
+							const message =
+								data.description || data.message || 'Deepgram live transcription error';
+							console.error('[Deepgram] Error message:', data);
+							update((s) => ({ ...s, error: message, lastMessageAt: Date.now() }));
 						}
 						// Silently ignore Metadata, SpeechStarted, UtteranceEnd
 					} catch (e) {
@@ -206,6 +227,7 @@ function createTranscriptionStore() {
 
 				console.error('[Deepgram] Setup error:', err);
 				isConnecting = false;
+				audioBuffer = [];
 				update((s) => ({ ...s, error: err.message, connecting: false }));
 			}
 		},
@@ -217,6 +239,9 @@ function createTranscriptionStore() {
 			} else if (socket || isConnecting) {
 				// Buffer the chunk until connection is ready
 				audioBuffer.push(data);
+				if (audioBuffer.length > MAX_BUFFERED_AUDIO_CHUNKS) {
+					audioBuffer.shift();
+				}
 			}
 			// Silently ignore if no connection
 		},
@@ -235,7 +260,7 @@ function createTranscriptionStore() {
 
 			if (socketToFinish?.readyState === WebSocket.OPEN) {
 				try {
-					socketToFinish.send(JSON.stringify({ type: 'CloseStream' }));
+					socketToFinish.send(JSON.stringify({ type: 'Finalize' }));
 				} catch (error) {
 					console.warn('[Deepgram] Failed to request final live transcript:', error);
 				}
@@ -246,6 +271,13 @@ function createTranscriptionStore() {
 			}
 
 			const result = buildResult(getSnapshot());
+			if (socketToFinish?.readyState === WebSocket.OPEN) {
+				try {
+					socketToFinish.send(JSON.stringify({ type: 'CloseStream' }));
+				} catch {
+					// The socket may already be closing after Finalize; closeActiveSocket handles cleanup.
+				}
+			}
 			closeActiveSocket('Done recording');
 			isConnectionOpen = false;
 			isConnecting = false;
