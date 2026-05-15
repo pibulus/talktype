@@ -9,8 +9,7 @@ import {
 import { get } from 'svelte/store';
 import { saveRecordingDraft } from './recordingRecoveryStore';
 import { browser } from '$app/environment';
-import { liveMode } from '$lib';
-import { STORAGE_KEYS } from '$lib/constants';
+import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { createLogger } from '$lib/utils/logger';
 
@@ -253,12 +252,8 @@ export class AudioService {
 				if (event.data.size > 0) {
 					this.audioChunks.push(event.data);
 
-					// Stream to Deepgram if Live Mode is enabled AND Privacy Mode is disabled
-					const privacyMode =
-						typeof localStorage !== 'undefined' &&
-						localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
-					const liveModeEnabled = get(liveMode) === 'true';
-					if (liveModeEnabled && !privacyMode) {
+					// Stream to Deepgram only in the resolved live-cloud mode.
+					if (getTranscriptionMode().useLiveDeepgram) {
 						transcriptionStore.send(event.data);
 					}
 				}
@@ -275,12 +270,8 @@ export class AudioService {
 				mimeType: this.mediaRecorder.mimeType || 'audio/webm'
 			}));
 
-			// Connect to Deepgram if Live Mode is enabled AND Privacy Mode is disabled
-			const privacyMode =
-				typeof localStorage !== 'undefined' &&
-				localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
-			const liveModeEnabled = get(liveMode) === 'true';
-			if (liveModeEnabled && !privacyMode) {
+			// Connect to Deepgram only in the resolved live-cloud mode.
+			if (getTranscriptionMode().useLiveDeepgram) {
 				transcriptionStore.connect().catch((err) => {
 					log.error('Failed to connect to Deepgram:', err);
 					// Don't fail recording, just fallback to batch

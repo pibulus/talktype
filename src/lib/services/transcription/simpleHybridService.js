@@ -6,7 +6,7 @@
 import { get } from 'svelte/store';
 import { whisperService, whisperStatus } from './whisper/whisperService';
 import { userPreferences } from '../infrastructure/stores';
-import { customPrompt } from '$lib';
+import { customPrompt, privacyMode } from '$lib';
 import { browser } from '$app/environment';
 import { STORAGE_KEYS } from '$lib/constants';
 import { ensureApiSession } from '../apiSession.js';
@@ -75,8 +75,12 @@ class SimpleHybridService {
 		);
 		this.whisperLoadPromise = whisperService
 			.preloadModel()
-			.then((result) => {
+			.then(async (result) => {
 				if (result.success) {
+					if (browser && get(privacyMode) !== 'true') {
+						await whisperService.unloadModel();
+						return { success: false, unloaded: true };
+					}
 					log.log('✅ Whisper model ready for offline use!');
 				}
 				return result;
@@ -92,15 +96,26 @@ class SimpleHybridService {
 		return this.whisperLoadPromise;
 	}
 
+	async releaseOfflineModel() {
+		const pendingLoad = this.whisperLoadPromise;
+		this.whisperLoadPromise = null;
+
+		if (pendingLoad) {
+			await pendingLoad.catch(() => null);
+		}
+
+		await whisperService.unloadModel();
+	}
+
 	/**
 	 * Transcribe audio using best available method
 	 */
 	async transcribeAudio(audioBlob) {
 		// Check privacy mode preference
-		const privacyMode = browser && localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
+		const privacyModeEnabled = browser && get(privacyMode) === 'true';
 
 		// Privacy mode: Use offline Whisper only (desktop + mobile allowed)
-		if (privacyMode) {
+		if (privacyModeEnabled) {
 			// Start loading Whisper if not already
 			if (!this.whisperReady && !this.whisperLoadPromise) {
 				this.startBackgroundLoad();

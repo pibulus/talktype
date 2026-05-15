@@ -69,6 +69,23 @@ export const autoSave = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.AUTO_SAVE
 // Store for live mode preference
 export const liveMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.LIVE_MODE, 'true');
 
+// Store for offline/private Whisper mode preference
+export const privacyMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.PRIVACY_MODE, 'false');
+
+// Repair legacy state where Offline Mode and Live Mode could both be persisted.
+// If the user only had Offline Mode saved, preserve that choice. If both were
+// saved as enabled, prefer the current default live Deepgram path.
+if (browser) {
+	const storedPrivacyMode = localStorage.getItem(CONSTANTS.STORAGE_KEYS.PRIVACY_MODE) === 'true';
+	const storedLiveMode = localStorage.getItem(CONSTANTS.STORAGE_KEYS.LIVE_MODE);
+
+	if (storedPrivacyMode && storedLiveMode === 'true') {
+		privacyMode.set('false');
+	} else if (storedPrivacyMode && storedLiveMode === null) {
+		liveMode.set('false');
+	}
+}
+
 // Export all constants for use throughout the app
 export { CONSTANTS };
 

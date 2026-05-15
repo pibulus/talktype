@@ -28,7 +28,7 @@
 		transcriptionActions,
 		transcriptionCompletedEvent
 	} from '$lib/services/infrastructure/stores';
-	import { liveMode } from '$lib';
+	import { liveMode, privacyMode } from '$lib';
 	import { transcriptionStore } from '$lib/stores/transcriptionStore';
 	import { whisperStatus } from '../../services/transcription/whisper/whisperService';
 
@@ -44,9 +44,10 @@
 
 	// Subscribe to whisper status to track when model is ready
 	$: modelReady = $whisperStatus.isLoaded;
+	$: liveTranscriptMode = $liveMode === 'true' && $privacyMode !== 'true';
 
 	// Sync streaming text to global store
-	$: if ($liveMode === 'true' && ($transcriptionStore.transcript || $transcriptionStore.interim)) {
+	$: if (liveTranscriptMode && ($transcriptionStore.transcript || $transcriptionStore.interim)) {
 		const fullText = ($transcriptionStore.transcript + ' ' + $transcriptionStore.interim).trim();
 		if (fullText) {
 			transcriptionActions.updateText(fullText);
@@ -104,10 +105,8 @@
 	function startModelLoading() {
 		if (modelLoadStarted) return;
 
-		// Only download if privacy mode is enabled
-		const privacyMode = browser && localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
-
-		if (!privacyMode) {
+		// Only download if Offline Mode is enabled.
+		if (!browser || $privacyMode !== 'true') {
 			// console.log('⏭️ Privacy mode not enabled - skipping model download');
 			return;
 		}
@@ -151,6 +150,13 @@
 		if (setting === 'privacyMode' && value === true) {
 			// console.log('🔒 Privacy mode enabled - starting model download immediately');
 			startModelLoading();
+		} else if (setting === 'privacyMode' && value === false) {
+			modelLoadStarted = false;
+			import('$lib/services/transcription/simpleHybridService')
+				.then(({ simpleHybridService }) => {
+					void simpleHybridService.releaseOfflineModel();
+				})
+				.catch(() => {});
 		}
 	}
 
@@ -280,7 +286,7 @@
 				class="content-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
 			>
 				<!-- Transcript Display -->
-				{#if ($transcriptionText || $liveMode === 'true') && (!$isRecording || $liveMode === 'true')}
+				{#if ($transcriptionText || liveTranscriptMode) && (!$isRecording || liveTranscriptMode)}
 					<TranscriptDisplay
 						transcript={$transcriptionText || ($isRecording ? 'Listening...' : '')}
 						{responsiveFontSize}

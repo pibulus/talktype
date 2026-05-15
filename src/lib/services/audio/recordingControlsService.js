@@ -9,8 +9,8 @@ import { CTA_PHRASES, ANIMATION, STORAGE_KEYS } from '$lib/constants';
 import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
 import { transcriptionState, transcriptionActions } from '../infrastructure/stores';
 import { analytics } from '../analytics';
-import { liveMode } from '$lib';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
+import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
 import { createLogger } from '$lib/utils/logger';
 
 const log = createLogger('RecordingControls');
@@ -149,11 +149,11 @@ export class RecordingControlsService {
 				}
 
 				// Check if Live Mode already captured a complete transcript.
-				const liveModeEnabled = get(liveMode) === 'true';
-				const liveResult = liveModeEnabled ? await transcriptionStore.finish() : null;
+				const { useLiveDeepgram } = getTranscriptionMode();
+				const liveResult = useLiveDeepgram ? await transcriptionStore.finish() : null;
 				const liveTranscript = liveResult?.text || '';
 				const canUseLiveTranscript =
-					liveModeEnabled &&
+					useLiveDeepgram &&
 					liveResult?.hasFinal &&
 					!liveResult.usedInterim &&
 					liveTranscript.trim().length > 0;
@@ -189,7 +189,7 @@ export class RecordingControlsService {
 					const wordCount = liveTranscript.trim().split(/\s+/).length;
 					analytics.completeTranscription('deepgram-live', estimatedDurationSeconds, wordCount);
 					return;
-				} else if (liveModeEnabled && liveTranscript.trim().length > 0) {
+				} else if (useLiveDeepgram && liveTranscript.trim().length > 0) {
 					log.log('Live Mode had unfinished interim text - using batch fallback');
 				}
 

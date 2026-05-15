@@ -1,7 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { theme, autoRecord, applyTheme, promptStyle, liveMode } from '$lib';
+	import { theme, autoRecord, applyTheme, promptStyle, liveMode, privacyMode } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
@@ -10,7 +10,7 @@
 	import PwaInstall from '$lib/components/pwa/PwaInstall.svelte';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
-	import { STORAGE_KEYS, SERVICE_EVENTS } from '$lib/constants';
+	import { SERVICE_EVENTS } from '$lib/constants';
 
 	export let closeModal = () => {};
 
@@ -29,6 +29,7 @@
 	let unsubscribeAutoRecord;
 	let unsubscribePromptStyle;
 	let unsubscribeLiveMode;
+	let unsubscribePrivacyMode;
 	let unsubscribeUserPreferences;
 
 	onMount(() => {
@@ -49,14 +50,13 @@
 			liveModeValue = value === 'true';
 		});
 
+		unsubscribePrivacyMode = privacyMode.subscribe((value) => {
+			privacyModeValue = value === 'true';
+		});
+
 		unsubscribeUserPreferences = userPreferences.subscribe((value) => {
 			isSupporterValue = value.isSupporter;
 		});
-
-		// Get privacy mode value from localStorage (browser only)
-		if (browser) {
-			privacyModeValue = localStorage.getItem(STORAGE_KEYS.PRIVACY_MODE) === 'true';
-		}
 	});
 
 	onDestroy(() => {
@@ -65,6 +65,7 @@
 		if (unsubscribeAutoRecord) unsubscribeAutoRecord();
 		if (unsubscribePromptStyle) unsubscribePromptStyle();
 		if (unsubscribeLiveMode) unsubscribeLiveMode();
+		if (unsubscribePrivacyMode) unsubscribePrivacyMode();
 		if (unsubscribeUserPreferences) unsubscribeUserPreferences();
 	});
 
@@ -113,8 +114,8 @@
 			liveModeValue = false;
 			liveMode.set('false');
 		}
+		privacyMode.set(privacyModeValue.toString());
 		if (browser) {
-			localStorage.setItem(STORAGE_KEYS.PRIVACY_MODE, privacyModeValue.toString());
 			window.dispatchEvent(
 				new CustomEvent(SERVICE_EVENTS.SETTINGS.CHANGED, {
 					detail: { setting: 'privacyMode', value: privacyModeValue }
@@ -127,9 +128,7 @@
 		liveModeValue = !liveModeValue;
 		if (liveModeValue && privacyModeValue) {
 			privacyModeValue = false;
-			if (browser) {
-				localStorage.setItem(STORAGE_KEYS.PRIVACY_MODE, 'false');
-			}
+			privacyMode.set('false');
 		}
 		liveMode.set(liveModeValue.toString());
 		if (browser) {
