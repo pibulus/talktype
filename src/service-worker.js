@@ -6,11 +6,17 @@ const CACHE = `cache-${version}`;
 const MODELS_CACHE = 'whisper-models-v1';
 const RUNTIME_CACHE = 'runtime-v1';
 
+const LARGE_RUNTIME_ASSET_PATTERNS = [/\/ort-.*\.wasm$/];
+
+function isLargeRuntimeAsset(pathname) {
+	return LARGE_RUNTIME_ASSET_PATTERNS.some((pattern) => pattern.test(pathname));
+}
+
 // Assets to always cache
 const ASSETS = [
 	...build, // the app itself
 	...files // everything in `static`
-];
+].filter((asset) => !isLargeRuntimeAsset(asset));
 
 // Install service worker
 self.addEventListener('install', (event) => {
