@@ -1,8 +1,9 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onDestroy } from 'svelte';
 	import { ANIMATION, getRandomFromArray } from '$lib/constants';
 	import DownloadingState from './states/DownloadingState.svelte';
 	import TranscribingState from './states/TranscribingState.svelte';
+	import { getRecordButtonState } from './recordButtonState.js';
 
 	const dispatch = createEventDispatcher();
 
@@ -22,15 +23,33 @@
 	// Element refs
 	let recordButtonElement;
 	let animationTimeout = null;
+	let copyMessage = getCopySuccessMessage();
+	let previousClipboardSuccess = false;
 
 	// Cleanup on destroy
-	import { onDestroy } from 'svelte';
 	onDestroy(() => {
 		if (animationTimeout) {
 			clearTimeout(animationTimeout);
 			animationTimeout = null;
 		}
 	});
+
+	$: buttonState = getRecordButtonState({
+		recording,
+		recordingDuration,
+		maxDuration,
+		warningThreshold,
+		dangerThreshold,
+		clipboardSuccess,
+		buttonLabel
+	});
+
+	$: {
+		if (clipboardSuccess && !previousClipboardSuccess) {
+			copyMessage = getCopySuccessMessage();
+		}
+		previousClipboardSuccess = clipboardSuccess;
+	}
 
 	// Handlers
 	export function animateButtonPress() {
@@ -53,34 +72,8 @@
 		}
 	}
 
-	function handleKeyDown(event) {
-		// Space or Enter key to toggle recording when focused
-		if ((event.key === 'Enter' || event.key === ' ') && !transcribing) {
-			event.preventDefault(); // Prevent default space/enter behavior
-			dispatch('click');
-		}
-	}
-
-	function getRandomCopyMessage() {
-		return getRandomFromArray(successMessages);
-	}
-
-	function getTimeRemaining() {
-		return maxDuration - recordingDuration;
-	}
-
-	// Reactive variables for timer states (compute only when needed)
-	$: timeRemaining = recording ? getTimeRemaining() : 0;
-	$: isWarning = recording && timeRemaining <= warningThreshold;
-	$: isDanger = recording && timeRemaining <= dangerThreshold;
-
-	$: progressPercentage = recording ? Math.min((recordingDuration / maxDuration) * 100, 100) : 0;
-
-	// Format timer display (MM:SS)
-	function formatTime(seconds) {
-		const minutes = Math.floor(seconds / 60);
-		const secs = Math.floor(seconds % 60);
-		return `${minutes}:${secs.toString().padStart(2, '0')}`;
+	function getCopySuccessMessage() {
+		return getRandomFromArray(successMessages?.length ? successMessages : ['Copied!']) || 'Copied!';
 	}
 </script>
 
@@ -91,20 +84,17 @@
 {:else}
 	<button
 		bind:this={recordButtonElement}
-		class="record-button duration-400 w-[90%] rounded-full transition-all ease-out sm:w-[85%] {clipboardSuccess
+		class="record-button w-[90%] rounded-full transition-all duration-300 ease-out sm:w-[85%] {clipboardSuccess
 			? 'notification-pulse border border-purple-200 bg-purple-50 text-black'
-			: 'text-black'} mx-auto flex h-[64px] min-w-[280px] max-w-[420px] items-center justify-center px-6 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:text-xl md:text-2xl {!recording &&
-		buttonLabel === 'Start Recording' &&
-		!clipboardSuccess
+			: 'text-black'} mx-auto flex h-[64px] min-w-[280px] max-w-[420px] items-center justify-center px-6 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:text-xl md:text-2xl {buttonState.isIdlePrimaryCta
 			? 'pulse-subtle'
-			: ''} {recording ? 'recording-active' : ''} {isWarning && recording
+			: ''} {recording ? 'recording-active' : ''} {buttonState.isWarning
 			? 'recording-warning'
-			: ''} {isDanger && recording ? 'recording-danger' : ''}"
+			: ''} {buttonState.isDanger ? 'recording-danger' : ''}"
 		style="transform-origin: center center; position: relative; {recording
-			? `--progress: ${progressPercentage}%`
+			? `--progress: ${buttonState.progressPercentage}%`
 			: ''}"
 		on:click={() => dispatch('click')}
-		on:keydown={handleKeyDown}
 		disabled={transcribing || downloading}
 		aria-label={recording ? 'Stop Recording' : 'Start Recording'}
 		aria-pressed={recording}
@@ -113,7 +103,7 @@
 		<!-- Main button text -->
 		<span
 			class="cta-text relative inline-block whitespace-nowrap transition-all duration-300 ease-out"
-			style="letter-spacing: 0.02em;"
+			style="letter-spacing: 0;"
 		>
 			<!-- Clipboard success message -->
 			<span
@@ -137,7 +127,7 @@
 						<circle cx="9" cy="10" r="1.2" fill="white" />
 						<circle cx="15" cy="10" r="1.2" fill="white" />
 					</svg>
-					{getRandomCopyMessage()}
+					{copyMessage}
 				</span>
 			</span>
 
@@ -155,13 +145,13 @@
 							class="cta__label relative z-10 rounded-lg px-1 py-0.5 {recording
 								? 'text-shadow-recording'
 								: ''}"
-							style="font-size: clamp(1rem, 0.5vw + 0.9rem, 1.25rem); letter-spacing: .02em;"
+							style="font-size: clamp(1rem, 0.5vw + 0.9rem, 1.25rem); letter-spacing: 0;"
 						>
 							{buttonLabel}
 						</span>
 						<span class="sr-only">
 							{#if recording}
-								{formatTime(recordingDuration)} of {formatTime(maxDuration)}
+								{buttonState.durationLabel}
 							{/if}
 						</span>
 					</span>
@@ -370,7 +360,7 @@
 			0 1px 2px rgba(0, 0, 0, 0.2),
 			0 0 1px rgba(0, 0, 0, 0.1);
 		font-weight: 700;
-		letter-spacing: 0.01em;
+		letter-spacing: 0;
 	}
 
 	/* Responsive adjustments for mobile */
