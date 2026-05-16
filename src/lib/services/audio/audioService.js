@@ -38,6 +38,7 @@ export class AudioService {
 		this.source = null;
 		this.analyser = null;
 		this.cleanupPromise = null;
+		this.stopPromise = null;
 		this.animationFrameId = null;
 		this.releaseStreamTimeout = null;
 
@@ -330,7 +331,11 @@ export class AudioService {
 	}
 
 	async stopRecording() {
-		return new Promise((resolve) => {
+		if (this.stopPromise) {
+			return this.stopPromise;
+		}
+
+		this.stopPromise = new Promise((resolve) => {
 			// Update state through state manager first - this will trigger store update
 			this.stateManager.setState(AudioStates.STOPPING);
 
@@ -401,7 +406,11 @@ export class AudioService {
 					resolve(null);
 				}
 			}, 100); // Small delay to ensure final chunk is captured
+		}).finally(() => {
+			this.stopPromise = null;
 		});
+
+		return this.stopPromise;
 	}
 
 	async #persistRecordingDraft(audioBlob, mimeType) {

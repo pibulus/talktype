@@ -14,7 +14,7 @@ import { createLogger } from '$lib/utils/logger';
 
 const log = createLogger('HybridService');
 
-class SimpleHybridService {
+export class SimpleHybridService {
 	constructor() {
 		this.whisperReady = false;
 		this.whisperLoadPromise = null;
@@ -100,11 +100,18 @@ class SimpleHybridService {
 		const pendingLoad = this.whisperLoadPromise;
 		this.whisperLoadPromise = null;
 
+		let pendingResult = null;
 		if (pendingLoad) {
-			await pendingLoad.catch(() => null);
+			pendingResult = await pendingLoad.catch(() => null);
 		}
 
-		await whisperService.unloadModel();
+		if (browser && get(privacyMode) === 'true') {
+			return;
+		}
+
+		if (!pendingResult?.unloaded) {
+			await whisperService.unloadModel();
+		}
 	}
 
 	/**
