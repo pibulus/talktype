@@ -104,7 +104,6 @@
 			? `--progress: ${progressPercentage}%`
 			: ''}"
 		on:click={() => dispatch('click')}
-		on:mouseenter={() => dispatch('preload')}
 		on:keydown={handleKeyDown}
 		disabled={transcribing || downloading}
 		aria-label={recording ? 'Stop Recording' : 'Start Recording'}

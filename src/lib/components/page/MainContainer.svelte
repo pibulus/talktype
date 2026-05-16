@@ -32,7 +32,6 @@
 
 	let PwaInstallPrompt;
 
-	let speechModelPreloaded = false;
 	let isProcessing = false;
 	function debug() {
 		// console.log(`[MainContainer] ${message}`);
@@ -67,14 +66,7 @@
 			}
 		}
 
-		// Open the modal directly like About modal does
-		// Small delay to ensure component is mounted
-		setTimeout(() => {
-			const modal = document.getElementById('settings_modal');
-			if (modal) {
-				modal.showModal();
-			}
-		}, 10);
+		openDialogAfterRender('settings_modal');
 	}
 
 	function closeSettingsModal() {
@@ -82,40 +74,10 @@
 		modalService.closeModal();
 	}
 
-	// Function to preload speech model for faster initial response
-	function preloadSpeechModel() {
-		if (!speechModelPreloaded && browser) {
-			debug('Preloading speech model for faster response');
-			speechModelPreloaded = true; // Assume success initially
-
-			// Make sure the current prompt style is set before preloading
-			if (browser) {
-				const savedStyle = StorageUtils.getItem(STORAGE_KEYS.PROMPT_STYLE);
-				if (savedStyle) {
-					debug(`Setting prompt style from localStorage: ${savedStyle}`);
-					geminiService.setPromptStyle(savedStyle);
-				}
-			}
-
-			// Log available prompt styles
-			const availableStyles = geminiService.getAvailableStyles();
-			debug(`Available prompt styles: ${availableStyles.join(', ')}`);
-
-			geminiService
-				.preloadModel()
-				.then(() => {
-					debug('Speech model preloaded successfully.');
-				})
-				.catch((err) => {
-					// Just log the error, don't block UI
-					console.error('Error preloading speech model:', err);
-					debug(`Error preloading speech model: ${err.message}`);
-					// Reset so we can try again
-					speechModelPreloaded = false;
-				});
-		} else if (speechModelPreloaded) {
-			debug('Speech model already preloaded or preloading.');
-		}
+	function openDialogAfterRender(modalId) {
+		setTimeout(() => {
+			modalService.openModal(modalId);
+		}, 10);
 	}
 
 	// Event handlers for recording state changes
@@ -170,23 +132,15 @@
 
 	// Modal control functions
 	function showAboutModal() {
-		const modal = document.getElementById('about_modal');
-		if (modal) {
-			modal.showModal();
-		}
+		modalService.openModal('about_modal');
 	}
 
 	function showExtensionModal() {
-		const modal = document.getElementById('extension_modal');
-		if (modal) {
-			modal.showModal();
-		}
+		modalService.openModal('extension_modal');
 	}
 
 	function closeModal() {
-		// General close modal function
-		const modals = document.querySelectorAll('dialog[open]');
-		modals.forEach((modal) => modal.close());
+		modalService.closeModal();
 	}
 
 	// Handle transcription completed event for PWA prompt and local transcript history
@@ -243,12 +197,7 @@
 			}
 		}
 
-		setTimeout(() => {
-			const modal = document.getElementById('supporter_modal');
-			if (modal) {
-				modal.showModal();
-			}
-		}, 10);
+		openDialogAfterRender('supporter_modal');
 	}
 
 	// Closes the PWA install prompt
@@ -292,12 +241,7 @@
 			}
 		}
 
-		setTimeout(() => {
-			const modal = document.getElementById('history_modal');
-			if (modal) {
-				modal.showModal();
-			}
-		}, 10);
+		openDialogAfterRender('history_modal');
 	}
 
 	// Component references
@@ -510,8 +454,6 @@
 	<ContentContainer
 		bind:this={contentContainer}
 		ghostComponent={ghostContainer}
-		{speechModelPreloaded}
-		onPreloadRequest={preloadSpeechModel}
 		on:recordingstart={handleRecordingStart}
 		on:recordingstop={handleRecordingStop}
 		on:processingstart={handleProcessingStart}

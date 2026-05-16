@@ -26,7 +26,6 @@
 
 	// Props
 	export let ghostComponent = null;
-	export let onPreloadRequest = null;
 	export let modelReady = false;
 
 	// Local state
@@ -59,11 +58,6 @@
 		if (ghostComponent) {
 			recordingControlsService.setGhostComponent(ghostComponent);
 		}
-
-		// Set preload handler
-		if (onPreloadRequest) {
-			recordingControlsService.setPreloadHandler(onPreloadRequest);
-		}
 	});
 
 	onDestroy(() => {
@@ -92,13 +86,6 @@
 			console.error('Recording toggle failed:', error);
 			dispatch('error', { message: error.message });
 		}
-	}
-
-	function handlePreload() {
-		if (recordingControlsService) {
-			recordingControlsService.preloadSpeechModel();
-		}
-		dispatch('preload');
 	}
 
 	// Export functions for external access
@@ -139,7 +126,6 @@
 				successMessages={COPY_MESSAGES}
 				{buttonLabel}
 				on:click={handleRecordingToggle}
-				on:preload={handlePreload}
 			/>
 		</div>
 	</div>

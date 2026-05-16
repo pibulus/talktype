@@ -47,14 +47,19 @@ export {
 	uiActions
 } from './infrastructure/stores';
 
+let servicesInitialized = false;
+let pendingDraftRestoreStarted = false;
+
 // Convenience function to initialize all services
 export function initializeServices(options = {}) {
-	const { debug = false, haptic = true } = options;
+	const { debug = false, haptic = true, reset = !servicesInitialized } = options;
 
-	// Reset stores to initial state
-	resetStores();
+	if (reset) {
+		resetStores();
+	}
 
-	if (browser) {
+	if (browser && !pendingDraftRestoreStarted) {
+		pendingDraftRestoreStarted = true;
 		transcriptionServiceInstance
 			.restorePendingRecordingDraft()
 			.catch((error) => console.warn('Failed to restore pending recording:', error));
@@ -70,6 +75,17 @@ export function initializeServices(options = {}) {
 		hapticServiceInstance.disable();
 	}
 
+	servicesInitialized = true;
+	return getServices();
+}
+
+export function resetServiceInitializationForTesting() {
+	servicesInitialized = false;
+	pendingDraftRestoreStarted = false;
+	resetStores();
+}
+
+function getServices() {
 	return {
 		eventBus: eventBusInstance,
 		audioService: audioServiceInstance,

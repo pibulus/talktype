@@ -74,36 +74,39 @@
 		checkScrollable();
 	}
 
-	onMount(async () => {
-		// Ensure text is set after DOM is ready - handles cases where the
-		// reactive $: statement misses the initial bind:this timing
-		await tick();
-		if (editableTranscript && transcript) {
-			editableTranscript.innerText = transcript;
-		}
+	onMount(() => {
+		let mounted = true;
+		let resizeObserver;
 
-		// Check if content is scrollable on mount
-		checkScrollable();
+		tick().then(() => {
+			if (!mounted) return;
 
-		// Watch for content changes to update scrollable state
-		const resizeObserver = new ResizeObserver(() => {
+			// Ensure text is set after DOM is ready - handles cases where the
+			// reactive $: statement misses the initial bind:this timing.
+			if (editableTranscript && transcript) {
+				editableTranscript.innerText = transcript;
+			}
+
 			checkScrollable();
+
+			if (typeof ResizeObserver === 'undefined') return;
+
+			resizeObserver = new ResizeObserver(() => {
+				checkScrollable();
+			});
+
+			if (transcriptBoxRef) {
+				resizeObserver.observe(transcriptBoxRef);
+			}
 		});
 
-		if (transcriptBoxRef) {
-			resizeObserver.observe(transcriptBoxRef);
-		}
-
 		return () => {
-			// Clean up RAF timeout
+			mounted = false;
 			if (checkScrollableTimeout) {
 				cancelAnimationFrame(checkScrollableTimeout);
+				checkScrollableTimeout = null;
 			}
-			// Clean up ResizeObserver
-			if (transcriptBoxRef) {
-				resizeObserver.unobserve(transcriptBoxRef);
-			}
-			resizeObserver.disconnect();
+			resizeObserver?.disconnect();
 		};
 	});
 </script>
@@ -218,7 +221,11 @@
 		display: flex;
 		flex-direction: column;
 		overflow: hidden; /* Contain all scrolling internally */
-		transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+		transition:
+			transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+			background-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+			border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+			box-shadow 0.38s cubic-bezier(0.22, 1, 0.36, 1);
 		animation: subtle-breathe 4s infinite ease-in-out alternate;
 		position: relative; /* For the pseudo-element highlight */
 		will-change: box-shadow; /* GPU hint for better performance */
@@ -288,7 +295,7 @@
 	/* Optimize spacing based on font size for better readability */
 	.text-xs,
 	.text-sm {
-		letter-spacing: 0.01em; /* Slightly open tracking for smaller text */
+		letter-spacing: 0;
 	}
 
 	.text-base,
@@ -301,16 +308,7 @@
 	.text-3xl,
 	.text-4xl {
 		line-height: 1.5; /* Slightly tighter for larger text */
-		letter-spacing: -0.01em; /* Slightly tighter tracking for large text */
-	}
-
-	/* Base transition timing for box with gentle easing curve */
-	.transcript-box {
-		transition:
-			transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-			background-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-			border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-			box-shadow 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+		letter-spacing: 0;
 	}
 
 	/* Clean highlight when clicked/editing - single consistent background */
@@ -321,6 +319,7 @@
 			0 10px 28px rgba(249, 168, 212, 0.3),
 			0 0 2px rgba(249, 168, 212, 0.2) inset;
 		transform: translateY(-1px) scale(1.003);
+		animation: edit-pulse 0.6s cubic-bezier(0.4, 0, 0.2, 1) 1;
 	}
 
 	/* Refined text shadow effect when editing - with subtle depth */
@@ -328,7 +327,7 @@
 		text-shadow:
 			0 0.5px 0 rgba(249, 168, 212, 0.2),
 			0 1px 1.5px rgba(0, 0, 0, 0.03);
-		letter-spacing: 0.01em; /* Very slightly open up letter spacing for editability */
+		letter-spacing: 0;
 	}
 
 	/* Subtle pulse animation when first entering edit mode */
@@ -344,27 +343,9 @@
 		}
 	}
 
-	.transcript-box:focus-within {
-		animation: edit-pulse 0.6s cubic-bezier(0.4, 0, 0.2, 1) 1;
-	}
-
 	/* Remove outline focus from the text itself for cleaner look */
 	.custom-transcript-text:focus {
 		outline: none;
-	}
-
-	/* Style the share button area with matching elegance */
-	.transcript-button-area {
-		transition:
-			background 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-			backdrop-filter 0.32s cubic-bezier(0.22, 1, 0.36, 1),
-			transform 0.34s cubic-bezier(0.34, 1.56, 0.64, 1);
-	}
-
-	.transcript-box:focus-within .transcript-button-area {
-		background-color: rgba(253, 242, 248, 0.9);
-		backdrop-filter: blur(5px);
-		transform: translateY(-0.5px);
 	}
 
 	/* Content area scrolling - more refined */
@@ -459,20 +440,6 @@
 		position: relative; /* For positioning the gradient */
 		z-index: 5; /* Ensure it's above the content but below the gradient */
 		margin-top: -4px; /* Reduce gap between transcript and share button */
-	}
-
-	/* Button area styling - integrated with content */
-	.transcript-button-area {
-		flex-shrink: 0; /* Prevent button area from shrinking */
-		background: transparent; /* Make it blend with content */
-		margin-top: 8px; /* Small space after gradient */
-		backdrop-filter: blur(4px); /* Subtle blur effect for elegance */
-	}
-
-	/* Ensure Share button stays centered */
-	:global(.share-btn-text) {
-		display: inline-block;
-		text-align: center;
 	}
 
 	/* Animation classes */

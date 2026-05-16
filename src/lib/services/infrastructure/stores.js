@@ -12,7 +12,8 @@ export const audioState = writable({
 	previousState: null,
 	timestamp: Date.now(),
 	mimeType: null,
-	waveformData: []
+	waveformData: [],
+	timeLimit: false
 });
 
 // Recording state
@@ -103,7 +104,8 @@ export const audioActions = {
 			previousState: current.state,
 			state,
 			error,
-			timestamp: Date.now()
+			timestamp: Date.now(),
+			timeLimit: false
 		}));
 
 		// Update recording state when audio state changes
@@ -178,14 +180,15 @@ export const audioActions = {
 
 	recordingTimeLimitReached() {
 		// This function can be subscribed to for stopping recording
-		audioState.update((current) => ({
-			...current,
-			timeLimit: true
-		}));
+		audioState.update((current) => {
+			if (current.timeLimit) return current;
+			return {
+				...current,
+				timeLimit: true
+			};
+		});
 
-		// For reliable auto-stop, we also immediately update the recording state
-		// so that subscribers can react to it
-		console.log('⏱️ Recording time limit reached, signaling automatic stop');
+		// For reliable auto-stop, subscribers react to the timeLimit flag.
 	}
 };
 
@@ -321,7 +324,8 @@ export function resetStores() {
 		previousState: null,
 		timestamp: Date.now(),
 		mimeType: null,
-		waveformData: []
+		waveformData: [],
+		timeLimit: false
 	});
 
 	recordingState.set({

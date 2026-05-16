@@ -10,7 +10,7 @@
 	import RecordingStatus from './RecordingStatus.svelte';
 	import TranscriptionEffects from './TranscriptionEffects.svelte';
 	import { memoize } from '$lib/utils/performanceUtils';
-	import { STORAGE_KEYS, ANIMATION, SERVICE_EVENTS } from '$lib/constants';
+	import { STORAGE_KEYS } from '$lib/constants';
 	import {
 		initializeServices,
 		// Stores
@@ -30,16 +30,15 @@
 	} from '$lib/services/infrastructure/stores';
 	import { liveMode, privacyMode } from '$lib';
 	import { transcriptionStore } from '$lib/stores/transcriptionStore';
+	import { offlineModelController } from '$lib/services/transcription/offlineModelController.js';
 	import { whisperStatus } from '../../services/transcription/whisper/whisperService';
 
 	const dispatch = createEventDispatcher();
 
 	// Props - simplified interface
 	export let ghostComponent = null;
-	export let onPreloadRequest = null;
 	// Service instances
 	let unsubscribers = [];
-	let activeTimeouts = [];
 	let modelReady = false;
 
 	// Subscribe to whisper status to track when model is ready
@@ -96,99 +95,12 @@
 		// Forward other events to child components as needed
 	}
 
-	// Track if user has interacted with the page
-	let hasUserInteracted = false;
-	let modelLoadStarted = false;
-
-	// Start background model load after first user interaction OR after configured delay
-	// This gives us the best of both worlds - fast initial page load but models ready when needed
-	function startModelLoading() {
-		if (modelLoadStarted) return;
-
-		// Only download if Offline Mode is enabled.
-		if (!browser || $privacyMode !== 'true') {
-			// console.log('⏭️ Privacy mode not enabled - skipping model download');
-			return;
-		}
-
-		modelLoadStarted = true;
-
-		// Start progressive model loading
-		import('$lib/services/transcription/simpleHybridService')
-			.then(({ simpleHybridService }) => {
-				// console.log('🚀 Starting progressive Whisper model download...');
-				return simpleHybridService.startBackgroundLoad();
-			})
-			.then((result) => {
-				if (!result?.success) {
-					modelLoadStarted = false;
-				}
-			})
-			.catch(() => {
-				modelLoadStarted = false;
-			});
-	}
-
-	function handleFirstInteraction() {
-		if (hasUserInteracted) return;
-		hasUserInteracted = true;
-
-		// Remove listeners after first interaction
-		if (browser) {
-			window.removeEventListener('click', handleFirstInteraction);
-			window.removeEventListener('touchstart', handleFirstInteraction);
-			window.removeEventListener('keydown', handleFirstInteraction);
-		}
-
-		// Start loading immediately on interaction
-		startModelLoading();
-	}
-
-	// Listen for privacy mode changes from Settings
-	function handlePrivacyModeChange(event) {
-		const { setting, value } = event.detail;
-		if (setting === 'privacyMode' && value === true) {
-			// console.log('🔒 Privacy mode enabled - starting model download immediately');
-			startModelLoading();
-		} else if (setting === 'privacyMode' && value === false) {
-			modelLoadStarted = false;
-			import('$lib/services/transcription/simpleHybridService')
-				.then(({ simpleHybridService }) => {
-					void simpleHybridService.releaseOfflineModel();
-				})
-				.catch(() => {});
-		}
-	}
-
 	// Lifecycle hooks
 	onMount(() => {
 		// Initialize services
 		initializeServices({ debug: false });
 
-		// Listen for privacy mode toggle from Settings
-		if (browser) {
-			window.addEventListener(SERVICE_EVENTS.SETTINGS.CHANGED, handlePrivacyModeChange);
-		}
-
-		// Wait for first user interaction before loading models
-		// This prevents affecting Lighthouse/PageSpeed scores
-		if (browser) {
-			window.addEventListener('click', handleFirstInteraction, { once: true });
-			window.addEventListener('touchstart', handleFirstInteraction, { once: true });
-			window.addEventListener('keydown', handleFirstInteraction, { once: true });
-
-			// Also start loading after configured delay if no interaction
-			// This ensures models are ready when user needs them
-			const delayTimeoutId = setTimeout(() => {
-				if (!modelLoadStarted) {
-					// console.log(
-					// 	`⏰ Auto-starting model load after ${ANIMATION.MODEL.AUTO_LOAD_DELAY / 1000}s delay`
-					// );
-					startModelLoading();
-				}
-			}, ANIMATION.MODEL.AUTO_LOAD_DELAY);
-			activeTimeouts.push(delayTimeoutId);
-		}
+		offlineModelController.start();
 
 		// Subscribe to permission denied state to show error modal
 		const permissionUnsub = hasPermissionError.subscribe((denied) => {
@@ -230,17 +142,7 @@
 		// Unsubscribe from all subscriptions
 		unsubscribers.forEach((unsub) => unsub());
 
-		// Clear all active timeouts
-		activeTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
-		activeTimeouts = [];
-
-		// Remove event listeners
-		if (browser) {
-			window.removeEventListener(SERVICE_EVENTS.SETTINGS.CHANGED, handlePrivacyModeChange);
-			window.removeEventListener('click', handleFirstInteraction);
-			window.removeEventListener('touchstart', handleFirstInteraction);
-			window.removeEventListener('keydown', handleFirstInteraction);
-		}
+		offlineModelController.cleanup();
 	});
 
 	// Export functions for external components
@@ -273,11 +175,9 @@
 		<RecordingControls
 			bind:this={recordingControlsRef}
 			{ghostComponent}
-			{onPreloadRequest}
 			{modelReady}
 			on:recordingStateChanged
 			on:error
-			on:preload
 		/>
 
 		<!-- Dynamic content area - only render when there's content -->

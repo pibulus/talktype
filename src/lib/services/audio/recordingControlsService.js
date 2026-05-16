@@ -7,7 +7,7 @@ import { get } from 'svelte/store';
 import { browser } from '$app/environment';
 import { CTA_PHRASES, ANIMATION, STORAGE_KEYS } from '$lib/constants';
 import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
-import { transcriptionState, transcriptionActions } from '../infrastructure/stores';
+import { audioState, transcriptionState, transcriptionActions } from '../infrastructure/stores';
 import { analytics } from '../analytics';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
@@ -26,22 +26,23 @@ export class RecordingControlsService {
 		this.ghostComponent = null;
 		this.activeTimeouts = [];
 		this.currentCtaIndex = 0;
-		this.onPreloadRequest = null;
 		this.toggleInFlight = false;
+		this.timeLimitStopInFlight = false;
+		this.timeLimitUnsubscribe = audioState.subscribe((state) => {
+			if (!state.timeLimit || this.timeLimitStopInFlight) return;
+			const { isRecording } = this.stores;
+			if (!isRecording || !get(isRecording)) return;
+
+			this.timeLimitStopInFlight = true;
+			this.uiActions.setScreenReaderMessage('Recording time limit reached. Stopping recording.');
+			this.stopRecording().finally(() => {
+				this.timeLimitStopInFlight = false;
+			});
+		});
 	}
 
 	setGhostComponent(ghostComponent) {
 		this.ghostComponent = ghostComponent;
-	}
-
-	setPreloadHandler(onPreloadRequest) {
-		this.onPreloadRequest = onPreloadRequest;
-	}
-
-	preloadSpeechModel() {
-		if (this.onPreloadRequest) {
-			this.onPreloadRequest();
-		}
 	}
 
 	getCurrentCta() {
@@ -59,9 +60,6 @@ export class RecordingControlsService {
 		const isAutoStart = options.source === 'auto-start' || options.source === 'launch-shortcut';
 
 		if (get(isRecording) || get(isTranscribing)) return;
-
-		// Try to preload the speech model if not already done
-		this.preloadSpeechModel();
 
 		// Reset UI state
 		this.uiActions.clearErrorMessage();
@@ -324,8 +322,9 @@ export class RecordingControlsService {
 		this.audioService?.cleanup?.().catch((error) => {
 			log.warn('Audio cleanup failed:', error?.message || error);
 		});
+		this.timeLimitUnsubscribe?.();
+		this.timeLimitUnsubscribe = null;
 		this.ghostComponent = null;
-		this.onPreloadRequest = null;
 	}
 }
 

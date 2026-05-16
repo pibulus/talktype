@@ -7,7 +7,6 @@
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
-	import PwaInstall from '$lib/components/pwa/PwaInstall.svelte';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { SERVICE_EVENTS } from '$lib/constants';
@@ -21,8 +20,6 @@
 	let privacyModeValue = false;
 	let liveModeValue = false;
 	let isSupporterValue = false;
-
-	let pwaInstallComponent;
 
 	// Store unsubscribe functions
 	let unsubscribeTheme;
@@ -282,30 +279,6 @@
 					</label>
 				</div>
 
-				<!-- Install App Button - COMMENTED OUT FOR NOW
-				{#if !$isPwaInstalled}
-					<div
-						class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
-					>
-						<div>
-							<span class="text-base font-medium text-gray-700">Keep TalkType Close</span>
-							<p class="mt-0.5 text-sm text-gray-500">Save to your Home Screen</p>
-						</div>
-						<button
-							class="btn btn-sm border-pink-200 bg-pink-50 text-pink-600 hover:bg-pink-100"
-							on:click={() => {
-								if (pwaInstallComponent) {
-									analytics.viewInstallModal('pwa-install-component');
-									pwaInstallComponent.showDialog();
-								}
-							}}
-						>
-							Tap to Save
-						</button>
-					</div>
-				{/if}
-				-->
-
 				<!-- Download Progress (if loading) -->
 				{#if $whisperStatus.isLoading && privacyModeValue}
 					<div class="rounded-lg border border-blue-200 bg-blue-50/80 p-2">
@@ -391,9 +364,6 @@
 		aria-label="Close modal"
 	></button>
 </dialog>
-
-<!-- PWA Install Component -->
-<PwaInstall bind:this={pwaInstallComponent} />
 
 <style>
 	.animate-fadeUp {

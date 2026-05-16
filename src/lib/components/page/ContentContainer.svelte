@@ -5,8 +5,6 @@
 
 	// Props passed from the parent
 	export let ghostComponent = null;
-	export let speechModelPreloaded = false;
-	export let onPreloadRequest = null;
 
 	// Event dispatcher to communicate with parent
 	const dispatch = createEventDispatcher();
@@ -87,8 +85,6 @@
 <div class="w-full max-w-xl sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
 	<AudioToText
 		bind:this={audioToTextComponent}
-		isModelPreloaded={speechModelPreloaded}
-		{onPreloadRequest}
 		{ghostComponent}
 		on:transcriptionCompleted={forwardTranscriptionCompleted}
 		on:recordingstart={forwardRecordingStart}
