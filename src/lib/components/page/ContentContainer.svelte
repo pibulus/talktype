@@ -36,6 +36,7 @@
 			debug('Starting recording from parent');
 			return audioToTextComponent.startRecording(options);
 		}
+		return false;
 	}
 
 	export function stopRecording() {

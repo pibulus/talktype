@@ -12,6 +12,7 @@ import { browser } from '$app/environment';
 import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { createLogger } from '$lib/utils/logger';
+import { isPermissionError } from './permissionErrors.js';
 
 const log = createLogger('AudioService');
 const IOS_PWA_WARM_STREAM_MS = 20 * 1000;
@@ -283,7 +284,7 @@ export class AudioService {
 			log.error('Error starting recording:', error);
 			this.stateManager.setState(AudioStates.ERROR, { error });
 
-			const friendlyMessage = error.message.includes('permission')
+			const friendlyMessage = isPermissionError(error)
 				? 'Need microphone access - check your browser settings!'
 				: 'Recording hiccup - give it another try?';
 			uiActions.setErrorMessage(friendlyMessage);

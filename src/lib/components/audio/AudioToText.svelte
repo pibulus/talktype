@@ -150,6 +150,7 @@
 		if (recordingControlsRef) {
 			return recordingControlsRef.startRecording(options);
 		}
+		return false;
 	}
 
 	export function stopRecording() {

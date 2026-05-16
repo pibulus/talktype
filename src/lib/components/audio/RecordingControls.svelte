@@ -92,7 +92,9 @@
 	export async function startRecording(options = {}) {
 		if (recordingControlsService) {
 			await recordingControlsService.startRecording(options);
+			return true;
 		}
+		return false;
 	}
 
 	export async function stopRecording() {

@@ -1,6 +1,7 @@
 <script>
 	import { onMount, tick } from 'svelte';
 	import { browser } from '$app/environment';
+	import { get } from 'svelte/store';
 	import GhostContainer from './GhostContainer.svelte';
 	import ContentContainer from './ContentContainer.svelte';
 	import FooterComponent from './FooterComponent.svelte';
@@ -290,14 +291,21 @@
 		}
 	}
 
+	function scheduleAutoStartRetry(source, options, delay) {
+		if (autoRecordTimeout) {
+			clearTimeout(autoRecordTimeout);
+		}
+		autoRecordTimeout = setTimeout(() => {
+			attemptAutoStart(source, options);
+		}, delay);
+	}
+
 	function armAutoStartOnGesture(source) {
 		if (!browser || autoStartGestureCleanup) return;
 
 		const retry = () => {
 			clearAutoStartGestureRetry();
-			autoRecordTimeout = setTimeout(() => {
-				attemptAutoStart(source, { allowGestureRetry: false });
-			}, 0);
+			scheduleAutoStartRetry(source, { allowGestureRetry: false }, 0);
 		};
 
 		window.addEventListener('pointerup', retry, true);
@@ -314,9 +322,7 @@
 		const retry = () => {
 			if (document.visibilityState !== 'visible') return;
 			clearAutoStartVisibilityRetry();
-			autoRecordTimeout = setTimeout(() => {
-				attemptAutoStart(source, { allowGestureRetry: true });
-			}, 150);
+			scheduleAutoStartRetry(source, { allowGestureRetry: true }, 150);
 		};
 
 		document.addEventListener('visibilitychange', retry);
@@ -331,9 +337,7 @@
 		await tick();
 
 		if (!contentContainer) {
-			autoRecordTimeout = setTimeout(() => {
-				attemptAutoStart(source, { allowGestureRetry });
-			}, 100);
+			scheduleAutoStartRetry(source, { allowGestureRetry }, 100);
 			return false;
 		}
 
@@ -347,14 +351,17 @@
 		}
 
 		if (hasOpenDialog()) {
-			autoRecordTimeout = setTimeout(() => {
-				attemptAutoStart(source, { allowGestureRetry });
-			}, 300);
+			scheduleAutoStartRetry(source, { allowGestureRetry }, 300);
 			return false;
 		}
 
 		try {
-			await contentContainer.startRecording({ source });
+			const started = await contentContainer.startRecording({ source });
+			await tick();
+			if (started !== true || !get(recordingStore)) {
+				scheduleAutoStartRetry(source, { allowGestureRetry }, 100);
+				return false;
+			}
 			clearAutoStartGestureRetry();
 			clearAutoStartVisibilityRetry();
 			return true;
@@ -409,9 +416,7 @@
 			const autoStartSource = getAutoStartSource();
 			if (autoStartSource) {
 				const startDelay = introWasShown ? 450 : 250;
-				autoRecordTimeout = setTimeout(() => {
-					attemptAutoStart(autoStartSource, { allowGestureRetry: true });
-				}, startDelay);
+				scheduleAutoStartRetry(autoStartSource, { allowGestureRetry: true }, startDelay);
 			} else {
 				debug('Auto-start not requested.');
 			}

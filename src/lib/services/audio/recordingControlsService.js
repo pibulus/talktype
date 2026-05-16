@@ -12,6 +12,7 @@ import { analytics } from '../analytics';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
 import { createLogger } from '$lib/utils/logger';
+import { isPermissionError } from './permissionErrors.js';
 
 const log = createLogger('RecordingControls');
 
@@ -95,8 +96,7 @@ export class RecordingControlsService {
 			// State is tracked through stores now
 		} catch (err) {
 			log.error('Error in startRecording:', err);
-			const errorMessage = err?.message || '';
-			const friendlyMessage = errorMessage.includes('permission')
+			const friendlyMessage = isPermissionError(err)
 				? isAutoStart
 					? 'Tap Start Recording to finish microphone setup.'
 					: 'Need microphone access - click allow when asked!'
@@ -146,9 +146,14 @@ export class RecordingControlsService {
 					return;
 				}
 
-				// Check if Live Mode already captured a complete transcript.
+				// Check if Live Mode already captured a complete transcript. If the user
+				// switched away from Live Mode while recording, close any stale socket
+				// without waiting for a Deepgram finalization grace period.
 				const { useLiveDeepgram } = getTranscriptionMode();
 				const liveResult = useLiveDeepgram ? await transcriptionStore.finish() : null;
+				if (!useLiveDeepgram) {
+					transcriptionStore.disconnect();
+				}
 				const liveTranscript = liveResult?.text || '';
 				const canUseLiveTranscript =
 					useLiveDeepgram &&
@@ -287,7 +292,7 @@ export class RecordingControlsService {
 			log.error('Recording operation failed:', err);
 
 			// Show error message
-			const friendlyMessage = err.message.includes('permission')
+			const friendlyMessage = isPermissionError(err)
 				? 'Need microphone access - click allow when asked!'
 				: 'Recording hiccup - mind trying again?';
 			this.uiActions.setErrorMessage(friendlyMessage);

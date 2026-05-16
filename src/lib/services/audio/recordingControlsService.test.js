@@ -1,6 +1,25 @@
 import { get } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioStates } from './audioStates.js';
+
+const transcriptionStoreMock = vi.hoisted(() => ({
+	disconnect: vi.fn(),
+	reset: vi.fn(),
+	finish: vi.fn()
+}));
+
+const transcriptionModeMock = vi.hoisted(() => ({
+	getTranscriptionMode: vi.fn(() => ({ useLiveDeepgram: false }))
+}));
+
+vi.mock('$lib/stores/transcriptionStore', () => ({
+	transcriptionStore: transcriptionStoreMock
+}));
+
+vi.mock('$lib/services/transcription/mode.js', () => ({
+	getTranscriptionMode: transcriptionModeMock.getTranscriptionMode
+}));
+
 import { RecordingControlsService } from './recordingControlsService.js';
 import {
 	audioActions,
@@ -11,12 +30,22 @@ import {
 	transcriptionText
 } from '../infrastructure/stores.js';
 
-function createService() {
+function createService(overrides = {}) {
+	const audioService = {
+		stopRecording: vi.fn(),
+		cleanup: vi.fn().mockResolvedValue(),
+		...overrides.audioService
+	};
+	const transcriptionService = {
+		transcribeAudio: vi.fn().mockResolvedValue('batch transcript'),
+		clearPendingRecordingDraft: vi.fn().mockResolvedValue(),
+		copyToClipboard: vi.fn().mockResolvedValue(),
+		...overrides.transcriptionService
+	};
+
 	return new RecordingControlsService({
-		audioService: {
-			cleanup: vi.fn().mockResolvedValue()
-		},
-		transcriptionService: {},
+		audioService,
+		transcriptionService,
 		hapticService: null,
 		pwaService: {
 			incrementTranscriptionCount: vi.fn()
@@ -44,6 +73,13 @@ describe('RecordingControlsService', () => {
 	afterEach(() => {
 		service?.cleanup();
 		service = null;
+		vi.clearAllMocks();
+		transcriptionModeMock.getTranscriptionMode.mockReturnValue({ useLiveDeepgram: false });
+		transcriptionStoreMock.finish.mockResolvedValue({
+			text: '',
+			hasFinal: false,
+			usedInterim: false
+		});
 		resetStores();
 	});
 
@@ -74,5 +110,55 @@ describe('RecordingControlsService', () => {
 		audioActions.updateState(AudioStates.IDLE);
 
 		expect(get(audioState).timeLimit).toBe(false);
+	});
+
+	it('disconnects stale Deepgram live streams without waiting when stopped after switching offline', async () => {
+		const audioBlob = new Blob(['x'.repeat(1200)], { type: 'audio/webm' });
+		const audioService = {
+			stopRecording: vi.fn().mockResolvedValue(audioBlob)
+		};
+		const transcriptionService = {
+			transcribeAudio: vi.fn().mockResolvedValue('offline transcript')
+		};
+
+		audioActions.updateState(AudioStates.RECORDING);
+		service = createService({ audioService, transcriptionService });
+
+		await service.stopRecording();
+
+		expect(transcriptionStoreMock.finish).not.toHaveBeenCalled();
+		expect(transcriptionStoreMock.disconnect).toHaveBeenCalledTimes(1);
+		expect(transcriptionService.transcribeAudio).toHaveBeenCalledWith(audioBlob);
+	});
+
+	it('uses finalized Deepgram live text without batch transcription in live mode', async () => {
+		const audioBlob = new Blob(['x'.repeat(1200)], { type: 'audio/webm' });
+		const audioService = {
+			stopRecording: vi.fn().mockResolvedValue(audioBlob)
+		};
+		const transcriptionService = {
+			transcribeAudio: vi.fn().mockResolvedValue('batch transcript'),
+			clearPendingRecordingDraft: vi.fn().mockResolvedValue(),
+			copyToClipboard: vi.fn().mockResolvedValue()
+		};
+
+		transcriptionModeMock.getTranscriptionMode.mockReturnValue({ useLiveDeepgram: true });
+		transcriptionStoreMock.finish.mockResolvedValue({
+			text: 'hello world',
+			hasFinal: true,
+			usedInterim: false
+		});
+		audioActions.updateState(AudioStates.RECORDING);
+		service = createService({ audioService, transcriptionService });
+
+		await service.stopRecording();
+
+		expect(transcriptionStoreMock.finish).toHaveBeenCalledTimes(1);
+		expect(transcriptionStoreMock.disconnect).not.toHaveBeenCalled();
+		expect(transcriptionService.transcribeAudio).not.toHaveBeenCalled();
+		expect(transcriptionService.clearPendingRecordingDraft).toHaveBeenCalledTimes(1);
+		expect(transcriptionService.copyToClipboard).toHaveBeenCalledWith('hello world', {
+			silent: true
+		});
 	});
 });
