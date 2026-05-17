@@ -26,7 +26,8 @@ export function initGradientAnimation(themeId, svgElement) {
 	cleanupAnimation(themeId);
 
 	const gradientId = `${themeId}Gradient`;
-	const gradient = svgElement.querySelector(`#${gradientId}`);
+	const gradient =
+		svgElement.querySelector(`#${gradientId}`) || document.getElementById(gradientId);
 
 	if (!gradient) {
 		console.warn(`Gradient #${gradientId} not found`);
