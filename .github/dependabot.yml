@@ -19,6 +19,9 @@ updates:
       - dependency-name: '*'
         update-types:
           - version-update:semver-major
+      - dependency-name: prettier
+      - dependency-name: prettier-plugin-svelte
+      - dependency-name: prettier-plugin-tailwindcss
 
   - package-ecosystem: github-actions
     directory: /
