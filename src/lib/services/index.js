@@ -21,10 +21,10 @@ export {
 
 // Audio services
 export { AudioStates } from './audio/audioStates';
-export { audioService, AudioEvents } from './audio/audioService';
+export { audioService } from './audio/audioService';
 
 // Transcription services
-export { transcriptionService, TranscriptionEvents } from './transcription/transcriptionService';
+export { transcriptionService } from './transcription/transcriptionService';
 
 // Store exports
 export {

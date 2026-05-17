@@ -17,14 +17,6 @@ import { isPermissionError } from './permissionErrors.js';
 const log = createLogger('AudioService');
 const IOS_PWA_WARM_STREAM_MS = 20 * 1000;
 
-export const AudioEvents = {
-	RECORDING_STARTED: 'audio:recordingStarted',
-	RECORDING_STOPPED: 'audio:recordingStopped',
-	RECORDING_ERROR: 'audio:recordingError',
-	STATE_CHANGED: 'audio:stateChanged',
-	WAVEFORM_DATA: 'audio:waveformData'
-};
-
 export class AudioService {
 	constructor() {
 		this.mediaRecorder = null;

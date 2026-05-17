@@ -40,9 +40,6 @@ function createLocalStorageStore(key, initialValue) {
 // Create centralized store for theme/vibe management
 export const theme = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.THEME, CONSTANTS.DEFAULT_THEME);
 
-// Store for first visit tracking
-export const hasSeenIntro = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.FIRST_VISIT, 'false');
-
 // Store for auto-record preference
 export const autoRecord = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.AUTO_RECORD, 'false');
 
@@ -54,9 +51,6 @@ export const promptStyle = createLocalStorageStore(
 
 // Store for custom prompt text
 export const customPrompt = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.CUSTOM_PROMPT, '');
-
-// Store for auto-save preference
-export const autoSave = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.AUTO_SAVE, 'true');
 
 // Store for live mode preference
 export const liveMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.LIVE_MODE, 'true');

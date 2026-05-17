@@ -9,15 +9,6 @@ import { createLogger } from '$lib/utils/logger';
 
 const log = createLogger('TranscriptionService');
 
-export const TranscriptionEvents = {
-	TRANSCRIPTION_STARTED: 'transcription:started',
-	TRANSCRIPTION_PROGRESS: 'transcription:progress',
-	TRANSCRIPTION_COMPLETED: 'transcription:completed',
-	TRANSCRIPTION_ERROR: 'transcription:error',
-	TRANSCRIPTION_COPIED: 'transcription:copied',
-	TRANSCRIPTION_SHARED: 'transcription:shared'
-};
-
 export class TranscriptionService {
 	constructor(dependencies = {}) {
 		this.hybridService = dependencies.hybridService || simpleHybridService;
