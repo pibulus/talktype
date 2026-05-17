@@ -33,6 +33,10 @@ if [[ -f "${EXTENSION_REPO}/README.md" ]]; then
 	cp -p "${EXTENSION_REPO}/README.md" "${PACKAGE_DIR}/README.md"
 fi
 
+if [[ -f "${EXTENSION_REPO}/LICENSE" ]]; then
+	cp -p "${EXTENSION_REPO}/LICENSE" "${PACKAGE_DIR}/LICENSE"
+fi
+
 (
 	cd "${TMP_DIR}"
 	find "${PACKAGE_NAME}" -type f -print | LC_ALL=C sort | zip -q -X "${ZIP_PATH}" -@
