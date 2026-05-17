@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import { Seo } from '$lib/components/layout';
 
 	let status = 'Ready to clear cache';
 	let cleared = false;
@@ -69,6 +70,14 @@
 		console.log('Cache cleaner ready');
 	});
 </script>
+
+<Seo
+	title="Clear Model Cache | TalkType"
+	description="Clear TalkType local model and browser caches."
+	path="/clear-cache"
+	noindex={true}
+	includeStructuredData={false}
+/>
 
 <div class="min-h-screen bg-gradient-to-br from-red-500 to-orange-600 p-8">
 	<div class="mx-auto max-w-2xl">

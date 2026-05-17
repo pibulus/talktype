@@ -5,6 +5,7 @@
 <PageLayout
 	title="TalkType Extension Privacy"
 	description="Privacy details for the TalkType Chrome extension."
+	path="/extension/privacy"
 >
 	<div class="w-full max-w-3xl space-y-5 text-gray-800">
 		<div class="space-y-3 text-center">

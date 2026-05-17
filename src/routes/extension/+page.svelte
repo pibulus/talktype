@@ -8,6 +8,7 @@
 <PageLayout
 	title="TalkType Extension | Voice Typing For Any Text Box"
 	description="Install the TalkType Chrome extension to use voice typing across Gmail, Notion, chat apps, forms, and docs."
+	path="/extension"
 >
 	<div class="w-full max-w-3xl space-y-5 text-gray-800">
 		<div class="space-y-3 text-center">

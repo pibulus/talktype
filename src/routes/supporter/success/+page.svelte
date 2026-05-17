@@ -3,6 +3,7 @@
 	import { browser } from '$app/environment';
 	import { setSupporterStatus } from '$lib/services';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
+	import { Seo } from '$lib/components/layout';
 
 	let status = 'checking';
 	let message = 'Checking your supporter unlock...';
@@ -82,9 +83,13 @@
 	});
 </script>
 
-<svelte:head>
-	<title>Supporter Unlock | TalkType</title>
-</svelte:head>
+<Seo
+	title="Supporter Unlock | TalkType"
+	description="Complete your TalkType supporter unlock."
+	path="/supporter/success"
+	noindex={true}
+	includeStructuredData={false}
+/>
 
 <main class="min-h-screen bg-[#fffaef] px-5 py-10 text-gray-800">
 	<section class="mx-auto flex max-w-md flex-col items-center gap-5 text-center">

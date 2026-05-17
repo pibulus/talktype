@@ -50,18 +50,9 @@
 		<meta name="msapplication-TileImage" content="%sveltekit.assets%/appicon/web/icon-192.png" />
 
 		<!-- App configuration -->
-		<title>TalkType - Fast, Fun, Freaky Good Voice to Text</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-		<link rel="canonical" href="https://talktype.app/" />
 		<meta name="format-detection" content="telephone=no" />
-		<meta
-			name="description"
-			content="Kick out the rest. Instant voice-to-text with offline mode, live transcription, saved history, and zero weird unlock screens."
-		/>
-		<meta
-			name="keywords"
-			content="voice to text, speech recognition, offline dictation, live transcription, talktype, ghost, pwa, minimalist"
-		/>
+		<meta name="application-name" content="TalkType" />
 		<meta name="author" content="Pablo Alvarado" />
 
 		<!-- Manifest -->
@@ -85,30 +76,6 @@
 			href="%sveltekit.assets%/splash/apple-splash-1125-2436.png"
 			media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)"
 		/>
-
-		<!-- Open Graph / Facebook -->
-		<meta property="og:type" content="website" />
-		<meta property="og:url" content="https://talktype.app/" />
-		<meta property="og:site_name" content="TalkType" />
-		<meta property="og:locale" content="en_US" />
-		<meta property="og:title" content="TalkType - Fast, Fun, Freaky Good Voice to Text" />
-		<meta
-			property="og:description"
-			content="Instant voice-to-text with offline mode, live transcription, saved history, and zero weird unlock screens."
-		/>
-		<meta property="og:image" content="https://talktype.app/og-image.png" />
-		<meta property="og:image:width" content="1200" />
-		<meta property="og:image:height" content="630" />
-
-		<!-- Twitter -->
-		<meta property="twitter:card" content="summary_large_image" />
-		<meta property="twitter:url" content="https://talktype.app/" />
-		<meta property="twitter:title" content="TalkType - Fast, Fun, Freaky Good Voice to Text" />
-		<meta
-			property="twitter:description"
-			content="Instant voice-to-text with offline mode, live transcription, saved history, and zero weird unlock screens."
-		/>
-		<meta property="twitter:image" content="https://talktype.app/og-image.png" />
 
 		<style>
 			/* Critical styles to prevent black flash */
@@ -166,41 +133,6 @@
 			data-website-id="280ec8ac-9eb5-4d06-89fe-369960e40b5d"
 		></script>
 
-		<script type="application/ld+json">
-			{
-				"@context": "https://schema.org",
-				"@type": "WebApplication",
-				"name": "TalkType",
-				"url": "https://talktype.app",
-				"applicationCategory": "UtilitiesApplication",
-				"operatingSystem": "Web",
-				"offers": {
-					"@type": "Offer",
-					"price": "0",
-					"priceCurrency": "USD"
-				},
-				"description": "Fast voice-to-text with offline mode, live transcription, and local transcript history.",
-				"potentialAction": {
-					"@type": "ConsumeAction",
-					"target": {
-						"@type": "EntryPoint",
-						"urlTemplate": "https://talktype.app",
-						"actionPlatform": [
-							"http://schema.org/DesktopWebPlatform",
-							"http://schema.org/MobileWebPlatform"
-						]
-					},
-					"expectsAcceptanceOf": {
-						"@type": "Offer",
-						"category": "free",
-						"description": "Free speech-to-text transcription service"
-					}
-				},
-				"browserRequirements": "Requires a modern web browser with WebSpeech API or microphone access. Works best in Chrome, Edge, Safari, and Firefox.",
-				"keywords": "speech to text, voice recognition, transcription, audio to text, voice typing, speech recognition",
-				"applicationSubCategory": "Voice Recognition"
-			}
-		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

@@ -27,7 +27,7 @@
 	async function shareApp() {
 		const shareData = {
 			title: 'TalkType',
-			text: 'Fast, Fun, Freaky Good Voice to Text. 100% Private.',
+			text: "Voice-to-text that doesn't suck. Fast, free, and private when you need it.",
 			url: 'https://talktype.app'
 		};
 

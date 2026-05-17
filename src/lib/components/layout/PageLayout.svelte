@@ -1,14 +1,28 @@
 <script>
-	export let title = 'TalkType | Spooky Good Voice-to-Text';
-	export let description =
-		'TalkType turns your voice into text. Clean, simple, and freaky fast voice typing. Free forever. Tap the ghost and start talking!';
+	import Seo from './Seo.svelte';
+	import { DEFAULT_SEO } from '$lib/config/seo.js';
+
+	export let title = DEFAULT_SEO.title;
+	export let description = DEFAULT_SEO.description;
+	export let path = '/';
+	export let image = DEFAULT_SEO.image;
+	export let imageAlt = DEFAULT_SEO.imageAlt;
+	export let noindex = false;
+	export let includeStructuredData = true;
+	export let structuredData = null;
 	export let footerYear = new Date().getFullYear();
 </script>
 
-<svelte:head>
-	<title>{title}</title>
-	<meta name="description" content={description} />
-</svelte:head>
+<Seo
+	{title}
+	{description}
+	{path}
+	{image}
+	{imageAlt}
+	{noindex}
+	{includeStructuredData}
+	{structuredData}
+/>
 
 <section
 	class="bg-gradient-mesh main center hero grid min-h-[100dvh] gap-8 px-4 py-6 pb-16 pt-[clamp(4rem,12vh,8rem)] font-sans text-black antialiased sm:px-6 md:px-10 lg:pb-16"
