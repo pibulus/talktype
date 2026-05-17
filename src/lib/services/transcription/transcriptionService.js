@@ -56,7 +56,7 @@ export class TranscriptionService {
 			// Friendly error message
 			let friendlyMessage = error.message;
 			if (error.message.includes('fetch')) {
-				friendlyMessage = "Couldn't reach transcription. Check your connection?";
+				friendlyMessage = 'Check your connection, then try transcription again.';
 			} else if (error.message.includes('load model')) {
 				friendlyMessage = 'Still getting offline mode ready. This usually only happens once.';
 			}
@@ -75,7 +75,7 @@ export class TranscriptionService {
 
 		const pending = get(transcriptionState).pendingRecording;
 		if (!pending?.id) {
-			throw new Error('No saved recording to retry.');
+			throw new Error('Record something fresh, then retry is ready.');
 		}
 
 		const draft = await getLatestRecordingDraft({ includeBlob: true });
@@ -83,7 +83,7 @@ export class TranscriptionService {
 
 		if (!audioInput) {
 			transcriptionActions.clearPendingRecording();
-			throw new Error('That saved recording was missing audio. Try one fresh recording.');
+			throw new Error('Try one fresh recording.');
 		}
 
 		uiActions.clearErrorMessage();
@@ -164,7 +164,7 @@ export class TranscriptionService {
 		if (!text || text.trim() === '') {
 			log.log('No text to copy, showing error');
 			if (!silent) {
-				uiActions.setErrorMessage('Nothing to copy yet. Record something first.');
+				uiActions.setErrorMessage('Record something first, then copy is ready.');
 			}
 			return false;
 		}
@@ -226,7 +226,7 @@ export class TranscriptionService {
 
 			log.error('Clipboard copy error:', error);
 
-			const friendlyMessage = "Couldn't copy that yet. Try tapping the page first.";
+			const friendlyMessage = 'Tap the page once, then try copy again.';
 			uiActions.setErrorMessage(friendlyMessage);
 			uiActions.setScreenReaderMessage(
 				'Click somewhere in the window first, then try copying again.'
@@ -242,7 +242,7 @@ export class TranscriptionService {
 		}
 
 		if (!text || text.trim() === '') {
-			uiActions.setErrorMessage('Nothing to share yet. Record something first.');
+			uiActions.setErrorMessage('Record something first, then sharing is ready.');
 			return false;
 		}
 
@@ -275,7 +275,7 @@ export class TranscriptionService {
 				return this.copyToClipboard(text);
 			}
 
-			uiActions.setErrorMessage('Sharing is not available here, so try the copy button instead.');
+			uiActions.setErrorMessage('Use the copy button for sharing from this browser.');
 			return false;
 		}
 	}

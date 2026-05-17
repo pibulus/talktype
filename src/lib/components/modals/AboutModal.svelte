@@ -57,7 +57,7 @@
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-lg text-pink-500">⬩</span>
-						<span>No account wall, no subscription treadmill</span>
+						<span>Fast start, simple extras, one-time supporter unlock</span>
 					</li>
 				</ul>
 			</div>

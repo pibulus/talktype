@@ -38,9 +38,7 @@
 			await transcriptionService.retryPendingRecording();
 		} catch (error) {
 			console.error('Retry transcription failed:', error);
-			uiActions.setErrorMessage(
-				error.message || 'That retry got tangled. Try one fresh recording.'
-			);
+			uiActions.setErrorMessage(error.message || 'Try one fresh recording.');
 		} finally {
 			isRetrying = false;
 		}

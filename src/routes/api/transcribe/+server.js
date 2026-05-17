@@ -21,7 +21,7 @@ export async function POST(event) {
 			console.error('[API /transcribe] Missing or invalid audio file');
 			return json(
 				{
-					error: "Hmm, looks like the audio file didn't make it through. Mind trying that again?"
+					error: 'Hmm, the audio needs one more pass. Mind trying that again?'
 				},
 				{ status: 400 }
 			);
@@ -65,20 +65,19 @@ export async function POST(event) {
 	} catch (error) {
 		console.error('[API /transcribe] ❌ Error:', error);
 
-		let friendlyMessage = 'Oops, the ghost got a bit confused there. Give it another shot?';
+		let friendlyMessage = 'The ghost needs one more pass. Give it another shot?';
 
 		const message = error?.message?.toString()?.toLowerCase() ?? '';
 		if (message.includes('quota') || message.includes('limit')) {
-			friendlyMessage =
-				'The ghost needs a breather - the limit has been reached. Try again in a moment?';
+			friendlyMessage = 'The ghost needs a quick breather. Try again in a moment?';
 		} else if (message.includes('network')) {
-			friendlyMessage = "Couldn't reach transcription right now. Check your connection?";
+			friendlyMessage = 'Check your connection, then try transcription again.';
 		} else if (message.includes('timeout')) {
 			friendlyMessage = 'That took longer than expected. Maybe try a shorter recording?';
 		} else if (message.includes('missing gemini api key')) {
-			friendlyMessage = 'Style transcription is not configured on this server yet.';
+			friendlyMessage = 'Style transcription needs server setup before it can run here.';
 		} else if (message.includes('missing deepgram api key')) {
-			friendlyMessage = 'Transcription is not configured on this server yet.';
+			friendlyMessage = 'Transcription needs server setup before it can run here.';
 		}
 
 		return json({ error: friendlyMessage }, { status: 500 });

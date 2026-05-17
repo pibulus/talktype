@@ -109,7 +109,7 @@
 
 	// Delete a transcript
 	async function handleDelete(id) {
-		if (confirm('Delete this transcript? This cannot be undone.')) {
+		if (confirm('Remove this transcript from history for good?')) {
 			await deleteTranscript(id);
 		}
 	}

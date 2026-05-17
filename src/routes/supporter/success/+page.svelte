@@ -21,7 +21,7 @@
 		const claimToken = sessionStorage.getItem(claimStorageKey(checkoutId));
 		if (!claimToken) {
 			status = 'missing-claim';
-			message = 'This browser is missing the checkout claim token.';
+			message = 'Open this supporter link in the same browser used for checkout.';
 			return;
 		}
 
@@ -35,7 +35,7 @@
 
 			if (!response.ok) {
 				status = 'error';
-				message = payload.error || 'Could not check that checkout.';
+				message = payload.error || 'Checkout status needs one more try in a moment.';
 				return;
 			}
 
@@ -52,7 +52,7 @@
 			sessionStorage.removeItem(claimStorageKey(checkoutId));
 		} catch {
 			status = 'error';
-			message = 'Could not reach the checkout status service.';
+			message = 'Check your connection, then refresh this page.';
 		}
 	}
 
@@ -64,7 +64,7 @@
 
 		if (!checkoutId) {
 			status = 'error';
-			message = 'Missing checkout id.';
+			message = 'Open TalkType and start supporter checkout again.';
 			return;
 		}
 

@@ -234,20 +234,20 @@ export const COPY_MESSAGES = [
 
 // Offline Haikus
 export const OFFLINE_HAIKUS = [
-	`Connection is lost
-Words float in digital void
+	`Signal drifts softly
+Words wait in the quiet light
 Try again, speak soon`,
 
-	`Microphone silent
-No network to hear your words
-Waiting for signals`,
+	`Microphone resting
+Words wait close to the shoreline
+Signals drift back soon`,
 
 	`Ghostly transcription
-Cannot find your voice today
-Internet missing`,
+Voice notes wait patiently
+Signals drift back soon`,
 
-	`Voice lost in the waves
-Digital silence prevails
+	`Voice rides gentle waves
+Digital quiet settles
 Connect and try again`,
 
 	`Whispers unheard now

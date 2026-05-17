@@ -278,7 +278,7 @@ export class AudioService {
 
 			const friendlyMessage = isPermissionError(error)
 				? 'The mic needs permission before the ghost can listen.'
-				: 'Recording got tangled. Give it another try?';
+				: 'Recording needs one more try.';
 			uiActions.setErrorMessage(friendlyMessage);
 
 			await this.cleanup();

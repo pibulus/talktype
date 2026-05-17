@@ -27,7 +27,7 @@ export async function POST(event) {
 
 	if (!isSquareCheckoutConfigured()) {
 		return json(
-			{ error: 'Square checkout is not configured yet. Use a supporter code for now.' },
+			{ error: 'Square checkout needs server setup first. Supporter codes still work.' },
 			{ status: 503 }
 		);
 	}
@@ -63,6 +63,6 @@ export async function POST(event) {
 		});
 	} catch (error) {
 		console.error('[SupporterCheckout] Failed to start checkout:', error);
-		return json({ error: 'Could not start checkout right now.' }, { status: 502 });
+		return json({ error: 'Checkout needs one more try in a moment.' }, { status: 502 });
 	}
 }

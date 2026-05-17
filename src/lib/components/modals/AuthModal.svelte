@@ -28,11 +28,10 @@
 		try {
 			const result = (await onSubmit(token.trim())) ?? { success: false };
 			if (!result.success) {
-				errorMessage = result.error || 'Something went wrong. Try again in a moment.';
+				errorMessage = result.error || 'Check the shared access token and try once more.';
 			}
 		} catch (error) {
-			errorMessage =
-				error?.message || 'Something unexpected happened. Please try submitting the token again.';
+			errorMessage = error?.message || 'Check the shared access token and try once more.';
 		} finally {
 			submitting = false;
 		}

@@ -41,8 +41,8 @@
 	};
 	$: styleNotice = !isSupporter
 		? stylesDisabled
-			? 'Supporter mode unlocks these presets. They run in After Stop mode.'
-			: 'Supporter mode unlocks these style presets.'
+			? 'Supporter mode includes these presets. Choose After Stop to use them.'
+			: 'Supporter mode includes these style presets.'
 		: stylesDisabled
 			? 'Style presets are available in After Stop mode.'
 			: '';
@@ -71,7 +71,7 @@
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
 					detail: {
-						message: 'Supporter mode unlocks style presets.',
+						message: 'Supporter mode includes style presets.',
 						type: 'info'
 					}
 				})

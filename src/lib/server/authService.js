@@ -15,7 +15,7 @@ export async function guardRequest(event) {
 	if (isAuthConfigured()) {
 		const hasSession = await validateSession(event);
 		if (!hasSession) {
-			return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+			return new Response(JSON.stringify({ error: 'Shared access token needed.' }), {
 				status: 401,
 				headers: { 'Content-Type': 'application/json' }
 			});

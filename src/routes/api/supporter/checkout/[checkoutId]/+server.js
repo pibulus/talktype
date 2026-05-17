@@ -16,11 +16,14 @@ export async function GET(event) {
 	const checkout = await getCheckoutById(checkoutId);
 
 	if (!checkout) {
-		return json({ error: 'Checkout not found.' }, { status: 404 });
+		return json({ error: 'Open TalkType and start supporter checkout again.' }, { status: 404 });
 	}
 
 	if (!claimToken || checkout.claimTokenHash !== hashSensitiveValue(claimToken)) {
-		return json({ error: 'Checkout claim token did not match.' }, { status: 403 });
+		return json(
+			{ error: 'Open this supporter link in the same browser used for checkout.' },
+			{ status: 403 }
+		);
 	}
 
 	if (checkout.status !== 'paid') {

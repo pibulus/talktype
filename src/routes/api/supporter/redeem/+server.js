@@ -25,7 +25,7 @@ export async function POST(event) {
 		const normalizedCode = normalizeSupporterCode(code);
 
 		if (!normalizedCode) {
-			return json({ valid: false, error: 'Enter a supporter code.' }, { status: 400 });
+			return json({ valid: false, error: 'Enter your supporter code to unlock.' }, { status: 400 });
 		}
 
 		const license = await redeemStoredLicense(normalizedCode);
@@ -40,13 +40,16 @@ export async function POST(event) {
 		const manualCodes = getManualCodes();
 		if (manualCodes.length === 0) {
 			return json(
-				{ valid: false, error: 'Supporter codes are not configured on this server yet.' },
+				{ valid: false, error: 'Supporter codes need server setup before they can run here.' },
 				{ status: 503 }
 			);
 		}
 
 		if (!isSupporterCodeValid(normalizedCode, manualCodes)) {
-			return json({ valid: false, error: 'That supporter code did not match.' }, { status: 401 });
+			return json(
+				{ valid: false, error: 'Check the supporter code and try once more.' },
+				{ status: 401 }
+			);
 		}
 
 		return json({
@@ -61,7 +64,7 @@ export async function POST(event) {
 	} catch (error) {
 		console.error('[SupporterRedeem] Failed to redeem supporter code:', error);
 		return json(
-			{ valid: false, error: 'Could not validate that code right now.' },
+			{ valid: false, error: 'Code check needs one more try in a moment.' },
 			{ status: 500 }
 		);
 	}

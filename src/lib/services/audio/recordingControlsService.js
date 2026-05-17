@@ -100,7 +100,7 @@ export class RecordingControlsService {
 				? isAutoStart
 					? 'Tap Start Recording to finish microphone setup.'
 					: 'The mic needs permission before the ghost can listen.'
-				: 'Recording got tangled. Mind trying again?';
+				: 'Recording needs one more try.';
 			this.uiActions.setErrorMessage(friendlyMessage);
 			throw err;
 		}
@@ -146,7 +146,7 @@ export class RecordingControlsService {
 				if (estimatedDurationSeconds < MIN_DURATION_SECONDS) {
 					log.warn(`Recording too short: ~${estimatedDurationSeconds.toFixed(2)}s`);
 					this.uiActions.setErrorMessage(
-						'Recording too short - try speaking for at least a second!'
+						'Speak for at least a second so the ghost has enough to transcribe.'
 					);
 					await this.transcriptionService.clearPendingRecordingDraft?.();
 					if (useLiveDeepgram) {
@@ -229,20 +229,20 @@ export class RecordingControlsService {
 				} catch (transcriptionError) {
 					log.error('Transcription error:', transcriptionError);
 					const friendlyMessage = transcriptionError.message.includes('network')
-						? "Couldn't reach transcription. Check your connection?"
-						: 'The ghost got tongue-tied. Give it another shot?';
+						? 'Check your connection, then try transcription again.'
+						: 'The ghost needs one more pass. Give it another shot?';
 					this.uiActions.setErrorMessage(friendlyMessage);
 				}
 			} else {
 				// If no audio data, revert UI state
-				this.uiActions.setErrorMessage("Didn't catch that - try recording again?");
+				this.uiActions.setErrorMessage('Try one more recording.');
 				if (useLiveDeepgram) {
 					transcriptionActions.completeTranscription('');
 				}
 			}
 		} catch (err) {
 			log.error('Error in stopRecording:', err);
-			const friendlyMessage = "Something went sideways - let's try that again!";
+			const friendlyMessage = "Let's try that recording again.";
 			this.uiActions.setErrorMessage(friendlyMessage);
 			if (liveStopInProgress) {
 				transcriptionActions.completeTranscription('');
@@ -307,7 +307,7 @@ export class RecordingControlsService {
 			// Show error message
 			const friendlyMessage = isPermissionError(err)
 				? 'The mic needs permission before the ghost can listen.'
-				: 'Recording got tangled. Mind trying again?';
+				: 'Recording needs one more try.';
 			this.uiActions.setErrorMessage(friendlyMessage);
 
 			// Haptic feedback for error
@@ -316,7 +316,7 @@ export class RecordingControlsService {
 			}
 
 			// Update screen reader status
-			this.uiActions.setScreenReaderMessage('Recording did not start. Please try again.');
+			this.uiActions.setScreenReaderMessage('Recording is ready for one more try.');
 		} finally {
 			this.toggleInFlight = false;
 		}

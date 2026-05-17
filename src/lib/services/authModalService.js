@@ -19,7 +19,7 @@ export function promptForApiToken() {
 						const error = await response.json().catch(() => ({}));
 						return {
 							success: false,
-							error: error?.error || 'That token did not work. Double-check and try again.'
+							error: error?.error || 'Check the shared access token and try once more.'
 						};
 					}
 
@@ -30,7 +30,7 @@ export function promptForApiToken() {
 					console.error(error);
 					return {
 						success: false,
-						error: "Couldn't reach the auth service. Check your connection and try again."
+						error: 'Check your connection, then try the shared access token again.'
 					};
 				}
 			},

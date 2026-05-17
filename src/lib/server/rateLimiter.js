@@ -36,7 +36,7 @@ export async function enforceRateLimit(event) {
 	if (entry.count > max) {
 		return json(
 			{
-				error: 'Too many requests. Slow down a little.',
+				error: 'Give TalkType a moment, then try again.',
 				retry_after_ms: windowMs - (now - entry.windowStart)
 			},
 			{ status: 429 }

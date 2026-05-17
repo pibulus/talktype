@@ -141,13 +141,13 @@ export class SimpleHybridService {
 				}
 				throw new Error(
 					this.deviceProfile.isMobile
-						? 'Offline mode could not initialize on this device. Try again or switch back to Live Text.'
+						? 'Offline mode needs one more try on this device, or switch back to Live Text.'
 						: 'Offline mode is still getting ready. Try again in a moment.'
 				);
 			} else {
 				throw new Error(
 					this.deviceProfile.isMobile
-						? 'Offline mode could not initialize on this device. Try again or switch back to Live Text.'
+						? 'Offline mode needs one more try on this device, or switch back to Live Text.'
 						: 'Offline mode is still getting ready. Try again in a moment.'
 				);
 			}
@@ -207,7 +207,7 @@ export class SimpleHybridService {
 
 				if (!response.ok) {
 					const error = await response.json().catch(() => ({}));
-					throw new Error(error.error || 'Transcription did not answer. Try again?');
+					throw new Error(error.error || 'Transcription needs one more try.');
 				}
 
 				const { transcription } = await response.json();
@@ -215,7 +215,7 @@ export class SimpleHybridService {
 			} catch (fetchError) {
 				clearTimeout(timeoutId);
 				if (fetchError.name === 'AbortError') {
-					throw new Error('Transcription took too long (60s timeout). Try a shorter recording?');
+					throw new Error('Try a shorter recording for this one.');
 				}
 				throw fetchError;
 			}

@@ -33,7 +33,7 @@
 
 			if (!response.ok || !payload.checkoutUrl) {
 				errorMessage =
-					payload.error || 'Checkout is not ready here yet. A supporter code still works.';
+					payload.error || 'Checkout needs server setup first. Supporter codes still work.';
 				return;
 			}
 
@@ -41,7 +41,7 @@
 			window.location.assign(payload.checkoutUrl);
 		} catch (error) {
 			console.error('Failed to start supporter checkout:', error);
-			errorMessage = "Checkout didn't open. Try again in a moment.";
+			errorMessage = 'Checkout needs one more try in a moment.';
 		} finally {
 			isStartingCheckout = false;
 		}
@@ -64,7 +64,7 @@
 			const payload = await response.json().catch(() => ({}));
 
 			if (!response.ok || !payload.valid) {
-				errorMessage = payload.error || "That code didn't match. Check it and try once more.";
+				errorMessage = payload.error || 'Check the supporter code and try once more.';
 				return;
 			}
 
@@ -83,7 +83,7 @@
 			closeModal();
 		} catch (error) {
 			console.error('Failed to validate supporter code:', error);
-			errorMessage = "Couldn't check the code just now. Try again in a moment.";
+			errorMessage = 'Code check needs one more try in a moment.';
 		} finally {
 			isSubmitting = false;
 		}
@@ -119,7 +119,7 @@
 					Support TalkType for a one-time {PRICING.displayPrice}
 				</h3>
 				<p class="text-sm text-gray-600">
-					Supporters unlock the good stuff without turning TalkType into subscription sludge.
+					Supporters unlock the good stuff with one small lifetime purchase.
 				</p>
 			</div>
 
@@ -129,13 +129,13 @@
 					<li>Transcript history with local save, edit, and playback</li>
 					<li>Download and export tools for saved transcripts</li>
 					<li>Three playful output style presets</li>
-					<li>Longer recording sessions beyond the free 5-minute cap</li>
+					<li>Longer recording sessions for extended notes</li>
 				</ul>
 			</div>
 
 			<button
 				type="button"
-				class="btn min-h-12 w-full border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600"
+				class="btn min-h-12 w-full border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
 				on:click={handleCheckout}
 				disabled={isStartingCheckout}
 			>
@@ -169,7 +169,7 @@
 			<div class="flex flex-col gap-2 sm:flex-row">
 				<button
 					type="button"
-					class="btn min-h-12 flex-1 border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600"
+					class="btn min-h-12 flex-1 border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
 					on:click={handleUnlock}
 					disabled={isSubmitting || !code.trim()}
 				>
@@ -184,9 +184,7 @@
 				</button>
 			</div>
 
-			<p class="text-xs text-gray-500">
-				Supporter codes also work for gifts, another device, or manual recovery.
-			</p>
+			<p class="text-xs text-gray-500">Codes work for gifts and other devices.</p>
 		</div>
 	</div>
 </dialog>

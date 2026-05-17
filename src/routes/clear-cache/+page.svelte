@@ -2,11 +2,11 @@
 	import { onMount } from 'svelte';
 	import { Seo } from '$lib/components/layout';
 
-	let status = 'Ready to clear cache';
+	let status = 'Ready for a fresh local cache';
 	let cleared = false;
 
 	async function clearAllCaches() {
-		status = 'Clearing caches...';
+		status = 'Clearing local caches...';
 		cleared = false;
 
 		try {
@@ -52,16 +52,16 @@
 			sessionStorage.clear();
 			console.log('Cleared sessionStorage');
 
-			status = '✅ All caches cleared successfully!';
+			status = 'Local caches are fresh now.';
 			cleared = true;
 
 			// Reload after 2 seconds
 			setTimeout(() => {
-				status = 'Reloading page...';
+				status = 'Reloading TalkType...';
 				window.location.reload();
 			}, 2000);
 		} catch (error) {
-			status = `❌ Error: ${error.message}`;
+			status = `Cache refresh needs one more try: ${error.message}`;
 			console.error('Cache clearing error:', error);
 		}
 	}
@@ -79,29 +79,29 @@
 	includeStructuredData={false}
 />
 
-<div class="min-h-screen bg-gradient-to-br from-red-500 to-orange-600 p-8">
+<div class="min-h-screen bg-gradient-to-br from-[#fffaef] to-[#fff0d9] p-8 text-gray-800">
 	<div class="mx-auto max-w-2xl">
-		<h1 class="mb-8 text-4xl font-bold text-white">🗑️ Clear Model Cache</h1>
+		<h1 class="mb-8 text-4xl font-black tracking-tight">Refresh Local Cache</h1>
 
-		<div class="rounded-xl bg-white/20 p-6 backdrop-blur-md">
-			<p class="mb-6 text-white">
-				This will clear all cached Whisper models and force fresh downloads. Use this if you're
-				experiencing ONNX errors or corrupted models.
+		<div class="rounded-3xl border border-pink-100 bg-white/75 p-6 shadow-xl backdrop-blur-md">
+			<p class="mb-6 text-gray-600">
+				This clears cached Whisper models and browser storage so TalkType can fetch a fresh local
+				copy the next time Offline Mode is used.
 			</p>
 
 			<button
 				on:click={clearAllCaches}
 				disabled={cleared}
-				class="w-full rounded-lg bg-red-600 px-6 py-3 font-bold text-white hover:bg-red-700 disabled:bg-gray-500"
+				class="w-full rounded-full bg-pink-500 px-6 py-3 font-bold text-white hover:bg-pink-600 disabled:bg-gray-300"
 			>
-				{cleared ? '✅ Cleared!' : '🗑️ Clear All Caches'}
+				{cleared ? 'Cache refreshed' : 'Refresh Local Cache'}
 			</button>
 
-			<div class="mt-4 rounded-lg bg-black/30 p-4">
-				<p class="text-white">Status: {status}</p>
+			<div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50/80 p-4">
+				<p class="text-amber-900">Status: {status}</p>
 			</div>
 
-			<div class="mt-6 text-sm text-white/80">
+			<div class="mt-6 text-sm text-gray-600">
 				<h3 class="mb-2 font-bold">This will clear:</h3>
 				<ul class="list-inside list-disc">
 					<li>IndexedDB (cached models)</li>
