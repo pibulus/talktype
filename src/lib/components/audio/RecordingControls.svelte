@@ -35,6 +35,7 @@
 
 	// Reactive button label computation
 	$: buttonLabel = $isRecording ? 'Stop Recording' : currentCta;
+	$: showOfflineDownloadState = $privacyMode === 'true' && $whisperStatus.isLoading && !modelReady;
 
 	onMount(() => {
 		// Initialize services
@@ -116,7 +117,7 @@
 			<RecordButtonWithTimer
 				recording={$isRecording}
 				transcribing={$isTranscribing}
-				downloading={$whisperStatus.isLoading && !modelReady}
+				downloading={showOfflineDownloadState}
 				clipboardSuccess={$uiState.clipboardSuccess}
 				recordingDuration={$recordingDuration}
 				progress={$transcriptionProgress}

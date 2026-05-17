@@ -19,6 +19,7 @@
 	let tooltipHoverCount = 0;
 	let hasUsedCopyButton = false;
 	let isScrollable = false;
+	let previousTranscript = '';
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher();
@@ -67,11 +68,24 @@
 		}
 	}
 
+	function scrollLiveTranscriptToBottom() {
+		if (!transcriptBoxRef || editable) return;
+
+		requestAnimationFrame(() => {
+			if (!transcriptBoxRef) return;
+			transcriptBoxRef.scrollTop = transcriptBoxRef.scrollHeight;
+		});
+	}
+
 	// Safely update transcript content without breaking cursor position.
 	// During live streaming the box is read-only, so incoming text always wins.
 	$: if (editableTranscript && (!editable || document.activeElement !== editableTranscript)) {
 		editableTranscript.innerText = transcript;
 		checkScrollable();
+		if (!editable && transcript !== previousTranscript) {
+			scrollLiveTranscriptToBottom();
+		}
+		previousTranscript = transcript;
 	}
 
 	onMount(() => {
@@ -113,6 +127,7 @@
 
 <div
 	class="transcript-wrapper w-full animate-fadeIn"
+	class:live-transcript={!editable}
 	on:animationend={() => {
 		// No page scrolling needed anymore with fixed layout
 		checkScrollable();
@@ -426,6 +441,20 @@
 
 		.transcript-wrapper {
 			margin-top: 24px; /* Smaller gap on mobile */
+		}
+
+		.live-transcript {
+			margin-top: 0.5rem;
+		}
+
+		.live-transcript .transcript-content-area {
+			max-height: min(22vh, 190px);
+			padding: 1rem 1rem 1.25rem;
+		}
+
+		.live-transcript .custom-transcript-text {
+			font-size: clamp(0.95rem, 3.5vw, 1.08rem);
+			line-height: 1.58;
 		}
 
 		/* Slightly taller scroll indicator on mobile */
