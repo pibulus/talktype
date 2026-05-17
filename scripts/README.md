@@ -7,8 +7,8 @@ This folder contains various scripts for TalkType development, including:
 3. **Codex Hooks** (`codex/init.sh`) - Shortcuts for spinning up the AI workflow
 
 > **Heads‑up:** the old Sharp-based icon scripts have been retired (and Sharp was removed
-> from `package.json`). Icons are exported manually from the Ghost Icon Figma file—see
-> `static/icons/NEXT-STEPS.md` for the current checklist.
+> from `package.json`). Icons are exported manually into `static/appicon/`; see
+> `docs/pwa-quickstart.md` for the current checklist.
 
 ## Meta-Development Script
 
