@@ -3,7 +3,7 @@
   Focused responsibility: user interaction with recording functionality
 -->
 <script>
-	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import RecordButtonWithTimer from './RecordButtonWithTimer.svelte';
 	import AudioVisualizer from './AudioVisualizer.svelte';
 	import { createRecordingControlsService } from '$lib/services/audio/recordingControlsService';
@@ -21,8 +21,6 @@
 	import { liveMode, privacyMode } from '$lib';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import { CTA_PHRASES, ANIMATION, COPY_MESSAGES } from '$lib/constants';
-
-	const dispatch = createEventDispatcher();
 
 	// Props
 	export let ghostComponent = null;
@@ -77,15 +75,8 @@
 			if ($transcriptionText && !$isRecording) {
 				currentCta = recordingControlsService.getCurrentCta();
 			}
-
-			// Dispatch events for parent components
-			dispatch('recordingStateChanged', {
-				isRecording: $isRecording,
-				hasTranscription: !!$transcriptionText
-			});
 		} catch (error) {
 			console.error('Recording toggle failed:', error);
-			dispatch('error', { message: error.message });
 		}
 	}
 

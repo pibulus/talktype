@@ -40,14 +40,6 @@ function createLocalStorageStore(key, initialValue) {
 // Create centralized store for theme/vibe management
 export const theme = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.THEME, CONSTANTS.DEFAULT_THEME);
 
-// Create centralized store for recording state
-export const isRecording = writable(false);
-
-// Create centralized stores for modal visibility
-export const showAboutInfo = writable(false);
-export const showExtensionInfo = writable(false);
-export const showSettingsModal = writable(false);
-
 // Store for first visit tracking
 export const hasSeenIntro = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.FIRST_VISIT, 'false');
 
@@ -111,33 +103,6 @@ export function applyTheme(vibeId, animate = false) {
 			setTimeout(() => {
 				root.style.transition = '';
 			}, 300);
-		}
-
-		// Update ghost icon by swapping the SVG file
-		const ghostBg = document.querySelector('.icon-bg');
-		if (ghostBg) {
-			// Set the appropriate gradient SVG based on theme
-			switch (vibeId) {
-				case CONSTANTS.THEMES.MINT:
-					ghostBg.src = '/talktype-icon-bg-gradient-mint.svg';
-					ghostBg.classList.remove('rainbow-animated');
-					break;
-				case CONSTANTS.THEMES.BUBBLEGUM:
-					ghostBg.src = '/talktype-icon-bg-gradient-bubblegum.svg';
-					ghostBg.classList.remove('rainbow-animated');
-					break;
-				case CONSTANTS.THEMES.RAINBOW:
-					ghostBg.src = '/talktype-icon-bg-gradient-rainbow.svg';
-					ghostBg.classList.add('rainbow-animated');
-					break;
-				default: // Default to peach
-					ghostBg.src = '/talktype-icon-bg-gradient.svg';
-					ghostBg.classList.remove('rainbow-animated');
-					break;
-			}
-
-			// Force a reflow to ensure the gradient is visible
-			void ghostBg.offsetWidth;
 		}
 	}
 }

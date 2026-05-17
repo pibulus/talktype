@@ -55,23 +55,6 @@
 		}
 	}
 
-	// Event forwarding functions
-	function forwardRecordingStart() {
-		dispatch('recordingstart');
-	}
-
-	function forwardRecordingStop() {
-		dispatch('recordingstop');
-	}
-
-	function forwardProcessingStart() {
-		dispatch('processingstart');
-	}
-
-	function forwardProcessingEnd() {
-		dispatch('processingend');
-	}
-
 	function forwardTranscriptionCompleted(event) {
 		dispatch('transcriptionCompleted', event.detail);
 	}
@@ -88,9 +71,5 @@
 		bind:this={audioToTextComponent}
 		{ghostComponent}
 		on:transcriptionCompleted={forwardTranscriptionCompleted}
-		on:recordingstart={forwardRecordingStart}
-		on:recordingstop={forwardRecordingStop}
-		on:processingstart={forwardProcessingStart}
-		on:processingend={forwardProcessingEnd}
 	/>
 </div>

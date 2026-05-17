@@ -173,13 +173,7 @@
 	<!-- Shared container with proper centering for mobile -->
 	<div class="mobile-centered-container flex w-full flex-col items-center justify-center">
 		<!-- Recording Controls Section -->
-		<RecordingControls
-			bind:this={recordingControlsRef}
-			{ghostComponent}
-			{modelReady}
-			on:recordingStateChanged
-			on:error
-		/>
+		<RecordingControls bind:this={recordingControlsRef} {ghostComponent} {modelReady} />
 
 		<!-- Dynamic content area - only render when there's content -->
 		{#if $isRecording || $isTranscribing || $transcriptionText || $errorMessage}

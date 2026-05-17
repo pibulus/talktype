@@ -33,7 +33,6 @@
 
 	let PwaInstallPrompt;
 
-	let isProcessing = false;
 	function debug() {
 		// console.log(`[MainContainer] ${message}`);
 	}
@@ -79,23 +78,6 @@
 		setTimeout(() => {
 			modalService.openModal(modalId);
 		}, 10);
-	}
-
-	// Event handlers for recording state changes
-	function handleRecordingStart() {
-		isProcessing = false;
-	}
-
-	function handleRecordingStop() {
-		// No need to set isRecording - it's handled by the store
-	}
-
-	function handleProcessingStart() {
-		isProcessing = true;
-	}
-
-	function handleProcessingEnd() {
-		isProcessing = false;
 	}
 
 	// Handle toggle recording from ghost via custom event
@@ -453,16 +435,12 @@
 	<GhostContainer
 		bind:this={ghostContainer}
 		isRecording={$recordingStore}
-		isProcessing={isProcessing || $transcribingStore}
+		isProcessing={$transcribingStore}
 		clickable={!$transcribingStore}
 	/>
 	<ContentContainer
 		bind:this={contentContainer}
 		ghostComponent={ghostContainer}
-		on:recordingstart={handleRecordingStart}
-		on:recordingstop={handleRecordingStop}
-		on:processingstart={handleProcessingStart}
-		on:processingend={handleProcessingEnd}
 		on:transcriptionCompleted={handleTranscriptionCompleted}
 	/>
 	<svelte:fragment slot="footer-buttons">
