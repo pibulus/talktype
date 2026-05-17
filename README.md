@@ -54,9 +54,19 @@ Copy `.env.example` to `.env` and set the values needed for your mode:
 - `GEMINI_MODEL`: optional; defaults to `gemini-3.1-flash-lite-preview`.
 - `API_AUTH_TOKEN`: optional shared token. If set, API routes require an auth session.
 - `API_COOKIE_SECRET`: required when API auth sessions are enabled.
-- `SUPPORTER_UNLOCK_CODES`: comma-separated manual supporter codes for `/api/validate-code`; matched case-insensitively.
+- `SUPPORTER_UNLOCK_CODES`: comma-separated manual supporter codes for `/api/supporter/redeem` and legacy `/api/validate-code`; matched case-insensitively.
+- `SUPPORTER_LICENSE_SECRET`: secret used to hash supporter codes and sign supporter tokens.
 - `PUBLIC_FORCE_SUPPORTER_MODE`: set to `true` only for local/supporter testing.
 - `MAX_UPLOAD_BYTES`: optional upload cap for `/api/transcribe`.
+- `PUBLIC_APP_URL`: public app origin used for payment redirects.
+- `SQUARE_ENVIRONMENT`: `sandbox` for testing or `production` for live Square checkout.
+- `SQUARE_API_VERSION`: Square API version header. Keep pinned and bump deliberately after testing.
+- `SQUARE_ACCESS_TOKEN`: Square access token for hosted checkout.
+- `SQUARE_LOCATION_ID`: Square location id for the supporter product.
+- `SQUARE_WEBHOOK_SIGNATURE_KEY`: Square webhook signature key.
+- `SQUARE_WEBHOOK_NOTIFICATION_URL`: exact webhook URL configured in Square.
+- `TALKTYPE_STORAGE_ADAPTER`: `filesystem`, `netlify-blobs`, or `memory`.
+- `TALKTYPE_DATA_DIR`: filesystem storage directory for checkout/license data.
 
 ## Deployment
 

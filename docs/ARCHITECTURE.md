@@ -132,6 +132,16 @@ Auto-start is requested from:
 Relevant files:
 
 - `src/lib/components/modals/SupporterModal.svelte`
+- `src/routes/api/supporter/checkout/+server.js`
+- `src/routes/api/supporter/checkout/[checkoutId]/+server.js`
+- `src/routes/api/supporter/redeem/+server.js`
+- `src/routes/api/square/webhook/+server.js`
+- `src/routes/supporter/success/+page.svelte`
+- `src/lib/server/payments/squareProvider.js`
+- `src/lib/server/payments/paymentStore.js`
+- `src/lib/server/supporter/licenseStore.js`
+- `src/lib/server/supporter/licenseCrypto.js`
+- `src/lib/server/storage/index.js`
 - `src/routes/api/validate-code/+server.js`
 - `src/lib/server/supporterCodes.js`
 - `src/lib/services/infrastructure/stores.js`
@@ -142,14 +152,21 @@ Relevant files:
 Flow:
 
 1. Settings, History, or locked transcription styles can open `SupporterModal`.
-2. The modal posts a manually issued code to `/api/validate-code`.
-3. The server rate-limits attempts and checks `SUPPORTER_UNLOCK_CODES` or `SUPPORTER_UNLOCK_CODE`.
-4. Codes are trimmed and matched case-insensitively.
-5. A valid code calls `setSupporterStatus(true)`, which stores `talktype_supporter=true` in local storage.
-6. Supporter status unlocks local transcript history/export, custom transcription style UI, custom prompts, and the longer recording limit.
-7. Completed transcripts are only saved to IndexedDB when `userPreferences.isSupporter` is true.
+2. The modal can start Square hosted checkout through `/api/supporter/checkout`.
+3. The server creates a provider-neutral checkout record and asks Square `CreatePaymentLink` for a hosted checkout URL.
+4. The browser stores a short-lived checkout claim token in `sessionStorage` and redirects to Square.
+5. Square redirects back to `/supporter/success?checkout_id=...`.
+6. The success page polls `/api/supporter/checkout/[checkoutId]` with the claim token.
+7. Square independently calls `/api/square/webhook`; the server validates the raw-body HMAC signature before trusting it.
+8. A completed Square payment marks the checkout paid and creates a supporter license.
+9. The success page receives the supporter code plus a signed supporter token, calls `setSupporterStatus(true, token)`, and shows the code for other devices.
+10. Existing manually issued codes still redeem through `/api/supporter/redeem` as a fallback.
+11. Supporter status unlocks local transcript history/export, custom transcription style UI, custom prompts, and the longer recording limit.
+12. Completed transcripts are only saved to IndexedDB when `userPreferences.isSupporter` is true.
 
-Current supporter mode is a lightweight local entitlement. It is enough for honest-user local features, but not a server-enforced payment boundary. Real payment automation should issue a server-verifiable supporter session or license token before paid server-side cost controls depend on it.
+Square is isolated to the payment provider layer. Feature gates consume supporter entitlement state and do not know which payment provider created it.
+
+Checkout and license data use the server storage adapter. For `adapter-node`, prefer `TALKTYPE_STORAGE_ADAPTER=filesystem` with a durable `TALKTYPE_DATA_DIR`. Use `netlify-blobs` only when deploying on Netlify. `memory` is for local throwaway tests only.
 
 ## State Ownership
 

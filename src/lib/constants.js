@@ -24,6 +24,7 @@ export const STORAGE_KEYS = {
 	PROMPT_STYLE: 'talktype_prompt_style',
 	CUSTOM_PROMPT: 'talktype_custom_prompt',
 	SUPPORTER: 'talktype_supporter',
+	SUPPORTER_TOKEN: 'talktype_supporter_token',
 	PRIVACY_MODE: 'talktype_privacy_mode', // Offline Whisper mode
 	LIVE_MODE: 'talktype_live_mode',
 	LAST_TRANSCRIPTION_METHOD: 'last_transcription_method', // Track which service was used

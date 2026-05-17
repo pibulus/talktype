@@ -16,6 +16,11 @@ yarn-debug.log*
 yarn-error.log*
 dev-debug.log
 
+# Local persistent runtime data
+/data
+/src/lib/server/data/supporter-checkouts.json
+/src/lib/server/data/supporter-licenses.json
+
 # OS
 .DS_Store
 Thumbs.db

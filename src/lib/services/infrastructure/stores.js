@@ -49,7 +49,9 @@ function createUserPreferences() {
 		? localStorage.getItem('talktype-prompt-style') || 'standard'
 		: 'standard';
 	const initialSupporterStatus = browser
-		? forceSupporterMode || localStorage.getItem(STORAGE_KEYS.SUPPORTER) === 'true'
+		? forceSupporterMode ||
+			localStorage.getItem(STORAGE_KEYS.SUPPORTER) === 'true' ||
+			Boolean(localStorage.getItem(STORAGE_KEYS.SUPPORTER_TOKEN))
 		: forceSupporterMode;
 
 	return writable({
@@ -60,7 +62,7 @@ function createUserPreferences() {
 
 export const userPreferences = createUserPreferences();
 
-export function setSupporterStatus(isSupporter) {
+export function setSupporterStatus(isSupporter, token = null) {
 	const resolvedSupporterStatus = forceSupporterMode ? true : isSupporter;
 
 	userPreferences.update((current) => ({
@@ -70,6 +72,11 @@ export function setSupporterStatus(isSupporter) {
 
 	if (browser) {
 		localStorage.setItem(STORAGE_KEYS.SUPPORTER, resolvedSupporterStatus ? 'true' : 'false');
+		if (token) {
+			localStorage.setItem(STORAGE_KEYS.SUPPORTER_TOKEN, token);
+		} else if (!resolvedSupporterStatus) {
+			localStorage.removeItem(STORAGE_KEYS.SUPPORTER_TOKEN);
+		}
 	}
 }
 

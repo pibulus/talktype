@@ -12,6 +12,40 @@
 	let code = '';
 	let errorMessage = '';
 	let isSubmitting = false;
+	let isStartingCheckout = false;
+
+	function setCheckoutClaim(checkoutId, claimToken) {
+		if (!browser || !checkoutId || !claimToken) return;
+		sessionStorage.setItem(`talktype_checkout_claim_${checkoutId}`, claimToken);
+	}
+
+	async function handleCheckout() {
+		if (!browser || isStartingCheckout) return;
+
+		isStartingCheckout = true;
+		errorMessage = '';
+
+		try {
+			const response = await fetch('/api/supporter/checkout', {
+				method: 'POST'
+			});
+			const payload = await response.json().catch(() => ({}));
+
+			if (!response.ok || !payload.checkoutUrl) {
+				errorMessage =
+					payload.error || 'Square checkout is not ready yet. Use a supporter code for now.';
+				return;
+			}
+
+			setCheckoutClaim(payload.checkoutId, payload.claimToken);
+			window.location.assign(payload.checkoutUrl);
+		} catch (error) {
+			console.error('Failed to start supporter checkout:', error);
+			errorMessage = 'Could not start checkout right now.';
+		} finally {
+			isStartingCheckout = false;
+		}
+	}
 
 	async function handleUnlock() {
 		if (!browser || isSubmitting) return;
@@ -20,7 +54,7 @@
 		errorMessage = '';
 
 		try {
-			const response = await fetch('/api/validate-code', {
+			const response = await fetch('/api/supporter/redeem', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -34,7 +68,7 @@
 				return;
 			}
 
-			setSupporterStatus(true);
+			setSupporterStatus(true, payload.token || null);
 
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
@@ -100,6 +134,15 @@
 				</ul>
 			</div>
 
+			<button
+				type="button"
+				class="btn min-h-12 w-full border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600"
+				on:click={handleCheckout}
+				disabled={isStartingCheckout}
+			>
+				{isStartingCheckout ? 'Opening Square...' : `Buy with Square - ${PRICING.displayPrice}`}
+			</button>
+
 			<div class="space-y-2">
 				<label for="supporter-code" class="text-sm font-semibold text-gray-700">
 					Already have a supporter code?
@@ -115,7 +158,7 @@
 					spellcheck="false"
 				/>
 				{#if errorMessage}
-					<p class="text-sm text-rose-500">{errorMessage}</p>
+					<p class="text-sm text-rose-500" aria-live="polite">{errorMessage}</p>
 				{/if}
 			</div>
 
@@ -124,7 +167,7 @@
 					type="button"
 					class="btn min-h-12 flex-1 border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600"
 					on:click={handleUnlock}
-					disabled={isSubmitting}
+					disabled={isSubmitting || !code.trim()}
 				>
 					{isSubmitting ? 'Checking code...' : 'Unlock supporter mode'}
 				</button>
@@ -138,8 +181,7 @@
 			</div>
 
 			<p class="text-xs text-gray-500">
-				Supporter codes are issued manually for now. This keeps the unlock simple while the payment
-				flow catches up.
+				Supporter codes also work for gifts, another device, or manual recovery.
 			</p>
 		</div>
 	</div>
