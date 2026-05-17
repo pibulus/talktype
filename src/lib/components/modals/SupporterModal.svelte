@@ -2,6 +2,8 @@
 	import { createEventDispatcher } from 'svelte';
 	import { browser } from '$app/environment';
 	import { ModalCloseButton } from './index.js';
+	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
+	import { theme } from '$lib';
 	import { setSupporterStatus } from '$lib/services';
 	import { PRICING } from '$lib/config/pricing.js';
 
@@ -13,6 +15,9 @@
 	let errorMessage = '';
 	let isSubmitting = false;
 	let isStartingCheckout = false;
+	let codePanelOpen = false;
+
+	const benefits = ['Local history', 'Downloads', 'Style presets', 'Longer notes'];
 
 	function setCheckoutClaim(checkoutId, claimToken) {
 		if (!browser || !checkoutId || !claimToken) return;
@@ -96,12 +101,13 @@
 
 <dialog
 	id="supporter_modal"
-	class="modal fixed z-[999] overflow-hidden"
+	class="modal modal-bottom fixed z-[999] overflow-hidden sm:modal-middle"
 	aria-labelledby="supporter_modal_title"
+	aria-describedby="supporter_modal_description"
 	aria-modal="true"
 >
 	<div
-		class="animate-modal-enter modal-box relative max-h-[88vh] w-[94%] max-w-md overflow-y-auto rounded-[1.75rem] border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] px-5 py-6 shadow-xl sm:w-[92%]"
+		class="animate-modal-enter modal-box relative max-h-[88dvh] w-[94%] max-w-md overflow-y-auto rounded-[1.75rem] border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] px-5 py-6 shadow-xl sm:w-[92%] sm:px-6"
 	>
 		<form method="dialog">
 			<ModalCloseButton
@@ -113,23 +119,41 @@
 		</form>
 
 		<div class="space-y-4">
-			<div class="space-y-2 pr-8">
-				<p class="text-xs font-bold uppercase tracking-[0.24em] text-pink-500">Supporter Mode</p>
-				<h3 id="supporter_modal_title" class="text-2xl font-black tracking-tight text-gray-800">
-					Support TalkType for a one-time {PRICING.displayPrice}
-				</h3>
-				<p class="text-sm text-gray-600">
-					Supporters unlock the good stuff with one small lifetime purchase.
-				</p>
+			<div class="flex items-start gap-3 pr-10">
+				<div
+					class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-pink-200/70 bg-white/75 shadow-sm"
+					aria-hidden="true"
+				>
+					<DisplayGhost size="34px" theme={$theme} seed={24680} disableJsAnimation={true} />
+				</div>
+				<div class="min-w-0 space-y-1">
+					<p class="text-xs font-bold uppercase tracking-[0.22em] text-pink-500">
+						Support TalkType
+					</p>
+					<h3
+						id="supporter_modal_title"
+						class="text-2xl font-black leading-tight tracking-tight text-gray-900"
+					>
+						One-time supporter unlock
+					</h3>
+				</div>
 			</div>
 
-			<div class="rounded-2xl border border-pink-100 bg-white/80 p-4 shadow-sm">
-				<p class="mb-3 text-sm font-semibold text-gray-700">What unlocks</p>
-				<ul class="space-y-2 text-sm text-gray-600">
-					<li>Transcript history with local save, edit, and playback</li>
-					<li>Download and export tools for saved transcripts</li>
-					<li>Three playful output style presets</li>
-					<li>Longer recording sessions for extended notes</li>
+			<div class="rounded-2xl border border-pink-100 bg-white/75 p-4 shadow-sm">
+				<p id="supporter_modal_description" class="text-sm leading-6 text-gray-700">
+					Pay once, keep the extras, and help the little ghost stay free for everyone.
+				</p>
+				<p class="mt-2 text-sm font-black text-pink-600">{PRICING.displayPrice}</p>
+			</div>
+
+			<div>
+				<p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-gray-500">Includes</p>
+				<ul class="grid grid-cols-2 gap-2 text-sm font-semibold text-gray-700">
+					{#each benefits as benefit}
+						<li class="rounded-xl border border-pink-100 bg-[#fffdf5] px-3 py-2 text-center">
+							{benefit}
+						</li>
+					{/each}
 				</ul>
 			</div>
 
@@ -139,54 +163,68 @@
 				on:click={handleCheckout}
 				disabled={isStartingCheckout}
 			>
-				{isStartingCheckout ? 'Opening Square...' : `Buy with Square - ${PRICING.displayPrice}`}
+				{isStartingCheckout ? 'Opening Square...' : `Contribute once - ${PRICING.displayPrice}`}
 			</button>
 
-			<div class="space-y-2">
-				<label for="supporter-code" class="text-sm font-semibold text-gray-700">
-					Already have a supporter code?
-				</label>
-				<input
-					id="supporter-code"
-					bind:value={code}
-					type="text"
-					placeholder="Enter code"
-					class="w-full rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
-					autocomplete="off"
-					autocapitalize="none"
-					spellcheck="false"
-				/>
-				{#if errorMessage}
-					<p
-						class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-amber-900"
-						aria-live="polite"
+			{#if errorMessage}
+				<p
+					class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-amber-900"
+					aria-live="polite"
+				>
+					{errorMessage}
+				</p>
+			{/if}
+
+			<details
+				bind:open={codePanelOpen}
+				class="rounded-2xl border border-pink-100 bg-white/65 px-4 py-3"
+			>
+				<summary
+					class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
+				>
+					<span>Have a supporter code?</span>
+					<span class="text-pink-500" aria-hidden="true">{codePanelOpen ? 'Close' : 'Open'}</span>
+				</summary>
+
+				<div class="mt-3 space-y-3">
+					<label for="supporter-code" class="sr-only">Supporter code</label>
+					<input
+						id="supporter-code"
+						bind:value={code}
+						type="text"
+						placeholder="Enter code"
+						class="w-full rounded-xl border border-pink-200 bg-white px-4 py-3 text-sm text-gray-700 shadow-sm focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
+						autocomplete="off"
+						autocapitalize="none"
+						spellcheck="false"
+					/>
+					<button
+						type="button"
+						class="btn min-h-12 w-full border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
+						on:click={handleUnlock}
+						disabled={isSubmitting || !code.trim()}
 					>
-						{errorMessage}
-					</p>
-				{/if}
-			</div>
+						{isSubmitting ? 'Checking code...' : 'Unlock with code'}
+					</button>
+					<p class="text-xs text-gray-500">Codes work for gifts and other devices.</p>
+				</div>
+			</details>
 
-			<div class="flex flex-col gap-2 sm:flex-row">
-				<button
-					type="button"
-					class="btn min-h-12 flex-1 border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
-					on:click={handleUnlock}
-					disabled={isSubmitting || !code.trim()}
-				>
-					{isSubmitting ? 'Checking code...' : 'Unlock supporter mode'}
-				</button>
-				<button
-					type="button"
-					class="btn btn-ghost min-h-12 flex-1 border border-pink-100 bg-white/70 text-gray-700 hover:bg-pink-50"
-					on:click={handleClose}
-				>
-					Maybe later
-				</button>
-			</div>
-
-			<p class="text-xs text-gray-500">Codes work for gifts and other devices.</p>
+			<button
+				type="button"
+				class="btn btn-ghost min-h-12 w-full border border-pink-100 bg-white/70 text-gray-700 hover:bg-pink-50"
+				on:click={handleClose}
+			>
+				Maybe later
+			</button>
 		</div>
 	</div>
+	<button
+		type="button"
+		class="modal-backdrop bg-black/40"
+		on:click={handleClose}
+		aria-label="Close supporter modal"
+	></button>
 </dialog>
 
 <style>

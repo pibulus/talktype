@@ -38,7 +38,7 @@
 
 <button
 	type="button"
-	class="modal-close-btn absolute {position} z-50 flex {sizeClass} items-center justify-center rounded-full border border-pink-200 bg-pink-100 text-pink-500 shadow-sm transition-all duration-200 ease-in-out hover:bg-pink-200 hover:text-pink-700"
+	class="modal-close-btn absolute {position} z-50 flex {sizeClass} items-center justify-center rounded-full border border-pink-200 bg-pink-100 text-pink-500 shadow-sm transition-all duration-200 ease-in-out hover:bg-pink-200 hover:text-pink-700 focus-visible:ring-2 focus-visible:ring-pink-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffaef]"
 	aria-label={label}
 	on:click|preventDefault={handleClick}
 >
@@ -48,7 +48,6 @@
 <style>
 	.modal-close-btn {
 		-webkit-tap-highlight-color: transparent;
-		outline: none;
 		cursor: pointer;
 		user-select: none;
 	}

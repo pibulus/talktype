@@ -11,10 +11,11 @@
 	id="extension_modal"
 	class="modal modal-bottom fixed z-50 overflow-y-hidden sm:modal-middle"
 	aria-labelledby="extension_modal_title"
+	aria-describedby="extension_modal_description"
 	aria-modal="true"
 >
 	<div
-		class="modal-box max-h-[80vh] overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
+		class="modal-box max-h-[82dvh] w-[92%] overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
 	>
 		<form method="dialog">
 			<ModalCloseButton {closeModal} label="Close extension modal" modalId="extension_modal" />
@@ -35,7 +36,7 @@
 			<div
 				class="rounded-lg border border-pink-200/60 bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 shadow-sm"
 			>
-				<p class="text-sm leading-relaxed text-gray-700">
+				<p id="extension_modal_description" class="text-sm leading-relaxed text-gray-700">
 					Use TalkType across desktop Chrome. The extension drops voice typing into text boxes,
 					textareas, and rich editors so you can dictate straight into Gmail, Notion, chat apps,
 					forms, and docs.
@@ -72,13 +73,13 @@
 				<a
 					href={downloadUrl}
 					download
-					class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-orange-400 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+					class="inline-flex min-h-11 items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-orange-400 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
 				>
 					Download zip
 				</a>
 				<a
 					href="/extension"
-					class="inline-flex items-center justify-center rounded-xl border border-pink-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-pink-300 hover:text-pink-600"
+					class="inline-flex min-h-11 items-center justify-center rounded-xl border border-pink-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-pink-300 hover:text-pink-600"
 				>
 					See install guide
 				</a>
@@ -86,7 +87,7 @@
 					href="https://github.com/pibulus/talktype_extension"
 					target="_blank"
 					rel="noreferrer"
-					class="inline-flex items-center justify-center rounded-xl border border-pink-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-pink-300 hover:text-pink-600"
+					class="inline-flex min-h-11 items-center justify-center rounded-xl border border-pink-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-pink-300 hover:text-pink-600"
 				>
 					Open repo
 				</a>
@@ -94,10 +95,11 @@
 		</div>
 	</div>
 	<button
+		type="button"
 		class="modal-backdrop bg-black/40"
 		on:click={closeModal}
 		on:keydown={(e) => e.key === 'Enter' && closeModal()}
-		aria-label="Close modal"
+		aria-label="Close extension modal"
 	></button>
 </dialog>
 

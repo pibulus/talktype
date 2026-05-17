@@ -44,6 +44,11 @@
 	$: animationsEnabled = $appActive;
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 	$: gradientId = getGradientId(currentTheme);
+	$: ghostLabel = clickable
+		? $ghostStateStore.isRecording
+			? 'Stop recording'
+			: 'Start recording'
+		: 'TalkType ghost mascot';
 
 	// React to recording state changes ONLY when fully ready
 	$: if (fullyReady && browser && isRecording !== lastRecordingState) {
@@ -292,8 +297,9 @@
 			handleClick();
 		}
 	}}
-	aria-label={clickable ? 'Toggle Recording' : 'Ghost'}
+	aria-label={ghostLabel}
 	aria-pressed={clickable ? $ghostStateStore.isRecording.toString() : undefined}
+	aria-disabled={!clickable}
 	tabindex={clickable ? '0' : '-1'}
 >
 	<svg
@@ -386,12 +392,18 @@
 	}
 
 	.ghost-container:focus,
-	.ghost-container:active,
-	.ghost-container:focus-visible {
+	.ghost-container:active {
 		outline: none !important;
 		outline-offset: 0 !important;
 		box-shadow: none !important;
 		border: none !important;
+	}
+
+	.ghost-container:focus-visible {
+		outline: 3px solid rgba(245, 158, 11, 0.95) !important;
+		outline-offset: 0.5rem !important;
+		border-radius: 999px;
+		box-shadow: 0 0 0 0.35rem rgba(255, 250, 239, 0.95) !important;
 	}
 
 	.ghost-non-clickable {

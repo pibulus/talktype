@@ -62,7 +62,7 @@
 	function disabledTooltip(fallback) {
 		if (liveModeValue) return 'Use After Stop mode for style presets';
 		if (privacyModeValue) return 'Use After Stop mode for style presets';
-		if (!isSupporter) return 'Supporter mode unlocks style presets';
+		if (!isSupporter) return 'Supporter mode includes style presets';
 		return fallback;
 	}
 
@@ -106,6 +106,7 @@
 	<div class="grid grid-cols-3 gap-2">
 		{#each availableStyles as style}
 			<button
+				type="button"
 				class={`relative flex min-h-[92px] flex-col items-center justify-center rounded-xl border bg-[#fffdf5] p-2 text-center shadow-sm transition-all duration-200 hover:border-pink-200 hover:shadow-md ${
 					selectedPromptStyle === style
 						? 'border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
@@ -127,6 +128,7 @@
 				{#if selectedPromptStyle === style}
 					<div
 						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-400 text-xs text-white shadow-sm"
+						aria-hidden="true"
 					>
 						✓
 					</div>
@@ -134,6 +136,7 @@
 					<div
 						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-xs text-white shadow-sm"
 						title="Requires supporter mode"
+						aria-hidden="true"
 					>
 						★
 					</div>

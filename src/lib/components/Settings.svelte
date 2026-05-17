@@ -173,6 +173,7 @@
 	class="modal fixed z-50"
 	style="overflow: hidden !important; z-index: 999;"
 	aria-labelledby="settings_modal_title"
+	aria-describedby="settings_modal_description"
 	aria-modal="true"
 >
 	<div
@@ -198,6 +199,9 @@
 				<h3 id="settings_modal_title" class="text-xl font-black tracking-tight text-gray-800">
 					Options
 				</h3>
+				<p id="settings_modal_description" class="sr-only">
+					Adjust recording startup, transcription mode, output style, supporter mode, and vibe.
+				</p>
 			</div>
 
 			<!-- Options Section -->
@@ -219,12 +223,12 @@
 						<div class="relative">
 							<input
 								type="checkbox"
-								class="sr-only"
+								class="peer sr-only"
 								checked={autoRecordValue}
 								on:change={toggleAutoRecord}
 							/>
 							<div
-								class={`h-6 w-11 rounded-full ${autoRecordValue ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}
+								class={`h-6 w-11 rounded-full ${autoRecordValue ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200 peer-focus-visible:ring-2 peer-focus-visible:ring-pink-300 peer-focus-visible:ring-offset-2`}
 							></div>
 							<div
 								class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${autoRecordValue ? 'translate-x-5' : ''}`}
@@ -311,6 +315,7 @@
 						</p>
 					</div>
 					<button
+						type="button"
 						class={`btn btn-sm !h-[44px] !min-h-[44px] shrink-0 px-4 ${
 							isSupporterValue
 								? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'

@@ -24,6 +24,7 @@
 	id="intro_modal"
 	class="modal modal-bottom sm:modal-middle"
 	aria-labelledby="intro_modal_title"
+	aria-describedby="intro_modal_description"
 	aria-modal="true"
 >
 	<div
@@ -53,7 +54,7 @@
 				Tap the ghost. <br /> Talk it out.
 			</h1>
 
-			<div class="space-y-2 text-center">
+			<div id="intro_modal_description" class="space-y-2 text-center">
 				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg">
 					Fast voice-to-text, with a tiny bit of ghost energy.
 				</p>
@@ -63,7 +64,8 @@
 			</div>
 
 			<button
-				class="relative w-full cursor-pointer rounded-xl border border-amber-300/50 bg-gradient-to-r from-amber-100 to-amber-200 px-4 py-3 text-center text-sm font-bold text-gray-800 shadow-md transition-all duration-300 hover:bg-gradient-to-r hover:from-amber-200 hover:to-amber-300 hover:text-gray-900 hover:shadow-lg active:scale-[0.98] sm:px-5 sm:py-4 sm:text-base md:text-lg"
+				type="button"
+				class="relative min-h-11 w-full cursor-pointer rounded-xl border border-amber-300/50 bg-gradient-to-r from-amber-100 to-amber-200 px-4 py-3 text-center text-sm font-bold text-gray-800 shadow-md transition-all duration-300 hover:bg-gradient-to-r hover:from-amber-200 hover:to-amber-300 hover:text-gray-900 hover:shadow-lg active:scale-[0.98] sm:px-5 sm:py-4 sm:text-base md:text-lg"
 				on:click={handleActionButton}
 			>
 				Start talking
@@ -75,7 +77,7 @@
 
 			<form method="dialog">
 				<button
-					class="w-full rounded-full bg-gradient-to-r from-yellow-400 to-pink-400 px-4 py-2.5 text-base font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-6 sm:py-3 sm:text-lg"
+					class="min-h-11 w-full rounded-full bg-gradient-to-r from-yellow-400 to-pink-400 px-4 py-2.5 text-base font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-6 sm:py-3 sm:text-lg"
 					on:click={markIntroAsSeen}
 				>
 					Skip for now

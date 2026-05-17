@@ -31,12 +31,15 @@
 <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
 	{#each vibeOptions as vibe, index}
 		<button
+			type="button"
 			class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {currentTheme ===
 			vibe.id
 				? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
 				: ''}"
 			data-vibe-type={vibe.id}
 			on:click={() => handleThemeClick(vibe)}
+			aria-label={`Choose ${vibe.name} vibe`}
+			aria-pressed={currentTheme === vibe.id}
 		>
 			<div class="preview-container mb-2">
 				<!-- Use the original DisplayGhost component with masking -->
@@ -57,6 +60,7 @@
 			{#if currentTheme === vibe.id}
 				<div
 					class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-400 text-xs text-white shadow-sm"
+					aria-hidden="true"
 				>
 					✓
 				</div>

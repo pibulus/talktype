@@ -14,6 +14,7 @@
 	id="about_modal"
 	class="modal modal-bottom fixed z-50 overflow-y-hidden sm:modal-middle"
 	aria-labelledby="about_modal_title"
+	aria-describedby="about_modal_description"
 	aria-modal="true"
 >
 	<div
@@ -38,7 +39,7 @@
 			<div
 				class="rounded-lg border border-pink-200/60 bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 shadow-sm"
 			>
-				<p class="text-base leading-relaxed text-gray-700">
+				<p id="about_modal_description" class="text-base leading-relaxed text-gray-700">
 					TalkType turns voice into editable text. Tap the ghost, say the thing, tidy it up if you
 					want.
 				</p>
@@ -86,10 +87,11 @@
 		</div>
 	</div>
 	<button
+		type="button"
 		class="modal-backdrop bg-black/40"
 		on:click={closeModal}
 		on:keydown={(e) => e.key === 'Enter' && closeModal()}
-		aria-label="Close modal"
+		aria-label="Close about modal"
 	></button>
 </dialog>
 

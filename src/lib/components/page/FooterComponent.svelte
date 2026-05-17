@@ -45,40 +45,40 @@
 	}
 </script>
 
-<div class="flex items-center space-x-1 sm:space-x-2">
+<nav class="flex items-center space-x-1 sm:space-x-2" aria-label="TalkType footer">
 	<button
-		class="btn btn-ghost btn-sm !h-[44px] !min-h-[44px] min-w-11 px-1.5 py-2 text-xs text-gray-600 shadow-none transition-all hover:bg-pink-50/50 hover:text-pink-500 sm:px-3 sm:text-base"
+		class="btn btn-ghost btn-sm !h-[44px] !min-h-[44px] min-w-11 px-1.5 py-2 text-xs text-gray-600 shadow-none transition-all hover:bg-pink-50/50 hover:text-pink-500 focus-visible:ring-2 focus-visible:ring-pink-300 focus-visible:ring-offset-2 sm:px-3 sm:text-base"
 		on:click={showAbout}
 		aria-label="About TalkType"
 	>
 		About
 	</button>
 	<button
-		class="btn btn-ghost btn-sm !h-[44px] !min-h-[44px] min-w-11 px-1.5 py-2 text-xs text-gray-600 shadow-none transition-all hover:bg-pink-50/50 hover:text-pink-500 sm:px-3 sm:text-base"
+		class="btn btn-ghost btn-sm !h-[44px] !min-h-[44px] min-w-11 px-1.5 py-2 text-xs text-gray-600 shadow-none transition-all hover:bg-pink-50/50 hover:text-pink-500 focus-visible:ring-2 focus-visible:ring-pink-300 focus-visible:ring-offset-2 sm:px-3 sm:text-base"
 		on:click={showSettings}
 		aria-label="Open Options"
 	>
 		Options
 	</button>
 	<button
-		class="btn btn-ghost btn-sm !h-[44px] !min-h-[44px] min-w-11 px-1.5 py-2 text-xs text-gray-600 shadow-none transition-all hover:bg-pink-50/50 hover:text-pink-500 sm:px-3 sm:text-base"
+		class="btn btn-ghost btn-sm !h-[44px] !min-h-[44px] min-w-11 px-1.5 py-2 text-xs text-gray-600 shadow-none transition-all hover:bg-pink-50/50 hover:text-pink-500 focus-visible:ring-2 focus-visible:ring-pink-300 focus-visible:ring-offset-2 sm:px-3 sm:text-base"
 		on:click={showHistory}
 		aria-label="View Transcript History"
 	>
 		History
 	</button>
 	<button
-		class="btn btn-ghost btn-sm !h-[44px] !min-h-[44px] min-w-11 px-1.5 py-2 text-xs text-gray-600 shadow-none transition-all hover:bg-pink-50/50 hover:text-pink-500 sm:px-3 sm:text-base"
+		class="btn btn-ghost btn-sm !h-[44px] !min-h-[44px] min-w-11 px-1.5 py-2 text-xs text-gray-600 shadow-none transition-all hover:bg-pink-50/50 hover:text-pink-500 focus-visible:ring-2 focus-visible:ring-pink-300 focus-visible:ring-offset-2 sm:px-3 sm:text-base"
 		on:click={showExtension}
 		aria-label="Open Chrome Extension info"
 	>
 		Extension
 	</button>
 	<button
-		class="btn btn-ghost btn-sm !h-[44px] !min-h-[44px] min-w-11 px-1.5 py-2 text-xs text-gray-600 shadow-none transition-all hover:bg-pink-50/50 hover:text-pink-500 sm:px-3 sm:text-base"
+		class="btn btn-ghost btn-sm !h-[44px] !min-h-[44px] min-w-11 px-1.5 py-2 text-xs text-gray-600 shadow-none transition-all hover:bg-pink-50/50 hover:text-pink-500 focus-visible:ring-2 focus-visible:ring-pink-300 focus-visible:ring-offset-2 sm:px-3 sm:text-base"
 		on:click={shareApp}
 		aria-label="Share TalkType"
 	>
 		Share
 	</button>
-</div>
+</nav>
