@@ -1,170 +1,74 @@
 # TalkType PWA Guide
 
-## What is a PWA?
+TalkType is installable as a PWA on iOS, Android, and desktop Chromium
+browsers. The current PWA setup is SvelteKit-native: the manifest and static
+assets live under `static/`, while the service worker lives at
+`src/service-worker.js`.
 
-A Progressive Web App (PWA) lets you install TalkType on your device just like a regular app. This means:
+## Current Files
 
-- 📱 TalkType icon on your home screen
-- 🚀 Faster loading and performance
-- 🔌 Works offline or with poor internet
-- 📺 Full-screen experience without browser UI
+- `static/manifest.json`: app name, install display mode, app shortcuts,
+  screenshots, and web icon references.
+- `src/service-worker.js`: SvelteKit service worker using `$service-worker`
+  `build`, `files`, and `version`.
+- `static/offline.html`: fallback page for offline navigation requests.
+- `src/app.html`: manifest link, favicon links, Apple touch icons, splash
+  screens, theme color, and social metadata.
+- `static/appicon/web/`: PWA icons used by `manifest.json`.
+- `static/appicon/ios/`: iOS app icon exports.
+- `static/favicon/`: browser favicon assets.
+- `static/splash/`: iOS startup images.
+- `static/screenshots/`: manifest screenshots.
+- `static/og-image.png`: social share image.
 
-## How to Install TalkType
+There is no active `static/icons/` directory and no icon generation build step.
 
-### On iPhone or iPad (iOS)
+## Install Behavior
 
-1. Open TalkType in Safari
-2. Tap the Share button (📤) at the bottom of the screen
-3. Scroll down and tap "Add to Home Screen"
-4. Tap "Add" in the top right corner
+- iOS: Safari Share menu, then Add to Home Screen.
+- Android: Chrome install prompt or Add to Home Screen.
+- Desktop Chromium: install icon in the address bar or browser app menu.
+- In-app prompt: handled by `src/lib/services/pwa/pwaService.js`.
+- Start-record shortcut: `static/manifest.json` points to
+  `/?action=record&source=shortcut`, which `MainContainer.svelte` treats as an
+  auto-start source.
 
-### On Android
+## Caching Behavior
 
-1. Open TalkType in Chrome
-2. Tap the menu button (⋮) in the top right
-3. Tap "Install app" or "Add to Home Screen"
-4. Follow the prompts to complete installation
+`src/service-worker.js` caches:
 
-### On Desktop (Chrome, Edge, or other Chromium browser)
+- SvelteKit build output.
+- Static files from `static/`.
+- Runtime GET responses.
+- Whisper model responses in the `whisper-models-v1` cache.
 
-1. Open TalkType in your browser
-2. Look for the install icon (➕) in the address bar
-3. Click it and follow the prompts to install
+Large ONNX runtime WASM assets are excluded from the install-time app cache and
+handled at runtime so the initial service-worker install is less brittle.
 
-## Features You'll Love
+## Updating Icons
 
-- **Offline Support**: TalkType works without internet once installed
-- **Full Screen Mode**: No browser UI taking up space
-- **Fast Access**: Launch directly from your home screen
-- **Faster Loading**: Assets are cached for better performance
-- **Stays Updated**: Gets updates automatically
+1. Export the web icons into `static/appicon/web/`:
+   - `icon-192.png`
+   - `icon-512.png`
+   - `icon-192-maskable.png`
+   - `icon-512-maskable.png`
+   - `apple-touch-icon.png`
+2. Export iOS-specific sizes into `static/appicon/ios/` if the app icon changes.
+3. Update favicons in `static/favicon/` if the small browser icon changes.
+4. Update `static/manifest.json` only if filenames, sizes, or purposes change.
+5. Update `static/splash/` and `static/screenshots/` when the launch or store
+   presentation changes.
+6. Run a production build and a Lighthouse PWA pass after icon changes.
 
-## Smart Installation Prompt
+## Test Checklist
 
-TalkType will show you an installation prompt after you've used it a few times. We'll only show this if:
-
-- You haven't installed the app yet
-- You've completed at least 3 transcriptions
-- Your device supports PWA installation
-
-## The Original Developer Guide
-
-## Required Files
-
-1. **Web App Manifest** (`/static/manifest.json`)
-
-   ```json
-   {
-   	"name": "App Name",
-   	"short_name": "App",
-   	"description": "App description",
-   	"start_url": "/",
-   	"display": "standalone",
-   	"background_color": "#FFFFFF",
-   	"theme_color": "#FFFFFF",
-   	"icons": [
-   		{
-   			"src": "/icons/icon-192x192.png",
-   			"sizes": "192x192",
-   			"type": "image/png",
-   			"purpose": "any maskable"
-   		},
-   		{
-   			"src": "/icons/icon-512x512.png",
-   			"sizes": "512x512",
-   			"type": "image/png",
-   			"purpose": "any maskable"
-   		}
-   	]
-   }
-   ```
-
-2. **Service Worker** (`/static/service-worker.js`)
-
-   ```javascript
-   const CACHE_NAME = 'app-cache-v1';
-   const ASSETS_TO_CACHE = ['/', '/index.html', '/manifest.json', '/favicon.png', '/offline.html'];
-
-   self.addEventListener('install', (event) => {
-   	self.skipWaiting();
-   	event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE)));
-   });
-
-   self.addEventListener('fetch', (event) => {
-   	event.respondWith(
-   		caches
-   			.match(event.request)
-   			.then((response) => response || fetch(event.request))
-   			.catch(() => {
-   				if (event.request.mode === 'navigate') {
-   					return caches.match('/offline.html');
-   				}
-   			})
-   	);
-   });
-   ```
-
-3. **Offline Page** (`/static/offline.html`)
-   - Simple HTML page with your logo
-   - Message indicating user is offline
-   - "Try Again" button that reloads the page
-
-4. **HTML Meta Tags** (in your HTML `<head>`)
-
-   ```html
-   <link rel="manifest" href="/manifest.json" />
-   <meta name="theme-color" content="#FFFFFF" />
-   <meta name="apple-mobile-web-app-capable" content="yes" />
-   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-   ```
-
-5. **Service Worker Registration** (in your main JavaScript)
-   ```javascript
-   if ('serviceWorker' in navigator) {
-   	window.addEventListener('load', () => {
-   		navigator.serviceWorker.register('/service-worker.js');
-   	});
-   }
-   ```
-
-## Required Icons
-
-- favicon.png (32x32)
-- apple-touch-icon.png (180x180)
-- icon-192x192.png (for Android)
-- icon-512x512.png (for Android)
-- og-image.png (1200x630, for social sharing)
-
-## Testing
-
-1. Use Lighthouse in Chrome DevTools
-2. Test installation:
-   - Chrome desktop: Look for install icon in URL bar
-   - Android: "Add to Home Screen" from menu
-   - iOS: "Add to Home Screen" from share menu
-3. Test offline:
-   - Enable offline mode in DevTools
-   - Verify offline page appears
-
-## Icon Generation
-
-Icons are exported manually—no build scripts or `sharp` dependency required anymore:
-
-1. Open the Ghost Icon Figma file (link in `docs/ghost-icon-reference.md`).
-2. Export the required sizes (see `static/icons/README.md`) as 1× PNG.
-3. Export both light/dark favicons and the maskable 512×512 variants.
-4. Replace the PNGs under `static/icons/` and update `static/manifest.json` if any filenames change.
-5. Capture splash/marketing shots manually (or reuse prior exports) and drop them in `static/icons/` as needed.
-
-`static/icons/NEXT-STEPS.md` has the detailed checklist (install tests, Lighthouse pass, etc.).
-
-## Quick Checklist
-
-- [ ] Create manifest.json
-- [ ] Create service-worker.js
-- [ ] Create offline.html
-- [ ] Add meta tags to HTML
-- [ ] Register service worker
-- [ ] Generate all required icons
-- [ ] Test installation and offline functionality
-- [ ] Run Lighthouse audit
+- `npm run build` completes.
+- Lighthouse PWA checks pass in Chrome.
+- `/manifest.json` loads and points to existing icon files.
+- `/offline.html` is present in the production output.
+- App installs on desktop Chromium.
+- iOS Add to Home Screen opens without browser chrome.
+- Android install uses the expected icon and app name.
+- Launch shortcut starts the app with `?action=record&source=shortcut`.
+- Offline navigation shows cached app content or `offline.html`.
+- Offline Mode still downloads and reuses Whisper models as expected.
