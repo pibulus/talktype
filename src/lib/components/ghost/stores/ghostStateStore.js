@@ -12,38 +12,35 @@ import {
 	ANIMATION_STATES,
 	ANIMATION_TRANSITIONS,
 	ANIMATION_BEHAVIORS,
-	WOBBLE_CONFIG, // Import WOBBLE_CONFIG
-	BLINK_CONFIG // Import BLINK_CONFIG
+	WOBBLE_CONFIG,
+	BLINK_CONFIG
 } from '../animationConfig.js';
+
+const RAF_RECORDING_START_TIMEOUT = 'rafRecordingStart';
+
+function createGhostState(overrides = {}) {
+	return {
+		current: ANIMATION_STATES.IDLE,
+		previous: null,
+		isRecording: false,
+		isProcessing: false,
+		eyesClosed: false,
+		eyePosition: { x: 0, y: 0 },
+		isEyeTrackingEnabled: true,
+		inactivityTimerId: null,
+		debug: false,
+		isFirstVisit: false,
+		stateTimeouts: {},
+		...overrides
+	};
+}
 
 /**
  * Create the ghost animation state machine
  */
 function createGhostStateStore() {
 	// Internal state store (make sure this 'state' is used throughout)
-	const _state = writable({
-		// Current animation state
-		current: ANIMATION_STATES.INITIAL,
-		// Previous animation state for transition effects
-		previous: null,
-		// Whether the ghost is recording
-		isRecording: false,
-		// Whether the ghost is processing
-		isProcessing: false,
-		// Whether the eyes are closed (for blinking)
-		eyesClosed: false,
-		// Eye tracking position
-		eyePosition: { x: 0, y: 0 },
-		// Whether eye tracking is enabled
-		isEyeTrackingEnabled: true,
-		inactivityTimerId: null, // Timer for falling asleep
-		// Debug mode
-		debug: false,
-		// First visit (for initial animation) - Default to false for SSR safety
-		isFirstVisit: false,
-		// Animation state timeouts
-		stateTimeouts: {}
-	});
+	const _state = writable(createGhostState({ current: ANIMATION_STATES.INITIAL }));
 
 	/**
 	 * Validate a state transition against the defined transition map
@@ -86,15 +83,18 @@ function createGhostStateStore() {
 
 		if (currentState.stateTimeouts[stateName]) {
 			clearTimeout(currentState.stateTimeouts[stateName]);
-
-			_state.update((s) => ({
-				...s,
-				stateTimeouts: {
-					...s.stateTimeouts,
-					[stateName]: null
-				}
-			}));
+			setStateTimeout(stateName, null);
 		}
+	}
+
+	function setStateTimeout(stateName, timeoutId) {
+		_state.update((s) => ({
+			...s,
+			stateTimeouts: {
+				...s.stateTimeouts,
+				[stateName]: timeoutId
+			}
+		}));
 	}
 
 	// Forward declaration for use in setAnimationState
@@ -195,13 +195,7 @@ function createGhostStateStore() {
 				}
 			}, behavior.cleanupDelay);
 
-			_state.update((s) => ({
-				...s,
-				stateTimeouts: {
-					...s.stateTimeouts,
-					[newState]: timeoutId
-				}
-			}));
+			setStateTimeout(newState, timeoutId);
 		}
 
 		return true;
@@ -251,10 +245,7 @@ function createGhostStateStore() {
 		}, WOBBLE_CONFIG.DURATION + 50);
 
 		// Store timeout ID for potential cleanup
-		_state.update((s) => ({
-			...s,
-			stateTimeouts: { ...s.stateTimeouts, [timeoutKey]: timeoutId }
-		}));
+		setStateTimeout(timeoutKey, timeoutId);
 	}
 
 	/**
@@ -271,8 +262,8 @@ function createGhostStateStore() {
 		applyWobbleAnimation('start');
 
 		// 3. Schedule state transition to RECORDING on next frame
-		if (currentState.stateTimeouts.rafRecordingStart) {
-			cancelAnimationFrame(currentState.stateTimeouts.rafRecordingStart);
+		if (currentState.stateTimeouts[RAF_RECORDING_START_TIMEOUT]) {
+			cancelAnimationFrame(currentState.stateTimeouts[RAF_RECORDING_START_TIMEOUT]);
 		}
 
 		const rafId = requestAnimationFrame(() => {
@@ -282,18 +273,11 @@ function createGhostStateStore() {
 			} else {
 				debugLog('Recording stopped before next frame state transition could occur.');
 			}
-			// Clear the stored RAF ID after execution
-			_state.update((s) => ({
-				...s,
-				stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: null }
-			}));
+			setStateTimeout(RAF_RECORDING_START_TIMEOUT, null);
 		});
 
 		// Store RAF ID for potential cleanup
-		_state.update((s) => ({
-			...s,
-			stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: rafId }
-		}));
+		setStateTimeout(RAF_RECORDING_START_TIMEOUT, rafId);
 	}
 
 	/**
@@ -307,12 +291,9 @@ function createGhostStateStore() {
 		_state.update((s) => ({ ...s, isRecording: false }));
 
 		// Clear any pending next-frame start transition
-		if (currentState.stateTimeouts.rafRecordingStart) {
-			cancelAnimationFrame(currentState.stateTimeouts.rafRecordingStart);
-			_state.update((s) => ({
-				...s,
-				stateTimeouts: { ...s.stateTimeouts, rafRecordingStart: null }
-			}));
+		if (currentState.stateTimeouts[RAF_RECORDING_START_TIMEOUT]) {
+			cancelAnimationFrame(currentState.stateTimeouts[RAF_RECORDING_START_TIMEOUT]);
+			setStateTimeout(RAF_RECORDING_START_TIMEOUT, null);
 		}
 
 		// 2. Transition to appropriate end state
@@ -431,19 +412,10 @@ function createGhostStateStore() {
 				if (timeout) clearTimeout(timeout);
 			});
 
-			return {
-				current: ANIMATION_STATES.IDLE,
-				previous: null,
-				isRecording: false,
-				isProcessing: false,
-				eyesClosed: false,
-				eyePosition: { x: 0, y: 0 },
-				isEyeTrackingEnabled: true,
-				inactivityTimerId: null, // Clear inactivity timer on reset
+			return createGhostState({
 				debug: s.debug,
-				isFirstVisit: false, // Assume reset happens after first visit
-				stateTimeouts: {}
-			};
+				current: ANIMATION_STATES.IDLE
+			});
 		});
 	}
 
