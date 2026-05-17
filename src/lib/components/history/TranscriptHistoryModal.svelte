@@ -1,5 +1,5 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import {
 		transcriptHistory,
 		storageStats,
@@ -16,8 +16,11 @@
 	export let closeModal = () => {};
 
 	let confirmClearAll = false;
+	let pendingDeleteId = null;
 	let editingId = null;
 	let editText = '';
+	let clearAllTimeout = null;
+	let deleteConfirmTimeout = null;
 	const iconButtonClass = 'btn btn-ghost h-12 min-h-12 w-12 px-0 text-base';
 
 	// Format timestamp to readable date
@@ -53,17 +56,44 @@
 		});
 	}
 
+	function formatMethod(method) {
+		const labels = {
+			'deepgram-live': 'Live',
+			gemini: 'Gemini',
+			whisper: 'Offline',
+			'offline-whisper': 'Offline',
+			'cloud-batch': 'Cloud'
+		};
+
+		return labels[method] || method;
+	}
+
+	function formatPromptStyle(style) {
+		const labels = {
+			leetSpeak: 'L33t',
+			quillAndInk: 'Victorian',
+			sparklePop: 'Sparkle'
+		};
+
+		return labels[style] || style;
+	}
+
 	// Copy transcript to clipboard
 	async function copyTranscript(text) {
 		try {
 			await navigator.clipboard.writeText(text);
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
-					detail: { message: '📋 Copied to clipboard!', type: 'success' }
+					detail: { message: 'Copied to clipboard.', type: 'success' }
 				})
 			);
 		} catch (err) {
 			console.error('Failed to copy:', err);
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: { message: 'Copy needs one more try.', type: 'info' }
+				})
+			);
 		}
 	}
 
@@ -95,7 +125,7 @@
 
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
-					detail: { message: '✏️ Transcript updated!', type: 'success' }
+					detail: { message: 'Transcript updated.', type: 'success' }
 				})
 			);
 		}
@@ -107,18 +137,35 @@
 		editText = '';
 	}
 
-	// Delete a transcript
-	async function handleDelete(id) {
-		if (confirm('Remove this transcript from history for good?')) {
-			await deleteTranscript(id);
-		}
+	function requestDelete(id) {
+		pendingDeleteId = id;
+		if (deleteConfirmTimeout) clearTimeout(deleteConfirmTimeout);
+		deleteConfirmTimeout = setTimeout(() => {
+			if (pendingDeleteId === id) pendingDeleteId = null;
+			deleteConfirmTimeout = null;
+		}, 3000);
+	}
+
+	async function confirmDelete(id) {
+		await deleteTranscript(id);
+		pendingDeleteId = null;
+
+		window.dispatchEvent(
+			new CustomEvent('talktype:toast', {
+				detail: { message: 'Transcript removed from history.', type: 'info' }
+			})
+		);
 	}
 
 	// Clear all transcripts
 	async function handleClearAll() {
 		if (!confirmClearAll) {
 			confirmClearAll = true;
-			setTimeout(() => (confirmClearAll = false), 3000);
+			if (clearAllTimeout) clearTimeout(clearAllTimeout);
+			clearAllTimeout = setTimeout(() => {
+				confirmClearAll = false;
+				clearAllTimeout = null;
+			}, 3000);
 			return;
 		}
 
@@ -127,7 +174,7 @@
 
 		window.dispatchEvent(
 			new CustomEvent('talktype:toast', {
-				detail: { message: '🗑️ All transcripts cleared', type: 'info' }
+				detail: { message: 'History cleared.', type: 'info' }
 			})
 		);
 	}
@@ -144,7 +191,7 @@
 		window.dispatchEvent(
 			new CustomEvent('talktype:toast', {
 				detail: {
-					message: `📦 Downloading ${count} transcript${count !== 1 ? 's' : ''}...`,
+					message: `Downloading ${count} transcript${count !== 1 ? 's' : ''}.`,
 					type: 'success'
 				}
 			})
@@ -156,7 +203,7 @@
 		await exportAllTranscriptsJSON();
 		window.dispatchEvent(
 			new CustomEvent('talktype:toast', {
-				detail: { message: '📄 Exported as JSON!', type: 'success' }
+				detail: { message: 'Exported as JSON.', type: 'success' }
 			})
 		);
 	}
@@ -164,12 +211,18 @@
 	onMount(() => {
 		loadAllTranscripts();
 	});
+
+	onDestroy(() => {
+		if (clearAllTimeout) clearTimeout(clearAllTimeout);
+		if (deleteConfirmTimeout) clearTimeout(deleteConfirmTimeout);
+	});
 </script>
 
 <dialog
 	id="history_modal"
 	class="modal fixed z-[999] overflow-hidden"
 	aria-labelledby="history_modal_title"
+	aria-describedby="history_modal_description"
 	aria-modal="true"
 >
 	<div
@@ -188,11 +241,14 @@
 		<div class="mb-4 border-b border-pink-100 pb-3">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div class="flex items-center gap-2">
-					<span class="text-2xl">📚</span>
+					<span class="text-2xl" aria-hidden="true">📚</span>
 					<div>
 						<h3 id="history_modal_title" class="text-xl font-black tracking-tight text-gray-800">
 							Transcript History
 						</h3>
+						<p id="history_modal_description" class="sr-only">
+							Review, copy, edit, download, export, or clear saved transcripts.
+						</p>
 						<p class="text-xs text-gray-500">
 							{$storageStats.count} transcript{$storageStats.count !== 1 ? 's' : ''} •
 							{formatSize($storageStats.totalSize)}
@@ -204,26 +260,31 @@
 					<div class="flex flex-wrap gap-2 sm:justify-end">
 						<button
 							type="button"
-							class="btn btn-ghost min-h-11 px-3 text-sm"
+							class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
 							on:click={handleBatchDownload}
 							title="Download all as text files"
+							aria-label="Download all transcripts as text files"
 						>
-							📦 Download All
+							Download
 						</button>
 						<button
 							type="button"
-							class="btn btn-ghost min-h-11 px-3 text-sm"
+							class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
 							on:click={handleExportJSON}
 							title="Export as JSON"
+							aria-label="Export transcript history as JSON"
 						>
-							📄 JSON
+							JSON
 						</button>
 						<button
 							type="button"
-							class="btn btn-ghost min-h-11 px-3 text-sm"
+							class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
 							on:click={handleClearAll}
+							aria-label={confirmClearAll
+								? 'Tap again to clear transcript history'
+								: 'Clear transcript history'}
 						>
-							{confirmClearAll ? '⚠️ Confirm?' : '🗑️ Clear All'}
+							{confirmClearAll ? 'Tap again' : 'Clear'}
 						</button>
 					</div>
 				{/if}
@@ -235,7 +296,7 @@
 			{#if $transcriptHistory.length === 0}
 				<!-- Empty State -->
 				<div class="py-12 text-center">
-					<p class="mb-2 text-4xl opacity-30">📝</p>
+					<p class="mb-2 text-4xl opacity-30" aria-hidden="true">📝</p>
 					<p class="text-sm text-gray-500">No transcripts yet</p>
 					<p class="text-xs text-gray-400">Your saved transcripts will appear here</p>
 				</div>
@@ -247,9 +308,9 @@
 							class="group rounded-lg border border-pink-100 bg-white/50 p-3 shadow-sm transition-all hover:shadow-md"
 						>
 							<!-- Header -->
-							<div class="mb-2 flex items-start justify-between">
-								<div class="flex-1">
-									<div class="flex items-center gap-2">
+							<div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+								<div class="min-w-0 flex-1">
+									<div class="flex flex-wrap items-center gap-2">
 										<span class="text-xs font-medium text-gray-500">
 											{formatDate(transcript.timestamp)}
 										</span>
@@ -257,14 +318,14 @@
 											<span
 												class="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700"
 											>
-												{transcript.method}
+												{formatMethod(transcript.method)}
 											</span>
 										{/if}
 										{#if transcript.promptStyle && transcript.promptStyle !== 'standard'}
 											<span
 												class="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700"
 											>
-												{transcript.promptStyle}
+												{formatPromptStyle(transcript.promptStyle)}
 											</span>
 										{/if}
 									</div>
@@ -275,45 +336,62 @@
 
 								<!-- Actions -->
 								<div
-									class="flex shrink-0 flex-wrap justify-end gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100"
+									class="flex w-full shrink-0 justify-between gap-1 opacity-100 transition-opacity sm:w-auto sm:flex-wrap sm:justify-end sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100"
 								>
 									{#if editingId !== transcript.id}
 										{#if transcript.audioBlob}
 											<button
+												type="button"
 												class={iconButtonClass}
 												on:click={() => playAudio(transcript.audioBlob)}
 												title="Play audio"
+												aria-label={`Play audio from ${formatDate(transcript.timestamp)}`}
 											>
-												🔊
+												<span aria-hidden="true">🔊</span>
 											</button>
 										{/if}
 										<button
+											type="button"
 											class={iconButtonClass}
 											on:click={() => startEdit(transcript)}
 											title="Edit"
+											aria-label={`Edit transcript from ${formatDate(transcript.timestamp)}`}
 										>
-											✏️
+											<span aria-hidden="true">✏️</span>
 										</button>
 										<button
+											type="button"
 											class={iconButtonClass}
 											on:click={() => copyTranscript(transcript.text)}
 											title="Copy text"
+											aria-label={`Copy transcript from ${formatDate(transcript.timestamp)}`}
 										>
-											📋
+											<span aria-hidden="true">📋</span>
 										</button>
 										<button
+											type="button"
 											class={iconButtonClass}
 											on:click={() => downloadTranscript(transcript)}
 											title="Download"
+											aria-label={`Download transcript from ${formatDate(transcript.timestamp)}`}
 										>
-											💾
+											<span aria-hidden="true">💾</span>
 										</button>
 										<button
+											type="button"
 											class={`${iconButtonClass} text-amber-700 hover:bg-amber-50`}
-											on:click={() => handleDelete(transcript.id)}
-											title="Delete"
+											on:click={() =>
+												pendingDeleteId === transcript.id
+													? confirmDelete(transcript.id)
+													: requestDelete(transcript.id)}
+											title="Remove"
+											aria-label={pendingDeleteId === transcript.id
+												? `Tap again to remove transcript from ${formatDate(transcript.timestamp)}`
+												: `Remove transcript from ${formatDate(transcript.timestamp)}`}
 										>
-											🗑️
+											<span aria-hidden="true">
+												{pendingDeleteId === transcript.id ? '✓' : '×'}
+											</span>
 										</button>
 									{/if}
 								</div>
@@ -327,10 +405,21 @@
 										bind:value={editText}
 										class="w-full rounded border border-pink-200 bg-white p-2 text-base focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200 sm:text-sm"
 										rows="4"
+										aria-label="Edit transcript text"
 									></textarea>
 									<div class="flex justify-end gap-2">
-										<button class="btn btn-ghost btn-xs" on:click={cancelEdit}> Cancel </button>
-										<button class="btn btn-primary btn-xs" on:click={() => saveEdit(transcript.id)}>
+										<button
+											type="button"
+											class="btn btn-ghost min-h-11 px-4 text-sm"
+											on:click={cancelEdit}
+										>
+											Cancel
+										</button>
+										<button
+											type="button"
+											class="btn btn-primary min-h-11 px-4 text-sm"
+											on:click={() => saveEdit(transcript.id)}
+										>
 											Save
 										</button>
 									</div>
@@ -347,6 +436,12 @@
 			{/if}
 		</div>
 	</div>
+	<button
+		type="button"
+		class="modal-backdrop bg-black/40"
+		on:click={closeModal}
+		aria-label="Close history"
+	></button>
 </dialog>
 
 <style>

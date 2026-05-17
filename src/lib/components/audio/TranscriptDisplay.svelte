@@ -180,6 +180,8 @@
 						aria-label={editable ? 'Transcript editor' : 'Live transcript'}
 						aria-multiline="true"
 						aria-readonly={!editable}
+						aria-live={editable ? undefined : 'polite'}
+						aria-relevant={editable ? undefined : 'text additions'}
 						tabindex="0"
 						aria-describedby="transcript-instructions"
 						bind:this={editableTranscript}

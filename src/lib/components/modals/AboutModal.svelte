@@ -49,15 +49,15 @@
 				<h4 class="mb-2 text-sm font-bold text-gray-700">The idea:</h4>
 				<ul class="space-y-1.5 text-sm text-gray-600">
 					<li class="flex items-start gap-2">
-						<span class="text-lg text-pink-500">⬩</span>
+						<span class="text-lg text-pink-500" aria-hidden="true">⬩</span>
 						<span>Live mode when speed matters</span>
 					</li>
 					<li class="flex items-start gap-2">
-						<span class="text-lg text-pink-500">⬩</span>
+						<span class="text-lg text-pink-500" aria-hidden="true">⬩</span>
 						<span>Offline mode when privacy matters</span>
 					</li>
 					<li class="flex items-start gap-2">
-						<span class="text-lg text-pink-500">⬩</span>
+						<span class="text-lg text-pink-500" aria-hidden="true">⬩</span>
 						<span>Fast start, simple extras, one-time supporter unlock</span>
 					</li>
 				</ul>
