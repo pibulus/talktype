@@ -33,32 +33,22 @@
 
 	let PwaInstallPrompt;
 
-	function debug() {
-		// console.log(`[MainContainer] ${message}`);
-	}
-
 	async function openSettingsModal() {
-		debug('openSettingsModal called');
-
 		// Check if we're already loading the modal
 		if (loadingSettings) {
-			debug('Settings is already loading, aborting.');
 			return;
 		}
 
 		// Dynamically import the Settings component if not already loaded
 		if (!Settings) {
 			loadingSettings = true;
-			debug('Lazy loading Settings component...');
 
 			try {
 				// Import the component dynamically
 				const module = await import('../Settings.svelte');
 				Settings = module.default;
-				debug('Settings component loaded successfully');
 			} catch (err) {
 				console.error('Error loading Settings:', err);
-				debug(`Error loading Settings: ${err.message}`);
 				loadingSettings = false;
 				return; // Don't proceed if loading failed
 			} finally {
@@ -70,7 +60,6 @@
 	}
 
 	function closeSettingsModal() {
-		debug('closeSettingsModal called');
 		modalService.closeModal();
 	}
 
@@ -82,10 +71,7 @@
 
 	// Handle toggle recording from ghost via custom event
 	function handleToggleRecording() {
-		debug('Toggle recording triggered via custom event');
-
 		if ($transcribingStore && !$recordingStore) {
-			debug('Ignoring ghost click while transcription is in progress');
 			return;
 		}
 
@@ -108,7 +94,6 @@
 
 	// Function to trigger ghost click
 	function triggerGhostClick() {
-		debug('Triggering ghost click after intro modal close');
 		// Forward to the toggle recording handler
 		handleToggleRecording();
 	}
@@ -130,9 +115,6 @@
 	async function handleTranscriptionCompleted(event) {
 		if (!browser) return;
 
-		const newCount = event.detail.count;
-		debug(`🔔 Transcription completed event received. Count: ${newCount}`);
-
 		if (event.detail.transcript && $userPreferences.isSupporter) {
 			try {
 				await saveTranscript({
@@ -142,7 +124,6 @@
 					promptStyle: event.detail.transcript.promptStyle || 'standard',
 					method: event.detail.transcript.method || 'gemini'
 				});
-				debug('💾 Transcript saved to history');
 			} catch (err) {
 				console.error('Failed to save transcript:', err);
 			}
@@ -150,16 +131,12 @@
 
 		// The PWA service handles most of the logic, but we need to lazy-load the component
 		if ($showPwaInstallPrompt && !PwaInstallPrompt) {
-			debug('📱 Lazy loading PWA install prompt component...');
-
 			try {
 				// Import the component dynamically
 				const module = await import('../pwa/PwaInstallPrompt.svelte');
 				PwaInstallPrompt = module.default;
-				debug('📱 PWA install prompt component loaded successfully');
 			} catch (err) {
 				console.error('Error loading PWA install prompt:', err);
-				debug(`Error loading PWA install prompt: ${err.message}`);
 			}
 		}
 	}
@@ -185,7 +162,6 @@
 
 	// Closes the PWA install prompt
 	function closePwaInstallPrompt() {
-		debug('ℹ️ PWA install prompt dismissed.');
 		// Update the store value through the service
 		pwaService.dismissPrompt();
 	}
@@ -207,14 +183,11 @@
 
 		if (loadingHistoryModal) return;
 
-		debug('Opening history modal');
-
 		if (!TranscriptHistoryModal) {
 			loadingHistoryModal = true;
 			try {
 				const module = await import('../history/TranscriptHistoryModal.svelte');
 				TranscriptHistoryModal = module.default;
-				debug('History modal loaded successfully');
 			} catch (err) {
 				console.error('Error loading history modal:', err);
 				loadingHistoryModal = false;
@@ -347,8 +320,7 @@
 			clearAutoStartGestureRetry();
 			clearAutoStartVisibilityRetry();
 			return true;
-		} catch (err) {
-			debug(`Auto-start failed: ${err?.message || err}`);
+		} catch {
 			if (allowGestureRetry) {
 				armAutoStartOnGesture(source);
 			}
@@ -366,7 +338,6 @@
 		if (browser) {
 			toggleRecordingListener = () => handleToggleRecording();
 			window.addEventListener('talktype:toggle-recording', toggleRecordingListener);
-			debug('Added listener for talktype:toggle-recording custom event');
 
 			supporterModalListener = () => openSupporterModal();
 			window.addEventListener('talktype:open-supporter-modal', supporterModalListener);
@@ -375,19 +346,12 @@
 		// Listen for settings changes
 		if (browser) {
 			settingsListener = (event) => {
-				if (event.detail && event.detail.setting === 'autoRecord') {
-					debug(`Setting changed event: autoRecord = ${event.detail.value}`);
-					// No immediate action needed, setting will apply on next page load/refresh
-				}
-
 				if (event.detail && event.detail.setting === 'promptStyle') {
-					debug('Prompt style setting changed:', event.detail.value);
 					// Update the prompt style in the service
 					geminiService.setPromptStyle(event.detail.value);
 				}
 			};
 			window.addEventListener('talktype-setting-changed', settingsListener);
-			debug('Added listener for settings changes.');
 		}
 
 		(async () => {
@@ -399,8 +363,6 @@
 			if (autoStartSource) {
 				const startDelay = introWasShown ? 450 : 250;
 				scheduleAutoStartRetry(autoStartSource, { allowGestureRetry: true }, startDelay);
-			} else {
-				debug('Auto-start not requested.');
 			}
 		})();
 
@@ -410,11 +372,9 @@
 
 			if (browser && settingsListener) {
 				window.removeEventListener('talktype-setting-changed', settingsListener);
-				debug('Removed settings change listener');
 			}
 			if (browser && toggleRecordingListener) {
 				window.removeEventListener('talktype:toggle-recording', toggleRecordingListener);
-				debug('Removed toggle recording listener');
 			}
 			if (browser && supporterModalListener) {
 				window.removeEventListener('talktype:open-supporter-modal', supporterModalListener);
