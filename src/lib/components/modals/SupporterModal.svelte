@@ -33,7 +33,7 @@
 
 			if (!response.ok || !payload.checkoutUrl) {
 				errorMessage =
-					payload.error || 'Square checkout is not ready yet. Use a supporter code for now.';
+					payload.error || 'Checkout is not ready here yet. A supporter code still works.';
 				return;
 			}
 
@@ -41,7 +41,7 @@
 			window.location.assign(payload.checkoutUrl);
 		} catch (error) {
 			console.error('Failed to start supporter checkout:', error);
-			errorMessage = 'Could not start checkout right now.';
+			errorMessage = "Checkout didn't open. Try again in a moment.";
 		} finally {
 			isStartingCheckout = false;
 		}
@@ -64,7 +64,7 @@
 			const payload = await response.json().catch(() => ({}));
 
 			if (!response.ok || !payload.valid) {
-				errorMessage = payload.error || 'That supporter code did not match.';
+				errorMessage = payload.error || "That code didn't match. Check it and try once more.";
 				return;
 			}
 
@@ -73,8 +73,7 @@
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
 					detail: {
-						message:
-							'Supporter mode unlocked. History, downloads, and custom transcription are live.',
+						message: 'Supporter mode unlocked. History, downloads, and style presets are live.',
 						type: 'success'
 					}
 				})
@@ -84,7 +83,7 @@
 			closeModal();
 		} catch (error) {
 			console.error('Failed to validate supporter code:', error);
-			errorMessage = 'Could not validate that code right now.';
+			errorMessage = "Couldn't check the code just now. Try again in a moment.";
 		} finally {
 			isSubmitting = false;
 		}
@@ -129,7 +128,7 @@
 				<ul class="space-y-2 text-sm text-gray-600">
 					<li>Transcript history with local save, edit, and playback</li>
 					<li>Download and export tools for saved transcripts</li>
-					<li>Custom transcription styles and custom prompt mode</li>
+					<li>Three playful output style presets</li>
 					<li>Longer recording sessions beyond the free 5-minute cap</li>
 				</ul>
 			</div>
@@ -158,7 +157,12 @@
 					spellcheck="false"
 				/>
 				{#if errorMessage}
-					<p class="text-sm text-rose-500" aria-live="polite">{errorMessage}</p>
+					<p
+						class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-amber-900"
+						aria-live="polite"
+					>
+						{errorMessage}
+					</p>
 				{/if}
 			</div>
 

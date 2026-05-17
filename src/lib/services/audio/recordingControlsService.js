@@ -99,8 +99,8 @@ export class RecordingControlsService {
 			const friendlyMessage = isPermissionError(err)
 				? isAutoStart
 					? 'Tap Start Recording to finish microphone setup.'
-					: 'Need microphone access - click allow when asked!'
-				: 'Recording hiccup - mind trying again?';
+					: 'The mic needs permission before the ghost can listen.'
+				: 'Recording got tangled. Mind trying again?';
 			this.uiActions.setErrorMessage(friendlyMessage);
 			throw err;
 		}
@@ -229,8 +229,8 @@ export class RecordingControlsService {
 				} catch (transcriptionError) {
 					log.error('Transcription error:', transcriptionError);
 					const friendlyMessage = transcriptionError.message.includes('network')
-						? "Can't reach the transcription service - check your connection?"
-						: 'The ghost got tongue-tied - give it another shot?';
+						? "Couldn't reach transcription. Check your connection?"
+						: 'The ghost got tongue-tied. Give it another shot?';
 					this.uiActions.setErrorMessage(friendlyMessage);
 				}
 			} else {
@@ -306,8 +306,8 @@ export class RecordingControlsService {
 
 			// Show error message
 			const friendlyMessage = isPermissionError(err)
-				? 'Need microphone access - click allow when asked!'
-				: 'Recording hiccup - mind trying again?';
+				? 'The mic needs permission before the ghost can listen.'
+				: 'Recording got tangled. Mind trying again?';
 			this.uiActions.setErrorMessage(friendlyMessage);
 
 			// Haptic feedback for error
@@ -316,7 +316,7 @@ export class RecordingControlsService {
 			}
 
 			// Update screen reader status
-			this.uiActions.setScreenReaderMessage('Recording failed. Please try again.');
+			this.uiActions.setScreenReaderMessage('Recording did not start. Please try again.');
 		} finally {
 			this.toggleInFlight = false;
 		}

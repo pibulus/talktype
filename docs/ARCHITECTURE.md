@@ -71,7 +71,7 @@ Flow:
 2. If Offline Mode is off, `simpleHybridService` posts the recorded blob to `/api/transcribe`.
 3. `/api/transcribe` applies auth/rate limiting through `guardRequest()`, validates upload size, and routes by prompt style.
 4. `standard` uses Deepgram Nova-3 batch transcription.
-5. Alternate and custom prompt styles use Gemini.
+5. Alternate output style presets use Gemini.
 6. Gemini uploads are deleted in `finally` after transcription.
 
 ## Offline Whisper Path
@@ -161,7 +161,7 @@ Flow:
 8. A completed Square payment marks the checkout paid and creates a supporter license.
 9. The success page receives the supporter code plus a signed supporter token, calls `setSupporterStatus(true, token)`, and shows the code for other devices.
 10. Existing manually issued codes still redeem through `/api/supporter/redeem` as a fallback.
-11. Supporter status unlocks local transcript history/export, custom transcription style UI, custom prompts, and the longer recording limit.
+11. Supporter status unlocks local transcript history/export, output style presets, and the longer recording limit.
 12. Completed transcripts are only saved to IndexedDB when `userPreferences.isSupporter` is true.
 
 Square is isolated to the payment provider layer. Feature gates consume supporter entitlement state and do not know which payment provider created it.

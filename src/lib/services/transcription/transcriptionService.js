@@ -56,10 +56,9 @@ export class TranscriptionService {
 			// Friendly error message
 			let friendlyMessage = error.message;
 			if (error.message.includes('fetch')) {
-				friendlyMessage = "Can't reach the transcription service. Check your connection?";
+				friendlyMessage = "Couldn't reach transcription. Check your connection?";
 			} else if (error.message.includes('load model')) {
-				friendlyMessage =
-					'Loading the transcription model. This happens once and enables offline magic!';
+				friendlyMessage = 'Still getting offline mode ready. This usually only happens once.';
 			}
 
 			// Update state to show error
@@ -76,7 +75,7 @@ export class TranscriptionService {
 
 		const pending = get(transcriptionState).pendingRecording;
 		if (!pending?.id) {
-			throw new Error('No saved recording available to retry.');
+			throw new Error('No saved recording to retry.');
 		}
 
 		const draft = await getLatestRecordingDraft({ includeBlob: true });
@@ -84,7 +83,7 @@ export class TranscriptionService {
 
 		if (!audioInput) {
 			transcriptionActions.clearPendingRecording();
-			throw new Error('Saved recording was missing audio data. Please record again.');
+			throw new Error('That saved recording was missing audio. Try one fresh recording.');
 		}
 
 		uiActions.clearErrorMessage();
@@ -165,14 +164,14 @@ export class TranscriptionService {
 		if (!text || text.trim() === '') {
 			log.log('No text to copy, showing error');
 			if (!silent) {
-				uiActions.setErrorMessage('Nothing to copy yet - record something first!');
+				uiActions.setErrorMessage('Nothing to copy yet. Record something first.');
 			}
 			return false;
 		}
 
 		if (!this.browser || typeof document === 'undefined' || typeof navigator === 'undefined') {
 			if (!silent) {
-				uiActions.setErrorMessage('Clipboard is only available in your browser.');
+				uiActions.setErrorMessage('Clipboard needs a browser window.');
 			}
 			return false;
 		}
@@ -227,7 +226,7 @@ export class TranscriptionService {
 
 			log.error('Clipboard copy error:', error);
 
-			const friendlyMessage = "Couldn't copy to clipboard. Try clicking somewhere first?";
+			const friendlyMessage = "Couldn't copy that yet. Try tapping the page first.";
 			uiActions.setErrorMessage(friendlyMessage);
 			uiActions.setScreenReaderMessage(
 				'Click somewhere in the window first, then try copying again.'
@@ -243,7 +242,7 @@ export class TranscriptionService {
 		}
 
 		if (!text || text.trim() === '') {
-			uiActions.setErrorMessage('Nothing to share yet - record something first!');
+			uiActions.setErrorMessage('Nothing to share yet. Record something first.');
 			return false;
 		}
 
@@ -276,9 +275,7 @@ export class TranscriptionService {
 				return this.copyToClipboard(text);
 			}
 
-			uiActions.setErrorMessage(
-				'Sharing not available on this device - copied to clipboard instead!'
-			);
+			uiActions.setErrorMessage('Sharing is not available here, so try the copy button instead.');
 			return false;
 		}
 	}

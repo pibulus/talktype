@@ -141,14 +141,14 @@ export class SimpleHybridService {
 				}
 				throw new Error(
 					this.deviceProfile.isMobile
-						? 'Offline mode could not initialize on this device. Try again or disable Privacy Mode.'
-						: 'Privacy mode enabled but offline model failed to load'
+						? 'Offline mode could not initialize on this device. Try again or switch back to Live Text.'
+						: 'Offline mode is still getting ready. Try again in a moment.'
 				);
 			} else {
 				throw new Error(
 					this.deviceProfile.isMobile
-						? 'Offline mode could not initialize on this device. Try again or disable Privacy Mode.'
-						: 'Privacy mode enabled but offline model not available'
+						? 'Offline mode could not initialize on this device. Try again or switch back to Live Text.'
+						: 'Offline mode is still getting ready. Try again in a moment.'
 				);
 			}
 		}
@@ -207,7 +207,7 @@ export class SimpleHybridService {
 
 				if (!response.ok) {
 					const error = await response.json().catch(() => ({}));
-					throw new Error(error.error || 'API transcription failed');
+					throw new Error(error.error || 'Transcription did not answer. Try again?');
 				}
 
 				const { transcription } = await response.json();

@@ -6,10 +6,10 @@ TalkType is a small voice-to-text PWA with a soft ghost interface. The product g
 
 - **Live Mode is the default**: Deepgram realtime WebSocket transcription streams text while the user speaks.
 - **Standard batch fallback**: Standard post-recording transcription routes to Deepgram Nova-3 through `/api/transcribe`.
-- **Styled/custom transcription**: Non-standard prompt styles route to Gemini through the same server endpoint.
+- **Style presets**: Non-standard output styles route to Gemini through the same server endpoint.
 - **Offline Mode is explicit**: When enabled, local Whisper runs in the browser with `@xenova/transformers`, WASM, IndexedDB/browser cache, and no cloud transcription.
 - **PWA-first UX**: Install prompt, launch shortcut recording, auto-record preference, iOS safe areas, touch targets, and installed-app microphone handling are part of the core app.
-- **Supporter mode**: History/export/custom prompt features are supporter-gated. Codes are manually issued for now and validated by `/api/validate-code`.
+- **Supporter mode**: History/export/style preset features are supporter-gated. Codes are manually issued for now and validated by `/api/validate-code`.
 
 ## Documentation
 
@@ -50,7 +50,7 @@ npm run build
 Copy `.env.example` to `.env` and set the values needed for your mode:
 
 - `DEEPGRAM_API_KEY`: required for Live Mode and standard batch transcription.
-- `GEMINI_API_KEY`: required for styled/custom transcription.
+- `GEMINI_API_KEY`: required for output style presets.
 - `GEMINI_MODEL`: optional; defaults to `gemini-3.1-flash-lite-preview`.
 - `API_AUTH_TOKEN`: optional shared token. If set, API routes require an auth session.
 - `API_COOKIE_SECRET`: required when API auth sessions are enabled.

@@ -13,7 +13,10 @@ export async function GET(event) {
 
 	const apiKey = env.DEEPGRAM_API_KEY;
 	if (!apiKey) {
-		return json({ error: 'Server Error: Missing Deepgram API key' }, { status: 500 });
+		return json(
+			{ error: 'Live transcription is not configured on this server yet.' },
+			{ status: 500 }
+		);
 	}
 
 	try {
@@ -31,7 +34,7 @@ export async function GET(event) {
 		if (!response.ok || !payload.access_token) {
 			console.error('[DeepgramToken] Failed to mint temporary token:', payload);
 			return json(
-				{ error: 'Could not start live transcription right now.' },
+				{ error: 'Live transcription did not start. Try After Stop mode for now.' },
 				{ status: response.status || 502 }
 			);
 		}
@@ -42,6 +45,9 @@ export async function GET(event) {
 		});
 	} catch (error) {
 		console.error('[DeepgramToken] Error minting temporary token:', error);
-		return json({ error: 'Could not start live transcription right now.' }, { status: 502 });
+		return json(
+			{ error: 'Live transcription did not start. Try After Stop mode for now.' },
+			{ status: 502 }
+		);
 	}
 }

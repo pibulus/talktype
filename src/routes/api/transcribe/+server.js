@@ -72,11 +72,13 @@ export async function POST(event) {
 			friendlyMessage =
 				'The ghost needs a breather - the limit has been reached. Try again in a moment?';
 		} else if (message.includes('network')) {
-			friendlyMessage = "Can't reach the transcription service right now. Check your internet?";
+			friendlyMessage = "Couldn't reach transcription right now. Check your connection?";
 		} else if (message.includes('timeout')) {
 			friendlyMessage = 'That took longer than expected. Maybe try a shorter recording?';
 		} else if (message.includes('missing gemini api key')) {
-			friendlyMessage = 'Server Error: Missing Gemini API key';
+			friendlyMessage = 'Style transcription is not configured on this server yet.';
+		} else if (message.includes('missing deepgram api key')) {
+			friendlyMessage = 'Transcription is not configured on this server yet.';
 		}
 
 		return json({ error: friendlyMessage }, { status: 500 });

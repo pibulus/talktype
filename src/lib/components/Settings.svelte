@@ -30,6 +30,26 @@
 	let unsubscribePrivacyMode;
 	let unsubscribeUserPreferences;
 
+	const transcriptionModes = [
+		{
+			id: 'live',
+			label: 'Live Text',
+			description: 'Words appear while you speak'
+		},
+		{
+			id: 'standard',
+			label: 'After Stop',
+			description: 'Best for style presets'
+		},
+		{
+			id: 'offline',
+			label: 'Offline',
+			description: 'Private on this device'
+		}
+	];
+
+	$: transcriptionMode = privacyModeValue ? 'offline' : liveModeValue ? 'live' : 'standard';
+
 	onMount(() => {
 		// Subscribe to stores only in browser
 		unsubscribeTheme = theme.subscribe((value) => {
@@ -106,43 +126,32 @@
 		}
 	}
 
-	function togglePrivacyMode() {
-		privacyModeValue = !privacyModeValue;
-		if (privacyModeValue && liveModeValue) {
-			liveModeValue = false;
-			liveMode.set('false');
-		}
-		privacyMode.set(privacyModeValue.toString());
-		if (browser) {
-			window.dispatchEvent(
-				new CustomEvent(SERVICE_EVENTS.SETTINGS.CHANGED, {
-					detail: { setting: 'privacyMode', value: privacyModeValue }
-				})
-			);
-		}
+	function dispatchSettingChanged(setting, value) {
+		if (!browser) return;
+
+		window.dispatchEvent(
+			new CustomEvent(SERVICE_EVENTS.SETTINGS.CHANGED, {
+				detail: { setting, value }
+			})
+		);
 	}
 
-	function toggleLiveMode() {
-		liveModeValue = !liveModeValue;
-		if (liveModeValue && privacyModeValue) {
-			privacyModeValue = false;
-			privacyMode.set('false');
-		}
+	function setTranscriptionMode(mode) {
+		const nextLiveMode = mode === 'live';
+		const nextPrivacyMode = mode === 'offline';
+
+		liveModeValue = nextLiveMode;
+		privacyModeValue = nextPrivacyMode;
+
 		liveMode.set(liveModeValue.toString());
-		if (browser) {
-			window.dispatchEvent(
-				new CustomEvent('talktype-setting-changed', {
-					detail: { setting: 'liveMode', value: liveModeValue }
-				})
-			);
-			if (liveModeValue) {
-				window.dispatchEvent(
-					new CustomEvent(SERVICE_EVENTS.SETTINGS.CHANGED, {
-						detail: { setting: 'privacyMode', value: false }
-					})
-				);
-			}
+		privacyMode.set(privacyModeValue.toString());
+
+		if (selectedPromptStyle !== 'standard' && mode !== 'standard') {
+			changePromptStyle('standard');
 		}
+
+		dispatchSettingChanged('liveMode', liveModeValue);
+		dispatchSettingChanged('privacyMode', privacyModeValue);
 	}
 
 	function handleModalClose() {
@@ -172,7 +181,7 @@
 		<form method="dialog">
 			<ModalCloseButton
 				closeModal={handleModalClose}
-				label="Close settings"
+				label="Close options"
 				position="right-2 top-2"
 				modalId="settings_modal"
 			/>
@@ -187,18 +196,18 @@
 					<DisplayGhost width="24px" height="24px" theme={selectedVibe} seed={54321} />
 				</div>
 				<h3 id="settings_modal_title" class="text-xl font-black tracking-tight text-gray-800">
-					Settings
+					Options
 				</h3>
 			</div>
 
-			<!-- Settings Section -->
+			<!-- Options Section -->
 			<div class="mb-2 space-y-2">
 				<!-- Auto-Record Toggle -->
 				<div
 					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
 				>
 					<div>
-						<span class="text-base font-medium text-gray-700">Auto-Record on Start</span>
+						<span class="text-base font-medium text-gray-700">Start Recording on Open</span>
 						<p class="mt-0.5 text-sm text-gray-500">
 							Start recording immediately when you open TalkType
 						</p>
@@ -224,69 +233,39 @@
 					</label>
 				</div>
 
-				<!-- Privacy Mode Toggle -->
+				<!-- Transcription Mode Picker -->
 				<div
-					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
+					class="mb-2 rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
 				>
-					<div>
-						<span class="text-base font-medium text-gray-700">Offline Mode</span>
-						<p class="mt-0.5 text-sm text-gray-500">Private Whisper, no cloud streaming</p>
+					<span class="text-base font-medium text-gray-700">Transcription Mode</span>
+					<div class="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Transcription mode">
+						{#each transcriptionModes as mode}
+							<button
+								type="button"
+								class={`flex min-h-[76px] flex-col items-center justify-center rounded-xl border px-2 py-2 text-center transition-all duration-200 ${
+									transcriptionMode === mode.id
+										? 'border-pink-300 bg-pink-50 text-gray-900 shadow-sm ring-2 ring-pink-100'
+										: 'border-pink-100 bg-white/70 text-gray-600 hover:border-pink-200 hover:bg-pink-50/60'
+								}`}
+								aria-pressed={transcriptionMode === mode.id}
+								on:click={() => setTranscriptionMode(mode.id)}
+							>
+								<span class="text-sm font-bold leading-tight">{mode.label}</span>
+								<span class="mt-1 text-[11px] font-medium leading-tight text-gray-500">
+									{mode.description}
+								</span>
+							</button>
+						{/each}
 					</div>
-					<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
-						<span class="sr-only"
-							>Privacy Mode Toggle {privacyModeValue ? 'Enabled' : 'Disabled'}</span
-						>
-						<div class="relative">
-							<input
-								type="checkbox"
-								class="sr-only"
-								checked={privacyModeValue}
-								on:change={togglePrivacyMode}
-							/>
-							<div
-								class={`h-6 w-11 rounded-full ${privacyModeValue ? 'bg-purple-400' : 'bg-gray-200'} transition-all duration-200`}
-							></div>
-							<div
-								class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${privacyModeValue ? 'translate-x-5' : ''}`}
-							></div>
-						</div>
-					</label>
-				</div>
-
-				<!-- Live Mode Toggle -->
-				<div
-					class="mb-2 flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200 hover:border-pink-200"
-				>
-					<div>
-						<span class="text-base font-medium text-gray-700">Live Mode</span>
-						<p class="mt-0.5 text-sm text-gray-500">Deepgram streaming text as you speak</p>
-					</div>
-					<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
-						<span class="sr-only">Live Mode Toggle {liveModeValue ? 'Enabled' : 'Disabled'}</span>
-						<div class="relative">
-							<input
-								type="checkbox"
-								class="sr-only"
-								checked={liveModeValue}
-								on:change={toggleLiveMode}
-							/>
-							<div
-								class={`h-6 w-11 rounded-full ${liveModeValue ? 'bg-blue-400' : 'bg-gray-200'} transition-all duration-200`}
-							></div>
-							<div
-								class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${liveModeValue ? 'translate-x-5' : ''}`}
-							></div>
-						</div>
-					</label>
 				</div>
 
 				<!-- Download Progress (if loading) -->
 				{#if $whisperStatus.isLoading && privacyModeValue}
-					<div class="rounded-lg border border-blue-200 bg-blue-50/80 p-2">
-						<p class="text-xs font-medium text-blue-700">📥 Downloading model...</p>
-						<div class="mt-1 h-1 overflow-hidden rounded-full bg-blue-200">
+					<div class="rounded-lg border border-pink-200 bg-pink-50/80 p-2">
+						<p class="text-xs font-medium text-pink-700">Getting offline mode ready...</p>
+						<div class="mt-1 h-1 overflow-hidden rounded-full bg-pink-100">
 							<div
-								class="indeterminate-progress h-full w-1/3 bg-gradient-to-r from-blue-400 to-blue-600"
+								class="indeterminate-progress h-full w-1/3 bg-gradient-to-r from-pink-300 to-amber-300"
 							></div>
 						</div>
 					</div>
@@ -294,12 +273,28 @@
 
 				<!-- Model Loaded Success -->
 				{#if $whisperStatus.isLoaded && privacyModeValue}
-					<div class="rounded-lg border border-green-200 bg-green-50/80 p-2">
-						<p class="text-xs font-medium text-green-700">
-							✅ Offline model ready! Completely private.
+					<div class="rounded-lg border border-emerald-200 bg-emerald-50/80 p-2">
+						<p class="text-xs font-medium text-emerald-700">
+							Offline mode is ready on this device.
 						</p>
 					</div>
 				{/if}
+			</div>
+
+			<!-- Prompt Style Selection Section -->
+			<div class="space-y-2">
+				<div>
+					<h4 class="text-sm font-bold text-gray-700">Output Style</h4>
+					<p class="text-xs text-gray-500">Plain transcription is the default.</p>
+				</div>
+				<TranscriptionStyleSelector
+					{selectedPromptStyle}
+					{changePromptStyle}
+					{privacyModeValue}
+					{liveModeValue}
+					isSupporter={isSupporterValue}
+					{openSupporterModal}
+				/>
 			</div>
 
 			<div
@@ -309,7 +304,7 @@
 					<div class="space-y-1">
 						<p class="text-sm font-semibold text-gray-800">Supporter mode</p>
 						<p class="text-sm text-gray-600">
-							Unlock transcript history, downloads, custom prompts, and longer sessions.
+							Unlock transcript history, downloads, style presets, and longer sessions.
 						</p>
 						<p class="text-xs uppercase tracking-[0.18em] text-amber-600">
 							{isSupporterValue ? 'Unlocked' : `One-time ${PRICING.displayPrice}`}
@@ -333,19 +328,6 @@
 			<div class="space-y-2">
 				<h4 class="text-sm font-bold text-gray-700">Choose Your Vibe</h4>
 				<ThemeSelector currentTheme={selectedVibe} onThemeChange={changeVibe} />
-			</div>
-
-			<!-- Prompt Style Selection Section -->
-			<div class="space-y-2">
-				<h4 class="text-sm font-bold text-gray-700">Choose Transcription Style</h4>
-				<TranscriptionStyleSelector
-					{selectedPromptStyle}
-					{changePromptStyle}
-					{privacyModeValue}
-					{liveModeValue}
-					isSupporter={isSupporterValue}
-					{openSupporterModal}
-				/>
 			</div>
 		</div>
 	</div>

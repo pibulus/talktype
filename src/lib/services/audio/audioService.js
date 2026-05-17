@@ -277,8 +277,8 @@ export class AudioService {
 			this.stateManager.setState(AudioStates.ERROR, { error });
 
 			const friendlyMessage = isPermissionError(error)
-				? 'Need microphone access - check your browser settings!'
-				: 'Recording hiccup - give it another try?';
+				? 'The mic needs permission before the ghost can listen.'
+				: 'Recording got tangled. Give it another try?';
 			uiActions.setErrorMessage(friendlyMessage);
 
 			await this.cleanup();

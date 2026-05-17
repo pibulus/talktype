@@ -252,7 +252,7 @@ export const transcriptionActions = {
 
 		uiState.update((current) => ({
 			...current,
-			errorMessage: `Transcription error: ${error || 'Unknown error'}`
+			errorMessage: error || 'That one got tangled. Try again?'
 		}));
 	},
 

@@ -9,8 +9,8 @@
 - `RecordingControls`: recording button, timer, status copy, and visual feedback.
 - `RecordButtonWithTimer`: compressed button UI used by recording controls.
 - `TranscriptDisplay`: transcript output/editor surface.
-- `Settings`: options modal for theme, auto-record, Offline Mode, Live Mode, supporter features, and transcription style.
-- `TranscriptionStyleSelector`: standard/styled/custom transcription style control.
+- `Settings`: options modal for theme, auto-record, transcription mode, supporter features, and output style presets.
+- `TranscriptionStyleSelector`: three-preset output style control; plain transcription is the default when no style is selected.
 - `SupporterModal`: supporter code entry and supporter feature explanation.
 
 ## Services And Stores

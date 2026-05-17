@@ -309,7 +309,7 @@
 											💾
 										</button>
 										<button
-											class={`${iconButtonClass} text-error`}
+											class={`${iconButtonClass} text-amber-700 hover:bg-amber-50`}
 											on:click={() => handleDelete(transcript.id)}
 											title="Delete"
 										>

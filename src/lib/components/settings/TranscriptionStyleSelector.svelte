@@ -1,9 +1,6 @@
 <script>
-	import { customPrompt } from '$lib';
-	import { geminiService } from '$lib/services/geminiService';
 	import { PROMPT_STYLES } from '$lib/constants';
 
-	// Props
 	export let selectedPromptStyle = 'standard';
 	export let changePromptStyle = () => {};
 	export let privacyModeValue = false;
@@ -11,107 +8,70 @@
 	export let isSupporter = false;
 	export let openSupporterModal = () => {};
 
-	// State for custom prompt
-	let showCustomInput = false;
-	let customPromptText = '';
-
-	// Subscribe to custom prompt store
-	$: if ($customPrompt) customPromptText = $customPrompt;
-
-	// Disable style selection when Live Mode or Privacy Mode is enabled
 	$: stylesDisabled = liveModeValue || privacyModeValue;
 
-	// Auto-switch to standard when styles are disabled
-	$: if (stylesDisabled && selectedPromptStyle !== 'standard') {
-		selectedPromptStyle = 'standard';
+	const availableStyles = [
+		PROMPT_STYLES.QUILL_AND_INK,
+		PROMPT_STYLES.SPARKLE_POP,
+		PROMPT_STYLES.LEET_SPEAK
+	];
+
+	const styleIcons = {
+		quillAndInk: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-purple-400">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+		</svg>`,
+		sparklePop: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-400">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4M4 19h4m12-12v4m-2-2h4m-5 12v4m-2-2h4" />
+		</svg>`,
+		leetSpeak: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-blue-500">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+		</svg>`
+	};
+
+	const styleNames = {
+		quillAndInk: 'Victorian',
+		sparklePop: 'Sparkle',
+		leetSpeak: 'L33t'
+	};
+
+	$: styleTooltips = {
+		quillAndInk: disabledTooltip('Victorian polish'),
+		sparklePop: disabledTooltip('Extra sparkle'),
+		leetSpeak: disabledTooltip('H4ck3r style')
+	};
+	$: styleNotice = !isSupporter
+		? stylesDisabled
+			? 'Supporter mode unlocks these presets. They run in After Stop mode.'
+			: 'Supporter mode unlocks these style presets.'
+		: stylesDisabled
+			? 'Style presets are available in After Stop mode.'
+			: '';
+
+	$: if (!availableStyles.includes(selectedPromptStyle) && selectedPromptStyle !== 'standard') {
 		changePromptStyle('standard');
-		showCustomInput = false;
+	}
+
+	$: if (stylesDisabled && selectedPromptStyle !== 'standard') {
+		changePromptStyle('standard');
 	}
 
 	$: if (!isSupporter && selectedPromptStyle !== 'standard') {
-		selectedPromptStyle = 'standard';
 		changePromptStyle('standard');
-		showCustomInput = false;
 	}
 
-	// Available styles - adding the fun ones back!
-	const availableStyles = [
-		PROMPT_STYLES.STANDARD,
-		PROMPT_STYLES.SURLY_PIRATE,
-		PROMPT_STYLES.QUILL_AND_INK,
-		PROMPT_STYLES.SPARKLE_POP,
-		PROMPT_STYLES.LEET_SPEAK,
-		'custom'
-	];
+	function disabledTooltip(fallback) {
+		if (liveModeValue) return 'Use After Stop mode for style presets';
+		if (privacyModeValue) return 'Use After Stop mode for style presets';
+		if (!isSupporter) return 'Supporter mode unlocks style presets';
+		return fallback;
+	}
 
-	// Style icons with pastel colors
-	const styleIcons = {
-		standard: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-500">
-	        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-	      </svg>`,
-		surlyPirate: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-amber-500">
-	           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-	         </svg>`,
-		quillAndInk: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-purple-400">
-	           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-	         </svg>`,
-		sparklePop: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-400">
-	           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4M4 19h4m12-12v4m-2-2h4m-5 12v4m-2-2h4" />
-	         </svg>`,
-		leetSpeak: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-blue-500">
-	           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-	         </svg>`,
-		custom: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-green-400">
-	        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-	      </svg>`
-	};
-
-	// Style names
-	const styleNames = {
-		standard: 'Standard',
-		surlyPirate: 'Pirate',
-		quillAndInk: 'Victorian',
-		sparklePop: 'Sparkle',
-		leetSpeak: 'L33t',
-		custom: 'Custom'
-	};
-
-	// Style tooltips - dynamic based on disabled modes
-	$: styleTooltips = {
-		standard: 'Clean, professional tone',
-		surlyPirate: liveModeValue
-			? 'Live Mode uses standard transcription only'
-			: privacyModeValue
-				? 'Only available with online mode'
-				: 'Pirate lingo & swagger',
-		quillAndInk: liveModeValue
-			? 'Live Mode uses standard transcription only'
-			: privacyModeValue
-				? 'Only available with online mode'
-				: 'Victorian literature style',
-		sparklePop: liveModeValue
-			? 'Live Mode uses standard transcription only'
-			: privacyModeValue
-				? 'Only available with online mode'
-				: 'Bubbly, emojis & vibes',
-		leetSpeak: liveModeValue
-			? 'Live Mode uses standard transcription only'
-			: privacyModeValue
-				? 'Only available with online mode'
-				: 'H4ck3r 5p34k',
-		custom: liveModeValue
-			? 'Live Mode uses standard transcription only'
-			: privacyModeValue
-				? 'Only available with online mode'
-				: 'Your own transcription instructions'
-	};
-	// Handle style selection
 	function handleStyleClick(style) {
-		if (!isSupporter && style !== 'standard') {
+		if (!isSupporter) {
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
 					detail: {
-						message: 'Supporter mode unlocks custom transcription styles and prompts.',
+						message: 'Supporter mode unlocks style presets.',
 						type: 'info'
 					}
 				})
@@ -120,13 +80,11 @@
 			return;
 		}
 
-		// Block non-standard styles when Live Mode is enabled
-		if (liveModeValue && style !== 'standard') {
+		if (stylesDisabled) {
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
 					detail: {
-						message:
-							'⚡ Live Mode streams directly to Deepgram using standard transcription. Disable Live Mode to use custom styles.',
+						message: 'Style presets work in After Stop mode.',
 						type: 'info'
 					}
 				})
@@ -134,112 +92,47 @@
 			return;
 		}
 
-		// Block non-standard styles when offline mode is enabled
-		if (privacyModeValue && style !== 'standard') {
-			window.dispatchEvent(
-				new CustomEvent('talktype:toast', {
-					detail: {
-						message:
-							'🔒 Custom styles only work with online mode. Disable offline mode to use custom prompts.',
-						type: 'info'
-					}
-				})
-			);
-			return;
-		}
-
-		if (style === 'custom') {
-			// Show custom input and switch to custom mode
-			showCustomInput = true;
-			selectedPromptStyle = 'custom';
-			changePromptStyle('custom');
-		} else {
-			// Hide custom input and switch to selected style
-			showCustomInput = false;
-			selectedPromptStyle = style;
-			changePromptStyle(style);
-		}
-	}
-
-	// Save custom prompt
-	function saveCustomPrompt() {
-		if (customPromptText.trim()) {
-			$customPrompt = customPromptText.trim();
-			geminiService.setCustomPrompt(customPromptText.trim());
-		}
-	}
-
-	// Handle enter key in textarea
-	function handleKeydown(e) {
-		if (e.key === 'Enter' && !e.shiftKey) {
-			e.preventDefault();
-			saveCustomPrompt();
-		}
+		changePromptStyle(selectedPromptStyle === style ? 'standard' : style);
 	}
 </script>
 
 <div>
-	<!-- Offline mode info banner (only show for privacy mode) -->
-	{#if privacyModeValue}
-		<div class="mb-2 rounded-lg border border-purple-200 bg-purple-50/80 p-2">
-			<p class="text-xs text-purple-700">
-				🔒 <strong>Offline mode:</strong> Uses local Whisper model with standard transcription.
-			</p>
+	{#if styleNotice}
+		<div class="mb-2 rounded-lg border border-pink-200 bg-pink-50/80 p-2">
+			<p class="text-xs font-medium text-pink-700">{styleNotice}</p>
 		</div>
 	{/if}
 
-	<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+	<div class="grid grid-cols-3 gap-2">
 		{#each availableStyles as style}
 			<button
-				class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {selectedPromptStyle ===
-				style
-					? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
-					: ''} {stylesDisabled && style !== 'standard' ? 'locked' : ''}"
+				class={`relative flex min-h-[92px] flex-col items-center justify-center rounded-xl border bg-[#fffdf5] p-2 text-center shadow-sm transition-all duration-200 hover:border-pink-200 hover:shadow-md ${
+					selectedPromptStyle === style
+						? 'border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
+						: 'border-pink-100'
+				} ${stylesDisabled ? 'opacity-60' : ''}`}
 				on:click={() => handleStyleClick(style)}
-				aria-label={styleNames[style] || style}
+				aria-label={styleNames[style]}
+				aria-pressed={selectedPromptStyle === style}
 				title={styleTooltips[style]}
-				data-style-type={style}
-				disabled={stylesDisabled && style !== 'standard'}
+				disabled={stylesDisabled}
 			>
-				<div class="preview-container mb-2">
-					<div class="preview-ghost-wrapper relative h-12 w-12">
-						<div
-							class="preview-icon-layers relative flex h-full w-full items-center justify-center"
-							style="pointer-events: none;"
-						>
-							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-							{@html styleIcons[style] || ''}
-						</div>
-					</div>
+				<div class="mb-2 flex h-10 w-10 items-center justify-center">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+					{@html styleIcons[style]}
 				</div>
 
-				<!-- Style Name -->
-				<span class="text-xs font-medium text-gray-700">{styleNames[style] || style}</span>
+				<span class="text-xs font-semibold text-gray-700">{styleNames[style]}</span>
 
-				<!-- Selected indicator -->
 				{#if selectedPromptStyle === style}
 					<div
-						class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-400 text-xs text-white shadow-sm"
+						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-400 text-xs text-white shadow-sm"
 					>
 						✓
 					</div>
-				{:else if liveModeValue && style !== 'standard'}
+				{:else if !isSupporter}
 					<div
-						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-xs shadow-sm"
-						title="Live Mode uses standard only"
-					>
-						⚡
-					</div>
-				{:else if privacyModeValue && style !== 'standard'}
-					<div
-						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-xs shadow-sm"
-						title="Requires online mode"
-					>
-						🔒
-					</div>
-				{:else if !isSupporter && style !== 'standard'}
-					<div
-						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-xs shadow-sm"
+						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-xs text-white shadow-sm"
 						title="Requires supporter mode"
 					>
 						★
@@ -248,71 +141,4 @@
 			</button>
 		{/each}
 	</div>
-
-	<!-- Custom prompt input area -->
-	{#if showCustomInput && isSupporter}
-		<div class="animate-in slide-in-from-top-2 mt-3 space-y-2 duration-200">
-			<textarea
-				bind:value={customPromptText}
-				on:keydown={handleKeydown}
-				on:blur={saveCustomPrompt}
-				placeholder="Write your custom transcription instructions..."
-				class="w-full rounded-lg border border-pink-200 bg-white p-3 text-sm focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
-				rows="3"
-			></textarea>
-			<p class="text-xs text-gray-500">Press Enter to save your custom prompt</p>
-		</div>
-	{:else if !isSupporter}
-		<div class="mt-3 rounded-lg border border-amber-200 bg-amber-50/80 p-3">
-			<p class="text-xs text-amber-800">
-				★ Supporter mode unlocks all alternate styles plus fully custom prompts.
-			</p>
-		</div>
-	{/if}
 </div>
-
-<style>
-	.selected-vibe {
-		box-shadow:
-			0 0 0 2px rgba(249, 168, 212, 0.4),
-			0 4px 8px rgba(249, 168, 212, 0.2);
-	}
-
-	.locked {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-
-	.locked:hover {
-		opacity: 0.7;
-	}
-
-	button:disabled {
-		cursor: not-allowed;
-		pointer-events: auto;
-	}
-
-	button:disabled:hover {
-		box-shadow: none;
-	}
-
-	textarea {
-		resize: vertical;
-		min-height: 80px;
-	}
-
-	@keyframes slide-in-from-top-2 {
-		from {
-			transform: translateY(-8px);
-			opacity: 0;
-		}
-		to {
-			transform: translateY(0);
-			opacity: 1;
-		}
-	}
-
-	.animate-in {
-		animation: slide-in-from-top-2 0.2s ease-out;
-	}
-</style>

@@ -38,17 +38,19 @@
 			await transcriptionService.retryPendingRecording();
 		} catch (error) {
 			console.error('Retry transcription failed:', error);
-			uiActions.setErrorMessage(error.message || 'Retry failed - please record again.');
+			uiActions.setErrorMessage(
+				error.message || 'That retry got tangled. Try one fresh recording.'
+			);
 		} finally {
 			isRetrying = false;
 		}
 	}
 </script>
 
-<!-- Error message display -->
+<!-- Gentle status message display -->
 {#if $errorMessage}
-	<div class="error-container mt-4 w-full">
-		<p class="error-message text-center font-medium text-red-500">
+	<div class="notice-container mt-4 w-full" role="status" aria-live="polite">
+		<p class="notice-message text-center font-medium">
 			{$errorMessage}
 		</p>
 	</div>
@@ -86,19 +88,24 @@
 {/if}
 
 <style>
-	.error-container {
+	.notice-container {
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		padding: 0 1rem;
 	}
 
-	.error-message {
+	.notice-message {
 		max-width: 500px;
 		line-height: 1.5;
 		font-size: 0.9rem;
-		color: #ef4444;
+		color: #8a5a16;
 		text-align: center;
+		padding: 0.65rem 0.9rem;
+		border: 1px solid rgba(245, 158, 11, 0.22);
+		border-radius: 999px;
+		background: rgba(255, 251, 235, 0.9);
+		box-shadow: 0 8px 20px rgba(245, 158, 11, 0.1);
 	}
 
 	/* Screen reader only class */
@@ -116,13 +123,14 @@
 
 	/* Mobile responsive */
 	@media (max-width: 768px) {
-		.error-container {
+		.notice-container {
 			margin-top: 0.75rem;
 			padding: 0 0.5rem;
 		}
 
-		.error-message {
+		.notice-message {
 			font-size: 0.85rem;
+			border-radius: 1rem;
 		}
 	}
 </style>
