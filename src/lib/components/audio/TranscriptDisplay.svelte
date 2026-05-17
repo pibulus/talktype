@@ -12,7 +12,6 @@
 
 	// Refs
 	let editableTranscript;
-	let copyButtonRef;
 	let transcriptBoxRef;
 
 	// State
@@ -49,21 +48,21 @@
 
 	// Check if content is scrollable and update UI accordingly
 	// Debounced to avoid excessive calls during resize
-	let checkScrollableTimeout;
+	let checkScrollableFrame;
 	function checkScrollable() {
 		if (transcriptBoxRef) {
 			// Debounce rapid calls
-			if (checkScrollableTimeout) {
-				cancelAnimationFrame(checkScrollableTimeout);
+			if (checkScrollableFrame) {
+				cancelAnimationFrame(checkScrollableFrame);
 			}
 
 			// Wait a tick for the element to fully render
-			checkScrollableTimeout = requestAnimationFrame(() => {
+			checkScrollableFrame = requestAnimationFrame(() => {
 				const scrollHeight = transcriptBoxRef.scrollHeight;
 				const clientHeight = transcriptBoxRef.clientHeight;
 				const hasOverflow = scrollHeight > clientHeight + 20; // Add buffer for more reliable detection
 				isScrollable = hasOverflow;
-				checkScrollableTimeout = null;
+				checkScrollableFrame = null;
 			});
 		}
 	}
@@ -116,9 +115,9 @@
 
 		return () => {
 			mounted = false;
-			if (checkScrollableTimeout) {
-				cancelAnimationFrame(checkScrollableTimeout);
-				checkScrollableTimeout = null;
+			if (checkScrollableFrame) {
+				cancelAnimationFrame(checkScrollableFrame);
+				checkScrollableFrame = null;
 			}
 			resizeObserver?.disconnect();
 		};
@@ -144,7 +143,6 @@
 					showCopyTooltip = false;
 				}}
 				aria-label="Copy transcript to clipboard"
-				bind:this={copyButtonRef}
 			>
 				<!-- Ghost icon using the app's current theme -->
 				<div class="h-full w-full p-0.5">
