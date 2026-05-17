@@ -1,0 +1,42 @@
+# TalkType Glossary
+
+## Components
+
+- `MainContainer`: top-level app orchestration, dialogs, PWA auto-start, ghost events.
+- `GhostContainer`: wraps the interactive ghost.
+- `ContentContainer`: main content wrapper between page shell and audio feature.
+- `AudioToText`: audio/transcript feature shell.
+- `RecordingControls`: recording button, timer, status copy, and visual feedback.
+- `RecordButtonWithTimer`: compressed button UI used by recording controls.
+- `TranscriptDisplay`: transcript output/editor surface.
+- `Settings`: options modal for theme, auto-record, Offline Mode, Live Mode, supporter features, and transcription style.
+- `TranscriptionStyleSelector`: standard/styled/custom transcription style control.
+- `SupporterModal`: supporter code entry and supporter feature explanation.
+
+## Services And Stores
+
+- `AudioService`: browser microphone and `MediaRecorder` owner.
+- `RecordingControlsService`: high-level recording workflow owner.
+- `TranscriptionService`: post-recording transcription workflow owner.
+- `simpleHybridService`: chooses Offline Whisper or cloud batch transcription.
+- `offlineModelController`: controls background Whisper load/release.
+- `transcriptionStore`: Deepgram live WebSocket store.
+- `whisperStatus`: local Whisper loading/loaded status store.
+- `audioState`: current low-level audio lifecycle state.
+- `transcriptionState`: current transcript/progress/error state.
+
+## Modes
+
+- **Live Mode**: Deepgram realtime transcription while recording. Default on.
+- **Offline Mode**: local Whisper transcription in browser. Overrides Live Mode.
+- **Batch cloud**: post-recording transcription via `/api/transcribe`.
+- **Standard style**: routes cloud batch to Deepgram.
+- **Styled/custom style**: routes cloud batch to Gemini.
+
+## Platform Terms
+
+- **Installed PWA**: app launched from home screen/dock/standalone display mode.
+- **Auto-record**: user preference that tries to start recording on app open.
+- **Launch shortcut**: PWA shortcut with `?action=record`.
+- **Warm stream**: short-lived iOS installed-PWA microphone stream kept after stop to reduce stream churn.
+- **Recovery draft**: saved local audio blob used to retry transcription after failure.

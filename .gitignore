@@ -54,5 +54,12 @@ tasks.json
 tasks/ 
 **/.claude/settings.local.json
 *.md
-!NEXT.md
+!README.md
+!CLAUDE.md
+!docs/
+!docs/**/*.md
+!scripts/README.md
+!src/lib/**/README.md
+!src/lib/components/ghost/CHARACTER_SYSTEM.md
+!static/**/README.md
 .claude/

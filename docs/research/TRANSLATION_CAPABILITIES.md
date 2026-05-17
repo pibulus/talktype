@@ -1,5 +1,7 @@
 # Translation Capabilities for TalkType
 
+Status: research note, not shipped behavior.
+
 ## 🌍 Current Whisper Translation Features
 
 ### Built-in Translation (Whisper Native)

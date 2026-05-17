@@ -1,98 +1,42 @@
-# TalkType Service Architecture
+# TalkType Service Layer
 
-This directory contains the service layer for TalkType, restructured to use a modular architecture with event-based communication.
+This directory holds the runtime service layer. For the full system map, see [../../../docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md).
 
-## Service Overview
+## Main Services
 
-The architecture consists of several key services:
+- `audio/audioService.js`: microphone permission, `MediaRecorder`, audio chunks, waveform data, iOS warm stream, cleanup.
+- `audio/recordingControlsService.js`: start/stop orchestration, time limits, Deepgram finalization, batch fallback, analytics, UI messages.
+- `transcription/transcriptionService.js`: transcript progress state, retry of saved recordings, copy/share helpers.
+- `transcription/simpleHybridService.js`: chooses Offline Whisper or cloud batch transcription.
+- `transcription/offlineModelController.js`: controls when the offline Whisper model preloads and unloads.
+- `pwa/pwaService.js`: install prompt state, installed detection, transcription count.
+- `first-visit/firstVisitService.js`: intro modal gating.
+- `modals/modalService.js`: dialog lifecycle helpers.
+- `infrastructure/stores.js`: shared audio, recording, transcription, UI, and preference stores.
 
-- **EventBus**: Central communication hub for all services
-- **AudioService**: Manages audio recording and processing
-- **TranscriptionService**: Handles speech-to-text conversion
-- **HapticService**: Provides haptic feedback on mobile devices
+## External Transcription Boundaries
 
-## Using the Services
+- Live Deepgram state is in `src/lib/stores/transcriptionStore.js`.
+- Batch Deepgram server calls are in `src/lib/server/deepgramService.js`.
+- Gemini server calls are in `src/lib/server/geminiService.js`.
+- API routes live under `src/routes/api/`.
 
-### Basic Usage
+## Current Flow
 
-```javascript
-import { initializeServices } from '$lib/services';
-import { onMount, onDestroy } from 'svelte';
-
-// In your component script
-let services;
-let unsubscribers = [];
-
-onMount(() => {
-	// Initialize all services
-	services = initializeServices({ debug: false });
-
-	// Subscribe to audio state changes
-	unsubscribers.push(
-		services.eventBus.on('audio:stateChanged', (data) => {
-			console.log('Audio state changed:', data.currentState);
-		})
-	);
-
-	// Subscribe to transcription completion
-	unsubscribers.push(
-		services.eventBus.on('transcription:completed', (data) => {
-			console.log('Transcription complete:', data.text);
-		})
-	);
-});
-
-onDestroy(() => {
-	// Clean up subscriptions
-	unsubscribers.forEach((unsub) => unsub());
-});
-
-// Start recording function
-async function startRecording() {
-	try {
-		await services.audioService.startRecording();
-	} catch (error) {
-		console.error('Failed to start recording:', error);
-	}
-}
-
-// Stop recording and transcribe
-async function stopAndTranscribe() {
-	try {
-		const audioBlob = await services.audioService.stopRecording();
-		if (audioBlob) {
-			await services.transcriptionService.transcribeAudio(audioBlob);
-		}
-	} catch (error) {
-		console.error('Failed to transcribe:', error);
-	}
-}
+```text
+RecordingControls.svelte
+  -> RecordingControlsService
+    -> AudioService
+    -> transcriptionStore when Live Mode is active
+    -> TranscriptionService when batch/offline transcription is needed
+      -> simpleHybridService
+        -> Whisper locally when Offline Mode is on
+        -> /api/transcribe when Offline Mode is off
 ```
 
-### AudioToText Component Integration
+## Notes
 
-Instead of containing all functionality directly, AudioToText.svelte would now:
-
-1. Initialize services using `initializeServices()`
-2. Subscribe to events from the services
-3. Update UI state based on service events
-4. Call service methods for recording/transcription operations
-
-## Event Types
-
-### Audio Events
-
-- `audio:recordingStarted` - Recording has started
-- `audio:recordingStopped` - Recording has stopped
-- `audio:recordingError` - Error during recording
-- `audio:stateChanged` - Audio service state has changed
-- `audio:waveformData` - New waveform data available for visualization
-
-### Transcription Events
-
-- `transcription:started` - Transcription process has started
-- `transcription:progress` - Transcription progress update
-- `transcription:completed` - Transcription successfully completed
-- `transcription:error` - Error during transcription
-- `transcription:copied` - Transcript copied to clipboard
-- `transcription:shared` - Transcript shared using Web Share API
+- `eventBus` still exists for compatibility and infrastructure, but the current app relies mostly on Svelte stores and direct service calls.
+- `initializeServices()` is idempotent and restores pending recording drafts once per browser session.
+- Offline Mode overrides Live Mode.
+- Service tests should focus on state transitions, async races, and cleanup behavior rather than component rendering.

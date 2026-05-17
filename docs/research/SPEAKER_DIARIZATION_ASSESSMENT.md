@@ -1,5 +1,7 @@
 # Speaker Diarization Assessment for TalkType
 
+Status: research note, not shipped behavior.
+
 ## 🎯 What is Speaker Diarization?
 
 Speaker diarization answers "who spoke when" - it segments audio by different speakers and assigns labels like "Speaker 1", "Speaker 2", etc.
