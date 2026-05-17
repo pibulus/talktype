@@ -32,7 +32,7 @@
 		"@testing-library/jest-dom": "^6.7.0",
 		"@vitest/ui": "^3.2.4",
 		"autoprefixer": "^10.4.20",
-		"eslint": "^9.18.0",
+		"eslint": "^9.39.4",
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-svelte": "^2.46.1",
 		"globals": "^15.14.0",
