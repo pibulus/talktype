@@ -30,12 +30,10 @@
 	let leftEye;
 	let rightEye;
 	let backgroundElement;
-	let ghostWobbleGroup;
 	let lastRecordingState = false;
 	let currentTheme = 'peach'; // Initialize immediately to prevent black silhouette flash
 	let themeStore = externalTheme || localTheme;
 	let unsubscribeTheme;
-	let wakeUpBlinkTriggered = false;
 	let eyeTracker;
 	let fullyReady = false; // Single initialization flag - prevents ALL rendering until ready
 	let readyRafId = null; // Track RAF for cleanup
@@ -46,9 +44,6 @@
 	$: animationsEnabled = $appActive;
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 	$: gradientId = getGradientId(currentTheme);
-
-	// Simplified ready check - only needs browser, ghostSvg, and fullyReady flag
-	$: isGhostReady = fullyReady && browser && !!ghostSvg && !!currentTheme;
 
 	// React to recording state changes ONLY when fully ready
 	$: if (fullyReady && browser && isRecording !== lastRecordingState) {
@@ -264,30 +259,6 @@
 		ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 	}
 
-	// Track previous ready state to dispatch event once
-	let wasReady = false;
-	$: if (isGhostReady && !wasReady) {
-		wasReady = true;
-	}
-
-	// Trigger a double blink when waking up sequence finishes (transition WAKING_UP -> IDLE)
-	$: if (
-		browser &&
-		$ghostStateStore.previous === ANIMATION_STATES.WAKING_UP &&
-		$ghostStateStore.current === ANIMATION_STATES.IDLE &&
-		!wakeUpBlinkTriggered && // Check the flag
-		leftEye &&
-		rightEye
-	) {
-		wakeUpBlinkTriggered = true; // Set the flag immediately
-		// Blink service will handle the blink timing automatically when state becomes IDLE
-	}
-
-	// Reset the flag when the ghost is no longer IDLE (meaning it went to sleep, started recording, etc.)
-	$: if ($ghostStateStore.current !== ANIMATION_STATES.IDLE && wakeUpBlinkTriggered) {
-		wakeUpBlinkTriggered = false;
-	}
-
 	// Interaction handlers for inactivity timer and waking up
 	function handleUserInteraction() {
 		if (!browser) return;
@@ -344,7 +315,6 @@
 
 		<g class="ghost-spin-pivot" id="ghost-spin-pivot">
 			<g
-				bind:this={ghostWobbleGroup}
 				class="ghost-wobble-group"
 				id="ghost-wobble-group"
 				use:initialGhostAnimation={fullyReady && $ghostStateStore.isFirstVisit
