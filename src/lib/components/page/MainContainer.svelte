@@ -23,39 +23,59 @@
 	import { saveTranscript } from '$lib/services/storage/transcriptStorage';
 
 	let Settings;
-	let loadingSettings = false;
-
 	let TranscriptHistoryModal;
-	let loadingHistoryModal = false;
-
 	let SupporterModal;
-	let loadingSupporterModal = false;
-
 	let PwaInstallPrompt;
 
+	function createComponentLoader(importComponent, assignComponent, label) {
+		let pending = null;
+
+		return async () => {
+			if (pending) return pending;
+
+			pending = importComponent()
+				.then((module) => {
+					assignComponent(module.default);
+					return true;
+				})
+				.catch((err) => {
+					console.error(`Error loading ${label}:`, err);
+					return false;
+				})
+				.finally(() => {
+					pending = null;
+				});
+
+			return pending;
+		};
+	}
+
+	const loadSettings = createComponentLoader(
+		() => import('../Settings.svelte'),
+		(component) => (Settings = component),
+		'Settings'
+	);
+
+	const loadTranscriptHistoryModal = createComponentLoader(
+		() => import('../history/TranscriptHistoryModal.svelte'),
+		(component) => (TranscriptHistoryModal = component),
+		'history modal'
+	);
+
+	const loadSupporterModal = createComponentLoader(
+		() => import('../modals/SupporterModal.svelte'),
+		(component) => (SupporterModal = component),
+		'supporter modal'
+	);
+
+	const loadPwaInstallPrompt = createComponentLoader(
+		() => import('../pwa/PwaInstallPrompt.svelte'),
+		(component) => (PwaInstallPrompt = component),
+		'PWA install prompt'
+	);
+
 	async function openSettingsModal() {
-		// Check if we're already loading the modal
-		if (loadingSettings) {
-			return;
-		}
-
-		// Dynamically import the Settings component if not already loaded
-		if (!Settings) {
-			loadingSettings = true;
-
-			try {
-				// Import the component dynamically
-				const module = await import('../Settings.svelte');
-				Settings = module.default;
-			} catch (err) {
-				console.error('Error loading Settings:', err);
-				loadingSettings = false;
-				return; // Don't proceed if loading failed
-			} finally {
-				loadingSettings = false; // Ensure this is always reset
-			}
-		}
-
+		if (!Settings && !(await loadSettings())) return;
 		openDialogAfterRender('settings_modal');
 	}
 
@@ -131,32 +151,12 @@
 
 		// The PWA service handles most of the logic, but we need to lazy-load the component
 		if ($showPwaInstallPrompt && !PwaInstallPrompt) {
-			try {
-				// Import the component dynamically
-				const module = await import('../pwa/PwaInstallPrompt.svelte');
-				PwaInstallPrompt = module.default;
-			} catch (err) {
-				console.error('Error loading PWA install prompt:', err);
-			}
+			await loadPwaInstallPrompt();
 		}
 	}
 
 	async function openSupporterModal() {
-		if (loadingSupporterModal) return;
-
-		if (!SupporterModal) {
-			loadingSupporterModal = true;
-			try {
-				const module = await import('../modals/SupporterModal.svelte');
-				SupporterModal = module.default;
-			} catch (err) {
-				console.error('Error loading supporter modal:', err);
-				return;
-			} finally {
-				loadingSupporterModal = false;
-			}
-		}
-
+		if (!SupporterModal && !(await loadSupporterModal())) return;
 		openDialogAfterRender('supporter_modal');
 	}
 
@@ -181,22 +181,7 @@
 			return;
 		}
 
-		if (loadingHistoryModal) return;
-
-		if (!TranscriptHistoryModal) {
-			loadingHistoryModal = true;
-			try {
-				const module = await import('../history/TranscriptHistoryModal.svelte');
-				TranscriptHistoryModal = module.default;
-			} catch (err) {
-				console.error('Error loading history modal:', err);
-				loadingHistoryModal = false;
-				return;
-			} finally {
-				loadingHistoryModal = false;
-			}
-		}
-
+		if (!TranscriptHistoryModal && !(await loadTranscriptHistoryModal())) return;
 		openDialogAfterRender('history_modal');
 	}
 
