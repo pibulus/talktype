@@ -1,7 +1,7 @@
 <script>
 	import './ghost-animations-optimized.css';
 	import ghostPathsUrl from './ghost-paths.svg?url';
-	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { GRADIENT_DEFS } from './gradients.js';
 
 	// Direct theme prop - no store subscription
@@ -94,18 +94,8 @@
 		clearTimeout(openEyesTimeoutId);
 	});
 
-	// Event dispatcher
-	const dispatch = createEventDispatcher();
-
 	// Reactive declaration for ghost ready state
 	$: isGhostReady = componentsLoaded && !!ghostSvg && !!resolvedTheme;
-
-	// Track previous ready state to dispatch event once
-	let wasReady = false;
-	$: if (isGhostReady && !wasReady) {
-		wasReady = true;
-		dispatch('ghostReady');
-	}
 </script>
 
 <div class="display-ghost" style="width:{resolvedWidth}; height:{resolvedHeight};">
