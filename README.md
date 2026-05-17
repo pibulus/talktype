@@ -1,6 +1,11 @@
 # TalkType
 
-TalkType is a small voice-to-text PWA with a soft ghost interface. The product goal is simple: open it, tap the ghost, speak, and get usable text quickly.
+[![CI](https://github.com/pibulus/talktype/actions/workflows/ci.yml/badge.svg)](https://github.com/pibulus/talktype/actions/workflows/ci.yml)
+[![License: custom non-commercial](https://img.shields.io/badge/license-custom_non--commercial-pink.svg)](LICENSE)
+
+TalkType is a small voice-to-text PWA with a soft ghost interface. Open it, tap the ghost, speak, and get usable editable text quickly.
+
+Try it at [talktype.app](https://talktype.app).
 
 ## Current Shape
 
@@ -9,7 +14,18 @@ TalkType is a small voice-to-text PWA with a soft ghost interface. The product g
 - **Style presets**: Non-standard output styles route to Gemini through the same server endpoint.
 - **Offline Mode is explicit**: When enabled, local Whisper runs in the browser with `@xenova/transformers`, WASM, IndexedDB/browser cache, and no cloud transcription.
 - **PWA-first UX**: Install prompt, launch shortcut recording, auto-record preference, iOS safe areas, touch targets, and installed-app microphone handling are part of the core app.
-- **Supporter mode**: History/export/style preset features are supporter-gated. Codes are manually issued for now and validated by `/api/validate-code`.
+- **Supporter mode**: History/export/style preset features are unlocked by one-time Square checkout, with manually issued supporter codes as a fallback.
+- **Accessibility matters**: Core controls and modals are built around keyboard focus, named controls, readable mobile layouts, and 44px touch targets.
+
+## Privacy Model
+
+TalkType has three transcription paths:
+
+- **Live Text** sends microphone chunks to Deepgram for realtime text.
+- **After Stop** sends the finished recording to the server; standard transcription uses Deepgram and style presets use Gemini.
+- **Offline** runs Whisper locally in the browser after the model has downloaded.
+
+Transcript history is saved locally in the user's browser when supporter mode is unlocked. Do not include private transcripts, recordings, API keys, supporter codes, or payment details in GitHub issues.
 
 ## Documentation
 
@@ -19,6 +35,9 @@ Start here:
 - [Documentation index](docs/INDEX.md)
 - [Current release notes](docs/NEXT.md)
 - [Testing strategy](docs/TESTING.md)
+- [Contributing](CONTRIBUTING.md)
+- [Support](SUPPORT.md)
+- [Security](SECURITY.md)
 - [Agent/project notes](CLAUDE.md)
 
 Historical audits and old session notes live in [docs/archive](docs/archive/README.md). Future feature research lives in [docs/research](docs/research).
@@ -82,3 +101,7 @@ Netlify config is present, but deployment details should be checked against the 
 ## Known Build Note
 
 The production build emits a large chunk warning for the offline Whisper/ONNX runtime path. That is expected while offline transcription ships in the main app bundle, but it remains a good future code-splitting target.
+
+## License
+
+TalkType uses a custom non-commercial source license. Personal, educational, and non-commercial use is allowed; commercial reuse needs written permission. See [LICENSE](LICENSE).

@@ -1,0 +1,60 @@
+name: Bug report
+description: Something in TalkType is not behaving as expected.
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping keep TalkType tidy. Please remove private transcripts, recordings, keys, supporter codes, and payment details before posting.
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did it happen?
+      options:
+        - Recording
+        - Live Text
+        - After Stop transcription
+        - Offline Mode
+        - Options modal
+        - Supporter/history flow
+        - PWA/install/mobile
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened?
+      description: Tell the story plainly.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open TalkType
+        2. Choose ...
+        3. Tap ...
+        4. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: iPhone 15 / iOS 18 / Safari, or macOS / Chrome, etc.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Screenshots or notes
+      description: Optional. Please blur or remove private content.

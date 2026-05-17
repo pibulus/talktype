@@ -8,6 +8,9 @@ This directory holds durable project documentation. Historical notes are preserv
 - [Project README](../README.md): product overview, commands, environment, deployment notes.
 - [Agent notes](../CLAUDE.md): short working context for coding agents.
 - [Testing](TESTING.md): current test stack and testing policy.
+- [Contributing](../CONTRIBUTING.md): small-project contribution rules and local checks.
+- [Support](../SUPPORT.md): what to include when reporting app issues.
+- [Security](../SECURITY.md): private reporting guidance and data-handling notes.
 - [Next](NEXT.md): release status and next moves.
 - [Glossary](GLOSSARY.md): quick names for important components and services.
 

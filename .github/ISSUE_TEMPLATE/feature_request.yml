@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest a focused improvement.
+title: '[Idea]: '
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would this improve?
+      description: Describe the user problem, not just the desired implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What should TalkType do?
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: What kind of improvement is it?
+      options:
+        - Mobile usability
+        - Accessibility
+        - Transcription quality
+        - Privacy/offline behavior
+        - Supporter/history flow
+        - Visual polish
+        - Other
+    validations:
+      required: true
