@@ -6,9 +6,9 @@ This folder contains various scripts for TalkType development, including:
 2. **Model Compression Utilities** (`compress-models.sh`) - Optional helper for shipping smaller Whisper weights
 3. **Codex Hooks** (`codex/init.sh`) - Shortcuts for spinning up the AI workflow
 
-> **Heads‑up:** the old Sharp-based icon scripts have been retired (and Sharp was removed
-> from `package.json`). Icons are exported manually into `static/appicon/`; see
-> `docs/pwa-quickstart.md` for the current checklist.
+> **Heads‑up:** the old icon-generation scripts have been retired. Icons are
+> exported manually into `static/appicon/`; see `docs/pwa-quickstart.md` for the
+> current checklist. Sharp is still used by `generate-screenshots.js`.
 
 ## Meta-Development Script
 
