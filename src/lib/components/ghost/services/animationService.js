@@ -138,8 +138,6 @@ export function applyInitialLoadEffect(ghostSvg) {
 	}); // End of requestAnimationFrame callback
 }
 
-// --- Removed applyWobbleEffect function ---
-
 /**
  * Start watching for special animation opportunities (easter eggs)
  *
@@ -197,28 +195,6 @@ export function stopSpecialAnimationWatch() {
 }
 
 /**
- * Perform a special animation (like spinning - easter egg)
- *
- * @param {HTMLElement} ghostSvg - Ghost SVG container
- */
-// performSpecialAnimation is no longer needed as a separate exported function.
-// The logic to transition to EASTER_EGG state is now in checkForSpecialAnimation.
-// The CSS class application will be handled reactively in Ghost.svelte.
-// The transition back to IDLE is handled by the state machine's cleanupDelay for EASTER_EGG.
-// We can remove this function or keep it internal if other special, non-state-machine animations are planned.
-// For now, let's assume it's effectively removed by not being called.
-// If you want to keep the debug logs, they could be moved or adapted.
-// The `animations.doingSpecialAnimation` flag is also no longer needed from this service.
-// We might need to adjust the `animations` object if it was used elsewhere.
-// For this refactor, we'll assume `performSpecialAnimation` is no longer called.
-// The `animations.doingSpecialAnimation` flag can be removed from the `animations` object at the top of this file.
-/*
-export function performSpecialAnimation(ghostSvg) {
-  // This function's logic is now integrated into the state machine and Ghost.svelte
-}
-*/
-
-/**
  * Apply a pulse animation
  *
  * @param {HTMLElement} ghostSvg - Ghost SVG container
@@ -241,7 +217,6 @@ export default {
 	initAnimations,
 	initThemeAnimation,
 	applyInitialLoadEffect,
-	// applyWobbleEffect, // Removed
 	applyPulseEffect,
 	// performSpecialAnimation, // No longer exported or used externally for spin
 	startSpecialAnimationWatch,

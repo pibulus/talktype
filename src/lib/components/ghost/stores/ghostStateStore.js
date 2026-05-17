@@ -36,13 +36,7 @@ function createGhostStateStore() {
 		eyePosition: { x: 0, y: 0 },
 		// Whether eye tracking is enabled
 		isEyeTrackingEnabled: true,
-		// --- Wobble state removed - handled imperatively ---
-		// isWobbling: false,
 		inactivityTimerId: null, // Timer for falling asleep
-		// wobbleDirection: null,
-		// wobbleTimeoutId: null,
-		// ---
-		// isSpecialAnimationActive is now handled by current === ANIMATION_STATES.EASTER_EGG
 		// Debug mode
 		debug: false,
 		// First visit (for initial animation) - Default to false for SSR safety
@@ -392,22 +386,6 @@ function createGhostStateStore() {
 		_state.update((s) => ({ ...s, eyesClosed: closed }));
 	}
 
-	// --- Removed applyWobbleEffectFlags function ---
-
-	/**
-	 * Set the wobble direction (now primarily used by external triggers)
-	 * @param {string} direction - Wobble direction CSS class
-	 */
-	// function setWobbleDirection(direction) { // Removed unused function
-	// 	// Get current state to check if this is a redundant update
-	// 	const currentState = get(_state);
-	//
-	// 	// Skip if current direction already matches target direction to prevent cycles
-	// 	if (currentState.wobbleDirection === direction) {
-	// 		if (currentState.debug) {
-	// 	}
-	// } // Removed unused function
-
 	/**
 	 * Checks if it's the first visit based on body attribute (client-side only)
 	 * and updates the store state accordingly.
@@ -461,10 +439,6 @@ function createGhostStateStore() {
 				eyesClosed: false,
 				eyePosition: { x: 0, y: 0 },
 				isEyeTrackingEnabled: true,
-				// isWobbling: false, // Removed
-				// wobbleDirection: null, // Removed
-				// wobbleTimeoutId: null, // Removed
-				// isSpecialAnimationActive removed
 				inactivityTimerId: null, // Clear inactivity timer on reset
 				debug: s.debug,
 				isFirstVisit: false, // Assume reset happens after first visit
@@ -526,8 +500,6 @@ function createGhostStateStore() {
 		setProcessing,
 		setEyePosition,
 		setEyesClosed,
-		// --- Removed setWobbling and setWobbleDirection from public API ---
-		// setSpecialAnimation is removed, use setAnimationState(ANIMATION_STATES.EASTER_EGG)
 		setDebug,
 		checkAndSetFirstVisit, // Expose the new method
 		completeFirstVisit,
@@ -561,13 +533,10 @@ function createGhostStateStore() {
 		isEyeTrackingEnabled: _isEyeTrackingEnabled,
 		isFirstVisit: _isFirstVisit
 	};
-} // <-- Closing brace for createGhostStateStore function moved here
+}
 
 // Create singleton instance
 export const ghostStateStore = createGhostStateStore();
-
-// --- Removed redundant top-level derived exports ---
-// Convenience exports are now part of the ghostStateStore object itself
 
 // Default export for convenience
 export default ghostStateStore;

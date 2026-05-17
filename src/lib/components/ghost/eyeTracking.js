@@ -66,7 +66,6 @@ export function createEyeTracking(customConfig = {}) {
 
 		// Store reference to tracked element
 		state.tracked = ghostElement;
-		// state.eyesElement = eyesElement; // Removed
 
 		log('Tracked element stored, starting tracking');
 
@@ -215,7 +214,6 @@ export function createEyeTracking(customConfig = {}) {
 		}
 		state.tracked = null;
 		state.cachedGhostRect = null;
-		// state.eyesElement = null; // Removed
 	}
 
 	/**
@@ -227,10 +225,7 @@ export function createEyeTracking(customConfig = {}) {
 		// Update internal state for consistency if needed, but primary action is store update
 		state.eyesClosed = closed;
 		ghostStateStore.setEyesClosed(closed);
-		// updateEyePosition(); // Removed, blinkService handles DOM updates via store subscription
 	}
-
-	// updateEyePosition() function is removed as DOM manipulation is now handled by blinkService
 
 	/**
 	 * Reset eye position to center by updating the store
@@ -240,7 +235,6 @@ export function createEyeTracking(customConfig = {}) {
 		state.eyePositionX = 0;
 		state.eyePositionY = 0;
 		ghostStateStore.setEyePosition(0, 0);
-		// updateEyePosition(); // Removed
 	}
 
 	// Public API

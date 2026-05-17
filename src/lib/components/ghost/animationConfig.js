@@ -188,10 +188,9 @@ export const ANIMATION_STATES = {
 	EASTER_EGG: 'easter_egg', // New state for special animations
 	ASLEEP: 'asleep', // New state for inactivity
 	WAKING_UP: 'waking_up' // New state for waking transition
-	// WOBBLING state removed
 };
 
-// Valid state transitions (WOBBLING removed)
+// Valid state transitions
 export const ANIMATION_TRANSITIONS = {
 	[ANIMATION_STATES.INITIAL]: [ANIMATION_STATES.IDLE],
 	[ANIMATION_STATES.IDLE]: [
@@ -204,14 +203,13 @@ export const ANIMATION_TRANSITIONS = {
 	],
 	[ANIMATION_STATES.THINKING]: [ANIMATION_STATES.IDLE, ANIMATION_STATES.RECORDING],
 	[ANIMATION_STATES.RECORDING]: [ANIMATION_STATES.THINKING, ANIMATION_STATES.IDLE],
-	// WOBBLING transitions removed
 	[ANIMATION_STATES.REACTING]: [ANIMATION_STATES.IDLE],
 	[ANIMATION_STATES.EASTER_EGG]: [ANIMATION_STATES.IDLE], // EASTER_EGG transitions back to IDLE
 	[ANIMATION_STATES.ASLEEP]: [ANIMATION_STATES.WAKING_UP], // ASLEEP transitions to WAKING_UP
 	[ANIMATION_STATES.WAKING_UP]: [ANIMATION_STATES.IDLE] // WAKING_UP transitions to IDLE
 };
 
-// Animation behaviors for each state (WOBBLING removed)
+// Animation behaviors for each state
 export const ANIMATION_BEHAVIORS = {
 	[ANIMATION_STATES.INITIAL]: {
 		blinkPattern: 'none',
@@ -238,7 +236,6 @@ export const ANIMATION_BEHAVIORS = {
 		eyeTracking: true,
 		cleanupDelay: 0
 	},
-	// WOBBLING behavior removed
 	[ANIMATION_STATES.REACTING]: {
 		blinkPattern: 'expression',
 		eyeTracking: true,
@@ -354,5 +351,4 @@ export function injectAnimationVariables() {
 	styleElement.textContent = `:root {\n  ${cssVars.replace(/\n/g, '\n  ')}\n}`;
 }
 
-// Removed injectAnimationVariables and generateAnimationCssVariables functions
 // Rely on themeStore.js and Ghost.svelte::initDynamicStyles for variable injection

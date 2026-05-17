@@ -395,8 +395,6 @@
 	</svg>
 </button>
 
-<!-- Removed duplicated SVG content from here -->
-
 <style>
 	.ghost-container {
 		position: relative;

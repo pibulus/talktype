@@ -6,8 +6,6 @@
  * All color values are defined in themeStore.js and injected as CSS variables.
  */
 
-// Removed helper functions (getCssVariable, getThemeColor, getThemeParameter) - use themeStore or utils
-
 /**
  * Core animation timing parameters
  * Controls the global timing aspects of animations
@@ -175,12 +173,9 @@ export const gradientAnimations = {
 	}
 };
 
-// Removed helper functions (getCssVariable, getThemeColor, getThemeParameter) - use themeStore or utils
-
 // Export the module for debugging/console access
 export default {
 	animationTiming,
 	shapeAnimations,
 	gradientAnimations
-	// Removed helper functions from export
 };
