@@ -3,6 +3,8 @@
 	import { theme } from '$lib';
 	import { ModalCloseButton } from './index.js';
 	export let closeModal;
+
+	const downloadUrl = '/downloads/talktype-extension.zip';
 </script>
 
 <dialog
@@ -34,7 +36,7 @@
 				class="rounded-lg border border-pink-200/60 bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 shadow-sm"
 			>
 				<p class="text-sm leading-relaxed text-gray-700">
-					Use TalkType everywhere on the web. The extension drops voice typing into text boxes,
+					Use TalkType across desktop Chrome. The extension drops voice typing into text boxes,
 					textareas, and rich editors so you can dictate straight into Gmail, Notion, chat apps,
 					forms, and docs.
 				</p>
@@ -45,11 +47,11 @@
 			>
 				<h4 class="mb-2 text-sm font-bold text-gray-800">Right now:</h4>
 				<p class="mb-3 text-sm leading-relaxed text-gray-700">
-					The extension is in manual-install mode while the Chrome Web Store listing gets packaged.
+					The extension is a downloadable manual-install zip while the Chrome Web Store listing gets
+					packaged.
 				</p>
 				<ol class="mt-2 list-decimal space-y-2 pl-5 text-left text-sm text-gray-700">
-					<li class="pb-1">Download or clone the extension repo from GitHub</li>
-					<li class="pb-1">Unzip the files to a folder on your computer</li>
+					<li class="pb-1">Download and unzip the extension package</li>
 					<li class="pb-1">
 						Open Chrome and go to <code
 							class="rounded-md bg-pink-100 px-1.5 py-0.5 font-mono text-pink-700"
@@ -59,13 +61,21 @@
 					<li class="pb-1">Enable "Developer mode" in the top-right corner</li>
 					<li>
 						Click "Load unpacked" and select the <code
-							class="rounded-md bg-pink-100 px-1.5 py-0.5 font-mono text-pink-700">src</code
+							class="rounded-md bg-pink-100 px-1.5 py-0.5 font-mono text-pink-700"
+							>talktype-extension</code
 						> folder
 					</li>
 				</ol>
 			</div>
 
 			<div class="flex flex-col gap-2 pt-1 sm:flex-row sm:justify-end">
+				<a
+					href={downloadUrl}
+					download
+					class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-orange-400 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+				>
+					Download zip
+				</a>
 				<a
 					href="/extension"
 					class="inline-flex items-center justify-center rounded-xl border border-pink-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-pink-300 hover:text-pink-600"
@@ -76,7 +86,7 @@
 					href="https://github.com/pibulus/talktype_extension"
 					target="_blank"
 					rel="noreferrer"
-					class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-orange-400 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-transform hover:-translate-y-0.5"
+					class="inline-flex items-center justify-center rounded-xl border border-pink-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-pink-300 hover:text-pink-600"
 				>
 					Open repo
 				</a>

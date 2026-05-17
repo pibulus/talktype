@@ -2,3 +2,9 @@
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+
+# Generated/package artifacts
+static/downloads/
+
+# Shell scripts are formatted manually
+scripts/*.sh

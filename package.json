@@ -7,6 +7,7 @@
 		"dev": "lsof -ti:5173 | xargs kill -9 2>/dev/null || true && vite dev --port 5173 --host",
 		"build": "vite build",
 		"deploy:pi": "bash scripts/deploy-pi.sh",
+		"package:extension": "bash scripts/package-extension.sh",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"format": "prettier --write .",
