@@ -2,6 +2,7 @@
 	import './ghost-animations-optimized.css';
 	import ghostPathsUrl from './ghost-paths.svg?url';
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { GRADIENT_DEFS } from './gradients.js';
 
 	// Direct theme prop - no store subscription
 	export let theme = 'peach';
@@ -28,6 +29,12 @@
 	$: resolvedTheme = validThemes.has(theme) ? theme : 'peach';
 	$: resolvedWidth = width || size;
 	$: resolvedHeight = height || size;
+	$: gradientPrefix = `display-ghost-${String(seed).replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+	$: resolvedGradientId = getInstanceGradientId(resolvedTheme);
+
+	function getInstanceGradientId(themeName) {
+		return `${gradientPrefix}-${themeName}-gradient`;
+	}
 
 	// Seeded random function
 	function seedRandom(min, max) {
@@ -113,37 +120,19 @@
 			focusable="false"
 		>
 			<defs>
-				<linearGradient id="peachGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-					<stop offset="0%" stop-color="var(--ghost-peach-start)" />
-					<stop offset="35%" stop-color="var(--ghost-peach-mid1)" />
-					<stop offset="65%" stop-color="var(--ghost-peach-mid2)" />
-					<stop offset="85%" stop-color="var(--ghost-peach-mid3)" />
-					<stop offset="100%" stop-color="var(--ghost-peach-end)" />
-				</linearGradient>
-
-				<linearGradient id="mintGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-					<stop offset="0%" stop-color="var(--ghost-mint-start)" />
-					<stop offset="35%" stop-color="var(--ghost-mint-mid1)" />
-					<stop offset="65%" stop-color="var(--ghost-mint-mid2)" />
-					<stop offset="85%" stop-color="var(--ghost-mint-mid3)" />
-					<stop offset="100%" stop-color="var(--ghost-mint-end)" />
-				</linearGradient>
-
-				<linearGradient id="bubblegumGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-					<stop offset="0%" stop-color="var(--ghost-bubblegum-start)" />
-					<stop offset="35%" stop-color="var(--ghost-bubblegum-mid1)" />
-					<stop offset="65%" stop-color="var(--ghost-bubblegum-mid2)" />
-					<stop offset="85%" stop-color="var(--ghost-bubblegum-mid3)" />
-					<stop offset="100%" stop-color="var(--ghost-bubblegum-end)" />
-				</linearGradient>
-
-				<linearGradient id="rainbowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-					<stop offset="0%" stop-color="var(--ghost-rainbow-start)" />
-					<stop offset="25%" stop-color="var(--ghost-rainbow-mid1)" />
-					<stop offset="50%" stop-color="var(--ghost-rainbow-mid2)" />
-					<stop offset="75%" stop-color="var(--ghost-rainbow-mid3)" />
-					<stop offset="100%" stop-color="var(--ghost-rainbow-end)" />
-				</linearGradient>
+				{#each Object.entries(GRADIENT_DEFS) as [themeName, gradient]}
+					<linearGradient
+						id={getInstanceGradientId(themeName)}
+						x1={gradient.x1}
+						y1={gradient.y1}
+						x2={gradient.x2}
+						y2={gradient.y2}
+					>
+						{#each gradient.stops as stop}
+							<stop offset={stop.offset} stop-color={stop.color} />
+						{/each}
+					</linearGradient>
+				{/each}
 			</defs>
 
 			<g class="ghost-layer ghost-bg">
@@ -152,7 +141,7 @@
 					href={ghostPathsUrl + '#ghost-background'}
 					class="ghost-shape"
 					id="ghost-shape"
-					fill="url(#{resolvedTheme}Gradient)"
+					fill="url(#{resolvedGradientId})"
 				/>
 			</g>
 

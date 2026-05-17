@@ -410,7 +410,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		contain: layout paint;
+		contain: layout;
 		/* Safari-specific fixes for flashing */
 		-webkit-backface-visibility: hidden;
 		-webkit-transform: translateZ(0);
@@ -446,6 +446,8 @@
 		max-width: 100%;
 		max-height: 100%;
 		opacity: 1; /* Start visible to prevent flashing */
+		position: relative;
+		z-index: 1;
 		/* Safari-specific fixes */
 		-webkit-backface-visibility: hidden;
 		-webkit-transform: translateZ(0);

@@ -102,24 +102,45 @@
 	inset: -20px;
 	border-radius: 50%;
 	opacity: 0;
+	z-index: 0;
 	pointer-events: none;
 	animation: recording-glow-fade 2s ease-in-out infinite;
 }
 
 .ghost-container.recording.theme-peach::before {
-	background: radial-gradient(circle, rgba(255, 135, 165, 0.3) 0%, transparent 70%);
+	background: radial-gradient(circle, rgba(255, 135, 165, 0.36) 0%, transparent 72%);
 }
 
 .ghost-container.recording.theme-mint::before {
-	background: radial-gradient(circle, rgba(80, 235, 170, 0.3) 0%, transparent 70%);
+	background: radial-gradient(circle, rgba(80, 235, 170, 0.36) 0%, transparent 72%);
 }
 
 .ghost-container.recording.theme-bubblegum::before {
-	background: radial-gradient(circle, rgba(200, 140, 255, 0.3) 0%, transparent 70%);
+	background: radial-gradient(circle, rgba(200, 140, 255, 0.36) 0%, transparent 72%);
 }
 
 .ghost-container.recording.theme-rainbow::before {
-	background: radial-gradient(circle, rgba(180, 130, 255, 0.3) 0%, transparent 70%);
+	background: radial-gradient(circle, rgba(180, 130, 255, 0.36) 0%, transparent 72%);
+}
+
+.ghost-container.recording.theme-peach {
+	filter: drop-shadow(0 0 18px rgba(255, 130, 170, 0.72))
+		drop-shadow(0 0 30px rgba(255, 178, 150, 0.34));
+}
+
+.ghost-container.recording.theme-mint {
+	filter: drop-shadow(0 0 18px rgba(80, 235, 170, 0.72))
+		drop-shadow(0 0 30px rgba(80, 210, 235, 0.34));
+}
+
+.ghost-container.recording.theme-bubblegum {
+	filter: drop-shadow(0 0 18px rgba(200, 140, 255, 0.72))
+		drop-shadow(0 0 30px rgba(255, 120, 190, 0.32));
+}
+
+.ghost-container.recording.theme-rainbow {
+	filter: drop-shadow(0 0 18px rgba(180, 130, 255, 0.72))
+		drop-shadow(0 0 30px rgba(120, 205, 255, 0.34));
 }
 
 @keyframes recording-glow-fade {
