@@ -127,6 +127,30 @@ Auto-start is requested from:
 
 `MainContainer` waits for child component refs and verifies the recording store after start. If the UI tree is not ready yet, it retries rather than assuming success.
 
+## Supporter Mode
+
+Relevant files:
+
+- `src/lib/components/modals/SupporterModal.svelte`
+- `src/routes/api/validate-code/+server.js`
+- `src/lib/server/supporterCodes.js`
+- `src/lib/services/infrastructure/stores.js`
+- `src/lib/components/page/MainContainer.svelte`
+- `src/lib/components/settings/TranscriptionStyleSelector.svelte`
+- `src/lib/services/storage/transcriptStorage.js`
+
+Flow:
+
+1. Settings, History, or locked transcription styles can open `SupporterModal`.
+2. The modal posts a manually issued code to `/api/validate-code`.
+3. The server rate-limits attempts and checks `SUPPORTER_UNLOCK_CODES` or `SUPPORTER_UNLOCK_CODE`.
+4. Codes are trimmed and matched case-insensitively.
+5. A valid code calls `setSupporterStatus(true)`, which stores `talktype_supporter=true` in local storage.
+6. Supporter status unlocks local transcript history/export, custom transcription style UI, custom prompts, and the longer recording limit.
+7. Completed transcripts are only saved to IndexedDB when `userPreferences.isSupporter` is true.
+
+Current supporter mode is a lightweight local entitlement. It is enough for honest-user local features, but not a server-enforced payment boundary. Real payment automation should issue a server-verifiable supporter session or license token before paid server-side cost controls depend on it.
+
 ## State Ownership
 
 - `src/lib/services/infrastructure/stores.js`: audio, recording, transcription, UI, and supporter preference stores.

@@ -3,6 +3,7 @@
 	import { browser } from '$app/environment';
 	import { ModalCloseButton } from './index.js';
 	import { setSupporterStatus } from '$lib/services';
+	import { PRICING } from '$lib/config/pricing.js';
 
 	export let closeModal = () => {};
 
@@ -82,7 +83,7 @@
 			<div class="space-y-2 pr-8">
 				<p class="text-xs font-bold uppercase tracking-[0.24em] text-pink-500">Supporter Mode</p>
 				<h3 id="supporter_modal_title" class="text-2xl font-black tracking-tight text-gray-800">
-					Support TalkType for a one-time $9
+					Support TalkType for a one-time {PRICING.displayPrice}
 				</h3>
 				<p class="text-sm text-gray-600">
 					Supporters unlock the good stuff without turning TalkType into subscription sludge.

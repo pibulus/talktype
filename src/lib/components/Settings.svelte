@@ -10,6 +10,7 @@
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { SERVICE_EVENTS } from '$lib/constants';
+	import { PRICING } from '$lib/config/pricing.js';
 
 	export let closeModal = () => {};
 
@@ -311,7 +312,7 @@
 							Unlock transcript history, downloads, custom prompts, and longer sessions.
 						</p>
 						<p class="text-xs uppercase tracking-[0.18em] text-amber-600">
-							{isSupporterValue ? 'Unlocked' : 'One-time $9'}
+							{isSupporterValue ? 'Unlocked' : `One-time ${PRICING.displayPrice}`}
 						</p>
 					</div>
 					<button

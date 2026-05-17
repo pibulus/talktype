@@ -54,7 +54,7 @@ Copy `.env.example` to `.env` and set the values needed for your mode:
 - `GEMINI_MODEL`: optional; defaults to `gemini-3.1-flash-lite-preview`.
 - `API_AUTH_TOKEN`: optional shared token. If set, API routes require an auth session.
 - `API_COOKIE_SECRET`: required when API auth sessions are enabled.
-- `SUPPORTER_UNLOCK_CODES`: comma-separated supporter codes for `/api/validate-code`.
+- `SUPPORTER_UNLOCK_CODES`: comma-separated manual supporter codes for `/api/validate-code`; matched case-insensitively.
 - `PUBLIC_FORCE_SUPPORTER_MODE`: set to `true` only for local/supporter testing.
 - `MAX_UPLOAD_BYTES`: optional upload cap for `/api/transcribe`.
 
