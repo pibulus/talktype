@@ -5,7 +5,7 @@
 	const aiStudioUrl = 'https://aistudio.google.com/app/apikey';
 	const downloadUrl = '/downloads/talktype-extension.zip';
 	const checksumUrl = '/downloads/talktype-extension.zip.sha256';
-	const extensionVersion = '1.4';
+	const extensionVersion = '1.5';
 </script>
 
 <PageLayout
