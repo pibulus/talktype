@@ -110,6 +110,7 @@ export class RecordingControlsService {
 		const { isRecording } = this.stores;
 
 		let thinkingStarted = false;
+		let liveStopInProgress = false;
 
 		try {
 			// Get current recording state
@@ -123,8 +124,13 @@ export class RecordingControlsService {
 				thinkingStarted = true;
 			}
 
-			// Stop recording and get the audio blob
+			const { useLiveDeepgram } = getTranscriptionMode();
+			if (useLiveDeepgram) {
+				liveStopInProgress = true;
+				transcriptionActions.startTranscribing();
+			}
 
+			// Stop recording and get the audio blob
 			const audioBlob = await this.audioService.stopRecording();
 			log.log('Got audio blob:', audioBlob);
 
@@ -143,13 +149,15 @@ export class RecordingControlsService {
 						'Recording too short - try speaking for at least a second!'
 					);
 					await this.transcriptionService.clearPendingRecordingDraft?.();
+					if (useLiveDeepgram) {
+						transcriptionActions.completeTranscription('');
+					}
 					return;
 				}
 
 				// Check if Live Mode already captured a complete transcript. If the user
 				// switched away from Live Mode while recording, close any stale socket
 				// without waiting for a Deepgram finalization grace period.
-				const { useLiveDeepgram } = getTranscriptionMode();
 				const liveResult = useLiveDeepgram ? await transcriptionStore.finish() : null;
 				if (!useLiveDeepgram) {
 					transcriptionStore.disconnect();
@@ -169,7 +177,6 @@ export class RecordingControlsService {
 					if (browser) {
 						localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'deepgram-live');
 					}
-					transcriptionActions.startTranscribing();
 					transcriptionActions.completeTranscription(liveTranscript);
 					await this.transcriptionService.clearPendingRecordingDraft?.();
 					void this.transcriptionService.copyToClipboard(liveTranscript, { silent: true });
@@ -229,11 +236,17 @@ export class RecordingControlsService {
 			} else {
 				// If no audio data, revert UI state
 				this.uiActions.setErrorMessage("Didn't catch that - try recording again?");
+				if (useLiveDeepgram) {
+					transcriptionActions.completeTranscription('');
+				}
 			}
 		} catch (err) {
 			log.error('Error in stopRecording:', err);
 			const friendlyMessage = "Something went sideways - let's try that again!";
 			this.uiActions.setErrorMessage(friendlyMessage);
+			if (liveStopInProgress) {
+				transcriptionActions.completeTranscription('');
+			}
 		} finally {
 			if (
 				thinkingStarted &&

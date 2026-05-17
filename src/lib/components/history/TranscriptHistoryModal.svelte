@@ -12,13 +12,13 @@
 		formatSize
 	} from '$lib/services/storage/transcriptStorage';
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
-	import { Button } from '$lib/components/shared';
 
 	export let closeModal = () => {};
 
 	let confirmClearAll = false;
 	let editingId = null;
 	let editText = '';
+	const iconButtonClass = 'btn btn-ghost h-12 min-h-12 w-12 px-0 text-base';
 
 	// Format timestamp to readable date
 	function formatDate(timestamp) {
@@ -186,7 +186,7 @@
 
 		<!-- Header -->
 		<div class="mb-4 border-b border-pink-100 pb-3">
-			<div class="flex items-center justify-between">
+			<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div class="flex items-center gap-2">
 					<span class="text-2xl">📚</span>
 					<div>
@@ -201,21 +201,30 @@
 				</div>
 
 				{#if $transcriptHistory.length > 0}
-					<div class="flex gap-2">
-						<Button
-							variant="ghost"
-							size="sm"
+					<div class="flex flex-wrap gap-2 sm:justify-end">
+						<button
+							type="button"
+							class="btn btn-ghost min-h-11 px-3 text-sm"
 							on:click={handleBatchDownload}
 							title="Download all as text files"
 						>
 							📦 Download All
-						</Button>
-						<Button variant="ghost" size="sm" on:click={handleExportJSON} title="Export as JSON">
+						</button>
+						<button
+							type="button"
+							class="btn btn-ghost min-h-11 px-3 text-sm"
+							on:click={handleExportJSON}
+							title="Export as JSON"
+						>
 							📄 JSON
-						</Button>
-						<Button variant="ghost" size="sm" on:click={handleClearAll}>
+						</button>
+						<button
+							type="button"
+							class="btn btn-ghost min-h-11 px-3 text-sm"
+							on:click={handleClearAll}
+						>
 							{confirmClearAll ? '⚠️ Confirm?' : '🗑️ Clear All'}
-						</Button>
+						</button>
 					</div>
 				{/if}
 			</div>
@@ -265,11 +274,13 @@
 								</div>
 
 								<!-- Actions -->
-								<div class="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+								<div
+									class="flex shrink-0 flex-wrap justify-end gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100"
+								>
 									{#if editingId !== transcript.id}
 										{#if transcript.audioBlob}
 											<button
-												class="btn btn-ghost btn-xs"
+												class={iconButtonClass}
 												on:click={() => playAudio(transcript.audioBlob)}
 												title="Play audio"
 											>
@@ -277,28 +288,28 @@
 											</button>
 										{/if}
 										<button
-											class="btn btn-ghost btn-xs"
+											class={iconButtonClass}
 											on:click={() => startEdit(transcript)}
 											title="Edit"
 										>
 											✏️
 										</button>
 										<button
-											class="btn btn-ghost btn-xs"
+											class={iconButtonClass}
 											on:click={() => copyTranscript(transcript.text)}
 											title="Copy text"
 										>
 											📋
 										</button>
 										<button
-											class="btn btn-ghost btn-xs"
+											class={iconButtonClass}
 											on:click={() => downloadTranscript(transcript)}
 											title="Download"
 										>
 											💾
 										</button>
 										<button
-											class="btn btn-ghost btn-xs text-error"
+											class={`${iconButtonClass} text-error`}
 											on:click={() => handleDelete(transcript.id)}
 											title="Delete"
 										>
@@ -314,7 +325,7 @@
 								<div class="space-y-2">
 									<textarea
 										bind:value={editText}
-										class="w-full rounded border border-pink-200 bg-white p-2 text-sm focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
+										class="w-full rounded border border-pink-200 bg-white p-2 text-base focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200 sm:text-sm"
 										rows="4"
 									></textarea>
 									<div class="flex justify-end gap-2">

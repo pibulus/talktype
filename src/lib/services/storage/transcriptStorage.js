@@ -181,6 +181,7 @@ export async function updateTranscript(id, newText) {
 
 				putRequest.onsuccess = () => {
 					log.log('Transcript updated:', id);
+					updateStats();
 					loadAllTranscripts(); // Refresh the list
 					resolve(true);
 				};

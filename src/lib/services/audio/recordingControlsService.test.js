@@ -161,4 +161,40 @@ describe('RecordingControlsService', () => {
 			silent: true
 		});
 	});
+
+	it('stays busy while waiting for Deepgram live finalization', async () => {
+		const audioBlob = new Blob(['x'.repeat(1200)], { type: 'audio/webm' });
+		const audioService = {
+			stopRecording: vi.fn().mockResolvedValue(audioBlob)
+		};
+		const transcriptionService = {
+			transcribeAudio: vi.fn().mockResolvedValue('batch transcript'),
+			clearPendingRecordingDraft: vi.fn().mockResolvedValue(),
+			copyToClipboard: vi.fn().mockResolvedValue()
+		};
+		let resolveFinish;
+		const finishPromise = new Promise((resolve) => {
+			resolveFinish = resolve;
+		});
+
+		transcriptionModeMock.getTranscriptionMode.mockReturnValue({ useLiveDeepgram: true });
+		transcriptionStoreMock.finish.mockReturnValue(finishPromise);
+		audioActions.updateState(AudioStates.RECORDING);
+		service = createService({ audioService, transcriptionService });
+
+		const stopPromise = service.stopRecording();
+		await vi.waitFor(() => expect(transcriptionStoreMock.finish).toHaveBeenCalledTimes(1));
+
+		expect(get(isTranscribing)).toBe(true);
+
+		resolveFinish({
+			text: 'hello again',
+			hasFinal: true,
+			usedInterim: false
+		});
+		await stopPromise;
+
+		expect(get(isTranscribing)).toBe(false);
+		expect(get(transcriptionText)).toBe('hello again');
+	});
 });
