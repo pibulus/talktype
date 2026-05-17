@@ -16,8 +16,6 @@ This directory holds durable project documentation. Historical notes are preserv
 - [Visual style guide](visual-style-guide.md)
 - [Animation and visual behaviors](animation-visual-behaviors.md)
 - [Ghost icon reference](ghost-icon-reference.md)
-- [Ghost component README](../src/lib/components/ghost/README.md)
-- [Ghost character system](../src/lib/components/ghost/CHARACTER_SYSTEM.md)
 
 ## Platform And Transcription
 
