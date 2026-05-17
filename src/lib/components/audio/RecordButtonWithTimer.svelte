@@ -26,12 +26,16 @@
 	let copyMessage = getCopySuccessMessage();
 	let previousClipboardSuccess = false;
 
-	// Cleanup on destroy
-	onDestroy(() => {
+	function clearAnimationTimeout() {
 		if (animationTimeout) {
 			clearTimeout(animationTimeout);
 			animationTimeout = null;
 		}
+	}
+
+	// Cleanup on destroy
+	onDestroy(() => {
+		clearAnimationTimeout();
 	});
 
 	$: buttonState = getRecordButtonState({
@@ -54,11 +58,7 @@
 	// Handlers
 	export function animateButtonPress() {
 		if (recordButtonElement) {
-			// Clear any pending animation timeout
-			if (animationTimeout) {
-				clearTimeout(animationTimeout);
-				animationTimeout = null;
-			}
+			clearAnimationTimeout();
 
 			recordButtonElement.classList.remove('button-press');
 			void recordButtonElement.offsetWidth; // Force reflow
@@ -95,10 +95,8 @@
 			? `--progress: ${buttonState.progressPercentage}%`
 			: ''}"
 		on:click={() => dispatch('click')}
-		disabled={transcribing || downloading}
 		aria-label={recording ? 'Stop Recording' : 'Start Recording'}
 		aria-pressed={recording}
-		aria-busy={transcribing || downloading}
 	>
 		<!-- Main button text -->
 		<span
