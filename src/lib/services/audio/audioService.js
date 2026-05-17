@@ -15,7 +15,18 @@ import { createLogger } from '$lib/utils/logger';
 import { isPermissionError } from './permissionErrors.js';
 
 const log = createLogger('AudioService');
+const SPEECH_AUDIO_BITS_PER_SECOND = 48000;
+const MEDIA_RECORDER_TIMESLICE_MS = 250;
+const FINAL_AUDIO_CHUNK_DELAY_MS = 100;
+const CLEANUP_RECORDER_STOP_TIMEOUT_MS = 1000;
+const TRACK_STOP_TIMEOUT_MS = 500;
+const IOS_AUDIO_CONTEXT_RETRY_DELAY_MS = 100;
+const IOS_CLEANUP_SETTLE_MS = 300;
 const IOS_PWA_WARM_STREAM_MS = 20 * 1000;
+
+function stopMediaStreamTracks(stream) {
+	stream?.getTracks().forEach((track) => track.stop());
+}
 
 export class AudioService {
 	constructor() {
@@ -64,7 +75,7 @@ export class AudioService {
 		// For iOS, we need to be more patient - context might take time to become running
 		if (this.isIOS && this.audioContext?.state === 'suspended') {
 			// Give it a moment and try one more time
-			await new Promise((resolve) => setTimeout(resolve, 100));
+			await new Promise((resolve) => setTimeout(resolve, IOS_AUDIO_CONTEXT_RETRY_DELAY_MS));
 			try {
 				await this.audioContext.resume();
 			} catch (error) {
@@ -111,24 +122,17 @@ export class AudioService {
 
 				try {
 					const stream = await navigator.mediaDevices.getUserMedia(constraints);
-					if (stream && stream.active) {
-						return { granted: true, stream };
-					} else {
-						stream?.getTracks().forEach((track) => track.stop());
-						return { granted: false, error: new Error('No active audio stream after permission') };
-					}
+					return this.#permissionResultFromStream(
+						stream,
+						'No active audio stream after permission'
+					);
 				} catch (iosSpecificError) {
 					log.warn('iOS specific constraints failed, trying fallback:', iosSpecificError.message);
 					const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-					if (stream && stream.active) {
-						return { granted: true, stream };
-					} else {
-						stream?.getTracks().forEach((track) => track.stop());
-						return {
-							granted: false,
-							error: new Error('No active audio stream after fallback permission')
-						};
-					}
+					return this.#permissionResultFromStream(
+						stream,
+						'No active audio stream after fallback permission'
+					);
 				}
 			}
 
@@ -140,15 +144,7 @@ export class AudioService {
 						autoGainControl: false
 					}
 				});
-				if (stream && stream.active) {
-					return { granted: true, stream };
-				} else {
-					stream?.getTracks().forEach((track) => track.stop());
-					return {
-						granted: false,
-						error: new Error('No active audio stream after permission')
-					};
-				}
+				return this.#permissionResultFromStream(stream, 'No active audio stream after permission');
 			} catch (detailedConstraintError) {
 				log.log(
 					'Detailed constraints failed, falling back to simple audio:',
@@ -156,15 +152,10 @@ export class AudioService {
 				);
 				try {
 					const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-					if (stream && stream.active) {
-						return { granted: true, stream };
-					} else {
-						stream?.getTracks().forEach((track) => track.stop());
-						return {
-							granted: false,
-							error: new Error('No active audio stream after permission')
-						};
-					}
+					return this.#permissionResultFromStream(
+						stream,
+						'No active audio stream after permission'
+					);
 				} catch (fallbackError) {
 					return { granted: false, error: fallbackError };
 				}
@@ -173,6 +164,31 @@ export class AudioService {
 			log.error('Error requesting audio permissions:', error);
 			return { granted: false, error };
 		}
+	}
+
+	#permissionResultFromStream(stream, errorMessage) {
+		if (stream?.active) {
+			return { granted: true, stream };
+		}
+
+		stopMediaStreamTracks(stream);
+		return { granted: false, error: new Error(errorMessage) };
+	}
+
+	#getMediaRecorderOptions() {
+		const mimeTypes = this.isIOS
+			? ['audio/mp4', 'audio/aac', 'audio/webm', '']
+			: ['audio/webm', 'audio/ogg', ''];
+
+		for (const mimeType of mimeTypes) {
+			if (!mimeType || MediaRecorder.isTypeSupported(mimeType)) {
+				return mimeType
+					? { mimeType, audioBitsPerSecond: SPEECH_AUDIO_BITS_PER_SECOND }
+					: { audioBitsPerSecond: SPEECH_AUDIO_BITS_PER_SECOND };
+			}
+		}
+
+		return { audioBitsPerSecond: SPEECH_AUDIO_BITS_PER_SECOND };
 	}
 
 	async startRecording() {
@@ -208,25 +224,8 @@ export class AudioService {
 			}
 
 			try {
-				const mimeTypes = this.isIOS
-					? ['audio/mp4', 'audio/aac', 'audio/webm', '']
-					: ['audio/webm', 'audio/ogg', ''];
-
-				let mediaRecorderOptions = null;
-
-				for (const mimeType of mimeTypes) {
-					if (!mimeType || MediaRecorder.isTypeSupported(mimeType)) {
-						// Optimize bitrate for speech (48kbps = 50% smaller files vs default 128kbps)
-						// Speech transcription doesn't need high quality audio
-						mediaRecorderOptions = mimeType
-							? { mimeType, audioBitsPerSecond: 48000 }
-							: { audioBitsPerSecond: 48000 };
-						break;
-					}
-				}
-
 				this.stream = stream;
-				this.mediaRecorder = new MediaRecorder(this.stream, mediaRecorderOptions);
+				this.mediaRecorder = new MediaRecorder(this.stream, this.#getMediaRecorderOptions());
 
 				await this.initializeAudioContext();
 				this.disconnectAudioGraph();
@@ -238,7 +237,7 @@ export class AudioService {
 
 				this.startWaveformMonitoring();
 			} catch (mrError) {
-				stream.getTracks().forEach((track) => track.stop());
+				stopMediaStreamTracks(stream);
 				throw mrError;
 			}
 
@@ -255,7 +254,7 @@ export class AudioService {
 
 			// Use smaller timeslice (250ms) to capture audio more frequently
 			// This helps prevent losing the last bit of audio
-			this.mediaRecorder.start(250);
+			this.mediaRecorder.start(MEDIA_RECORDER_TIMESLICE_MS);
 			this.stateManager.setState(AudioStates.RECORDING);
 
 			// Update the store with mimeType
@@ -397,7 +396,7 @@ export class AudioService {
 					this.stateManager.setState(AudioStates.IDLE);
 					resolve(null);
 				}
-			}, 100); // Small delay to ensure final chunk is captured
+			}, FINAL_AUDIO_CHUNK_DELAY_MS);
 		}).finally(() => {
 			this.stopPromise = null;
 		});
@@ -486,7 +485,7 @@ export class AudioService {
 				await new Promise((resolve) => {
 					const timeout = setTimeout(() => {
 						resolve();
-					}, 1000);
+					}, CLEANUP_RECORDER_STOP_TIMEOUT_MS);
 
 					this.mediaRecorder.onstop = () => {
 						clearTimeout(timeout);
@@ -509,7 +508,7 @@ export class AudioService {
 						return new Promise((resolve) => {
 							// Assign onended BEFORE stop() to avoid race if it fires synchronously
 							track.onended = resolve;
-							setTimeout(resolve, 500);
+							setTimeout(resolve, TRACK_STOP_TIMEOUT_MS);
 							track.stop();
 						});
 					})
@@ -523,7 +522,7 @@ export class AudioService {
 				if (this.isIOS) {
 					try {
 						await this.audioContext.suspend();
-						await new Promise((resolve) => setTimeout(resolve, 100));
+						await new Promise((resolve) => setTimeout(resolve, IOS_AUDIO_CONTEXT_RETRY_DELAY_MS));
 					} catch (suspendError) {
 						log.warn('Error suspending iOS audio context:', suspendError.message);
 					}
@@ -541,7 +540,7 @@ export class AudioService {
 			this.audioChunks = [];
 
 			if (this.isIOS) {
-				await new Promise((resolve) => setTimeout(resolve, 300));
+				await new Promise((resolve) => setTimeout(resolve, IOS_CLEANUP_SETTLE_MS));
 			}
 		} finally {
 			this.stateManager.setState(AudioStates.IDLE);
@@ -583,9 +582,7 @@ export class AudioService {
 	stopStreamTracks() {
 		if (!this.stream) return;
 
-		this.stream.getTracks().forEach((track) => {
-			track.stop();
-		});
+		stopMediaStreamTracks(this.stream);
 		this.stream = null;
 	}
 
