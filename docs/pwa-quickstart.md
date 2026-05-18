@@ -41,9 +41,11 @@ There is no active `static/icons/` directory and no icon generation build step.
 - Static files from `static/`.
 - Runtime GET responses.
 - Whisper model responses in the `whisper-models-v1` cache.
+- Large ONNX runtime WASM responses in the `runtime-v1` cache.
 
 Large ONNX runtime WASM assets are excluded from the install-time app cache and
-handled at runtime so the initial service-worker install is less brittle.
+handled at runtime so the initial service-worker install is less brittle. Stale
+hashed runtime assets are pruned on activation.
 
 ## Updating Icons
 

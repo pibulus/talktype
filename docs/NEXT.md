@@ -22,7 +22,7 @@
 
 - `npm test -- --run` passes.
 - `npm run lint` passes.
-- `npm run build` passes, with the known offline Whisper chunk warning.
+- `npm run build` passes.
 - Live transcript display is wired to Deepgram interim/final state.
 - Offline Mode avoids cloud transcription when enabled.
 - PWA auto-start now waits for nested recording controls to be ready.
@@ -33,7 +33,7 @@
 - Real-device installed PWA testing on iPhone and Android.
 - Mic permission deny/allow/retry smoke test on physical devices.
 - Payment automation for supporter mode.
-- Build chunk reduction for the offline Whisper/ONNX runtime.
+- Further offline Whisper/ONNX runtime size reduction, if Offline Mode becomes a first-run priority.
 - Confirm deployment target versus current `@sveltejs/adapter-node` setup.
 
 ## Obvious Next Moves

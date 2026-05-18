@@ -7,6 +7,7 @@ const MODELS_CACHE = 'whisper-models-v1';
 const RUNTIME_CACHE = 'runtime-v1';
 
 const LARGE_RUNTIME_ASSET_PATTERNS = [/\/ort-.*\.wasm$/];
+const LARGE_RUNTIME_ASSETS = build.filter((asset) => isLargeRuntimeAsset(asset));
 
 function isLargeRuntimeAsset(pathname) {
 	return LARGE_RUNTIME_ASSET_PATTERNS.some((pattern) => pattern.test(pathname));
@@ -42,7 +43,21 @@ self.addEventListener('activate', (event) => {
 		}
 	}
 
-	event.waitUntil(deleteOldCaches().then(() => self.clients.claim()));
+	async function pruneRuntimeCache() {
+		const runtimeCache = await caches.open(RUNTIME_CACHE);
+		const currentRuntimeAssets = new Set(LARGE_RUNTIME_ASSETS);
+
+		for (const request of await runtimeCache.keys()) {
+			const url = new URL(request.url);
+			if (url.origin === self.location.origin && !currentRuntimeAssets.has(url.pathname)) {
+				await runtimeCache.delete(request);
+			}
+		}
+	}
+
+	event.waitUntil(
+		Promise.all([deleteOldCaches(), pruneRuntimeCache()]).then(() => self.clients.claim())
+	);
 });
 
 // Fetch event
@@ -53,6 +68,21 @@ self.addEventListener('fetch', (event) => {
 	async function respond() {
 		const url = new URL(event.request.url);
 		const cache = await caches.open(CACHE);
+
+		if (url.origin === self.location.origin && isLargeRuntimeAsset(url.pathname)) {
+			const runtimeCache = await caches.open(RUNTIME_CACHE);
+			const cachedResponse = await runtimeCache.match(event.request);
+
+			if (cachedResponse) {
+				return cachedResponse;
+			}
+
+			const response = await fetch(event.request);
+			if (response.ok) {
+				runtimeCache.put(event.request, response.clone());
+			}
+			return response;
+		}
 
 		// `build`/`files` can always be served from the cache
 		if (ASSETS.includes(url.pathname)) {

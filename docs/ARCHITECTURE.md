@@ -127,6 +127,8 @@ Auto-start is requested from:
 
 `MainContainer` waits for child component refs and verifies the recording store after start. If the UI tree is not ready yet, it retries rather than assuming success.
 
+The service worker precaches normal app/static assets, caches Whisper model downloads in `whisper-models-v1`, and keeps large ONNX runtime WASM files in `runtime-v1` so they are not part of install-time precache and can survive app cache version changes.
+
 ## Supporter Mode
 
 Relevant files:
@@ -178,6 +180,6 @@ Checkout and license data use the server storage adapter. For `adapter-node`, pr
 ## Current Risk Areas
 
 - Real-device iOS installed PWA microphone behavior still needs physical-device smoke testing.
-- The offline Whisper/ONNX path creates a large production chunk.
+- The offline Whisper/ONNX path still depends on a large runtime WASM asset.
 - Payment automation is not wired; supporter code issuing is manual.
 - Netlify config exists, but the active adapter is currently `@sveltejs/adapter-node`.

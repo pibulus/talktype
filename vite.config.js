@@ -3,6 +3,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
 	plugins: [sveltekit()],
+	resolve: {
+		alias: [{ find: /^onnxruntime-web$/, replacement: 'onnxruntime-web/wasm' }]
+	},
 	server: {
 		port: 5173, // Vite default - avoids macOS ControlCenter on 5000
 		host: true, // allows access from other devices on the network

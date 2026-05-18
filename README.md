@@ -100,7 +100,7 @@ Netlify config is present, but deployment details should be checked against the 
 
 ## Known Build Note
 
-The production build emits a large chunk warning for the offline Whisper/ONNX runtime path. That is expected while offline transcription ships in the main app bundle, but it remains a good future code-splitting target.
+Offline Mode still ships a large ONNX Runtime WASM asset, but it is on the dynamic offline-transcription path and is cached at runtime rather than precached during service-worker install.
 
 ## License
 
