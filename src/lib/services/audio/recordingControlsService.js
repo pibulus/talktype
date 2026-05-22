@@ -143,36 +143,48 @@ export class RecordingControlsService {
 				return;
 			}
 
-				// Check if Live Mode already captured a complete transcript. If the user
-				// switched away from Live Mode while recording, close any stale socket
-				// without waiting for a Deepgram finalization grace period.
-				const liveResult = useLiveDeepgram ? await transcriptionStore.finish() : null;
-				if (!useLiveDeepgram) {
-					transcriptionStore.disconnect();
-				}
-				const finalTranscript = (useLiveDeepgram && liveResult?.hasFinal && liveResult.text.trim().length > 0) 
-					? liveResult.text 
+			// Check if Live Mode already captured a complete transcript. If the user
+			// switched away from Live Mode while recording, close any stale socket
+			// without waiting for a Deepgram finalization grace period.
+			const liveResult = useLiveDeepgram ? await transcriptionStore.finish() : null;
+			if (!useLiveDeepgram) {
+				transcriptionStore.disconnect();
+			}
+			const finalTranscript =
+				useLiveDeepgram && liveResult?.hasFinal && liveResult.text.trim().length > 0
+					? liveResult.text
 					: await this.transcriptionService.transcribeAudio(audioBlob);
 
-				log.log('Transcription result:', finalTranscript);
-				transcriptionActions.completeTranscription(finalTranscript);
-				await this.transcriptionService.clearPendingRecordingDraft?.();
-				
-				if (useLiveDeepgram && finalTranscript === liveResult?.text) {
-					void this.transcriptionService.copyToClipboard(finalTranscript, { silent: true });
-				}
+			log.log('Transcription result:', finalTranscript);
+			transcriptionActions.completeTranscription(finalTranscript);
+			await this.transcriptionService.clearPendingRecordingDraft?.();
+
+			if (useLiveDeepgram && finalTranscript === liveResult?.text) {
+				void this.transcriptionService.copyToClipboard(finalTranscript, { silent: true });
+			}
 
 			// Analytics & UI post-processing
-			if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, useLiveDeepgram && finalTranscript === liveResult?.text ? 'deepgram-live' : 'cloud-batch');
-			
-			scrollToBottomIfNeeded({ threshold: 300, delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY });
-			
+			if (browser)
+				localStorage.setItem(
+					STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD,
+					useLiveDeepgram && finalTranscript === liveResult?.text ? 'deepgram-live' : 'cloud-batch'
+				);
+
+			scrollToBottomIfNeeded({
+				threshold: 300,
+				delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY
+			});
+
 			const wordCount = finalTranscript.trim().split(/\s+/).length;
-			analytics.completeTranscription(useLiveDeepgram ? 'deepgram-live' : 'cloud-batch', estimatedDurationSeconds, wordCount);
+			analytics.completeTranscription(
+				useLiveDeepgram ? 'deepgram-live' : 'cloud-batch',
+				estimatedDurationSeconds,
+				wordCount
+			);
 
-			if (browser && 'requestIdleCallback' in window) window.requestIdleCallback(() => this._incrementTranscriptionCount());
+			if (browser && 'requestIdleCallback' in window)
+				window.requestIdleCallback(() => this._incrementTranscriptionCount());
 			else setTimeout(() => this._incrementTranscriptionCount(), 0);
-
 		} catch (err) {
 			log.error('Error in stopRecording:', err);
 			this.uiActions.setErrorMessage("Let's try that recording again.");

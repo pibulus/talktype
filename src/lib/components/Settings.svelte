@@ -190,7 +190,7 @@
 
 		<div class="animate-fadeUp space-y-6">
 			<!-- Header -->
-			<div class="flex items-center gap-2 mb-2">
+			<div class="mb-2 flex items-center gap-2">
 				<div
 					class="flex h-8 w-8 items-center justify-center rounded-full border border-pink-200/60 bg-gradient-to-br from-white to-pink-50 shadow-sm"
 				>
@@ -211,7 +211,7 @@
 			<div
 				class="rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200"
 			>
-				<h4 class="text-sm font-bold text-gray-700 mb-2">Transcription Mode</h4>
+				<h4 class="mb-2 text-sm font-bold text-gray-700">Transcription Mode</h4>
 				<div class="grid grid-cols-3 gap-2" role="group" aria-label="Transcription mode">
 					{#each transcriptionModes as mode}
 						<button
@@ -260,9 +260,7 @@
 					</p>
 				</div>
 				<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
-					<span class="sr-only"
-						>Auto-Record Toggle {autoRecordValue ? 'Enabled' : 'Disabled'}</span
-					>
+					<span class="sr-only">Auto-Record Toggle {autoRecordValue ? 'Enabled' : 'Disabled'}</span>
 					<div class="relative">
 						<input
 							type="checkbox"
