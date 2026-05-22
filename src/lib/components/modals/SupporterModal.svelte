@@ -107,7 +107,7 @@
 	aria-modal="true"
 >
 	<div
-		class="animate-modal-enter modal-box relative max-h-[88dvh] w-[94%] max-w-md overflow-y-auto rounded-[1.75rem] border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] px-5 py-6 shadow-xl sm:w-[92%] sm:px-6"
+		class="modal-box relative max-h-[85vh] w-[92vw] overflow-y-auto rounded-3xl border border-pink-100 bg-[#fffcf5] p-6 shadow-2xl"
 	>
 		<form method="dialog">
 			<ModalCloseButton

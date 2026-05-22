@@ -53,6 +53,16 @@ export class AudioService {
 			// Update the store instead of emitting event
 			audioActions.updateState(newState, error);
 		});
+
+		if (browser) {
+			document.addEventListener('visibilitychange', () => {
+				if (document.visibilityState === 'visible') {
+					this.initializeAudioContext().catch((err) =>
+						log.warn('Failed to resume audio context on visibility change:', err)
+					);
+				}
+			});
+		}
 	}
 
 	async initializeAudioContext() {

@@ -227,8 +227,7 @@
 
 /* Gentle ambient floating for idle state */
 .ghost-container:not(.recording):not(.asleep) .ghost-wobble-group {
-	animation: gentle-float 3s ease-in-out infinite;
-	animation-delay: 1.5s;
+	animation: gentle-float 4s ease-in-out infinite;
 }
 
 @keyframes gentle-float {
@@ -237,7 +236,7 @@
 		transform: translateY(0);
 	}
 	50% {
-		transform: translateY(-3px);
+		transform: translateY(-5px);
 	}
 }
 

@@ -84,11 +84,9 @@
 {:else}
 	<button
 		bind:this={recordButtonElement}
-		class="record-button w-[90%] rounded-full transition-all duration-300 ease-out sm:w-[85%] {clipboardSuccess
+		class="record-button pulse-subtle w-[90%] rounded-full transition-all duration-300 ease-out sm:w-[85%] {clipboardSuccess
 			? 'notification-pulse border border-purple-200 bg-purple-50 text-black'
-			: 'text-black'} mx-auto flex h-[64px] min-w-[280px] max-w-[420px] items-center justify-center px-6 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:text-xl md:text-2xl {buttonState.isIdlePrimaryCta
-			? 'pulse-subtle'
-			: ''} {recording ? 'recording-active' : ''} {buttonState.isWarning
+			: 'text-black'} mx-auto flex h-[64px] min-w-[280px] max-w-[420px] items-center justify-center px-6 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:text-xl md:text-2xl {recording ? 'recording-active' : ''} {buttonState.isWarning
 			? 'recording-warning'
 			: ''} {buttonState.isDanger ? 'recording-danger' : ''}"
 		style="transform-origin: center center; position: relative; {recording

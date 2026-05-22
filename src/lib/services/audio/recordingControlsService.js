@@ -110,15 +110,10 @@ export class RecordingControlsService {
 		const { isRecording } = this.stores;
 
 		let thinkingStarted = false;
-		let liveStopInProgress = false;
 
 		try {
-			// Get current recording state
-			if (!get(isRecording)) {
-				return;
-			}
+			if (!get(isRecording)) return;
 
-			// Make the ghost look like it's thinking hard
 			if (this.ghostComponent && typeof this.ghostComponent.startThinking === 'function') {
 				this.ghostComponent.startThinking();
 				thinkingStarted = true;
@@ -126,34 +121,27 @@ export class RecordingControlsService {
 
 			const { useLiveDeepgram } = getTranscriptionMode();
 			if (useLiveDeepgram) {
-				liveStopInProgress = true;
 				transcriptionActions.startTranscribing();
 			}
 
-			// Stop recording and get the audio blob
 			const audioBlob = await this.audioService.stopRecording();
 			log.log('Got audio blob:', audioBlob);
 
-			// Process the audio if we have data
-			if (audioBlob) {
-				log.log('Starting transcription with blob size:', audioBlob.size);
+			if (!audioBlob) {
+				this.uiActions.setErrorMessage('Try one more recording.');
+				if (useLiveDeepgram) transcriptionActions.completeTranscription('');
+				return;
+			}
 
-				// Validate minimum recording duration (prevent processing tiny clips)
-				// Estimate duration: webm is roughly 16kbps = 2000 bytes/second
-				const estimatedDurationSeconds = audioBlob.size / 2000;
-				const MIN_DURATION_SECONDS = 0.5; // Minimum half second
-
-				if (estimatedDurationSeconds < MIN_DURATION_SECONDS) {
-					log.warn(`Recording too short: ~${estimatedDurationSeconds.toFixed(2)}s`);
-					this.uiActions.setErrorMessage(
-						'Speak for at least a second so the ghost has enough to transcribe.'
-					);
-					await this.transcriptionService.clearPendingRecordingDraft?.();
-					if (useLiveDeepgram) {
-						transcriptionActions.completeTranscription('');
-					}
-					return;
-				}
+			// Validate duration
+			const estimatedDurationSeconds = audioBlob.size / 2000;
+			if (estimatedDurationSeconds < 0.5) {
+				log.warn(`Recording too short: ~${estimatedDurationSeconds.toFixed(2)}s`);
+				this.uiActions.setErrorMessage('Speak for at least a second.');
+				await this.transcriptionService.clearPendingRecordingDraft?.();
+				if (useLiveDeepgram) transcriptionActions.completeTranscription('');
+				return;
+			}
 
 				// Check if Live Mode already captured a complete transcript. If the user
 				// switched away from Live Mode while recording, close any stale socket
@@ -162,99 +150,35 @@ export class RecordingControlsService {
 				if (!useLiveDeepgram) {
 					transcriptionStore.disconnect();
 				}
-				const liveTranscript = liveResult?.text || '';
-				const canUseLiveTranscript =
-					useLiveDeepgram &&
-					liveResult?.hasFinal &&
-					!liveResult.usedInterim &&
-					liveTranscript.trim().length > 0;
+				const finalTranscript = (useLiveDeepgram && liveResult?.hasFinal && liveResult.text.trim().length > 0) 
+					? liveResult.text 
+					: await this.transcriptionService.transcribeAudio(audioBlob);
 
-				// Skip batch transcription only when Deepgram finalized the whole live transcript.
-				if (canUseLiveTranscript) {
-					log.log('Live Mode captured transcript - skipping batch');
-
-					// Complete transcription so history gets saved via transcriptionCompletedEvent
-					if (browser) {
-						localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'deepgram-live');
-					}
-					transcriptionActions.completeTranscription(liveTranscript);
-					await this.transcriptionService.clearPendingRecordingDraft?.();
-					void this.transcriptionService.copyToClipboard(liveTranscript, { silent: true });
-
-					// Scroll to show transcript if needed
-					scrollToBottomIfNeeded({
-						threshold: 300,
-						delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY
-					});
-
-					// Increment the transcription count for PWA prompt
-					if (browser && 'requestIdleCallback' in window) {
-						window.requestIdleCallback(() => this._incrementTranscriptionCount());
-					} else {
-						const timeoutId = setTimeout(() => this._incrementTranscriptionCount(), 0);
-						this.activeTimeouts.push(timeoutId);
-					}
-
-					// Track successful transcription
-					const wordCount = liveTranscript.trim().split(/\s+/).length;
-					analytics.completeTranscription('deepgram-live', estimatedDurationSeconds, wordCount);
-					return;
-				} else if (useLiveDeepgram && liveTranscript.trim().length > 0) {
-					log.log('Live Mode had unfinished interim text - using batch fallback');
+				log.log('Transcription result:', finalTranscript);
+				transcriptionActions.completeTranscription(finalTranscript);
+				await this.transcriptionService.clearPendingRecordingDraft?.();
+				
+				if (useLiveDeepgram && finalTranscript === liveResult?.text) {
+					void this.transcriptionService.copyToClipboard(finalTranscript, { silent: true });
 				}
 
-				// Transcribe the audio with proper error handling (batch mode)
-				try {
-					const transcriptText = await this.transcriptionService.transcribeAudio(audioBlob);
-					log.log('Transcription result:', transcriptText);
+			// Analytics & UI post-processing
+			if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, useLiveDeepgram && finalTranscript === liveResult?.text ? 'deepgram-live' : 'cloud-batch');
+			
+			scrollToBottomIfNeeded({ threshold: 300, delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY });
+			
+			const wordCount = finalTranscript.trim().split(/\s+/).length;
+			analytics.completeTranscription(useLiveDeepgram ? 'deepgram-live' : 'cloud-batch', estimatedDurationSeconds, wordCount);
 
-					// Scroll to show transcript if needed
+			if (browser && 'requestIdleCallback' in window) window.requestIdleCallback(() => this._incrementTranscriptionCount());
+			else setTimeout(() => this._incrementTranscriptionCount(), 0);
 
-					scrollToBottomIfNeeded({
-						threshold: 300,
-						delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY
-					});
-
-					// Increment the transcription count for PWA prompt
-					if (browser && 'requestIdleCallback' in window) {
-						window.requestIdleCallback(() => this._incrementTranscriptionCount());
-					} else {
-						const timeoutId = setTimeout(() => this._incrementTranscriptionCount(), 0);
-						this.activeTimeouts.push(timeoutId);
-					}
-
-					// Track successful transcription
-					const wordCount = transcriptText.trim().split(/\s+/).length;
-					analytics.completeTranscription('cloud-batch', estimatedDurationSeconds, wordCount);
-				} catch (transcriptionError) {
-					log.error('Transcription error:', transcriptionError);
-					const friendlyMessage = transcriptionError.message.includes('network')
-						? 'Check your connection, then try transcription again.'
-						: 'The ghost needs one more pass. Give it another shot?';
-					this.uiActions.setErrorMessage(friendlyMessage);
-				}
-			} else {
-				// If no audio data, revert UI state
-				this.uiActions.setErrorMessage('Try one more recording.');
-				if (useLiveDeepgram) {
-					transcriptionActions.completeTranscription('');
-				}
-			}
 		} catch (err) {
 			log.error('Error in stopRecording:', err);
-			const friendlyMessage = "Let's try that recording again.";
-			this.uiActions.setErrorMessage(friendlyMessage);
-			if (liveStopInProgress) {
-				transcriptionActions.completeTranscription('');
-			}
+			this.uiActions.setErrorMessage("Let's try that recording again.");
+			if (useLiveDeepgram) transcriptionActions.completeTranscription('');
 		} finally {
-			if (
-				thinkingStarted &&
-				this.ghostComponent &&
-				typeof this.ghostComponent.stopThinking === 'function'
-			) {
-				this.ghostComponent.stopThinking();
-			}
+			if (thinkingStarted && this.ghostComponent?.stopThinking) this.ghostComponent.stopThinking();
 		}
 	}
 

@@ -13,7 +13,8 @@
 	const availableStyles = [
 		PROMPT_STYLES.QUILL_AND_INK,
 		PROMPT_STYLES.SPARKLE_POP,
-		PROMPT_STYLES.LEET_SPEAK
+		PROMPT_STYLES.LEET_SPEAK,
+		PROMPT_STYLES.RAINBOW_VIBE
 	];
 
 	const styleIcons = {
@@ -25,19 +26,24 @@
 		</svg>`,
 		leetSpeak: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-blue-500">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+		</svg>`,
+		rainbowVibe: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-rainbow">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
 		</svg>`
 	};
 
 	const styleNames = {
 		quillAndInk: 'Victorian',
 		sparklePop: 'Sparkle',
-		leetSpeak: 'L33t'
+		leetSpeak: 'L33t',
+		rainbowVibe: 'Rainbow'
 	};
 
 	$: styleTooltips = {
 		quillAndInk: disabledTooltip('Victorian polish'),
 		sparklePop: disabledTooltip('Extra sparkle'),
-		leetSpeak: disabledTooltip('H4ck3r style')
+		leetSpeak: disabledTooltip('H4ck3r style'),
+		rainbowVibe: disabledTooltip('Rainbow vibes')
 	};
 	$: styleNotice = !isSupporter
 		? stylesDisabled
