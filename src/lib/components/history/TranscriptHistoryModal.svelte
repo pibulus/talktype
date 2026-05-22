@@ -13,7 +13,20 @@
 	} from '$lib/services/storage/transcriptStorage';
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
 
+	import { userPreferences } from '$lib/services/infrastructure/stores';
+	import { PRICING } from '$lib/config/pricing.js';
+
 	export let closeModal = () => {};
+
+	// Supporter status check
+	$: isSupporter = $userPreferences.isSupporter;
+
+	function openSupporterModal() {
+		closeModal();
+		setTimeout(() => {
+			window.dispatchEvent(new CustomEvent('talktype:open-supporter-modal'));
+		}, 75);
+	}
 
 	let confirmClearAll = false;
 	let pendingDeleteId = null;
@@ -293,7 +306,23 @@
 
 		<!-- Content -->
 		<div class="max-h-[calc(85vh-140px)] overflow-y-auto">
-			{#if $transcriptHistory.length === 0}
+			{#if !isSupporter}
+				<div class="space-y-4 py-12 text-center">
+					<p class="text-4xl" aria-hidden="true">🔒</p>
+					<h4 class="text-lg font-black text-gray-800">Transcript History Locked</h4>
+					<p class="mx-auto max-w-sm text-sm text-gray-600">
+						Unlock transcript history, downloads, and style presets with a one-time supporter
+						contribution.
+					</p>
+					<button
+						type="button"
+						class="btn min-h-12 border-pink-200 bg-pink-500 px-6 text-white hover:bg-pink-600"
+						on:click={openSupporterModal}
+					>
+						Unlock for {PRICING.displayPrice}
+					</button>
+				</div>
+			{:else if $transcriptHistory.length === 0}
 				<!-- Empty State -->
 				<div class="py-12 text-center">
 					<p class="mb-2 text-4xl opacity-30" aria-hidden="true">📝</p>

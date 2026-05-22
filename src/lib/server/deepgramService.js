@@ -1,6 +1,6 @@
 import { env } from '$env/dynamic/private';
 
-export async function transcribeAudio(file) {
+export async function transcribeAudio(file, { diarize = false, paragraphs = true } = {}) {
 	const apiKey = env.DEEPGRAM_API_KEY;
 	if (!apiKey) {
 		throw new Error('Server Error: Missing Deepgram API key');
@@ -11,8 +11,8 @@ export async function transcribeAudio(file) {
 		const params = new URLSearchParams({
 			model: 'nova-3',
 			smart_format: 'true',
-			paragraphs: 'true',
-			diarize: 'true'
+			paragraphs: paragraphs ? 'true' : 'false',
+			diarize: diarize ? 'true' : 'false'
 		});
 
 		const response = await fetch(`https://api.deepgram.com/v1/listen?${params.toString()}`, {

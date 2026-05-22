@@ -2,6 +2,8 @@ import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { guardRequest } from '$lib/server/authService.js';
 import { transcribeAudio } from '$lib/server/deepgramService.js';
+import { verifySupporterToken } from '$lib/server/supporter/licenseCrypto.js';
+import { STORAGE_KEYS } from '$lib/constants';
 
 const MAX_UPLOAD_BYTES = Number(env.MAX_UPLOAD_BYTES ?? `${50 * 1024 * 1024}`);
 
@@ -11,6 +13,10 @@ export async function POST(event) {
 		if (guardResponse) {
 			return guardResponse;
 		}
+
+		// Check supporter status via token cookie or header
+		const token = event.cookies.get(STORAGE_KEYS.SUPPORTER_TOKEN);
+		const isSupporter = !!(token && verifySupporterToken(token));
 
 		const formData = await event.request.formData();
 		const file = formData.get('audio_file');
@@ -40,17 +46,17 @@ export async function POST(event) {
 		const audioSizeKB = typeof file.size === 'number' ? (file.size / 1024).toFixed(2) : 'unknown';
 
 		console.log(
-			`[API /transcribe] Received ${audioSizeKB}KB of ${file.type || 'audio/webm'}, preferred style: ${promptStyle}`
+			`[API /transcribe] Received ${audioSizeKB}KB of ${file.type || 'audio/webm'}, preferred style: ${promptStyle}, supporter: ${isSupporter}`
 		);
 
 		let transcription = '';
 
 		// Routing Logic:
-		// 1. Standard -> Deepgram (High Accuracy)
+		// 1. Standard -> Deepgram (High Accuracy, premium diarization for supporters)
 		// 2. Creative / Custom -> Gemini (High Vibe / Low Cost)
 		if (promptStyle === 'standard') {
 			console.log('[API /transcribe] Routing to Deepgram (Standard)');
-			transcription = await transcribeAudio(file);
+			transcription = await transcribeAudio(file, { diarize: isSupporter });
 		} else {
 			console.log(`[API /transcribe] Routing to Gemini (${promptStyle})`);
 			// Dynamically import Gemini service to keep initial load light
