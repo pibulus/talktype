@@ -1,11 +1,23 @@
 <script>
 	import { generateMemberIdentity } from './identityUtils.js';
+	import {
+		buildPassportQrPayload,
+		buildQRBuddyShareUrl,
+		getVaultHandshakeQR
+	} from '$lib/services/qrHandshakeService.js';
 
 	export let vaultHash = '';
 
 	$: identity = generateMemberIdentity(vaultHash);
 	$: hasVaultHash = !identity.isFallback;
 	$: cardStyle = `--passport-bg: #${identity.bg}; --passport-shape: #${identity.shape};`;
+	$: passportQrPayload = hasVaultHash ? buildPassportQrPayload(identity) : '';
+	$: passportQrImageUrl = passportQrPayload
+		? getVaultHandshakeQR({ data: passportQrPayload, style: 'sunset', size: 256 })
+		: '';
+	$: passportQrShareUrl = passportQrPayload
+		? buildQRBuddyShareUrl(passportQrPayload, { style: 'sunset' })
+		: '';
 </script>
 
 <div
@@ -44,18 +56,36 @@
 			<p class="mt-1 font-mono text-sm font-black tracking-normal">{identity.memberId}</p>
 		</div>
 
-		<div
-			class="ghost-seal grid h-12 w-12 shrink-0 place-items-center rounded-full"
-			aria-hidden="true"
-		>
-			<svg class="ghost-mark" viewBox="0 0 32 36" focusable="false" aria-hidden="true">
-				<path
-					d="M16 3c-7.1 0-12 5.4-12 13.1V32l3.5-2.2L11 32l3.5-2.2L18 32l3.5-2.2L25 32l3-1.9v-14C28 8.4 23.1 3 16 3Z"
+		{#if passportQrImageUrl}
+			<a
+				class="passport-qr-stamp"
+				href={passportQrShareUrl}
+				target="_blank"
+				rel="noreferrer"
+				aria-label={`Open QRBuddy passport QR for ${identity.memberId}`}
+			>
+				<img
+					src={passportQrImageUrl}
+					alt=""
+					loading="lazy"
+					decoding="async"
+					referrerpolicy="no-referrer"
 				/>
-				<circle cx="11.5" cy="16" r="2.4" />
-				<circle cx="20.5" cy="16" r="2.4" />
-			</svg>
-		</div>
+			</a>
+		{:else}
+			<div
+				class="ghost-seal grid h-12 w-12 shrink-0 place-items-center rounded-full"
+				aria-hidden="true"
+			>
+				<svg class="ghost-mark" viewBox="0 0 32 36" focusable="false" aria-hidden="true">
+					<path
+						d="M16 3c-7.1 0-12 5.4-12 13.1V32l3.5-2.2L11 32l3.5-2.2L18 32l3.5-2.2L25 32l3-1.9v-14C28 8.4 23.1 3 16 3Z"
+					/>
+					<circle cx="11.5" cy="16" r="2.4" />
+					<circle cx="20.5" cy="16" r="2.4" />
+				</svg>
+			</div>
+		{/if}
 	</div>
 </div>
 
@@ -125,6 +155,48 @@
 		box-shadow: 0 6px 14px rgba(79, 70, 68, 0.1);
 	}
 
+	.passport-qr-stamp {
+		display: grid;
+		width: 3.7rem;
+		height: 3.7rem;
+		flex-shrink: 0;
+		place-items: center;
+		overflow: hidden;
+		border-radius: 0.9rem;
+		border: 1px solid rgba(255, 253, 240, 0.9);
+		background: #fffdf0;
+		padding: 0.18rem;
+		box-shadow:
+			0 8px 18px rgba(136, 82, 88, 0.14),
+			inset 0 1px 0 rgba(255, 253, 240, 0.9);
+		transition:
+			transform 150ms ease,
+			box-shadow 150ms ease;
+	}
+
+	.passport-qr-stamp:hover,
+	.passport-qr-stamp:focus-visible {
+		transform: translateY(-1px) scale(1.02);
+		box-shadow:
+			0 10px 22px rgba(136, 82, 88, 0.18),
+			inset 0 1px 0 rgba(255, 253, 240, 0.9);
+		outline: none;
+	}
+
+	.passport-qr-stamp:focus-visible {
+		box-shadow:
+			0 0 0 3px rgba(236, 72, 153, 0.2),
+			0 10px 22px rgba(136, 82, 88, 0.18);
+	}
+
+	.passport-qr-stamp img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border-radius: 0.7rem;
+		object-fit: cover;
+	}
+
 	.ghost-mark {
 		width: 32px;
 		height: 36px;
@@ -144,6 +216,12 @@
 		.passport-name {
 			font-size: 1.3rem;
 			line-height: 1.12;
+		}
+
+		.passport-qr-stamp {
+			width: 3.25rem;
+			height: 3.25rem;
+			border-radius: 0.8rem;
 		}
 	}
 

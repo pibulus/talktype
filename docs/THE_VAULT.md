@@ -46,7 +46,8 @@ Supporter audio should sync as separate encrypted media payloads, not as base64 
 ## 4. Integration Ecosystem
 
 - **Auth/Link**: QuickCat can route users to the sync page without the Vault server knowing raw transcript data.
-- **Access**: QR handoff should use a trusted local renderer before embedding supporter codes.
+- **Passport QR**: QRBuddy can render a non-secret passport stamp from the member ID and identity name. This is for display/share polish, not account transfer.
+- **Access**: Real QR handoff still needs a trusted local transfer protocol. Raw supporter codes must not be embedded in QR URLs or sent to a renderer.
 
 ## 5. Implementation Roadmap
 
@@ -55,7 +56,8 @@ Supporter audio should sync as separate encrypted media payloads, not as base64 
 3. [x] **Backup UI**: "Back up" action in History Modal for encrypted one-way backup.
 4. [ ] **Merge Logic**: Last-write-wins merge with IndexedDB transcript history.
 5. [x] **Audio Media Helpers**: Encrypted audio blob upload/download helpers and media manifest.
-6. [ ] **Trusted QR Integration**: Generate QR codes locally or through a trusted private renderer without exposing raw supporter codes.
+6. [x] **Passport QR Stamp**: Render non-secret membership-card QR art through QRBuddy.
+7. [ ] **Trusted QR Transfer**: Generate one-time handoff QR codes locally or through a trusted private renderer without exposing raw supporter codes.
 
 ## 6. Deployment Notes
 
