@@ -1,32 +1,23 @@
 /**
- * QRHandshakeService
- * Bridges the Vault sync protocol with your physical QR infrastructure.
+ * Bridges the Vault sync protocol with a trusted QR renderer.
  */
 
-const QR_BUDDY_API = 'https://qrbuddy.com/api/v1/generate'; // Placeholder for your actual QRBuddy endpoint
+export function buildVaultHandshakeUrl(code, syncBaseUrl) {
+	if (!code) {
+		throw new Error('Vault QR needs a supporter code');
+	}
 
-/**
- * Generates a styled QR code for a vault sync handshake
- * @param {string} code - The supporter code
- * @param {string} syncBaseUrl - URL where the app handles the handshake
- */
-export async function getVaultHandshakeQR(code, syncBaseUrl) {
-    // 1. Build the deep link that triggers the sync
-    const vaultUrl = `${syncBaseUrl}?code=${encodeURIComponent(code)}`;
-    
-    // 2. Request a stylized QR from QRBuddy
-    const response = await fetch(QR_BUDDY_API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            url: vaultUrl,
-            style: 'pastel-punk', // Assuming QRBuddy supports your custom styles
-            logo: 'talktype'
-        })
-    });
+	const baseUrl =
+		typeof window !== 'undefined' && window.location?.origin
+			? window.location.origin
+			: 'https://talktype.local';
+	const url = new URL(syncBaseUrl, baseUrl);
+	url.hash = `code=${encodeURIComponent(code)}`;
+	return url.toString();
+}
 
-    if (!response.ok) throw new Error('Failed to generate vault QR');
-    
-    // Return the image data (SVG or Base64)
-    return await response.json();
+export async function getVaultHandshakeQR() {
+	throw new Error(
+		'Vault QR generation needs a trusted local renderer before codes can be embedded.'
+	);
 }

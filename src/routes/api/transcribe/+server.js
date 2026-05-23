@@ -6,6 +6,32 @@ import { verifySupporterToken } from '$lib/server/supporter/licenseCrypto.js';
 import { STORAGE_KEYS } from '$lib/constants';
 
 const MAX_UPLOAD_BYTES = Number(env.MAX_UPLOAD_BYTES ?? `${50 * 1024 * 1024}`);
+const SUPPORTER_TOKEN_HEADER = 'x-talktype-supporter-token';
+
+function getBearerToken(event) {
+	const authorization = event.request.headers.get('authorization') || '';
+	const match = authorization.match(/^Bearer\s+(.+)$/i);
+	return match?.[1]?.trim() || '';
+}
+
+export function _getSupporterToken(event) {
+	return (
+		event.cookies.get(STORAGE_KEYS.SUPPORTER_TOKEN) ||
+		event.request.headers.get(SUPPORTER_TOKEN_HEADER) ||
+		getBearerToken(event)
+	);
+}
+
+export function _hasValidSupporterToken(token) {
+	if (!token) return false;
+
+	try {
+		return Boolean(verifySupporterToken(token));
+	} catch (error) {
+		console.warn('[API /transcribe] Supporter token could not be verified:', error.message);
+		return false;
+	}
+}
 
 export async function POST(event) {
 	try {
@@ -14,9 +40,8 @@ export async function POST(event) {
 			return guardResponse;
 		}
 
-		// Check supporter status via token cookie or header
-		const token = event.cookies.get(STORAGE_KEYS.SUPPORTER_TOKEN);
-		const isSupporter = !!(token && verifySupporterToken(token));
+		const token = _getSupporterToken(event);
+		const isSupporter = _hasValidSupporterToken(token);
 
 		const formData = await event.request.formData();
 		const file = formData.get('audio_file');
@@ -43,6 +68,13 @@ export async function POST(event) {
 			);
 		}
 
+		if (!isSupporter && promptStyle !== 'standard') {
+			return json(
+				{ error: 'Supporter mode unlocks style presets. Switch to Standard for this one.' },
+				{ status: 403 }
+			);
+		}
+
 		const audioSizeKB = typeof file.size === 'number' ? (file.size / 1024).toFixed(2) : 'unknown';
 
 		console.log(
@@ -56,7 +88,10 @@ export async function POST(event) {
 		// 2. Creative / Custom -> Gemini (High Vibe / Low Cost)
 		if (promptStyle === 'standard') {
 			console.log('[API /transcribe] Routing to Deepgram (Standard)');
-			transcription = await transcribeAudio(file, { diarize: isSupporter });
+			transcription = await transcribeAudio(file, {
+				diarize: isSupporter,
+				paragraphs: isSupporter
+			});
 		} else {
 			console.log(`[API /transcribe] Routing to Gemini (${promptStyle})`);
 			// Dynamically import Gemini service to keep initial load light

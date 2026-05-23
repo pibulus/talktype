@@ -1,16 +1,44 @@
-import { browser } from '$app/environment';
-
 const ALGO = 'AES-GCM';
+const KEY_ITERATIONS = 100000;
+const SALT_BYTES = 16;
+const IV_BYTES = 12;
+const LEGACY_SALT = 'talktype-vault-salt';
 
-/**
- * Derives a cryptographic key from the user's supporter code.
- * Uses PBKDF2 for secure key derivation.
- */
-async function deriveKey(code) {
+function bytesToBase64(bytes) {
+	let binary = '';
+	const chunkSize = 0x8000;
+
+	for (let index = 0; index < bytes.length; index += chunkSize) {
+		binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+	}
+
+	return btoa(binary);
+}
+
+function base64ToBytes(base64) {
+	const binary = atob(base64);
+	const bytes = new Uint8Array(binary.length);
+
+	for (let index = 0; index < binary.length; index += 1) {
+		bytes[index] = binary.charCodeAt(index);
+	}
+
+	return bytes;
+}
+
+function requireCode(code) {
+	if (typeof code !== 'string' || code.trim().length === 0) {
+		throw new Error('Vault encryption needs a supporter code');
+	}
+
+	return code;
+}
+
+async function deriveKey(code, salt, iterations = KEY_ITERATIONS) {
 	const enc = new TextEncoder();
 	const keyMaterial = await crypto.subtle.importKey(
 		'raw',
-		enc.encode(code),
+		enc.encode(requireCode(code)),
 		{ name: 'PBKDF2' },
 		false,
 		['deriveKey']
@@ -19,8 +47,8 @@ async function deriveKey(code) {
 	return crypto.subtle.deriveKey(
 		{
 			name: 'PBKDF2',
-			salt: enc.encode('talktype-vault-salt'), // Static salt for simple sync
-			iterations: 100000,
+			salt,
+			iterations,
 			hash: 'SHA-256'
 		},
 		keyMaterial,
@@ -31,46 +59,63 @@ async function deriveKey(code) {
 }
 
 /**
- * Encrypts data using AES-GCM
+ * Encrypts JSON-compatible data using AES-GCM.
  */
 export async function encrypt(data, code) {
-	const key = await deriveKey(code);
-	const iv = crypto.getRandomValues(new Uint8Array(12));
+	const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
+	const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
+	const key = await deriveKey(code, salt);
 	const encoded = new TextEncoder().encode(JSON.stringify(data));
 
-	const encrypted = await crypto.subtle.encrypt(
-		{ name: ALGO, iv },
-		key,
-		encoded
-	);
+	const encrypted = await crypto.subtle.encrypt({ name: ALGO, iv }, key, encoded);
 
-	// Prepend IV to the ciphertext so we can use it for decryption
-	const combined = new Uint8Array(iv.length + encrypted.byteLength);
-	combined.set(iv);
-	combined.set(new Uint8Array(encrypted), iv.length);
+	return JSON.stringify({
+		v: 1,
+		alg: ALGO,
+		kdf: 'PBKDF2-SHA256',
+		iterations: KEY_ITERATIONS,
+		salt: bytesToBase64(salt),
+		iv: bytesToBase64(iv),
+		data: bytesToBase64(new Uint8Array(encrypted))
+	});
+}
 
-	return btoa(String.fromCharCode(...combined));
+async function decryptStructuredPayload(payload, code) {
+	if (payload?.v !== 1 || payload.alg !== ALGO || typeof payload.data !== 'string') {
+		throw new Error('Unsupported vault payload');
+	}
+
+	const salt = base64ToBytes(payload.salt);
+	const iv = base64ToBytes(payload.iv);
+	const encrypted = base64ToBytes(payload.data);
+	const key = await deriveKey(code, salt, payload.iterations || KEY_ITERATIONS);
+	const decrypted = await crypto.subtle.decrypt({ name: ALGO, iv }, key, encrypted);
+
+	return JSON.parse(new TextDecoder().decode(decrypted));
+}
+
+async function decryptLegacyPayload(encryptedBase64, code) {
+	const enc = new TextEncoder();
+	const key = await deriveKey(code, enc.encode(LEGACY_SALT));
+	const combined = base64ToBytes(encryptedBase64);
+	const iv = combined.slice(0, IV_BYTES);
+	const data = combined.slice(IV_BYTES);
+	const decrypted = await crypto.subtle.decrypt({ name: ALGO, iv }, key, data);
+
+	return JSON.parse(new TextDecoder().decode(decrypted));
 }
 
 /**
- * Decrypts data using AES-GCM
+ * Decrypts current JSON vault payloads and the first-run legacy base64 payload.
  */
-export async function decrypt(encryptedBase64, code) {
-	const key = await deriveKey(code);
-	const combined = new Uint8Array(
-		atob(encryptedBase64)
-			.split('')
-			.map((c) => c.charCodeAt(0))
-	);
+export async function decrypt(encryptedPayload, code) {
+	try {
+		return await decryptStructuredPayload(JSON.parse(encryptedPayload), code);
+	} catch (error) {
+		if (error instanceof SyntaxError) {
+			return decryptLegacyPayload(encryptedPayload, code);
+		}
 
-	const iv = combined.slice(0, 12);
-	const data = combined.slice(12);
-
-	const decrypted = await crypto.subtle.decrypt(
-		{ name: ALGO, iv },
-		key,
-		data
-	);
-
-	return JSON.parse(new TextDecoder().decode(decrypted));
+		throw error;
+	}
 }

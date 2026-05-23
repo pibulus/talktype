@@ -18,4 +18,16 @@ describe('Encryption Service', () => {
 
 		await expect(decrypt(encrypted, 'wrong-code')).rejects.toThrow();
 	});
+
+	it('handles larger history blobs without spreading the whole payload onto the stack', async () => {
+		const testData = {
+			history: Array.from({ length: 5000 }, (_, index) => `Transcript line ${index}`)
+		};
+		const secretCode = 'super-secret-supporter-code-123';
+
+		const encrypted = await encrypt(testData, secretCode);
+		const decrypted = await decrypt(encrypted, secretCode);
+
+		expect(decrypted).toEqual(testData);
+	});
 });

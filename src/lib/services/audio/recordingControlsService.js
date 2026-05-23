@@ -110,6 +110,7 @@ export class RecordingControlsService {
 		const { isRecording } = this.stores;
 
 		let thinkingStarted = false;
+		const { useLiveDeepgram } = getTranscriptionMode();
 
 		try {
 			if (!get(isRecording)) return;
@@ -119,7 +120,6 @@ export class RecordingControlsService {
 				thinkingStarted = true;
 			}
 
-			const { useLiveDeepgram } = getTranscriptionMode();
 			if (useLiveDeepgram) {
 				transcriptionActions.startTranscribing();
 			}
@@ -175,7 +175,8 @@ export class RecordingControlsService {
 				delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY
 			});
 
-			const wordCount = finalTranscript.trim().split(/\s+/).length;
+			const trimmedTranscript = finalTranscript.trim();
+			const wordCount = trimmedTranscript ? trimmedTranscript.split(/\s+/).length : 0;
 			analytics.completeTranscription(
 				useLiveDeepgram ? 'deepgram-live' : 'cloud-batch',
 				estimatedDurationSeconds,

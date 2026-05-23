@@ -150,6 +150,9 @@ Relevant files:
 - `src/lib/components/page/MainContainer.svelte`
 - `src/lib/components/settings/TranscriptionStyleSelector.svelte`
 - `src/lib/services/storage/transcriptStorage.js`
+- `src/lib/services/syncService.js`
+- `src/lib/services/encryptionService.js`
+- `vault-server.js`
 
 Flow:
 
@@ -165,10 +168,13 @@ Flow:
 10. Existing manually issued codes still redeem through `/api/supporter/redeem` as a fallback.
 11. Supporter status unlocks local transcript history/export, output style presets, and the longer recording limit.
 12. Completed transcripts are only saved to IndexedDB when `userPreferences.isSupporter` is true.
+13. Batch `/api/transcribe` verifies the signed supporter token before enabling server-side style presets, Deepgram diarization, or Deepgram paragraph formatting.
 
 Square is isolated to the payment provider layer. Feature gates consume supporter entitlement state and do not know which payment provider created it.
 
 Checkout and license data use the server storage adapter. For `adapter-node`, prefer `TALKTYPE_STORAGE_ADAPTER=filesystem` with a durable `TALKTYPE_DATA_DIR`. Use `netlify-blobs` only when deploying on Netlify. `memory` is for local throwaway tests only.
+
+Vault sync is experimental and not mounted in the main UI yet. The client helpers encrypt JSON payloads before upload, and the standalone `vault-server.js` only stores encrypted blobs by app name and vault hash.
 
 ## State Ownership
 

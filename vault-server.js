@@ -1,57 +1,144 @@
-import fastify from 'fastify';
-import fs from 'fs/promises';
-import path from 'path';
+import { createServer } from 'node:http';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
-// "The Vault" - A private, encrypted drop-zone for TalkType histories.
-// Simple, lean, and runs on your own hardware.
+const PORT = Number(process.env.PORT || 3000);
+const MAX_BODY_BYTES = Number(process.env.MAX_VAULT_BLOB_BYTES || 5 * 1024 * 1024);
+const VAULT_DIR = path.resolve(process.env.VAULT_DIR || path.join(process.cwd(), 'vaults'));
+const APP_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/i;
+const HASH_PATTERN = /^[a-f0-9]{64}$/;
 
-const app = fastify({ logger: true });
-
-// Ensure vaults directory exists
-const VAULT_DIR = path.join(process.cwd(), 'vaults');
 await fs.mkdir(VAULT_DIR, { recursive: true });
 
-// Health check
-app.get('/health', async () => ({ status: 'ok', vault: 'alive' }));
+function sendJson(response, status, payload) {
+	response.writeHead(status, { 'Content-Type': 'application/json' });
+	response.end(JSON.stringify(payload));
+}
 
-// POST: Upload encrypted vault blob
-// Client provides the app name and vault_hash in the URL
-app.post('/vault/:appName/:hash', async (request, reply) => {
-	const { appName, hash } = request.params;
-	const { data } = request.body; // Expecting { data: '...' }
+function applyCors(request, response) {
+	const allowedOrigin = process.env.VAULT_ALLOWED_ORIGIN;
+	const requestOrigin = request.headers.origin;
+	if (!allowedOrigin || !requestOrigin) return;
 
-	if (!data) {
-		return reply.status(400).send({ error: 'Missing vault data' });
+	const allowedOrigins = allowedOrigin.split(',').map((origin) => origin.trim());
+	if (allowedOrigin === '*' || allowedOrigins.includes(requestOrigin)) {
+		response.setHeader('Access-Control-Allow-Origin', allowedOrigin === '*' ? '*' : requestOrigin);
+		response.setHeader('Vary', 'Origin');
+		response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+		response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+	}
+}
+
+function parseVaultPath(requestUrl) {
+	const url = new URL(requestUrl, 'http://vault.local');
+	const [root, appName, hash] = url.pathname.split('/').filter(Boolean);
+
+	if (root !== 'vault' || !appName || !hash) return null;
+	if (!APP_NAME_PATTERN.test(appName) || !HASH_PATTERN.test(hash)) {
+		const error = new Error('Invalid path parameters');
+		error.statusCode = 400;
+		throw error;
 	}
 
-	// Basic validation: ensure names are alphanumeric
-	if (!/^[a-zA-Z0-9]+$/.test(appName) || !/^[a-zA-Z0-9]+$/.test(hash)) {
-		return reply.status(400).send({ error: 'Invalid path parameters' });
-	}
+	return { appName, hash };
+}
 
-	const dir = path.join(VAULT_DIR, appName);
-	await fs.mkdir(dir, { recursive: true });
-	await fs.writeFile(path.join(dir, `${hash}.enc`), data);
-	return { status: 'ok' };
-});
+async function readJsonBody(request) {
+	const chunks = [];
+	let size = 0;
 
-// GET: Download encrypted vault blob
-app.get('/vault/:appName/:hash', async (request, reply) => {
-	const { appName, hash } = request.params;
-
-	if (!/^[a-zA-Z0-9]+$/.test(appName) || !/^[a-zA-Z0-9]+$/.test(hash)) {
-		return reply.status(400).send({ error: 'Invalid path parameters' });
+	for await (const chunk of request) {
+		size += chunk.length;
+		if (size > MAX_BODY_BYTES) {
+			const error = new Error('Vault data is too large');
+			error.statusCode = 413;
+			throw error;
+		}
+		chunks.push(chunk);
 	}
 
 	try {
-		const file = await fs.readFile(path.join(VAULT_DIR, appName, `${hash}.enc`), 'utf8');
-		return { data: file };
-	} catch (err) {
-		return reply.status(404).send({ error: 'Vault not found' });
+		return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+	} catch {
+		const error = new Error('Invalid JSON body');
+		error.statusCode = 400;
+		throw error;
+	}
+}
+
+function getVaultFile(appName, hash) {
+	const appDir = path.join(VAULT_DIR, appName);
+	return {
+		appDir,
+		filePath: path.join(appDir, `${hash}.enc`)
+	};
+}
+
+async function saveVaultBlob(appName, hash, data) {
+	if (typeof data !== 'string' || data.length === 0) {
+		const error = new Error('Missing vault data');
+		error.statusCode = 400;
+		throw error;
+	}
+
+	const { appDir, filePath } = getVaultFile(appName, hash);
+	await fs.mkdir(appDir, { recursive: true });
+
+	const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+	await fs.writeFile(tempPath, data, { mode: 0o600 });
+	await fs.rename(tempPath, filePath);
+}
+
+const server = createServer(async (request, response) => {
+	applyCors(request, response);
+
+	if (request.method === 'OPTIONS') {
+		response.writeHead(204);
+		response.end();
+		return;
+	}
+
+	if (request.method === 'GET' && request.url === '/health') {
+		sendJson(response, 200, { status: 'ok', vault: 'alive' });
+		return;
+	}
+
+	try {
+		const params = parseVaultPath(request.url);
+		if (!params) {
+			sendJson(response, 404, { error: 'Not found' });
+			return;
+		}
+
+		const { appName, hash } = params;
+
+		if (request.method === 'POST') {
+			const { data } = await readJsonBody(request);
+			await saveVaultBlob(appName, hash, data);
+			sendJson(response, 200, { status: 'ok' });
+			return;
+		}
+
+		if (request.method === 'GET') {
+			const { filePath } = getVaultFile(appName, hash);
+			const data = await fs.readFile(filePath, 'utf8');
+			sendJson(response, 200, { data });
+			return;
+		}
+
+		sendJson(response, 405, { error: 'Method not allowed' });
+	} catch (error) {
+		if (error.code === 'ENOENT') {
+			sendJson(response, 404, { error: 'Vault not found' });
+			return;
+		}
+
+		sendJson(response, error.statusCode || 500, {
+			error: error.statusCode ? error.message : 'Vault server error'
+		});
 	}
 });
 
-const port = process.env.PORT || 3000;
-await app.listen({ port: port, host: '0.0.0.0' });
-
-console.log(`Vault Drop-zone alive on port ${port} 🎸`);
+server.listen(PORT, '0.0.0.0', () => {
+	console.log(`Vault drop-zone alive on port ${PORT}`);
+});

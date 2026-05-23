@@ -1,38 +1,114 @@
 /**
  * Membership identity generation.
- * Deterministically turns a vault hash into a unique 'Club Member' identity.
+ * Deterministically turns a vault hash into a TalkType supporter identity.
  */
 
-const ADJECTIVES = ['Speedy', 'Sleepy', 'Radiant', 'Cosmic', 'Pixel', 'Neon', 'Velvet', 'Lunar', 'Disco', 'Glitch'];
-const ANIMALS = ['Goanna', 'Panda', 'Ghost', 'Axolotl', 'Capybara', 'Corgi', 'Koala', 'Falcon', 'Shark', 'Otter'];
+const FALLBACK_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
+
+const ADJECTIVES = [
+	'Speedy',
+	'Sleepy',
+	'Radiant',
+	'Cosmic',
+	'Pixel',
+	'Neon',
+	'Velvet',
+	'Lunar',
+	'Disco',
+	'Glitch',
+	'Breezy',
+	'Mossy',
+	'Golden',
+	'Dreamy',
+	'Fizzy',
+	'Lucky',
+	'Plucky',
+	'Sunny',
+	'Wavy',
+	'Zippy'
+];
+
+const ANIMALS = [
+	'Goanna',
+	'Panda',
+	'Ghost',
+	'Axolotl',
+	'Capybara',
+	'Corgi',
+	'Koala',
+	'Falcon',
+	'Shark',
+	'Otter',
+	'Quokka',
+	'Wombat',
+	'Kookaburra',
+	'Numbat',
+	'Platypus',
+	'Gecko',
+	'Possum',
+	'Rosella',
+	'Bilby',
+	'Wallaby'
+];
 
 const BG_COLORS = [
-    'ffb3c6', 'ffd1dc', 'ffdfba', 'ffd6a5', 'fce4ec',
-    'fff1a8', 'fde68a', 'ff9baa', 'ffcad4', 'ffddd2', 'ffc8dd', 'ffe5b4',
-];
-const SHAPE_COLORS = [
-    'f4a261', 'e9c46a', 'ffb347', 'ff9a8b', 'ffa07a', 'e8a0bf', 'c9b1d0', 'ffcc99',
+	'ffb3c6',
+	'ffd1dc',
+	'ffdfba',
+	'ffd6a5',
+	'fce4ec',
+	'fff1a8',
+	'fde68a',
+	'ff9baa',
+	'ffcad4',
+	'ffddd2',
+	'ffc8dd',
+	'ffe5b4'
 ];
 
-function hashToIndex(hash, array) {
-    // Simple hash reduction to an index
-    let total = 0;
-    for (let i = 0; i < hash.length; i++) total += hash.charCodeAt(i);
-    return total % array.length;
+const SHAPE_COLORS = [
+	'f4a261',
+	'e9c46a',
+	'ffb347',
+	'ff9a8b',
+	'ffa07a',
+	'e8a0bf',
+	'c9b1d0',
+	'ffcc99'
+];
+
+function normalizeHash(vaultHash) {
+	return typeof vaultHash === 'string' && vaultHash.trim() ? vaultHash.trim() : FALLBACK_HASH;
+}
+
+function hashToIndex(hash, array, offset = 0) {
+	const segment = hash.slice(offset, offset + 8) || hash;
+	const parsed = Number.parseInt(segment, 16);
+
+	if (Number.isFinite(parsed)) {
+		return parsed % array.length;
+	}
+
+	let total = 0;
+	for (let index = 0; index < segment.length; index += 1) {
+		total += segment.charCodeAt(index) * (index + 1);
+	}
+	return total % array.length;
 }
 
 export function generateMemberIdentity(vaultHash) {
-    const adj = ADJECTIVES[hashToIndex(vaultHash, ADJECTIVES)];
-    const animal = ANIMALS[hashToIndex(vaultHash.slice(1), ANIMALS)];
-    
-    const bg = BG_COLORS[hashToIndex(vaultHash, BG_COLORS)];
-    const shape = SHAPE_COLORS[hashToIndex(vaultHash.slice(2), SHAPE_COLORS)];
-    
-    const avatarUrl = `https://api.dicebear.com/9.x/thumbs/png?seed=${vaultHash}&backgroundColor=${bg}&shapeColor=${shape}&backgroundType=gradientLinear&size=256`;
-    
-    return {
-        name: `${adj} ${animal}`,
-        memberId: `TT-${vaultHash.slice(0, 6).toUpperCase()}`,
-        avatarUrl
-    };
+	const hash = normalizeHash(vaultHash);
+	const adj = ADJECTIVES[hashToIndex(hash, ADJECTIVES, 0)];
+	const animal = ANIMALS[hashToIndex(hash, ANIMALS, 8)];
+	const bg = BG_COLORS[hashToIndex(hash, BG_COLORS, 16)];
+	const shape = SHAPE_COLORS[hashToIndex(hash, SHAPE_COLORS, 24)];
+	const memberId = `TT-${hash.slice(0, 4).toUpperCase()}-${hash.slice(4, 8).toUpperCase()}`;
+
+	return {
+		name: `${adj} ${animal}`,
+		memberId,
+		initials: `${adj[0]}${animal[0]}`,
+		bg,
+		shape
+	};
 }

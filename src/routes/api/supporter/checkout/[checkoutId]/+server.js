@@ -7,12 +7,14 @@ import {
 	issueTokenForLicense
 } from '$lib/server/supporter/licenseStore.js';
 
+const CHECKOUT_CLAIM_HEADER = 'x-talktype-checkout-claim';
+
 export async function GET(event) {
 	const rateResponse = await enforceRateLimit(event);
 	if (rateResponse) return rateResponse;
 
 	const checkoutId = event.params.checkoutId;
-	const claimToken = event.url.searchParams.get('claim_token') || '';
+	const claimToken = event.request.headers.get(CHECKOUT_CLAIM_HEADER) || '';
 	const checkout = await getCheckoutById(checkoutId);
 
 	if (!checkout) {

@@ -4,13 +4,11 @@
 	import { theme, autoRecord, applyTheme, promptStyle, liveMode, privacyMode } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
-	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { SERVICE_EVENTS } from '$lib/constants';
-	import { PRICING } from '$lib/config/pricing.js';
 
 	export let closeModal = () => {};
 
@@ -199,6 +197,9 @@
 				<h3 id="settings_modal_title" class="text-xl font-black tracking-tight text-gray-800">
 					Options
 				</h3>
+				<p id="settings_modal_description" class="sr-only">
+					Adjust recording startup, transcription mode, output style, supporter mode, and vibe.
+				</p>
 			</div>
 
 			<!-- Vibe Selector Section -->

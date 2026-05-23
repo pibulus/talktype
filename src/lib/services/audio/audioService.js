@@ -44,6 +44,7 @@ export class AudioService {
 		this.stopPromise = null;
 		this.animationFrameId = null;
 		this.releaseStreamTimeout = null;
+		this.visibilityChangeHandler = null;
 
 		this.stateManager = new AudioStateManager();
 
@@ -55,13 +56,14 @@ export class AudioService {
 		});
 
 		if (browser) {
-			document.addEventListener('visibilitychange', () => {
+			this.visibilityChangeHandler = () => {
 				if (document.visibilityState === 'visible') {
 					this.initializeAudioContext().catch((err) =>
 						log.warn('Failed to resume audio context on visibility change:', err)
 					);
 				}
-			});
+			};
+			document.addEventListener('visibilitychange', this.visibilityChangeHandler);
 		}
 	}
 
@@ -444,6 +446,11 @@ export class AudioService {
 	}
 
 	async cleanup() {
+		if (browser && this.visibilityChangeHandler) {
+			document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
+			this.visibilityChangeHandler = null;
+		}
+
 		this.cancelWarmStreamRelease();
 		transcriptionStore.disconnect();
 

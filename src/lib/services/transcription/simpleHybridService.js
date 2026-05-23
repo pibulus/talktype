@@ -197,8 +197,15 @@ export class SimpleHybridService {
 					}
 				}
 
+				const headers = {};
+				const supporterToken = browser ? localStorage.getItem(STORAGE_KEYS.SUPPORTER_TOKEN) : '';
+				if (supporterToken) {
+					headers['x-talktype-supporter-token'] = supporterToken;
+				}
+
 				const response = await fetch('/api/transcribe', {
 					method: 'POST',
+					headers,
 					body: formData,
 					signal: controller.signal
 				});

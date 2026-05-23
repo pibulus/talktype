@@ -1,5 +1,10 @@
 import { env } from '$env/dynamic/private';
 
+export function extractDeepgramTranscript(data) {
+	const alternative = data?.results?.channels?.[0]?.alternatives?.[0];
+	return alternative?.paragraphs?.transcript || alternative?.transcript || '';
+}
+
 export async function transcribeAudio(file, { diarize = false, paragraphs = true } = {}) {
 	const apiKey = env.DEEPGRAM_API_KEY;
 	if (!apiKey) {
@@ -31,9 +36,7 @@ export async function transcribeAudio(file, { diarize = false, paragraphs = true
 
 		const data = await response.json();
 
-		// Extract transcript from the response
-		// Deepgram response structure: results.channels[0].alternatives[0].transcript
-		const transcript = data?.results?.channels?.[0]?.alternatives?.[0]?.transcript;
+		const transcript = extractDeepgramTranscript(data);
 
 		if (!transcript) {
 			console.warn('[DeepgramService] No transcript found in response');

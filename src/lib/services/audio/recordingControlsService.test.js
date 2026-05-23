@@ -197,4 +197,43 @@ describe('RecordingControlsService', () => {
 		expect(get(isTranscribing)).toBe(false);
 		expect(get(transcriptionText)).toBe('hello again');
 	});
+
+	it('keeps batch stop failures inside the recording error path', async () => {
+		const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+		const uiActions = {
+			clearErrorMessage: vi.fn(),
+			setErrorMessage: vi.fn(),
+			setScreenReaderMessage: vi.fn()
+		};
+
+		audioActions.updateState(AudioStates.RECORDING);
+		service = new RecordingControlsService({
+			audioService: {
+				stopRecording: vi.fn().mockRejectedValue(new Error('recorder failed')),
+				cleanup: vi.fn().mockResolvedValue()
+			},
+			transcriptionService: {
+				transcribeAudio: vi.fn(),
+				clearPendingRecordingDraft: vi.fn(),
+				copyToClipboard: vi.fn()
+			},
+			hapticService: null,
+			pwaService: {
+				incrementTranscriptionCount: vi.fn()
+			},
+			uiActions,
+			stores: {
+				isRecording,
+				isTranscribing,
+				transcriptionText
+			}
+		});
+
+		try {
+			await expect(service.stopRecording()).resolves.toBeUndefined();
+			expect(uiActions.setErrorMessage).toHaveBeenCalledWith("Let's try that recording again.");
+		} finally {
+			consoleError.mockRestore();
+		}
+	});
 });
