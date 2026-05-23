@@ -11,7 +11,7 @@ import {
 	saveAudioToVaultWithManifest
 } from './syncService.js';
 
-describe('Vault sync helpers', () => {
+describe('Vault transport helpers', () => {
 	afterEach(() => {
 		vi.restoreAllMocks();
 	});

@@ -70,17 +70,17 @@
 		window.history.replaceState({}, '', '/passport');
 	}
 
-	async function syncFromVault() {
+	async function restoreFromVault() {
 		if (!passportCode) {
 			errorMessage = 'Enter your Passport code first.';
 			return;
 		}
 		if (!vaultServerUrl.trim()) {
-			errorMessage = 'Enter your Vault URL to sync history.';
+			errorMessage = 'Enter your Vault URL to restore history.';
 			return;
 		}
 
-		status = 'syncing';
+		status = 'restoring';
 		errorMessage = '';
 		restoreSummary = null;
 		restoreProgress = { current: 0, total: 0, audioCount: 0, audioFailed: 0 };
@@ -101,20 +101,20 @@
 			if (summary.missing) {
 				message = 'Passport imported. No Vault backup found yet.';
 			} else {
-				message = `Synced ${summary.total} transcript${summary.total === 1 ? '' : 's'} from Vault.`;
+				message = `Restored ${summary.total} transcript${summary.total === 1 ? '' : 's'} from Vault.`;
 			}
 		} catch (error) {
-			console.error('Passport sync failed:', error);
+			console.error('Passport restore failed:', error);
 			status = 'ready';
-			errorMessage = error.message || 'Vault sync needs one more try.';
-			message = 'Passport imported. Vault sync did not finish.';
+			errorMessage = error.message || 'Vault restore needs one more try.';
+			message = 'Passport imported. Vault restore did not finish.';
 		}
 	}
 
 	async function importPassport(
 		nextCode = manualCode,
 		nextVaultUrl = vaultServerUrl,
-		shouldSync = false
+		shouldRestore = false
 	) {
 		errorMessage = '';
 		restoreSummary = null;
@@ -133,8 +133,8 @@
 			status = 'ready';
 			message = 'Passport imported on this device.';
 
-			if (shouldSync && nextVaultUrl.trim()) {
-				await syncFromVault();
+			if (shouldRestore && nextVaultUrl.trim()) {
+				await restoreFromVault();
 			}
 		} catch (error) {
 			console.error('Passport import failed:', error);
@@ -161,8 +161,8 @@
 </script>
 
 <Seo
-	title="Passport Sync | TalkType"
-	description="Import your TalkType Passport and sync encrypted history."
+	title="Passport Import | TalkType"
+	description="Import your TalkType Passport and restore encrypted history."
 	path="/passport"
 	noindex={true}
 	includeStructuredData={false}
@@ -177,7 +177,7 @@
 		<div class="space-y-2">
 			<p class="text-xs font-bold uppercase tracking-[0.24em] text-pink-500">TalkType Passport</p>
 			<h1 class="text-3xl font-black tracking-tight">
-				{status === 'syncing' ? 'Syncing from Vault' : 'Passport sync'}
+				{status === 'restoring' ? 'Restoring from Vault' : 'Passport import'}
 			</h1>
 			<p class="text-sm leading-6 text-gray-600">{message}</p>
 		</div>
@@ -225,22 +225,22 @@
 					<button
 						type="submit"
 						class="btn min-h-12 border-pink-200 bg-pink-500 text-white transition-colors duration-150 hover:border-pink-300 hover:bg-pink-600 disabled:opacity-60"
-						disabled={status === 'importing' || status === 'syncing'}
+						disabled={status === 'importing' || status === 'restoring'}
 					>
 						{passportCode ? 'Save details' : 'Import Passport'}
 					</button>
 					<button
 						type="button"
 						class="btn min-h-12 border-pink-100 bg-white text-pink-600 transition-colors duration-150 hover:border-pink-200 hover:bg-pink-50 disabled:opacity-60"
-						on:click={syncFromVault}
-						disabled={!passportCode || status === 'syncing'}
+						on:click={restoreFromVault}
+						disabled={!passportCode || status === 'restoring'}
 					>
-						{status === 'syncing' ? 'Syncing...' : 'Sync from Vault'}
+						{status === 'restoring' ? 'Restoring...' : 'Restore from Vault'}
 					</button>
 				</div>
 			</form>
 
-			{#if restoreProgress && status === 'syncing'}
+			{#if restoreProgress && status === 'restoring'}
 				<p class="mt-3 text-xs font-bold text-pink-700" aria-live="polite">
 					{restoreProgress.current}/{restoreProgress.total} processed
 				</p>

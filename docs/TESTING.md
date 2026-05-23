@@ -31,7 +31,7 @@ Unit tests cover:
 - Supporter license crypto, payment store behavior, Square provider request shaping, and supporter code validation.
 - Passport QR URL construction and QRBuddy render URL generation.
 - Passport local storage migration and vault hash cleanup.
-- Encrypted Vault backup/restore, transcript import merging, smart tags, and audio media manifest helpers.
+- Encrypted Vault backup/restore, best-effort text auto-backup, transcript import merging, smart tags, and audio media manifest helpers.
 
 ## What Belongs In Unit Tests
 
@@ -52,7 +52,7 @@ Unit tests cover:
 - Install prompts and launch shortcuts.
 - Square hosted checkout return flow and webhook-backed license creation.
 - Membership card QR import on a second device.
-- Vault backup/restore against the Pi drop-zone, including encrypted audio history.
+- Vault auto-backup/manual restore against the Pi drop-zone, including encrypted audio history.
 - Long recording recovery on mobile after backgrounding, refresh, and interruption.
 
 ## Manual Smoke Pass
@@ -68,9 +68,10 @@ For a release candidate:
 7. Deny microphone permission, reload, allow permission, and retry.
 8. Record a longer note, background the app, refresh or interrupt it, and verify the recovery card can restore usable audio/text.
 9. Unlock supporter mode through Square sandbox or a manual code.
-10. Back up history to Vault, scan/click the Passport QR on another device, and verify `/passport` imports the Passport and restores history.
-11. If audio sync is enabled, verify a restored history item can play its encrypted audio.
-12. Install to iPhone/Android home screen and test auto-record plus mic permission flow.
+10. Save a supporter transcript with a Passport and Vault URL configured, then verify text history backs up to Vault.
+11. Scan/click the Passport QR on another device and verify `/passport` imports the Passport and restores history.
+12. If audio backup is enabled, verify a restored history item can play its encrypted audio.
+13. Install to iPhone/Android home screen and test auto-record plus mic permission flow.
 
 ## Known Gaps
 

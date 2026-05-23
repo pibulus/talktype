@@ -5,13 +5,12 @@ const APP_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/i;
 const MEDIA_ID_PATTERN = /^[a-z0-9][a-z0-9_.:-]{0,79}$/i;
 
 /**
- * SyncService - The Master Cartridge
- * Facilitates encrypted sync with the Pi Vault.
+ * Low-level encrypted transport helpers for the Pi Vault.
  */
 
 function normalizeVaultCode(code) {
 	if (typeof code !== 'string' || !code.trim()) {
-		throw new Error('Vault sync needs a supporter code');
+		throw new Error('Vault backup needs a supporter code');
 	}
 
 	return code.trim().toUpperCase();
@@ -108,7 +107,7 @@ export function getRetainedAudioEntries(entries, retentionDays, now = Date.now()
 /**
  * Encrypt and upload data to the Pi Vault.
  * @param {string} appName - 'talktype' or 'ziplist'
- * @param {Object} data - The JSON state to sync
+ * @param {Object} data - The JSON state to save
  * @param {string} code - The supporter code
  * @param {string} serverUrl - URL of your Pi vault
  */
@@ -163,7 +162,7 @@ export async function loadAudioManifestFromVault(appName, code, serverUrl) {
  */
 export async function saveAudioToVault(appName, audioBlob, code, serverUrl, options = {}) {
 	if (!(audioBlob instanceof Blob)) {
-		throw new Error('Vault audio sync needs a Blob');
+		throw new Error('Vault audio backup needs a Blob');
 	}
 
 	const mediaId = normalizeMediaId(options.mediaId || createVaultMediaId());

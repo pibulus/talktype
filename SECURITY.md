@@ -17,4 +17,4 @@ Security fixes target the `main` branch.
 
 ## Data Handling Notes
 
-TalkType can send audio to Deepgram or Gemini depending on the selected mode. Offline Mode runs Whisper locally in the browser. Transcript history is stored locally in the user's browser when supporter mode is unlocked. If Vault backup is enabled, transcript history and optional audio media are encrypted client-side before upload to the configured Vault server.
+TalkType can send audio to Deepgram or Gemini depending on the selected mode. Offline Mode runs Whisper locally in the browser. Transcript history is stored locally in the user's browser when supporter mode is unlocked. If a Passport and Vault URL are configured, transcript history can be backed up automatically; optional audio media is only included when recording backup is enabled. Vault payloads are encrypted client-side before upload to the configured Vault server.

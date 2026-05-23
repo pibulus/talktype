@@ -147,7 +147,7 @@ Examples:
 - "Start Recording" (clear action)
 - "Copied to clipboard" (confirmation without fuss)
 - "Passport imported on this device." (plain outcome)
-- "Vault sync needs one more try." (calm failure state)
+- "Vault restore needs one more try." (calm failure state)
 
 ---
 

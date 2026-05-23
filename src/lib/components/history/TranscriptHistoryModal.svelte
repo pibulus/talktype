@@ -500,7 +500,8 @@
 					</button>
 				</form>
 				<p class="mt-2 text-xs leading-5 text-gray-500">
-					One-way encrypted backup. Restore and merge are coming later.
+					New supporter transcripts back up automatically when this device has a Passport and Vault
+					URL. Use this button to save a snapshot now.
 					{#if hasStoredPassportCode}
 						Passport remembered on this device.
 					{:else}
@@ -512,7 +513,7 @@
 							? 'forever'
 							: `${$vaultAudioRetentionDays}-day`} retention.
 					{:else}
-						Text history only. Turn on Encrypted Audio Backup in Settings to include recordings.
+						Text history only. Turn on Back Up Recordings in Settings to include audio.
 					{/if}
 				</p>
 				{#if vaultProgress && isBackingUpVault}

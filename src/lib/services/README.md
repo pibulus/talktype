@@ -11,11 +11,12 @@ This directory holds the runtime service layer. For the full system map, see [..
 - `transcription/simpleHybridService.js`: chooses Offline Whisper or cloud batch transcription.
 - `transcription/offlineModelController.js`: controls when the offline Whisper model preloads and unloads.
 - `storage/transcriptStorage.js`: supporter transcript history, tags, and audio references in IndexedDB.
+- `storage/vaultAutoBackup.js`: best-effort text history backup after supporter transcripts when Vault is configured.
 - `storage/vaultTranscriptBackup.js`: encrypted Vault backup/restore orchestration for history and optional audio.
 - `vaultHashStorage.js`: trusted-device Passport code storage and legacy key cleanup.
 - `syncService.js`: app-name-based encrypted Vault JSON/audio transport helpers.
 - `encryptionService.js`: AES-GCM/PBKDF2 encryption helpers for JSON and Blob payloads.
-- `qrHandshakeService.js`: Passport sync URL and QRBuddy render URL helpers.
+- `qrHandshakeService.js`: Passport import URL and QRBuddy render URL helpers.
 - `pwa/pwaService.js`: install prompt state, installed detection, transcription count.
 - `first-visit/firstVisitService.js`: intro modal gating.
 - `modals/modalService.js`: dialog lifecycle helpers.

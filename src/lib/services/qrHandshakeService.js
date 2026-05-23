@@ -1,5 +1,5 @@
 /**
- * Bridges the Vault sync protocol with a trusted QR renderer.
+ * Bridges Passport import links with a trusted QR renderer.
  */
 
 const DEFAULT_QRBUDDY_API_URL = 'https://qrbuddy.app';

@@ -130,6 +130,11 @@ export async function saveTranscript(transcript) {
 		const database = await initDB();
 		const transaction = database.transaction([STORE_NAME], 'readwrite');
 		const store = transaction.objectStore(STORE_NAME);
+		const transactionComplete = new Promise((resolve, reject) => {
+			transaction.oncomplete = resolve;
+			transaction.onerror = () => reject(transaction.error);
+			transaction.onabort = () => reject(transaction.error);
+		});
 
 		// Prepare transcript object
 		const transcriptData = {
@@ -146,14 +151,21 @@ export async function saveTranscript(transcript) {
 		return new Promise((resolve, reject) => {
 			const request = store.add(transcriptData);
 
-			request.onsuccess = () => {
+			request.onsuccess = async () => {
+				const savedId = request.result;
 				log.log('Transcript saved:', request.result);
-				updateStats();
-				loadAllTranscripts(); // Refresh the list
-				resolve(request.result);
+				try {
+					await transactionComplete;
+					updateStats();
+					await loadAllTranscripts();
+					resolve(savedId);
+				} catch (error) {
+					reject(error);
+				}
 			};
 
 			request.onerror = () => {
+				transactionComplete.catch(() => {});
 				log.error('Failed to save transcript:', request.error);
 				reject(request.error);
 			};

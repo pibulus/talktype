@@ -21,6 +21,7 @@
 
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
 	import { saveTranscript } from '$lib/services/storage/transcriptStorage';
+	import { autoBackupHistoryToVault } from '$lib/services/storage/vaultAutoBackup.js';
 
 	let Settings;
 	let TranscriptHistoryModal;
@@ -144,6 +145,7 @@
 					promptStyle: event.detail.transcript.promptStyle || 'standard',
 					method: event.detail.transcript.method || 'gemini'
 				});
+				void autoBackupHistoryToVault();
 			} catch (err) {
 				console.error('Failed to save transcript:', err);
 			}

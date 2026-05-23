@@ -28,11 +28,12 @@
 - `recordingRecoveryStore`: IndexedDB persistence for recovery drafts and active recording journal chunks.
 - `transcriptHistory`: IndexedDB-backed supporter transcript history store.
 - `transcriptTags`: local smart-tag generation and cleanup helpers for saved transcripts.
+- `vaultAutoBackup`: best-effort text history backup after supporter transcripts when Passport and Vault URL are configured.
 - `vaultTranscriptBackup`: encrypted History-to-Vault backup and `/passport` restore orchestration.
-- `syncService`: encrypted Vault JSON/audio save/load helpers.
+- `syncService`: low-level encrypted Vault JSON/audio transport helpers.
 - `encryptionService`: AES-GCM/PBKDF2 envelope helpers for JSON and Blob payloads.
 - `vaultHashStorage`: trusted-device Passport code storage and legacy vault-hash cleanup.
-- `qrHandshakeService`: builds Passport sync URLs and QRBuddy render URLs.
+- `qrHandshakeService`: builds Passport import URLs and QRBuddy render URLs.
 - `pwaService`: install prompt, installed-state, and PWA engagement helper.
 - `userPreferences`: local preference store for mode, supporter, style, and recording settings.
 - `whisperStatus`: local Whisper loading/loaded status store.
@@ -64,8 +65,8 @@
 - **Passport**: local supporter identity/key concept. In TalkType it powers the membership card, QR import, and Vault access.
 - **Vault hash**: deterministic SHA-256 identifier derived from the supporter code when needed; it is not stored as durable app state.
 - **Vault**: Pi-backed encrypted blob drop-zone addressed by app name and vault hash.
-- **Vault backup**: manual encrypted upload from TalkType history to the Pi.
-- **Vault restore**: manual encrypted download/import through `/passport`; not automatic two-way sync yet.
+- **Vault backup**: automatic text-history upload when configured, plus a manual snapshot button in History.
+- **Vault restore**: manual encrypted download/import through `/passport`; not automatic two-way sync.
 - **QRBuddy**: Pablo-owned QR renderer used for the membership-card Passport stamp.
 - **Smart tags**: local lightweight hashtags generated from transcript text for filtering saved history.
-- **History audio**: optional saved recording audio attached to a history entry and optionally encrypted to Vault as media.
+- **History audio**: optional saved recording audio attached to a history entry and optionally encrypted to Vault as media when recording backup is enabled.

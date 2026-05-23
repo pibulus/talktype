@@ -343,7 +343,7 @@
 								<span class="text-base font-medium text-gray-700">Back Up Recordings</span>
 								<p class="mt-0.5 text-sm text-gray-500">
 									{isSupporterValue
-										? 'Include audio when you back up history to Vault.'
+										? 'Include audio when TalkType backs up history to Vault.'
 										: 'Supporters can include recordings in private Vault backup.'}
 								</p>
 							</div>

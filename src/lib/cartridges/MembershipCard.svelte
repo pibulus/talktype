@@ -74,7 +74,7 @@
 			<a
 				class="passport-qr-stamp"
 				href={passportSyncUrl}
-				aria-label={`Open TalkType Passport sync for ${identity.memberId}`}
+				aria-label={`Open TalkType Passport import for ${identity.memberId}`}
 			>
 				<img
 					src={passportQrImageUrl}

@@ -21,7 +21,7 @@ describe('QR handshake helpers', () => {
 		);
 	});
 
-	it('builds a Passport sync link with the code in the fragment', () => {
+	it('builds a Passport import link with the code in the fragment', () => {
 		const url = new URL(
 			buildPassportSyncUrl({
 				code: ' TT-SECRET-CODE ',
@@ -68,7 +68,7 @@ describe('QR handshake helpers', () => {
 		expect(shareUrl.searchParams.get('d')).toBe(payload);
 	});
 
-	it('builds the legacy handoff helper as a Passport sync link', () => {
+	it('builds the legacy handoff helper as a Passport import link', () => {
 		const url = new URL(buildVaultHandshakeUrl('TT-SECRET-CODE', 'https://vault.local:3000'));
 		const fragment = new URLSearchParams(url.hash.slice(1));
 
@@ -77,7 +77,7 @@ describe('QR handshake helpers', () => {
 		expect(fragment.get('vault')).toBe('https://vault.local:3000');
 	});
 
-	it('uses QRBuddy to render a Passport sync link', () => {
+	it('uses QRBuddy to render a Passport import link', () => {
 		const url = new URL(
 			getVaultHandshakeQR({
 				code: 'TT-SECRET-CODE',
