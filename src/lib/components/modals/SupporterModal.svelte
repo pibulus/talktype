@@ -6,9 +6,10 @@
 	import { theme } from '$lib';
 	import { setSupporterStatus, userPreferences } from '$lib/services';
 	import { PRICING } from '$lib/config/pricing.js';
-	import { STORAGE_KEYS } from '$lib/constants';
+	import { SUPPORTER_CHECKOUT } from '$lib/constants';
 	import MembershipCard from '$lib/cartridges/MembershipCard.svelte';
 	import { getVaultHash } from '$lib/services/syncService.js';
+	import { readStoredVaultHash, saveStoredVaultHash } from '$lib/services/vaultHashStorage.js';
 
 	export let closeModal = () => {};
 
@@ -26,19 +27,16 @@
 
 	function setCheckoutClaim(checkoutId, claimToken) {
 		if (!browser || !checkoutId || !claimToken) return;
-		sessionStorage.setItem(`talktype_checkout_claim_${checkoutId}`, claimToken);
+		sessionStorage.setItem(`${SUPPORTER_CHECKOUT.CLAIM_STORAGE_PREFIX}${checkoutId}`, claimToken);
 	}
 
 	function saveVaultHash(hash) {
-		vaultHash = hash;
-		if (browser && hash) {
-			localStorage.setItem(STORAGE_KEYS.SUPPORTER_VAULT_HASH, hash);
-		}
+		vaultHash = saveStoredVaultHash(hash);
 	}
 
 	onMount(() => {
 		if (!browser) return;
-		vaultHash = localStorage.getItem(STORAGE_KEYS.SUPPORTER_VAULT_HASH) || '';
+		vaultHash = readStoredVaultHash();
 	});
 
 	async function handleCheckout() {
@@ -90,9 +88,8 @@
 				return;
 			}
 
-			const nextVaultHash = await getVaultHash(code);
+			saveVaultHash(await getVaultHash(code));
 			setSupporterStatus(true, payload.token || null);
-			saveVaultHash(nextVaultHash);
 
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
@@ -223,6 +220,14 @@
 						</button>
 					</div>
 				</details>
+				{#if errorMessage}
+					<p
+						class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-amber-900"
+						aria-live="polite"
+					>
+						{errorMessage}
+					</p>
+				{/if}
 			{:else}
 				<div class="rounded-2xl border border-pink-100 bg-white/75 p-4 shadow-sm">
 					<p class="text-xs font-black uppercase tracking-[0.18em] text-pink-500">

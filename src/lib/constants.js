@@ -26,6 +26,7 @@ export const STORAGE_KEYS = {
 	SUPPORTER: 'talktype_supporter',
 	SUPPORTER_TOKEN: 'talktype_supporter_token',
 	SUPPORTER_VAULT_HASH: 'talktype_supporter_vault_hash',
+	SUPPORTER_VAULT_HASH_SAVED_AT: 'talktype_supporter_vault_hash_saved_at',
 	PRIVACY_MODE: 'talktype_privacy_mode', // Offline Whisper mode
 	LIVE_MODE: 'talktype_live_mode',
 	LAST_TRANSCRIPTION_METHOD: 'last_transcription_method', // Track which service was used
@@ -37,6 +38,18 @@ export const STORAGE_KEYS = {
 	PWA_LAST_PROMPT_DATE: 'talktype-pwa-last-prompt-date',
 	PWA_LAST_PROMPT_TRANSCRIPTION_COUNT: 'talktype-pwa-last-prompt-transcription-count',
 	PWA_INSTALLED: 'talktype-pwa-installed'
+};
+
+export const SUPPORTER_CHECKOUT = {
+	CLAIM_HEADER: 'x-talktype-checkout-claim',
+	CLAIM_STORAGE_PREFIX: 'talktype_checkout_claim_',
+	CLAIM_TOKEN_TTL_MS: 2 * 60 * 60 * 1000,
+	MAX_POLLS: 20,
+	POLL_INTERVAL_MS: 2500
+};
+
+export const SUPPORTER_VAULT = {
+	HASH_TTL_MS: 30 * 24 * 60 * 60 * 1000
 };
 
 // Prompt Styles

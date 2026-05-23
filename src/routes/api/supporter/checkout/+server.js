@@ -9,6 +9,7 @@ import {
 	hashSensitiveValue,
 	hashSupporterCode
 } from '$lib/server/supporter/licenseCrypto.js';
+import { SUPPORTER_CHECKOUT } from '$lib/constants';
 import {
 	createSquareCheckout,
 	isSquareCheckoutConfigured
@@ -47,6 +48,7 @@ export async function POST(event) {
 			provider: squareCheckout.provider,
 			status: 'pending',
 			claimTokenHash: hashSensitiveValue(claimToken),
+			claimExpiresAt: new Date(Date.now() + SUPPORTER_CHECKOUT.CLAIM_TOKEN_TTL_MS).toISOString(),
 			codeHash: hashSupporterCode(licenseCode),
 			providerCheckoutId: squareCheckout.paymentLinkId,
 			providerOrderId: squareCheckout.providerOrderId,

@@ -7,8 +7,9 @@
 	import { Seo } from '$lib/components/layout';
 	import Confetti from '$lib/components/ui/effects/Confetti.svelte';
 	import MembershipCard from '$lib/cartridges/MembershipCard.svelte';
-	import { STORAGE_KEYS } from '$lib/constants';
+	import { SUPPORTER_CHECKOUT } from '$lib/constants';
 	import { getVaultHash } from '$lib/services/syncService.js';
+	import { saveStoredVaultHash } from '$lib/services/vaultHashStorage.js';
 
 	let status = 'checking';
 	let message = 'Checking your supporter unlock...';
@@ -19,12 +20,17 @@
 	let pollAttempts = 0;
 	let copyMessage = '';
 	let showSuccessConfetti = false;
-
-	const MAX_CHECKOUT_POLLS = 20;
-	const CHECKOUT_CLAIM_HEADER = 'x-talktype-checkout-claim';
+	let isCheckingCheckout = false;
 
 	function claimStorageKey(id) {
-		return `talktype_checkout_claim_${id}`;
+		return `${SUPPORTER_CHECKOUT.CLAIM_STORAGE_PREFIX}${id}`;
+	}
+
+	function stopPolling() {
+		if (pollTimer) {
+			clearInterval(pollTimer);
+			pollTimer = null;
+		}
 	}
 
 	async function copySupporterCode() {
@@ -42,19 +48,22 @@
 	}
 
 	async function checkCheckout() {
-		if (!browser || !checkoutId) return;
+		if (!browser || !checkoutId || isCheckingCheckout) return;
+
+		isCheckingCheckout = true;
 
 		const claimToken = sessionStorage.getItem(claimStorageKey(checkoutId));
 		if (!claimToken) {
 			status = 'missing-claim';
 			message = 'Open this supporter link in the same browser used for checkout.';
+			isCheckingCheckout = false;
 			return;
 		}
 
 		try {
 			const response = await fetch(`/api/supporter/checkout/${encodeURIComponent(checkoutId)}`, {
 				headers: {
-					[CHECKOUT_CLAIM_HEADER]: claimToken
+					[SUPPORTER_CHECKOUT.CLAIM_HEADER]: claimToken
 				}
 			});
 			const payload = await response.json().catch(() => ({}));
@@ -76,7 +85,7 @@
 			if (nextSupporterCode) {
 				try {
 					nextVaultHash = await getVaultHash(nextSupporterCode);
-					localStorage.setItem(STORAGE_KEYS.SUPPORTER_VAULT_HASH, nextVaultHash);
+					saveStoredVaultHash(nextVaultHash);
 				} catch (error) {
 					console.warn('Failed to prepare supporter passport:', error);
 				}
@@ -94,6 +103,8 @@
 		} catch {
 			status = 'error';
 			message = 'Check your connection, then refresh this page.';
+		} finally {
+			isCheckingCheckout = false;
 		}
 	}
 
@@ -112,22 +123,23 @@
 		checkCheckout();
 		pollTimer = setInterval(() => {
 			if (status === 'paid' || status === 'error' || status === 'missing-claim') {
-				clearInterval(pollTimer);
+				stopPolling();
 				return;
 			}
+			if (isCheckingCheckout) return;
 			pollAttempts += 1;
-			if (pollAttempts >= MAX_CHECKOUT_POLLS) {
+			if (pollAttempts >= SUPPORTER_CHECKOUT.MAX_POLLS) {
 				status = 'error';
 				message =
 					'Payment confirmation is taking longer than expected. Refresh this page in a moment.';
-				clearInterval(pollTimer);
+				stopPolling();
 				return;
 			}
 			checkCheckout();
-		}, 2500);
+		}, SUPPORTER_CHECKOUT.POLL_INTERVAL_MS);
 
 		return () => {
-			if (pollTimer) clearInterval(pollTimer);
+			stopPolling();
 		};
 	});
 </script>
