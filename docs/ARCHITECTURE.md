@@ -19,7 +19,7 @@ The user-facing flow is:
 1. User taps the ghost/button or auto-start requests recording.
 2. `RecordingControlsService.startRecording()` clears stale transcript state and asks `AudioService` to start the microphone.
 3. `AudioService` requests mic permission, creates a `MediaRecorder`, starts waveform monitoring, and optionally connects Deepgram live streaming.
-4. While recording, chunks are stored for batch fallback and sent to Deepgram if Live Mode is active.
+4. While recording, chunks are stored for batch fallback, periodically checkpointed into local recovery storage, and sent to Deepgram if Live Mode is active.
 5. On stop, `RecordingControlsService.stopRecording()` decides whether to use finalized live text or transcribe the saved audio blob.
 6. `TranscriptionService` writes transcript state, clears recovery drafts, and copies successful output.
 
@@ -108,6 +108,8 @@ Important behaviors:
 - Permission errors are normalized across browser `DOMException` names/messages.
 - `AudioService.stopRecording()` is idempotent while a stop is already in flight.
 - Draft recordings are persisted before transcription so failed transcription can be retried.
+- Active recordings are checkpointed locally after the first few seconds and then on a rolling interval, so a long note has a recent recovery draft if the tab, browser, or microphone session is interrupted.
+- If `MediaRecorder` stops unexpectedly before the user presses stop, TalkType saves the available chunks as an interrupted recovery draft and surfaces the retry card.
 - iOS installed PWA mode can keep the microphone stream warm briefly after stop to reduce repeated permission/stream churn.
 - Cleanup closes Deepgram, cancels waveform animation, stops recorder/streams, and closes the audio context.
 

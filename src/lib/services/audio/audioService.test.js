@@ -1,21 +1,129 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetStores } from '../infrastructure/stores.js';
+import { get } from 'svelte/store';
+import { liveMode } from '$lib';
+import { resetStores, transcriptionState, uiState } from '../infrastructure/stores.js';
+import { saveRecordingDraft } from './recordingRecoveryStore.js';
 import { AudioService } from './audioService.js';
+
+vi.mock('$app/environment', () => ({
+	browser: true,
+	dev: false,
+	building: false,
+	version: 'test'
+}));
+
+vi.mock('./recordingRecoveryStore.js', () => ({
+	saveRecordingDraft: vi.fn(async (_blob, metadata) => ({
+		id: 'latest',
+		createdAt: Date.now(),
+		metadata
+	}))
+}));
 
 describe('AudioService', () => {
 	let service;
+	let originalMediaRecorder;
+	let originalAudioContext;
+	let originalRequestAnimationFrame;
+	let originalCancelAnimationFrame;
 
 	beforeEach(() => {
 		vi.useFakeTimers();
+		vi.mocked(saveRecordingDraft).mockClear();
 		resetStores();
+		liveMode.set('false');
 		service = new AudioService();
 	});
 
 	afterEach(() => {
+		vi.restoreAllMocks();
 		vi.useRealTimers();
 		resetStores();
 		service = null;
+		global.MediaRecorder = originalMediaRecorder;
+		window.MediaRecorder = originalMediaRecorder;
+		window.AudioContext = originalAudioContext;
+		window.requestAnimationFrame = originalRequestAnimationFrame;
+		window.cancelAnimationFrame = originalCancelAnimationFrame;
+		global.requestAnimationFrame = originalRequestAnimationFrame;
+		global.cancelAnimationFrame = originalCancelAnimationFrame;
 	});
+
+	function installRecordingMocks() {
+		const track = {
+			readyState: 'live',
+			stop: vi.fn(),
+			onended: null
+		};
+		const stream = {
+			active: true,
+			getTracks: vi.fn(() => [track]),
+			getAudioTracks: vi.fn(() => [track])
+		};
+
+		originalMediaRecorder = global.MediaRecorder;
+		originalAudioContext = window.AudioContext;
+		originalRequestAnimationFrame = window.requestAnimationFrame;
+		originalCancelAnimationFrame = window.cancelAnimationFrame;
+
+		class MockMediaRecorder {
+			static last = null;
+			static isTypeSupported = vi.fn(() => true);
+
+			constructor() {
+				this.state = 'inactive';
+				this.mimeType = 'audio/webm';
+				this.ondataavailable = null;
+				this.onstop = null;
+				this.onerror = null;
+				this.start = vi.fn(() => {
+					this.state = 'recording';
+				});
+				this.requestData = vi.fn(() => {
+					this.ondataavailable?.({
+						data: new Blob(['checkpoint'], { type: 'audio/webm' })
+					});
+				});
+				this.stop = vi.fn(() => {
+					this.state = 'inactive';
+					return this.onstop?.();
+				});
+				MockMediaRecorder.last = this;
+			}
+		}
+
+		global.MediaRecorder = MockMediaRecorder;
+		window.MediaRecorder = MockMediaRecorder;
+		const audioContext = {
+			state: 'running',
+			resume: vi.fn().mockResolvedValue(undefined),
+			suspend: vi.fn().mockResolvedValue(undefined),
+			close: vi.fn().mockResolvedValue(undefined),
+			createMediaStreamSource: vi.fn(() => ({
+				connect: vi.fn(),
+				disconnect: vi.fn()
+			})),
+			createAnalyser: vi.fn(() => ({
+				fftSize: 0,
+				frequencyBinCount: 1,
+				getByteFrequencyData: vi.fn(),
+				disconnect: vi.fn()
+			}))
+		};
+
+		window.AudioContext = vi.fn(() => audioContext);
+		vi.spyOn(service, 'initializeAudioContext').mockImplementation(async () => {
+			service.audioContext = audioContext;
+			return true;
+		});
+		vi.spyOn(service, 'requestPermissions').mockResolvedValue({ granted: true, stream });
+		window.requestAnimationFrame = vi.fn(() => 1);
+		window.cancelAnimationFrame = vi.fn();
+		global.requestAnimationFrame = window.requestAnimationFrame;
+		global.cancelAnimationFrame = window.cancelAnimationFrame;
+
+		return { MockMediaRecorder, stream, track };
+	}
 
 	it('shares one in-flight MediaRecorder stop across repeated stop calls', async () => {
 		const audioChunk = new Blob(['x'.repeat(1200)], { type: 'audio/webm' });
@@ -44,5 +152,63 @@ describe('AudioService', () => {
 		expect(firstBlob.size).toBe(audioChunk.size);
 		expect(secondBlob.size).toBe(audioChunk.size);
 		expect(service.mediaRecorder).toBeNull();
+	});
+
+	it('checkpoints an active recording locally after the initial recovery delay', async () => {
+		const { MockMediaRecorder } = installRecordingMocks();
+
+		await service.startRecording();
+		MockMediaRecorder.last.ondataavailable?.({
+			data: new Blob(['seed'], { type: 'audio/webm' })
+		});
+		await vi.advanceTimersByTimeAsync(5120);
+
+		expect(MockMediaRecorder.last.requestData).toHaveBeenCalled();
+		expect(saveRecordingDraft).toHaveBeenCalledWith(
+			expect.any(Blob),
+			expect.objectContaining({
+				mimeType: 'audio/webm',
+				recovery: expect.objectContaining({
+					isPartial: true,
+					reason: 'initial-checkpoint'
+				})
+			})
+		);
+		expect(get(transcriptionState).pendingRecording).toMatchObject({
+			id: 'latest',
+			recovery: expect.objectContaining({
+				isPartial: true
+			})
+		});
+	});
+
+	it('saves an interrupted recording when MediaRecorder stops unexpectedly', async () => {
+		const { MockMediaRecorder } = installRecordingMocks();
+
+		await service.startRecording();
+		MockMediaRecorder.last.ondataavailable?.({
+			data: new Blob(['interrupted'], { type: 'audio/webm' })
+		});
+		MockMediaRecorder.last.state = 'inactive';
+		await MockMediaRecorder.last.onstop();
+
+		expect(saveRecordingDraft).toHaveBeenCalledWith(
+			expect.any(Blob),
+			expect.objectContaining({
+				recovery: expect.objectContaining({
+					isPartial: false,
+					reason: 'recording-interrupted'
+				})
+			})
+		);
+		expect(get(uiState).errorMessage).toBe(
+			'Recording was interrupted. Your saved draft is ready to retry.'
+		);
+		expect(get(transcriptionState).pendingRecording).toMatchObject({
+			id: 'latest',
+			recovery: expect.objectContaining({
+				reason: 'recording-interrupted'
+			})
+		});
 	});
 });

@@ -18,6 +18,9 @@ const log = createLogger('AudioService');
 const SPEECH_AUDIO_BITS_PER_SECOND = 48000;
 const MEDIA_RECORDER_TIMESLICE_MS = 250;
 const FINAL_AUDIO_CHUNK_DELAY_MS = 100;
+const RECOVERY_CHECKPOINT_INITIAL_DELAY_MS = 5000;
+const RECOVERY_CHECKPOINT_INTERVAL_MS = 20000;
+const RECOVERY_CHECKPOINT_SETTLE_MS = 120;
 const CLEANUP_RECORDER_STOP_TIMEOUT_MS = 1000;
 const TRACK_STOP_TIMEOUT_MS = 500;
 const IOS_AUDIO_CONTEXT_RETRY_DELAY_MS = 100;
@@ -42,6 +45,10 @@ export class AudioService {
 		this.analyser = null;
 		this.cleanupPromise = null;
 		this.stopPromise = null;
+		this.recoveryCheckpointTimeout = null;
+		this.recoveryCheckpointInterval = null;
+		this.recoveryCheckpointInFlight = false;
+		this.activeRecordingSessionId = null;
 		this.animationFrameId = null;
 		this.releaseStreamTimeout = null;
 		this.visibilityChangeHandler = null;
@@ -60,6 +67,12 @@ export class AudioService {
 				if (document.visibilityState === 'visible') {
 					this.initializeAudioContext().catch((err) =>
 						log.warn('Failed to resume audio context on visibility change:', err)
+					);
+				} else if (this.stateManager.getState() === AudioStates.RECORDING) {
+					void this.#checkpointRecordingDraft(
+						this.mediaRecorder?.mimeType || 'audio/webm',
+						this.activeRecordingSessionId,
+						'visibility-hidden'
 					);
 				}
 			};
@@ -230,6 +243,7 @@ export class AudioService {
 
 			this.stateManager.setState(AudioStates.READY);
 			this.audioChunks = [];
+			this.activeRecordingSessionId = globalThis.crypto?.randomUUID?.() || String(Date.now());
 
 			if (typeof MediaRecorder === 'undefined') {
 				throw new Error('Your browser needs an update to use recording features');
@@ -263,11 +277,29 @@ export class AudioService {
 					}
 				}
 			};
+			this.mediaRecorder.onstop = async () => {
+				await this.#handleUnexpectedRecorderStop(
+					this.mediaRecorder?.mimeType || 'audio/webm',
+					this.activeRecordingSessionId
+				);
+			};
+			this.mediaRecorder.onerror = (event) => {
+				log.warn(
+					'MediaRecorder error while recording:',
+					event?.error?.message || event?.error || event
+				);
+				void this.#checkpointRecordingDraft(
+					this.mediaRecorder?.mimeType || 'audio/webm',
+					this.activeRecordingSessionId,
+					'recorder-error'
+				);
+			};
 
 			// Use smaller timeslice (250ms) to capture audio more frequently
 			// This helps prevent losing the last bit of audio
 			this.mediaRecorder.start(MEDIA_RECORDER_TIMESLICE_MS);
 			this.stateManager.setState(AudioStates.RECORDING);
+			this.#startRecoveryCheckpointing(this.mediaRecorder.mimeType || 'audio/webm');
 
 			// Update the store with mimeType
 			audioState.update((current) => ({
@@ -339,6 +371,9 @@ export class AudioService {
 		}
 
 		this.stopPromise = new Promise((resolve) => {
+			this.#stopRecoveryCheckpointing();
+			this.activeRecordingSessionId = null;
+
 			// Update state through state manager first - this will trigger store update
 			this.stateManager.setState(AudioStates.STOPPING);
 
@@ -381,7 +416,13 @@ export class AudioService {
 				this.mediaRecorder = null;
 
 				// Persist before transcription starts so success cleanup cannot race a late draft write.
-				await this.#persistRecordingDraft(audioBlob, mimeType);
+				await this.#persistRecordingDraft(audioBlob, mimeType, {
+					recovery: {
+						isPartial: false,
+						reason: 'stopped',
+						checkpointedAt: new Date().toISOString()
+					}
+				});
 
 				// Ensure state is properly reset
 				this.stateManager.setState(AudioStates.IDLE);
@@ -416,7 +457,101 @@ export class AudioService {
 		return this.stopPromise;
 	}
 
-	async #persistRecordingDraft(audioBlob, mimeType) {
+	#startRecoveryCheckpointing(mimeType) {
+		this.#stopRecoveryCheckpointing();
+
+		const sessionId = this.activeRecordingSessionId;
+		this.recoveryCheckpointTimeout = setTimeout(() => {
+			void this.#checkpointRecordingDraft(mimeType, sessionId, 'initial-checkpoint');
+			this.recoveryCheckpointInterval = setInterval(() => {
+				void this.#checkpointRecordingDraft(mimeType, sessionId, 'interval-checkpoint');
+			}, RECOVERY_CHECKPOINT_INTERVAL_MS);
+		}, RECOVERY_CHECKPOINT_INITIAL_DELAY_MS);
+	}
+
+	#stopRecoveryCheckpointing() {
+		if (this.recoveryCheckpointTimeout) {
+			clearTimeout(this.recoveryCheckpointTimeout);
+			this.recoveryCheckpointTimeout = null;
+		}
+
+		if (this.recoveryCheckpointInterval) {
+			clearInterval(this.recoveryCheckpointInterval);
+			this.recoveryCheckpointInterval = null;
+		}
+	}
+
+	async #checkpointRecordingDraft(mimeType, sessionId, reason) {
+		if (!browser || this.recoveryCheckpointInFlight) return;
+		if (!sessionId || sessionId !== this.activeRecordingSessionId) return;
+		if (!this.audioChunks.length) return;
+
+		this.recoveryCheckpointInFlight = true;
+
+		try {
+			if (this.mediaRecorder?.state === 'recording') {
+				try {
+					this.mediaRecorder.requestData();
+					await new Promise((resolve) => setTimeout(resolve, RECOVERY_CHECKPOINT_SETTLE_MS));
+				} catch (error) {
+					log.warn('Failed to request checkpoint audio data:', error.message);
+				}
+			}
+
+			if (sessionId !== this.activeRecordingSessionId || !this.audioChunks.length) return;
+
+			const checkpointBlob = new Blob(this.audioChunks, { type: mimeType });
+			if (checkpointBlob.size === 0) return;
+
+			await this.#persistRecordingDraft(checkpointBlob, mimeType, {
+				recovery: {
+					isPartial: true,
+					reason,
+					checkpointedAt: new Date().toISOString()
+				}
+			});
+		} catch (error) {
+			log.warn('Failed to checkpoint recording draft:', error.message);
+		} finally {
+			this.recoveryCheckpointInFlight = false;
+		}
+	}
+
+	async #handleUnexpectedRecorderStop(mimeType, sessionId) {
+		if (!sessionId || sessionId !== this.activeRecordingSessionId) return;
+
+		this.#stopRecoveryCheckpointing();
+		this.activeRecordingSessionId = null;
+
+		try {
+			const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+			if (audioBlob.size > 0) {
+				audioActions.setAudioBlob(audioBlob, mimeType);
+				await this.#persistRecordingDraft(audioBlob, mimeType, {
+					recovery: {
+						isPartial: false,
+						reason: 'recording-interrupted',
+						checkpointedAt: new Date().toISOString()
+					}
+				});
+				uiActions.setErrorMessage('Recording was interrupted. Your saved draft is ready to retry.');
+			}
+		} catch (error) {
+			log.warn('Failed to save interrupted recording:', error.message);
+		} finally {
+			this.disconnectAudioGraph();
+			if (this.shouldKeepStreamWarm()) {
+				this.scheduleWarmStreamRelease();
+			} else {
+				this.stopStreamTracks();
+			}
+			this.audioChunks = [];
+			this.mediaRecorder = null;
+			this.stateManager.setState(AudioStates.IDLE);
+		}
+	}
+
+	async #persistRecordingDraft(audioBlob, mimeType, metadata = {}) {
 		if (!browser || !audioBlob) return;
 
 		try {
@@ -428,13 +563,15 @@ export class AudioService {
 				mimeType,
 				size: audioBlob.size,
 				duration,
-				sampleRate: 16000
+				sampleRate: 16000,
+				...metadata
 			});
 
 			if (draft) {
 				transcriptionActions.setPendingRecording({
 					id: draft.id,
 					createdAt: draft.createdAt,
+					...(draft.metadata || {}),
 					duration,
 					size: audioBlob.size,
 					mimeType
@@ -452,6 +589,8 @@ export class AudioService {
 		}
 
 		this.cancelWarmStreamRelease();
+		this.#stopRecoveryCheckpointing();
+		this.activeRecordingSessionId = null;
 		transcriptionStore.disconnect();
 
 		if (this.animationFrameId) {
@@ -555,6 +694,7 @@ export class AudioService {
 
 			this.mediaRecorder = null;
 			this.audioChunks = [];
+			this.recoveryCheckpointInFlight = false;
 
 			if (this.isIOS) {
 				await new Promise((resolve) => setTimeout(resolve, IOS_CLEANUP_SETTLE_MS));

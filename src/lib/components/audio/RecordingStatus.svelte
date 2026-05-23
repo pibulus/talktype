@@ -9,6 +9,7 @@
 		uiState,
 		uiActions,
 		transcriptionState,
+		isRecording,
 		isTranscribing,
 		transcriptionService
 	} from '$lib/services';
@@ -54,7 +55,7 @@
 	</div>
 {/if}
 
-{#if pendingRecording && !$isTranscribing}
+{#if pendingRecording && !$isTranscribing && !$isRecording}
 	<div
 		class="recovery-card mx-auto mt-3 flex w-full max-w-[540px] items-center justify-between gap-3 rounded-xl border border-amber-200/70 bg-amber-50/90 px-3 py-2 text-left shadow-sm sm:px-4"
 	>
