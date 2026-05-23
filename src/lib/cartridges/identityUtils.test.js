@@ -14,6 +14,10 @@ describe('membership identity generation', () => {
 
 	it('handles an empty vault hash without throwing', () => {
 		expect(() => generateMemberIdentity('')).not.toThrow();
-		expect(generateMemberIdentity('').memberId).toBe('TT-0000-0000');
+		expect(generateMemberIdentity('')).toMatchObject({
+			name: 'Passport Pending',
+			memberId: 'TT-PENDING',
+			isFallback: true
+		});
 	});
 });

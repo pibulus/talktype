@@ -202,7 +202,7 @@
 						class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
 					>
 						<span>Regenerate passport</span>
-						<span class="text-pink-500" aria-hidden="true">Open</span>
+						<span class="chevron text-pink-500" aria-hidden="true"></span>
 					</summary>
 
 					<div class="mt-3 space-y-3">
@@ -281,7 +281,7 @@
 						class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
 					>
 						<span>Have a supporter code?</span>
-						<span class="text-pink-500" aria-hidden="true">{codePanelOpen ? 'Close' : 'Open'}</span>
+						<span class="chevron text-pink-500" aria-hidden="true"></span>
 					</summary>
 
 					<div class="mt-3 space-y-3">
@@ -309,19 +309,21 @@
 					</div>
 				</details>
 
-				<button
-					type="button"
-					class="btn btn-ghost min-h-12 w-full border border-pink-100 bg-white/70 text-gray-700 hover:bg-pink-50"
-					on:click={handleClose}
-				>
-					Maybe later
-				</button>
+				<div class="sticky bottom-0 z-10 -mx-6 -mb-6 bg-[#fffcf5]/95 px-6 pb-6 pt-2 backdrop-blur">
+					<button
+						type="button"
+						class="btn btn-ghost min-h-12 w-full border border-pink-100 bg-white/70 text-gray-700 hover:bg-pink-50"
+						on:click={handleClose}
+					>
+						Maybe later
+					</button>
+				</div>
 			{/if}
 		</div>
 	</div>
 	<button
 		type="button"
-		class="modal-backdrop bg-pink-950/30"
+		class="modal-backdrop bg-pink-950/50"
 		on:click={handleClose}
 		aria-label="Close supporter modal"
 	></button>
@@ -330,6 +332,20 @@
 <style>
 	.animate-modal-enter {
 		animation: modalSlideUp 0.3s ease-out;
+	}
+
+	.chevron {
+		display: inline-block;
+		height: 0.65rem;
+		width: 0.65rem;
+		border-bottom: 2px solid currentColor;
+		border-right: 2px solid currentColor;
+		transform: rotate(45deg);
+		transition: transform 160ms ease;
+	}
+
+	details[open] .chevron {
+		transform: rotate(225deg);
 	}
 
 	@keyframes modalSlideUp {

@@ -78,7 +78,11 @@ const SHAPE_COLORS = [
 ];
 
 function normalizeHash(vaultHash) {
-	return typeof vaultHash === 'string' && vaultHash.trim() ? vaultHash.trim() : FALLBACK_HASH;
+	const hash = typeof vaultHash === 'string' ? vaultHash.trim() : '';
+	return {
+		hash: hash || FALLBACK_HASH,
+		isFallback: !hash
+	};
 }
 
 function hashToIndex(hash, array, offset = 0) {
@@ -97,7 +101,18 @@ function hashToIndex(hash, array, offset = 0) {
 }
 
 export function generateMemberIdentity(vaultHash) {
-	const hash = normalizeHash(vaultHash);
+	const { hash, isFallback } = normalizeHash(vaultHash);
+	if (isFallback) {
+		return {
+			name: 'Passport Pending',
+			memberId: 'TT-PENDING',
+			initials: 'TT',
+			bg: 'fff1f2',
+			shape: 'f9a8d4',
+			isFallback: true
+		};
+	}
+
 	const adj = ADJECTIVES[hashToIndex(hash, ADJECTIVES, 0)];
 	const animal = ANIMALS[hashToIndex(hash, ANIMALS, 8)];
 	const bg = BG_COLORS[hashToIndex(hash, BG_COLORS, 16)];
@@ -109,6 +124,7 @@ export function generateMemberIdentity(vaultHash) {
 		memberId,
 		initials: `${adj[0]}${animal[0]}`,
 		bg,
-		shape
+		shape,
+		isFallback: false
 	};
 }

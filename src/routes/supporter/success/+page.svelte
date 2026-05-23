@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { setSupporterStatus } from '$lib/services';
+	import { theme } from '$lib';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { Seo } from '$lib/components/layout';
 	import MembershipCard from '$lib/cartridges/MembershipCard.svelte';
@@ -141,16 +142,18 @@
 		<div
 			class={`transition-transform duration-300 ${status === 'paid' ? 'ghost-celebrate h-32 w-32' : 'h-24 w-24'}`}
 		>
-			<DisplayGhost theme="peach" size="100%" />
+			<DisplayGhost theme={$theme} size="100%" />
 		</div>
 
-		<div class="space-y-2">
-			<p class="text-xs font-bold uppercase tracking-[0.24em] text-pink-500">Supporter Mode</p>
-			<h1 class="text-3xl font-black tracking-tight">
-				{status === 'paid' ? 'Your passport is ready' : 'Almost there'}
-			</h1>
-			<p class="text-sm text-gray-600">{message}</p>
-		</div>
+		{#key status}
+			<div class="status-copy space-y-2">
+				<p class="text-xs font-bold uppercase tracking-[0.24em] text-pink-500">Supporter Mode</p>
+				<h1 class="text-3xl font-black tracking-tight">
+					{status === 'paid' ? 'Your passport is ready' : 'Almost there'}
+				</h1>
+				<p class="text-sm text-gray-600">{message}</p>
+			</div>
+		{/key}
 
 		{#if status === 'pending' || status === 'checking'}
 			<div class="h-2 w-full overflow-hidden rounded-full bg-pink-100">
@@ -160,7 +163,7 @@
 
 		{#if supporterCode}
 			{#if vaultHash}
-				<div class="space-y-3">
+				<div class="success-passport space-y-3">
 					<p class="text-xs font-black uppercase tracking-[0.18em] text-pink-500">
 						Your TalkType Passport
 					</p>
@@ -168,7 +171,9 @@
 				</div>
 			{/if}
 
-			<div class="w-full rounded-2xl border border-pink-100 bg-white/80 p-4 shadow-sm">
+			<div
+				class="success-code-card w-full rounded-2xl border border-pink-100 bg-white/80 p-4 shadow-sm"
+			>
 				<p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
 					Your supporter code
 				</p>
@@ -197,7 +202,7 @@
 
 		<a
 			href="/"
-			class="btn min-h-12 w-full rounded-2xl border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600"
+			class={`btn min-h-12 w-full rounded-2xl border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600 ${status === 'paid' ? 'success-return' : ''}`}
 		>
 			Return to TalkType
 		</a>
@@ -206,8 +211,41 @@
 
 <style>
 	@media (prefers-reduced-motion: no-preference) {
+		.status-copy {
+			animation: statusReveal 260ms ease-out both;
+		}
+
 		.ghost-celebrate {
 			animation: ghostCelebrate 850ms cubic-bezier(0.2, 0.9, 0.2, 1.12) both;
+		}
+
+		.success-passport,
+		.success-code-card,
+		.success-return {
+			animation: successReveal 420ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+		}
+
+		.success-passport {
+			animation-delay: 300ms;
+		}
+
+		.success-code-card {
+			animation-delay: 470ms;
+		}
+
+		.success-return {
+			animation-delay: 620ms;
+		}
+	}
+
+	@keyframes statusReveal {
+		from {
+			opacity: 0;
+			transform: translateY(4px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
 		}
 	}
 
@@ -219,6 +257,17 @@
 			transform: translateY(-4px) scale(1.04);
 		}
 		100% {
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes successReveal {
+		from {
+			opacity: 0;
+			transform: translateY(14px) scale(0.98);
+		}
+		to {
+			opacity: 1;
 			transform: translateY(0) scale(1);
 		}
 	}
