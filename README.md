@@ -15,7 +15,7 @@ Try it at [talktype.app](https://talktype.app).
 - **Offline Mode is explicit**: When enabled, local Whisper runs in the browser with `@xenova/transformers`, WASM, IndexedDB/browser cache, and no cloud transcription.
 - **PWA-first UX**: Install prompt, launch shortcut recording, auto-record preference, iOS safe areas, touch targets, and installed-app microphone handling are part of the core app.
 - **Supporter mode**: History/export/style preset features are unlocked by one-time Square checkout, with manually issued supporter codes as a fallback.
-- **Supporter Passport and Vault**: Supporter codes become deterministic Passport cards with QRBuddy QR handoff, automatic encrypted history/recording backup, and manual restore.
+- **Supporter Passport and Vault**: Supporter codes become deterministic Passport cards with QRBuddy QR handoff, automatic encrypted current-history/recording mirror, and manual restore.
 - **Accessibility matters**: Core controls and modals are built around keyboard focus, named controls, readable mobile layouts, and 44px touch targets.
 
 ## Privacy Model
@@ -26,7 +26,7 @@ TalkType has three transcription paths:
 - **After Stop** sends the finished recording to the server; standard transcription uses Deepgram and style presets use Gemini.
 - **Offline** runs Whisper locally in the browser after the model has downloaded.
 
-Transcript history is saved locally in the user's browser when supporter mode is unlocked. If a supporter has a Passport and Vault URL saved, new transcripts and attached recordings can back themselves up to the Pi drop-zone. Text and audio are encrypted client-side before upload. Do not include private transcripts, recordings, API keys, supporter codes, or payment details in GitHub issues.
+Transcript history is saved locally in the user's browser when supporter mode is unlocked. If a supporter has a Passport and Vault URL saved, current transcripts and attached recordings can mirror themselves to the Pi drop-zone. Text and audio are encrypted client-side before upload, and local deletions remove items from the mirrored Vault history on the next backup pass. Do not include private transcripts, recordings, API keys, supporter codes, or payment details in GitHub issues.
 
 ## Documentation
 

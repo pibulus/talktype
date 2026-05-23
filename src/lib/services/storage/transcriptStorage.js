@@ -311,6 +311,11 @@ export async function updateTranscript(id, newText, options = {}) {
 		const database = await initDB();
 		const transaction = database.transaction([STORE_NAME], 'readwrite');
 		const store = transaction.objectStore(STORE_NAME);
+		const transactionComplete = new Promise((resolve, reject) => {
+			transaction.oncomplete = resolve;
+			transaction.onerror = () => reject(transaction.error);
+			transaction.onabort = () => reject(transaction.error);
+		});
 
 		return new Promise((resolve, reject) => {
 			// First get the existing transcript
@@ -319,6 +324,7 @@ export async function updateTranscript(id, newText, options = {}) {
 			getRequest.onsuccess = () => {
 				const transcript = getRequest.result;
 				if (!transcript) {
+					transactionComplete.catch(() => {});
 					reject(new Error('Transcript not found'));
 					return;
 				}
@@ -331,20 +337,27 @@ export async function updateTranscript(id, newText, options = {}) {
 				// Save the updated transcript
 				const putRequest = store.put(transcript);
 
-				putRequest.onsuccess = () => {
+				putRequest.onsuccess = async () => {
 					log.log('Transcript updated:', id);
-					updateStats();
-					loadAllTranscripts(); // Refresh the list
-					resolve(true);
+					try {
+						await transactionComplete;
+						updateStats();
+						await loadAllTranscripts();
+						resolve(true);
+					} catch (error) {
+						reject(error);
+					}
 				};
 
 				putRequest.onerror = () => {
+					transactionComplete.catch(() => {});
 					log.error('Failed to update transcript:', putRequest.error);
 					reject(putRequest.error);
 				};
 			};
 
 			getRequest.onerror = () => {
+				transactionComplete.catch(() => {});
 				log.error('Failed to get transcript:', getRequest.error);
 				reject(getRequest.error);
 			};
@@ -365,18 +378,29 @@ export async function deleteTranscript(id) {
 		const database = await initDB();
 		const transaction = database.transaction([STORE_NAME], 'readwrite');
 		const store = transaction.objectStore(STORE_NAME);
+		const transactionComplete = new Promise((resolve, reject) => {
+			transaction.oncomplete = resolve;
+			transaction.onerror = () => reject(transaction.error);
+			transaction.onabort = () => reject(transaction.error);
+		});
 
 		return new Promise((resolve, reject) => {
 			const request = store.delete(id);
 
-			request.onsuccess = () => {
+			request.onsuccess = async () => {
 				log.log('Transcript deleted:', id);
-				updateStats();
-				loadAllTranscripts(); // Refresh the list
-				resolve(true);
+				try {
+					await transactionComplete;
+					updateStats();
+					await loadAllTranscripts();
+					resolve(true);
+				} catch (error) {
+					reject(error);
+				}
 			};
 
 			request.onerror = () => {
+				transactionComplete.catch(() => {});
 				log.error('Failed to delete transcript:', request.error);
 				reject(request.error);
 			};
@@ -396,18 +420,29 @@ export async function clearAllTranscripts() {
 		const database = await initDB();
 		const transaction = database.transaction([STORE_NAME], 'readwrite');
 		const store = transaction.objectStore(STORE_NAME);
+		const transactionComplete = new Promise((resolve, reject) => {
+			transaction.oncomplete = resolve;
+			transaction.onerror = () => reject(transaction.error);
+			transaction.onabort = () => reject(transaction.error);
+		});
 
 		return new Promise((resolve, reject) => {
 			const request = store.clear();
 
-			request.onsuccess = () => {
+			request.onsuccess = async () => {
 				log.log('All transcripts cleared');
-				transcriptHistory.set([]);
-				updateStats();
-				resolve(true);
+				try {
+					await transactionComplete;
+					transcriptHistory.set([]);
+					updateStats();
+					resolve(true);
+				} catch (error) {
+					reject(error);
+				}
 			};
 
 			request.onerror = () => {
+				transactionComplete.catch(() => {});
 				log.error('Failed to clear transcripts:', request.error);
 				reject(request.error);
 			};

@@ -27,20 +27,20 @@ The Vault is a local-first backup and handoff system powered by your Raspberry P
 
 TalkType's settled Vault shape is:
 
-1. **Automatic history backup**: after a successful supporter transcript is saved, TalkType quietly backs up text and attached recordings if this device already has a Passport code and Vault URL.
-2. **Manual snapshot button**: the History modal still has a **Back up** button so the user can save a snapshot on purpose.
+1. **Automatic history mirror**: after a successful supporter transcript is saved, edited, deleted, or cleared, TalkType quietly mirrors the current history if this device already has a Passport code and Vault URL.
+2. **Manual mirror button**: the History modal still has a **Back up** button so the user can push the current history on purpose.
 3. **Passport handoff**: the membership card asks QRBuddy to render a QR stamp whose payload points to TalkType `/passport#code=...&vault=...`.
 4. **Manual restore**: `/passport` imports the supporter code, remembers the Vault URL, derives the vault hash, downloads the encrypted backup, decrypts locally, and merges into IndexedDB without duplicating the same Vault source IDs.
 5. **Audio comes with the note**: if a saved history item has a recording, Vault backup encrypts and stores that audio too.
 
-This is backup/restore and device handoff, not automatic two-way sync. That is a product decision, not a temporary gap. It gives people the important utility: "my notes are backed up" and "I can move them to another device" without creating a shared live workspace.
+This is backup/restore and device handoff, not automatic two-way sync. It is also not a separate permanent archive. The Vault mirrors the current local history so people get the important utility: "my notes are backed up" and "I can move them to another device" without creating a shared live workspace or a hidden pile of old deleted recordings.
 
 ## 4. Current TalkType Flow
 
 1. **Configured device**: the user has supporter mode, a remembered Passport code, and a saved Vault URL.
 2. **Save transcript**: TalkType saves the transcript to local IndexedDB.
-3. **Best-effort backup**: TalkType loads local history, encrypts the transcript list, and uploads it to `/vault/talktype/[vault_hash]`. Backup failures do not block the recording flow.
-4. **Audio media backup**: audio blobs are encrypted separately under `/vault/talktype-media/[media_hash]`, with references tracked in an encrypted `talktype-media-index` manifest.
+3. **Best-effort mirror**: TalkType loads local history, encrypts the current transcript list, and uploads it to `/vault/talktype/[vault_hash]`. Backup failures do not block the recording flow.
+4. **Audio media mirror**: audio blobs are encrypted separately under `/vault/talktype-media/[media_hash]`, with references tracked in an encrypted `talktype-media-index` manifest. Media that is no longer referenced by the current history is deleted from Vault on the next mirror pass.
 5. **Another device**: the Passport QR/link opens `/passport`, imports the code and Vault URL, and offers **Restore from Vault**.
 
 ## 5. Audio Media Payloads
@@ -52,8 +52,8 @@ Supporter audio backs up as separate encrypted media payloads, not as base64 emb
 - `media_hash` is `sha256("talktype-vault-media:" + supporter_code + ":" + media_id)`.
 - The media body is encrypted client-side with the same AES-GCM/PBKDF2 envelope as JSON payloads, but over raw audio bytes.
 - Audio backup is automatic for configured supporter Vaults because the Pi/hard-drive setup is the paid backup surface.
-- TalkType stores media references in an encrypted `app_name-media-index` manifest so missing/orphaned media can be detected without embedding large files in the transcript list.
-- The default retention is `Forever`; retention pruning still exists at the manifest layer for old installs or deliberate future limits.
+- TalkType stores media references in an encrypted `app_name-media-index` manifest so stale media can be deleted without embedding large files in the transcript list.
+- Deleting a transcript locally removes it from the encrypted transcript list on the next mirror pass. If that transcript's audio is no longer referenced, TalkType asks the Vault to delete the encrypted media blob too.
 
 ## 6. Cross-App Shape
 
@@ -70,17 +70,19 @@ For another app such as ZipList, the honest next step is to copy the small Passp
 
 1. [x] **Pi Drop-zone**: Minimal Node server for `GET`/`POST` encrypted files.
 2. [x] **Encryption Service**: Client-side AES-GCM helpers for JSON payloads.
-3. [x] **Backup UI**: "Back up" action in History Modal for encrypted one-way backup.
+3. [x] **Backup UI**: "Back up" action in History Modal for encrypted current-history mirror.
 4. [x] **Restore/Merge Logic**: Passport route can restore Vault history/audio into local IndexedDB without duplicating the same Vault source IDs.
 5. [x] **Audio Media Helpers**: Encrypted audio blob upload/download helpers and media manifest.
 6. [x] **Passport QR Handoff**: Render membership-card QR art through QRBuddy and point scans directly at TalkType Passport import.
-7. [x] **Automatic History Backup**: Back up history and attached recordings after supporter transcripts when Passport and Vault URL are configured.
-8. [ ] **Pretty Connect URLs**: Add short `talktype.app` links for phone-to-computer handoff.
+7. [x] **Automatic History Mirror**: Back up current history and attached recordings after supporter transcripts when Passport and Vault URL are configured.
+8. [x] **Vault Media Cleanup**: Delete stale encrypted audio blobs when local history no longer references them.
+9. [ ] **Pretty Connect URLs**: Add short `talktype.app` links for phone-to-computer handoff.
+10. [ ] **Long Silence Stop**: Investigate automatically ending a recording after an extended quiet stretch, without adding another visible setting.
 
 ## 9. Deployment Notes
 
 - Keep the Vault behind HTTPS before using it outside the LAN.
-- Set `VAULT_ALLOWED_ORIGIN` when browser backup/restore happens from a different TalkType origin.
+- Set `VAULT_ALLOWED_ORIGIN` when browser backup/restore/delete happens from a different TalkType origin.
 - The drop-zone stores encrypted blobs only; it does not make a weak supporter code safe. Codes used for Vault backup need enough entropy to resist offline guessing.
 - `MAX_VAULT_BLOB_BYTES` defaults to 150MB so normal compressed recordings can fit while still avoiding reckless browser/server memory spikes.
 - `/health` reports the Vault directory, max blob size, and disk-space figures when the host supports `statfs`.

@@ -1,6 +1,4 @@
 import { browser } from '$app/environment';
-import { get } from 'svelte/store';
-import { vaultAudioRetentionDays } from '$lib';
 import {
 	readStoredSupporterCode,
 	readStoredVaultServerUrl
@@ -9,10 +7,36 @@ import { backupTranscriptsToVault } from './vaultTranscriptBackup.js';
 import { loadAllTranscripts } from './transcriptStorage.js';
 
 let autoBackupInFlight = null;
+let queuedAutoBackupOptions = null;
+let queuedAutoBackupPromise = null;
+
+function queueAutoBackup(options) {
+	queuedAutoBackupOptions = {
+		...options,
+		allowEmptyHistory: Boolean(
+			queuedAutoBackupOptions?.allowEmptyHistory || options.allowEmptyHistory
+		)
+	};
+
+	if (!queuedAutoBackupPromise) {
+		queuedAutoBackupPromise = autoBackupInFlight.then(async () => {
+			const queuedOptions = queuedAutoBackupOptions;
+			queuedAutoBackupOptions = null;
+			queuedAutoBackupPromise = null;
+
+			return queuedOptions
+				? autoBackupHistoryToVault(queuedOptions)
+				: { skipped: true, reason: 'no-queued-backup' };
+		});
+	}
+
+	return queuedAutoBackupPromise;
+}
 
 export async function autoBackupHistoryToVault(options = {}) {
 	const {
 		force = false,
+		allowEmptyHistory = false,
 		loadTranscripts = loadAllTranscripts,
 		backup = backupTranscriptsToVault,
 		readCode = readStoredSupporterCode,
@@ -31,11 +55,11 @@ export async function autoBackupHistoryToVault(options = {}) {
 		return { skipped: true, reason: 'missing-passport-or-vault' };
 	}
 
-	if (autoBackupInFlight) return autoBackupInFlight;
+	if (autoBackupInFlight) return queueAutoBackup(options);
 
 	autoBackupInFlight = (async () => {
 		const transcripts = await loadTranscripts();
-		if (!Array.isArray(transcripts) || transcripts.length === 0) {
+		if (!Array.isArray(transcripts) || (!allowEmptyHistory && transcripts.length === 0)) {
 			return { skipped: true, reason: 'empty-history' };
 		}
 
@@ -43,8 +67,7 @@ export async function autoBackupHistoryToVault(options = {}) {
 			transcripts,
 			code,
 			serverUrl,
-			includeAudio: options.includeAudio ?? true,
-			retentionDays: options.retentionDays ?? get(vaultAudioRetentionDays)
+			includeAudio: options.includeAudio ?? true
 		});
 
 		return { skipped: false, summary };

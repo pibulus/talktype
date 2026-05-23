@@ -1,8 +1,10 @@
-import { SUPPORTER_VAULT } from '$lib/constants';
 import {
+	deleteAudioFromVault,
 	loadAudioFromVault,
+	loadAudioManifestFromVault,
 	loadFromVault,
-	saveAudioToVaultWithManifest,
+	saveAudioManifestToVault,
+	saveAudioToVault,
 	saveToVault
 } from '$lib/services/syncService.js';
 import { importTranscriptHistory } from './transcriptStorage.js';
@@ -74,7 +76,6 @@ export async function backupTranscriptsToVault({
 	code,
 	serverUrl,
 	includeAudio = true,
-	retentionDays = String(SUPPORTER_VAULT.DEFAULT_AUDIO_RETENTION_DAYS),
 	onProgress = () => {}
 }) {
 	if (!Array.isArray(transcripts)) {
@@ -91,6 +92,15 @@ export async function backupTranscriptsToVault({
 	const backedUpTranscripts = [];
 	let audioCount = 0;
 	let audioFailed = 0;
+	let audioDeleted = 0;
+	let audioDeleteFailed = 0;
+	const previousManifest = includeAudio
+		? await loadAudioManifestFromVault(VAULT_APP_NAME, code, cleanServerUrl)
+		: { entries: [] };
+	const previousEntries = Array.isArray(previousManifest.entries) ? previousManifest.entries : [];
+	const previousEntriesById = new Map(previousEntries.map((entry) => [entry.mediaId, entry]));
+	const currentAudioEntries = [];
+	const referencedMediaIds = new Set();
 
 	for (const [index, transcript] of transcripts.entries()) {
 		let audio = null;
@@ -98,20 +108,17 @@ export async function backupTranscriptsToVault({
 		if (includeAudio && transcript?.audioBlob instanceof Blob) {
 			try {
 				const mediaId = await createTranscriptMediaId(transcript);
-				const savedAudio = await saveAudioToVaultWithManifest(
-					VAULT_APP_NAME,
-					transcript.audioBlob,
-					code,
-					cleanServerUrl,
-					{
-						mediaId,
-						transcriptId: getTranscriptId(transcript),
-						duration: transcript.duration || 0,
-						mimeType: transcript.audioBlob.type || 'audio/webm',
-						createdAt: new Date(transcript.timestamp || Date.now()).toISOString(),
-						retentionDays
-					}
-				);
+				const existingAudio = previousEntriesById.get(mediaId);
+				const savedAudio =
+					existingAudio?.size === transcript.audioBlob.size
+						? existingAudio
+						: await saveAudioToVault(VAULT_APP_NAME, transcript.audioBlob, code, cleanServerUrl, {
+								mediaId,
+								transcriptId: getTranscriptId(transcript),
+								duration: transcript.duration || 0,
+								mimeType: transcript.audioBlob.type || 'audio/webm',
+								createdAt: new Date(transcript.timestamp || Date.now()).toISOString()
+							});
 
 				audio = {
 					mediaId: savedAudio.mediaId,
@@ -120,6 +127,14 @@ export async function backupTranscriptsToVault({
 					size: savedAudio.size,
 					encryptedSize: savedAudio.encryptedSize
 				};
+				currentAudioEntries.push({
+					...savedAudio,
+					transcriptId: getTranscriptId(transcript),
+					duration: transcript.duration || 0,
+					createdAt:
+						savedAudio.createdAt || new Date(transcript.timestamp || Date.now()).toISOString()
+				});
+				referencedMediaIds.add(savedAudio.mediaId);
 				audioCount += 1;
 			} catch (error) {
 				console.warn('Failed to back up Vault audio clip:', error);
@@ -140,16 +155,44 @@ export async function backupTranscriptsToVault({
 		v: 1,
 		updatedAt: new Date().toISOString(),
 		audioIncluded: includeAudio,
-		audioRetentionDays: String(retentionDays),
+		audioMirror: includeAudio,
 		transcripts: backedUpTranscripts
 	};
 
 	await saveToVault(VAULT_APP_NAME, payload, code, cleanServerUrl);
 
+	if (includeAudio) {
+		const retainedStaleEntries = [];
+		for (const entry of previousEntries) {
+			if (!entry?.mediaId || referencedMediaIds.has(entry.mediaId)) continue;
+
+			try {
+				await deleteAudioFromVault(VAULT_APP_NAME, entry.mediaId, code, cleanServerUrl);
+				audioDeleted += 1;
+			} catch (error) {
+				console.warn('Failed to delete stale Vault audio clip:', error);
+				audioDeleteFailed += 1;
+				retainedStaleEntries.push(entry);
+			}
+		}
+
+		await saveAudioManifestToVault(
+			VAULT_APP_NAME,
+			{
+				v: 1,
+				entries: [...currentAudioEntries, ...retainedStaleEntries]
+			},
+			code,
+			cleanServerUrl
+		);
+	}
+
 	return {
 		transcriptCount: backedUpTranscripts.length,
 		audioCount,
 		audioFailed,
+		audioDeleted,
+		audioDeleteFailed,
 		includeAudio,
 		updatedAt: payload.updatedAt
 	};

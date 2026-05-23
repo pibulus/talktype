@@ -1,19 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
 	createVaultMediaId,
+	deleteAudioFromVault,
+	deleteFromVault,
 	getVaultHash,
 	getVaultMediaHash,
-	getRetainedAudioEntries,
 	loadAudioManifestFromVault,
 	loadAudioFromVault,
 	saveAudioManifestToVault,
-	saveAudioToVault,
-	saveAudioToVaultWithManifest
+	saveAudioToVault
 } from './syncService.js';
 
 describe('Vault transport helpers', () => {
 	afterEach(() => {
 		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
 	});
 
 	it('uses a stable case-insensitive supporter-code hash', async () => {
@@ -85,19 +86,6 @@ describe('Vault transport helpers', () => {
 		expect(await loaded.blob.text()).toBe('vault audio');
 	});
 
-	it('prunes audio manifest entries by retention window', () => {
-		const now = Date.parse('2026-05-23T00:00:00.000Z');
-		const entries = [
-			{ mediaId: 'old', mediaHash: 'a', createdAt: '2026-04-01T00:00:00.000Z' },
-			{ mediaId: 'fresh', mediaHash: 'b', createdAt: '2026-05-20T00:00:00.000Z' }
-		];
-
-		expect(getRetainedAudioEntries(entries, '30', now).map((entry) => entry.mediaId)).toEqual([
-			'fresh'
-		]);
-		expect(getRetainedAudioEntries(entries, '0', now)).toEqual(entries);
-	});
-
 	it('saves and loads audio manifests through an encrypted media index', async () => {
 		let savedUrl = '';
 		let savedPayload = '';
@@ -134,58 +122,6 @@ describe('Vault transport helpers', () => {
 		expect(loaded.entries).toEqual(manifest.entries);
 	});
 
-	it('updates the audio manifest when saving media with a manifest', async () => {
-		const payloads = new Map();
-
-		vi.stubGlobal(
-			'fetch',
-			vi.fn(async (url, options = {}) => {
-				const key = url.toString();
-				if (options.method === 'POST') {
-					payloads.set(key, JSON.parse(options.body).data);
-					return { ok: true, status: 200 };
-				}
-
-				const payload = payloads.get(key);
-				if (!payload) return { ok: false, status: 404 };
-
-				return {
-					ok: true,
-					status: 200,
-					json: async () => ({ data: payload })
-				};
-			})
-		);
-
-		const saved = await saveAudioToVaultWithManifest(
-			'talktype',
-			new Blob(['manifest audio'], { type: 'audio/webm' }),
-			'TT-ABCD-1234',
-			'https://vault.local',
-			{
-				mediaId: 'clip-1',
-				transcriptId: 'transcript-1',
-				retentionDays: '30'
-			}
-		);
-		const manifest = await loadAudioManifestFromVault(
-			'talktype',
-			'TT-ABCD-1234',
-			'https://vault.local'
-		);
-
-		expect(saved).toMatchObject({
-			mediaId: 'clip-1',
-			transcriptId: 'transcript-1',
-			mimeType: 'audio/webm'
-		});
-		expect(manifest.entries).toHaveLength(1);
-		expect(manifest.entries[0]).toMatchObject({
-			mediaId: 'clip-1',
-			transcriptId: 'transcript-1'
-		});
-	});
-
 	it('rejects oversized audio before upload', async () => {
 		const fetchSpy = vi.fn();
 		vi.stubGlobal('fetch', fetchSpy);
@@ -200,5 +136,30 @@ describe('Vault transport helpers', () => {
 			)
 		).rejects.toThrow('Vault audio is too large');
 		expect(fetchSpy).not.toHaveBeenCalled();
+	});
+
+	it('deletes Vault JSON and audio payloads by derived address', async () => {
+		const requests = [];
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (url, options = {}) => {
+				requests.push({ pathname: new URL(url.toString()).pathname, method: options.method });
+				return { ok: true, status: 200 };
+			})
+		);
+
+		await deleteFromVault('talktype', 'TT-ABCD-1234', 'https://vault.local');
+		await deleteAudioFromVault('talktype', 'clip-1', 'TT-ABCD-1234', 'https://vault.local');
+
+		expect(requests).toEqual([
+			{
+				pathname: expect.stringMatching(/^\/vault\/talktype\/[a-f0-9]{64}$/),
+				method: 'DELETE'
+			},
+			{
+				pathname: expect.stringMatching(/^\/vault\/talktype-media\/[a-f0-9]{64}$/),
+				method: 'DELETE'
+			}
+		]);
 	});
 });

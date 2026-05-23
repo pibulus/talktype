@@ -96,8 +96,7 @@ describe('Vault transcript backup', () => {
 			],
 			code: 'TT-ABCD-1234',
 			serverUrl: 'https://vault.local',
-			includeAudio: true,
-			retentionDays: '30'
+			includeAudio: true
 		});
 
 		expect(summary).toMatchObject({
@@ -107,8 +106,8 @@ describe('Vault transcript backup', () => {
 		});
 		expect(posts.map((post) => new URL(post.url).pathname)).toEqual([
 			expect.stringMatching(/^\/vault\/talktype-media\/[a-f0-9]{64}$/),
-			expect.stringMatching(/^\/vault\/talktype-media-index\/[a-f0-9]{64}$/),
-			expect.stringMatching(/^\/vault\/talktype\/[a-f0-9]{64}$/)
+			expect.stringMatching(/^\/vault\/talktype\/[a-f0-9]{64}$/),
+			expect.stringMatching(/^\/vault\/talktype-media-index\/[a-f0-9]{64}$/)
 		]);
 	});
 
@@ -125,9 +124,10 @@ describe('Vault transcript backup', () => {
 					if (pathname.startsWith('/vault/talktype-media/')) {
 						return { ok: false, status: 413 };
 					}
+					return { ok: true, status: 200 };
 				}
 
-				return { ok: true, status: 200 };
+				return { ok: false, status: 404 };
 			})
 		);
 
@@ -152,8 +152,74 @@ describe('Vault transcript backup', () => {
 		});
 		expect(posts).toEqual([
 			expect.stringMatching(/^\/vault\/talktype-media\/[a-f0-9]{64}$/),
-			expect.stringMatching(/^\/vault\/talktype\/[a-f0-9]{64}$/)
+			expect.stringMatching(/^\/vault\/talktype\/[a-f0-9]{64}$/),
+			expect.stringMatching(/^\/vault\/talktype-media-index\/[a-f0-9]{64}$/)
 		]);
 		expect(warn).toHaveBeenCalled();
+	});
+
+	it('deletes stale audio when history is mirrored after local deletion', async () => {
+		const requests = [];
+		const payloads = new Map();
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (url, options = {}) => {
+				const key = url.toString();
+				const pathname = new URL(key).pathname;
+
+				if (options.method === 'POST') {
+					const body = JSON.parse(options.body);
+					requests.push({ method: 'POST', pathname });
+					payloads.set(key, body.data);
+					return { ok: true, status: 200 };
+				}
+
+				if (options.method === 'DELETE') {
+					requests.push({ method: 'DELETE', pathname });
+					payloads.delete(key);
+					return { ok: true, status: 200 };
+				}
+
+				const payload = payloads.get(key);
+				if (!payload) return { ok: false, status: 404 };
+
+				return {
+					ok: true,
+					status: 200,
+					json: async () => ({ data: payload })
+				};
+			})
+		);
+
+		const first = await backupTranscriptsToVault({
+			transcripts: [
+				{
+					id: 1,
+					text: 'audio to mirror',
+					timestamp: Date.parse('2026-05-23T00:00:00.000Z'),
+					audioBlob: new Blob(['audio'], { type: 'audio/webm' })
+				}
+			],
+			code: 'TT-ABCD-1234',
+			serverUrl: 'https://vault.local'
+		});
+		const second = await backupTranscriptsToVault({
+			transcripts: [],
+			code: 'TT-ABCD-1234',
+			serverUrl: 'https://vault.local'
+		});
+
+		expect(first).toMatchObject({ transcriptCount: 1, audioCount: 1 });
+		expect(second).toMatchObject({
+			transcriptCount: 0,
+			audioCount: 0,
+			audioDeleted: 1,
+			audioDeleteFailed: 0
+		});
+		expect(requests).toContainEqual({
+			method: 'DELETE',
+			pathname: expect.stringMatching(/^\/vault\/talktype-media\/[a-f0-9]{64}$/)
+		});
 	});
 });

@@ -25,7 +25,7 @@ function applyCors(request, response) {
 		response.setHeader('Access-Control-Allow-Origin', allowedOrigin === '*' ? '*' : requestOrigin);
 		response.setHeader('Vary', 'Origin');
 		response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-		response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+		response.setHeader('Access-Control-Allow-Methods', 'DELETE,GET,POST,OPTIONS');
 	}
 }
 
@@ -87,6 +87,11 @@ async function saveVaultBlob(appName, hash, data) {
 	const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
 	await fs.writeFile(tempPath, data, { mode: 0o600 });
 	await fs.rename(tempPath, filePath);
+}
+
+async function deleteVaultBlob(appName, hash) {
+	const { filePath } = getVaultFile(appName, hash);
+	await fs.rm(filePath, { force: true });
 }
 
 async function getStorageHealth() {
@@ -159,6 +164,12 @@ const server = createServer(async (request, response) => {
 			const { filePath } = getVaultFile(appName, hash);
 			const data = await fs.readFile(filePath, 'utf8');
 			sendJson(response, 200, { data });
+			return;
+		}
+
+		if (request.method === 'DELETE') {
+			await deleteVaultBlob(appName, hash);
+			sendJson(response, 200, { status: 'deleted' });
 			return;
 		}
 

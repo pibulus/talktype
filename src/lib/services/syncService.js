@@ -91,19 +91,6 @@ function normalizeAudioManifest(manifest) {
 	};
 }
 
-export function getRetainedAudioEntries(entries, retentionDays, now = Date.now()) {
-	if (!Array.isArray(entries)) return [];
-
-	const days = Number.parseInt(retentionDays, 10);
-	if (!Number.isFinite(days) || days <= 0) return entries;
-
-	const cutoff = now - days * 24 * 60 * 60 * 1000;
-	return entries.filter((entry) => {
-		const createdAt = Date.parse(entry.createdAt || entry.timestamp || '');
-		return Number.isFinite(createdAt) ? createdAt >= cutoff : true;
-	});
-}
-
 /**
  * Encrypt and upload data to the Pi Vault.
  * @param {string} appName - 'talktype' or 'ziplist'
@@ -140,6 +127,18 @@ export async function loadFromVault(appName, code, serverUrl) {
 
 	const { data } = await response.json();
 	return await decrypt(data, code);
+}
+
+export async function deleteFromVault(appName, code, serverUrl) {
+	const hash = await getVaultHash(code);
+
+	const response = await fetch(getVaultUrl(serverUrl, appName, hash), {
+		method: 'DELETE'
+	});
+	if (response.status === 404) return false;
+	if (!response.ok) throw new Error('Failed to delete from Vault');
+
+	return true;
 }
 
 export async function saveAudioManifestToVault(appName, manifest, code, serverUrl) {
@@ -196,42 +195,6 @@ export async function saveAudioToVault(appName, audioBlob, code, serverUrl, opti
 	};
 }
 
-export async function saveAudioToVaultWithManifest(
-	appName,
-	audioBlob,
-	code,
-	serverUrl,
-	options = {}
-) {
-	const saved = await saveAudioToVault(appName, audioBlob, code, serverUrl, options);
-	const manifest = await loadAudioManifestFromVault(appName, code, serverUrl);
-	const retentionDays =
-		options.retentionDays ?? String(SUPPORTER_VAULT.DEFAULT_AUDIO_RETENTION_DAYS);
-	const entries = getRetainedAudioEntries(manifest.entries, retentionDays);
-	const nextEntry = {
-		...saved,
-		transcriptId: options.transcriptId || null,
-		duration: options.duration || 0,
-		createdAt: options.createdAt || new Date().toISOString()
-	};
-	const nextEntries = [
-		...entries.filter((entry) => entry.mediaId !== nextEntry.mediaId),
-		nextEntry
-	];
-
-	await saveAudioManifestToVault(
-		appName,
-		{
-			v: 1,
-			entries: nextEntries
-		},
-		code,
-		serverUrl
-	);
-
-	return nextEntry;
-}
-
 /**
  * Fetch and decrypt an audio Blob from the Vault.
  */
@@ -244,4 +207,16 @@ export async function loadAudioFromVault(appName, mediaId, code, serverUrl) {
 
 	const { data } = await response.json();
 	return await decryptBlob(data, code);
+}
+
+export async function deleteAudioFromVault(appName, mediaId, code, serverUrl) {
+	const mediaHash = await getVaultMediaHash(code, mediaId);
+
+	const response = await fetch(getVaultUrl(serverUrl, getMediaAppName(appName), mediaHash), {
+		method: 'DELETE'
+	});
+	if (response.status === 404) return false;
+	if (!response.ok) throw new Error('Failed to delete audio from Vault');
+
+	return true;
 }

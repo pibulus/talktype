@@ -15,8 +15,8 @@
 		backupTranscriptsToVault,
 		countTranscriptsWithAudio
 	} from '$lib/services/storage/vaultTranscriptBackup.js';
+	import { autoBackupHistoryToVault } from '$lib/services/storage/vaultAutoBackup.js';
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
-	import { vaultAudioRetentionDays } from '$lib';
 	import {
 		readStoredSupporterCode,
 		readStoredVaultServerUrl,
@@ -132,6 +132,10 @@
 		selectedTag = selectedTag === tag ? '' : tag;
 	}
 
+	function mirrorHistoryToVault() {
+		void autoBackupHistoryToVault({ allowEmptyHistory: true });
+	}
+
 	// Copy transcript to clipboard
 	async function copyTranscript(text) {
 		try {
@@ -176,6 +180,7 @@
 			await updateTranscript(id, editText.trim());
 			editingId = null;
 			editText = '';
+			mirrorHistoryToVault();
 
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
@@ -207,6 +212,7 @@
 
 		await deleteTranscript(id);
 		pendingDeleteId = null;
+		mirrorHistoryToVault();
 
 		window.dispatchEvent(
 			new CustomEvent('talktype:toast', {
@@ -230,6 +236,7 @@
 		clearActiveAudio();
 		await clearAllTranscripts();
 		confirmClearAll = false;
+		mirrorHistoryToVault();
 
 		window.dispatchEvent(
 			new CustomEvent('talktype:toast', {
@@ -331,7 +338,6 @@
 				code: passportCode,
 				serverUrl: vaultServerUrl,
 				includeAudio: true,
-				retentionDays: $vaultAudioRetentionDays,
 				onProgress: (progress) => {
 					vaultProgress = progress;
 				}
@@ -341,7 +347,7 @@
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
 					detail: {
-						message: `Backed up ${vaultBackupSummary.transcriptCount} transcript${vaultBackupSummary.transcriptCount !== 1 ? 's' : ''} to Vault.`,
+						message: `Mirrored ${vaultBackupSummary.transcriptCount} transcript${vaultBackupSummary.transcriptCount !== 1 ? 's' : ''} to Vault.`,
 						type: 'success'
 					}
 				})
@@ -500,15 +506,14 @@
 				</form>
 				<p class="mt-2 text-xs leading-5 text-gray-500">
 					New supporter transcripts and recordings back up automatically when this device has a
-					Passport and Vault URL. Use this button to save a snapshot now.
+					Passport and Vault URL. Use this button to mirror current history now.
 					{#if hasStoredPassportCode}
 						Passport remembered on this device.
 					{:else}
 						Enter your supporter code once and TalkType will remember this Passport.
 					{/if}
 					{#if audioClipCount > 0}
-						{audioClipCount} clip{audioClipCount !== 1 ? 's' : ''} will be encrypted separately with
-						{$vaultAudioRetentionDays === '0' ? 'forever' : `${$vaultAudioRetentionDays}-day`} retention.
+						{audioClipCount} clip{audioClipCount !== 1 ? 's' : ''} will be encrypted separately.
 					{:else}
 						No saved recordings are attached to this history yet.
 					{/if}
@@ -533,11 +538,27 @@
 							? 's'
 							: ''}.
 					</p>
+					{#if vaultBackupSummary.audioDeleted > 0}
+						<p class="mt-1 text-xs font-bold text-emerald-700" aria-live="polite">
+							Removed {vaultBackupSummary.audioDeleted} stale Vault recording{vaultBackupSummary.audioDeleted !==
+							1
+								? 's'
+								: ''}.
+						</p>
+					{/if}
 					{#if vaultBackupSummary.audioFailed > 0}
 						<p class="mt-1 text-xs font-bold text-amber-700" aria-live="polite">
 							{vaultBackupSummary.audioFailed} recording{vaultBackupSummary.audioFailed !== 1
 								? 's'
 								: ''} could not be backed up, but the transcript text was saved.
+						</p>
+					{/if}
+					{#if vaultBackupSummary.audioDeleteFailed > 0}
+						<p class="mt-1 text-xs font-bold text-amber-700" aria-live="polite">
+							{vaultBackupSummary.audioDeleteFailed} stale Vault recording{vaultBackupSummary.audioDeleteFailed !==
+							1
+								? 's'
+								: ''} could not be removed yet.
 						</p>
 					{/if}
 				{/if}
