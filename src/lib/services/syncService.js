@@ -1,3 +1,4 @@
+import { SUPPORTER_VAULT } from '$lib/constants';
 import { encrypt, decrypt, encryptBlob, decryptBlob } from './encryptionService.js';
 
 const APP_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/i;
@@ -74,6 +75,36 @@ function getMediaAppName(appName) {
 	return mediaAppName;
 }
 
+function getMediaManifestAppName(appName) {
+	const manifestAppName = `${appName}-media-index`;
+	if (!APP_NAME_PATTERN.test(manifestAppName)) {
+		throw new Error('Invalid Vault media manifest app name');
+	}
+	return manifestAppName;
+}
+
+function normalizeAudioManifest(manifest) {
+	const entries = Array.isArray(manifest?.entries) ? manifest.entries : [];
+	return {
+		v: 1,
+		updatedAt: manifest?.updatedAt || new Date().toISOString(),
+		entries: entries.filter((entry) => entry?.mediaId && entry?.mediaHash)
+	};
+}
+
+export function getRetainedAudioEntries(entries, retentionDays, now = Date.now()) {
+	if (!Array.isArray(entries)) return [];
+
+	const days = Number.parseInt(retentionDays, 10);
+	if (!Number.isFinite(days) || days <= 0) return entries;
+
+	const cutoff = now - days * 24 * 60 * 60 * 1000;
+	return entries.filter((entry) => {
+		const createdAt = Date.parse(entry.createdAt || entry.timestamp || '');
+		return Number.isFinite(createdAt) ? createdAt >= cutoff : true;
+	});
+}
+
 /**
  * Encrypt and upload data to the Pi Vault.
  * @param {string} appName - 'talktype' or 'ziplist'
@@ -112,6 +143,20 @@ export async function loadFromVault(appName, code, serverUrl) {
 	return await decrypt(data, code);
 }
 
+export async function saveAudioManifestToVault(appName, manifest, code, serverUrl) {
+	const payload = normalizeAudioManifest({
+		...manifest,
+		updatedAt: new Date().toISOString()
+	});
+
+	return saveToVault(getMediaManifestAppName(appName), payload, code, serverUrl);
+}
+
+export async function loadAudioManifestFromVault(appName, code, serverUrl) {
+	const manifest = await loadFromVault(getMediaManifestAppName(appName), code, serverUrl);
+	return manifest ? normalizeAudioManifest(manifest) : { v: 1, updatedAt: null, entries: [] };
+}
+
 /**
  * Encrypt and upload an audio Blob to the Vault as a separate media payload.
  * Store the returned mediaId/mediaHash in the encrypted transcript metadata.
@@ -122,6 +167,10 @@ export async function saveAudioToVault(appName, audioBlob, code, serverUrl, opti
 	}
 
 	const mediaId = normalizeMediaId(options.mediaId || createVaultMediaId());
+	if (audioBlob.size > (options.maxSizeBytes || SUPPORTER_VAULT.MAX_AUDIO_BLOB_BYTES)) {
+		throw new Error('Vault audio is too large');
+	}
+
 	const mediaHash = await getVaultMediaHash(code, mediaId);
 	const encryptedData = await encryptBlob(audioBlob, code, {
 		mediaId,
@@ -146,6 +195,42 @@ export async function saveAudioToVault(appName, audioBlob, code, serverUrl, opti
 		size: audioBlob.size,
 		encryptedSize: encryptedData.length
 	};
+}
+
+export async function saveAudioToVaultWithManifest(
+	appName,
+	audioBlob,
+	code,
+	serverUrl,
+	options = {}
+) {
+	const saved = await saveAudioToVault(appName, audioBlob, code, serverUrl, options);
+	const manifest = await loadAudioManifestFromVault(appName, code, serverUrl);
+	const retentionDays =
+		options.retentionDays ?? String(SUPPORTER_VAULT.DEFAULT_AUDIO_RETENTION_DAYS);
+	const entries = getRetainedAudioEntries(manifest.entries, retentionDays);
+	const nextEntry = {
+		...saved,
+		transcriptId: options.transcriptId || null,
+		duration: options.duration || 0,
+		createdAt: options.createdAt || new Date().toISOString()
+	};
+	const nextEntries = [
+		...entries.filter((entry) => entry.mediaId !== nextEntry.mediaId),
+		nextEntry
+	];
+
+	await saveAudioManifestToVault(
+		appName,
+		{
+			v: 1,
+			entries: nextEntries
+		},
+		code,
+		serverUrl
+	);
+
+	return nextEntry;
 }
 
 /**

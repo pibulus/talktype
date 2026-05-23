@@ -89,6 +89,38 @@ async function saveVaultBlob(appName, hash, data) {
 	await fs.rename(tempPath, filePath);
 }
 
+async function getStorageHealth() {
+	const storage = {
+		dir: VAULT_DIR,
+		maxBlobBytes: MAX_BODY_BYTES
+	};
+
+	if (typeof fs.statfs !== 'function') {
+		return storage;
+	}
+
+	try {
+		const stats = await fs.statfs(VAULT_DIR);
+		const totalBytes = stats.blocks * stats.bsize;
+		const freeBytes = stats.bfree * stats.bsize;
+		const availableBytes = stats.bavail * stats.bsize;
+
+		return {
+			...storage,
+			totalBytes,
+			freeBytes,
+			availableBytes,
+			usedBytes: totalBytes - freeBytes,
+			freeRatio: totalBytes > 0 ? freeBytes / totalBytes : null
+		};
+	} catch (error) {
+		return {
+			...storage,
+			error: error.message
+		};
+	}
+}
+
 const server = createServer(async (request, response) => {
 	applyCors(request, response);
 
@@ -99,7 +131,11 @@ const server = createServer(async (request, response) => {
 	}
 
 	if (request.method === 'GET' && request.url === '/health') {
-		sendJson(response, 200, { status: 'ok', vault: 'alive' });
+		sendJson(response, 200, {
+			status: 'ok',
+			vault: 'alive',
+			storage: await getStorageHealth()
+		});
 		return;
 	}
 

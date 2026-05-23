@@ -58,6 +58,17 @@ export const liveMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.LIVE_MODE
 // Store for offline/private Whisper mode preference
 export const privacyMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.PRIVACY_MODE, 'false');
 
+// Store for opt-in Vault audio sync preference
+export const vaultAudioSync = createLocalStorageStore(
+	CONSTANTS.STORAGE_KEYS.VAULT_AUDIO_SYNC,
+	'false'
+);
+
+export const vaultAudioRetentionDays = createLocalStorageStore(
+	CONSTANTS.STORAGE_KEYS.VAULT_AUDIO_RETENTION_DAYS,
+	String(CONSTANTS.SUPPORTER_VAULT.DEFAULT_AUDIO_RETENTION_DAYS)
+);
+
 // Repair legacy state where Offline Mode and Live Mode could both be persisted.
 // If the user only had Offline Mode saved, preserve that choice. If both were
 // saved as enabled, prefer the current default live Deepgram path.

@@ -29,6 +29,8 @@ The Vault is a local-first, private-cloud sync system powered by your Raspberry 
 4. **Merge**: Client merges remote data with local IndexedDB (Last-Write-Wins based on `timestamp`).
 5. **Upload**: Client encrypts the merged state and `POST`s back to the Pi.
 
+The current History modal implements a deliberate one-way **Back up to Vault** action. The user enters the Vault URL and supporter code for that backup run, TalkType encrypts locally, uploads the encrypted history payload, and clears the code from component state after success. Full bidirectional merge remains a follow-up.
+
 ## 3.1 Audio Media Payloads
 
 Supporter audio should sync as separate encrypted media payloads, not as base64 embedded inside the transcript list.
@@ -38,6 +40,8 @@ Supporter audio should sync as separate encrypted media payloads, not as base64 
 - `media_hash` is `sha256("talktype-vault-media:" + supporter_code + ":" + media_id)`.
 - The media body is encrypted client-side with the same AES-GCM/PBKDF2 envelope as JSON payloads, but over raw audio bytes.
 - Audio sync should remain opt-in because audio is larger and more sensitive than text.
+- TalkType stores media references in an encrypted `app_name-media-index` manifest so missing/orphaned media can be detected without embedding large files in the transcript list.
+- The app preference model supports `30 days` and `Forever`; retention pruning happens at the manifest layer before the next upload.
 
 ## 4. Integration Ecosystem
 
@@ -48,9 +52,10 @@ Supporter audio should sync as separate encrypted media payloads, not as base64 
 
 1. [x] **Pi Drop-zone**: Minimal Node server for `GET`/`POST` encrypted files.
 2. [x] **Encryption Service**: Client-side AES-GCM helpers for JSON payloads.
-3. [ ] **Sync UI**: "Sync" button in History Modal that triggers the handshake.
+3. [x] **Backup UI**: "Back up" action in History Modal for encrypted one-way backup.
 4. [ ] **Merge Logic**: Last-write-wins merge with IndexedDB transcript history.
-5. [ ] **Trusted QR Integration**: Generate QR codes locally or through a trusted private renderer.
+5. [x] **Audio Media Helpers**: Encrypted audio blob upload/download helpers and media manifest.
+6. [ ] **Trusted QR Integration**: Generate QR codes locally or through a trusted private renderer.
 
 ## 6. Deployment Notes
 
@@ -58,6 +63,7 @@ Supporter audio should sync as separate encrypted media payloads, not as base64 
 - Set `VAULT_ALLOWED_ORIGIN` when browser sync happens from a different TalkType origin.
 - The drop-zone stores encrypted blobs only; it does not make a weak supporter code safe. Codes used for Vault sync need enough entropy to resist offline guessing.
 - `MAX_VAULT_BLOB_BYTES` defaults to 50MB so short encrypted audio clips can fit. Lower it for text-only vaults or raise it deliberately for long-form audio.
+- `/health` reports the Vault directory, max blob size, and disk-space figures when the host supports `statfs`.
 
 ---
 

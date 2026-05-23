@@ -3,8 +3,12 @@ import {
 	createVaultMediaId,
 	getVaultHash,
 	getVaultMediaHash,
+	getRetainedAudioEntries,
+	loadAudioManifestFromVault,
 	loadAudioFromVault,
-	saveAudioToVault
+	saveAudioManifestToVault,
+	saveAudioToVault,
+	saveAudioToVaultWithManifest
 } from './syncService.js';
 
 describe('Vault sync helpers', () => {
@@ -79,5 +83,122 @@ describe('Vault sync helpers', () => {
 			mimeType: 'audio/webm'
 		});
 		expect(await loaded.blob.text()).toBe('vault audio');
+	});
+
+	it('prunes audio manifest entries by retention window', () => {
+		const now = Date.parse('2026-05-23T00:00:00.000Z');
+		const entries = [
+			{ mediaId: 'old', mediaHash: 'a', createdAt: '2026-04-01T00:00:00.000Z' },
+			{ mediaId: 'fresh', mediaHash: 'b', createdAt: '2026-05-20T00:00:00.000Z' }
+		];
+
+		expect(getRetainedAudioEntries(entries, '30', now).map((entry) => entry.mediaId)).toEqual([
+			'fresh'
+		]);
+		expect(getRetainedAudioEntries(entries, '0', now)).toEqual(entries);
+	});
+
+	it('saves and loads audio manifests through an encrypted media index', async () => {
+		let savedUrl = '';
+		let savedPayload = '';
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (url, options = {}) => {
+				if (options.method === 'POST') {
+					savedUrl = url.toString();
+					savedPayload = JSON.parse(options.body).data;
+					return { ok: true, status: 200 };
+				}
+
+				return {
+					ok: true,
+					status: 200,
+					json: async () => ({ data: savedPayload })
+				};
+			})
+		);
+
+		const manifest = {
+			entries: [{ mediaId: 'clip-1', mediaHash: 'abc123', size: 12 }]
+		};
+
+		await saveAudioManifestToVault('talktype', manifest, 'TT-ABCD-1234', 'https://vault.local');
+		const loaded = await loadAudioManifestFromVault(
+			'talktype',
+			'TT-ABCD-1234',
+			'https://vault.local'
+		);
+
+		expect(savedUrl).toMatch(/^https:\/\/vault\.local\/vault\/talktype-media-index\/[a-f0-9]{64}$/);
+		expect(loaded.entries).toEqual(manifest.entries);
+	});
+
+	it('updates the audio manifest when saving media with a manifest', async () => {
+		const payloads = new Map();
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (url, options = {}) => {
+				const key = url.toString();
+				if (options.method === 'POST') {
+					payloads.set(key, JSON.parse(options.body).data);
+					return { ok: true, status: 200 };
+				}
+
+				const payload = payloads.get(key);
+				if (!payload) return { ok: false, status: 404 };
+
+				return {
+					ok: true,
+					status: 200,
+					json: async () => ({ data: payload })
+				};
+			})
+		);
+
+		const saved = await saveAudioToVaultWithManifest(
+			'talktype',
+			new Blob(['manifest audio'], { type: 'audio/webm' }),
+			'TT-ABCD-1234',
+			'https://vault.local',
+			{
+				mediaId: 'clip-1',
+				transcriptId: 'transcript-1',
+				retentionDays: '30'
+			}
+		);
+		const manifest = await loadAudioManifestFromVault(
+			'talktype',
+			'TT-ABCD-1234',
+			'https://vault.local'
+		);
+
+		expect(saved).toMatchObject({
+			mediaId: 'clip-1',
+			transcriptId: 'transcript-1',
+			mimeType: 'audio/webm'
+		});
+		expect(manifest.entries).toHaveLength(1);
+		expect(manifest.entries[0]).toMatchObject({
+			mediaId: 'clip-1',
+			transcriptId: 'transcript-1'
+		});
+	});
+
+	it('rejects oversized audio before upload', async () => {
+		const fetchSpy = vi.fn();
+		vi.stubGlobal('fetch', fetchSpy);
+
+		await expect(
+			saveAudioToVault(
+				'talktype',
+				new Blob(['too large'], { type: 'audio/webm' }),
+				'TT-ABCD-1234',
+				'https://vault.local',
+				{ maxSizeBytes: 2 }
+			)
+		).rejects.toThrow('Vault audio is too large');
+		expect(fetchSpy).not.toHaveBeenCalled();
 	});
 });

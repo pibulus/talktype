@@ -11,7 +11,13 @@
 		exportAllTranscriptsJSON,
 		formatSize
 	} from '$lib/services/storage/transcriptStorage';
+	import {
+		backupTranscriptsToVault,
+		countTranscriptsWithAudio
+	} from '$lib/services/storage/vaultTranscriptBackup.js';
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
+	import { vaultAudioRetentionDays, vaultAudioSync } from '$lib';
+	import { STORAGE_KEYS } from '$lib/constants';
 
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { PRICING } from '$lib/config/pricing.js';
@@ -34,7 +40,17 @@
 	let editText = '';
 	let clearAllTimeout = null;
 	let deleteConfirmTimeout = null;
+	let vaultPanelOpen = false;
+	let vaultServerUrl = '';
+	let vaultCode = '';
+	let vaultBackupError = '';
+	let vaultBackupSummary = null;
+	let vaultProgress = null;
+	let isBackingUpVault = false;
 	const iconButtonClass = 'btn btn-ghost h-12 min-h-12 w-12 px-0 text-base';
+
+	$: audioBackupEnabled = $vaultAudioSync === 'true';
+	$: audioClipCount = countTranscriptsWithAudio($transcriptHistory);
 
 	// Format timestamp to readable date
 	function formatDate(timestamp) {
@@ -221,7 +237,60 @@
 		);
 	}
 
+	async function handleVaultBackup() {
+		vaultBackupError = '';
+		vaultBackupSummary = null;
+
+		if (!vaultServerUrl.trim()) {
+			vaultBackupError = 'Enter your Vault server URL.';
+			return;
+		}
+
+		if (!vaultCode.trim()) {
+			vaultBackupError = 'Enter your supporter code to encrypt this backup.';
+			return;
+		}
+
+		isBackingUpVault = true;
+		vaultProgress = { current: 0, total: $transcriptHistory.length, audioCount: 0 };
+
+		try {
+			localStorage.setItem(STORAGE_KEYS.VAULT_SERVER_URL, vaultServerUrl.trim());
+			vaultBackupSummary = await backupTranscriptsToVault({
+				transcripts: $transcriptHistory,
+				code: vaultCode,
+				serverUrl: vaultServerUrl,
+				includeAudio: audioBackupEnabled,
+				retentionDays: $vaultAudioRetentionDays,
+				onProgress: (progress) => {
+					vaultProgress = progress;
+				}
+			});
+			vaultCode = '';
+
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: {
+						message: `Backed up ${vaultBackupSummary.transcriptCount} transcript${vaultBackupSummary.transcriptCount !== 1 ? 's' : ''} to Vault.`,
+						type: 'success'
+					}
+				})
+			);
+		} catch (error) {
+			console.error('Failed to back up to Vault:', error);
+			vaultBackupError = error.message || 'Vault backup needs one more try.';
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: { message: 'Vault backup failed.', type: 'info' }
+				})
+			);
+		} finally {
+			isBackingUpVault = false;
+		}
+	}
+
 	onMount(() => {
+		vaultServerUrl = localStorage.getItem(STORAGE_KEYS.VAULT_SERVER_URL) || '';
 		loadAllTranscripts();
 	});
 
@@ -239,7 +308,7 @@
 	aria-modal="true"
 >
 	<div
-		class="animate-modal-enter modal-box relative max-h-[85vh] w-[95%] max-w-3xl overflow-hidden rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
+		class="animate-modal-enter modal-box relative flex max-h-[85vh] w-[95%] max-w-3xl flex-col overflow-hidden rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
 	>
 		<form method="dialog">
 			<ModalCloseButton
@@ -251,7 +320,7 @@
 		</form>
 
 		<!-- Header -->
-		<div class="mb-4 border-b border-pink-100 pb-3">
+		<div class="mb-4 shrink-0 border-b border-pink-100 pb-3">
 			<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div class="flex items-center gap-2">
 					<span class="text-2xl" aria-hidden="true">📚</span>
@@ -271,6 +340,15 @@
 
 				{#if $transcriptHistory.length > 0}
 					<div class="flex flex-wrap gap-2 sm:justify-end">
+						<button
+							type="button"
+							class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
+							on:click={() => (vaultPanelOpen = !vaultPanelOpen)}
+							aria-expanded={vaultPanelOpen}
+							aria-controls="vault_backup_panel"
+						>
+							Vault
+						</button>
 						<button
 							type="button"
 							class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
@@ -304,8 +382,81 @@
 			</div>
 		</div>
 
+		{#if isSupporter && vaultPanelOpen && $transcriptHistory.length > 0}
+			<div
+				id="vault_backup_panel"
+				class="mb-4 shrink-0 rounded-xl border border-pink-100 bg-white/70 p-3 shadow-sm"
+			>
+				<form
+					class="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"
+					on:submit|preventDefault={handleVaultBackup}
+				>
+					<label class="min-w-0">
+						<span class="sr-only">Vault server URL</span>
+						<input
+							type="url"
+							class="min-h-11 w-full rounded-xl border border-pink-100 bg-[#fffdf5] px-3 text-sm text-gray-800 outline-none transition-all duration-150 focus:border-pink-300 focus:ring-2 focus:ring-pink-100"
+							placeholder="https://vault.local:3000"
+							bind:value={vaultServerUrl}
+							autocomplete="url"
+						/>
+					</label>
+					<label class="min-w-0">
+						<span class="sr-only">Supporter code</span>
+						<input
+							type="password"
+							class="min-h-11 w-full rounded-xl border border-pink-100 bg-[#fffdf5] px-3 text-sm text-gray-800 outline-none transition-all duration-150 focus:border-pink-300 focus:ring-2 focus:ring-pink-100"
+							placeholder="Supporter code"
+							bind:value={vaultCode}
+							autocomplete="one-time-code"
+							autocapitalize="characters"
+							spellcheck="false"
+						/>
+					</label>
+					<button
+						type="submit"
+						class="btn min-h-11 border-pink-200 bg-pink-500 px-4 text-sm font-bold text-white transition-colors duration-150 hover:bg-pink-600 disabled:opacity-60"
+						disabled={isBackingUpVault}
+					>
+						{isBackingUpVault ? 'Backing up' : 'Back up'}
+					</button>
+				</form>
+				<p class="mt-2 text-xs leading-5 text-gray-500">
+					{#if audioBackupEnabled}
+						Audio backup is on. {audioClipCount} clip{audioClipCount !== 1 ? 's' : ''} will be encrypted
+						separately with {$vaultAudioRetentionDays === '0'
+							? 'forever'
+							: `${$vaultAudioRetentionDays}-day`} retention.
+					{:else}
+						Text history only. Turn on Encrypted Audio Backup in Settings to include recordings.
+					{/if}
+				</p>
+				{#if vaultProgress && isBackingUpVault}
+					<p class="mt-1 text-xs font-bold text-pink-700" aria-live="polite">
+						{vaultProgress.current}/{vaultProgress.total} processed
+					</p>
+				{/if}
+				{#if vaultBackupError}
+					<p class="mt-1 text-xs font-bold text-amber-700" aria-live="polite">
+						{vaultBackupError}
+					</p>
+				{/if}
+				{#if vaultBackupSummary}
+					<p class="mt-1 text-xs font-bold text-emerald-700" aria-live="polite">
+						Backed up {vaultBackupSummary.transcriptCount} transcript{vaultBackupSummary.transcriptCount !==
+						1
+							? 's'
+							: ''} and {vaultBackupSummary.audioCount} audio clip{vaultBackupSummary.audioCount !==
+						1
+							? 's'
+							: ''}.
+					</p>
+				{/if}
+			</div>
+		{/if}
+
 		<!-- Content -->
-		<div class="max-h-[calc(85vh-140px)] overflow-y-auto">
+		<div class="min-h-0 flex-1 overflow-y-auto">
 			{#if !isSupporter}
 				<div class="space-y-4 py-12 text-center">
 					<p class="text-4xl" aria-hidden="true">🔒</p>
