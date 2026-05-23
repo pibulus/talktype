@@ -1,23 +1,35 @@
 <script>
+	import { onMount } from 'svelte';
 	import { generateMemberIdentity } from './identityUtils.js';
-	import {
-		buildPassportQrPayload,
-		buildQRBuddyShareUrl,
-		getVaultHandshakeQR
-	} from '$lib/services/qrHandshakeService.js';
+	import { buildPassportSyncUrl, getVaultHandshakeQR } from '$lib/services/qrHandshakeService.js';
+	import { STORAGE_KEYS } from '$lib/constants';
+	import { readStoredSupporterCode } from '$lib/services/vaultHashStorage.js';
 
 	export let vaultHash = '';
+	export let passportCode = '';
+
+	let storedPassportCode = '';
+	let storedVaultUrl = '';
 
 	$: identity = generateMemberIdentity(vaultHash);
 	$: hasVaultHash = !identity.isFallback;
 	$: cardStyle = `--passport-bg: #${identity.bg}; --passport-shape: #${identity.shape};`;
-	$: passportQrPayload = hasVaultHash ? buildPassportQrPayload(identity) : '';
-	$: passportQrImageUrl = passportQrPayload
-		? getVaultHandshakeQR({ data: passportQrPayload, style: 'sunset', size: 256 })
+	$: effectivePassportCode = passportCode || storedPassportCode;
+	$: passportSyncUrl =
+		hasVaultHash && effectivePassportCode
+			? buildPassportSyncUrl({
+					code: effectivePassportCode,
+					vaultUrl: storedVaultUrl
+				})
+			: '';
+	$: passportQrImageUrl = passportSyncUrl
+		? getVaultHandshakeQR({ data: passportSyncUrl, style: 'sunset', size: 256 })
 		: '';
-	$: passportQrShareUrl = passportQrPayload
-		? buildQRBuddyShareUrl(passportQrPayload, { style: 'sunset' })
-		: '';
+
+	onMount(() => {
+		storedPassportCode = readStoredSupporterCode();
+		storedVaultUrl = localStorage.getItem(STORAGE_KEYS.VAULT_SERVER_URL) || '';
+	});
 </script>
 
 <div
@@ -59,10 +71,8 @@
 		{#if passportQrImageUrl}
 			<a
 				class="passport-qr-stamp"
-				href={passportQrShareUrl}
-				target="_blank"
-				rel="noreferrer"
-				aria-label={`Open QRBuddy passport QR for ${identity.memberId}`}
+				href={passportSyncUrl}
+				aria-label={`Open TalkType Passport sync for ${identity.memberId}`}
 			>
 				<img
 					src={passportQrImageUrl}

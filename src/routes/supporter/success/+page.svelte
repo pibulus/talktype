@@ -192,7 +192,7 @@
 					<p class="text-xs font-black uppercase tracking-[0.18em] text-pink-500">
 						Your TalkType Passport
 					</p>
-					<MembershipCard {vaultHash} />
+					<MembershipCard {vaultHash} passportCode={supporterCode} />
 				</div>
 			{/if}
 

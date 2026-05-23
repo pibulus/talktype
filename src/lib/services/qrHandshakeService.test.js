@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	buildPassportSyncUrl,
 	buildPassportQrPayload,
 	buildQRBuddyRenderUrl,
 	buildQRBuddyShareUrl,
@@ -14,10 +15,27 @@ const identity = {
 };
 
 describe('QR handshake helpers', () => {
-	it('builds a non-secret passport QR payload', () => {
+	it('can still build a display-only passport payload', () => {
 		expect(buildPassportQrPayload(identity)).toBe(
 			'talktype:passport:v1:TT-A3F2-C819:Neon Platypus'
 		);
+	});
+
+	it('builds a Passport sync link with the code in the fragment', () => {
+		const url = new URL(
+			buildPassportSyncUrl({
+				code: ' TT-SECRET-CODE ',
+				vaultUrl: 'https://vault.local:3000',
+				baseUrl: 'https://talktype.app'
+			})
+		);
+		const fragment = new URLSearchParams(url.hash.slice(1));
+
+		expect(url.origin).toBe('https://talktype.app');
+		expect(url.pathname).toBe('/passport');
+		expect(url.search).toBe('');
+		expect(fragment.get('code')).toBe('TT-SECRET-CODE');
+		expect(fragment.get('vault')).toBe('https://vault.local:3000');
 	});
 
 	it('does not build payloads for placeholder passports', () => {
@@ -50,23 +68,30 @@ describe('QR handshake helpers', () => {
 		expect(shareUrl.searchParams.get('d')).toBe(payload);
 	});
 
-	it('keeps supporter-code handoff disabled until there is a real transfer protocol', () => {
-		expect(() => buildVaultHandshakeUrl('TT-SECRET-CODE', '/sync')).toThrow(
-			/supporter codes must not be embedded/
-		);
+	it('builds the legacy handoff helper as a Passport sync link', () => {
+		const url = new URL(buildVaultHandshakeUrl('TT-SECRET-CODE', 'https://vault.local:3000'));
+		const fragment = new URLSearchParams(url.hash.slice(1));
+
+		expect(url.pathname).toBe('/passport');
+		expect(fragment.get('code')).toBe('TT-SECRET-CODE');
+		expect(fragment.get('vault')).toBe('https://vault.local:3000');
 	});
 
-	it('uses the same safe renderer path for the legacy QR helper name', () => {
+	it('uses QRBuddy to render a Passport sync link', () => {
 		const url = new URL(
 			getVaultHandshakeQR({
-				identity,
+				code: 'TT-SECRET-CODE',
+				vaultUrl: 'https://vault.local:3000',
+				appBaseUrl: 'https://talktype.app',
 				baseUrl: 'http://localhost:8005',
 				style: 'sunset'
 			})
 		);
+		const payload = new URL(url.searchParams.get('d'));
+		const fragment = new URLSearchParams(payload.hash.slice(1));
 
 		expect(url.pathname).toBe('/render-qr');
-		expect(url.toString()).not.toContain('TT-SECRET-CODE');
-		expect(url.searchParams.get('d')).toContain('TT-A3F2-C819');
+		expect(payload.pathname).toBe('/passport');
+		expect(fragment.get('code')).toBe('TT-SECRET-CODE');
 	});
 });

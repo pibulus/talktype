@@ -1,5 +1,11 @@
 import { SUPPORTER_VAULT } from '$lib/constants';
-import { saveAudioToVaultWithManifest, saveToVault } from '$lib/services/syncService.js';
+import {
+	loadAudioFromVault,
+	loadFromVault,
+	saveAudioToVaultWithManifest,
+	saveToVault
+} from '$lib/services/syncService.js';
+import { importTranscriptHistory } from './transcriptStorage.js';
 import { cleanTranscriptTags } from './transcriptTags.js';
 
 const VAULT_APP_NAME = 'talktype';
@@ -38,6 +44,23 @@ function serializeTranscript(transcript, audio = null) {
 			transcript.wordCount || (transcript.text ? transcript.text.trim().split(/\s+/).length : 0),
 		tags: cleanTranscriptTags(transcript.tags || []),
 		audio
+	};
+}
+
+function deserializeTranscript(transcript, audioBlob = null) {
+	const text = transcript?.text || '';
+	return {
+		id: transcript?.id,
+		vaultSourceId: transcript?.id,
+		text,
+		audioBlob,
+		duration: transcript?.duration || 0,
+		timestamp: Number(transcript?.timestamp) || Date.now(),
+		promptStyle: transcript?.promptStyle || 'standard',
+		method: transcript?.method || 'gemini',
+		wordCount:
+			transcript?.wordCount || (text ? text.trim().split(/\s+/).filter(Boolean).length : 0),
+		tags: cleanTranscriptTags(transcript?.tags || [])
 	};
 }
 
@@ -121,5 +144,79 @@ export async function backupTranscriptsToVault({
 		audioCount,
 		includeAudio,
 		updatedAt: payload.updatedAt
+	};
+}
+
+export async function restoreTranscriptsFromVault({
+	code,
+	serverUrl,
+	includeAudio = true,
+	onProgress = () => {}
+}) {
+	if (!serverUrl?.trim()) {
+		throw new Error('Vault restore needs a server URL');
+	}
+	if (!code?.trim()) {
+		throw new Error('Vault restore needs a supporter code');
+	}
+
+	const cleanServerUrl = serverUrl.trim();
+	const payload = await loadFromVault(VAULT_APP_NAME, code, cleanServerUrl);
+
+	if (!payload) {
+		return {
+			missing: true,
+			imported: 0,
+			updated: 0,
+			total: 0,
+			audioCount: 0,
+			audioFailed: 0,
+			updatedAt: null
+		};
+	}
+
+	const vaultTranscripts = Array.isArray(payload.transcripts) ? payload.transcripts : [];
+	const restoredTranscripts = [];
+	let audioCount = 0;
+	let audioFailed = 0;
+
+	for (const [index, transcript] of vaultTranscripts.entries()) {
+		let audioBlob = null;
+
+		if (includeAudio && transcript?.audio?.mediaId) {
+			try {
+				const restoredAudio = await loadAudioFromVault(
+					VAULT_APP_NAME,
+					transcript.audio.mediaId,
+					code,
+					cleanServerUrl
+				);
+				if (restoredAudio?.blob) {
+					audioBlob = restoredAudio.blob;
+					audioCount += 1;
+				}
+			} catch (error) {
+				console.warn('Failed to restore Vault audio clip:', error);
+				audioFailed += 1;
+			}
+		}
+
+		restoredTranscripts.push(deserializeTranscript(transcript, audioBlob));
+		onProgress({
+			current: index + 1,
+			total: vaultTranscripts.length,
+			audioCount,
+			audioFailed
+		});
+	}
+
+	const mergeSummary = await importTranscriptHistory(restoredTranscripts);
+
+	return {
+		missing: false,
+		...mergeSummary,
+		audioCount,
+		audioFailed,
+		updatedAt: payload.updatedAt || null
 	};
 }

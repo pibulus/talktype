@@ -29,7 +29,7 @@ The Vault is a local-first, private-cloud sync system powered by your Raspberry 
 4. **Merge**: Client merges remote data with local IndexedDB (Last-Write-Wins based on `timestamp`).
 5. **Upload**: Client encrypts the merged state and `POST`s back to the Pi.
 
-That is the future two-way shape. The current History modal implements a deliberate one-way **Back up to Vault** action. The user enters the Vault URL, TalkType uses the locally remembered Passport key to encrypt, then uploads the encrypted history payload. If the Passport key is missing because site data was cleared, the modal asks for the supporter code once and remembers it again. Full bidirectional merge remains a follow-up.
+That is the future fully automatic two-way shape. The current app implements two simple manual actions: **Back up to Vault** from History, and **Sync from Vault** from `/passport`. The Passport QR/link can import the supporter code, remember the Vault URL, pull the encrypted backup, and merge it into local IndexedDB. If the Passport key is missing because site data was cleared, the UI asks for the supporter code once and remembers it again.
 
 ## 3.1 Audio Media Payloads
 
@@ -46,18 +46,18 @@ Supporter audio should sync as separate encrypted media payloads, not as base64 
 ## 4. Integration Ecosystem
 
 - **Auth/Link**: QuickCat can route users to the sync page without the Vault server knowing raw transcript data.
-- **Passport QR**: QRBuddy can render a non-secret passport stamp from the member ID and identity name. This is for display/share polish, not account transfer.
-- **Access**: Real QR handoff still needs a trusted local transfer protocol. Raw supporter codes must not be embedded in QR URLs or sent to a renderer.
+- **Passport QR**: QRBuddy renders the membership-card QR image. The QR points directly to TalkType `/passport#code=...&vault=...` so another device can import the Passport and sync. This deliberately treats QRBuddy/Pi as trusted Pablo-owned infrastructure.
+- **Pretty Links**: A short `talktype.app` connect-link layer can sit in front later, but the working primitive is the direct Passport link.
 
 ## 5. Implementation Roadmap
 
 1. [x] **Pi Drop-zone**: Minimal Node server for `GET`/`POST` encrypted files.
 2. [x] **Encryption Service**: Client-side AES-GCM helpers for JSON payloads.
 3. [x] **Backup UI**: "Back up" action in History Modal for encrypted one-way backup.
-4. [ ] **Merge Logic**: Last-write-wins merge with IndexedDB transcript history.
+4. [x] **Restore/Merge Logic**: Passport route can restore Vault history/audio into local IndexedDB without duplicating the same Vault source IDs.
 5. [x] **Audio Media Helpers**: Encrypted audio blob upload/download helpers and media manifest.
-6. [x] **Passport QR Stamp**: Render non-secret membership-card QR art through QRBuddy.
-7. [ ] **Trusted QR Transfer**: Generate one-time handoff QR codes locally or through a trusted private renderer without exposing raw supporter codes.
+6. [x] **Passport QR Sync**: Render membership-card QR art through QRBuddy and point scans directly at TalkType Passport import.
+7. [ ] **Pretty Connect URLs**: Add short `talktype.app` links for phone-to-computer handoff.
 
 ## 6. Deployment Notes
 

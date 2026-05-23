@@ -24,6 +24,7 @@
 	let isStartingCheckout = false;
 	let codePanelOpen = false;
 	let vaultHash = '';
+	let passportCode = '';
 
 	const benefits = ['Local history', 'Downloads', 'Style presets', 'Longer notes'];
 	const MAX_SUPPORTER_CODE_LENGTH = 64;
@@ -42,6 +43,7 @@
 
 		const storedCode = readStoredSupporterCode();
 		if (storedCode) {
+			passportCode = storedCode;
 			getVaultHash(storedCode)
 				.then(saveVaultHash)
 				.catch((error) => console.warn('Failed to restore supporter passport:', error));
@@ -97,8 +99,10 @@
 				return;
 			}
 
-			const passportCode = saveStoredSupporterCode(code);
-			saveVaultHash(await getVaultHash(passportCode));
+			const nextPassportCode = saveStoredSupporterCode(code);
+			const nextVaultHash = await getVaultHash(nextPassportCode);
+			saveVaultHash(nextVaultHash);
+			passportCode = nextPassportCode;
 			setSupporterStatus(true, payload.token || null);
 			code = '';
 			codePanelOpen = false;
@@ -172,7 +176,7 @@
 						Your passport is ready
 					</p>
 					<div class="flex justify-center py-3">
-						<MembershipCard {vaultHash} />
+						<MembershipCard {vaultHash} {passportCode} />
 					</div>
 				</div>
 				<p id="supporter_modal_description" class="text-center text-sm leading-6 text-gray-700">

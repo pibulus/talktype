@@ -99,6 +99,27 @@ function getGeneratedTags(text, explicitTags = null, excludedId = null) {
 	return generateTranscriptTags(text, getTranscriptTagPool(existingTranscripts));
 }
 
+function getRestoredTranscriptId(sourceId, timestamp) {
+	const normalizedSourceId = sourceId?.toString().trim();
+	return normalizedSourceId ? `vault:${normalizedSourceId}` : `vault:${timestamp || Date.now()}`;
+}
+
+function findExistingTranscript(transcripts, sourceId, timestamp, text) {
+	const normalizedSourceId = sourceId?.toString();
+
+	return transcripts.find((transcript) => {
+		if (normalizedSourceId) {
+			if (transcript.id?.toString() === normalizedSourceId) return true;
+			if (transcript.vaultSourceId?.toString() === normalizedSourceId) return true;
+			if (transcript.id?.toString() === `vault:${normalizedSourceId}`) return true;
+		}
+
+		return Boolean(
+			timestamp && text && transcript.timestamp === timestamp && transcript.text === text
+		);
+	});
+}
+
 /**
  * Save a transcript to storage
  * @param {Object} transcript - Transcript data to save
@@ -139,6 +160,83 @@ export async function saveTranscript(transcript) {
 		});
 	} catch (error) {
 		log.error('Error saving transcript:', error);
+		throw error;
+	}
+}
+
+export async function importTranscriptHistory(transcripts) {
+	if (!Array.isArray(transcripts) || transcripts.length === 0) {
+		return { imported: 0, updated: 0, total: 0 };
+	}
+
+	try {
+		const database = await initDB();
+		const existingTranscripts = await new Promise((resolve, reject) => {
+			const transaction = database.transaction([STORE_NAME], 'readonly');
+			const store = transaction.objectStore(STORE_NAME);
+			const request = store.getAll();
+
+			request.onsuccess = () => resolve(request.result || []);
+			request.onerror = () => reject(request.error);
+		});
+
+		const transaction = database.transaction([STORE_NAME], 'readwrite');
+		const store = transaction.objectStore(STORE_NAME);
+		const transactionComplete = new Promise((resolve, reject) => {
+			transaction.oncomplete = resolve;
+			transaction.onerror = () => reject(transaction.error);
+			transaction.onabort = () => reject(transaction.error);
+		});
+		let imported = 0;
+		let updated = 0;
+
+		await Promise.all(
+			transcripts.map(
+				(transcript) =>
+					new Promise((resolve, reject) => {
+						const timestamp = Number(transcript.timestamp) || Date.now();
+						const text = transcript.text || '';
+						const sourceId = transcript.vaultSourceId || transcript.id || timestamp;
+						const existing = findExistingTranscript(existingTranscripts, sourceId, timestamp, text);
+						const restored = {
+							...existing,
+							id: existing?.id ?? getRestoredTranscriptId(sourceId, timestamp),
+							vaultSourceId: sourceId.toString(),
+							text,
+							audioBlob: transcript.audioBlob || existing?.audioBlob || null,
+							duration: transcript.duration || 0,
+							timestamp,
+							promptStyle: transcript.promptStyle || 'standard',
+							method: transcript.method || 'gemini',
+							wordCount:
+								transcript.wordCount ||
+								(text ? text.trim().split(/\s+/).filter(Boolean).length : 0),
+							tags: getGeneratedTags(text, transcript.tags)
+						};
+
+						const request = store.put(restored);
+						request.onsuccess = () => {
+							if (existing) updated += 1;
+							else imported += 1;
+							resolve();
+						};
+						request.onerror = () => reject(request.error);
+					})
+			)
+		);
+
+		await transactionComplete;
+
+		updateStats();
+		await loadAllTranscripts();
+
+		return {
+			imported,
+			updated,
+			total: transcripts.length
+		};
+	} catch (error) {
+		log.error('Error importing transcript history:', error);
 		throw error;
 	}
 }

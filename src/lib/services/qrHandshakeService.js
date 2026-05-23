@@ -17,11 +17,30 @@ function normalizeQrSize(size) {
 	return Math.min(1024, Math.max(128, parsed));
 }
 
-export function buildPassportQrPayload(identity) {
-	if (!identity || identity.isFallback) return '';
+function getTalkTypeBaseUrl(baseUrl) {
+	if (baseUrl) return baseUrl;
+	if (typeof window !== 'undefined' && window.location?.origin) return window.location.origin;
+	return getEnvValue('PUBLIC_APP_URL', 'https://talktype.app');
+}
 
-	const memberId = identity.memberId?.toString().trim();
-	const name = identity.name?.toString().trim();
+export function buildPassportSyncUrl({ code, vaultUrl = '', baseUrl = '', appBaseUrl = '' } = {}) {
+	const normalizedCode = code?.toString().trim();
+	if (!normalizedCode) return '';
+
+	const url = new URL('/passport', getTalkTypeBaseUrl(appBaseUrl || baseUrl));
+	const fragment = new URLSearchParams();
+	fragment.set('code', normalizedCode);
+	if (vaultUrl?.toString().trim()) fragment.set('vault', vaultUrl.toString().trim());
+	url.hash = fragment.toString();
+	return url.toString();
+}
+
+export function buildPassportQrPayload(identityOrOptions) {
+	if (identityOrOptions?.code) return buildPassportSyncUrl(identityOrOptions);
+	if (!identityOrOptions || identityOrOptions.isFallback) return '';
+
+	const memberId = identityOrOptions.memberId?.toString().trim();
+	const name = identityOrOptions.name?.toString().trim();
 
 	if (!memberId || !name) return '';
 
@@ -50,12 +69,21 @@ export function buildQRBuddyShareUrl(data, options = {}) {
 }
 
 export function getVaultHandshakeQR(options = {}) {
-	const data = options.data || buildPassportQrPayload(options.identity);
+	const data =
+		options.data ||
+		(options.code
+			? buildPassportSyncUrl({
+					...options,
+					baseUrl: options.appBaseUrl
+				})
+			: '') ||
+		buildPassportQrPayload(options.identity || options);
 	return buildQRBuddyRenderUrl(data, options);
 }
 
-export function buildVaultHandshakeUrl() {
-	throw new Error(
-		'Passport transfer QR is not implemented because supporter codes must not be embedded.'
-	);
+export function buildVaultHandshakeUrl(code, syncBaseUrl = '') {
+	return buildPassportSyncUrl({
+		code,
+		vaultUrl: syncBaseUrl
+	});
 }
