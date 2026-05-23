@@ -27,11 +27,11 @@ The Vault is a local-first backup and handoff system powered by your Raspberry P
 
 TalkType's settled Vault shape is:
 
-1. **Automatic text backup**: after a successful supporter transcript is saved, TalkType quietly backs up text history if this device already has a Passport code and Vault URL.
+1. **Automatic history backup**: after a successful supporter transcript is saved, TalkType quietly backs up text and attached recordings if this device already has a Passport code and Vault URL.
 2. **Manual snapshot button**: the History modal still has a **Back up** button so the user can save a snapshot on purpose.
 3. **Passport handoff**: the membership card asks QRBuddy to render a QR stamp whose payload points to TalkType `/passport#code=...&vault=...`.
 4. **Manual restore**: `/passport` imports the supporter code, remembers the Vault URL, derives the vault hash, downloads the encrypted backup, decrypts locally, and merges into IndexedDB without duplicating the same Vault source IDs.
-5. **Audio is a choice**: audio blobs are only backed up when the user turns on **Back Up Recordings**, because audio uses real Pi disk space.
+5. **Audio comes with the note**: if a saved history item has a recording, Vault backup encrypts and stores that audio too.
 
 This is backup/restore and device handoff, not automatic two-way sync. That is a product decision, not a temporary gap. It gives people the important utility: "my notes are backed up" and "I can move them to another device" without creating a shared live workspace.
 
@@ -40,7 +40,7 @@ This is backup/restore and device handoff, not automatic two-way sync. That is a
 1. **Configured device**: the user has supporter mode, a remembered Passport code, and a saved Vault URL.
 2. **Save transcript**: TalkType saves the transcript to local IndexedDB.
 3. **Best-effort backup**: TalkType loads local history, encrypts the transcript list, and uploads it to `/vault/talktype/[vault_hash]`. Backup failures do not block the recording flow.
-4. **Optional audio backup**: when audio backup is enabled, audio blobs are encrypted separately under `/vault/talktype-media/[media_hash]`, with references tracked in an encrypted `talktype-media-index` manifest.
+4. **Audio media backup**: audio blobs are encrypted separately under `/vault/talktype-media/[media_hash]`, with references tracked in an encrypted `talktype-media-index` manifest.
 5. **Another device**: the Passport QR/link opens `/passport`, imports the code and Vault URL, and offers **Restore from Vault**.
 
 ## 5. Audio Media Payloads
@@ -51,9 +51,9 @@ Supporter audio backs up as separate encrypted media payloads, not as base64 emb
 - Audio payloads live under the media namespace: `/vault/[app_name]-media/[media_hash]`.
 - `media_hash` is `sha256("talktype-vault-media:" + supporter_code + ":" + media_id)`.
 - The media body is encrypted client-side with the same AES-GCM/PBKDF2 envelope as JSON payloads, but over raw audio bytes.
-- Audio backup is opt-in because audio is larger, more sensitive, and uses real disk space.
+- Audio backup is automatic for configured supporter Vaults because the Pi/hard-drive setup is the paid backup surface.
 - TalkType stores media references in an encrypted `app_name-media-index` manifest so missing/orphaned media can be detected without embedding large files in the transcript list.
-- The app preference model supports `30 days` and `Forever`; retention pruning happens at the manifest layer before the next upload.
+- The default retention is `Forever`; retention pruning still exists at the manifest layer for old installs or deliberate future limits.
 
 ## 6. Cross-App Shape
 
@@ -74,7 +74,7 @@ For another app such as ZipList, the honest next step is to copy the small Passp
 4. [x] **Restore/Merge Logic**: Passport route can restore Vault history/audio into local IndexedDB without duplicating the same Vault source IDs.
 5. [x] **Audio Media Helpers**: Encrypted audio blob upload/download helpers and media manifest.
 6. [x] **Passport QR Handoff**: Render membership-card QR art through QRBuddy and point scans directly at TalkType Passport import.
-7. [x] **Automatic Text Backup**: Back up text history after supporter transcripts when Passport and Vault URL are configured.
+7. [x] **Automatic History Backup**: Back up history and attached recordings after supporter transcripts when Passport and Vault URL are configured.
 8. [ ] **Pretty Connect URLs**: Add short `talktype.app` links for phone-to-computer handoff.
 
 ## 9. Deployment Notes
@@ -82,5 +82,5 @@ For another app such as ZipList, the honest next step is to copy the small Passp
 - Keep the Vault behind HTTPS before using it outside the LAN.
 - Set `VAULT_ALLOWED_ORIGIN` when browser backup/restore happens from a different TalkType origin.
 - The drop-zone stores encrypted blobs only; it does not make a weak supporter code safe. Codes used for Vault backup need enough entropy to resist offline guessing.
-- `MAX_VAULT_BLOB_BYTES` defaults to 50MB so short encrypted audio clips can fit. Lower it for text-only vaults or raise it deliberately for long-form audio.
+- `MAX_VAULT_BLOB_BYTES` defaults to 150MB so normal compressed recordings can fit while still avoiding reckless browser/server memory spikes.
 - `/health` reports the Vault directory, max blob size, and disk-space figures when the host supports `statfs`.

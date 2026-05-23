@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 import { get } from 'svelte/store';
-import { vaultAudioRetentionDays, vaultAudioSync } from '$lib';
+import { vaultAudioRetentionDays } from '$lib';
 import {
 	readStoredSupporterCode,
 	readStoredVaultServerUrl
@@ -43,7 +43,7 @@ export async function autoBackupHistoryToVault(options = {}) {
 			transcripts,
 			code,
 			serverUrl,
-			includeAudio: options.includeAudio ?? get(vaultAudioSync) === 'true',
+			includeAudio: options.includeAudio ?? true,
 			retentionDays: options.retentionDays ?? get(vaultAudioRetentionDays)
 		});
 

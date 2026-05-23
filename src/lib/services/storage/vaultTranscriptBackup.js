@@ -73,7 +73,7 @@ export async function backupTranscriptsToVault({
 	transcripts,
 	code,
 	serverUrl,
-	includeAudio = false,
+	includeAudio = true,
 	retentionDays = String(SUPPORTER_VAULT.DEFAULT_AUDIO_RETENTION_DAYS),
 	onProgress = () => {}
 }) {
@@ -90,42 +90,49 @@ export async function backupTranscriptsToVault({
 	const cleanServerUrl = serverUrl.trim();
 	const backedUpTranscripts = [];
 	let audioCount = 0;
+	let audioFailed = 0;
 
 	for (const [index, transcript] of transcripts.entries()) {
 		let audio = null;
 
 		if (includeAudio && transcript?.audioBlob instanceof Blob) {
-			const mediaId = await createTranscriptMediaId(transcript);
-			const savedAudio = await saveAudioToVaultWithManifest(
-				VAULT_APP_NAME,
-				transcript.audioBlob,
-				code,
-				cleanServerUrl,
-				{
-					mediaId,
-					transcriptId: getTranscriptId(transcript),
-					duration: transcript.duration || 0,
-					mimeType: transcript.audioBlob.type || 'audio/webm',
-					createdAt: new Date(transcript.timestamp || Date.now()).toISOString(),
-					retentionDays
-				}
-			);
+			try {
+				const mediaId = await createTranscriptMediaId(transcript);
+				const savedAudio = await saveAudioToVaultWithManifest(
+					VAULT_APP_NAME,
+					transcript.audioBlob,
+					code,
+					cleanServerUrl,
+					{
+						mediaId,
+						transcriptId: getTranscriptId(transcript),
+						duration: transcript.duration || 0,
+						mimeType: transcript.audioBlob.type || 'audio/webm',
+						createdAt: new Date(transcript.timestamp || Date.now()).toISOString(),
+						retentionDays
+					}
+				);
 
-			audio = {
-				mediaId: savedAudio.mediaId,
-				mediaHash: savedAudio.mediaHash,
-				mimeType: savedAudio.mimeType,
-				size: savedAudio.size,
-				encryptedSize: savedAudio.encryptedSize
-			};
-			audioCount += 1;
+				audio = {
+					mediaId: savedAudio.mediaId,
+					mediaHash: savedAudio.mediaHash,
+					mimeType: savedAudio.mimeType,
+					size: savedAudio.size,
+					encryptedSize: savedAudio.encryptedSize
+				};
+				audioCount += 1;
+			} catch (error) {
+				console.warn('Failed to back up Vault audio clip:', error);
+				audioFailed += 1;
+			}
 		}
 
 		backedUpTranscripts.push(serializeTranscript(transcript, audio));
 		onProgress({
 			current: index + 1,
 			total: transcripts.length,
-			audioCount
+			audioCount,
+			audioFailed
 		});
 	}
 
@@ -142,6 +149,7 @@ export async function backupTranscriptsToVault({
 	return {
 		transcriptCount: backedUpTranscripts.length,
 		audioCount,
+		audioFailed,
 		includeAudio,
 		updatedAt: payload.updatedAt
 	};

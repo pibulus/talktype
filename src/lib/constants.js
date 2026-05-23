@@ -29,7 +29,6 @@ export const STORAGE_KEYS = {
 	SUPPORTER_TOKEN: `${APP_STORAGE_PREFIX}:supporter_token`,
 	SUPPORTER_PASSPORT_CODE: `${APP_STORAGE_PREFIX}:passport_code`,
 	VAULT_SERVER_URL: `${APP_STORAGE_PREFIX}:vault_url`,
-	VAULT_AUDIO_SYNC: 'talktype_vault_audio_sync',
 	VAULT_AUDIO_RETENTION_DAYS: 'talktype_vault_audio_retention_days',
 	PRIVACY_MODE: 'talktype_privacy_mode', // Offline Whisper mode
 	LIVE_MODE: 'talktype_live_mode',
@@ -60,11 +59,11 @@ export const SUPPORTER_CHECKOUT = {
 };
 
 export const SUPPORTER_VAULT = {
-	DEFAULT_AUDIO_RETENTION_DAYS: 30,
-	MAX_AUDIO_BLOB_BYTES: 50 * 1024 * 1024,
+	DEFAULT_AUDIO_RETENTION_DAYS: 0,
+	MAX_AUDIO_BLOB_BYTES: 96 * 1024 * 1024,
 	AUDIO_RETENTION_OPTIONS: [
-		{ value: '30', label: '30 days' },
-		{ value: '0', label: 'Forever' }
+		{ value: '0', label: 'Forever' },
+		{ value: '30', label: '30 days' }
 	]
 };
 

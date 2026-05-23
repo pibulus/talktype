@@ -58,12 +58,6 @@ export const liveMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.LIVE_MODE
 // Store for offline/private Whisper mode preference
 export const privacyMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.PRIVACY_MODE, 'false');
 
-// Store for opt-in Vault audio backup preference
-export const vaultAudioSync = createLocalStorageStore(
-	CONSTANTS.STORAGE_KEYS.VAULT_AUDIO_SYNC,
-	'false'
-);
-
 export const vaultAudioRetentionDays = createLocalStorageStore(
 	CONSTANTS.STORAGE_KEYS.VAULT_AUDIO_RETENTION_DAYS,
 	String(CONSTANTS.SUPPORTER_VAULT.DEFAULT_AUDIO_RETENTION_DAYS)

@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const PORT = Number(process.env.PORT || 3000);
-const MAX_BODY_BYTES = Number(process.env.MAX_VAULT_BLOB_BYTES || 50 * 1024 * 1024);
+const MAX_BODY_BYTES = Number(process.env.MAX_VAULT_BLOB_BYTES || 150 * 1024 * 1024);
 const VAULT_DIR = path.resolve(process.env.VAULT_DIR || path.join(process.cwd(), 'vaults'));
 const APP_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/i;
 const HASH_PATTERN = /^[a-f0-9]{64}$/;

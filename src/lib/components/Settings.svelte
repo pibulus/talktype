@@ -1,23 +1,14 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import {
-		theme,
-		autoRecord,
-		applyTheme,
-		promptStyle,
-		liveMode,
-		privacyMode,
-		vaultAudioSync,
-		vaultAudioRetentionDays
-	} from '$lib';
+	import { theme, autoRecord, applyTheme, promptStyle, liveMode, privacyMode } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
-	import { SERVICE_EVENTS, SUPPORTER_VAULT } from '$lib/constants';
+	import { SERVICE_EVENTS } from '$lib/constants';
 
 	export let closeModal = () => {};
 
@@ -28,8 +19,6 @@
 	let privacyModeValue = false;
 	let liveModeValue = false;
 	let isSupporterValue = false;
-	let vaultAudioSyncValue = false;
-	let vaultAudioRetentionValue = String(SUPPORTER_VAULT.DEFAULT_AUDIO_RETENTION_DAYS);
 
 	// Store unsubscribe functions
 	let unsubscribeTheme;
@@ -38,8 +27,6 @@
 	let unsubscribeLiveMode;
 	let unsubscribePrivacyMode;
 	let unsubscribeUserPreferences;
-	let unsubscribeVaultAudioSync;
-	let unsubscribeVaultAudioRetention;
 
 	const transcriptionModes = [
 		{
@@ -86,18 +73,6 @@
 		unsubscribeUserPreferences = userPreferences.subscribe((value) => {
 			isSupporterValue = value.isSupporter;
 		});
-
-		unsubscribeVaultAudioSync = vaultAudioSync.subscribe((value) => {
-			vaultAudioSyncValue = value === 'true';
-		});
-
-		unsubscribeVaultAudioRetention = vaultAudioRetentionDays.subscribe((value) => {
-			vaultAudioRetentionValue = SUPPORTER_VAULT.AUDIO_RETENTION_OPTIONS.some(
-				(option) => option.value === value
-			)
-				? value
-				: String(SUPPORTER_VAULT.DEFAULT_AUDIO_RETENTION_DAYS);
-		});
 	});
 
 	onDestroy(() => {
@@ -108,8 +83,6 @@
 		if (unsubscribeLiveMode) unsubscribeLiveMode();
 		if (unsubscribePrivacyMode) unsubscribePrivacyMode();
 		if (unsubscribeUserPreferences) unsubscribeUserPreferences();
-		if (unsubscribeVaultAudioSync) unsubscribeVaultAudioSync();
-		if (unsubscribeVaultAudioRetention) unsubscribeVaultAudioRetention();
 	});
 
 	// Handlers
@@ -149,23 +122,6 @@
 				})
 			);
 		}
-	}
-
-	function toggleVaultAudioSync() {
-		if (!isSupporterValue) {
-			openSupporterModal();
-			return;
-		}
-
-		vaultAudioSyncValue = !vaultAudioSyncValue;
-		vaultAudioSync.set(vaultAudioSyncValue.toString());
-		dispatchSettingChanged('vaultAudioSync', vaultAudioSyncValue);
-	}
-
-	function setVaultAudioRetention(value) {
-		vaultAudioRetentionValue = value;
-		vaultAudioRetentionDays.set(value);
-		dispatchSettingChanged('vaultAudioRetentionDays', value);
 	}
 
 	function dispatchSettingChanged(setting, value) {
@@ -242,7 +198,7 @@
 					Settings
 				</h3>
 				<p id="settings_modal_description" class="sr-only">
-					Adjust vibe, text timing, output style, and optional backup settings.
+					Adjust vibe, text timing, output style, and recording startup.
 				</p>
 			</div>
 
@@ -332,72 +288,6 @@
 								></div>
 							</div>
 						</label>
-					</div>
-
-					<!-- Encrypted Audio Backup -->
-					<div
-						class="rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200"
-					>
-						<div class="flex items-start justify-between gap-4">
-							<div>
-								<span class="text-base font-medium text-gray-700">Back Up Recordings</span>
-								<p class="mt-0.5 text-sm text-gray-500">
-									{isSupporterValue
-										? 'Include audio when TalkType backs up history to Vault.'
-										: 'Supporters can include recordings in private Vault backup.'}
-								</p>
-							</div>
-							{#if isSupporterValue}
-								<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
-									<span class="sr-only">
-										Audio backup {vaultAudioSyncValue ? 'enabled' : 'disabled'}
-									</span>
-									<div class="relative">
-										<input
-											type="checkbox"
-											class="peer sr-only"
-											checked={vaultAudioSyncValue}
-											on:change={toggleVaultAudioSync}
-										/>
-										<div
-											class={`h-6 w-11 rounded-full ${
-												vaultAudioSyncValue ? 'bg-pink-400' : 'bg-gray-200'
-											} transition-all duration-200`}
-										></div>
-										<div
-											class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${vaultAudioSyncValue ? 'translate-x-5' : ''}`}
-										></div>
-									</div>
-								</label>
-							{:else}
-								<button
-									type="button"
-									class="min-h-11 rounded-xl border border-pink-200 bg-pink-50 px-3 text-sm font-bold text-pink-700 transition-all duration-150 hover:bg-pink-100"
-									on:click={openSupporterModal}
-								>
-									Unlock
-								</button>
-							{/if}
-						</div>
-
-						{#if isSupporterValue && vaultAudioSyncValue}
-							<div class="mt-3 grid grid-cols-2 gap-2" role="group" aria-label="Audio retention">
-								{#each SUPPORTER_VAULT.AUDIO_RETENTION_OPTIONS as option}
-									<button
-										type="button"
-										class={`min-h-11 rounded-xl border px-3 py-2 text-sm font-bold transition-all duration-150 ${
-											vaultAudioRetentionValue === option.value
-												? 'border-pink-300 bg-pink-50 text-gray-900 shadow-sm ring-2 ring-pink-100'
-												: 'border-pink-100 bg-white/70 text-gray-600 hover:border-pink-200'
-										}`}
-										aria-pressed={vaultAudioRetentionValue === option.value}
-										on:click={() => setVaultAudioRetention(option.value)}
-									>
-										{option.label}
-									</button>
-								{/each}
-							</div>
-						{/if}
 					</div>
 				</div>
 			</details>

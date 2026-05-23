@@ -3,6 +3,7 @@ import { backupTranscriptsToVault, countTranscriptsWithAudio } from './vaultTran
 
 describe('Vault transcript backup', () => {
 	afterEach(() => {
+		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
 	});
 
@@ -16,7 +17,7 @@ describe('Vault transcript backup', () => {
 		).toBe(1);
 	});
 
-	it('backs up text history without uploading audio when audio backup is off', async () => {
+	it('can back up text history without uploading audio when a caller excludes media', async () => {
 		const posts = [];
 		vi.stubGlobal(
 			'fetch',
@@ -56,7 +57,7 @@ describe('Vault transcript backup', () => {
 		expect(posts[0].body.data).not.toContain('hello vault');
 	});
 
-	it('uploads audio media and an encrypted manifest when audio backup is on', async () => {
+	it('uploads audio media and an encrypted manifest when media backup is requested', async () => {
 		const posts = [];
 		const payloads = new Map();
 
@@ -109,5 +110,50 @@ describe('Vault transcript backup', () => {
 			expect.stringMatching(/^\/vault\/talktype-media-index\/[a-f0-9]{64}$/),
 			expect.stringMatching(/^\/vault\/talktype\/[a-f0-9]{64}$/)
 		]);
+	});
+
+	it('still saves the transcript snapshot when one audio upload fails', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		const posts = [];
+
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (url, options = {}) => {
+				const pathname = new URL(url.toString()).pathname;
+				if (options.method === 'POST') {
+					posts.push(pathname);
+					if (pathname.startsWith('/vault/talktype-media/')) {
+						return { ok: false, status: 413 };
+					}
+				}
+
+				return { ok: true, status: 200 };
+			})
+		);
+
+		const summary = await backupTranscriptsToVault({
+			transcripts: [
+				{
+					id: 1,
+					text: 'keep the note',
+					timestamp: Date.parse('2026-05-23T00:00:00.000Z'),
+					audioBlob: new Blob(['audio'], { type: 'audio/webm' })
+				}
+			],
+			code: 'TT-ABCD-1234',
+			serverUrl: 'https://vault.local'
+		});
+
+		expect(summary).toMatchObject({
+			transcriptCount: 1,
+			audioCount: 0,
+			audioFailed: 1,
+			includeAudio: true
+		});
+		expect(posts).toEqual([
+			expect.stringMatching(/^\/vault\/talktype-media\/[a-f0-9]{64}$/),
+			expect.stringMatching(/^\/vault\/talktype\/[a-f0-9]{64}$/)
+		]);
+		expect(warn).toHaveBeenCalled();
 	});
 });

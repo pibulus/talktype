@@ -16,7 +16,7 @@
 		countTranscriptsWithAudio
 	} from '$lib/services/storage/vaultTranscriptBackup.js';
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
-	import { vaultAudioRetentionDays, vaultAudioSync } from '$lib';
+	import { vaultAudioRetentionDays } from '$lib';
 	import {
 		readStoredSupporterCode,
 		readStoredVaultServerUrl,
@@ -62,7 +62,6 @@
 	let selectedTag = '';
 	const iconButtonClass = 'btn btn-ghost h-12 min-h-12 w-12 px-0 text-base';
 
-	$: audioBackupEnabled = $vaultAudioSync === 'true';
 	$: audioClipCount = countTranscriptsWithAudio($transcriptHistory);
 	$: availableTags = getTranscriptTagPool($transcriptHistory);
 	$: visibleTranscripts = selectedTag
@@ -318,7 +317,7 @@
 		}
 
 		isBackingUpVault = true;
-		vaultProgress = { current: 0, total: $transcriptHistory.length, audioCount: 0 };
+		vaultProgress = { current: 0, total: $transcriptHistory.length, audioCount: 0, audioFailed: 0 };
 
 		try {
 			saveStoredVaultServerUrl(vaultServerUrl);
@@ -331,7 +330,7 @@
 				transcripts: $transcriptHistory,
 				code: passportCode,
 				serverUrl: vaultServerUrl,
-				includeAudio: audioBackupEnabled,
+				includeAudio: true,
 				retentionDays: $vaultAudioRetentionDays,
 				onProgress: (progress) => {
 					vaultProgress = progress;
@@ -500,20 +499,18 @@
 					</button>
 				</form>
 				<p class="mt-2 text-xs leading-5 text-gray-500">
-					New supporter transcripts back up automatically when this device has a Passport and Vault
-					URL. Use this button to save a snapshot now.
+					New supporter transcripts and recordings back up automatically when this device has a
+					Passport and Vault URL. Use this button to save a snapshot now.
 					{#if hasStoredPassportCode}
 						Passport remembered on this device.
 					{:else}
 						Enter your supporter code once and TalkType will remember this Passport.
 					{/if}
-					{#if audioBackupEnabled}
-						Audio backup is on. {audioClipCount} clip{audioClipCount !== 1 ? 's' : ''} will be encrypted
-						separately with {$vaultAudioRetentionDays === '0'
-							? 'forever'
-							: `${$vaultAudioRetentionDays}-day`} retention.
+					{#if audioClipCount > 0}
+						{audioClipCount} clip{audioClipCount !== 1 ? 's' : ''} will be encrypted separately with
+						{$vaultAudioRetentionDays === '0' ? 'forever' : `${$vaultAudioRetentionDays}-day`} retention.
 					{:else}
-						Text history only. Turn on Back Up Recordings in Settings to include audio.
+						No saved recordings are attached to this history yet.
 					{/if}
 				</p>
 				{#if vaultProgress && isBackingUpVault}
@@ -536,6 +533,13 @@
 							? 's'
 							: ''}.
 					</p>
+					{#if vaultBackupSummary.audioFailed > 0}
+						<p class="mt-1 text-xs font-bold text-amber-700" aria-live="polite">
+							{vaultBackupSummary.audioFailed} recording{vaultBackupSummary.audioFailed !== 1
+								? 's'
+								: ''} could not be backed up, but the transcript text was saved.
+						</p>
+					{/if}
 				{/if}
 			</div>
 		{/if}

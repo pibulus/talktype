@@ -19,7 +19,7 @@ describe('Vault auto-backup', () => {
 		expect(backup).not.toHaveBeenCalled();
 	});
 
-	it('backs up text history when Passport and Vault URL are saved', async () => {
+	it('backs up text and recording history when Passport and Vault URL are saved', async () => {
 		const transcripts = [{ id: 1, text: 'hello vault' }];
 		const backup = vi.fn(async () => ({ transcriptCount: 1, audioCount: 0 }));
 
@@ -30,7 +30,6 @@ describe('Vault auto-backup', () => {
 				readVaultUrl: () => 'https://vault.local',
 				loadTranscripts: async () => transcripts,
 				backup,
-				includeAudio: false,
 				retentionDays: '30'
 			})
 		).resolves.toMatchObject({
@@ -42,7 +41,7 @@ describe('Vault auto-backup', () => {
 			transcripts,
 			code: 'TT-ABCD-1234',
 			serverUrl: 'https://vault.local',
-			includeAudio: false,
+			includeAudio: true,
 			retentionDays: '30'
 		});
 	});

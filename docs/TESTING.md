@@ -68,9 +68,9 @@ For a release candidate:
 7. Deny microphone permission, reload, allow permission, and retry.
 8. Record a longer note, background the app, refresh or interrupt it, and verify the recovery card can restore usable audio/text.
 9. Unlock supporter mode through Square sandbox or a manual code.
-10. Save a supporter transcript with a Passport and Vault URL configured, then verify text history backs up to Vault.
+10. Save a supporter transcript with a Passport and Vault URL configured, then verify text and attached audio back up to Vault.
 11. Scan/click the Passport QR on another device and verify `/passport` imports the Passport and restores history.
-12. If audio backup is enabled, verify a restored history item can play its encrypted audio.
+12. Verify a restored history item can play its encrypted audio when the source history item had a recording.
 13. Install to iPhone/Android home screen and test auto-record plus mic permission flow.
 
 ## Known Gaps
