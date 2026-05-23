@@ -9,7 +9,12 @@
 	import { SUPPORTER_CHECKOUT } from '$lib/constants';
 	import MembershipCard from '$lib/cartridges/MembershipCard.svelte';
 	import { getVaultHash } from '$lib/services/syncService.js';
-	import { readStoredVaultHash, saveStoredVaultHash } from '$lib/services/vaultHashStorage.js';
+	import {
+		readStoredSupporterCode,
+		readStoredVaultHash,
+		saveStoredSupporterCode,
+		saveStoredVaultHash
+	} from '$lib/services/vaultHashStorage.js';
 
 	export let closeModal = () => {};
 
@@ -37,6 +42,15 @@
 	onMount(() => {
 		if (!browser) return;
 		vaultHash = readStoredVaultHash();
+
+		if (!vaultHash) {
+			const storedCode = readStoredSupporterCode();
+			if (storedCode) {
+				getVaultHash(storedCode)
+					.then(saveVaultHash)
+					.catch((error) => console.warn('Failed to restore supporter passport:', error));
+			}
+		}
 	});
 
 	async function handleCheckout() {
@@ -88,7 +102,8 @@
 				return;
 			}
 
-			saveVaultHash(await getVaultHash(code));
+			const passportCode = saveStoredSupporterCode(code);
+			saveVaultHash(await getVaultHash(passportCode));
 			setSupporterStatus(true, payload.token || null);
 
 			window.dispatchEvent(

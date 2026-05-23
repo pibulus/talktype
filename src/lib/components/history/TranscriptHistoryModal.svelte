@@ -18,6 +18,10 @@
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
 	import { vaultAudioRetentionDays, vaultAudioSync } from '$lib';
 	import { STORAGE_KEYS } from '$lib/constants';
+	import {
+		readStoredSupporterCode,
+		saveStoredSupporterCode
+	} from '$lib/services/vaultHashStorage.js';
 
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { PRICING } from '$lib/config/pricing.js';
@@ -47,6 +51,7 @@
 	let vaultBackupSummary = null;
 	let vaultProgress = null;
 	let isBackingUpVault = false;
+	let hasStoredPassportCode = false;
 	const iconButtonClass = 'btn btn-ghost h-12 min-h-12 w-12 px-0 text-base';
 
 	$: audioBackupEnabled = $vaultAudioSync === 'true';
@@ -246,8 +251,11 @@
 			return;
 		}
 
-		if (!vaultCode.trim()) {
-			vaultBackupError = 'Enter your supporter code to encrypt this backup.';
+		const storedPassportCode = readStoredSupporterCode();
+		let passportCode = storedPassportCode;
+
+		if (!passportCode && !vaultCode.trim()) {
+			vaultBackupError = 'Enter your supporter code once to remember this Passport.';
 			return;
 		}
 
@@ -256,9 +264,13 @@
 
 		try {
 			localStorage.setItem(STORAGE_KEYS.VAULT_SERVER_URL, vaultServerUrl.trim());
+			if (!storedPassportCode) {
+				passportCode = saveStoredSupporterCode(vaultCode);
+				hasStoredPassportCode = true;
+			}
 			vaultBackupSummary = await backupTranscriptsToVault({
 				transcripts: $transcriptHistory,
-				code: vaultCode,
+				code: passportCode,
 				serverUrl: vaultServerUrl,
 				includeAudio: audioBackupEnabled,
 				retentionDays: $vaultAudioRetentionDays,
@@ -291,6 +303,7 @@
 
 	onMount(() => {
 		vaultServerUrl = localStorage.getItem(STORAGE_KEYS.VAULT_SERVER_URL) || '';
+		hasStoredPassportCode = !!readStoredSupporterCode();
 		loadAllTranscripts();
 	});
 
@@ -388,7 +401,7 @@
 				class="mb-4 shrink-0 rounded-xl border border-pink-100 bg-white/70 p-3 shadow-sm"
 			>
 				<form
-					class="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"
+					class={`grid gap-3 ${hasStoredPassportCode ? 'sm:grid-cols-[1fr_auto]' : 'sm:grid-cols-[1fr_1fr_auto]'}`}
 					on:submit|preventDefault={handleVaultBackup}
 				>
 					<label class="min-w-0">
@@ -401,18 +414,20 @@
 							autocomplete="url"
 						/>
 					</label>
-					<label class="min-w-0">
-						<span class="sr-only">Supporter code</span>
-						<input
-							type="password"
-							class="min-h-11 w-full rounded-xl border border-pink-100 bg-[#fffdf5] px-3 text-sm text-gray-800 outline-none transition-all duration-150 focus:border-pink-300 focus:ring-2 focus:ring-pink-100"
-							placeholder="Supporter code"
-							bind:value={vaultCode}
-							autocomplete="one-time-code"
-							autocapitalize="characters"
-							spellcheck="false"
-						/>
-					</label>
+					{#if !hasStoredPassportCode}
+						<label class="min-w-0">
+							<span class="sr-only">Supporter code</span>
+							<input
+								type="password"
+								class="min-h-11 w-full rounded-xl border border-pink-100 bg-[#fffdf5] px-3 text-sm text-gray-800 outline-none transition-all duration-150 focus:border-pink-300 focus:ring-2 focus:ring-pink-100"
+								placeholder="Supporter code"
+								bind:value={vaultCode}
+								autocomplete="one-time-code"
+								autocapitalize="characters"
+								spellcheck="false"
+							/>
+						</label>
+					{/if}
 					<button
 						type="submit"
 						class="btn min-h-11 border-pink-200 bg-pink-500 px-4 text-sm font-bold text-white transition-colors duration-150 hover:bg-pink-600 disabled:opacity-60"
@@ -422,6 +437,11 @@
 					</button>
 				</form>
 				<p class="mt-2 text-xs leading-5 text-gray-500">
+					{#if hasStoredPassportCode}
+						Passport remembered on this device.
+					{:else}
+						Enter your supporter code once and TalkType will remember this Passport.
+					{/if}
 					{#if audioBackupEnabled}
 						Audio backup is on. {audioClipCount} clip{audioClipCount !== 1 ? 's' : ''} will be encrypted
 						separately with {$vaultAudioRetentionDays === '0'

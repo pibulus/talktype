@@ -31,7 +31,7 @@ function requireCode(code) {
 		throw new Error('Vault encryption needs a supporter code');
 	}
 
-	return code;
+	return code.trim().toUpperCase();
 }
 
 async function deriveKey(code, salt, iterations = KEY_ITERATIONS) {

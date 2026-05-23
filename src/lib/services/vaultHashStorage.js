@@ -65,3 +65,50 @@ export function saveStoredVaultHash(hash, storage, now = Date.now()) {
 
 	return hash;
 }
+
+export function normalizeStoredSupporterCode(code) {
+	return code?.toString().trim().toUpperCase() || '';
+}
+
+export function clearStoredSupporterCode(storage) {
+	const targetStorage = getStorage(storage);
+	if (!targetStorage) return;
+
+	try {
+		targetStorage.removeItem(STORAGE_KEYS.SUPPORTER_PASSPORT_CODE);
+	} catch (error) {
+		console.warn('Failed to clear supporter passport code:', error);
+	}
+}
+
+export function readStoredSupporterCode(storage) {
+	const targetStorage = getStorage(storage);
+	if (!targetStorage) return '';
+
+	try {
+		return normalizeStoredSupporterCode(
+			targetStorage.getItem(STORAGE_KEYS.SUPPORTER_PASSPORT_CODE) || ''
+		);
+	} catch (error) {
+		console.warn('Failed to read supporter passport code:', error);
+		return '';
+	}
+}
+
+export function saveStoredSupporterCode(code, storage) {
+	const normalizedCode = normalizeStoredSupporterCode(code);
+	if (!normalizedCode) {
+		throw new Error('Supporter passport code is missing');
+	}
+
+	const targetStorage = getStorage(storage);
+	if (!targetStorage) return normalizedCode;
+
+	try {
+		targetStorage.setItem(STORAGE_KEYS.SUPPORTER_PASSPORT_CODE, normalizedCode);
+	} catch (error) {
+		console.warn('Failed to persist supporter passport code:', error);
+	}
+
+	return normalizedCode;
+}

@@ -1,8 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { STORAGE_KEYS, SUPPORTER_VAULT } from '$lib/constants';
 import {
+	clearStoredSupporterCode,
 	clearStoredVaultHash,
+	readStoredSupporterCode,
 	readStoredVaultHash,
+	saveStoredSupporterCode,
 	saveStoredVaultHash
 } from './vaultHashStorage.js';
 
@@ -48,5 +51,27 @@ describe('vault hash local storage', () => {
 		clearStoredVaultHash(storage);
 
 		expect(readStoredVaultHash(storage)).toBe('');
+	});
+
+	it('saves a normalized supporter passport code for trusted-device backups', () => {
+		const storage = createStorage();
+
+		const savedCode = saveStoredSupporterCode(' tt-abcd-1234 ', storage);
+
+		expect(savedCode).toBe('TT-ABCD-1234');
+		expect(storage.setItem).toHaveBeenCalledWith(
+			STORAGE_KEYS.SUPPORTER_PASSPORT_CODE,
+			'TT-ABCD-1234'
+		);
+		expect(readStoredSupporterCode(storage)).toBe('TT-ABCD-1234');
+	});
+
+	it('can explicitly clear the stored supporter passport code', () => {
+		const storage = createStorage();
+
+		saveStoredSupporterCode('TT-ABCD-1234', storage);
+		clearStoredSupporterCode(storage);
+
+		expect(readStoredSupporterCode(storage)).toBe('');
 	});
 });

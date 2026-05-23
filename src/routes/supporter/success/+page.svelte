@@ -9,7 +9,7 @@
 	import MembershipCard from '$lib/cartridges/MembershipCard.svelte';
 	import { SUPPORTER_CHECKOUT } from '$lib/constants';
 	import { getVaultHash } from '$lib/services/syncService.js';
-	import { saveStoredVaultHash } from '$lib/services/vaultHashStorage.js';
+	import { saveStoredSupporterCode, saveStoredVaultHash } from '$lib/services/vaultHashStorage.js';
 
 	let status = 'checking';
 	let message = 'Checking your supporter unlock...';
@@ -84,7 +84,8 @@
 			let nextVaultHash = '';
 			if (nextSupporterCode) {
 				try {
-					nextVaultHash = await getVaultHash(nextSupporterCode);
+					const passportCode = saveStoredSupporterCode(nextSupporterCode);
+					nextVaultHash = await getVaultHash(passportCode);
 					saveStoredVaultHash(nextVaultHash);
 				} catch (error) {
 					console.warn('Failed to prepare supporter passport:', error);
@@ -220,7 +221,7 @@
 					<p class="mt-2 text-xs font-bold text-pink-600" aria-live="polite">{copyMessage}</p>
 				{/if}
 				<p class="mt-2 text-xs text-gray-500">
-					Keep this code for unlocking TalkType on another device.
+					TalkType remembered this Passport on this device. Keep the code for other devices.
 				</p>
 			</div>
 		{/if}

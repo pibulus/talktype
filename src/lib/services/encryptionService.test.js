@@ -19,6 +19,13 @@ describe('Encryption Service', () => {
 		await expect(decrypt(encrypted, 'wrong-code')).rejects.toThrow();
 	});
 
+	it('normalizes supporter code casing for encryption keys', async () => {
+		const testData = { history: ['hello passport'] };
+		const encrypted = await encrypt(testData, ' tt-abcd-1234 ');
+
+		await expect(decrypt(encrypted, 'TT-ABCD-1234')).resolves.toEqual(testData);
+	});
+
 	it('handles larger history blobs without spreading the whole payload onto the stack', async () => {
 		const testData = {
 			history: Array.from({ length: 5000 }, (_, index) => `Transcript line ${index}`)

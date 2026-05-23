@@ -25,6 +25,7 @@ export const STORAGE_KEYS = {
 	CUSTOM_PROMPT: 'talktype_custom_prompt',
 	SUPPORTER: 'talktype_supporter',
 	SUPPORTER_TOKEN: 'talktype_supporter_token',
+	SUPPORTER_PASSPORT_CODE: 'talktype_supporter_passport_code',
 	SUPPORTER_VAULT_HASH: 'talktype_supporter_vault_hash',
 	SUPPORTER_VAULT_HASH_SAVED_AT: 'talktype_supporter_vault_hash_saved_at',
 	VAULT_SERVER_URL: 'talktype_vault_server_url',
