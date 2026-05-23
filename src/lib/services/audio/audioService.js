@@ -23,11 +23,9 @@ const log = createLogger('AudioService');
 const SPEECH_AUDIO_BITS_PER_SECOND = 48000;
 const MEDIA_RECORDER_TIMESLICE_MS = 250;
 const FINAL_AUDIO_CHUNK_DELAY_MS = 100;
-const RECOVERY_CHECKPOINT_INITIAL_DELAY_MS = 5000;
-const RECOVERY_CHECKPOINT_INTERVAL_MS = 20000;
 const RECOVERY_CHECKPOINT_SETTLE_MS = 120;
-const RECOVERY_JOURNAL_FLUSH_MS = 2000;
-const RECOVERY_JOURNAL_MAX_BUFFERED_CHUNKS = 8;
+const RECOVERY_JOURNAL_FLUSH_MS = 5000;
+const RECOVERY_JOURNAL_MAX_BUFFERED_CHUNKS = 20;
 const CLEANUP_RECORDER_STOP_TIMEOUT_MS = 1000;
 const TRACK_STOP_TIMEOUT_MS = 500;
 const IOS_AUDIO_CONTEXT_RETRY_DELAY_MS = 100;
@@ -52,8 +50,6 @@ export class AudioService {
 		this.analyser = null;
 		this.cleanupPromise = null;
 		this.stopPromise = null;
-		this.recoveryCheckpointTimeout = null;
-		this.recoveryCheckpointInterval = null;
 		this.recoveryCheckpointInFlight = false;
 		this.recoveryJournalBuffer = [];
 		this.recoveryJournalSequence = 0;
@@ -323,7 +319,6 @@ export class AudioService {
 			// This helps prevent losing the last bit of audio
 			this.mediaRecorder.start(MEDIA_RECORDER_TIMESLICE_MS);
 			this.stateManager.setState(AudioStates.RECORDING);
-			this.#startRecoveryCheckpointing(mimeType);
 
 			// Update the store with mimeType
 			audioState.update((current) => ({
@@ -395,8 +390,6 @@ export class AudioService {
 		}
 
 		this.stopPromise = new Promise((resolve) => {
-			this.#stopRecoveryCheckpointing();
-
 			// Update state through state manager first - this will trigger store update
 			this.stateManager.setState(AudioStates.STOPPING);
 
@@ -486,30 +479,6 @@ export class AudioService {
 		});
 
 		return this.stopPromise;
-	}
-
-	#startRecoveryCheckpointing(mimeType) {
-		this.#stopRecoveryCheckpointing();
-
-		const sessionId = this.activeRecordingSessionId;
-		this.recoveryCheckpointTimeout = setTimeout(() => {
-			void this.#checkpointRecordingDraft(mimeType, sessionId, 'initial-checkpoint');
-			this.recoveryCheckpointInterval = setInterval(() => {
-				void this.#checkpointRecordingDraft(mimeType, sessionId, 'interval-checkpoint');
-			}, RECOVERY_CHECKPOINT_INTERVAL_MS);
-		}, RECOVERY_CHECKPOINT_INITIAL_DELAY_MS);
-	}
-
-	#stopRecoveryCheckpointing() {
-		if (this.recoveryCheckpointTimeout) {
-			clearTimeout(this.recoveryCheckpointTimeout);
-			this.recoveryCheckpointTimeout = null;
-		}
-
-		if (this.recoveryCheckpointInterval) {
-			clearInterval(this.recoveryCheckpointInterval);
-			this.recoveryCheckpointInterval = null;
-		}
 	}
 
 	#resetRecoveryJournalState() {
@@ -671,8 +640,6 @@ export class AudioService {
 	async #handleUnexpectedRecorderStop(mimeType, sessionId) {
 		if (!sessionId || sessionId !== this.activeRecordingSessionId) return;
 
-		this.#stopRecoveryCheckpointing();
-
 		try {
 			await this.#flushRecoveryJournal(mimeType, sessionId, 'recording-interrupted', {
 				forceMetadataUpdate: true
@@ -744,7 +711,6 @@ export class AudioService {
 		}
 
 		this.cancelWarmStreamRelease();
-		this.#stopRecoveryCheckpointing();
 		if (this.stateManager.getState() === AudioStates.RECORDING && this.activeRecordingSessionId) {
 			await this.#flushRecoveryJournal(
 				this.mediaRecorder?.mimeType || 'audio/webm',

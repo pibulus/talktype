@@ -22,6 +22,10 @@
 		readStoredSupporterCode,
 		saveStoredSupporterCode
 	} from '$lib/services/vaultHashStorage.js';
+	import {
+		cleanTranscriptTags,
+		getTranscriptTagPool
+	} from '$lib/services/storage/transcriptTags.js';
 
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { PRICING } from '$lib/config/pricing.js';
@@ -54,10 +58,20 @@
 	let hasStoredPassportCode = false;
 	let activeAudioId = null;
 	let activeAudioUrl = '';
+	let selectedTag = '';
 	const iconButtonClass = 'btn btn-ghost h-12 min-h-12 w-12 px-0 text-base';
 
 	$: audioBackupEnabled = $vaultAudioSync === 'true';
 	$: audioClipCount = countTranscriptsWithAudio($transcriptHistory);
+	$: availableTags = getTranscriptTagPool($transcriptHistory);
+	$: visibleTranscripts = selectedTag
+		? $transcriptHistory.filter((transcript) =>
+				cleanTranscriptTags(transcript.tags || []).includes(selectedTag)
+			)
+		: $transcriptHistory;
+	$: if (selectedTag && !availableTags.includes(selectedTag)) {
+		selectedTag = '';
+	}
 
 	// Format timestamp to readable date
 	function formatDate(timestamp) {
@@ -112,6 +126,10 @@
 		};
 
 		return labels[style] || style;
+	}
+
+	function toggleTag(tag) {
+		selectedTag = selectedTag === tag ? '' : tag;
 	}
 
 	// Copy transcript to clipboard
@@ -266,6 +284,21 @@
 		);
 	}
 
+	async function validatePassportCode(code) {
+		const response = await fetch('/api/validate-code', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ code })
+		});
+		const payload = await response.json().catch(() => ({}));
+
+		if (!response.ok || !payload.valid) {
+			throw new Error(payload.error || 'Check the supporter code and try once more.');
+		}
+	}
+
 	async function handleVaultBackup() {
 		vaultBackupError = '';
 		vaultBackupSummary = null;
@@ -289,6 +322,7 @@
 		try {
 			localStorage.setItem(STORAGE_KEYS.VAULT_SERVER_URL, vaultServerUrl.trim());
 			if (!storedPassportCode) {
+				await validatePassportCode(vaultCode);
 				passportCode = saveStoredSupporterCode(vaultCode);
 				hasStoredPassportCode = true;
 			}
@@ -372,6 +406,9 @@
 						<p class="text-xs text-gray-500">
 							{$storageStats.count} transcript{$storageStats.count !== 1 ? 's' : ''} •
 							{formatSize($storageStats.totalSize)}
+							{#if selectedTag}
+								• #{selectedTag}
+							{/if}
 						</p>
 					</div>
 				</div>
@@ -500,6 +537,41 @@
 			</div>
 		{/if}
 
+		{#if isSupporter && availableTags.length > 0 && $transcriptHistory.length > 0}
+			<div
+				class="mb-3 flex shrink-0 gap-2 overflow-x-auto pb-1"
+				role="group"
+				aria-label="Filter history by tag"
+			>
+				<button
+					type="button"
+					class={`min-h-10 shrink-0 rounded-full border px-3 text-xs font-bold transition-colors duration-150 ${
+						!selectedTag
+							? 'border-pink-300 bg-pink-50 text-pink-800'
+							: 'border-pink-100 bg-white/75 text-gray-600 hover:bg-pink-50'
+					}`}
+					aria-pressed={!selectedTag}
+					on:click={() => (selectedTag = '')}
+				>
+					All
+				</button>
+				{#each availableTags.slice(0, 14) as tag}
+					<button
+						type="button"
+						class={`min-h-10 shrink-0 rounded-full border px-3 text-xs font-bold transition-colors duration-150 ${
+							selectedTag === tag
+								? 'border-pink-300 bg-pink-50 text-pink-800'
+								: 'border-pink-100 bg-white/75 text-gray-600 hover:bg-pink-50'
+						}`}
+						aria-pressed={selectedTag === tag}
+						on:click={() => toggleTag(tag)}
+					>
+						#{tag}
+					</button>
+				{/each}
+			</div>
+		{/if}
+
 		<!-- Content -->
 		<div class="min-h-0 flex-1 overflow-y-auto">
 			{#if !isSupporter}
@@ -528,7 +600,7 @@
 			{:else}
 				<!-- Transcript List -->
 				<div class="space-y-3">
-					{#each $transcriptHistory as transcript (transcript.id)}
+					{#each visibleTranscripts as transcript (transcript.id)}
 						<div
 							class="group rounded-lg border border-pink-100 bg-white/50 p-3 shadow-sm transition-all hover:shadow-md"
 						>
@@ -557,6 +629,24 @@
 									<p class="text-xs text-gray-400">
 										{transcript.wordCount} words • {transcript.duration}s
 									</p>
+									{#if transcript.tags?.length}
+										<div class="mt-2 flex flex-wrap gap-1.5">
+											{#each cleanTranscriptTags(transcript.tags).slice(0, 5) as tag}
+												<button
+													type="button"
+													class={`rounded-full border px-2 py-1 text-[10px] font-bold transition-colors duration-150 ${
+														selectedTag === tag
+															? 'border-pink-300 bg-pink-50 text-pink-800'
+															: 'border-pink-100 bg-white/80 text-gray-500 hover:bg-pink-50'
+													}`}
+													aria-pressed={selectedTag === tag}
+													on:click={() => toggleTag(tag)}
+												>
+													#{tag}
+												</button>
+											{/each}
+										</div>
+									{/if}
 								</div>
 
 								<!-- Actions -->

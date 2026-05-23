@@ -108,7 +108,7 @@ Important behaviors:
 - Permission errors are normalized across browser `DOMException` names/messages.
 - `AudioService.stopRecording()` is idempotent while a stop is already in flight.
 - Draft recordings are persisted before transcription so failed transcription can be retried.
-- Active recordings keep an append-only local recovery journal in IndexedDB. `MediaRecorder` chunks are flushed into small journal blobs during recording, with an early checkpoint after the first few seconds and a rolling interval after that.
+- Active recordings keep an append-only local recovery journal in IndexedDB. `MediaRecorder` chunks are buffered into small journal blobs every few seconds, with immediate flushes on stop, visibility loss, cleanup, or recorder errors.
 - Recovery journal metadata also stores the latest live Deepgram transcript snapshot when Live Mode is active, so a failed long note can retain both recoverable audio and the best partial text TalkType had seen.
 - If `MediaRecorder` stops unexpectedly before the user presses stop, TalkType saves the available chunks as an interrupted recovery draft and surfaces the retry card.
 - iOS installed PWA mode can keep the microphone stream warm briefly after stop to reduce repeated permission/stream churn.
@@ -170,7 +170,7 @@ Flow:
 9. The success page receives the supporter code plus a signed supporter token, calls `setSupporterStatus(true, token)`, and shows the code for other devices.
 10. Existing manually issued codes still redeem through `/api/supporter/redeem` as a fallback.
 11. Supporter status unlocks local transcript history/export, output style presets, and the longer recording limit.
-12. Completed transcripts are only saved to IndexedDB when `userPreferences.isSupporter` is true.
+12. Completed transcripts are only saved to IndexedDB when `userPreferences.isSupporter` is true. Saved history entries get a few local smart tags for lightweight filtering; this does not call an external tagging API.
 13. Batch `/api/transcribe` verifies the signed supporter token before enabling server-side style presets, Deepgram diarization, or Deepgram paragraph formatting.
 
 Square is isolated to the payment provider layer. Feature gates consume supporter entitlement state and do not know which payment provider created it.

@@ -44,13 +44,13 @@
 	const transcriptionModes = [
 		{
 			id: 'live',
-			label: 'Live Text',
-			description: 'Words appear while you speak'
+			label: 'Live',
+			description: 'Text appears as you talk'
 		},
 		{
 			id: 'standard',
 			label: 'After Stop',
-			description: 'Best for style presets'
+			description: 'Clean final transcript'
 		},
 		{
 			id: 'offline',
@@ -230,7 +230,7 @@
 			/>
 		</form>
 
-		<div class="animate-fadeUp space-y-6">
+		<div class="animate-fadeUp space-y-5">
 			<!-- Header -->
 			<div class="mb-2 flex items-center gap-2">
 				<div
@@ -239,16 +239,16 @@
 					<DisplayGhost width="24px" height="24px" theme={selectedVibe} seed={54321} />
 				</div>
 				<h3 id="settings_modal_title" class="text-xl font-black tracking-tight text-gray-800">
-					Options
+					Settings
 				</h3>
 				<p id="settings_modal_description" class="sr-only">
-					Adjust recording startup, transcription mode, output style, supporter mode, and vibe.
+					Adjust vibe, text timing, output style, and optional backup settings.
 				</p>
 			</div>
 
 			<!-- Vibe Selector Section -->
 			<div class="space-y-2">
-				<h4 class="text-sm font-bold text-gray-700">Choose Your Vibe</h4>
+				<h4 class="text-sm font-bold text-gray-700">Vibe</h4>
 				<ThemeSelector currentTheme={selectedVibe} onThemeChange={changeVibe} />
 			</div>
 
@@ -256,7 +256,7 @@
 			<div
 				class="rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200"
 			>
-				<h4 class="mb-2 text-sm font-bold text-gray-700">Transcription Mode</h4>
+				<h4 class="mb-2 text-sm font-bold text-gray-700">When Text Appears</h4>
 				<div class="grid grid-cols-3 gap-2" role="group" aria-label="Transcription mode">
 					{#each transcriptionModes as mode}
 						<button
@@ -281,8 +281,8 @@
 			<!-- Prompt Style Selection Section -->
 			<div class="space-y-2">
 				<div>
-					<h4 class="text-sm font-bold text-gray-700">Output Style</h4>
-					<p class="text-xs text-gray-500">Plain transcription is the default.</p>
+					<h4 class="text-sm font-bold text-gray-700">Style</h4>
+					<p class="text-xs text-gray-500">Plain is best for everyday notes.</p>
 				</div>
 				<TranscriptionStyleSelector
 					{selectedPromptStyle}
@@ -294,105 +294,118 @@
 				/>
 			</div>
 
-			<!-- Encrypted Audio Backup -->
-			<div
-				class="rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200"
+			<details
+				class="rounded-xl border border-pink-100 bg-white/65 p-3 shadow-sm transition-all duration-200"
 			>
-				<div class="flex items-start justify-between gap-4">
-					<div>
-						<span class="text-base font-medium text-gray-700">Encrypted Audio Backup</span>
-						<p class="mt-0.5 text-sm text-gray-500">
-							{isSupporterValue
-								? 'Include recordings when Vault sync is connected'
-								: 'Supporters can privately sync recordings to the Vault'}
-						</p>
-					</div>
-					{#if isSupporterValue}
+				<summary
+					class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold text-gray-700"
+				>
+					<span>More Options</span>
+					<span class="text-pink-500" aria-hidden="true">v</span>
+				</summary>
+
+				<div class="mt-3 space-y-3">
+					<!-- Auto-Record Toggle -->
+					<div
+						class="flex items-center justify-between gap-4 rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm"
+					>
+						<div>
+							<span class="text-base font-medium text-gray-700">Start Listening on Open</span>
+							<p class="mt-0.5 text-sm text-gray-500">Useful for one-tap capture.</p>
+						</div>
 						<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
-							<span class="sr-only">
-								Encrypted audio backup {vaultAudioSyncValue ? 'enabled' : 'disabled'}
-							</span>
+							<span class="sr-only"
+								>Auto-Record Toggle {autoRecordValue ? 'Enabled' : 'Disabled'}</span
+							>
 							<div class="relative">
 								<input
 									type="checkbox"
 									class="peer sr-only"
-									checked={vaultAudioSyncValue}
-									on:change={toggleVaultAudioSync}
+									checked={autoRecordValue}
+									on:change={toggleAutoRecord}
 								/>
 								<div
-									class={`h-6 w-11 rounded-full ${
-										vaultAudioSyncValue ? 'bg-pink-400' : 'bg-gray-200'
-									} transition-all duration-200`}
+									class={`h-6 w-11 rounded-full ${autoRecordValue ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}
 								></div>
 								<div
-									class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${vaultAudioSyncValue ? 'translate-x-5' : ''}`}
+									class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${autoRecordValue ? 'translate-x-5' : ''}`}
 								></div>
 							</div>
 						</label>
-					{:else}
-						<button
-							type="button"
-							class="min-h-11 rounded-xl border border-pink-200 bg-pink-50 px-3 text-sm font-bold text-pink-700 transition-all duration-150 hover:bg-pink-100"
-							on:click={openSupporterModal}
-						>
-							Unlock
-						</button>
-					{/if}
-				</div>
-
-				{#if isSupporterValue && vaultAudioSyncValue}
-					<div class="mt-3 grid grid-cols-2 gap-2" role="group" aria-label="Audio retention">
-						{#each SUPPORTER_VAULT.AUDIO_RETENTION_OPTIONS as option}
-							<button
-								type="button"
-								class={`min-h-11 rounded-xl border px-3 py-2 text-sm font-bold transition-all duration-150 ${
-									vaultAudioRetentionValue === option.value
-										? 'border-pink-300 bg-pink-50 text-gray-900 shadow-sm ring-2 ring-pink-100'
-										: 'border-pink-100 bg-white/70 text-gray-600 hover:border-pink-200'
-								}`}
-								aria-pressed={vaultAudioRetentionValue === option.value}
-								on:click={() => setVaultAudioRetention(option.value)}
-							>
-								{option.label}
-							</button>
-						{/each}
 					</div>
-				{/if}
-			</div>
 
-			<!-- Auto-Record Toggle -->
-			<div
-				class="flex items-center justify-between rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm"
-			>
-				<div>
-					<span class="text-base font-medium text-gray-700">Start Recording on Open</span>
-					<p class="mt-0.5 text-sm text-gray-500">
-						Start recording immediately when you open TalkType
-					</p>
-				</div>
-				<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
-					<span class="sr-only">Auto-Record Toggle {autoRecordValue ? 'Enabled' : 'Disabled'}</span>
-					<div class="relative">
-						<input
-							type="checkbox"
-							class="peer sr-only"
-							checked={autoRecordValue}
-							on:change={toggleAutoRecord}
-						/>
-						<div
-							class={`h-6 w-11 rounded-full ${autoRecordValue ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}
-						></div>
-						<div
-							class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${autoRecordValue ? 'translate-x-5' : ''}`}
-						></div>
+					<!-- Encrypted Audio Backup -->
+					<div
+						class="rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200"
+					>
+						<div class="flex items-start justify-between gap-4">
+							<div>
+								<span class="text-base font-medium text-gray-700">Back Up Recordings</span>
+								<p class="mt-0.5 text-sm text-gray-500">
+									{isSupporterValue
+										? 'Include audio when you back up history to Vault.'
+										: 'Supporters can include recordings in private Vault backup.'}
+								</p>
+							</div>
+							{#if isSupporterValue}
+								<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
+									<span class="sr-only">
+										Audio backup {vaultAudioSyncValue ? 'enabled' : 'disabled'}
+									</span>
+									<div class="relative">
+										<input
+											type="checkbox"
+											class="peer sr-only"
+											checked={vaultAudioSyncValue}
+											on:change={toggleVaultAudioSync}
+										/>
+										<div
+											class={`h-6 w-11 rounded-full ${
+												vaultAudioSyncValue ? 'bg-pink-400' : 'bg-gray-200'
+											} transition-all duration-200`}
+										></div>
+										<div
+											class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${vaultAudioSyncValue ? 'translate-x-5' : ''}`}
+										></div>
+									</div>
+								</label>
+							{:else}
+								<button
+									type="button"
+									class="min-h-11 rounded-xl border border-pink-200 bg-pink-50 px-3 text-sm font-bold text-pink-700 transition-all duration-150 hover:bg-pink-100"
+									on:click={openSupporterModal}
+								>
+									Unlock
+								</button>
+							{/if}
+						</div>
+
+						{#if isSupporterValue && vaultAudioSyncValue}
+							<div class="mt-3 grid grid-cols-2 gap-2" role="group" aria-label="Audio retention">
+								{#each SUPPORTER_VAULT.AUDIO_RETENTION_OPTIONS as option}
+									<button
+										type="button"
+										class={`min-h-11 rounded-xl border px-3 py-2 text-sm font-bold transition-all duration-150 ${
+											vaultAudioRetentionValue === option.value
+												? 'border-pink-300 bg-pink-50 text-gray-900 shadow-sm ring-2 ring-pink-100'
+												: 'border-pink-100 bg-white/70 text-gray-600 hover:border-pink-200'
+										}`}
+										aria-pressed={vaultAudioRetentionValue === option.value}
+										on:click={() => setVaultAudioRetention(option.value)}
+									>
+										{option.label}
+									</button>
+								{/each}
+							</div>
+						{/if}
 					</div>
-				</label>
-			</div>
+				</div>
+			</details>
 		</div>
 	</div>
 
 	<button
-		class="modal-backdrop bg-black/40"
+		class="modal-backdrop bg-pink-950/40"
 		on:click|self|preventDefault|stopPropagation={() => {
 			if (browser) {
 				const modal = document.getElementById('settings_modal');

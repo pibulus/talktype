@@ -177,16 +177,15 @@ describe('AudioService', () => {
 		expect(service.mediaRecorder).toBeNull();
 	});
 
-	it('checkpoints an active recording locally after the initial recovery delay', async () => {
+	it('flushes active recording chunks into the local recovery journal', async () => {
 		const { MockMediaRecorder } = installRecordingMocks();
 
 		await service.startRecording();
 		MockMediaRecorder.last.ondataavailable?.({
 			data: new Blob(['seed'], { type: 'audio/webm' })
 		});
-		await vi.advanceTimersByTimeAsync(5120);
+		await vi.advanceTimersByTimeAsync(5000);
 
-		expect(MockMediaRecorder.last.requestData).toHaveBeenCalled();
 		expect(beginRecordingDraftJournal).toHaveBeenCalledWith(
 			expect.any(String),
 			expect.objectContaining({
@@ -205,7 +204,7 @@ describe('AudioService', () => {
 				mimeType: 'audio/webm',
 				recovery: expect.objectContaining({
 					isPartial: true,
-					reason: 'initial-checkpoint'
+					reason: 'timed-journal'
 				})
 			})
 		);
@@ -215,6 +214,36 @@ describe('AudioService', () => {
 				isPartial: true
 			})
 		});
+	});
+
+	it('uses a new journal sequence for each flushed recovery blob', async () => {
+		const { MockMediaRecorder } = installRecordingMocks();
+
+		await service.startRecording();
+		MockMediaRecorder.last.ondataavailable?.({
+			data: new Blob(['first'], { type: 'audio/webm' })
+		});
+		await vi.advanceTimersByTimeAsync(5000);
+
+		MockMediaRecorder.last.ondataavailable?.({
+			data: new Blob(['second'], { type: 'audio/webm' })
+		});
+		await vi.advanceTimersByTimeAsync(5000);
+
+		expect(appendRecordingDraftJournalChunk).toHaveBeenNthCalledWith(
+			1,
+			expect.any(String),
+			0,
+			expect.any(Blob),
+			expect.any(Object)
+		);
+		expect(appendRecordingDraftJournalChunk).toHaveBeenNthCalledWith(
+			2,
+			expect.any(String),
+			1,
+			expect.any(Blob),
+			expect.any(Object)
+		);
 	});
 
 	it('saves an interrupted recording when MediaRecorder stops unexpectedly', async () => {

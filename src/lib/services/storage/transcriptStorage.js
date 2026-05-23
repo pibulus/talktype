@@ -6,11 +6,16 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 import { createLogger } from '$lib/utils/logger';
+import {
+	cleanTranscriptTags,
+	generateTranscriptTags,
+	getTranscriptTagPool
+} from './transcriptTags.js';
 
 const log = createLogger('TranscriptStorage');
 
 const DB_NAME = 'TalkTypeTranscripts';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'transcripts';
 
 // Transcript history store
@@ -45,22 +50,53 @@ async function initDB() {
 		request.onupgradeneeded = (event) => {
 			const database = event.target.result;
 
-			// Create object store with auto-incrementing key
+			let objectStore;
+
 			if (!database.objectStoreNames.contains(STORE_NAME)) {
-				const objectStore = database.createObjectStore(STORE_NAME, {
+				objectStore = database.createObjectStore(STORE_NAME, {
 					keyPath: 'id',
 					autoIncrement: true
 				});
-
-				// Create indexes for queries
-				objectStore.createIndex('timestamp', 'timestamp', { unique: false });
-				objectStore.createIndex('promptStyle', 'promptStyle', { unique: false });
-				objectStore.createIndex('method', 'method', { unique: false });
-
-				log.log('Transcript storage schema created');
+			} else {
+				objectStore = event.target.transaction.objectStore(STORE_NAME);
 			}
+
+			if (!objectStore.indexNames.contains('timestamp')) {
+				objectStore.createIndex('timestamp', 'timestamp', { unique: false });
+			}
+			if (!objectStore.indexNames.contains('promptStyle')) {
+				objectStore.createIndex('promptStyle', 'promptStyle', { unique: false });
+			}
+			if (!objectStore.indexNames.contains('method')) {
+				objectStore.createIndex('method', 'method', { unique: false });
+			}
+			if (!objectStore.indexNames.contains('tags')) {
+				objectStore.createIndex('tags', 'tags', { unique: false, multiEntry: true });
+			}
+
+			log.log('Transcript storage schema ready');
 		};
 	});
+}
+
+function getHistorySnapshot() {
+	let current = [];
+	transcriptHistory.subscribe((value) => {
+		current = Array.isArray(value) ? value : [];
+	})();
+	return current;
+}
+
+function getGeneratedTags(text, explicitTags = null, excludedId = null) {
+	if (Array.isArray(explicitTags) && explicitTags.length) {
+		return cleanTranscriptTags(explicitTags);
+	}
+
+	const existingTranscripts = excludedId
+		? getHistorySnapshot().filter((transcript) => transcript.id !== excludedId)
+		: getHistorySnapshot();
+
+	return generateTranscriptTags(text, getTranscriptTagPool(existingTranscripts));
 }
 
 /**
@@ -82,7 +118,8 @@ export async function saveTranscript(transcript) {
 			timestamp: Date.now(),
 			promptStyle: transcript.promptStyle || 'standard',
 			method: transcript.method || 'gemini', // 'gemini' or 'whisper'
-			wordCount: transcript.text ? transcript.text.split(/\s+/).length : 0
+			wordCount: transcript.text ? transcript.text.split(/\s+/).length : 0,
+			tags: getGeneratedTags(transcript.text, transcript.tags)
 		};
 
 		return new Promise((resolve, reject) => {
@@ -125,9 +162,13 @@ export async function loadAllTranscripts() {
 			request.onsuccess = (event) => {
 				const cursor = event.target.result;
 				if (cursor) {
+					const transcript = cursor.value;
 					transcripts.push({
-						id: cursor.value.id,
-						...cursor.value
+						id: transcript.id,
+						...transcript,
+						tags: cleanTranscriptTags(
+							transcript.tags?.length ? transcript.tags : generateTranscriptTags(transcript.text)
+						)
 					});
 					cursor.continue();
 				} else {
@@ -155,7 +196,7 @@ export async function loadAllTranscripts() {
  * @param {string} newText - Updated transcript text
  * @returns {Promise<boolean>}
  */
-export async function updateTranscript(id, newText) {
+export async function updateTranscript(id, newText, options = {}) {
 	try {
 		const database = await initDB();
 		const transaction = database.transaction([STORE_NAME], 'readwrite');
@@ -175,6 +216,7 @@ export async function updateTranscript(id, newText) {
 				// Update the text and word count
 				transcript.text = newText;
 				transcript.wordCount = newText ? newText.split(/\s+/).length : 0;
+				transcript.tags = getGeneratedTags(newText, options.tags, id);
 
 				// Save the updated transcript
 				const putRequest = store.put(transcript);
@@ -326,7 +368,8 @@ export async function exportTranscriptsAsJSON() {
 			promptStyle: t.promptStyle,
 			method: t.method,
 			wordCount: t.wordCount,
-			hasAudio: !!t.audioBlob
+			hasAudio: !!t.audioBlob,
+			tags: cleanTranscriptTags(t.tags || [])
 		}))
 	};
 }
@@ -354,6 +397,11 @@ export async function batchDownloadTranscripts() {
 		content += `Method: ${transcript.method}\n`;
 		content += `Style: ${transcript.promptStyle}\n`;
 		content += `Word Count: ${transcript.wordCount}\n`;
+		if (transcript.tags?.length) {
+			content += `Tags: ${cleanTranscriptTags(transcript.tags)
+				.map((tag) => `#${tag}`)
+				.join(' ')}\n`;
+		}
 		content += `\n${'='.repeat(50)}\n\n`;
 		content += transcript.text;
 

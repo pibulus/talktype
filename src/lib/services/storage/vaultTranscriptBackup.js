@@ -1,5 +1,6 @@
 import { SUPPORTER_VAULT } from '$lib/constants';
 import { saveAudioToVaultWithManifest, saveToVault } from '$lib/services/syncService.js';
+import { cleanTranscriptTags } from './transcriptTags.js';
 
 const VAULT_APP_NAME = 'talktype';
 
@@ -35,6 +36,7 @@ function serializeTranscript(transcript, audio = null) {
 		method: transcript.method || 'gemini',
 		wordCount:
 			transcript.wordCount || (transcript.text ? transcript.text.trim().split(/\s+/).length : 0),
+		tags: cleanTranscriptTags(transcript.tags || []),
 		audio
 	};
 }

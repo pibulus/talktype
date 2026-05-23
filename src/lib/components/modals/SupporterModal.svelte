@@ -105,6 +105,8 @@
 			const passportCode = saveStoredSupporterCode(code);
 			saveVaultHash(await getVaultHash(passportCode));
 			setSupporterStatus(true, payload.token || null);
+			code = '';
+			codePanelOpen = false;
 
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
