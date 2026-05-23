@@ -108,7 +108,8 @@ Important behaviors:
 - Permission errors are normalized across browser `DOMException` names/messages.
 - `AudioService.stopRecording()` is idempotent while a stop is already in flight.
 - Draft recordings are persisted before transcription so failed transcription can be retried.
-- Active recordings are checkpointed locally after the first few seconds and then on a rolling interval, so a long note has a recent recovery draft if the tab, browser, or microphone session is interrupted.
+- Active recordings keep an append-only local recovery journal in IndexedDB. `MediaRecorder` chunks are flushed into small journal blobs during recording, with an early checkpoint after the first few seconds and a rolling interval after that.
+- Recovery journal metadata also stores the latest live Deepgram transcript snapshot when Live Mode is active, so a failed long note can retain both recoverable audio and the best partial text TalkType had seen.
 - If `MediaRecorder` stops unexpectedly before the user presses stop, TalkType saves the available chunks as an interrupted recovery draft and surfaces the retry card.
 - iOS installed PWA mode can keep the microphone stream warm briefly after stop to reduce repeated permission/stream churn.
 - Cleanup closes Deepgram, cancels waveform animation, stops recorder/streams, and closes the audio context.

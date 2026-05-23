@@ -7,7 +7,12 @@ import {
 	transcriptionActions
 } from '../infrastructure/stores';
 import { get } from 'svelte/store';
-import { saveRecordingDraft } from './recordingRecoveryStore';
+import {
+	appendRecordingDraftJournalChunk,
+	beginRecordingDraftJournal,
+	saveRecordingDraft,
+	updateRecordingDraftJournalMetadata
+} from './recordingRecoveryStore';
 import { browser } from '$app/environment';
 import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
@@ -21,6 +26,8 @@ const FINAL_AUDIO_CHUNK_DELAY_MS = 100;
 const RECOVERY_CHECKPOINT_INITIAL_DELAY_MS = 5000;
 const RECOVERY_CHECKPOINT_INTERVAL_MS = 20000;
 const RECOVERY_CHECKPOINT_SETTLE_MS = 120;
+const RECOVERY_JOURNAL_FLUSH_MS = 2000;
+const RECOVERY_JOURNAL_MAX_BUFFERED_CHUNKS = 8;
 const CLEANUP_RECORDER_STOP_TIMEOUT_MS = 1000;
 const TRACK_STOP_TIMEOUT_MS = 500;
 const IOS_AUDIO_CONTEXT_RETRY_DELAY_MS = 100;
@@ -48,6 +55,11 @@ export class AudioService {
 		this.recoveryCheckpointTimeout = null;
 		this.recoveryCheckpointInterval = null;
 		this.recoveryCheckpointInFlight = false;
+		this.recoveryJournalBuffer = [];
+		this.recoveryJournalSequence = 0;
+		this.recoveryJournalTotalSize = 0;
+		this.recoveryJournalWriteQueue = Promise.resolve();
+		this.recoveryJournalFlushTimeout = null;
 		this.activeRecordingSessionId = null;
 		this.animationFrameId = null;
 		this.releaseStreamTimeout = null;
@@ -267,9 +279,21 @@ export class AudioService {
 				throw mrError;
 			}
 
+			const mimeType = this.mediaRecorder.mimeType || 'audio/webm';
+			this.#resetRecoveryJournalState();
+			try {
+				await beginRecordingDraftJournal(
+					this.activeRecordingSessionId,
+					this.#buildRecoveryMetadata(mimeType, 'recording-started')
+				);
+			} catch (error) {
+				log.warn('Failed to start recording recovery journal:', error.message);
+			}
+
 			this.mediaRecorder.ondataavailable = (event) => {
-				if (event.data.size > 0) {
+				if (event.data?.size > 0) {
 					this.audioChunks.push(event.data);
+					this.#stageRecoveryJournalChunk(event.data, mimeType);
 
 					// Stream to Deepgram only in the resolved live-cloud mode.
 					if (getTranscriptionMode().useLiveDeepgram) {
@@ -299,12 +323,12 @@ export class AudioService {
 			// This helps prevent losing the last bit of audio
 			this.mediaRecorder.start(MEDIA_RECORDER_TIMESLICE_MS);
 			this.stateManager.setState(AudioStates.RECORDING);
-			this.#startRecoveryCheckpointing(this.mediaRecorder.mimeType || 'audio/webm');
+			this.#startRecoveryCheckpointing(mimeType);
 
 			// Update the store with mimeType
 			audioState.update((current) => ({
 				...current,
-				mimeType: this.mediaRecorder.mimeType || 'audio/webm'
+				mimeType
 			}));
 
 			// Connect to Deepgram only in the resolved live-cloud mode.
@@ -372,7 +396,6 @@ export class AudioService {
 
 		this.stopPromise = new Promise((resolve) => {
 			this.#stopRecoveryCheckpointing();
-			this.activeRecordingSessionId = null;
 
 			// Update state through state manager first - this will trigger store update
 			this.stateManager.setState(AudioStates.STOPPING);
@@ -386,6 +409,7 @@ export class AudioService {
 
 			// The mimeType should be determined before onstop is set up.
 			const mimeType = this.mediaRecorder.mimeType || 'audio/webm';
+			const sessionId = this.activeRecordingSessionId;
 
 			// Request any remaining data before stopping
 			// This ensures we capture audio right up to when stop was pressed
@@ -396,6 +420,9 @@ export class AudioService {
 			// Assign onstop BEFORE calling stop() to avoid race condition
 			// where stop fires synchronously and the handler isn't attached yet
 			this.mediaRecorder.onstop = async () => {
+				await this.#flushRecoveryJournal(mimeType, sessionId, 'stopped', {
+					forceMetadataUpdate: true
+				});
 				// Create the Blob from this.audioChunks, which now contains all chunks
 				// including the final one from the last dataavailable event.
 				const audioBlob = new Blob(this.audioChunks, { type: mimeType });
@@ -414,6 +441,8 @@ export class AudioService {
 
 				this.audioChunks = [];
 				this.mediaRecorder = null;
+				this.activeRecordingSessionId = null;
+				this.#clearRecoveryJournalFlushTimer();
 
 				// Persist before transcription starts so success cleanup cannot race a late draft write.
 				await this.#persistRecordingDraft(audioBlob, mimeType, {
@@ -446,6 +475,8 @@ export class AudioService {
 					}
 
 					// Force state reset on error
+					this.activeRecordingSessionId = null;
+					this.#clearRecoveryJournalFlushTimer();
 					this.stateManager.setState(AudioStates.IDLE);
 					resolve(null);
 				}
@@ -481,34 +512,154 @@ export class AudioService {
 		}
 	}
 
+	#resetRecoveryJournalState() {
+		this.#clearRecoveryJournalFlushTimer();
+		this.recoveryJournalBuffer = [];
+		this.recoveryJournalSequence = 0;
+		this.recoveryJournalTotalSize = 0;
+		this.recoveryJournalWriteQueue = Promise.resolve();
+	}
+
+	#clearRecoveryJournalFlushTimer() {
+		if (this.recoveryJournalFlushTimeout) {
+			clearTimeout(this.recoveryJournalFlushTimeout);
+			this.recoveryJournalFlushTimeout = null;
+		}
+	}
+
+	#stageRecoveryJournalChunk(chunk, mimeType) {
+		if (!browser || !chunk || chunk.size <= 0 || !this.activeRecordingSessionId) return;
+
+		const sessionId = this.activeRecordingSessionId;
+		this.recoveryJournalBuffer.push(chunk);
+		this.recoveryJournalTotalSize += chunk.size;
+
+		if (this.recoveryJournalBuffer.length >= RECOVERY_JOURNAL_MAX_BUFFERED_CHUNKS) {
+			this.#clearRecoveryJournalFlushTimer();
+			void this.#flushRecoveryJournal(mimeType, sessionId, 'chunk-journal');
+			return;
+		}
+
+		if (!this.recoveryJournalFlushTimeout) {
+			this.recoveryJournalFlushTimeout = setTimeout(() => {
+				this.recoveryJournalFlushTimeout = null;
+				void this.#flushRecoveryJournal(mimeType, sessionId, 'timed-journal');
+			}, RECOVERY_JOURNAL_FLUSH_MS);
+		}
+	}
+
+	#buildRecoveryMetadata(mimeType, reason, overrides = {}) {
+		const checkpointedAt = new Date().toISOString();
+		const durationFromStore = get(recordingState)?.duration;
+		const duration =
+			typeof durationFromStore === 'number'
+				? durationFromStore
+				: this.recoveryJournalTotalSize / 2000;
+		const liveTranscript = transcriptionStore.getTranscriptSnapshot?.();
+		const liveText = liveTranscript?.text?.trim();
+
+		return {
+			mimeType,
+			size: this.recoveryJournalTotalSize,
+			duration,
+			sampleRate: 16000,
+			chunkCount: this.recoveryJournalSequence,
+			...(liveText
+				? {
+						liveTranscript: {
+							text: liveText,
+							finalText: liveTranscript.finalText,
+							interimText: liveTranscript.interimText,
+							usedInterim: liveTranscript.usedInterim,
+							snapshotAt: checkpointedAt
+						}
+					}
+				: {}),
+			...overrides,
+			recovery: {
+				isPartial: true,
+				reason,
+				checkpointedAt,
+				...(overrides.recovery || {})
+			}
+		};
+	}
+
+	async #writePendingDraftFromJournal(draft, metadata) {
+		if (!draft) return;
+
+		transcriptionActions.setPendingRecording({
+			id: draft.id,
+			createdAt: draft.createdAt,
+			...(draft.metadata || metadata || {})
+		});
+	}
+
+	async #flushRecoveryJournal(mimeType, sessionId, reason, options = {}) {
+		if (!browser || !sessionId || sessionId !== this.activeRecordingSessionId) return;
+
+		if (options.requestData && this.mediaRecorder?.state === 'recording') {
+			try {
+				this.mediaRecorder.requestData();
+				await new Promise((resolve) => setTimeout(resolve, RECOVERY_CHECKPOINT_SETTLE_MS));
+			} catch (error) {
+				log.warn('Failed to request checkpoint audio data:', error.message);
+			}
+		}
+
+		if (sessionId !== this.activeRecordingSessionId) return;
+
+		this.#clearRecoveryJournalFlushTimer();
+		const chunksToFlush = this.recoveryJournalBuffer.splice(0);
+		const sequence = chunksToFlush.length ? this.recoveryJournalSequence : null;
+		if (sequence !== null) {
+			this.recoveryJournalSequence += 1;
+		}
+		const metadata = this.#buildRecoveryMetadata(mimeType, reason, {
+			chunkCount: this.recoveryJournalSequence
+		});
+
+		if (
+			!chunksToFlush.length &&
+			(!options.forceMetadataUpdate ||
+				this.recoveryJournalSequence <= 0 ||
+				this.recoveryJournalTotalSize <= 0)
+		) {
+			return;
+		}
+
+		this.recoveryJournalWriteQueue = this.recoveryJournalWriteQueue
+			.catch(() => undefined)
+			.then(async () => {
+				if (sessionId !== this.activeRecordingSessionId && !options.allowStaleSession) return null;
+
+				if (chunksToFlush.length) {
+					const journalBlob = new Blob(chunksToFlush, { type: mimeType });
+					if (journalBlob.size <= 0) return null;
+
+					return appendRecordingDraftJournalChunk(sessionId, sequence, journalBlob, metadata);
+				}
+
+				return updateRecordingDraftJournalMetadata(sessionId, metadata);
+			})
+			.then((draft) => this.#writePendingDraftFromJournal(draft, metadata))
+			.catch((error) => {
+				log.warn('Failed to write recording recovery journal:', error.message);
+			});
+
+		await this.recoveryJournalWriteQueue;
+	}
+
 	async #checkpointRecordingDraft(mimeType, sessionId, reason) {
 		if (!browser || this.recoveryCheckpointInFlight) return;
 		if (!sessionId || sessionId !== this.activeRecordingSessionId) return;
-		if (!this.audioChunks.length) return;
 
 		this.recoveryCheckpointInFlight = true;
 
 		try {
-			if (this.mediaRecorder?.state === 'recording') {
-				try {
-					this.mediaRecorder.requestData();
-					await new Promise((resolve) => setTimeout(resolve, RECOVERY_CHECKPOINT_SETTLE_MS));
-				} catch (error) {
-					log.warn('Failed to request checkpoint audio data:', error.message);
-				}
-			}
-
-			if (sessionId !== this.activeRecordingSessionId || !this.audioChunks.length) return;
-
-			const checkpointBlob = new Blob(this.audioChunks, { type: mimeType });
-			if (checkpointBlob.size === 0) return;
-
-			await this.#persistRecordingDraft(checkpointBlob, mimeType, {
-				recovery: {
-					isPartial: true,
-					reason,
-					checkpointedAt: new Date().toISOString()
-				}
+			await this.#flushRecoveryJournal(mimeType, sessionId, reason, {
+				requestData: true,
+				forceMetadataUpdate: true
 			});
 		} catch (error) {
 			log.warn('Failed to checkpoint recording draft:', error.message);
@@ -521,9 +672,11 @@ export class AudioService {
 		if (!sessionId || sessionId !== this.activeRecordingSessionId) return;
 
 		this.#stopRecoveryCheckpointing();
-		this.activeRecordingSessionId = null;
 
 		try {
+			await this.#flushRecoveryJournal(mimeType, sessionId, 'recording-interrupted', {
+				forceMetadataUpdate: true
+			});
 			const audioBlob = new Blob(this.audioChunks, { type: mimeType });
 			if (audioBlob.size > 0) {
 				audioActions.setAudioBlob(audioBlob, mimeType);
@@ -547,6 +700,8 @@ export class AudioService {
 			}
 			this.audioChunks = [];
 			this.mediaRecorder = null;
+			this.activeRecordingSessionId = null;
+			this.#clearRecoveryJournalFlushTimer();
 			this.stateManager.setState(AudioStates.IDLE);
 		}
 	}
@@ -590,7 +745,16 @@ export class AudioService {
 
 		this.cancelWarmStreamRelease();
 		this.#stopRecoveryCheckpointing();
+		if (this.stateManager.getState() === AudioStates.RECORDING && this.activeRecordingSessionId) {
+			await this.#flushRecoveryJournal(
+				this.mediaRecorder?.mimeType || 'audio/webm',
+				this.activeRecordingSessionId,
+				'cleanup',
+				{ requestData: true, forceMetadataUpdate: true }
+			);
+		}
 		this.activeRecordingSessionId = null;
+		this.#clearRecoveryJournalFlushTimer();
 		transcriptionStore.disconnect();
 
 		if (this.animationFrameId) {

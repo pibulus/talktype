@@ -306,7 +306,9 @@ function createTranscriptionStore() {
 			let current;
 			subscribe((s) => (current = s))();
 			return current?.transcript || '';
-		}
+		},
+
+		getTranscriptSnapshot: () => buildResult(getSnapshot())
 	};
 }
 

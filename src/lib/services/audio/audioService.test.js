@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 import { liveMode } from '$lib';
 import { resetStores, transcriptionState, uiState } from '../infrastructure/stores.js';
-import { saveRecordingDraft } from './recordingRecoveryStore.js';
+import {
+	appendRecordingDraftJournalChunk,
+	beginRecordingDraftJournal,
+	saveRecordingDraft,
+	updateRecordingDraftJournalMetadata
+} from './recordingRecoveryStore.js';
 import { AudioService } from './audioService.js';
 
 vi.mock('$app/environment', () => ({
@@ -13,6 +18,21 @@ vi.mock('$app/environment', () => ({
 }));
 
 vi.mock('./recordingRecoveryStore.js', () => ({
+	beginRecordingDraftJournal: vi.fn(async (_sessionId, metadata) => ({
+		id: 'latest',
+		createdAt: Date.now(),
+		metadata
+	})),
+	appendRecordingDraftJournalChunk: vi.fn(async (_sessionId, _sequence, _blob, metadata) => ({
+		id: 'latest',
+		createdAt: Date.now(),
+		metadata
+	})),
+	updateRecordingDraftJournalMetadata: vi.fn(async (_sessionId, metadata) => ({
+		id: 'latest',
+		createdAt: Date.now(),
+		metadata
+	})),
 	saveRecordingDraft: vi.fn(async (_blob, metadata) => ({
 		id: 'latest',
 		createdAt: Date.now(),
@@ -30,6 +50,9 @@ describe('AudioService', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		vi.mocked(saveRecordingDraft).mockClear();
+		vi.mocked(beginRecordingDraftJournal).mockClear();
+		vi.mocked(appendRecordingDraftJournalChunk).mockClear();
+		vi.mocked(updateRecordingDraftJournalMetadata).mockClear();
 		resetStores();
 		liveMode.set('false');
 		service = new AudioService();
@@ -164,7 +187,19 @@ describe('AudioService', () => {
 		await vi.advanceTimersByTimeAsync(5120);
 
 		expect(MockMediaRecorder.last.requestData).toHaveBeenCalled();
-		expect(saveRecordingDraft).toHaveBeenCalledWith(
+		expect(beginRecordingDraftJournal).toHaveBeenCalledWith(
+			expect.any(String),
+			expect.objectContaining({
+				mimeType: 'audio/webm',
+				recovery: expect.objectContaining({
+					isPartial: true,
+					reason: 'recording-started'
+				})
+			})
+		);
+		expect(appendRecordingDraftJournalChunk).toHaveBeenCalledWith(
+			expect.any(String),
+			expect.any(Number),
 			expect.any(Blob),
 			expect.objectContaining({
 				mimeType: 'audio/webm',
@@ -192,6 +227,16 @@ describe('AudioService', () => {
 		MockMediaRecorder.last.state = 'inactive';
 		await MockMediaRecorder.last.onstop();
 
+		expect(appendRecordingDraftJournalChunk).toHaveBeenCalledWith(
+			expect.any(String),
+			expect.any(Number),
+			expect.any(Blob),
+			expect.objectContaining({
+				recovery: expect.objectContaining({
+					reason: 'recording-interrupted'
+				})
+			})
+		);
 		expect(saveRecordingDraft).toHaveBeenCalledWith(
 			expect.any(Blob),
 			expect.objectContaining({
