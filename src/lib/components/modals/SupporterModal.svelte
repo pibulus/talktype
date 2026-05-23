@@ -11,9 +11,7 @@
 	import { getVaultHash } from '$lib/services/syncService.js';
 	import {
 		readStoredSupporterCode,
-		readStoredVaultHash,
-		saveStoredSupporterCode,
-		saveStoredVaultHash
+		saveStoredSupporterCode
 	} from '$lib/services/vaultHashStorage.js';
 
 	export let closeModal = () => {};
@@ -36,20 +34,17 @@
 	}
 
 	function saveVaultHash(hash) {
-		vaultHash = saveStoredVaultHash(hash);
+		vaultHash = hash;
 	}
 
 	onMount(() => {
 		if (!browser) return;
-		vaultHash = readStoredVaultHash();
 
-		if (!vaultHash) {
-			const storedCode = readStoredSupporterCode();
-			if (storedCode) {
-				getVaultHash(storedCode)
-					.then(saveVaultHash)
-					.catch((error) => console.warn('Failed to restore supporter passport:', error));
-			}
+		const storedCode = readStoredSupporterCode();
+		if (storedCode) {
+			getVaultHash(storedCode)
+				.then(saveVaultHash)
+				.catch((error) => console.warn('Failed to restore supporter passport:', error));
 		}
 	});
 

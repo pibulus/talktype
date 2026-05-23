@@ -9,7 +9,7 @@
 	import MembershipCard from '$lib/cartridges/MembershipCard.svelte';
 	import { SUPPORTER_CHECKOUT } from '$lib/constants';
 	import { getVaultHash } from '$lib/services/syncService.js';
-	import { saveStoredSupporterCode, saveStoredVaultHash } from '$lib/services/vaultHashStorage.js';
+	import { saveStoredSupporterCode } from '$lib/services/vaultHashStorage.js';
 
 	let status = 'checking';
 	let message = 'Checking your supporter unlock...';
@@ -86,7 +86,6 @@
 				try {
 					const passportCode = saveStoredSupporterCode(nextSupporterCode);
 					nextVaultHash = await getVaultHash(passportCode);
-					saveStoredVaultHash(nextVaultHash);
 				} catch (error) {
 					console.warn('Failed to prepare supporter passport:', error);
 				}

@@ -1,12 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { STORAGE_KEYS, SUPPORTER_VAULT } from '$lib/constants';
+import { STORAGE_KEYS } from '$lib/constants';
 import {
 	clearStoredSupporterCode,
 	clearStoredVaultHash,
 	readStoredSupporterCode,
-	readStoredVaultHash,
-	saveStoredSupporterCode,
-	saveStoredVaultHash
+	saveStoredSupporterCode
 } from './vaultHashStorage.js';
 
 function createStorage() {
@@ -18,39 +16,14 @@ function createStorage() {
 	};
 }
 
-describe('vault hash local storage', () => {
-	it('saves and reads a supporter vault hash with a timestamp', () => {
-		const storage = createStorage();
-		const now = Date.now();
-
-		saveStoredVaultHash('abc123', storage, now);
-
-		expect(storage.setItem).toHaveBeenCalledWith(STORAGE_KEYS.SUPPORTER_VAULT_HASH, 'abc123');
-		expect(storage.setItem).toHaveBeenCalledWith(
-			STORAGE_KEYS.SUPPORTER_VAULT_HASH_SAVED_AT,
-			String(now)
-		);
-		expect(readStoredVaultHash(storage, now + 1000)).toBe('abc123');
-	});
-
-	it('clears stale hashes instead of keeping them indefinitely', () => {
-		const storage = createStorage();
-		const now = Date.now();
-
-		saveStoredVaultHash('abc123', storage, now - SUPPORTER_VAULT.HASH_TTL_MS - 1000);
-
-		expect(readStoredVaultHash(storage, now)).toBe('');
-		expect(storage.removeItem).toHaveBeenCalledWith(STORAGE_KEYS.SUPPORTER_VAULT_HASH);
-		expect(storage.removeItem).toHaveBeenCalledWith(STORAGE_KEYS.SUPPORTER_VAULT_HASH_SAVED_AT);
-	});
-
-	it('can explicitly clear the stored hash', () => {
+describe('supporter passport local storage', () => {
+	it('clears the legacy stored hash cache', () => {
 		const storage = createStorage();
 
-		saveStoredVaultHash('abc123', storage);
 		clearStoredVaultHash(storage);
 
-		expect(readStoredVaultHash(storage)).toBe('');
+		expect(storage.removeItem).toHaveBeenCalledWith('talktype_supporter_vault_hash');
+		expect(storage.removeItem).toHaveBeenCalledWith('talktype_supporter_vault_hash_saved_at');
 	});
 
 	it('saves a normalized supporter passport code for trusted-device backups', () => {
@@ -64,6 +37,8 @@ describe('vault hash local storage', () => {
 			'TT-ABCD-1234'
 		);
 		expect(readStoredSupporterCode(storage)).toBe('TT-ABCD-1234');
+		expect(storage.removeItem).toHaveBeenCalledWith('talktype_supporter_vault_hash');
+		expect(storage.removeItem).toHaveBeenCalledWith('talktype_supporter_vault_hash_saved_at');
 	});
 
 	it('can explicitly clear the stored supporter passport code', () => {

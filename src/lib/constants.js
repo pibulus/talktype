@@ -26,8 +26,6 @@ export const STORAGE_KEYS = {
 	SUPPORTER: 'talktype_supporter',
 	SUPPORTER_TOKEN: 'talktype_supporter_token',
 	SUPPORTER_PASSPORT_CODE: 'talktype_supporter_passport_code',
-	SUPPORTER_VAULT_HASH: 'talktype_supporter_vault_hash',
-	SUPPORTER_VAULT_HASH_SAVED_AT: 'talktype_supporter_vault_hash_saved_at',
 	VAULT_SERVER_URL: 'talktype_vault_server_url',
 	VAULT_AUDIO_SYNC: 'talktype_vault_audio_sync',
 	VAULT_AUDIO_RETENTION_DAYS: 'talktype_vault_audio_retention_days',
@@ -53,7 +51,6 @@ export const SUPPORTER_CHECKOUT = {
 };
 
 export const SUPPORTER_VAULT = {
-	HASH_TTL_MS: 30 * 24 * 60 * 60 * 1000,
 	DEFAULT_AUDIO_RETENTION_DAYS: 30,
 	MAX_AUDIO_BLOB_BYTES: 50 * 1024 * 1024,
 	AUDIO_RETENTION_OPTIONS: [

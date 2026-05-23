@@ -499,6 +499,7 @@
 					</button>
 				</form>
 				<p class="mt-2 text-xs leading-5 text-gray-500">
+					One-way encrypted backup. Restore and merge are coming later.
 					{#if hasStoredPassportCode}
 						Passport remembered on this device.
 					{:else}

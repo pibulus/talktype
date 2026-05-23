@@ -14,14 +14,14 @@ The Vault is a local-first, private-cloud sync system powered by your Raspberry 
 - **Storage**: An encrypted JSON payload (`{ data: encryptedPayload }`).
 - **Addressing**: `/vault/[app_name]/[vault_hash]` where `vault_hash` is `sha256("talktype-vault-id:" + supporter_code)`.
 - **Key derivation**: PBKDF2-SHA256 with a per-payload random salt.
-- **Device trust boundary**: TalkType treats the supporter code as the user's Passport key. After unlock, it stores that code locally on the device so the card, history, and Vault backup can work without repeated prompts. This is trusted-device convenience, not enterprise key custody; clearing site data forgets the Passport.
+- **Device trust boundary**: TalkType treats the supporter code as the user's Passport key. After unlock, it stores that code locally on the device so the card, history, and Vault backup can work without repeated prompts. The vault hash is derived on demand from that stored code, not cached with a silent expiry. This is trusted-device convenience, not enterprise key custody; clearing site data forgets the Passport.
 - **Handshake**:
   1. Client derives a symmetric key from the `supporter_code`.
   2. Client encrypts the transcript history JSON blob with AES-GCM.
   3. Client `POST`s the encrypted blob to the Pi.
   4. Pi saves the blob to disk, keyed by app name and vault hash.
 
-## 3. Sync Flow
+## 3. Target Sync Flow
 
 1. **Sync Trigger**: User clicks "Sync Vault."
 2. **Download**: Client `GET`s `/vault/[app_name]/[vault_hash]`.
@@ -29,7 +29,7 @@ The Vault is a local-first, private-cloud sync system powered by your Raspberry 
 4. **Merge**: Client merges remote data with local IndexedDB (Last-Write-Wins based on `timestamp`).
 5. **Upload**: Client encrypts the merged state and `POST`s back to the Pi.
 
-The current History modal implements a deliberate one-way **Back up to Vault** action. The user enters the Vault URL, TalkType uses the locally remembered Passport key to encrypt, then uploads the encrypted history payload. If the Passport key is missing because site data was cleared, the modal asks for the supporter code once and remembers it again. Full bidirectional merge remains a follow-up.
+That is the future two-way shape. The current History modal implements a deliberate one-way **Back up to Vault** action. The user enters the Vault URL, TalkType uses the locally remembered Passport key to encrypt, then uploads the encrypted history payload. If the Passport key is missing because site data was cleared, the modal asks for the supporter code once and remembers it again. Full bidirectional merge remains a follow-up.
 
 ## 3.1 Audio Media Payloads
 
@@ -55,7 +55,7 @@ Supporter audio should sync as separate encrypted media payloads, not as base64 
 3. [x] **Backup UI**: "Back up" action in History Modal for encrypted one-way backup.
 4. [ ] **Merge Logic**: Last-write-wins merge with IndexedDB transcript history.
 5. [x] **Audio Media Helpers**: Encrypted audio blob upload/download helpers and media manifest.
-6. [ ] **Trusted QR Integration**: Generate QR codes locally or through a trusted private renderer.
+6. [ ] **Trusted QR Integration**: Generate QR codes locally or through a trusted private renderer without exposing raw supporter codes.
 
 ## 6. Deployment Notes
 
