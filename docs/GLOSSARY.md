@@ -12,6 +12,7 @@
 - `Settings`: options modal for theme, auto-record, transcription mode, supporter features, and output style presets.
 - `TranscriptionStyleSelector`: three-preset output style control; plain transcription is the default when no style is selected.
 - `SupporterModal`: supporter code entry and supporter feature explanation.
+- `TranscriptHistoryModal`: supporter transcript history, editing, deletion, Vault backup, and audio playback surface.
 - `MembershipCard`: deterministic supporter Passport card with QRBuddy-rendered Passport QR stamp.
 
 ## Services And Stores
@@ -50,4 +51,6 @@
 - **Passport**: local supporter identity/key concept. In TalkType it powers the membership card, QR import, and Vault access.
 - **Vault hash**: deterministic SHA-256 identifier derived from the supporter code when needed; it is not stored as durable app state.
 - **Vault**: Pi-backed encrypted blob drop-zone addressed by app name and vault hash.
+- **Vault backup**: manual encrypted upload from TalkType history to the Pi.
+- **Vault restore**: manual encrypted download/import through `/passport`; not automatic two-way sync yet.
 - **QRBuddy**: Pablo-owned QR renderer used for the membership-card Passport stamp.

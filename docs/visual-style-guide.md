@@ -1,10 +1,10 @@
 # TalkType Visual Style Guide
 
-## Visual Identity & Design Philosophy
+## Purpose
 
-TalkType is part of the Soft Stack family—a suite of emotionally intelligent, tactile, minimalist tools that blend functionality with a touch of personality. Our design approach combines clean, minimalist interfaces with subtle animations and interactions that create a sense of presence and delight.
+This is a practical style note, not a design-token source of truth. Use the existing Tailwind classes, theme helpers, and component patterns before inventing new visual language.
 
-We embrace a "soft modern brutalism" aesthetic with gentle whimsy, creating experiences that are both visually pleasing and intuitively functional. Our design language prioritizes clarity and responsiveness while introducing thoughtful micro-interactions that surprise and delight.
+TalkType should feel focused, warm, and lightly playful. The app is a voice-to-text utility first: the recording flow must stay obvious, the transcript must stay readable, and the ghost personality should support the work rather than crowd it.
 
 ## Color Palette
 
@@ -15,8 +15,8 @@ Our color palette is carefully curated to create a warm, inviting atmosphere tha
 - **Background/Canvas**: Soft Cream `#FEFAF4` to `#FCF5EA` (radial gradient)
 - **Element Backgrounds**: Eggshell White `#FFFDF7` with semi-transparency
 - **Text**: Dark Gray `#1A1A1A` (titles), Slate Gray `#374151` (body)
-- **CTAs/Buttons**: Amber `#F59E0B` to `#FBBF24` (gradient)
-- **Progress Indication**: Amber `#FBBF24` to Rose `#FDA4AF` (gradient)
+- **Primary Accents**: warm amber, peach, pink, and rose accents depending on context
+- **Supporter/Passport Accents**: pastel card colors, QRBuddy stamps, and pink supporter surfaces
 
 ### Accent Colors & Gradients
 
@@ -29,11 +29,13 @@ Our accent colors provide visual interest and highlight interactive elements:
 
 ### Color Application Rules
 
-- Never use pure white or black; always opt for softer tones
+- Prefer cream-tinted whites and softened dark text for surfaces and copy.
+- Black is fine where it is part of the ghost SVG outline/eyes or needed for reliable contrast.
 - Apply subtle gradients for visual depth and warmth
 - Use transparency to create layered, airy interfaces
 - Maintain sufficient contrast for accessibility (AA rating minimum)
 - Shadows should be soft, colored, and thoughtfully applied
+- Avoid turning the app into a one-hue pink/cream wash; use contrast and hierarchy when a workflow needs clarity.
 
 ## Typography
 
@@ -53,11 +55,13 @@ Typography should be responsive, with text sizes scaling appropriately across de
 
 ### Buttons
 
-- **Primary Action (Recording)**: Rounded-full, amber gradient, with subtle shadow
-- **Secondary Actions**: Rounded-full, lighter background, minimal styling
+- **Primary Action (Recording)**: large, obvious, touch-friendly, with visual feedback during recording
+- **Supporter/Passport Actions**: warm pink/rose actions with clear disabled/loading states
+- **Secondary Actions**: lighter background, lower visual weight, still at least 44px tall
 - **Hover States**: Scale transform (105%), color brightening, subtle shadow increase
 - **Focus States**: Visible outline ring in amber for keyboard navigation
 - **Active/Pressed**: Scale reduction (95%), darker color, inner shadow
+- **Transitions**: use short `transition-* duration-150` style movement for interactive state changes
 
 ### Progress Indicators
 
@@ -68,11 +72,12 @@ Typography should be responsive, with text sizes scaling appropriately across de
 
 ### Cards & Containers
 
-- Rounded corners (rounded-2xl minimum)
+- Use rounded corners consistently with the surrounding component family.
 - Subtle border in pink/purple tones
 - White background with slight transparency
 - Soft shadows with colored glow
 - Special effects (speech bubble point) for transcript container
+- Avoid wrapping cards inside more cards. Use cards for repeated items, modals, history entries, and framed tools.
 
 ### Toasts & Notifications
 
@@ -103,7 +108,7 @@ Our animations are intentional, smooth, and enhancing rather than distracting:
 
 ### Special Effects
 
-- **Confetti Celebration**: On successful transcription completion
+- **Passport Reveal**: Supporter unlock/card moments can use slightly more ceremony than normal UI.
 - **Ghost Expressions**: Blinking, thinking, and reactive animations
 - **Progress Glow**: Pulsing effect during processing
 
@@ -115,6 +120,7 @@ Our animations are intentional, smooth, and enhancing rather than distracting:
 - Layered elements for depth and focus
 - Fixed positioning for persistent elements (toasts, footer)
 - Careful spacing to prevent layout shifts during state changes
+- Keep transcription as the first-screen job. Do not turn the app into a dashboard.
 
 ## Accessibility Considerations
 
@@ -139,9 +145,10 @@ Our interface copy matches our visual style:
 Examples:
 
 - "Start Recording" (clear action)
-- "Transcript copied to clipboard! ✨" (confirmation with personality)
-- "Made with ❤️ by Dennis & Pablo" (personal touch)
+- "Copied to clipboard" (confirmation without fuss)
+- "Passport imported on this device." (plain outcome)
+- "Vault sync needs one more try." (calm failure state)
 
 ---
 
-This style guide captures the essence of TalkType's current implementation while providing a framework for consistent future development. The design combines functionality with personality, creating an experience that is both efficient and delightful.
+This style guide should stay short and directional. If it starts describing implementation details, move those details to `docs/ARCHITECTURE.md`, `docs/ghost-icon-reference.md`, or the component itself.
