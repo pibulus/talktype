@@ -4,6 +4,8 @@
 
 - `MainContainer`: top-level app orchestration, dialogs, PWA auto-start, ghost events.
 - `GhostContainer`: wraps the interactive ghost.
+- `Ghost`: interactive runtime mascot used on the main app screen.
+- `DisplayGhost`: static/decorative ghost used in modals, previews, and secondary screens.
 - `ContentContainer`: main content wrapper between page shell and audio feature.
 - `AudioToText`: audio/transcript feature shell.
 - `RecordingControls`: recording button, timer, status copy, and visual feedback.
@@ -24,9 +26,15 @@
 - `offlineModelController`: controls background Whisper load/release.
 - `transcriptionStore`: Deepgram live WebSocket store.
 - `recordingRecoveryStore`: IndexedDB persistence for recovery drafts and active recording journal chunks.
+- `transcriptHistory`: IndexedDB-backed supporter transcript history store.
+- `transcriptTags`: local smart-tag generation and cleanup helpers for saved transcripts.
+- `vaultTranscriptBackup`: encrypted History-to-Vault backup and `/passport` restore orchestration.
 - `syncService`: encrypted Vault JSON/audio save/load helpers.
 - `encryptionService`: AES-GCM/PBKDF2 envelope helpers for JSON and Blob payloads.
+- `vaultHashStorage`: trusted-device Passport code storage and legacy vault-hash cleanup.
 - `qrHandshakeService`: builds Passport sync URLs and QRBuddy render URLs.
+- `pwaService`: install prompt, installed-state, and PWA engagement helper.
+- `userPreferences`: local preference store for mode, supporter, style, and recording settings.
 - `whisperStatus`: local Whisper loading/loaded status store.
 - `audioState`: current low-level audio lifecycle state.
 - `transcriptionState`: current transcript/progress/error state.
@@ -47,10 +55,17 @@
 - **Warm stream**: short-lived iOS installed-PWA microphone stream kept after stop to reduce stream churn.
 - **Recovery draft**: saved local audio blob used to retry transcription after failure.
 - **Recovery journal**: append-only IndexedDB chunks written while recording so interrupted long notes can be reconstructed.
+
+## Supporter And Vault Terms
+
+- **Supporter mode**: unlocked state that enables history, exports, style presets, longer recordings, Passport, and Vault features.
 - **Supporter code**: purchased or manually issued code that unlocks supporter features and acts as the trusted-device Passport key.
+- **Supporter token**: signed local entitlement token used by API calls to unlock supporter-only server features.
 - **Passport**: local supporter identity/key concept. In TalkType it powers the membership card, QR import, and Vault access.
 - **Vault hash**: deterministic SHA-256 identifier derived from the supporter code when needed; it is not stored as durable app state.
 - **Vault**: Pi-backed encrypted blob drop-zone addressed by app name and vault hash.
 - **Vault backup**: manual encrypted upload from TalkType history to the Pi.
 - **Vault restore**: manual encrypted download/import through `/passport`; not automatic two-way sync yet.
 - **QRBuddy**: Pablo-owned QR renderer used for the membership-card Passport stamp.
+- **Smart tags**: local lightweight hashtags generated from transcript text for filtering saved history.
+- **History audio**: optional saved recording audio attached to a history entry and optionally encrypted to Vault as media.
