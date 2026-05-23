@@ -12,6 +12,7 @@
 - `Settings`: options modal for theme, auto-record, transcription mode, supporter features, and output style presets.
 - `TranscriptionStyleSelector`: three-preset output style control; plain transcription is the default when no style is selected.
 - `SupporterModal`: supporter code entry and supporter feature explanation.
+- `MembershipCard`: deterministic supporter Passport card with QRBuddy-rendered Passport QR stamp.
 
 ## Services And Stores
 
@@ -21,6 +22,10 @@
 - `simpleHybridService`: chooses Offline Whisper or cloud batch transcription.
 - `offlineModelController`: controls background Whisper load/release.
 - `transcriptionStore`: Deepgram live WebSocket store.
+- `recordingRecoveryStore`: IndexedDB persistence for recovery drafts and active recording journal chunks.
+- `syncService`: encrypted Vault JSON/audio save/load helpers.
+- `encryptionService`: AES-GCM/PBKDF2 envelope helpers for JSON and Blob payloads.
+- `qrHandshakeService`: builds Passport sync URLs and QRBuddy render URLs.
 - `whisperStatus`: local Whisper loading/loaded status store.
 - `audioState`: current low-level audio lifecycle state.
 - `transcriptionState`: current transcript/progress/error state.
@@ -40,3 +45,9 @@
 - **Launch shortcut**: PWA shortcut with `?action=record`.
 - **Warm stream**: short-lived iOS installed-PWA microphone stream kept after stop to reduce stream churn.
 - **Recovery draft**: saved local audio blob used to retry transcription after failure.
+- **Recovery journal**: append-only IndexedDB chunks written while recording so interrupted long notes can be reconstructed.
+- **Supporter code**: purchased or manually issued code that unlocks supporter features and acts as the trusted-device Passport key.
+- **Passport**: local supporter identity/key concept. In TalkType it powers the membership card, QR import, and Vault access.
+- **Vault hash**: deterministic SHA-256 identifier derived from the supporter code when needed; it is not stored as durable app state.
+- **Vault**: Pi-backed encrypted blob drop-zone addressed by app name and vault hash.
+- **QRBuddy**: Pablo-owned QR renderer used for the membership-card Passport stamp.

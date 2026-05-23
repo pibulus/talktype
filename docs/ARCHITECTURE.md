@@ -189,6 +189,8 @@ Vault sync is experimental but usable. The History modal exposes encrypted "Back
 ## Current Risk Areas
 
 - Real-device iOS installed PWA microphone behavior still needs physical-device smoke testing.
+- Long-recording recovery needs stress testing on lower-end phones, especially backgrounding/interruption and journal reconstruction.
 - The offline Whisper/ONNX path still depends on a large runtime WASM asset.
-- Payment automation is not wired; supporter code issuing is manual.
+- Square checkout is wired, but sandbox/production payment configuration still needs an end-to-end launch smoke test.
+- Vault sync is one-way backup plus manual restore for now, not automatic two-way merge.
 - Netlify config exists, but the active adapter is currently `@sveltejs/adapter-node`.

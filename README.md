@@ -15,6 +15,7 @@ Try it at [talktype.app](https://talktype.app).
 - **Offline Mode is explicit**: When enabled, local Whisper runs in the browser with `@xenova/transformers`, WASM, IndexedDB/browser cache, and no cloud transcription.
 - **PWA-first UX**: Install prompt, launch shortcut recording, auto-record preference, iOS safe areas, touch targets, and installed-app microphone handling are part of the core app.
 - **Supporter mode**: History/export/style preset features are unlocked by one-time Square checkout, with manually issued supporter codes as a fallback.
+- **Supporter Passport and Vault**: Supporter codes become deterministic Passport cards with QRBuddy QR handoff, encrypted Pi Vault backup/restore, and optional encrypted history audio.
 - **Accessibility matters**: Core controls and modals are built around keyboard focus, named controls, readable mobile layouts, and 44px touch targets.
 
 ## Privacy Model
@@ -25,7 +26,7 @@ TalkType has three transcription paths:
 - **After Stop** sends the finished recording to the server; standard transcription uses Deepgram and style presets use Gemini.
 - **Offline** runs Whisper locally in the browser after the model has downloaded.
 
-Transcript history is saved locally in the user's browser when supporter mode is unlocked. Do not include private transcripts, recordings, API keys, supporter codes, or payment details in GitHub issues.
+Transcript history is saved locally in the user's browser when supporter mode is unlocked. Supporters can also opt into encrypted Vault backup to a Pi drop-zone; transcript text and optional audio are encrypted client-side before upload. Do not include private transcripts, recordings, API keys, supporter codes, or payment details in GitHub issues.
 
 ## Documentation
 
@@ -34,6 +35,7 @@ Start here:
 - [Technical architecture](docs/ARCHITECTURE.md)
 - [Documentation index](docs/INDEX.md)
 - [Current release notes](docs/NEXT.md)
+- [The Vault](docs/THE_VAULT.md)
 - [Testing strategy](docs/TESTING.md)
 - [Contributing](CONTRIBUTING.md)
 - [Support](SUPPORT.md)
@@ -86,6 +88,15 @@ Copy `.env.example` to `.env` and set the values needed for your mode:
 - `SQUARE_WEBHOOK_NOTIFICATION_URL`: exact webhook URL configured in Square.
 - `TALKTYPE_STORAGE_ADAPTER`: `filesystem`, `netlify-blobs`, or `memory`.
 - `TALKTYPE_DATA_DIR`: filesystem storage directory for checkout/license data.
+- `PUBLIC_QRBUDDY_API_URL`: QRBuddy `/render-qr` endpoint for Passport card QR stamps.
+- `PUBLIC_QRBUDDY_APP_URL`: QRBuddy app/share origin for QR links when needed.
+
+The standalone Vault server uses:
+
+- `PORT`: Vault server port, default `3000`.
+- `VAULT_DIR`: encrypted blob storage directory, default `./vaults`.
+- `VAULT_ALLOWED_ORIGIN`: comma-separated browser origins allowed to call the Vault server.
+- `MAX_VAULT_BLOB_BYTES`: upload cap for encrypted Vault payloads, default `50MB`.
 
 ## Deployment
 

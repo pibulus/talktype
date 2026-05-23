@@ -5,10 +5,17 @@ This directory holds the runtime service layer. For the full system map, see [..
 ## Main Services
 
 - `audio/audioService.js`: microphone permission, `MediaRecorder`, audio chunks, waveform data, iOS warm stream, cleanup.
+- `audio/recordingRecoveryStore.js`: IndexedDB recovery drafts and append-only active recording journal chunks.
 - `audio/recordingControlsService.js`: start/stop orchestration, time limits, Deepgram finalization, batch fallback, analytics, UI messages.
 - `transcription/transcriptionService.js`: transcript progress state, retry of saved recordings, copy/share helpers.
 - `transcription/simpleHybridService.js`: chooses Offline Whisper or cloud batch transcription.
 - `transcription/offlineModelController.js`: controls when the offline Whisper model preloads and unloads.
+- `storage/transcriptStorage.js`: supporter transcript history, tags, and audio references in IndexedDB.
+- `storage/vaultTranscriptBackup.js`: encrypted Vault backup/restore orchestration for history and optional audio.
+- `vaultHashStorage.js`: trusted-device Passport code storage and legacy key cleanup.
+- `syncService.js`: app-name-based encrypted Vault JSON/audio transport helpers.
+- `encryptionService.js`: AES-GCM/PBKDF2 encryption helpers for JSON and Blob payloads.
+- `qrHandshakeService.js`: Passport sync URL and QRBuddy render URL helpers.
 - `pwa/pwaService.js`: install prompt state, installed detection, transcription count.
 - `first-visit/firstVisitService.js`: intro modal gating.
 - `modals/modalService.js`: dialog lifecycle helpers.
@@ -39,4 +46,6 @@ RecordingControls.svelte
 - `eventBus` still exists for compatibility and infrastructure, but the current app relies mostly on Svelte stores and direct service calls.
 - `initializeServices()` is idempotent and restores pending recording drafts once per browser session.
 - Offline Mode overrides Live Mode.
+- The supporter code is the Passport key on trusted devices; vault hashes are derived on demand rather than cached.
+- Vault helpers accept an `appName`, but the current Passport route and card UI are TalkType-specific.
 - Service tests should focus on state transitions, async races, and cleanup behavior rather than component rendering.
