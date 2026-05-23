@@ -17,9 +17,8 @@ This directory holds durable project documentation. Historical notes are preserv
 
 ## Design And UI
 
-- [Visual style guide](visual-style-guide.md)
-- [Animation and visual behaviors](animation-visual-behaviors.md)
-- [Ghost icon reference](ghost-icon-reference.md)
+- [Visual style guide](visual-style-guide.md): broad visual direction and UI tone.
+- [Ghost icon reference](ghost-icon-reference.md): canonical ghost implementation notes and troubleshooting.
 
 ## Platform And Transcription
 
@@ -37,4 +36,4 @@ Research docs are useful for later feature work, but they are not descriptions o
 
 - [Archive directory](archive/)
 
-Archived docs include old audits, handoff notes, stale payment setup, branch recovery notes, and past cleanup plans. They are kept for context and archaeology, not for current implementation guidance.
+Archived docs include old audits, handoff notes, stale payment setup, animation refactor notes, branch recovery notes, and past cleanup plans. They are kept for context and archaeology, not for current implementation guidance.
