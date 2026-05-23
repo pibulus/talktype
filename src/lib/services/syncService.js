@@ -1,6 +1,7 @@
-import { encrypt, decrypt } from './encryptionService.js';
+import { encrypt, decrypt, encryptBlob, decryptBlob } from './encryptionService.js';
 
 const APP_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/i;
+const MEDIA_ID_PATTERN = /^[a-z0-9][a-z0-9_.:-]{0,79}$/i;
 
 /**
  * SyncService - The Master Cartridge
@@ -24,12 +25,53 @@ export async function getVaultHash(code) {
 	return hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+export function createVaultMediaId() {
+	if (crypto.randomUUID) return crypto.randomUUID();
+
+	const bytes = crypto.getRandomValues(new Uint8Array(16));
+	bytes[6] = (bytes[6] & 0x0f) | 0x40;
+	bytes[8] = (bytes[8] & 0x3f) | 0x80;
+	const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+	return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
+function normalizeMediaId(mediaId) {
+	if (typeof mediaId !== 'string' || !mediaId.trim()) {
+		throw new Error('Vault media needs a media id');
+	}
+
+	const normalized = mediaId.trim();
+	if (!MEDIA_ID_PATTERN.test(normalized)) {
+		throw new Error('Invalid Vault media id');
+	}
+
+	return normalized;
+}
+
+export async function getVaultMediaHash(code, mediaId) {
+	const encoder = new TextEncoder();
+	const data = encoder.encode(
+		`talktype-vault-media:${normalizeVaultCode(code)}:${normalizeMediaId(mediaId)}`
+	);
+	const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+	const hashArray = Array.from(new Uint8Array(hashBuffer));
+	return hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 function getVaultUrl(serverUrl, appName, hash) {
 	if (!APP_NAME_PATTERN.test(appName)) {
 		throw new Error('Invalid Vault app name');
 	}
 
 	return `${serverUrl.replace(/\/+$/, '')}/vault/${encodeURIComponent(appName)}/${hash}`;
+}
+
+function getMediaAppName(appName) {
+	const mediaAppName = `${appName}-media`;
+	if (!APP_NAME_PATTERN.test(mediaAppName)) {
+		throw new Error('Invalid Vault media app name');
+	}
+	return mediaAppName;
 }
 
 /**
@@ -68,4 +110,54 @@ export async function loadFromVault(appName, code, serverUrl) {
 
 	const { data } = await response.json();
 	return await decrypt(data, code);
+}
+
+/**
+ * Encrypt and upload an audio Blob to the Vault as a separate media payload.
+ * Store the returned mediaId/mediaHash in the encrypted transcript metadata.
+ */
+export async function saveAudioToVault(appName, audioBlob, code, serverUrl, options = {}) {
+	if (!(audioBlob instanceof Blob)) {
+		throw new Error('Vault audio sync needs a Blob');
+	}
+
+	const mediaId = normalizeMediaId(options.mediaId || createVaultMediaId());
+	const mediaHash = await getVaultMediaHash(code, mediaId);
+	const encryptedData = await encryptBlob(audioBlob, code, {
+		mediaId,
+		transcriptId: options.transcriptId || null,
+		createdAt: options.createdAt || new Date().toISOString(),
+		duration: options.duration || 0,
+		mimeType: options.mimeType || audioBlob.type || 'audio/webm'
+	});
+
+	const response = await fetch(getVaultUrl(serverUrl, getMediaAppName(appName), mediaHash), {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ data: encryptedData })
+	});
+
+	if (!response.ok) throw new Error('Failed to save audio to Vault');
+
+	return {
+		mediaId,
+		mediaHash,
+		mimeType: audioBlob.type || options.mimeType || 'audio/webm',
+		size: audioBlob.size,
+		encryptedSize: encryptedData.length
+	};
+}
+
+/**
+ * Fetch and decrypt an audio Blob from the Vault.
+ */
+export async function loadAudioFromVault(appName, mediaId, code, serverUrl) {
+	const mediaHash = await getVaultMediaHash(code, mediaId);
+
+	const response = await fetch(getVaultUrl(serverUrl, getMediaAppName(appName), mediaHash));
+	if (response.status === 404) return null;
+	if (!response.ok) throw new Error('Failed to load audio from Vault');
+
+	const { data } = await response.json();
+	return await decryptBlob(data, code);
 }

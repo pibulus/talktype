@@ -174,7 +174,7 @@ Square is isolated to the payment provider layer. Feature gates consume supporte
 
 Checkout and license data use the server storage adapter. For `adapter-node`, prefer `TALKTYPE_STORAGE_ADAPTER=filesystem` with a durable `TALKTYPE_DATA_DIR`. Use `netlify-blobs` only when deploying on Netlify. `memory` is for local throwaway tests only.
 
-Vault sync is experimental and not mounted in the main UI yet. The client helpers encrypt JSON payloads before upload, and the standalone `vault-server.js` only stores encrypted blobs by app name and vault hash.
+Vault sync is experimental and not mounted in the main UI yet. The client helpers encrypt JSON payloads before upload, and audio history can be encrypted as separate media payloads under the `app-media` namespace. The standalone `vault-server.js` only stores encrypted blobs by app name and vault hash.
 
 ## State Ownership
 

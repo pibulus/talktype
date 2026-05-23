@@ -29,6 +29,16 @@ The Vault is a local-first, private-cloud sync system powered by your Raspberry 
 4. **Merge**: Client merges remote data with local IndexedDB (Last-Write-Wins based on `timestamp`).
 5. **Upload**: Client encrypts the merged state and `POST`s back to the Pi.
 
+## 3.1 Audio Media Payloads
+
+Supporter audio should sync as separate encrypted media payloads, not as base64 embedded inside the transcript list.
+
+- Transcript history stores a media reference such as `{ mediaId, mediaHash, mimeType, size }`.
+- Audio payloads live under the media namespace: `/vault/[app_name]-media/[media_hash]`.
+- `media_hash` is `sha256("talktype-vault-media:" + supporter_code + ":" + media_id)`.
+- The media body is encrypted client-side with the same AES-GCM/PBKDF2 envelope as JSON payloads, but over raw audio bytes.
+- Audio sync should remain opt-in because audio is larger and more sensitive than text.
+
 ## 4. Integration Ecosystem
 
 - **Auth/Link**: QuickCat can route users to the sync page without the Vault server knowing raw transcript data.
@@ -47,6 +57,7 @@ The Vault is a local-first, private-cloud sync system powered by your Raspberry 
 - Keep the Vault behind HTTPS before using it outside the LAN.
 - Set `VAULT_ALLOWED_ORIGIN` when browser sync happens from a different TalkType origin.
 - The drop-zone stores encrypted blobs only; it does not make a weak supporter code safe. Codes used for Vault sync need enough entropy to resist offline guessing.
+- `MAX_VAULT_BLOB_BYTES` defaults to 50MB so short encrypted audio clips can fit. Lower it for text-only vaults or raise it deliberately for long-form audio.
 
 ---
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { encrypt, decrypt } from './encryptionService.js';
+import { encrypt, decrypt, encryptBlob, decryptBlob } from './encryptionService.js';
 
 describe('Encryption Service', () => {
 	it('should encrypt and decrypt a JSON object successfully', async () => {
@@ -29,5 +29,26 @@ describe('Encryption Service', () => {
 		const decrypted = await decrypt(encrypted, secretCode);
 
 		expect(decrypted).toEqual(testData);
+	});
+
+	it('encrypts and decrypts audio blobs with authenticated metadata', async () => {
+		const audioBlob = new Blob(['small-audio-payload'], { type: 'audio/webm' });
+		const secretCode = 'super-secret-supporter-code-123';
+
+		const encrypted = await encryptBlob(audioBlob, secretCode, {
+			mediaId: 'clip-1',
+			transcriptId: 'transcript-1'
+		});
+		const { blob, metadata } = await decryptBlob(encrypted, secretCode);
+
+		expect(blob.type).toBe('audio/webm');
+		expect(await blob.text()).toBe('small-audio-payload');
+		expect(metadata).toMatchObject({
+			mediaId: 'clip-1',
+			transcriptId: 'transcript-1',
+			mimeType: 'audio/webm',
+			size: audioBlob.size
+		});
+		await expect(decryptBlob(encrypted, 'wrong-code')).rejects.toThrow();
 	});
 });
