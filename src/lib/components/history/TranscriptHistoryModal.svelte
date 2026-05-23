@@ -52,6 +52,8 @@
 	let vaultProgress = null;
 	let isBackingUpVault = false;
 	let hasStoredPassportCode = false;
+	let activeAudioId = null;
+	let activeAudioUrl = '';
 	const iconButtonClass = 'btn btn-ghost h-12 min-h-12 w-12 px-0 text-base';
 
 	$: audioBackupEnabled = $vaultAudioSync === 'true';
@@ -181,6 +183,10 @@
 	}
 
 	async function confirmDelete(id) {
+		if (activeAudioId === id) {
+			clearActiveAudio();
+		}
+
 		await deleteTranscript(id);
 		pendingDeleteId = null;
 
@@ -203,6 +209,7 @@
 			return;
 		}
 
+		clearActiveAudio();
 		await clearAllTranscripts();
 		confirmClearAll = false;
 
@@ -214,9 +221,26 @@
 	}
 
 	// Play audio (if available)
-	function playAudio(audioBlob) {
-		const audio = new Audio(URL.createObjectURL(audioBlob));
-		audio.play();
+	function clearActiveAudio() {
+		if (activeAudioUrl) {
+			URL.revokeObjectURL(activeAudioUrl);
+		}
+
+		activeAudioId = null;
+		activeAudioUrl = '';
+	}
+
+	function toggleAudioPlayer(transcript) {
+		if (!transcript?.audioBlob) return;
+
+		if (activeAudioId === transcript.id) {
+			clearActiveAudio();
+			return;
+		}
+
+		clearActiveAudio();
+		activeAudioId = transcript.id;
+		activeAudioUrl = URL.createObjectURL(transcript.audioBlob);
 	}
 
 	// Batch download all transcripts
@@ -310,6 +334,7 @@
 	onDestroy(() => {
 		if (clearAllTimeout) clearTimeout(clearAllTimeout);
 		if (deleteConfirmTimeout) clearTimeout(deleteConfirmTimeout);
+		clearActiveAudio();
 	});
 </script>
 
@@ -542,12 +567,17 @@
 										{#if transcript.audioBlob}
 											<button
 												type="button"
-												class={iconButtonClass}
-												on:click={() => playAudio(transcript.audioBlob)}
-												title="Play audio"
-												aria-label={`Play audio from ${formatDate(transcript.timestamp)}`}
+												class={`${iconButtonClass} ${activeAudioId === transcript.id ? 'bg-pink-50 text-pink-700' : ''}`}
+												on:click={() => toggleAudioPlayer(transcript)}
+												title={activeAudioId === transcript.id ? 'Hide player' : 'Play audio'}
+												aria-expanded={activeAudioId === transcript.id}
+												aria-label={activeAudioId === transcript.id
+													? `Hide audio player for ${formatDate(transcript.timestamp)}`
+													: `Play audio from ${formatDate(transcript.timestamp)}`}
 											>
-												<span aria-hidden="true">🔊</span>
+												<span aria-hidden="true"
+													>{activeAudioId === transcript.id ? '⏸' : '▶'}</span
+												>
 											</button>
 										{/if}
 										<button
@@ -596,6 +626,19 @@
 									{/if}
 								</div>
 							</div>
+
+							{#if activeAudioId === transcript.id && activeAudioUrl}
+								<div class="mb-2 rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-inner">
+									<audio
+										class="history-audio-player w-full"
+										src={activeAudioUrl}
+										controls
+										autoplay
+										preload="metadata"
+										aria-label={`Recording audio from ${formatDate(transcript.timestamp)}`}
+									></audio>
+								</div>
+							{/if}
 
 							<!-- Transcript Text -->
 							{#if editingId === transcript.id}
@@ -677,5 +720,11 @@
 
 	.overflow-y-auto::-webkit-scrollbar-thumb:hover {
 		background: #ffb6de;
+	}
+
+	.history-audio-player {
+		display: block;
+		height: 42px;
+		border-radius: 0.75rem;
 	}
 </style>
