@@ -21,12 +21,7 @@
 	let codePanelOpen = false;
 	let vaultHash = '';
 
-	const benefits = [
-		{ label: 'Local history', mark: 'H' },
-		{ label: 'Downloads', mark: 'D' },
-		{ label: 'Style presets', mark: 'S' },
-		{ label: 'Longer notes', mark: 'L' }
-	];
+	const benefits = ['Local history', 'Downloads', 'Style presets', 'Longer notes'];
 	const MAX_SUPPORTER_CODE_LENGTH = 64;
 
 	function setCheckoutClaim(checkoutId, claimToken) {
@@ -177,7 +172,7 @@
 				</p>
 				<button
 					type="button"
-					class="btn min-h-12 w-full border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600"
+					class="btn min-h-12 w-full border-pink-200 bg-pink-500 text-white transition-colors duration-150 hover:border-pink-300 hover:bg-pink-600"
 					on:click={handleClose}
 				>
 					Nice, let's go
@@ -220,7 +215,7 @@
 						/>
 						<button
 							type="button"
-							class="btn min-h-12 w-full border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
+							class="btn min-h-12 w-full border-pink-200 bg-pink-500 text-white transition-colors duration-150 hover:border-pink-300 hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
 							on:click={handleUnlock}
 							disabled={isSubmitting || !code.trim()}
 						>
@@ -230,10 +225,15 @@
 				</details>
 			{:else}
 				<div class="rounded-2xl border border-pink-100 bg-white/75 p-4 shadow-sm">
-					<p id="supporter_modal_description" class="text-sm leading-6 text-gray-700">
+					<p class="text-xs font-black uppercase tracking-[0.18em] text-pink-500">
+						One-time unlock
+					</p>
+					<p class="mt-1 text-3xl font-black leading-none text-pink-600">
+						{PRICING.displayPrice}
+					</p>
+					<p id="supporter_modal_description" class="mt-3 text-sm leading-6 text-gray-700">
 						Pay once, keep the extras, and help the little ghost stay free for everyone.
 					</p>
-					<p class="mt-3 text-xl font-black text-pink-600">{PRICING.displayPrice}</p>
 				</div>
 
 				<div>
@@ -241,15 +241,9 @@
 					<ul class="grid grid-cols-2 gap-2 text-sm font-semibold text-gray-700">
 						{#each benefits as benefit}
 							<li
-								class="flex min-h-12 items-center gap-2 rounded-xl border border-pink-100 bg-pink-50/70 px-3 py-2"
+								class="flex min-h-12 items-center justify-center rounded-xl border border-pink-100 bg-pink-50/70 px-3 py-2 text-center leading-tight"
 							>
-								<span
-									class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/80 text-xs font-black text-pink-500"
-									aria-hidden="true"
-								>
-									{benefit.mark}
-								</span>
-								<span class="min-w-0 text-left leading-tight">{benefit.label}</span>
+								{benefit}
 							</li>
 						{/each}
 					</ul>
@@ -257,7 +251,7 @@
 
 				<button
 					type="button"
-					class="btn min-h-12 w-full border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
+					class="btn min-h-12 w-full border-pink-200 bg-pink-500 text-white transition-colors duration-150 hover:border-pink-300 hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
 					on:click={handleCheckout}
 					disabled={isStartingCheckout}
 				>
@@ -299,7 +293,7 @@
 						/>
 						<button
 							type="button"
-							class="btn min-h-12 w-full border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
+							class="btn min-h-12 w-full border-pink-200 bg-pink-500 text-white transition-colors duration-150 hover:border-pink-300 hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
 							on:click={handleUnlock}
 							disabled={isSubmitting || !code.trim()}
 						>
@@ -312,7 +306,7 @@
 				<div class="sticky bottom-0 z-10 -mx-6 -mb-6 bg-[#fffcf5]/95 px-6 pb-6 pt-2 backdrop-blur">
 					<button
 						type="button"
-						class="btn btn-ghost min-h-12 w-full border border-pink-100 bg-white/70 text-gray-700 hover:bg-pink-50"
+						class="btn btn-ghost min-h-12 w-full border border-pink-100 bg-white/70 text-gray-700 transition-colors duration-150 hover:bg-pink-50"
 						on:click={handleClose}
 					>
 						Maybe later
@@ -331,7 +325,7 @@
 
 <style>
 	.animate-modal-enter {
-		animation: modalSlideUp 0.3s ease-out;
+		animation: modalSlideUp 360ms cubic-bezier(0.2, 0.9, 0.2, 1.12);
 	}
 
 	.chevron {

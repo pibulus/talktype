@@ -9,7 +9,7 @@
 </script>
 
 <div
-	class="passport-card relative flex aspect-[1.586/1] w-full max-w-[320px] flex-col justify-between overflow-hidden rounded-2xl border border-white/70 p-5 text-gray-900 shadow-2xl"
+	class="passport-card relative flex aspect-[1.586/1] w-full max-w-[320px] flex-col justify-between overflow-hidden rounded-2xl border border-[#fffdf0]/80 p-5 text-gray-900"
 	class:is-placeholder={!hasVaultHash}
 	style={cardStyle}
 	role="group"
@@ -31,7 +31,7 @@
 		</div>
 
 		<div
-			class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/70 bg-white/50 font-black text-gray-800 shadow-sm"
+			class="initials-chip grid h-14 w-14 shrink-0 place-items-center rounded-2xl font-black text-gray-800"
 			aria-hidden="true"
 		>
 			{identity.initials}
@@ -62,8 +62,12 @@
 <style>
 	.passport-card {
 		background:
-			linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.2)),
+			linear-gradient(135deg, rgba(255, 253, 240, 0.78), rgba(255, 253, 240, 0.2)),
 			linear-gradient(135deg, var(--passport-bg), #fff8e7);
+		box-shadow:
+			0 18px 34px rgba(136, 82, 88, 0.18),
+			0 3px 0 rgba(255, 253, 240, 0.9) inset,
+			0 0 0 1px rgba(136, 82, 88, 0.08);
 		transform-origin: center;
 	}
 
@@ -76,21 +80,22 @@
 		background: linear-gradient(
 			115deg,
 			transparent 0%,
-			rgba(255, 255, 255, 0.42) 46%,
+			rgba(255, 253, 240, 0.5) 46%,
 			transparent 72%
 		);
-		mix-blend-mode: soft-light;
+		mix-blend-mode: overlay;
+		opacity: 0.34;
 	}
 
 	.passport-pattern {
 		background: repeating-linear-gradient(
 			135deg,
 			var(--passport-shape) 0 4px,
-			rgba(255, 255, 255, 0.42) 4px 8px,
-			rgba(255, 255, 255, 0.08) 8px 12px
+			rgba(255, 253, 240, 0.52) 4px 8px,
+			rgba(255, 253, 240, 0.16) 8px 12px
 		);
 		clip-path: polygon(28% 0, 100% 0, 100% 100%, 0 100%);
-		opacity: 0.58;
+		opacity: 0.74;
 	}
 
 	.passport-card.is-placeholder .passport-pattern {
@@ -98,21 +103,32 @@
 	}
 
 	.passport-name {
-		font-size: 1.24rem;
-		line-height: 1.16;
-		overflow-wrap: anywhere;
+		font-size: 1.48rem;
+		line-height: 1.08;
+		overflow-wrap: break-word;
+		text-shadow: 0 1px 0 rgba(255, 253, 240, 0.62);
+		text-wrap: balance;
+	}
+
+	.initials-chip {
+		background: rgba(255, 253, 240, 0.86);
+		background: color-mix(in srgb, var(--passport-shape) 24%, #fffdf0 76%);
+		border: 1px solid rgba(255, 253, 240, 0.88);
+		box-shadow:
+			0 8px 18px rgba(136, 82, 88, 0.12),
+			inset 0 1px 0 rgba(255, 253, 240, 0.72);
 	}
 
 	.ghost-seal {
-		background: rgba(255, 255, 255, 0.58);
-		border: 1px solid rgba(255, 255, 255, 0.76);
+		background: rgba(255, 253, 240, 0.62);
+		border: 1px solid rgba(255, 253, 240, 0.78);
 		box-shadow: 0 6px 14px rgba(79, 70, 68, 0.1);
 	}
 
 	.ghost-mark {
-		width: 28px;
-		height: 32px;
-		fill: rgba(255, 255, 255, 0.95);
+		width: 32px;
+		height: 36px;
+		fill: rgba(255, 253, 240, 0.95);
 		filter: drop-shadow(0 3px 0 rgba(255, 202, 212, 0.45));
 	}
 
@@ -126,9 +142,8 @@
 		}
 
 		.passport-name {
-			font-size: 1.14rem;
-			line-height: 1.18;
-			max-width: 176px;
+			font-size: 1.3rem;
+			line-height: 1.12;
 		}
 	}
 

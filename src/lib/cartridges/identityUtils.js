@@ -67,14 +67,14 @@ const BG_COLORS = [
 ];
 
 const SHAPE_COLORS = [
-	'f4a261',
-	'e9c46a',
-	'ffb347',
-	'ff9a8b',
-	'ffa07a',
-	'e8a0bf',
-	'c9b1d0',
-	'ffcc99'
+	'f7b89c',
+	'f0c080',
+	'f5c86b',
+	'f4afa3',
+	'f5b08e',
+	'e6adc5',
+	'd0bfd8',
+	'f3caa7'
 ];
 
 function normalizeHash(vaultHash) {

@@ -5,6 +5,7 @@
 	import { theme } from '$lib';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { Seo } from '$lib/components/layout';
+	import Confetti from '$lib/components/ui/effects/Confetti.svelte';
 	import MembershipCard from '$lib/cartridges/MembershipCard.svelte';
 	import { STORAGE_KEYS } from '$lib/constants';
 	import { getVaultHash } from '$lib/services/syncService.js';
@@ -17,6 +18,7 @@
 	let pollTimer;
 	let pollAttempts = 0;
 	let copyMessage = '';
+	let showSuccessConfetti = false;
 
 	const MAX_CHECKOUT_POLLS = 20;
 	const CHECKOUT_CLAIM_HEADER = 'x-talktype-checkout-claim';
@@ -84,6 +86,7 @@
 			vaultHash = nextVaultHash;
 			setSupporterStatus(true, payload.token || null);
 			status = 'paid';
+			showSuccessConfetti = true;
 			message = nextVaultHash
 				? 'Supporter mode is unlocked on this device.'
 				: 'Supporter mode is unlocked. Your passport can be regenerated from your code later.';
@@ -137,10 +140,20 @@
 	includeStructuredData={false}
 />
 
+{#if showSuccessConfetti}
+	<Confetti
+		targetSelector=".success-ghost"
+		particleCount={34}
+		duration={1500}
+		colors={['#ec4899', '#f9a8d4', '#f5c86b', '#f7b89c', '#fff1a8']}
+		on:complete={() => (showSuccessConfetti = false)}
+	/>
+{/if}
+
 <main class="min-h-screen bg-[#fffaef] px-5 py-8 text-gray-800 sm:py-10">
 	<section class="mx-auto flex max-w-md flex-col items-center gap-5 text-center">
 		<div
-			class={`transition-transform duration-300 ${status === 'paid' ? 'ghost-celebrate h-32 w-32' : 'h-24 w-24'}`}
+			class={`success-ghost transition-transform duration-300 ${status === 'paid' ? 'ghost-celebrate h-32 w-32' : 'h-24 w-24'}`}
 		>
 			<DisplayGhost theme={$theme} size="100%" />
 		</div>
@@ -157,7 +170,7 @@
 
 		{#if status === 'pending' || status === 'checking'}
 			<div class="h-2 w-full overflow-hidden rounded-full bg-pink-100">
-				<div class="h-full w-1/3 animate-pulse rounded-full bg-pink-400"></div>
+				<div class="supporter-progress-bar h-full rounded-full"></div>
 			</div>
 		{/if}
 
@@ -174,23 +187,23 @@
 			<div
 				class="success-code-card w-full rounded-2xl border border-pink-100 bg-white/80 p-4 shadow-sm"
 			>
-				<p class="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
-					Your supporter code
-				</p>
-				<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-					<p
-						class="min-w-0 flex-1 break-all rounded-xl bg-[#fffdf5] px-3 py-2 font-mono text-base font-bold tracking-wide text-gray-900"
-					>
-						{supporterCode}
+				<div class="mb-2 flex items-center justify-between gap-3">
+					<p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">
+						Your supporter code
 					</p>
 					<button
 						type="button"
-						class="btn min-h-11 border-pink-200 bg-pink-500 px-4 text-white hover:border-pink-300 hover:bg-pink-600"
+						class="btn min-h-11 min-w-20 border-pink-200 bg-pink-500 px-4 text-white transition-colors duration-150 hover:border-pink-300 hover:bg-pink-600"
 						on:click={copySupporterCode}
 					>
 						Copy
 					</button>
 				</div>
+				<p
+					class="min-w-0 break-all rounded-xl bg-[#fffdf5] px-3 py-2 text-left font-mono text-base font-bold tracking-wide text-gray-900"
+				>
+					{supporterCode}
+				</p>
 				{#if copyMessage}
 					<p class="mt-2 text-xs font-bold text-pink-600" aria-live="polite">{copyMessage}</p>
 				{/if}
@@ -202,7 +215,7 @@
 
 		<a
 			href="/"
-			class={`btn min-h-12 w-full rounded-2xl border-pink-200 bg-pink-500 text-white hover:border-pink-300 hover:bg-pink-600 ${status === 'paid' ? 'success-return' : ''}`}
+			class={`btn min-h-12 w-full rounded-2xl border-pink-200 bg-pink-500 text-white transition-colors duration-150 hover:border-pink-300 hover:bg-pink-600 ${status === 'paid' ? 'success-return' : ''}`}
 		>
 			Return to TalkType
 		</a>
@@ -216,7 +229,7 @@
 		}
 
 		.ghost-celebrate {
-			animation: ghostCelebrate 850ms cubic-bezier(0.2, 0.9, 0.2, 1.12) both;
+			animation: ghostCelebrate 1100ms cubic-bezier(0.16, 0.95, 0.18, 1.2) both;
 		}
 
 		.success-passport,
@@ -226,16 +239,23 @@
 		}
 
 		.success-passport {
-			animation-delay: 300ms;
+			animation-delay: 500ms;
 		}
 
 		.success-code-card {
-			animation-delay: 470ms;
+			animation-delay: 680ms;
 		}
 
 		.success-return {
-			animation-delay: 620ms;
+			animation-delay: 820ms;
 		}
+	}
+
+	.supporter-progress-bar {
+		width: 42%;
+		background: linear-gradient(90deg, #f9a8d4 0%, #ec4899 45%, #f5c86b 100%);
+		animation: progressScan 1300ms ease-in-out infinite;
+		box-shadow: 0 0 18px rgba(236, 72, 153, 0.22);
 	}
 
 	@keyframes statusReveal {
@@ -251,13 +271,19 @@
 
 	@keyframes ghostCelebrate {
 		0% {
-			transform: translateY(8px) scale(0.92);
+			transform: translateY(14px) rotate(-4deg) scale(0.82);
 		}
-		55% {
-			transform: translateY(-4px) scale(1.04);
+		35% {
+			transform: translateY(-10px) rotate(3deg) scale(1.1);
+		}
+		58% {
+			transform: translateY(3px) rotate(-2deg) scale(0.98);
+		}
+		78% {
+			transform: translateY(-3px) rotate(1deg) scale(1.03);
 		}
 		100% {
-			transform: translateY(0) scale(1);
+			transform: translateY(0) rotate(0) scale(1);
 		}
 	}
 
@@ -269,6 +295,15 @@
 		to {
 			opacity: 1;
 			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes progressScan {
+		0% {
+			transform: translateX(-110%);
+		}
+		100% {
+			transform: translateX(260%);
 		}
 	}
 </style>
