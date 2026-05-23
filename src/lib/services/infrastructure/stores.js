@@ -1,7 +1,12 @@
 import { writable, derived, get } from 'svelte/store';
 import { AudioStates } from '../audio/audioStates';
-import { ANIMATION, STORAGE_KEYS } from '$lib/constants';
+import { ANIMATION, LEGACY_STORAGE_KEYS, STORAGE_KEYS } from '$lib/constants';
 import { browser } from '$app/environment';
+import {
+	readStorageValue,
+	removeStorageValue,
+	writeStorageValue
+} from '$lib/services/storage/localStorageMigration.js';
 
 const forceSupporterMode = import.meta.env.PUBLIC_FORCE_SUPPORTER_MODE === 'true';
 
@@ -50,8 +55,14 @@ function createUserPreferences() {
 		: 'standard';
 	const initialSupporterStatus = browser
 		? forceSupporterMode ||
-			localStorage.getItem(STORAGE_KEYS.SUPPORTER) === 'true' ||
-			Boolean(localStorage.getItem(STORAGE_KEYS.SUPPORTER_TOKEN))
+			readStorageValue(STORAGE_KEYS.SUPPORTER, {
+				legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER
+			}) === 'true' ||
+			Boolean(
+				readStorageValue(STORAGE_KEYS.SUPPORTER_TOKEN, {
+					legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN
+				})
+			)
 		: forceSupporterMode;
 
 	return writable({
@@ -71,11 +82,17 @@ export function setSupporterStatus(isSupporter, token = null) {
 	}));
 
 	if (browser) {
-		localStorage.setItem(STORAGE_KEYS.SUPPORTER, resolvedSupporterStatus ? 'true' : 'false');
+		writeStorageValue(STORAGE_KEYS.SUPPORTER, resolvedSupporterStatus ? 'true' : 'false', {
+			legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER
+		});
 		if (token) {
-			localStorage.setItem(STORAGE_KEYS.SUPPORTER_TOKEN, token);
+			writeStorageValue(STORAGE_KEYS.SUPPORTER_TOKEN, token, {
+				legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN
+			});
 		} else if (!resolvedSupporterStatus) {
-			localStorage.removeItem(STORAGE_KEYS.SUPPORTER_TOKEN);
+			removeStorageValue(STORAGE_KEYS.SUPPORTER_TOKEN, {
+				legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN
+			});
 		}
 	}
 }

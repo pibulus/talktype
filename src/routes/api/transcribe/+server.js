@@ -3,7 +3,7 @@ import { env } from '$env/dynamic/private';
 import { guardRequest } from '$lib/server/authService.js';
 import { transcribeAudio } from '$lib/server/deepgramService.js';
 import { verifySupporterToken } from '$lib/server/supporter/licenseCrypto.js';
-import { STORAGE_KEYS } from '$lib/constants';
+import { LEGACY_STORAGE_KEYS, STORAGE_KEYS } from '$lib/constants';
 
 const MAX_UPLOAD_BYTES = Number(env.MAX_UPLOAD_BYTES ?? `${50 * 1024 * 1024}`);
 const SUPPORTER_TOKEN_HEADER = 'x-talktype-supporter-token';
@@ -17,6 +17,7 @@ function getBearerToken(event) {
 export function _getSupporterToken(event) {
 	return (
 		event.cookies.get(STORAGE_KEYS.SUPPORTER_TOKEN) ||
+		LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN.map((key) => event.cookies.get(key)).find(Boolean) ||
 		event.request.headers.get(SUPPORTER_TOKEN_HEADER) ||
 		getBearerToken(event)
 	);

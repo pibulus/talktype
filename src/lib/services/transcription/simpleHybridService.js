@@ -8,7 +8,8 @@ import { whisperService, whisperStatus } from './whisper/whisperService';
 import { userPreferences } from '../infrastructure/stores';
 import { customPrompt, privacyMode } from '$lib';
 import { browser } from '$app/environment';
-import { STORAGE_KEYS } from '$lib/constants';
+import { LEGACY_STORAGE_KEYS, STORAGE_KEYS } from '$lib/constants';
+import { readStorageValue } from '$lib/services/storage/localStorageMigration.js';
 import { ensureApiSession } from '../apiSession.js';
 import { createLogger } from '$lib/utils/logger';
 
@@ -198,7 +199,11 @@ export class SimpleHybridService {
 				}
 
 				const headers = {};
-				const supporterToken = browser ? localStorage.getItem(STORAGE_KEYS.SUPPORTER_TOKEN) : '';
+				const supporterToken = browser
+					? readStorageValue(STORAGE_KEYS.SUPPORTER_TOKEN, {
+							legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN
+						})
+					: '';
 				if (supporterToken) {
 					headers['x-talktype-supporter-token'] = supporterToken;
 				}

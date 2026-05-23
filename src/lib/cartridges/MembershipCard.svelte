@@ -2,8 +2,10 @@
 	import { onMount } from 'svelte';
 	import { generateMemberIdentity } from './identityUtils.js';
 	import { buildPassportSyncUrl, getVaultHandshakeQR } from '$lib/services/qrHandshakeService.js';
-	import { STORAGE_KEYS } from '$lib/constants';
-	import { readStoredSupporterCode } from '$lib/services/vaultHashStorage.js';
+	import {
+		readStoredSupporterCode,
+		readStoredVaultServerUrl
+	} from '$lib/services/vaultHashStorage.js';
 
 	export let vaultHash = '';
 	export let passportCode = '';
@@ -28,7 +30,7 @@
 
 	onMount(() => {
 		storedPassportCode = readStoredSupporterCode();
-		storedVaultUrl = localStorage.getItem(STORAGE_KEYS.VAULT_SERVER_URL) || '';
+		storedVaultUrl = readStoredVaultServerUrl();
 	});
 </script>
 

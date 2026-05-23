@@ -5,11 +5,14 @@
 	import MembershipCard from '$lib/cartridges/MembershipCard.svelte';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { Seo } from '$lib/components/layout';
-	import { STORAGE_KEYS } from '$lib/constants';
 	import { setSupporterStatus } from '$lib/services';
 	import { restoreTranscriptsFromVault } from '$lib/services/storage/vaultTranscriptBackup.js';
 	import { getVaultHash } from '$lib/services/syncService.js';
-	import { saveStoredSupporterCode } from '$lib/services/vaultHashStorage.js';
+	import {
+		readStoredVaultServerUrl,
+		saveStoredSupporterCode,
+		saveStoredVaultServerUrl
+	} from '$lib/services/vaultHashStorage.js';
 
 	let status = 'checking';
 	let message = 'Reading Passport...';
@@ -60,8 +63,7 @@
 		setSupporterStatus(true, token);
 
 		if (nextVaultUrl.trim()) {
-			vaultServerUrl = nextVaultUrl.trim();
-			localStorage.setItem(STORAGE_KEYS.VAULT_SERVER_URL, vaultServerUrl);
+			vaultServerUrl = saveStoredVaultServerUrl(nextVaultUrl);
 		}
 
 		vaultHash = await getVaultHash(savedCode);
@@ -82,7 +84,7 @@
 		errorMessage = '';
 		restoreSummary = null;
 		restoreProgress = { current: 0, total: 0, audioCount: 0, audioFailed: 0 };
-		localStorage.setItem(STORAGE_KEYS.VAULT_SERVER_URL, vaultServerUrl.trim());
+		saveStoredVaultServerUrl(vaultServerUrl);
 
 		try {
 			const summary = await restoreTranscriptsFromVault({
@@ -146,7 +148,7 @@
 		if (!browser) return;
 
 		const params = getPassportParams();
-		vaultServerUrl = params.vault || localStorage.getItem(STORAGE_KEYS.VAULT_SERVER_URL) || '';
+		vaultServerUrl = params.vault || readStoredVaultServerUrl();
 
 		if (params.code) {
 			importPassport(params.code, vaultServerUrl, Boolean(vaultServerUrl));

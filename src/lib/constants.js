@@ -16,6 +16,8 @@ export const THEMES = {
 export const DEFAULT_THEME = THEMES.PEACH;
 
 // Local Storage Keys
+export const APP_STORAGE_PREFIX = 'pibulus:talktype';
+
 export const STORAGE_KEYS = {
 	// Application Settings
 	THEME: 'talktype-vibe',
@@ -23,10 +25,10 @@ export const STORAGE_KEYS = {
 	AUTO_RECORD: 'talktype_auto_record',
 	PROMPT_STYLE: 'talktype_prompt_style',
 	CUSTOM_PROMPT: 'talktype_custom_prompt',
-	SUPPORTER: 'talktype_supporter',
-	SUPPORTER_TOKEN: 'talktype_supporter_token',
-	SUPPORTER_PASSPORT_CODE: 'talktype_supporter_passport_code',
-	VAULT_SERVER_URL: 'talktype_vault_server_url',
+	SUPPORTER: `${APP_STORAGE_PREFIX}:supporter`,
+	SUPPORTER_TOKEN: `${APP_STORAGE_PREFIX}:supporter_token`,
+	SUPPORTER_PASSPORT_CODE: `${APP_STORAGE_PREFIX}:passport_code`,
+	VAULT_SERVER_URL: `${APP_STORAGE_PREFIX}:vault_url`,
 	VAULT_AUDIO_SYNC: 'talktype_vault_audio_sync',
 	VAULT_AUDIO_RETENTION_DAYS: 'talktype_vault_audio_retention_days',
 	PRIVACY_MODE: 'talktype_privacy_mode', // Offline Whisper mode
@@ -40,6 +42,13 @@ export const STORAGE_KEYS = {
 	PWA_LAST_PROMPT_DATE: 'talktype-pwa-last-prompt-date',
 	PWA_LAST_PROMPT_TRANSCRIPTION_COUNT: 'talktype-pwa-last-prompt-transcription-count',
 	PWA_INSTALLED: 'talktype-pwa-installed'
+};
+
+export const LEGACY_STORAGE_KEYS = {
+	SUPPORTER: ['talktype_supporter'],
+	SUPPORTER_TOKEN: ['talktype_supporter_token'],
+	SUPPORTER_PASSPORT_CODE: ['talktype_supporter_passport_code'],
+	VAULT_SERVER_URL: ['talktype_vault_server_url']
 };
 
 export const SUPPORTER_CHECKOUT = {

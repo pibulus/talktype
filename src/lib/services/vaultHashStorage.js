@@ -1,5 +1,10 @@
 import { browser } from '$app/environment';
-import { STORAGE_KEYS } from '$lib/constants';
+import { LEGACY_STORAGE_KEYS, STORAGE_KEYS } from '$lib/constants';
+import {
+	readStorageValue,
+	removeStorageValue,
+	writeStorageValue
+} from '$lib/services/storage/localStorageMigration.js';
 
 const LEGACY_VAULT_HASH_KEYS = [
 	'talktype_supporter_vault_hash',
@@ -28,29 +33,20 @@ export function normalizeStoredSupporterCode(code) {
 }
 
 export function clearStoredSupporterCode(storage) {
-	const targetStorage = getStorage(storage);
-	if (!targetStorage) return;
-
-	try {
-		targetStorage.removeItem(STORAGE_KEYS.SUPPORTER_PASSPORT_CODE);
-		clearStoredVaultHash(targetStorage);
-	} catch (error) {
-		console.warn('Failed to clear supporter passport code:', error);
-	}
+	removeStorageValue(STORAGE_KEYS.SUPPORTER_PASSPORT_CODE, {
+		legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER_PASSPORT_CODE,
+		storage
+	});
+	clearStoredVaultHash(storage);
 }
 
 export function readStoredSupporterCode(storage) {
-	const targetStorage = getStorage(storage);
-	if (!targetStorage) return '';
-
-	try {
-		return normalizeStoredSupporterCode(
-			targetStorage.getItem(STORAGE_KEYS.SUPPORTER_PASSPORT_CODE) || ''
-		);
-	} catch (error) {
-		console.warn('Failed to read supporter passport code:', error);
-		return '';
-	}
+	return normalizeStoredSupporterCode(
+		readStorageValue(STORAGE_KEYS.SUPPORTER_PASSPORT_CODE, {
+			legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER_PASSPORT_CODE,
+			storage
+		})
+	);
 }
 
 export function saveStoredSupporterCode(code, storage) {
@@ -59,15 +55,33 @@ export function saveStoredSupporterCode(code, storage) {
 		throw new Error('Supporter passport code is missing');
 	}
 
-	const targetStorage = getStorage(storage);
-	if (!targetStorage) return normalizedCode;
+	const savedCode = writeStorageValue(STORAGE_KEYS.SUPPORTER_PASSPORT_CODE, normalizedCode, {
+		legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER_PASSPORT_CODE,
+		storage
+	});
+	clearStoredVaultHash(storage);
+	return savedCode;
+}
 
-	try {
-		targetStorage.setItem(STORAGE_KEYS.SUPPORTER_PASSPORT_CODE, normalizedCode);
-		clearStoredVaultHash(targetStorage);
-	} catch (error) {
-		console.warn('Failed to persist supporter passport code:', error);
+export function readStoredVaultServerUrl(storage) {
+	return readStorageValue(STORAGE_KEYS.VAULT_SERVER_URL, {
+		legacyKeys: LEGACY_STORAGE_KEYS.VAULT_SERVER_URL,
+		storage
+	}).trim();
+}
+
+export function saveStoredVaultServerUrl(url, storage) {
+	const normalizedUrl = url?.toString().trim() || '';
+	if (!normalizedUrl) {
+		removeStorageValue(STORAGE_KEYS.VAULT_SERVER_URL, {
+			legacyKeys: LEGACY_STORAGE_KEYS.VAULT_SERVER_URL,
+			storage
+		});
+		return '';
 	}
 
-	return normalizedCode;
+	return writeStorageValue(STORAGE_KEYS.VAULT_SERVER_URL, normalizedUrl, {
+		legacyKeys: LEGACY_STORAGE_KEYS.VAULT_SERVER_URL,
+		storage
+	});
 }

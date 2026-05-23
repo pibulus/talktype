@@ -17,10 +17,11 @@
 	} from '$lib/services/storage/vaultTranscriptBackup.js';
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
 	import { vaultAudioRetentionDays, vaultAudioSync } from '$lib';
-	import { STORAGE_KEYS } from '$lib/constants';
 	import {
 		readStoredSupporterCode,
-		saveStoredSupporterCode
+		readStoredVaultServerUrl,
+		saveStoredSupporterCode,
+		saveStoredVaultServerUrl
 	} from '$lib/services/vaultHashStorage.js';
 	import {
 		cleanTranscriptTags,
@@ -320,7 +321,7 @@
 		vaultProgress = { current: 0, total: $transcriptHistory.length, audioCount: 0 };
 
 		try {
-			localStorage.setItem(STORAGE_KEYS.VAULT_SERVER_URL, vaultServerUrl.trim());
+			saveStoredVaultServerUrl(vaultServerUrl);
 			if (!storedPassportCode) {
 				await validatePassportCode(vaultCode);
 				passportCode = saveStoredSupporterCode(vaultCode);
@@ -360,7 +361,7 @@
 	}
 
 	onMount(() => {
-		vaultServerUrl = localStorage.getItem(STORAGE_KEYS.VAULT_SERVER_URL) || '';
+		vaultServerUrl = readStoredVaultServerUrl();
 		hasStoredPassportCode = !!readStoredSupporterCode();
 		loadAllTranscripts();
 	});

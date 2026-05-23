@@ -15,6 +15,7 @@ The Vault is a local-first, private-cloud sync system powered by your Raspberry 
 - **Addressing**: `/vault/[app_name]/[vault_hash]` where `vault_hash` is `sha256("talktype-vault-id:" + supporter_code)`.
 - **Key derivation**: PBKDF2-SHA256 with a per-payload random salt.
 - **Device trust boundary**: TalkType treats the supporter code as the user's Passport key. After unlock, it stores that code locally on the device so the card, history, and Vault backup can work without repeated prompts. The vault hash is derived on demand from that stored code, not cached with a silent expiry. This is trusted-device convenience, not enterprise key custody; clearing site data forgets the Passport.
+- **Local key naming**: Passport/Vault localStorage keys use the `pibulus:talktype:*` convention, with read-through migration from old `talktype_*` keys. Other apps should use the same pattern with their own app ID, e.g. `pibulus:ziplist:passport_code`.
 - **Handshake**:
   1. Client derives a symmetric key from the `supporter_code`.
   2. Client encrypts the transcript history JSON blob with AES-GCM.

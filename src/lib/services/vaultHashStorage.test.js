@@ -4,7 +4,9 @@ import {
 	clearStoredSupporterCode,
 	clearStoredVaultHash,
 	readStoredSupporterCode,
-	saveStoredSupporterCode
+	readStoredVaultServerUrl,
+	saveStoredSupporterCode,
+	saveStoredVaultServerUrl
 } from './vaultHashStorage.js';
 
 function createStorage() {
@@ -41,6 +43,25 @@ describe('supporter passport local storage', () => {
 		expect(storage.removeItem).toHaveBeenCalledWith('talktype_supporter_vault_hash_saved_at');
 	});
 
+	it('migrates legacy passport and vault URL keys on read', () => {
+		const storage = createStorage();
+		storage.setItem('talktype_supporter_passport_code', 'tt-old-code');
+		storage.setItem('talktype_vault_server_url', 'https://vault.local');
+
+		expect(readStoredSupporterCode(storage)).toBe('TT-OLD-CODE');
+		expect(readStoredVaultServerUrl(storage)).toBe('https://vault.local');
+		expect(storage.setItem).toHaveBeenCalledWith(
+			STORAGE_KEYS.SUPPORTER_PASSPORT_CODE,
+			'tt-old-code'
+		);
+		expect(storage.setItem).toHaveBeenCalledWith(
+			STORAGE_KEYS.VAULT_SERVER_URL,
+			'https://vault.local'
+		);
+		expect(storage.removeItem).toHaveBeenCalledWith('talktype_supporter_passport_code');
+		expect(storage.removeItem).toHaveBeenCalledWith('talktype_vault_server_url');
+	});
+
 	it('can explicitly clear the stored supporter passport code', () => {
 		const storage = createStorage();
 
@@ -48,5 +69,16 @@ describe('supporter passport local storage', () => {
 		clearStoredSupporterCode(storage);
 
 		expect(readStoredSupporterCode(storage)).toBe('');
+	});
+
+	it('clears the stored vault URL when saved blank', () => {
+		const storage = createStorage();
+
+		saveStoredVaultServerUrl('https://vault.local', storage);
+		expect(saveStoredVaultServerUrl(' ', storage)).toBe('');
+
+		expect(readStoredVaultServerUrl(storage)).toBe('');
+		expect(storage.removeItem).toHaveBeenCalledWith(STORAGE_KEYS.VAULT_SERVER_URL);
+		expect(storage.removeItem).toHaveBeenCalledWith('talktype_vault_server_url');
 	});
 });
