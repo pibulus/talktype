@@ -17,6 +17,7 @@
 - `RecordButtonWithTimer` state extracted and tested.
 - PWA auto-start, permission messaging, stale Deepgram sockets, repeated stops, and Whisper unload races hardened.
 - Supporter checkout, membership card, Passport QR/link import, automatic encrypted current-history/recording mirror, stale audio cleanup, and quiet notes check-in landed.
+- Supporter unlock now saves the one visible completed note from that page session, without keeping a hidden free-user history backlog.
 - Active recording recovery now keeps an append-only IndexedDB journal for long-note crash/interruption recovery.
 - Documentation reorganized into current docs, research, and archive.
 

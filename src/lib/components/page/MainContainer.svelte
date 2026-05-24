@@ -17,7 +17,7 @@
 	import { fade } from 'svelte/transition';
 	import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
 	import { STORAGE_KEYS } from '$lib/constants';
-	import { userPreferences } from '$lib/services';
+	import { transcriptionState, userPreferences } from '$lib/services';
 
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
 	import { saveTranscript } from '$lib/services/storage/transcriptStorage';
@@ -28,6 +28,8 @@
 	let TranscriptHistoryModal;
 	let SupporterModal;
 	let PwaInstallPrompt;
+	let latestUnsavedTranscript = null;
+	let isSavingUnlockTranscript = false;
 
 	function createComponentLoader(importComponent, assignComponent, label) {
 		let pending = null;
@@ -133,23 +135,57 @@
 		modalService.closeModal();
 	}
 
+	function getHistoryTranscript(transcript, textOverride = '') {
+		const text = (textOverride || transcript?.text || '').trim();
+		if (!text) return null;
+
+		return {
+			text,
+			audioBlob: transcript?.audioBlob || null,
+			duration: transcript?.duration || 0,
+			promptStyle: transcript?.promptStyle || 'standard',
+			method: transcript?.method || 'gemini'
+		};
+	}
+
+	async function saveTranscriptToHistory(transcript) {
+		await saveTranscript(transcript);
+		void autoBackupHistoryToVault();
+	}
+
+	async function saveVisibleTranscriptAfterUnlock() {
+		if (!browser || isSavingUnlockTranscript || !latestUnsavedTranscript) return;
+
+		const currentText = get(transcriptionState).text;
+		const transcript = getHistoryTranscript(latestUnsavedTranscript, currentText);
+		if (!transcript) return;
+
+		isSavingUnlockTranscript = true;
+		try {
+			await saveTranscriptToHistory(transcript);
+			latestUnsavedTranscript = null;
+		} catch (err) {
+			console.error('Failed to save visible transcript after supporter unlock:', err);
+		} finally {
+			isSavingUnlockTranscript = false;
+		}
+	}
+
 	// Handle transcription completed event for PWA prompt and local transcript history
 	async function handleTranscriptionCompleted(event) {
 		if (!browser) return;
 
-		if (event.detail.transcript && $userPreferences.isSupporter) {
+		const transcript = getHistoryTranscript(event.detail.transcript);
+
+		if (transcript && $userPreferences.isSupporter) {
 			try {
-				await saveTranscript({
-					text: event.detail.transcript.text,
-					audioBlob: event.detail.transcript.audioBlob,
-					duration: event.detail.transcript.duration || 0,
-					promptStyle: event.detail.transcript.promptStyle || 'standard',
-					method: event.detail.transcript.method || 'gemini'
-				});
-				void autoBackupHistoryToVault();
+				await saveTranscriptToHistory(transcript);
+				latestUnsavedTranscript = null;
 			} catch (err) {
 				console.error('Failed to save transcript:', err);
 			}
+		} else if (transcript) {
+			latestUnsavedTranscript = transcript;
 		}
 
 		// The PWA service handles most of the logic, but we need to lazy-load the component
@@ -161,6 +197,11 @@
 	async function openSupporterModal() {
 		if (!SupporterModal && !(await loadSupporterModal())) return;
 		openDialogAfterRender('supporter_modal');
+	}
+
+	async function handleSupporterUnlocked() {
+		await checkPassportNotes();
+		await saveVisibleTranscriptAfterUnlock();
 	}
 
 	// Closes the PWA install prompt
@@ -425,7 +466,7 @@
 {/if}
 
 {#if SupporterModal}
-	<svelte:component this={SupporterModal} {closeModal} />
+	<svelte:component this={SupporterModal} {closeModal} on:unlocked={handleSupporterUnlocked} />
 {/if}
 
 <!-- PWA Install Prompt -->

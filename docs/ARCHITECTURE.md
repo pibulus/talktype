@@ -170,7 +170,7 @@ Flow:
 9. The success page receives the supporter code plus a signed supporter token, calls `setSupporterStatus(true, token)`, and shows the code for other devices.
 10. Existing manually issued codes still redeem through `/api/supporter/redeem` as a fallback.
 11. Supporter status unlocks local transcript history/export, output style presets, and the longer recording limit.
-12. Completed transcripts are only saved to IndexedDB when `userPreferences.isSupporter` is true. Saved history entries get a few local smart tags for lightweight filtering; this does not call an external tagging API.
+12. Completed transcripts are only saved to IndexedDB when `userPreferences.isSupporter` is true. If a free user unlocks while a completed transcript is still visible in the current page session, TalkType saves that one visible note into history after Passport check-in. It does not build a hidden pre-supporter backlog.
 13. Batch `/api/transcribe` verifies the signed supporter token before enabling server-side style presets, Deepgram diarization, or Deepgram paragraph formatting.
 
 Square is isolated to the payment provider layer. Feature gates consume supporter entitlement state and do not know which payment provider created it.
