@@ -11,18 +11,8 @@
 		exportAllTranscriptsJSON,
 		formatSize
 	} from '$lib/services/storage/transcriptStorage';
-	import {
-		backupTranscriptsToVault,
-		countTranscriptsWithAudio
-	} from '$lib/services/storage/vaultTranscriptBackup.js';
 	import { autoBackupHistoryToVault } from '$lib/services/storage/vaultAutoBackup.js';
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
-	import {
-		readStoredSupporterCode,
-		readStoredVaultServerUrl,
-		saveStoredSupporterCode,
-		saveStoredVaultServerUrl
-	} from '$lib/services/vaultHashStorage.js';
 	import {
 		cleanTranscriptTags,
 		getTranscriptTagPool
@@ -49,20 +39,11 @@
 	let editText = '';
 	let clearAllTimeout = null;
 	let deleteConfirmTimeout = null;
-	let vaultPanelOpen = false;
-	let vaultServerUrl = '';
-	let vaultCode = '';
-	let vaultBackupError = '';
-	let vaultBackupSummary = null;
-	let vaultProgress = null;
-	let isBackingUpVault = false;
-	let hasStoredPassportCode = false;
 	let activeAudioId = null;
 	let activeAudioUrl = '';
 	let selectedTag = '';
 	const iconButtonClass = 'btn btn-ghost h-12 min-h-12 w-12 px-0 text-base';
 
-	$: audioClipCount = countTranscriptsWithAudio($transcriptHistory);
 	$: availableTags = getTranscriptTagPool($transcriptHistory);
 	$: visibleTranscripts = selectedTag
 		? $transcriptHistory.filter((transcript) =>
@@ -291,83 +272,7 @@
 		);
 	}
 
-	async function validatePassportCode(code) {
-		const response = await fetch('/api/validate-code', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({ code })
-		});
-		const payload = await response.json().catch(() => ({}));
-
-		if (!response.ok || !payload.valid) {
-			throw new Error(payload.error || 'Check the supporter code and try once more.');
-		}
-	}
-
-	async function handleVaultBackup() {
-		vaultBackupError = '';
-		vaultBackupSummary = null;
-
-		if (!vaultServerUrl.trim()) {
-			vaultBackupError = 'Enter your Vault server URL.';
-			return;
-		}
-
-		const storedPassportCode = readStoredSupporterCode();
-		let passportCode = storedPassportCode;
-
-		if (!passportCode && !vaultCode.trim()) {
-			vaultBackupError = 'Enter your supporter code once to remember this Passport.';
-			return;
-		}
-
-		isBackingUpVault = true;
-		vaultProgress = { current: 0, total: $transcriptHistory.length, audioCount: 0, audioFailed: 0 };
-
-		try {
-			saveStoredVaultServerUrl(vaultServerUrl);
-			if (!storedPassportCode) {
-				await validatePassportCode(vaultCode);
-				passportCode = saveStoredSupporterCode(vaultCode);
-				hasStoredPassportCode = true;
-			}
-			vaultBackupSummary = await backupTranscriptsToVault({
-				transcripts: $transcriptHistory,
-				code: passportCode,
-				serverUrl: vaultServerUrl,
-				includeAudio: true,
-				onProgress: (progress) => {
-					vaultProgress = progress;
-				}
-			});
-			vaultCode = '';
-
-			window.dispatchEvent(
-				new CustomEvent('talktype:toast', {
-					detail: {
-						message: `Mirrored ${vaultBackupSummary.transcriptCount} transcript${vaultBackupSummary.transcriptCount !== 1 ? 's' : ''} to Vault.`,
-						type: 'success'
-					}
-				})
-			);
-		} catch (error) {
-			console.error('Failed to back up to Vault:', error);
-			vaultBackupError = error.message || 'Vault backup needs one more try.';
-			window.dispatchEvent(
-				new CustomEvent('talktype:toast', {
-					detail: { message: 'Vault backup failed.', type: 'info' }
-				})
-			);
-		} finally {
-			isBackingUpVault = false;
-		}
-	}
-
 	onMount(() => {
-		vaultServerUrl = readStoredVaultServerUrl();
-		hasStoredPassportCode = !!readStoredSupporterCode();
 		loadAllTranscripts();
 	});
 
@@ -424,15 +329,6 @@
 						<button
 							type="button"
 							class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
-							on:click={() => (vaultPanelOpen = !vaultPanelOpen)}
-							aria-expanded={vaultPanelOpen}
-							aria-controls="vault_backup_panel"
-						>
-							Vault
-						</button>
-						<button
-							type="button"
-							class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
 							on:click={handleBatchDownload}
 							title="Download all as text files"
 							aria-label="Download all transcripts as text files"
@@ -462,108 +358,6 @@
 				{/if}
 			</div>
 		</div>
-
-		{#if isSupporter && vaultPanelOpen && $transcriptHistory.length > 0}
-			<div
-				id="vault_backup_panel"
-				class="mb-4 shrink-0 rounded-xl border border-pink-100 bg-white/70 p-3 shadow-sm"
-			>
-				<form
-					class={`grid gap-3 ${hasStoredPassportCode ? 'sm:grid-cols-[1fr_auto]' : 'sm:grid-cols-[1fr_1fr_auto]'}`}
-					on:submit|preventDefault={handleVaultBackup}
-				>
-					<label class="min-w-0">
-						<span class="sr-only">Vault server URL</span>
-						<input
-							type="url"
-							class="min-h-11 w-full rounded-xl border border-pink-100 bg-[#fffdf5] px-3 text-sm text-gray-800 outline-none transition-all duration-150 focus:border-pink-300 focus:ring-2 focus:ring-pink-100"
-							placeholder="https://vault.local:3000"
-							bind:value={vaultServerUrl}
-							autocomplete="url"
-						/>
-					</label>
-					{#if !hasStoredPassportCode}
-						<label class="min-w-0">
-							<span class="sr-only">Supporter code</span>
-							<input
-								type="password"
-								class="min-h-11 w-full rounded-xl border border-pink-100 bg-[#fffdf5] px-3 text-sm text-gray-800 outline-none transition-all duration-150 focus:border-pink-300 focus:ring-2 focus:ring-pink-100"
-								placeholder="Supporter code"
-								bind:value={vaultCode}
-								autocomplete="one-time-code"
-								autocapitalize="characters"
-								spellcheck="false"
-							/>
-						</label>
-					{/if}
-					<button
-						type="submit"
-						class="btn min-h-11 border-pink-200 bg-pink-500 px-4 text-sm font-bold text-white transition-colors duration-150 hover:bg-pink-600 disabled:opacity-60"
-						disabled={isBackingUpVault}
-					>
-						{isBackingUpVault ? 'Backing up' : 'Back up'}
-					</button>
-				</form>
-				<p class="mt-2 text-xs leading-5 text-gray-500">
-					New supporter transcripts and recordings back up automatically when this device has a
-					Passport and Vault URL. Use this button to mirror current history now.
-					{#if hasStoredPassportCode}
-						Passport remembered on this device.
-					{:else}
-						Enter your supporter code once and TalkType will remember this Passport.
-					{/if}
-					{#if audioClipCount > 0}
-						{audioClipCount} clip{audioClipCount !== 1 ? 's' : ''} will be encrypted separately.
-					{:else}
-						No saved recordings are attached to this history yet.
-					{/if}
-				</p>
-				{#if vaultProgress && isBackingUpVault}
-					<p class="mt-1 text-xs font-bold text-pink-700" aria-live="polite">
-						{vaultProgress.current}/{vaultProgress.total} processed
-					</p>
-				{/if}
-				{#if vaultBackupError}
-					<p class="mt-1 text-xs font-bold text-amber-700" aria-live="polite">
-						{vaultBackupError}
-					</p>
-				{/if}
-				{#if vaultBackupSummary}
-					<p class="mt-1 text-xs font-bold text-emerald-700" aria-live="polite">
-						Backed up {vaultBackupSummary.transcriptCount} transcript{vaultBackupSummary.transcriptCount !==
-						1
-							? 's'
-							: ''} and {vaultBackupSummary.audioCount} audio clip{vaultBackupSummary.audioCount !==
-						1
-							? 's'
-							: ''}.
-					</p>
-					{#if vaultBackupSummary.audioDeleted > 0}
-						<p class="mt-1 text-xs font-bold text-emerald-700" aria-live="polite">
-							Removed {vaultBackupSummary.audioDeleted} stale Vault recording{vaultBackupSummary.audioDeleted !==
-							1
-								? 's'
-								: ''}.
-						</p>
-					{/if}
-					{#if vaultBackupSummary.audioFailed > 0}
-						<p class="mt-1 text-xs font-bold text-amber-700" aria-live="polite">
-							{vaultBackupSummary.audioFailed} recording{vaultBackupSummary.audioFailed !== 1
-								? 's'
-								: ''} could not be backed up, but the transcript text was saved.
-						</p>
-					{/if}
-					{#if vaultBackupSummary.audioDeleteFailed > 0}
-						<p class="mt-1 text-xs font-bold text-amber-700" aria-live="polite">
-							{vaultBackupSummary.audioDeleteFailed} stale Vault recording{vaultBackupSummary.audioDeleteFailed !==
-							1
-								? 's'
-								: ''} could not be removed yet.
-						</p>
-					{/if}
-				{/if}
-			</div>
-		{/if}
 
 		{#if isSupporter && availableTags.length > 0 && $transcriptHistory.length > 0}
 			<div

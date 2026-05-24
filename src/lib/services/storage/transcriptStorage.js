@@ -5,6 +5,7 @@
 
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import { STORAGE_KEYS } from '$lib/constants';
 import { createLogger } from '$lib/utils/logger';
 import {
 	cleanTranscriptTags,
@@ -81,9 +82,10 @@ async function initDB() {
 
 function getHistorySnapshot() {
 	let current = [];
-	transcriptHistory.subscribe((value) => {
+	const unsubscribe = transcriptHistory.subscribe((value) => {
 		current = Array.isArray(value) ? value : [];
-	})();
+	});
+	unsubscribe();
 	return current;
 }
 
@@ -118,6 +120,31 @@ function findExistingTranscript(transcripts, sourceId, timestamp, text) {
 			timestamp && text && transcript.timestamp === timestamp && transcript.text === text
 		);
 	});
+}
+
+export function getHistoryChangedAt(storage = null) {
+	const targetStorage = storage || (browser ? localStorage : null);
+	if (!targetStorage) return 0;
+
+	const value = Number.parseInt(targetStorage.getItem(STORAGE_KEYS.HISTORY_CHANGED_AT) || '0', 10);
+	return Number.isFinite(value) ? value : 0;
+}
+
+export function markHistoryChangedAt(timestamp = Date.now(), storage = null) {
+	const targetStorage = storage || (browser ? localStorage : null);
+	const resolvedTimestamp = Number.isFinite(Number(timestamp)) ? Number(timestamp) : Date.now();
+	if (targetStorage) {
+		targetStorage.setItem(STORAGE_KEYS.HISTORY_CHANGED_AT, String(resolvedTimestamp));
+	}
+	return resolvedTimestamp;
+}
+
+function getTranscriptHistoryTimestamp(transcripts) {
+	if (!Array.isArray(transcripts) || transcripts.length === 0) return 0;
+	return transcripts.reduce((latest, transcript) => {
+		const timestamp = Number(transcript?.timestamp) || 0;
+		return Math.max(latest, timestamp);
+	}, 0);
 }
 
 /**
@@ -156,6 +183,7 @@ export async function saveTranscript(transcript) {
 				log.log('Transcript saved:', request.result);
 				try {
 					await transactionComplete;
+					markHistoryChangedAt();
 					updateStats();
 					await loadAllTranscripts();
 					resolve(savedId);
@@ -176,21 +204,29 @@ export async function saveTranscript(transcript) {
 	}
 }
 
-export async function importTranscriptHistory(transcripts) {
-	if (!Array.isArray(transcripts) || transcripts.length === 0) {
+export async function importTranscriptHistory(transcripts, options = {}) {
+	const replaceExisting = Boolean(options.replaceExisting);
+
+	if (!Array.isArray(transcripts)) {
+		return { imported: 0, updated: 0, total: 0 };
+	}
+
+	if (transcripts.length === 0 && !replaceExisting) {
 		return { imported: 0, updated: 0, total: 0 };
 	}
 
 	try {
 		const database = await initDB();
-		const existingTranscripts = await new Promise((resolve, reject) => {
-			const transaction = database.transaction([STORE_NAME], 'readonly');
-			const store = transaction.objectStore(STORE_NAME);
-			const request = store.getAll();
+		const existingTranscripts = replaceExisting
+			? []
+			: await new Promise((resolve, reject) => {
+					const transaction = database.transaction([STORE_NAME], 'readonly');
+					const store = transaction.objectStore(STORE_NAME);
+					const request = store.getAll();
 
-			request.onsuccess = () => resolve(request.result || []);
-			request.onerror = () => reject(request.error);
-		});
+					request.onsuccess = () => resolve(request.result || []);
+					request.onerror = () => reject(request.error);
+				});
 
 		const transaction = database.transaction([STORE_NAME], 'readwrite');
 		const store = transaction.objectStore(STORE_NAME);
@@ -201,9 +237,20 @@ export async function importTranscriptHistory(transcripts) {
 		});
 		let imported = 0;
 		let updated = 0;
+		const writeOperations = [];
 
-		await Promise.all(
-			transcripts.map(
+		if (replaceExisting) {
+			writeOperations.push(
+				new Promise((resolve, reject) => {
+					const request = store.clear();
+					request.onsuccess = resolve;
+					request.onerror = () => reject(request.error);
+				})
+			);
+		}
+
+		writeOperations.push(
+			...transcripts.map(
 				(transcript) =>
 					new Promise((resolve, reject) => {
 						const timestamp = Number(transcript.timestamp) || Date.now();
@@ -237,8 +284,13 @@ export async function importTranscriptHistory(transcripts) {
 			)
 		);
 
+		await Promise.all(writeOperations);
+
 		await transactionComplete;
 
+		if (imported > 0 || updated > 0 || replaceExisting) {
+			markHistoryChangedAt(getTranscriptHistoryTimestamp(transcripts) || Date.now());
+		}
 		updateStats();
 		await loadAllTranscripts();
 
@@ -341,6 +393,7 @@ export async function updateTranscript(id, newText, options = {}) {
 					log.log('Transcript updated:', id);
 					try {
 						await transactionComplete;
+						markHistoryChangedAt();
 						updateStats();
 						await loadAllTranscripts();
 						resolve(true);
@@ -391,6 +444,7 @@ export async function deleteTranscript(id) {
 				log.log('Transcript deleted:', id);
 				try {
 					await transactionComplete;
+					markHistoryChangedAt();
 					updateStats();
 					await loadAllTranscripts();
 					resolve(true);
@@ -434,6 +488,7 @@ export async function clearAllTranscripts() {
 				try {
 					await transactionComplete;
 					transcriptHistory.set([]);
+					markHistoryChangedAt();
 					updateStats();
 					resolve(true);
 				} catch (error) {

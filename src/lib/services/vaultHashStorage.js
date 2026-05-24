@@ -63,11 +63,20 @@ export function saveStoredSupporterCode(code, storage) {
 	return savedCode;
 }
 
+export function getDefaultPassportServerUrl() {
+	return (
+		import.meta.env?.PUBLIC_PASSPORT_SERVER_URL?.trim() ||
+		import.meta.env?.PUBLIC_VAULT_SERVER_URL?.trim() ||
+		''
+	);
+}
+
 export function readStoredVaultServerUrl(storage) {
-	return readStorageValue(STORAGE_KEYS.VAULT_SERVER_URL, {
+	const storedUrl = readStorageValue(STORAGE_KEYS.VAULT_SERVER_URL, {
 		legacyKeys: LEGACY_STORAGE_KEYS.VAULT_SERVER_URL,
 		storage
 	}).trim();
+	return storedUrl || getDefaultPassportServerUrl();
 }
 
 export function saveStoredVaultServerUrl(url, storage) {

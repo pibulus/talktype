@@ -6,7 +6,7 @@
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { Seo } from '$lib/components/layout';
 	import { setSupporterStatus } from '$lib/services';
-	import { restoreTranscriptsFromVault } from '$lib/services/storage/vaultTranscriptBackup.js';
+	import { checkPassportNotes } from '$lib/services/storage/passportNotesCheck.js';
 	import { getVaultHash } from '$lib/services/syncService.js';
 	import {
 		readStoredVaultServerUrl,
@@ -22,7 +22,6 @@
 	let vaultHash = '';
 	let errorMessage = '';
 	let restoreSummary = null;
-	let restoreProgress = null;
 
 	function getPassportParams() {
 		const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -70,44 +69,39 @@
 		window.history.replaceState({}, '', '/passport');
 	}
 
-	async function restoreFromVault() {
+	async function getNotes() {
 		if (!passportCode) {
 			errorMessage = 'Enter your Passport code first.';
 			return;
 		}
 		if (!vaultServerUrl.trim()) {
-			errorMessage = 'Enter your Vault URL to restore history.';
-			return;
+			message = 'Passport connected.';
+			return { skipped: true, reason: 'no-notes-source' };
 		}
 
-		status = 'restoring';
+		status = 'getting';
+		message = 'Getting your notes...';
 		errorMessage = '';
 		restoreSummary = null;
-		restoreProgress = { current: 0, total: 0, audioCount: 0, audioFailed: 0 };
 		saveStoredVaultServerUrl(vaultServerUrl);
 
 		try {
-			const summary = await restoreTranscriptsFromVault({
-				code: passportCode,
-				serverUrl: vaultServerUrl,
-				includeAudio: true,
-				onProgress: (progress) => {
-					restoreProgress = progress;
-				}
+			const summary = await checkPassportNotes({
+				force: true,
+				readCode: () => passportCode,
+				readServerUrl: () => vaultServerUrl
 			});
 
 			restoreSummary = summary;
 			status = 'ready';
-			if (summary.missing) {
-				message = 'Passport imported. No Vault backup found yet.';
-			} else {
-				message = `Restored ${summary.total} transcript${summary.total === 1 ? '' : 's'} from Vault.`;
-			}
+			message = summary.action === 'pulled' ? 'Your notes are here.' : 'Passport connected.';
+			return summary;
 		} catch (error) {
-			console.error('Passport restore failed:', error);
+			console.error('Passport notes import failed:', error);
 			status = 'ready';
-			errorMessage = error.message || 'Vault restore needs one more try.';
-			message = 'Passport imported. Vault restore did not finish.';
+			errorMessage = 'Getting your notes needs one more try.';
+			message = 'Passport connected.';
+			return { skipped: true, reason: 'failed', error };
 		}
 	}
 
@@ -126,21 +120,21 @@
 		}
 
 		status = 'importing';
-		message = 'Importing Passport...';
+		message = 'Connecting Passport...';
 
 		try {
 			await rememberPassport(nextCode, nextVaultUrl);
 			status = 'ready';
-			message = 'Passport imported on this device.';
+			message = 'Passport connected.';
 
-			if (shouldRestore && nextVaultUrl.trim()) {
-				await restoreFromVault();
+			if (shouldRestore && vaultServerUrl.trim()) {
+				await getNotes();
 			}
 		} catch (error) {
 			console.error('Passport import failed:', error);
 			status = 'manual';
 			errorMessage = error.message || 'Passport import needs one more try.';
-			message = 'Enter your Passport details.';
+			message = 'Enter your Passport code.';
 		}
 	}
 
@@ -161,8 +155,8 @@
 </script>
 
 <Seo
-	title="Passport Import | TalkType"
-	description="Import your TalkType Passport and restore encrypted history."
+	title="TalkType Passport | TalkType"
+	description="Connect a TalkType Passport on this device."
 	path="/passport"
 	noindex={true}
 	includeStructuredData={false}
@@ -177,7 +171,11 @@
 		<div class="space-y-2">
 			<p class="text-xs font-bold uppercase tracking-[0.24em] text-pink-500">TalkType Passport</p>
 			<h1 class="text-3xl font-black tracking-tight">
-				{status === 'restoring' ? 'Restoring from Vault' : 'Passport import'}
+				{status === 'getting'
+					? 'Getting your notes'
+					: status === 'ready'
+						? 'Passport connected'
+						: 'TalkType Passport'}
 			</h1>
 			<p class="text-sm leading-6 text-gray-600">{message}</p>
 		</div>
@@ -189,7 +187,8 @@
 		<div class="w-full rounded-2xl border border-pink-100 bg-white/80 p-4 text-left shadow-sm">
 			<form
 				class="space-y-3"
-				on:submit|preventDefault={() => importPassport(passportCode || manualCode, vaultServerUrl)}
+				on:submit|preventDefault={() =>
+					importPassport(passportCode || manualCode, vaultServerUrl, Boolean(vaultServerUrl))}
 			>
 				{#if !passportCode}
 					<label class="block">
@@ -208,43 +207,26 @@
 					</label>
 				{/if}
 
-				<label class="block">
-					<span class="mb-1 block text-xs font-bold uppercase tracking-[0.16em] text-gray-500">
-						Vault URL
-					</span>
-					<input
-						type="url"
-						class="min-h-12 w-full rounded-xl border border-pink-100 bg-[#fffdf5] px-4 text-sm text-gray-800 outline-none transition-all duration-150 focus:border-pink-300 focus:ring-2 focus:ring-pink-100"
-						placeholder="https://vault.local:3000"
-						bind:value={vaultServerUrl}
-						autocomplete="url"
-					/>
-				</label>
-
-				<div class="grid gap-2 sm:grid-cols-2">
+				<div class="grid gap-2 {passportCode && vaultServerUrl ? 'sm:grid-cols-2' : ''}">
 					<button
 						type="submit"
 						class="btn min-h-12 border-pink-200 bg-pink-500 text-white transition-colors duration-150 hover:border-pink-300 hover:bg-pink-600 disabled:opacity-60"
-						disabled={status === 'importing' || status === 'restoring'}
+						disabled={Boolean(passportCode) || status === 'importing' || status === 'getting'}
 					>
-						{passportCode ? 'Save details' : 'Import Passport'}
+						{passportCode ? 'Passport connected' : 'Connect Passport'}
 					</button>
-					<button
-						type="button"
-						class="btn min-h-12 border-pink-100 bg-white text-pink-600 transition-colors duration-150 hover:border-pink-200 hover:bg-pink-50 disabled:opacity-60"
-						on:click={restoreFromVault}
-						disabled={!passportCode || status === 'restoring'}
-					>
-						{status === 'restoring' ? 'Restoring...' : 'Restore from Vault'}
-					</button>
+					{#if passportCode && vaultServerUrl}
+						<button
+							type="button"
+							class="btn min-h-12 border-pink-100 bg-white text-pink-600 transition-colors duration-150 hover:border-pink-200 hover:bg-pink-50 disabled:opacity-60"
+							on:click={getNotes}
+							disabled={status === 'getting'}
+						>
+							{status === 'getting' ? 'Getting notes...' : 'Get notes'}
+						</button>
+					{/if}
 				</div>
 			</form>
-
-			{#if restoreProgress && status === 'restoring'}
-				<p class="mt-3 text-xs font-bold text-pink-700" aria-live="polite">
-					{restoreProgress.current}/{restoreProgress.total} processed
-				</p>
-			{/if}
 
 			{#if errorMessage}
 				<p class="mt-3 text-sm font-bold text-amber-700" aria-live="polite">
@@ -252,11 +234,9 @@
 				</p>
 			{/if}
 
-			{#if restoreSummary && !restoreSummary.missing}
+			{#if restoreSummary && restoreSummary.action === 'pulled'}
 				<p class="mt-3 text-sm font-bold text-emerald-700" aria-live="polite">
-					Imported {restoreSummary.imported}, updated {restoreSummary.updated}. Audio clips
-					restored:
-					{restoreSummary.audioCount}.
+					Your notes are here.
 				</p>
 			{/if}
 		</div>

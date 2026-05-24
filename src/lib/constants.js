@@ -29,6 +29,7 @@ export const STORAGE_KEYS = {
 	SUPPORTER_TOKEN: `${APP_STORAGE_PREFIX}:supporter_token`,
 	SUPPORTER_PASSPORT_CODE: `${APP_STORAGE_PREFIX}:passport_code`,
 	VAULT_SERVER_URL: `${APP_STORAGE_PREFIX}:vault_url`,
+	HISTORY_CHANGED_AT: `${APP_STORAGE_PREFIX}:history_changed_at`,
 	PRIVACY_MODE: 'talktype_privacy_mode', // Offline Whisper mode
 	LIVE_MODE: 'talktype_live_mode',
 	LAST_TRANSCRIPTION_METHOD: 'last_transcription_method', // Track which service was used

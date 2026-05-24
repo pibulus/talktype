@@ -8,7 +8,8 @@ vi.mock('./transcriptStorage.js', () => ({
 		imported: transcripts.length,
 		updated: 0,
 		total: transcripts.length
-	}))
+	})),
+	markHistoryChangedAt: vi.fn()
 }));
 
 describe('Vault transcript restore', () => {

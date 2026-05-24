@@ -31,7 +31,7 @@ Unit tests cover:
 - Supporter license crypto, payment store behavior, Square provider request shaping, and supporter code validation.
 - Passport QR URL construction and QRBuddy render URL generation.
 - Passport local storage migration and vault hash cleanup.
-- Encrypted Vault mirror/restore, stale audio cleanup, transcript import merging, smart tags, and audio media manifest helpers.
+- Encrypted notes mirror/check-in, stale audio cleanup, transcript import/replacement, smart tags, and audio media manifest helpers.
 
 ## What Belongs In Unit Tests
 
@@ -52,7 +52,7 @@ Unit tests cover:
 - Install prompts and launch shortcuts.
 - Square hosted checkout return flow and webhook-backed license creation.
 - Membership card QR import on a second device.
-- Vault auto-mirror/manual restore against the Pi drop-zone, including encrypted audio history and delete cleanup.
+- Passport notes check-in against the Pi drop-zone, including encrypted audio history and delete cleanup.
 - Long recording recovery on mobile after backgrounding, refresh, and interruption.
 
 ## Manual Smoke Pass
@@ -68,10 +68,10 @@ For a release candidate:
 7. Deny microphone permission, reload, allow permission, and retry.
 8. Record a longer note, background the app, refresh or interrupt it, and verify the recovery card can restore usable audio/text.
 9. Unlock supporter mode through Square sandbox or a manual code.
-10. Save a supporter transcript with a Passport and Vault URL configured, then verify text and attached audio mirror to Vault.
-11. Scan/click the Passport QR on another device and verify `/passport` imports the Passport and restores history.
+10. Save a supporter transcript with a Passport and notes endpoint configured, then verify text and attached audio mirror to the Pi drop-zone.
+11. Scan/click the Passport QR on another device and verify `/passport` imports the Passport and notes appear.
 12. Verify a restored history item can play its encrypted audio when the source history item had a recording.
-13. Delete the source history item locally, run/observe the next Vault mirror, and verify the restored Vault history no longer includes that item or stale audio.
+13. Delete the source history item locally, run/observe the next mirror, and verify the other device no longer includes that item or stale audio after check-in.
 14. Install to iPhone/Android home screen and test auto-record plus mic permission flow.
 
 ## Known Gaps
@@ -80,4 +80,4 @@ For a release candidate:
 - No automated real microphone tests.
 - No automated visual regression tests.
 - Real installed-PWA iOS behavior still requires physical-device testing.
-- No automated browser-level Vault/QR/Square end-to-end flow yet.
+- No automated browser-level Passport/QR/Square end-to-end flow yet.

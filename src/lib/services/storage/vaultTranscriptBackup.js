@@ -7,13 +7,13 @@ import {
 	saveAudioToVault,
 	saveToVault
 } from '$lib/services/syncService.js';
-import { importTranscriptHistory } from './transcriptStorage.js';
+import { importTranscriptHistory, markHistoryChangedAt } from './transcriptStorage.js';
 import { cleanTranscriptTags } from './transcriptTags.js';
 
 const VAULT_APP_NAME = 'talktype';
 
 function getTranscriptId(transcript) {
-	return String(transcript.id ?? transcript.timestamp ?? Date.now());
+	return String(transcript.vaultSourceId ?? transcript.id ?? transcript.timestamp ?? Date.now());
 }
 
 async function createTranscriptMediaId(transcript) {
@@ -69,6 +69,38 @@ function deserializeTranscript(transcript, audioBlob = null) {
 export function countTranscriptsWithAudio(transcripts) {
 	if (!Array.isArray(transcripts)) return 0;
 	return transcripts.filter((transcript) => transcript?.audioBlob instanceof Blob).length;
+}
+
+export async function loadVaultTranscriptMirror({ code, serverUrl }) {
+	if (!serverUrl?.trim()) {
+		throw new Error('Passport notes need a server URL');
+	}
+	if (!code?.trim()) {
+		throw new Error('Passport notes need a supporter code');
+	}
+
+	const cleanServerUrl = serverUrl.trim();
+	const payload = await loadFromVault(VAULT_APP_NAME, code, cleanServerUrl);
+
+	if (!payload) {
+		return {
+			missing: true,
+			updatedAt: null,
+			updatedAtMs: 0,
+			total: 0
+		};
+	}
+
+	const updatedAt = payload.updatedAt || null;
+	const updatedAtMs = Date.parse(updatedAt || '') || 0;
+
+	return {
+		missing: false,
+		payload,
+		updatedAt,
+		updatedAtMs,
+		total: Array.isArray(payload.transcripts) ? payload.transcripts.length : 0
+	};
 }
 
 export async function backupTranscriptsToVault({
@@ -202,6 +234,7 @@ export async function restoreTranscriptsFromVault({
 	code,
 	serverUrl,
 	includeAudio = true,
+	replaceExisting = false,
 	onProgress = () => {}
 }) {
 	if (!serverUrl?.trim()) {
@@ -212,9 +245,9 @@ export async function restoreTranscriptsFromVault({
 	}
 
 	const cleanServerUrl = serverUrl.trim();
-	const payload = await loadFromVault(VAULT_APP_NAME, code, cleanServerUrl);
+	const mirror = await loadVaultTranscriptMirror({ code, serverUrl: cleanServerUrl });
 
-	if (!payload) {
+	if (mirror.missing) {
 		return {
 			missing: true,
 			imported: 0,
@@ -226,6 +259,7 @@ export async function restoreTranscriptsFromVault({
 		};
 	}
 
+	const payload = mirror.payload;
 	const vaultTranscripts = Array.isArray(payload.transcripts) ? payload.transcripts : [];
 	const restoredTranscripts = [];
 	let audioCount = 0;
@@ -261,7 +295,12 @@ export async function restoreTranscriptsFromVault({
 		});
 	}
 
-	const mergeSummary = await importTranscriptHistory(restoredTranscripts);
+	const mergeSummary = replaceExisting
+		? await importTranscriptHistory(restoredTranscripts, { replaceExisting: true })
+		: await importTranscriptHistory(restoredTranscripts);
+	if (mirror.updatedAtMs) {
+		markHistoryChangedAt(mirror.updatedAtMs);
+	}
 
 	return {
 		missing: false,

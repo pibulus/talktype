@@ -14,7 +14,7 @@
 - `Settings`: options modal for theme, auto-record, transcription mode, supporter features, and output style presets.
 - `TranscriptionStyleSelector`: three-preset output style control; plain transcription is the default when no style is selected.
 - `SupporterModal`: supporter code entry and supporter feature explanation.
-- `TranscriptHistoryModal`: supporter transcript history, editing, deletion, Vault backup, and audio playback surface.
+- `TranscriptHistoryModal`: supporter transcript history, tag filtering, editing, deletion, and audio playback surface.
 - `MembershipCard`: deterministic supporter Passport card with QRBuddy-rendered Passport QR stamp.
 
 ## Services And Stores
@@ -28,8 +28,9 @@
 - `recordingRecoveryStore`: IndexedDB persistence for recovery drafts and active recording journal chunks.
 - `transcriptHistory`: IndexedDB-backed supporter transcript history store.
 - `transcriptTags`: local smart-tag generation and cleanup helpers for saved transcripts.
-- `vaultAutoBackup`: best-effort current-history mirror after supporter history changes when Passport and Vault URL are configured.
-- `vaultTranscriptBackup`: encrypted History-to-Vault mirror, stale audio cleanup, and `/passport` restore orchestration.
+- `passportNotesCheck`: quiet Passport check-in that pulls a newer encrypted mirror or pushes newer local history.
+- `vaultAutoBackup`: best-effort current-history mirror after supporter history changes when Passport and a notes endpoint are configured.
+- `vaultTranscriptBackup`: encrypted History-to-Vault mirror, stale audio cleanup, and `/passport` import orchestration.
 - `syncService`: low-level encrypted Vault JSON/audio transport helpers.
 - `encryptionService`: AES-GCM/PBKDF2 envelope helpers for JSON and Blob payloads.
 - `vaultHashStorage`: trusted-device Passport code storage and legacy vault-hash cleanup.
@@ -59,14 +60,14 @@
 
 ## Supporter And Vault Terms
 
-- **Supporter mode**: unlocked state that enables history, exports, style presets, longer recordings, Passport, and Vault features.
+- **Supporter mode**: unlocked state that enables history, exports, style presets, longer recordings, and Passport features.
 - **Supporter code**: purchased or manually issued code that unlocks supporter features and acts as the trusted-device Passport key.
 - **Supporter token**: signed local entitlement token used by API calls to unlock supporter-only server features.
-- **Passport**: local supporter identity/key concept. In TalkType it powers the membership card, QR import, and Vault access.
+- **Passport**: local supporter identity/key concept. In TalkType it powers the membership card, QR import, and quiet notes handoff.
 - **Vault hash**: deterministic SHA-256 identifier derived from the supporter code when needed; it is not stored as durable app state.
-- **Vault**: Pi-backed encrypted blob drop-zone addressed by app name and vault hash.
-- **Vault backup**: automatic encrypted current-history/recording mirror when configured, plus a manual mirror button in History.
-- **Vault restore**: manual encrypted download/import through `/passport`; not automatic two-way sync.
+- **Vault**: backstage Pi-backed encrypted blob drop-zone addressed by app name and vault hash.
+- **Notes mirror**: automatic encrypted current-history/recording mirror used by Passport handoff; not a separate archive.
+- **Notes check-in**: timestamp-based Passport check that pulls a newer encrypted mirror or pushes newer local history.
 - **QRBuddy**: Pablo-owned QR renderer used for the membership-card Passport stamp.
 - **Smart tags**: local lightweight hashtags generated from transcript text for filtering saved history.
 - **History audio**: saved recording audio attached to a history entry and encrypted to Vault as media while current mirrored history references it.

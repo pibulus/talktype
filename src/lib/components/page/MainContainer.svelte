@@ -22,6 +22,7 @@
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
 	import { saveTranscript } from '$lib/services/storage/transcriptStorage';
 	import { autoBackupHistoryToVault } from '$lib/services/storage/vaultAutoBackup.js';
+	import { checkPassportNotes } from '$lib/services/storage/passportNotesCheck.js';
 
 	let Settings;
 	let TranscriptHistoryModal;
@@ -183,6 +184,7 @@
 			return;
 		}
 
+		void checkPassportNotes();
 		if (!TranscriptHistoryModal && !(await loadTranscriptHistoryModal())) return;
 		openDialogAfterRender('history_modal');
 	}
@@ -342,6 +344,8 @@
 		}
 
 		(async () => {
+			void checkPassportNotes();
+
 			// Check if first visit to show intro
 			const introWasShown = await firstVisitService.showIntroModal();
 			if (destroyed) return;

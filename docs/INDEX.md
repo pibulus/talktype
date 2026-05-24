@@ -8,7 +8,7 @@ This directory holds durable project documentation. Historical notes are preserv
 - [Project README](../README.md): product overview, commands, environment, deployment notes.
 - [Agent notes](../CLAUDE.md): short working context for coding agents.
 - [Testing](TESTING.md): current test stack and testing policy.
-- [The Vault](THE_VAULT.md): Passport, encrypted Pi backup, QR handoff, and restore notes.
+- [The Vault](THE_VAULT.md): Passport, encrypted Pi handoff, QR import, and notes mirror.
 - [Contributing](../CONTRIBUTING.md): small-project contribution rules and local checks.
 - [Support](../SUPPORT.md): what to include when reporting app issues.
 - [Security](../SECURITY.md): private reporting guidance and data-handling notes.
