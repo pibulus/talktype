@@ -43,11 +43,63 @@ function createTranscriptionStore() {
 	let isConnecting = false;
 	let keepAliveInterval = null;
 	let connectionId = 0;
+	let pendingFinalize = null;
 
 	function clearKeepAlive() {
 		if (keepAliveInterval) {
 			clearInterval(keepAliveInterval);
 			keepAliveInterval = null;
+		}
+	}
+
+	function resolvePendingFinalize(reason, candidateSocket = null) {
+		const pending = pendingFinalize;
+		if (!pending) return false;
+		if (candidateSocket && pending.socket !== candidateSocket) return false;
+
+		clearTimeout(pending.timeout);
+		pendingFinalize = null;
+		pending.resolve(reason);
+		return true;
+	}
+
+	function waitForFinalizeResponse(socketToFinish, currentConnectionId, timeoutMs) {
+		resolvePendingFinalize('superseded');
+
+		return new Promise((resolve) => {
+			const timeout = setTimeout(() => {
+				resolvePendingFinalize('timeout', socketToFinish);
+			}, timeoutMs);
+
+			pendingFinalize = {
+				socket: socketToFinish,
+				connectionId: currentConnectionId,
+				timeout,
+				resolve,
+				finalizeSent: false
+			};
+		});
+	}
+
+	function requestFinalize(socketToFinish) {
+		if (
+			!pendingFinalize ||
+			pendingFinalize.socket !== socketToFinish ||
+			pendingFinalize.connectionId !== connectionId ||
+			pendingFinalize.finalizeSent ||
+			socketToFinish?.readyState !== WebSocket.OPEN
+		) {
+			return false;
+		}
+
+		try {
+			socketToFinish.send(JSON.stringify({ type: 'Finalize' }));
+			pendingFinalize.finalizeSent = true;
+			return true;
+		} catch (error) {
+			console.warn('[Deepgram] Failed to request final live transcript:', error);
+			resolvePendingFinalize('finalize-send-failed', socketToFinish);
+			return false;
 		}
 	}
 
@@ -59,6 +111,8 @@ function createTranscriptionStore() {
 		socket = null;
 
 		if (!socketToClose) return;
+
+		resolvePendingFinalize('socket-closing', socketToClose);
 
 		socketToClose.onopen = null;
 		socketToClose.onmessage = null;
@@ -94,10 +148,6 @@ function createTranscriptionStore() {
 			usedInterim: interimText.length > 0,
 			error: state.error || null
 		};
-	}
-
-	function wait(ms) {
-		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 
 	return {
@@ -183,6 +233,8 @@ function createTranscriptionStore() {
 						audioBuffer = [];
 					}
 
+					requestFinalize(activeSocket);
+
 					// Start keep-alive to prevent NET-0001 timeout (10s without data)
 					clearKeepAlive();
 					keepAliveInterval = setInterval(() => {
@@ -203,6 +255,7 @@ function createTranscriptionStore() {
 					isConnecting = false;
 					socket = null;
 					clearKeepAlive();
+					resolvePendingFinalize('socket-closed', activeSocket);
 					update((s) => ({ ...s, connected: false, connecting: false }));
 				};
 
@@ -211,6 +264,7 @@ function createTranscriptionStore() {
 
 					console.error('[Deepgram] WebSocket error:', error);
 					isConnecting = false;
+					resolvePendingFinalize('socket-error', activeSocket);
 					update((s) => ({ ...s, error: 'WebSocket error', connecting: false }));
 				};
 
@@ -237,7 +291,11 @@ function createTranscriptionStore() {
 							const message =
 								data.description || data.message || 'Deepgram live transcription error';
 							console.error('[Deepgram] Error message:', data);
+							resolvePendingFinalize('deepgram-error', activeSocket);
 							update((s) => ({ ...s, error: message, lastMessageAt: Date.now() }));
+						}
+						if (data.from_finalize === true) {
+							resolvePendingFinalize('finalized', activeSocket);
 						}
 						// Silently ignore Metadata, SpeechStarted, UtteranceEnd
 					} catch (e) {
@@ -276,32 +334,41 @@ function createTranscriptionStore() {
 			isConnectionOpen = false;
 			isConnecting = false;
 			audioBuffer = [];
-			update((s) => ({ ...s, connected: false, interim: '' }));
+			update((s) => ({ ...s, connected: false, connecting: false, interim: '' }));
 		},
 
 		finish: async ({ graceMs = DEFAULT_FINISH_GRACE_MS } = {}) => {
 			const socketToFinish = socket;
+			const currentConnectionId = connectionId;
 
-			if (socketToFinish?.readyState === WebSocket.OPEN) {
-				try {
-					socketToFinish.send(JSON.stringify({ type: 'Finalize' }));
-				} catch (error) {
-					console.warn('[Deepgram] Failed to request final live transcript:', error);
+			if (
+				socketToFinish?.readyState === WebSocket.OPEN ||
+				socketToFinish?.readyState === WebSocket.CONNECTING
+			) {
+				const finalizeWait = waitForFinalizeResponse(socketToFinish, currentConnectionId, graceMs);
+				requestFinalize(socketToFinish);
+				const finalizeReason = await finalizeWait;
+				const result = buildResult(getSnapshot());
+				result.finalizeAcknowledged = finalizeReason === 'finalized';
+
+				if (socketToFinish?.readyState === WebSocket.OPEN) {
+					try {
+						socketToFinish.send(JSON.stringify({ type: 'CloseStream' }));
+					} catch {
+						// The socket may already be closing after Finalize; closeActiveSocket handles cleanup.
+					}
 				}
-			}
+				closeActiveSocket('Done recording');
+				isConnectionOpen = false;
+				isConnecting = false;
+				audioBuffer = [];
+				update((s) => ({ ...s, connected: false, connecting: false, interim: '' }));
 
-			if (socketToFinish) {
-				await wait(graceMs);
+				return result;
 			}
 
 			const result = buildResult(getSnapshot());
-			if (socketToFinish?.readyState === WebSocket.OPEN) {
-				try {
-					socketToFinish.send(JSON.stringify({ type: 'CloseStream' }));
-				} catch {
-					// The socket may already be closing after Finalize; closeActiveSocket handles cleanup.
-				}
-			}
+			result.finalizeAcknowledged = false;
 			closeActiveSocket('Done recording');
 			isConnectionOpen = false;
 			isConnecting = false;

@@ -21,6 +21,7 @@
 		hasPermissionError,
 		recordingState,
 		userPreferences,
+		uiState,
 		uiActions,
 		transcriptionService
 	} from '$lib/services';
@@ -186,6 +187,7 @@
 						transcript={$transcriptionText || ($isRecording ? 'Listening...' : '')}
 						{responsiveFontSize}
 						editable={!$isRecording && !$isTranscribing}
+						copyNeedsGesture={$uiState.copyNeedsGesture}
 						on:copy={handleTranscriptEvent}
 						on:edit={handleTranscriptEvent}
 						on:focus={handleTranscriptEvent}

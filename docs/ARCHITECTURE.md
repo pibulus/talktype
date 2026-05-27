@@ -17,11 +17,11 @@ src/routes/+page.svelte
 The user-facing flow is:
 
 1. User taps the ghost/button or auto-start requests recording.
-2. `RecordingControlsService.startRecording()` clears stale transcript state and asks `AudioService` to start the microphone.
-3. `AudioService` requests mic permission, creates a `MediaRecorder`, starts waveform monitoring, and optionally connects Deepgram live streaming.
-4. While recording, chunks are stored for batch fallback, periodically checkpointed into local recovery storage, and sent to Deepgram if Live Mode is active.
+2. `RecordingControlsService.startRecording()` clears stale transcript state, snapshots the effective transcription mode for this recording, and asks `AudioService` to start the microphone.
+3. `AudioService` requests mic permission, creates a `MediaRecorder`, starts waveform monitoring, and optionally connects Deepgram live streaming from that start-time mode snapshot.
+4. While recording, chunks are stored for batch fallback, periodically checkpointed into local recovery storage, and sent to Deepgram only if Live Mode was active when the recording started.
 5. On stop, `RecordingControlsService.stopRecording()` decides whether to use finalized live text or transcribe the saved audio blob.
-6. `TranscriptionService` writes transcript state, clears recovery drafts, and copies successful output.
+6. `TranscriptionService` writes transcript state, clears recovery drafts, and tries to copy successful output. If the browser blocks silent auto-copy, UI state marks the transcript copy button as needing a tap instead of showing an error.
 
 ## Transcription Modes
 
@@ -52,8 +52,9 @@ Flow:
 4. `AudioService` sends `MediaRecorder` chunks every 250ms.
 5. `transcriptionStore` keeps final transcript and interim text separate.
 6. `AudioToText` renders live text through `TranscriptDisplay`.
-7. On stop, `transcriptionStore.finish()` asks Deepgram to finalize. If the result is complete final text, batch transcription is skipped.
-8. If the user switched away from Live Mode while recording, the stale live socket is disconnected without waiting for the finalization grace period.
+7. On stop, `transcriptionStore.finish()` sends Deepgram `Finalize`, waits specifically for a `from_finalize` acknowledgement with a timeout fallback, then closes the stream.
+8. Batch transcription is skipped only when the live result has acknowledged finalization, has final text, and has no trailing interim text.
+9. The start-time recording mode is used through stop/transcription. If a recording began Offline, changing settings before stop cannot route that blob to cloud transcription.
 
 ## Batch Cloud Path
 
@@ -69,10 +70,18 @@ Flow:
 
 1. `TranscriptionService.transcribeAudio()` starts progress UI and delegates to `simpleHybridService`.
 2. If Offline Mode is off, `simpleHybridService` posts the recorded blob to `/api/transcribe`.
-3. `/api/transcribe` applies auth/rate limiting through `guardRequest()`, validates upload size, and routes by prompt style.
+3. `/api/transcribe` applies auth/rate limiting through `guardRequest()` plus a transcription-specific rate bucket, validates upload size/duration limits, and routes by prompt style.
 4. `standard` uses Deepgram Nova-3 batch transcription.
 5. Alternate output style presets use Gemini.
 6. Gemini uploads are deleted in `finally` after transcription.
+
+Limits and spend controls:
+
+- Free recordings are capped in the UI at `ANIMATION.RECORDING.FREE_LIMIT` seconds and the client sends the completed duration to `/api/transcribe`.
+- `/api/transcribe` rejects free batch uploads above `FREE_RECORDING_LIMIT_SECONDS` plus a short grace window, applies a smaller free upload cap, and fail-fast rejects clearly oversized `Content-Length` values before multipart parsing. Defaults: 5 minutes, 10 MB free uploads, 50 MB supporter/server max uploads.
+- Endpoint defaults can be tuned with `FREE_RECORDING_LIMIT_SECONDS`, `FREE_MAX_UPLOAD_BYTES`, `MAX_UPLOAD_BYTES`, `TRANSCRIBE_RATE_LIMIT`, and `TRANSCRIBE_RATE_WINDOW_MS`.
+- `/api/deepgram/token` is separately rate-limited with `DEEPGRAM_TOKEN_RATE_LIMIT` and `DEEPGRAM_TOKEN_RATE_WINDOW_MS` so Live Mode token minting cannot bypass the batch transcription bucket. Default: 12 token mints per 10 minutes per client.
+- The generic API guard still uses `API_RATE_LIMIT` and `API_RATE_WINDOW_MS`; endpoint buckets are layered on top and keyed separately.
 
 ## Offline Whisper Path
 
@@ -90,7 +99,9 @@ Flow:
 2. `offlineModelController` owns preload/release timing around the Offline Mode store.
 3. `simpleHybridService.startBackgroundLoad()` loads Whisper once and unloads if Offline Mode was turned off before the load completed.
 4. `simpleHybridService.releaseOfflineModel()` waits for pending loads and re-checks Offline Mode before unloading, so fast off/on toggles do not drop a model the user just asked to keep.
-5. `whisperService` loads `@xenova/transformers`, configures WASM, disables WebGPU, requests persistent storage, warms the model, and transcribes converted audio.
+5. A recording that began in Offline Mode keeps that start-time mode through stop. If the user switches Offline Mode off while Whisper is still loading, the pending load is kept long enough to transcribe that recording locally, then released if Offline Mode is still off.
+6. `whisperService` loads `@xenova/transformers`, configures WASM, disables WebGPU, requests persistent storage, checks Cache API model state, warms the model, and transcribes converted audio.
+7. `whisperStatus` exposes separate downloaded/cache, loading, loaded, progress, storage persistence, and retry/error state for Settings and the main recording button.
 
 Current default model is `tiny` unless `userPreferences.whisperModel` is set.
 
@@ -112,6 +123,7 @@ Important behaviors:
 - Recovery journal metadata also stores the latest live Deepgram transcript snapshot when Live Mode is active, so a failed long note can retain both recoverable audio and the best partial text TalkType had seen.
 - If `MediaRecorder` stops unexpectedly before the user presses stop, TalkType saves the available chunks as an interrupted recovery draft and surfaces the retry card.
 - iOS installed PWA mode can keep the microphone stream warm briefly after stop to reduce repeated permission/stream churn.
+- Active recordings request Screen Wake Lock when supported so the display is less likely to sleep mid-note. The lock is released on stop, cleanup, or browser release.
 - Cleanup closes Deepgram, cancels waveform animation, stops recorder/streams, and closes the audio context.
 
 ## PWA And Auto-Start
@@ -119,6 +131,7 @@ Important behaviors:
 Relevant files:
 
 - `src/lib/components/page/MainContainer.svelte`
+- `src/lib/components/pwa/PwaDeviceSetup.svelte`
 - `src/lib/services/pwa/pwaService.js`
 - `static/manifest.json`
 - `src/service-worker.js`
@@ -130,7 +143,11 @@ Auto-start is requested from:
 
 `MainContainer` waits for child component refs and verifies the recording store after start. If the UI tree is not ready yet, it retries rather than assuming success.
 
-The service worker precaches normal app/static assets, caches Whisper model downloads in `whisper-models-v1`, and keeps large ONNX runtime WASM files in `runtime-v1` so they are not part of install-time precache and can survive app cache version changes.
+If a browser blocks or stalls the first automatic microphone start, `MainContainer` treats auto-start as armed rather than failed: it suppresses the first automatic-start warning, shows a touch-sized `tap to start` prompt, and retries on the next pointer gesture or Enter/Space activation. If that user-initiated retry still fails, the normal microphone permission messaging is allowed through.
+
+Installed iOS PWAs can show a one-tap setup pill that asks for microphone permission, requests persistent storage, and downloads/warms the offline Whisper model cache. If Offline Mode is not enabled after setup, the model is unloaded from memory but left cached.
+
+The service worker precaches normal app/static assets and keeps large ONNX runtime WASM files in `runtime-v1` so they are not part of install-time precache and can survive app cache version changes. Transformers.js owns the active Whisper model cache; the service worker only serves legacy model-cache hits once for migration. Runtime caching bypasses `/api/`, `/passport`, and sensitive query URLs so temporary Deepgram tokens, checkout claims, supporter tokens, and Passport links are not stored by the PWA cache.
 
 ## Supporter Mode
 
@@ -169,7 +186,7 @@ Flow:
 8. A completed Square payment marks the checkout paid and creates a supporter license.
 9. The success page receives the supporter code plus a signed supporter token, calls `setSupporterStatus(true, token)`, and shows the code for other devices.
 10. Existing manually issued codes still redeem through `/api/supporter/redeem` as a fallback.
-11. Supporter status unlocks local transcript history/export, output style presets, and the longer recording limit.
+11. Supporter status unlocks local transcript history/export, output style presets, and the longer recording limit. Local supporter state requires a signed supporter token unless `PUBLIC_FORCE_SUPPORTER_MODE=true`.
 12. Completed transcripts are only saved to IndexedDB when `userPreferences.isSupporter` is true. If a free user unlocks while a completed transcript is still visible in the current page session, TalkType saves that one visible note into history after Passport check-in. It does not build a hidden pre-supporter backlog.
 13. Batch `/api/transcribe` verifies the signed supporter token before enabling server-side style presets, Deepgram diarization, or Deepgram paragraph formatting.
 

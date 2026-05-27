@@ -19,6 +19,8 @@ architecture and should not be reintroduced.
   definitions for the interactive ghost.
 - `src/lib/components/ghost/themeStore.js`: theme color configuration and global
   CSS-variable generation.
+- `src/lib/components/ghost/personality.js`: tiny deterministic daily motion
+  settings and rare special-animation selection.
 
 ## Theme Flow
 
@@ -73,6 +75,18 @@ Recording visuals are state-driven:
 Avoid direct imperative calls for recording glow or wobble unless a component is
 already part of the ghost animation service.
 
+## Personality Motion
+
+The interactive ghost gets small daily motion differences from the local
+calendar date plus the component `seed`. These values only set CSS variables for
+the idle float: horizontal drift, vertical lift, tilt, scale, speed, and phase.
+They must stay subtle.
+
+Rare special animations are selected in `animationService.js` through
+`personality.js`. The normal spin remains the primary special; the extras are a
+quick one-eye peek and a tiny shimmy. Keep new specials transform/opacity only,
+short, and compatible with `prefers-reduced-motion`.
+
 ## Troubleshooting
 
 **Theme changes only after reload**
@@ -107,3 +121,4 @@ already part of the ghost animation service.
 - Settings option list: `src/lib/components/settings/ThemeSelector.svelte`
 - Theme store and persistence: `src/lib/index.js`
 - Gradient definitions: `src/lib/components/ghost/gradients.js`
+- Daily motion/personality helpers: `src/lib/components/ghost/personality.js`

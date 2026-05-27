@@ -16,12 +16,14 @@ import {
 } from '../animationConfig.js';
 import { ghostStateStore } from '../stores/ghostStateStore.js';
 import { initGradientAnimation } from '../gradientAnimator.js';
+import { pickSpecialAnimation } from '../personality.js';
 
 // Animation timers
 const timers = {
 	specialAnimationTimeoutId: null,
 	wobbleTimeoutId: null
 };
+let specialAnimationCounter = 0;
 
 // Flag to ensure initial load effect runs only once
 let initialLoadEffectApplied = false;
@@ -167,6 +169,9 @@ export function startSpecialAnimationWatch(ghostSvg, seed = 0) {
 		if (random < SPECIAL_CONFIG.CHANCE) {
 			// Transition to EASTER_EGG state.
 			// The state machine's cleanupDelay for EASTER_EGG will handle transitioning back to IDLE.
+			ghostStateStore.setSpecialAnimation(
+				pickSpecialAnimation(seed, specialAnimationCounter++, new Date())
+			);
 			ghostStateStore.setAnimationState(ANIMATION_STATES.EASTER_EGG);
 		}
 

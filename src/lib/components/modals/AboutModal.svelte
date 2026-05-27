@@ -40,31 +40,37 @@
 				class="rounded-lg border border-pink-200/60 bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 shadow-sm"
 			>
 				<p id="about_modal_description" class="text-base leading-relaxed text-gray-700">
-					TalkType turns voice into editable text. Tap the ghost, say the thing, tidy it up if you
-					want.
+					TalkType is a minimalist voice-to-text tool that transforms your speech into text
+					effortlessly. Built with love for people who think tech should be <span
+						class="font-medium text-pink-600">simple</span
+					>,
+					<span class="font-medium text-amber-600">delightful</span>, and actually
+					<span class="font-medium text-pink-600">helpful</span>.
 				</p>
 			</div>
 
 			<div>
-				<h4 class="mb-2 text-sm font-bold text-gray-700">The idea:</h4>
+				<h4 class="mb-2 text-sm font-bold text-gray-700">Why we made this:</h4>
 				<ul class="space-y-1.5 text-sm text-gray-600">
 					<li class="flex items-start gap-2">
 						<span class="text-lg text-pink-500" aria-hidden="true">⬩</span>
-						<span>Live mode when speed matters</span>
+						<span
+							>Some ideas come out better by <span class="italic">talking</span>, not typing</span
+						>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-lg text-pink-500" aria-hidden="true">⬩</span>
-						<span>Offline mode when privacy matters</span>
+						<span>Other voice-typing tools are either expensive or clunky</span>
 					</li>
 					<li class="flex items-start gap-2">
 						<span class="text-lg text-pink-500" aria-hidden="true">⬩</span>
-						<span>Fast start, simple extras, one-time supporter unlock</span>
+						<span>We wanted something beautiful that just works</span>
 					</li>
 				</ul>
 			</div>
 
 			<div class="border-l-3 my-2 ml-1 border-pink-300 py-1 pl-4 italic text-gray-600">
-				"A small voice tool with a ghost and decent manners."
+				"A little bit of soul, a hint of chaos, and a deep love for clarity."
 			</div>
 
 			<div class="flex items-end justify-between pt-2">

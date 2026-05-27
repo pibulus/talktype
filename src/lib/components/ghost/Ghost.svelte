@@ -13,6 +13,7 @@
 	import { initialGhostAnimation } from './actions/initialGhostAnimation.js';
 	import { createEyeTracking } from './eyeTracking.js';
 	import { getGradientId } from './gradients.js';
+	import { buildGhostPersonality } from './personality.js';
 
 	export let isRecording = false;
 
@@ -37,6 +38,8 @@
 	let eyeTracker;
 	let fullyReady = false; // Single initialization flag - prevents ALL rendering until ready
 	let readyRafId = null; // Track RAF for cleanup
+	let personalityStyle = '';
+	let personalityMood = 'drift';
 	const validThemes = new Set(['peach', 'mint', 'bubblegum', 'rainbow']);
 
 	// === REACTIVE DECLARATIONS ===
@@ -44,6 +47,10 @@
 	$: animationsEnabled = $appActive;
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 	$: gradientId = getGradientId(currentTheme);
+	$: specialAnimationClass =
+		$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG && $ghostStateStore.specialAnimation
+			? `ghost-special-${$ghostStateStore.specialAnimation}`
+			: '';
 	$: ghostLabel = clickable
 		? $ghostStateStore.isRecording
 			? 'Stop recording'
@@ -183,6 +190,10 @@
 		setupThemeSubscription();
 
 		if (browser) {
+			const personality = buildGhostPersonality({ seed });
+			personalityStyle = personality.style;
+			personalityMood = personality.mood;
+
 			// Initialize element references for services
 			const elements = {
 				ghostSvg,
@@ -280,11 +291,16 @@
 	bind:this={ghostSvg}
 	class="ghost-container theme-{currentTheme} {animationClass}
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
-      {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG ? CSS_CLASSES.SPIN : ''}
+      {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG &&
+	$ghostStateStore.specialAnimation === 'spin'
+		? CSS_CLASSES.SPIN
+		: ''}
+      {specialAnimationClass}
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
       {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
       {!clickable ? 'ghost-non-clickable' : ''}"
-	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale});"
+	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale}); {personalityStyle}"
+	data-ghost-mood={personalityMood}
 	on:click={() => {
 		if (clickable) {
 			handleClick();
@@ -310,7 +326,8 @@
 		pointer-events="none"
 		class:visible={fullyReady}
 		class:recording={$ghostStateStore.isRecording}
-		class:spin={$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG}
+		class:spin={$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG &&
+			$ghostStateStore.specialAnimation === 'spin'}
 		class:asleep={$ghostStateStore.current === ANIMATION_STATES.ASLEEP}
 		class:waking-up={$ghostStateStore.current === ANIMATION_STATES.WAKING_UP}
 		class:debug-animation={debugAnim}

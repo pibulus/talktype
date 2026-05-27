@@ -37,8 +37,34 @@ function createLocalStorageStore(key, initialValue) {
 	};
 }
 
+function hasStoredSupporterToken() {
+	if (!browser) return false;
+	if (import.meta.env.PUBLIC_FORCE_SUPPORTER_MODE === 'true') return true;
+
+	return Boolean(
+		localStorage.getItem(CONSTANTS.STORAGE_KEYS.SUPPORTER_TOKEN) ||
+			CONSTANTS.LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN.some((key) => localStorage.getItem(key))
+	);
+}
+
+function sanitizeTheme(vibeId) {
+	if (vibeId === CONSTANTS.THEMES.RAINBOW && !hasStoredSupporterToken()) {
+		return CONSTANTS.DEFAULT_THEME;
+	}
+
+	return Object.values(CONSTANTS.THEMES).includes(vibeId) ? vibeId : CONSTANTS.DEFAULT_THEME;
+}
+
 // Create centralized store for theme/vibe management
 export const theme = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.THEME, CONSTANTS.DEFAULT_THEME);
+
+if (browser) {
+	const storedTheme = localStorage.getItem(CONSTANTS.STORAGE_KEYS.THEME);
+	const safeTheme = sanitizeTheme(storedTheme);
+	if (storedTheme && safeTheme !== storedTheme) {
+		theme.set(safeTheme);
+	}
+}
 
 // Store for auto-record preference
 export const autoRecord = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.AUTO_RECORD, 'false');
@@ -78,8 +104,10 @@ export { CONSTANTS };
 // Helper function to apply theme across app components
 // This is the single source of truth for theme application
 export function applyTheme(vibeId, animate = false) {
+	const safeVibeId = sanitizeTheme(vibeId);
+
 	// Update the store (which also updates localStorage)
-	theme.set(vibeId);
+	theme.set(safeVibeId);
 
 	if (browser) {
 		const root = document.documentElement;
@@ -90,7 +118,7 @@ export function applyTheme(vibeId, animate = false) {
 		}
 
 		// Apply theme to document root for consistent CSS targeting
-		root.setAttribute('data-theme', vibeId);
+		root.setAttribute('data-theme', safeVibeId);
 
 		// Remove transition after animation
 		if (animate) {

@@ -1,21 +1,42 @@
 <script>
 	import { BUTTON_LABELS } from '$lib/constants';
+
+	export let progress = 0;
+	export let statusText = BUTTON_LABELS.DOWNLOADING;
+	export let detail = '';
+
+	$: safeProgress = Math.max(0, Math.min(100, Math.round(Number(progress) || 0)));
+	$: displayText =
+		statusText && statusText !== BUTTON_LABELS.DOWNLOADING
+			? statusText
+			: safeProgress > 0
+				? `Downloading offline model ${safeProgress}%`
+				: BUTTON_LABELS.DOWNLOADING;
 </script>
 
-<!-- Downloading: Indeterminate shimmer (can't track HuggingFace download) -->
 <div
-	class="progress-container loading-state relative mx-auto flex h-[64px] w-[90%] max-w-[420px] items-center justify-center overflow-hidden rounded-full bg-gradient-to-r from-blue-200 to-indigo-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
-	role="status"
-	aria-label="Downloading offline model"
+	class="progress-container loading-state relative mx-auto flex min-h-[72px] w-[90%] max-w-[420px] items-center justify-center overflow-hidden rounded-full border border-blue-100 bg-gradient-to-r from-blue-100 via-cyan-100 to-indigo-100 px-5 shadow-md shadow-black/10 sm:w-[85%]"
+	role="progressbar"
+	aria-label={displayText}
+	aria-valuemin="0"
+	aria-valuemax="100"
+	aria-valuenow={safeProgress}
 >
+	<div
+		class="progress-fill absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-sky-200 via-teal-200 to-violet-200"
+		style={`width: ${safeProgress}%;`}
+	></div>
 	<div class="loading-shimmer absolute inset-0"></div>
-	<div class="flex h-full items-center justify-center">
+	<div class="relative z-10 flex h-full min-w-0 flex-col items-center justify-center text-center">
 		<span
-			class="loading-text relative z-10 text-xl font-bold text-black"
-			style="letter-spacing: 0.02em;"
+			class="loading-text block max-w-full truncate text-base font-black leading-tight text-black sm:text-lg"
+			style="letter-spacing: 0;"
 		>
-			{BUTTON_LABELS.DOWNLOADING}
+			{displayText}
 		</span>
+		{#if detail}
+			<span class="mt-0.5 block max-w-full truncate text-xs font-bold text-gray-600">{detail}</span>
+		{/if}
 	</div>
 </div>
 
@@ -25,6 +46,12 @@
 		position: relative;
 		overflow: hidden;
 		transition: all 0.3s ease;
+	}
+
+	.progress-fill {
+		min-width: 10%;
+		transition: width 0.35s ease;
+		opacity: 0.85;
 	}
 
 	/* Loading state styles */

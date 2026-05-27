@@ -16,7 +16,7 @@ export class TranscriptionService {
 		this.lastTranscriptionTimestamp = null;
 	}
 
-	async transcribeAudio(audioBlob) {
+	async transcribeAudio(audioBlob, options = {}) {
 		try {
 			if (!audioBlob || !(audioBlob instanceof Blob)) {
 				// Friendly error message
@@ -33,7 +33,7 @@ export class TranscriptionService {
 			this.startProgressAnimation();
 
 			// Use hybrid service (API while Whisper loads, then Whisper when ready)
-			const transcriptText = await this.hybridService.transcribeAudio(audioBlob);
+			const transcriptText = await this.hybridService.transcribeAudio(audioBlob, options);
 
 			// Complete progress animation with smooth transition
 			this.completeProgressAnimation();
@@ -177,11 +177,17 @@ export class TranscriptionService {
 		}
 
 		const markCopied = () => {
+			uiActions.setCopyNeedsGesture(false);
 			if (showSuccess) {
 				uiActions.showClipboardSuccess();
 			}
 			uiActions.setScreenReaderMessage('Transcript copied to clipboard');
 			analytics.copyTranscript(text.split(/\s+/).length);
+		};
+
+		const markCopyNeedsGesture = () => {
+			uiActions.setCopyNeedsGesture(true);
+			uiActions.setScreenReaderMessage('Transcript ready. Use the copy button if needed.');
 		};
 
 		try {
@@ -214,13 +220,15 @@ export class TranscriptionService {
 				uiActions.setScreenReaderMessage(
 					'Unable to copy. Please try clicking in the window first.'
 				);
+			} else {
+				markCopyNeedsGesture();
 			}
 
 			return success;
 		} catch (error) {
 			if (silent) {
 				log.warn('Auto-copy unavailable:', error?.message || error);
-				uiActions.setScreenReaderMessage('Transcript ready. Use the copy button if needed.');
+				markCopyNeedsGesture();
 				return false;
 			}
 

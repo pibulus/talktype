@@ -57,9 +57,11 @@ export class AudioService {
 		this.recoveryJournalWriteQueue = Promise.resolve();
 		this.recoveryJournalFlushTimeout = null;
 		this.activeRecordingSessionId = null;
+		this.activeRecordingMode = null;
 		this.animationFrameId = null;
 		this.releaseStreamTimeout = null;
 		this.visibilityChangeHandler = null;
+		this.wakeLockSentinel = null;
 
 		this.stateManager = new AudioStateManager();
 
@@ -76,6 +78,9 @@ export class AudioService {
 					this.initializeAudioContext().catch((err) =>
 						log.warn('Failed to resume audio context on visibility change:', err)
 					);
+					if (this.stateManager.getState() === AudioStates.RECORDING) {
+						void this.requestScreenWakeLock();
+					}
 				} else if (this.stateManager.getState() === AudioStates.RECORDING) {
 					void this.#checkpointRecordingDraft(
 						this.mediaRecorder?.mimeType || 'audio/webm',
@@ -224,8 +229,10 @@ export class AudioService {
 		return { audioBitsPerSecond: SPEECH_AUDIO_BITS_PER_SECOND };
 	}
 
-	async startRecording() {
+	async startRecording(options = {}) {
 		try {
+			this.activeRecordingMode = options.transcriptionMode || getTranscriptionMode();
+
 			if (this.stateManager.getState() !== AudioStates.IDLE) {
 				await this.cleanup();
 			}
@@ -292,7 +299,7 @@ export class AudioService {
 					this.#stageRecoveryJournalChunk(event.data, mimeType);
 
 					// Stream to Deepgram only in the resolved live-cloud mode.
-					if (getTranscriptionMode().useLiveDeepgram) {
+					if (this.activeRecordingMode?.useLiveDeepgram) {
 						transcriptionStore.send(event.data);
 					}
 				}
@@ -319,6 +326,7 @@ export class AudioService {
 			// This helps prevent losing the last bit of audio
 			this.mediaRecorder.start(MEDIA_RECORDER_TIMESLICE_MS);
 			this.stateManager.setState(AudioStates.RECORDING);
+			void this.requestScreenWakeLock();
 
 			// Update the store with mimeType
 			audioState.update((current) => ({
@@ -327,7 +335,7 @@ export class AudioService {
 			}));
 
 			// Connect to Deepgram only in the resolved live-cloud mode.
-			if (getTranscriptionMode().useLiveDeepgram) {
+			if (this.activeRecordingMode?.useLiveDeepgram) {
 				transcriptionStore.connect().catch((err) => {
 					log.error('Failed to connect to Deepgram:', err);
 					// Don't fail recording, just fallback to batch
@@ -425,6 +433,7 @@ export class AudioService {
 				audioActions.setAudioBlob(audioBlob, mimeType);
 
 				this.disconnectAudioGraph();
+				void this.releaseScreenWakeLock();
 
 				if (this.shouldKeepStreamWarm()) {
 					this.scheduleWarmStreamRelease();
@@ -435,6 +444,7 @@ export class AudioService {
 				this.audioChunks = [];
 				this.mediaRecorder = null;
 				this.activeRecordingSessionId = null;
+				this.activeRecordingMode = null;
 				this.#clearRecoveryJournalFlushTimer();
 
 				// Persist before transcription starts so success cleanup cannot race a late draft write.
@@ -469,6 +479,7 @@ export class AudioService {
 
 					// Force state reset on error
 					this.activeRecordingSessionId = null;
+					this.activeRecordingMode = null;
 					this.#clearRecoveryJournalFlushTimer();
 					this.stateManager.setState(AudioStates.IDLE);
 					resolve(null);
@@ -660,6 +671,7 @@ export class AudioService {
 			log.warn('Failed to save interrupted recording:', error.message);
 		} finally {
 			this.disconnectAudioGraph();
+			void this.releaseScreenWakeLock();
 			if (this.shouldKeepStreamWarm()) {
 				this.scheduleWarmStreamRelease();
 			} else {
@@ -668,6 +680,7 @@ export class AudioService {
 			this.audioChunks = [];
 			this.mediaRecorder = null;
 			this.activeRecordingSessionId = null;
+			this.activeRecordingMode = null;
 			this.#clearRecoveryJournalFlushTimer();
 			this.stateManager.setState(AudioStates.IDLE);
 		}
@@ -711,6 +724,7 @@ export class AudioService {
 		}
 
 		this.cancelWarmStreamRelease();
+		await this.releaseScreenWakeLock();
 		if (this.stateManager.getState() === AudioStates.RECORDING && this.activeRecordingSessionId) {
 			await this.#flushRecoveryJournal(
 				this.mediaRecorder?.mimeType || 'audio/webm',
@@ -824,6 +838,7 @@ export class AudioService {
 
 			this.mediaRecorder = null;
 			this.audioChunks = [];
+			this.activeRecordingMode = null;
 			this.recoveryCheckpointInFlight = false;
 
 			if (this.isIOS) {
@@ -904,6 +919,46 @@ export class AudioService {
 
 	isRecording() {
 		return this.stateManager.getState() === AudioStates.RECORDING;
+	}
+
+	async requestScreenWakeLock() {
+		if (!browser || this.wakeLockSentinel || document.visibilityState !== 'visible') {
+			return false;
+		}
+
+		if (typeof navigator.wakeLock?.request !== 'function') {
+			return false;
+		}
+
+		try {
+			const sentinel = await navigator.wakeLock.request('screen');
+			this.wakeLockSentinel = sentinel;
+			sentinel.addEventListener?.('release', () => {
+				if (this.wakeLockSentinel === sentinel) {
+					this.wakeLockSentinel = null;
+				}
+			});
+			return true;
+		} catch (error) {
+			log.warn('Screen Wake Lock request failed:', error?.message || error);
+			this.wakeLockSentinel = null;
+			return false;
+		}
+	}
+
+	async releaseScreenWakeLock() {
+		const sentinel = this.wakeLockSentinel;
+		this.wakeLockSentinel = null;
+
+		if (!sentinel || typeof sentinel.release !== 'function') {
+			return;
+		}
+
+		try {
+			await sentinel.release();
+		} catch (error) {
+			log.warn('Screen Wake Lock release failed:', error?.message || error);
+		}
 	}
 }
 

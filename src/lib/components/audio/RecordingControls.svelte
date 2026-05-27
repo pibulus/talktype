@@ -20,6 +20,7 @@
 	} from '$lib/services';
 	import { liveMode, privacyMode } from '$lib';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
+	import { WHISPER_PHASES } from '$lib/services/transcription/whisper/statusUtils.js';
 	import { CTA_PHRASES, ANIMATION, COPY_MESSAGES } from '$lib/constants';
 
 	// Props
@@ -33,7 +34,23 @@
 
 	// Reactive button label computation
 	$: buttonLabel = $isRecording ? 'Stop Recording' : currentCta;
-	$: showOfflineDownloadState = $privacyMode === 'true' && $whisperStatus.isLoading && !modelReady;
+	$: isOfflineModelPreparing = [
+		WHISPER_PHASES.CHECKING_CACHE,
+		WHISPER_PHASES.LOADING_LIBRARY,
+		WHISPER_PHASES.DOWNLOADING,
+		WHISPER_PHASES.PREPARING,
+		WHISPER_PHASES.WARMING
+	].includes($whisperStatus.phase);
+	$: showOfflineDownloadState =
+		$privacyMode === 'true' &&
+		($whisperStatus.isLoading || isOfflineModelPreparing) &&
+		!modelReady;
+	$: offlineDownloadProgress = Math.max(
+		0,
+		Math.min(100, Math.round(Number($whisperStatus.progress) || 0))
+	);
+	$: offlineDownloadLabel = $whisperStatus.statusText || 'Getting offline model ready';
+	$: offlineDownloadDetail = $whisperStatus.selectedModelName || '';
 
 	onMount(() => {
 		// Initialize services
@@ -109,6 +126,9 @@
 				recording={$isRecording}
 				transcribing={$isTranscribing}
 				downloading={showOfflineDownloadState}
+				downloadProgress={offlineDownloadProgress}
+				downloadLabel={offlineDownloadLabel}
+				downloadDetail={offlineDownloadDetail}
 				clipboardSuccess={$uiState.clipboardSuccess}
 				recordingDuration={$recordingDuration}
 				progress={$transcriptionProgress}

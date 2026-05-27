@@ -44,6 +44,13 @@ export const promptTemplates = {
 		transcribeAudio: {
 			text: 'Transcribe this audio file with the eloquence and stylistic flourishes of a 19th century Victorian novelist, in the vein of Jane Austen or Charles Dickens. Employ elaborate sentences, period-appropriate vocabulary, literary devices, and a generally formal and ornate prose style. The transcription should maintain the original meaning but transform the manner of expression entirely.'
 		}
+	},
+
+	// Custom prompt text is supplied separately by the settings UI.
+	custom: {
+		transcribeAudio: {
+			text: ''
+		}
 	}
 };
 

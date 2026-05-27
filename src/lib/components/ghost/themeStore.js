@@ -1,6 +1,6 @@
 import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
-import { THEMES, STORAGE_KEYS } from '$lib/constants';
+import { LEGACY_STORAGE_KEYS, THEMES, STORAGE_KEYS } from '$lib/constants';
 import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
 import { gradientAnimations, shapeAnimations } from './gradientConfig';
 import { WOBBLE_CONFIG, SPECIAL_CONFIG } from './animationConfig'; // Import WOBBLE_CONFIG and SPECIAL_CONFIG
@@ -65,36 +65,56 @@ const themeColors = {
 		shadowColorBrightest: 'rgba(170, 130, 210, 0.45)'
 	},
 	rainbow: {
-		start: '#ff0080',
-		startBright: '#ff2090',
-		mid1: '#ff8c00',
-		mid1Bright: '#ff9a20',
-		mid2: '#ffed00',
-		mid2Bright: '#fff020',
-		mid3: '#00ff80',
-		mid3Bright: '#20ff95',
-		end: '#00bfff',
-		endBright: '#30d0ff',
-		glowPrimary: 'rgba(255, 50, 150, 1)',
-		glowSecondary: 'rgba(255, 90, 90, 1)',
-		glowTertiary: 'rgba(255, 180, 80, 1)',
-		glowQuaternary: 'rgba(255, 230, 100, 1)',
-		glowQuinary: 'rgba(80, 220, 120, 1)',
-		glowSenary: 'rgba(80, 160, 255, 1)',
-		shadowColor: 'rgba(255, 120, 180, 0.35)',
-		shadowColorBright: 'rgba(255, 180, 80, 0.4)',
-		shadowColorBrighter: 'rgba(180, 255, 100, 0.45)',
-		shadowColorBrightest: 'rgba(100, 200, 255, 0.5)',
-		shadowColorBrightAlt: 'rgba(150, 100, 255, 0.4)'
+		start: '#ff5f8f',
+		startBright: '#ff7aa3',
+		mid1: '#ff9f43',
+		mid1Bright: '#ffb062',
+		mid2: '#ffe66d',
+		mid2Bright: '#fff08f',
+		mid3: '#7bed9f',
+		mid3Bright: '#98f4b4',
+		mid4: '#70d6ff',
+		mid4Bright: '#90e0ff',
+		mid5: '#8f8cff',
+		mid5Bright: '#aaa7ff',
+		end: '#d67bff',
+		endBright: '#e09aff',
+		glowPrimary: 'rgba(255, 95, 143, 0.92)',
+		glowSecondary: 'rgba(255, 159, 67, 0.9)',
+		glowTertiary: 'rgba(255, 230, 109, 0.88)',
+		glowQuaternary: 'rgba(123, 237, 159, 0.9)',
+		glowQuinary: 'rgba(112, 214, 255, 0.9)',
+		glowSenary: 'rgba(214, 123, 255, 0.88)',
+		shadowColor: 'rgba(255, 95, 143, 0.3)',
+		shadowColorBright: 'rgba(255, 159, 67, 0.34)',
+		shadowColorBrighter: 'rgba(123, 237, 159, 0.36)',
+		shadowColorBrightest: 'rgba(112, 214, 255, 0.4)',
+		shadowColorBrightAlt: 'rgba(214, 123, 255, 0.34)'
 	}
 };
 
 // Get theme from localStorage or use default
+function hasStoredSupporterToken() {
+	if (!browser) return false;
+	if (import.meta.env.PUBLIC_FORCE_SUPPORTER_MODE === 'true') return true;
+
+	return Boolean(
+		StorageUtils.getItem(STORAGE_KEYS.SUPPORTER_TOKEN) ||
+			LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN.some((key) => StorageUtils.getItem(key))
+	);
+}
+
+function sanitizeTheme(themeName) {
+	if (!Object.values(THEMES).includes(themeName)) return FALLBACK_THEME;
+	if (themeName === THEMES.RAINBOW && !hasStoredSupporterToken()) return FALLBACK_THEME;
+	return themeName;
+}
+
 export function getInitialTheme() {
 	if (!browser) return FALLBACK_THEME;
 
 	const storedTheme = StorageUtils.getItem(STORAGE_KEYS.THEME);
-	return storedTheme && Object.values(THEMES).includes(storedTheme) ? storedTheme : FALLBACK_THEME;
+	return sanitizeTheme(storedTheme);
 }
 
 // Create the main theme store
@@ -136,6 +156,14 @@ export function generateThemeCssVariables(themeName = FALLBACK_THEME) {
 	cssVars += `--ghost-${safeTheme}-mid2-bright: ${colors.mid2Bright};\n`;
 	cssVars += `--ghost-${safeTheme}-mid3: ${colors.mid3};\n`;
 	cssVars += `--ghost-${safeTheme}-mid3-bright: ${colors.mid3Bright};\n`;
+	if (colors.mid4) {
+		cssVars += `--ghost-${safeTheme}-mid4: ${colors.mid4};\n`;
+		cssVars += `--ghost-${safeTheme}-mid4-bright: ${colors.mid4Bright};\n`;
+	}
+	if (colors.mid5) {
+		cssVars += `--ghost-${safeTheme}-mid5: ${colors.mid5};\n`;
+		cssVars += `--ghost-${safeTheme}-mid5-bright: ${colors.mid5Bright};\n`;
+	}
 	cssVars += `--ghost-${safeTheme}-end: ${colors.end};\n`;
 	cssVars += `--ghost-${safeTheme}-end-bright: ${colors.endBright};\n`;
 
@@ -255,10 +283,12 @@ export function ensureGhostThemeStyles(options = {}) {
 
 // Function to set a new theme
 function setTheme(newTheme) {
-	if (Object.values(THEMES).includes(newTheme)) {
-		theme.set(newTheme);
+	const safeTheme = sanitizeTheme(newTheme);
+	if (safeTheme === newTheme) {
+		theme.set(safeTheme);
 	} else {
 		console.warn(`Invalid theme: ${newTheme}`);
+		theme.set(safeTheme);
 	}
 }
 

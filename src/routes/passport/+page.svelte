@@ -3,25 +3,28 @@
 	import { browser } from '$app/environment';
 	import { theme } from '$lib';
 	import MembershipCard from '$lib/cartridges/MembershipCard.svelte';
+	import Confetti from '$lib/components/ui/effects/Confetti.svelte';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { Seo } from '$lib/components/layout';
 	import { setSupporterStatus } from '$lib/services';
 	import { checkPassportNotes } from '$lib/services/storage/passportNotesCheck.js';
 	import { getVaultHash } from '$lib/services/syncService.js';
 	import {
+		readStoredSupporterCode,
 		readStoredVaultServerUrl,
 		saveStoredSupporterCode,
 		saveStoredVaultServerUrl
 	} from '$lib/services/vaultHashStorage.js';
 
 	let status = 'checking';
-	let message = 'Reading Passport...';
+	let message = 'Just a sec...';
 	let passportCode = '';
 	let manualCode = '';
 	let vaultServerUrl = '';
 	let vaultHash = '';
 	let errorMessage = '';
 	let restoreSummary = null;
+	let showConfetti = false;
 
 	function getPassportParams() {
 		const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -55,8 +58,12 @@
 	}
 
 	async function rememberPassport(nextCode, nextVaultUrl = '') {
+		const token = await redeemPassportCode(nextCode);
+		if (!token) {
+			throw new Error('Check your Passport code and try once more.');
+		}
+
 		const savedCode = saveStoredSupporterCode(nextCode);
-		const token = await redeemPassportCode(savedCode);
 		passportCode = savedCode;
 		manualCode = '';
 		setSupporterStatus(true, token);
@@ -80,7 +87,7 @@
 		}
 
 		status = 'getting';
-		message = 'Getting your notes...';
+		message = 'Fetching your memories...';
 		errorMessage = '';
 		restoreSummary = null;
 		saveStoredVaultServerUrl(vaultServerUrl);
@@ -94,13 +101,14 @@
 
 			restoreSummary = summary;
 			status = 'ready';
-			message = summary.action === 'pulled' ? 'Your notes are here.' : 'Passport connected.';
+			message =
+				summary.action === 'pulled' ? 'Your notes followed you here.' : 'Ghost remembers you.';
 			return summary;
 		} catch (error) {
 			console.error('Passport notes import failed:', error);
 			status = 'ready';
-			errorMessage = 'Getting your notes needs one more try.';
-			message = 'Passport connected.';
+			errorMessage = 'Vault was quiet. Try again in a moment.';
+			message = 'Ghost remembers you.';
 			return { skipped: true, reason: 'failed', error };
 		}
 	}
@@ -119,13 +127,16 @@
 			return;
 		}
 
+		const isFirstTime = !readStoredSupporterCode();
 		status = 'importing';
-		message = 'Connecting Passport...';
+		message = 'Waking the ghost...';
 
 		try {
 			await rememberPassport(nextCode, nextVaultUrl);
 			status = 'ready';
-			message = 'Passport connected.';
+			message = isFirstTime ? 'Your passport is ready.' : 'Ghost remembers you.';
+
+			if (isFirstTime) showConfetti = true;
 
 			if (shouldRestore && vaultServerUrl.trim()) {
 				await getNotes();
@@ -133,8 +144,8 @@
 		} catch (error) {
 			console.error('Passport import failed:', error);
 			status = 'manual';
-			errorMessage = error.message || 'Passport import needs one more try.';
-			message = 'Enter your Passport code.';
+			errorMessage = error.message || 'The ghost went quiet. Check your code and try again.';
+			message = 'Enter your code to continue.';
 		}
 	}
 
@@ -150,7 +161,7 @@
 		}
 
 		status = 'manual';
-		message = 'Scan a Passport QR or enter your code.';
+		message = 'Scan your Passport QR or type your code.';
 	});
 </script>
 
@@ -172,10 +183,14 @@
 			<p class="text-xs font-bold uppercase tracking-[0.24em] text-pink-500">TalkType Passport</p>
 			<h1 class="text-3xl font-black tracking-tight">
 				{status === 'getting'
-					? 'Getting your notes'
-					: status === 'ready'
-						? 'Passport connected'
-						: 'TalkType Passport'}
+					? 'Fetching your memories'
+					: status === 'ready' && showConfetti
+						? 'Welcome home 👻'
+						: status === 'ready'
+							? 'Ghost remembers you'
+							: status === 'importing'
+								? 'Waking the ghost'
+								: 'Your Passport'}
 			</h1>
 			<p class="text-sm leading-6 text-gray-600">{message}</p>
 		</div>
@@ -193,7 +208,7 @@
 				{#if !passportCode}
 					<label class="block">
 						<span class="mb-1 block text-xs font-bold uppercase tracking-[0.16em] text-gray-500">
-							Passport code
+							Your code
 						</span>
 						<input
 							type="text"
@@ -213,7 +228,7 @@
 						class="btn min-h-12 border-pink-200 bg-pink-500 text-white transition-colors duration-150 hover:border-pink-300 hover:bg-pink-600 disabled:opacity-60"
 						disabled={Boolean(passportCode) || status === 'importing' || status === 'getting'}
 					>
-						{passportCode ? 'Passport connected' : 'Connect Passport'}
+						{passportCode ? 'Ghost remembers you' : 'Wake the ghost'}
 					</button>
 					{#if passportCode && vaultServerUrl}
 						<button
@@ -222,7 +237,7 @@
 							on:click={getNotes}
 							disabled={status === 'getting'}
 						>
-							{status === 'getting' ? 'Getting notes...' : 'Get notes'}
+							{status === 'getting' ? 'Fetching...' : 'Fetch my notes'}
 						</button>
 					{/if}
 				</div>
@@ -236,7 +251,7 @@
 
 			{#if restoreSummary && restoreSummary.action === 'pulled'}
 				<p class="mt-3 text-sm font-bold text-emerald-700" aria-live="polite">
-					Your notes are here.
+					Your notes followed you here. ✨
 				</p>
 			{/if}
 		</div>
@@ -245,7 +260,11 @@
 			href="/"
 			class="btn min-h-12 w-full rounded-2xl border-pink-200 bg-pink-500 text-white transition-colors duration-150 hover:border-pink-300 hover:bg-pink-600"
 		>
-			Return to TalkType
+			Back to TalkType
 		</a>
 	</section>
+
+	{#if showConfetti}
+		<Confetti on:complete={() => (showConfetti = false)} />
+	{/if}
 </main>

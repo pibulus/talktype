@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
-import { liveMode } from '$lib';
+import { liveMode, privacyMode } from '$lib';
 import { resetStores, transcriptionState, uiState } from '../infrastructure/stores.js';
+import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import {
 	appendRecordingDraftJournalChunk,
 	beginRecordingDraftJournal,
@@ -46,6 +47,7 @@ describe('AudioService', () => {
 	let originalAudioContext;
 	let originalRequestAnimationFrame;
 	let originalCancelAnimationFrame;
+	let originalWakeLock;
 
 	beforeEach(() => {
 		vi.useFakeTimers();
@@ -55,6 +57,7 @@ describe('AudioService', () => {
 		vi.mocked(updateRecordingDraftJournalMetadata).mockClear();
 		resetStores();
 		liveMode.set('false');
+		privacyMode.set('false');
 		service = new AudioService();
 	});
 
@@ -62,6 +65,8 @@ describe('AudioService', () => {
 		vi.restoreAllMocks();
 		vi.useRealTimers();
 		resetStores();
+		liveMode.set('false');
+		privacyMode.set('false');
 		service = null;
 		global.MediaRecorder = originalMediaRecorder;
 		window.MediaRecorder = originalMediaRecorder;
@@ -70,6 +75,14 @@ describe('AudioService', () => {
 		window.cancelAnimationFrame = originalCancelAnimationFrame;
 		global.requestAnimationFrame = originalRequestAnimationFrame;
 		global.cancelAnimationFrame = originalCancelAnimationFrame;
+		if (originalWakeLock === undefined) {
+			delete navigator.wakeLock;
+		} else {
+			Object.defineProperty(navigator, 'wakeLock', {
+				configurable: true,
+				value: originalWakeLock
+			});
+		}
 	});
 
 	function installRecordingMocks() {
@@ -88,6 +101,7 @@ describe('AudioService', () => {
 		originalAudioContext = window.AudioContext;
 		originalRequestAnimationFrame = window.requestAnimationFrame;
 		originalCancelAnimationFrame = window.cancelAnimationFrame;
+		originalWakeLock = navigator.wakeLock;
 
 		class MockMediaRecorder {
 			static last = null;
@@ -147,6 +161,33 @@ describe('AudioService', () => {
 
 		return { MockMediaRecorder, stream, track };
 	}
+
+	it('requests a screen wake lock while recording and releases it on stop', async () => {
+		const { MockMediaRecorder } = installRecordingMocks();
+		const release = vi.fn().mockResolvedValue(undefined);
+		const request = vi.fn().mockResolvedValue({
+			release,
+			addEventListener: vi.fn()
+		});
+		Object.defineProperty(navigator, 'wakeLock', {
+			configurable: true,
+			value: { request }
+		});
+
+		await service.startRecording();
+		await Promise.resolve();
+
+		expect(request).toHaveBeenCalledWith('screen');
+
+		MockMediaRecorder.last.ondataavailable?.({
+			data: new Blob(['wake lock audio'], { type: 'audio/webm' })
+		});
+		const stopPromise = service.stopRecording();
+		await vi.advanceTimersByTimeAsync(100);
+		await stopPromise;
+
+		expect(release).toHaveBeenCalledTimes(1);
+	});
 
 	it('shares one in-flight MediaRecorder stop across repeated stop calls', async () => {
 		const audioChunk = new Blob(['x'.repeat(1200)], { type: 'audio/webm' });
@@ -214,6 +255,38 @@ describe('AudioService', () => {
 				isPartial: true
 			})
 		});
+	});
+
+	it('connects Deepgram and streams chunks in Live Mode', async () => {
+		const { MockMediaRecorder } = installRecordingMocks();
+		const connectSpy = vi.spyOn(transcriptionStore, 'connect').mockResolvedValue();
+		const sendSpy = vi.spyOn(transcriptionStore, 'send').mockImplementation(() => {});
+		liveMode.set('true');
+		privacyMode.set('false');
+
+		await service.startRecording();
+		MockMediaRecorder.last.ondataavailable?.({
+			data: new Blob(['live chunk'], { type: 'audio/webm' })
+		});
+
+		expect(connectSpy).toHaveBeenCalledTimes(1);
+		expect(sendSpy).toHaveBeenCalledWith(expect.any(Blob));
+	});
+
+	it('does not connect or stream to Deepgram when Offline Mode overrides Live Mode', async () => {
+		const { MockMediaRecorder } = installRecordingMocks();
+		const connectSpy = vi.spyOn(transcriptionStore, 'connect').mockResolvedValue();
+		const sendSpy = vi.spyOn(transcriptionStore, 'send').mockImplementation(() => {});
+		liveMode.set('true');
+		privacyMode.set('true');
+
+		await service.startRecording();
+		MockMediaRecorder.last.ondataavailable?.({
+			data: new Blob(['private chunk'], { type: 'audio/webm' })
+		});
+
+		expect(connectSpy).not.toHaveBeenCalled();
+		expect(sendSpy).not.toHaveBeenCalled();
 	});
 
 	it('uses a new journal sequence for each flushed recovery blob', async () => {

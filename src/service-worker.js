@@ -3,14 +3,21 @@ import { build, files, version } from '$service-worker';
 
 // Create a unique cache name for this deployment
 const CACHE = `cache-${version}`;
-const MODELS_CACHE = 'whisper-models-v1';
+const LEGACY_MODELS_CACHE = 'whisper-models-v1';
 const RUNTIME_CACHE = 'runtime-v1';
 
 const LARGE_RUNTIME_ASSET_PATTERNS = [/\/ort-.*\.wasm$/];
 const LARGE_RUNTIME_ASSETS = build.filter((asset) => isLargeRuntimeAsset(asset));
+const SENSITIVE_QUERY_KEYS = ['code', 'token', 'checkout_id', 'vault', 'vaultUrl'];
 
 function isLargeRuntimeAsset(pathname) {
 	return LARGE_RUNTIME_ASSET_PATTERNS.some((pattern) => pattern.test(pathname));
+}
+
+function shouldBypassRuntimeCache(url) {
+	if (url.origin !== self.location.origin) return false;
+	if (url.pathname.startsWith('/api/') || url.pathname === '/passport') return true;
+	return SENSITIVE_QUERY_KEYS.some((key) => url.searchParams.has(key));
 }
 
 // Assets to always cache
@@ -36,8 +43,8 @@ self.addEventListener('activate', (event) => {
 	// Remove previous cached data from disk
 	async function deleteOldCaches() {
 		for (const key of await caches.keys()) {
-			// Keep models and runtime caches, only delete old version caches
-			if (key !== CACHE && key !== MODELS_CACHE && key !== RUNTIME_CACHE) {
+			// Keep the legacy model cache temporarily so old downloads can be migrated.
+			if (key !== CACHE && key !== LEGACY_MODELS_CACHE && key !== RUNTIME_CACHE) {
 				await caches.delete(key);
 			}
 		}
@@ -69,6 +76,10 @@ self.addEventListener('fetch', (event) => {
 		const url = new URL(event.request.url);
 		const cache = await caches.open(CACHE);
 
+		if (shouldBypassRuntimeCache(url)) {
+			return fetch(event.request);
+		}
+
 		if (url.origin === self.location.origin && isLargeRuntimeAsset(url.pathname)) {
 			const runtimeCache = await caches.open(RUNTIME_CACHE);
 			const cachedResponse = await runtimeCache.match(event.request);
@@ -93,26 +104,18 @@ self.addEventListener('fetch', (event) => {
 			}
 		}
 
-		// Special handling for Whisper models (ONNX files)
+		// Transformers.js owns its own `transformers-cache`. Avoid duplicating large
+		// model files here; only serve one old cache hit so the library can migrate it.
 		if (url.href.includes('huggingface.co') || url.href.includes('.onnx')) {
-			const modelCache = await caches.open(MODELS_CACHE);
-			const cachedResponse = await modelCache.match(event.request);
+			const legacyModelCache = await caches.open(LEGACY_MODELS_CACHE);
+			const cachedResponse = await legacyModelCache.match(event.request);
 
 			if (cachedResponse) {
+				legacyModelCache.delete(event.request).catch(() => {});
 				return cachedResponse;
 			}
 
-			// Download and cache model files
-			try {
-				const response = await fetch(event.request);
-				if (response.ok) {
-					modelCache.put(event.request, response.clone());
-				}
-				return response;
-			} catch {
-				// If offline and not cached, return error
-				return new Response('Model not available offline', { status: 503 });
-			}
+			return fetch(event.request);
 		}
 
 		// Skip service worker for Umami analytics

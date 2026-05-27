@@ -9,6 +9,7 @@
 	export let showCopyTooltip = false;
 	export let responsiveFontSize = 'text-base';
 	export let editable = true;
+	export let copyNeedsGesture = false;
 
 	// Refs
 	let editableTranscript;
@@ -136,13 +137,14 @@
 		<div class="transcript-box-container relative mx-auto w-[96%] max-w-[580px] px-0 sm:w-full">
 			<!-- Copy button with themed ghost icon -->
 			<button
-				class="copy-btn share-chip absolute -top-5 right-0 z-[200] h-11 w-11 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95 sm:-right-4 sm:-top-4 sm:h-10 sm:w-10"
+				class="copy-btn share-chip absolute -top-5 right-0 z-[200] h-12 w-12 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95 sm:-right-4 sm:-top-4 sm:h-11 sm:w-11"
+				class:copyNeedsGesture
 				on:click|preventDefault={handleCopyClick}
 				on:mouseenter={handleTooltipMouseEnter}
 				on:mouseleave={() => {
 					showCopyTooltip = false;
 				}}
-				aria-label="Copy transcript to clipboard"
+				aria-label={copyNeedsGesture ? 'Copy this transcript' : 'Copy transcript to clipboard'}
 			>
 				<!-- Ghost icon using the app's current theme -->
 				<div class="h-full w-full p-0.5">
@@ -161,6 +163,13 @@
 					</div>
 				{/if}
 			</button>
+			{#if copyNeedsGesture}
+				<span
+					class="copy-nudge pointer-events-none absolute -top-4 right-14 z-[190] rounded-full border border-pink-200 bg-white/95 px-3 py-1.5 text-xs font-extrabold text-gray-800 shadow-md sm:right-10"
+				>
+					Tap to copy
+				</span>
+			{/if}
 
 			<!-- Redesigned transcript box with proper structure -->
 			<div
@@ -229,6 +238,74 @@
 	.transcript-wrapper {
 		contain: layout;
 		margin-top: 24px; /* Reduced space between button and transcript */
+	}
+
+	.copy-btn {
+		min-height: 44px;
+		min-width: 44px;
+		touch-action: manipulation;
+		transform-origin: center;
+	}
+
+	.copy-btn.copyNeedsGesture {
+		height: 3.5rem;
+		width: 3.5rem;
+		box-shadow:
+			0 14px 30px rgba(249, 168, 212, 0.32),
+			0 0 0 5px rgba(255, 255, 255, 0.92);
+		animation: copy-squeeze 1.65s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+	}
+
+	.copy-btn.copyNeedsGesture::after {
+		content: '';
+		position: absolute;
+		inset: -7px;
+		border-radius: 9999px;
+		border: 2px solid rgba(249, 168, 212, 0.42);
+		pointer-events: none;
+		animation: copy-ring 1.65s ease-out infinite;
+	}
+
+	.copy-nudge {
+		animation: copy-nudge-pop 1.65s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+	}
+
+	@keyframes copy-nudge-pop {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		40% {
+			transform: translateY(-2px);
+		}
+	}
+
+	@keyframes copy-squeeze {
+		0%,
+		100% {
+			transform: scale(1);
+		}
+		36% {
+			transform: scale(1.13);
+		}
+		52% {
+			transform: scale(0.97);
+		}
+		70% {
+			transform: scale(1.07);
+		}
+	}
+
+	@keyframes copy-ring {
+		0% {
+			opacity: 0.8;
+			transform: scale(0.86);
+		}
+		70%,
+		100% {
+			opacity: 0;
+			transform: scale(1.18);
+		}
 	}
 
 	/* Box structure */
@@ -435,6 +512,11 @@
 			top: -1.1rem;
 		}
 
+		.copy-btn.copyNeedsGesture {
+			right: 0.2rem;
+			top: -1.35rem;
+		}
+
 		.transcript-content-area::-webkit-scrollbar {
 			display: none; /* Hide scrollbar on Webkit browsers */
 		}
@@ -498,6 +580,23 @@
 		to {
 			opacity: 1;
 			transform: translateY(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.copy-btn.copyNeedsGesture {
+			animation: none;
+			transform: scale(1.08);
+		}
+
+		.copy-btn.copyNeedsGesture::after {
+			animation: none;
+			opacity: 0.75;
+			transform: scale(1);
+		}
+
+		.copy-nudge {
+			animation: none;
 		}
 	}
 </style>

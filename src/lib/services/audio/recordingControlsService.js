@@ -7,7 +7,12 @@ import { get } from 'svelte/store';
 import { browser } from '$app/environment';
 import { CTA_PHRASES, ANIMATION, STORAGE_KEYS } from '$lib/constants';
 import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
-import { audioState, transcriptionState, transcriptionActions } from '../infrastructure/stores';
+import {
+	audioState,
+	recordingState,
+	transcriptionState,
+	transcriptionActions
+} from '../infrastructure/stores';
 import { analytics } from '../analytics';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
@@ -15,6 +20,23 @@ import { createLogger } from '$lib/utils/logger';
 import { isPermissionError } from './permissionErrors.js';
 
 const log = createLogger('RecordingControls');
+
+export function getCompletedTranscriptionMethod({
+	useLiveDeepgram = false,
+	useOfflineWhisper = false,
+	usedLiveTranscript = false
+} = {}) {
+	if (useLiveDeepgram && usedLiveTranscript) return 'deepgram-live';
+	if (useOfflineWhisper) return 'whisper';
+	return 'cloud-batch';
+}
+
+export function saveLastTranscriptionMethod(
+	method,
+	storage = globalThis.localStorage || globalThis.window?.localStorage || null
+) {
+	storage?.setItem?.(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, method);
+}
 
 export class RecordingControlsService {
 	constructor(dependencies) {
@@ -29,6 +51,7 @@ export class RecordingControlsService {
 		this.currentCtaIndex = 0;
 		this.toggleInFlight = false;
 		this.timeLimitStopInFlight = false;
+		this.activeRecordingMode = null;
 		this.timeLimitUnsubscribe = audioState.subscribe((state) => {
 			if (!state.timeLimit || this.timeLimitStopInFlight) return;
 			const { isRecording } = this.stores;
@@ -85,13 +108,15 @@ export class RecordingControlsService {
 		});
 
 		try {
+			this.activeRecordingMode = getTranscriptionMode();
+
 			// Subtle pulse ghost icon when starting recording
 			if (this.ghostComponent && typeof this.ghostComponent.pulse === 'function') {
 				this.ghostComponent.pulse();
 			}
 
 			// Start recording using the AudioService
-			await this.audioService.startRecording();
+			await this.audioService.startRecording({ transcriptionMode: this.activeRecordingMode });
 
 			// State is tracked through stores now
 		} catch (err) {
@@ -110,7 +135,8 @@ export class RecordingControlsService {
 		const { isRecording } = this.stores;
 
 		let thinkingStarted = false;
-		const { useLiveDeepgram } = getTranscriptionMode();
+		const recordingMode = this.activeRecordingMode || getTranscriptionMode();
+		const { useLiveDeepgram, useOfflineWhisper } = recordingMode;
 
 		try {
 			if (!get(isRecording)) return;
@@ -151,24 +177,38 @@ export class RecordingControlsService {
 				transcriptionStore.disconnect();
 			}
 			const finalTranscript =
-				useLiveDeepgram && liveResult?.hasFinal && liveResult.text.trim().length > 0
+				useLiveDeepgram &&
+				liveResult?.finalizeAcknowledged &&
+				liveResult?.hasFinal &&
+				!liveResult?.usedInterim &&
+				liveResult.text.trim().length > 0
 					? liveResult.text
-					: await this.transcriptionService.transcribeAudio(audioBlob);
+					: await this.transcriptionService.transcribeAudio(audioBlob, {
+							mode: recordingMode,
+							durationSeconds: get(recordingState).duration || estimatedDurationSeconds
+						});
+			const usedLiveTranscript =
+				useLiveDeepgram &&
+				liveResult?.finalizeAcknowledged &&
+				liveResult?.hasFinal &&
+				!liveResult?.usedInterim &&
+				finalTranscript === liveResult?.text;
+			const completedMethod = getCompletedTranscriptionMethod({
+				useLiveDeepgram,
+				useOfflineWhisper,
+				usedLiveTranscript
+			});
 
 			log.log('Transcription result:', finalTranscript);
 			transcriptionActions.completeTranscription(finalTranscript);
 			await this.transcriptionService.clearPendingRecordingDraft?.();
 
-			if (useLiveDeepgram && finalTranscript === liveResult?.text) {
+			if (usedLiveTranscript) {
 				void this.transcriptionService.copyToClipboard(finalTranscript, { silent: true });
 			}
 
 			// Analytics & UI post-processing
-			if (browser)
-				localStorage.setItem(
-					STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD,
-					useLiveDeepgram && finalTranscript === liveResult?.text ? 'deepgram-live' : 'cloud-batch'
-				);
+			saveLastTranscriptionMethod(completedMethod);
 
 			scrollToBottomIfNeeded({
 				threshold: 300,
@@ -177,11 +217,7 @@ export class RecordingControlsService {
 
 			const trimmedTranscript = finalTranscript.trim();
 			const wordCount = trimmedTranscript ? trimmedTranscript.split(/\s+/).length : 0;
-			analytics.completeTranscription(
-				useLiveDeepgram ? 'deepgram-live' : 'cloud-batch',
-				estimatedDurationSeconds,
-				wordCount
-			);
+			analytics.completeTranscription(completedMethod, estimatedDurationSeconds, wordCount);
 
 			if (browser && 'requestIdleCallback' in window)
 				window.requestIdleCallback(() => this._incrementTranscriptionCount());
@@ -192,6 +228,7 @@ export class RecordingControlsService {
 			if (useLiveDeepgram) transcriptionActions.completeTranscription('');
 		} finally {
 			if (thinkingStarted && this.ghostComponent?.stopThinking) this.ghostComponent.stopThinking();
+			this.activeRecordingMode = null;
 		}
 	}
 

@@ -30,6 +30,7 @@ function createGhostState(overrides = {}) {
 		inactivityTimerId: null,
 		debug: false,
 		isFirstVisit: false,
+		specialAnimation: null,
 		stateTimeouts: {},
 		...overrides
 	};
@@ -176,6 +177,7 @@ function createGhostStateStore() {
 			...s,
 			previous: s.current,
 			current: newState,
+			specialAnimation: newState === ANIMATION_STATES.EASTER_EGG ? s.specialAnimation : null,
 			isEyeTrackingEnabled: behavior.eyeTracking,
 			eyesClosed: newEyesClosedState
 			// isWobbling flag is managed separately now
@@ -367,6 +369,10 @@ function createGhostStateStore() {
 		_state.update((s) => ({ ...s, eyesClosed: closed }));
 	}
 
+	function setSpecialAnimation(animationName) {
+		_state.update((s) => ({ ...s, specialAnimation: animationName || null }));
+	}
+
 	/**
 	 * Checks if it's the first visit based on body attribute (client-side only)
 	 * and updates the store state accordingly.
@@ -472,6 +478,7 @@ function createGhostStateStore() {
 		setProcessing,
 		setEyePosition,
 		setEyesClosed,
+		setSpecialAnimation,
 		setDebug,
 		checkAndSetFirstVisit, // Expose the new method
 		completeFirstVisit,
@@ -490,6 +497,7 @@ function createGhostStateStore() {
 	const _eyesClosed = derived(_state, ($state) => $state.eyesClosed);
 	const _isEyeTrackingEnabled = derived(_state, ($state) => $state.isEyeTrackingEnabled);
 	const _isFirstVisit = derived(_state, ($state) => $state.isFirstVisit);
+	const _specialAnimation = derived(_state, ($state) => $state.specialAnimation);
 	// ---
 
 	// Add derived stores to the public API object (mapping names)
@@ -503,7 +511,8 @@ function createGhostStateStore() {
 		eyePosition: _eyePosition,
 		eyesClosed: _eyesClosed,
 		isEyeTrackingEnabled: _isEyeTrackingEnabled,
-		isFirstVisit: _isFirstVisit
+		isFirstVisit: _isFirstVisit,
+		specialAnimation: _specialAnimation
 	};
 }
 

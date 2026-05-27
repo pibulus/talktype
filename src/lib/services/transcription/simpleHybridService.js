@@ -19,6 +19,7 @@ export class SimpleHybridService {
 	constructor() {
 		this.whisperReady = false;
 		this.whisperLoadPromise = null;
+		this.keepPendingOfflineLoad = false;
 		this.deviceProfile = this.detectDeviceProfile();
 		this.geminiQueue = Promise.resolve();
 
@@ -60,10 +61,13 @@ export class SimpleHybridService {
 	 * Start loading Whisper in the background (only called when privacy mode enabled)
 	 * Mobile devices are supported, but we always force the Tiny model for stability.
 	 */
-	async startBackgroundLoad() {
+	async startBackgroundLoad({ keepForPendingOfflineRecording = false } = {}) {
 		if (this.whisperReady) {
 			return { success: true, alreadyLoaded: true };
 		}
+
+		this.keepPendingOfflineLoad =
+			this.keepPendingOfflineLoad || Boolean(keepForPendingOfflineRecording);
 
 		if (this.whisperLoadPromise) {
 			return this.whisperLoadPromise;
@@ -78,7 +82,7 @@ export class SimpleHybridService {
 			.preloadModel()
 			.then(async (result) => {
 				if (result.success) {
-					if (browser && get(privacyMode) !== 'true') {
+					if (browser && get(privacyMode) !== 'true' && !this.keepPendingOfflineLoad) {
 						await whisperService.unloadModel();
 						return { success: false, unloaded: true };
 					}
@@ -92,6 +96,7 @@ export class SimpleHybridService {
 			})
 			.finally(() => {
 				this.whisperLoadPromise = null;
+				this.keepPendingOfflineLoad = false;
 			});
 
 		return this.whisperLoadPromise;
@@ -118,27 +123,36 @@ export class SimpleHybridService {
 	/**
 	 * Transcribe audio using best available method
 	 */
-	async transcribeAudio(audioBlob) {
+	async transcribeAudio(audioBlob, options = {}) {
 		// Check privacy mode preference
-		const privacyModeEnabled = browser && get(privacyMode) === 'true';
+		const modeSnapshotWantsOffline = options.mode?.useOfflineWhisper === true;
+		const privacyModeEnabled = modeSnapshotWantsOffline || (browser && get(privacyMode) === 'true');
+		const releaseSnapshotLoadAfterUse =
+			modeSnapshotWantsOffline && browser && get(privacyMode) !== 'true';
 
 		// Privacy mode: Use offline Whisper only (desktop + mobile allowed)
 		if (privacyModeEnabled) {
 			// Start loading Whisper if not already
 			if (!this.whisperReady && !this.whisperLoadPromise) {
-				this.startBackgroundLoad();
+				this.startBackgroundLoad({
+					keepForPendingOfflineRecording: modeSnapshotWantsOffline
+				});
 			}
 
 			if (this.whisperReady) {
 				log.log('🔒 Privacy Mode: Using offline Whisper');
 				if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
-				return await whisperService.transcribeAudio(audioBlob);
+				return await this.#transcribeWithWhisper(audioBlob, {
+					releaseAfterUse: releaseSnapshotLoadAfterUse
+				});
 			} else if (this.whisperLoadPromise) {
 				log.log('🔒 Privacy Mode: Waiting for Whisper to load...');
 				const result = await this.whisperLoadPromise;
 				if (result.success) {
 					if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
-					return await whisperService.transcribeAudio(audioBlob);
+					return await this.#transcribeWithWhisper(audioBlob, {
+						releaseAfterUse: releaseSnapshotLoadAfterUse
+					});
 				}
 				throw new Error(
 					this.deviceProfile.isMobile
@@ -157,21 +171,31 @@ export class SimpleHybridService {
 		// Normal mode: Use Cloud API (Deepgram)
 		log.log('☁️ Using Cloud API for transcription');
 		if (browser) localStorage.setItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'cloud');
-		return await this.transcribeWithCloud(audioBlob);
+		return await this.transcribeWithCloud(audioBlob, options);
+	}
+
+	async #transcribeWithWhisper(audioBlob, { releaseAfterUse = false } = {}) {
+		try {
+			return await whisperService.transcribeAudio(audioBlob);
+		} finally {
+			if (releaseAfterUse && browser && get(privacyMode) !== 'true') {
+				await whisperService.unloadModel();
+			}
+		}
 	}
 
 	/**
 	 * Transcribe using Cloud API
 	 */
-	async transcribeWithCloud(audioBlob) {
+	async transcribeWithCloud(audioBlob, options = {}) {
 		this.geminiQueue = this.geminiQueue
 			.catch(() => {})
-			.then(() => this._transcribeWithCloudInternal(audioBlob));
+			.then(() => this._transcribeWithCloudInternal(audioBlob, options));
 
 		return this.geminiQueue;
 	}
 
-	async _transcribeWithCloudInternal(audioBlob) {
+	async _transcribeWithCloudInternal(audioBlob, options = {}) {
 		try {
 			const promptStyle = get(userPreferences).promptStyle || 'standard';
 			const controller = new AbortController();
@@ -189,6 +213,9 @@ export class SimpleHybridService {
 
 				formData.append('audio_file', audioBlob, filename);
 				formData.append('prompt_style', promptStyle);
+				if (Number.isFinite(options.durationSeconds)) {
+					formData.append('duration_seconds', String(options.durationSeconds));
+				}
 
 				// Add custom prompt text if style is custom
 				if (promptStyle === 'custom') {

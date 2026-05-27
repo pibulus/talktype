@@ -24,12 +24,22 @@
 ## Looks Solid
 
 - `npm test -- --run` passes.
-- `npm run lint` passes.
+- `npx eslint .` passes. `npm run lint` is still blocked by Prettier formatting in the existing cartridge files.
 - `npm run build` passes.
 - Live transcript display is wired to Deepgram interim/final state.
 - Offline Mode avoids cloud transcription when enabled.
+- Offline Mode now exposes downloaded, loading percentage, ready, storage persistence, and retry state in Settings and on the main recording button.
+- Recording uses the start-time mode through stop/transcription, so mid-recording setting changes cannot leak an Offline recording to cloud. If Whisper is still loading after Offline Mode is switched off, the local load is kept only long enough to finish that start-time Offline recording.
+- Installed iOS PWA now has a one-tap device setup pass for mic permission, persistent storage, and offline model cache priming.
+- Active recording requests Screen Wake Lock when the browser supports it.
+- Deepgram live stop waits for the finalize acknowledgement before trusting live text over batch fallback.
+- Free recordings now have layered spend controls: a 5 minute UI cap, server-side duration metadata check, smaller free upload cap, and dedicated `/api/transcribe` plus `/api/deepgram/token` rate buckets.
 - PWA auto-start now waits for nested recording controls to be ready.
+- PWA auto-start has a tap-to-start fallback when browser mic startup stalls or needs a gesture.
 - Permission-denied messaging handles common browser error shapes.
+- Service worker runtime caching skips API, Passport, and sensitive query URLs.
+- Service worker model handling no longer duplicates new Hugging Face model files outside the transformers.js browser cache.
+- Supporter entitlement requires a signed supporter token in local state.
 - Passport storage is simplified: the supporter code is stored on trusted devices and vault hashes are derived on demand.
 - QRBuddy-backed Passport QR stamps point to `/passport#code=...&vault=...` for cross-device import and notes check-in.
 - Passport has a clear product line: notes can follow the card through a simple encrypted current-state mirror. It is not a separate permanent archive.

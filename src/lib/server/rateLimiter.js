@@ -2,26 +2,38 @@ import { env } from '$env/dynamic/private';
 import { json } from '@sveltejs/kit';
 import { get as getEntry, set as setEntry, clearExpired } from './fileStore.js';
 
-const RATE_LIMIT_WINDOW_MS = Number(env.API_RATE_WINDOW_MS ?? '60000');
-const RATE_LIMIT_MAX = Number(env.API_RATE_LIMIT ?? '60');
+const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000;
+const DEFAULT_RATE_LIMIT_MAX = 60;
 
-export function getRateLimitConfig() {
-	return { windowMs: RATE_LIMIT_WINDOW_MS, max: RATE_LIMIT_MAX };
+function parsePositiveNumber(value, fallback) {
+	const parsed = Number(value);
+	return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
-export function isRateLimitEnabled() {
-	return RATE_LIMIT_MAX > 0 && RATE_LIMIT_WINDOW_MS > 0;
+export function getRateLimitConfig(options = {}) {
+	return {
+		windowMs: parsePositiveNumber(
+			options.windowMs ?? env.API_RATE_WINDOW_MS,
+			DEFAULT_RATE_LIMIT_WINDOW_MS
+		),
+		max: parsePositiveNumber(options.max ?? env.API_RATE_LIMIT, DEFAULT_RATE_LIMIT_MAX),
+		bucket: options.bucket || 'global'
+	};
 }
 
-export async function enforceRateLimit(event) {
-	if (!isRateLimitEnabled()) {
+export function isRateLimitEnabled(config = getRateLimitConfig()) {
+	return config.max > 0 && config.windowMs > 0;
+}
+
+export async function enforceRateLimit(event, options = {}) {
+	const { windowMs, max, bucket } = getRateLimitConfig(options);
+	if (!isRateLimitEnabled({ windowMs, max })) {
 		return null;
 	}
 
-	const { windowMs, max } = getRateLimitConfig();
 	await clearExpired(windowMs);
 
-	const key = getClientKey(event);
+	const key = `${bucket}:${getClientKey(event)}`;
 	const now = Date.now();
 
 	let entry = (await getEntry(key)) ?? { count: 0, windowStart: now };
@@ -34,12 +46,18 @@ export async function enforceRateLimit(event) {
 	await setEntry(key, entry);
 
 	if (entry.count > max) {
+		const retryAfterMs = Math.max(0, windowMs - (now - entry.windowStart));
 		return json(
 			{
 				error: 'Give TalkType a moment, then try again.',
-				retry_after_ms: windowMs - (now - entry.windowStart)
+				retry_after_ms: retryAfterMs
 			},
-			{ status: 429 }
+			{
+				status: 429,
+				headers: {
+					'Retry-After': String(Math.ceil(retryAfterMs / 1000))
+				}
+			}
 		);
 	}
 

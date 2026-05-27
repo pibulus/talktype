@@ -10,6 +10,14 @@ import {
 
 const forceSupporterMode = import.meta.env.PUBLIC_FORCE_SUPPORTER_MODE === 'true';
 
+function hasStoredSupporterToken() {
+	return Boolean(
+		readStorageValue(STORAGE_KEYS.SUPPORTER_TOKEN, {
+			legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN
+		})
+	);
+}
+
 // Core audio state store
 export const audioState = writable({
 	state: AudioStates.IDLE,
@@ -42,6 +50,7 @@ export const transcriptionState = writable({
 // UI state
 export const uiState = writable({
 	clipboardSuccess: false,
+	copyNeedsGesture: false,
 	errorMessage: '',
 	showPermissionError: false,
 	transcriptionCopied: false,
@@ -54,15 +63,7 @@ function createUserPreferences() {
 		? localStorage.getItem('talktype-prompt-style') || 'standard'
 		: 'standard';
 	const initialSupporterStatus = browser
-		? forceSupporterMode ||
-			readStorageValue(STORAGE_KEYS.SUPPORTER, {
-				legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER
-			}) === 'true' ||
-			Boolean(
-				readStorageValue(STORAGE_KEYS.SUPPORTER_TOKEN, {
-					legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN
-				})
-			)
+		? forceSupporterMode || hasStoredSupporterToken()
 		: forceSupporterMode;
 
 	return writable({
@@ -74,7 +75,9 @@ function createUserPreferences() {
 export const userPreferences = createUserPreferences();
 
 export function setSupporterStatus(isSupporter, token = null) {
-	const resolvedSupporterStatus = forceSupporterMode ? true : isSupporter;
+	const resolvedSupporterStatus = forceSupporterMode
+		? true
+		: Boolean(isSupporter && (token || hasStoredSupporterToken()));
 
 	userPreferences.update((current) => ({
 		...current,
@@ -313,7 +316,15 @@ export const uiActions = {
 	setClipboardSuccess(success) {
 		uiState.update((current) => ({
 			...current,
-			clipboardSuccess: success
+			clipboardSuccess: success,
+			copyNeedsGesture: success ? false : current.copyNeedsGesture
+		}));
+	},
+
+	setCopyNeedsGesture(needsGesture) {
+		uiState.update((current) => ({
+			...current,
+			copyNeedsGesture: needsGesture
 		}));
 	},
 
@@ -321,6 +332,7 @@ export const uiActions = {
 		uiState.update((current) => ({
 			...current,
 			clipboardSuccess: true,
+			copyNeedsGesture: false,
 			transcriptionCopied: true
 		}));
 
@@ -370,6 +382,7 @@ export function resetStores() {
 
 	uiState.set({
 		clipboardSuccess: false,
+		copyNeedsGesture: false,
 		errorMessage: '',
 		showPermissionError: false,
 		transcriptionCopied: false,
@@ -391,11 +404,6 @@ export const transcriptionCompletedEvent = (() => {
 			currentState.text &&
 			currentState.text.trim() !== ''
 		) {
-			// Condition: Was transcribing, now finished, and there's actual text.
-			console.log(
-				'[Store DEBUG] transcriptionCompletedEvent: Firing with text -',
-				currentState.text
-			);
 			set(currentState.text); // Emit the text value
 			// Reset to null in a microtask to ensure current subscribers process the text value first
 			// and to make it a true "event" store for the next completion.

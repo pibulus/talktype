@@ -4,23 +4,9 @@
 
 	export let closeModal;
 	export let markIntroAsSeen;
-	export let triggerGhostClick;
-
-	// Use Svelte's binding instead of getElementById
-	let modalElement;
-
-	function handleActionButton() {
-		if (modalElement) modalElement.close();
-		markIntroAsSeen();
-
-		setTimeout(() => {
-			triggerGhostClick();
-		}, 300);
-	}
 </script>
 
 <dialog
-	bind:this={modalElement}
 	id="intro_modal"
 	class="modal modal-bottom sm:modal-middle"
 	aria-labelledby="intro_modal_title"
@@ -51,28 +37,27 @@
 				id="intro_modal_title"
 				class="text-center text-2xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-3xl md:text-4xl lg:text-5xl"
 			>
-				Tap the ghost. <br /> Talk it out.
+				TalkType's the best. <br /> Kick out the rest.
 			</h1>
 
-			<div id="intro_modal_description" class="space-y-2 text-center">
-				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg">
-					Fast voice-to-text, with a tiny bit of ghost energy.
+			<div id="intro_modal_description" class="space-y-3 sm:space-y-4">
+				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
+					🎯 <strong>Private when you want it</strong> — Offline mode keeps everything on your device,
+					and live mode is there when you want speed.
 				</p>
-				<p class="text-sm font-medium leading-relaxed text-gray-600 sm:text-base">
-					Use live mode for speed, or offline mode when you want everything kept on your device.
+
+				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
+					⚡ <strong>Instant Start</strong> — Tap the ghost and talk. Works offline after first use.
+				</p>
+
+				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
+					✨ <strong>Your words, your way</strong> — Save transcripts, switch styles, and keep the ghost
+					vibes without weird upsells.
 				</p>
 			</div>
 
-			<button
-				type="button"
-				class="relative min-h-11 w-full cursor-pointer rounded-xl border border-amber-300/50 bg-gradient-to-r from-amber-100 to-amber-200 px-4 py-3 text-center text-sm font-bold text-gray-800 shadow-md transition-all duration-300 hover:bg-gradient-to-r hover:from-amber-200 hover:to-amber-300 hover:text-gray-900 hover:shadow-lg active:scale-[0.98] sm:px-5 sm:py-4 sm:text-base md:text-lg"
-				on:click={handleActionButton}
-			>
-				Start talking
-			</button>
-
-			<p class="py-1 text-center text-sm font-bold text-pink-600 sm:text-base">
-				Fast, fun, freaky good.
+			<p class="py-2 text-center text-base font-bold text-pink-600 sm:text-lg md:text-xl">
+				It's fast, it's fun, it's freaky good.
 			</p>
 
 			<form method="dialog">
@@ -80,7 +65,7 @@
 					class="min-h-11 w-full rounded-full bg-gradient-to-r from-yellow-400 to-pink-400 px-4 py-2.5 text-base font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-6 sm:py-3 sm:text-lg"
 					on:click={markIntroAsSeen}
 				>
-					Skip for now
+					click &amp; see
 				</button>
 			</form>
 		</div>

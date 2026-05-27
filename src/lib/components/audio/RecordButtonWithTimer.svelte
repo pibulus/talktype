@@ -19,6 +19,9 @@
 	export let buttonLabel = 'Start Recording';
 	export let successMessages = ['Copied!'];
 	export let progress = 0; // For transcription progress
+	export let downloadProgress = 0;
+	export let downloadLabel = '';
+	export let downloadDetail = '';
 
 	// Element refs
 	let recordButtonElement;
@@ -78,7 +81,7 @@
 </script>
 
 {#if downloading}
-	<DownloadingState />
+	<DownloadingState progress={downloadProgress} statusText={downloadLabel} detail={downloadDetail} />
 {:else if transcribing}
 	<TranscribingState {progress} />
 {:else}

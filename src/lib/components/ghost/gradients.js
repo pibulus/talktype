@@ -60,11 +60,13 @@ export const GRADIENT_DEFS = {
 		x2: '100%',
 		y2: '100%',
 		stops: [
-			{ offset: '0%', color: 'var(--ghost-rainbow-start, #ffb3ba)' },
-			{ offset: '25%', color: 'var(--ghost-rainbow-mid1, #ffdfba)' },
-			{ offset: '50%', color: 'var(--ghost-rainbow-mid2, #ffffba)' },
-			{ offset: '75%', color: 'var(--ghost-rainbow-mid3, #baffc9)' },
-			{ offset: '100%', color: 'var(--ghost-rainbow-end, #bae1ff)' }
+			{ offset: '0%', color: 'var(--ghost-rainbow-start, #ff5f8f)' },
+			{ offset: '16%', color: 'var(--ghost-rainbow-mid1, #ff9f43)' },
+			{ offset: '32%', color: 'var(--ghost-rainbow-mid2, #ffe66d)' },
+			{ offset: '48%', color: 'var(--ghost-rainbow-mid3, #7bed9f)' },
+			{ offset: '64%', color: 'var(--ghost-rainbow-mid4, #70d6ff)' },
+			{ offset: '80%', color: 'var(--ghost-rainbow-mid5, #8f8cff)' },
+			{ offset: '100%', color: 'var(--ghost-rainbow-end, #d67bff)' }
 		]
 	}
 };

@@ -1,8 +1,17 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
+	import { browser } from '$app/environment';
 
 	// Event handling
 	const dispatch = createEventDispatcher();
+	const isIOS =
+		browser &&
+		(/iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+			(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+	const isStandalone =
+		browser &&
+		(window.matchMedia?.('(display-mode: standalone)').matches === true ||
+			navigator.standalone === true);
 
 	// Close the modal when clicked or keyboard activated
 	function closeModal() {
@@ -17,6 +26,11 @@
 		} else if (event.key === 'Escape') {
 			closeModal();
 		}
+	}
+
+	function openInSafari() {
+		if (!browser) return;
+		window.open(window.location.href, '_blank', 'noopener');
 	}
 </script>
 
@@ -56,28 +70,55 @@
 
 		<!-- Permission error message -->
 		<p id="permission_error_description">
-			TalkType needs the mic before it can listen. Allow microphone access in your browser, then try
-			recording again.
+			{#if isIOS}
+				TalkType needs the mic before it can listen. Give this site microphone access in Safari,
+				then try recording again.
+			{:else}
+				TalkType needs the mic before it can listen. Allow microphone access in your browser, then
+				try recording again.
+			{/if}
 		</p>
 
 		<!-- Solution steps -->
 		<div class="error-steps">
-			<div class="step">
-				<div class="step-number">1</div>
-				<p>Click the microphone or lock icon in your address bar</p>
-			</div>
-			<div class="step">
-				<div class="step-number">2</div>
-				<p>Select "Allow" for microphone access</p>
-			</div>
-			<div class="step">
-				<div class="step-number">3</div>
-				<p>Refresh the page and try again</p>
-			</div>
+			{#if isIOS}
+				<div class="step">
+					<div class="step-number">1</div>
+					<p>Open TalkType in Safari</p>
+				</div>
+				<div class="step">
+					<div class="step-number">2</div>
+					<p>Tap Page Menu, More, Website Settings</p>
+				</div>
+				<div class="step">
+					<div class="step-number">3</div>
+					<p>Set Microphone to Allow</p>
+				</div>
+			{:else}
+				<div class="step">
+					<div class="step-number">1</div>
+					<p>Click the microphone or lock icon in your address bar</p>
+				</div>
+				<div class="step">
+					<div class="step-number">2</div>
+					<p>Select "Allow" for microphone access</p>
+				</div>
+				<div class="step">
+					<div class="step-number">3</div>
+					<p>Refresh the page and try again</p>
+				</div>
+			{/if}
 		</div>
 
 		<!-- Dismiss button -->
-		<button class="dismiss-btn" on:click|stopPropagation={closeModal}> Got it </button>
+		<div class="permission-actions">
+			{#if isIOS && isStandalone}
+				<button class="dismiss-btn secondary" on:click|stopPropagation={openInSafari}>
+					Open Safari
+				</button>
+			{/if}
+			<button class="dismiss-btn" on:click|stopPropagation={closeModal}> Got it </button>
+		</div>
 	</div>
 </div>
 
@@ -163,6 +204,12 @@
 		font-weight: 800;
 	}
 
+	.permission-actions {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+		gap: 0.5rem;
+	}
+
 	.dismiss-btn {
 		min-height: 44px;
 		width: 100%;
@@ -174,6 +221,11 @@
 		font-weight: 800;
 		box-shadow: 0 10px 22px rgba(255, 92, 159, 0.18);
 		cursor: pointer;
+	}
+
+	.dismiss-btn.secondary {
+		background: rgba(255, 255, 255, 0.88);
+		color: #9a3412;
 	}
 
 	.dismiss-btn:focus-visible {

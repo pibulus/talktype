@@ -169,7 +169,7 @@ export const gradientAnimations = {
 			speed: 0.12,
 			amplitude: 6
 		},
-		stopPositions: ['start', 'mid1', 'mid2', 'mid3', 'end']
+		stopPositions: ['start', 'mid1', 'mid2', 'mid3', 'mid4', 'mid5', 'end']
 	}
 };
 

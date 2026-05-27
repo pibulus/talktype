@@ -35,6 +35,7 @@ const whisperMock = vi.hoisted(() => ({
 	},
 	whisperService: {
 		preloadModel: vi.fn(),
+		transcribeAudio: vi.fn(),
 		unloadModel: vi.fn().mockResolvedValue()
 	}
 }));
@@ -54,6 +55,7 @@ describe('SimpleHybridService', () => {
 	beforeEach(() => {
 		storeMock.privacyMode.set('false');
 		whisperMock.whisperService.preloadModel.mockClear();
+		whisperMock.whisperService.transcribeAudio.mockReset();
 		whisperMock.whisperService.unloadModel.mockClear();
 	});
 
@@ -99,6 +101,45 @@ describe('SimpleHybridService', () => {
 		resolveLoad({ success: true });
 		await Promise.all([loadPromise, releasePromise]);
 
+		expect(whisperMock.whisperService.unloadModel).toHaveBeenCalledTimes(1);
+	});
+
+	it('uses the provided Offline Mode snapshot even if the current store is cloud mode', async () => {
+		const { SimpleHybridService } = await import('./simpleHybridService.js');
+		const service = new SimpleHybridService();
+		const audioBlob = new Blob(['audio'], { type: 'audio/webm' });
+
+		service.whisperReady = true;
+		storeMock.privacyMode.set('false');
+		whisperMock.whisperService.transcribeAudio.mockResolvedValue('offline transcript');
+
+		const result = await service.transcribeAudio(audioBlob, {
+			mode: {
+				useOfflineWhisper: true
+			}
+		});
+
+		expect(result).toBe('offline transcript');
+		expect(whisperMock.whisperService.transcribeAudio).toHaveBeenCalledWith(audioBlob);
+	});
+
+	it('finishes a start-time Offline recording even if Offline Mode is turned off before Whisper loads', async () => {
+		const { SimpleHybridService } = await import('./simpleHybridService.js');
+		const service = new SimpleHybridService();
+		const audioBlob = new Blob(['audio'], { type: 'audio/webm' });
+
+		storeMock.privacyMode.set('false');
+		whisperMock.whisperService.preloadModel.mockResolvedValue({ success: true });
+		whisperMock.whisperService.transcribeAudio.mockResolvedValue('offline transcript');
+
+		const result = await service.transcribeAudio(audioBlob, {
+			mode: {
+				useOfflineWhisper: true
+			}
+		});
+
+		expect(result).toBe('offline transcript');
+		expect(whisperMock.whisperService.transcribeAudio).toHaveBeenCalledWith(audioBlob);
 		expect(whisperMock.whisperService.unloadModel).toHaveBeenCalledTimes(1);
 	});
 });

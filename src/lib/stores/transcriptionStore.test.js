@@ -79,4 +79,202 @@ describe('Deepgram live transcription configuration', () => {
 		expect(state.connected).toBe(false);
 		expect(state.error).toBe('Live transcription connection dropped');
 	});
+
+	it('clears connecting state when disconnected before the token request finishes', async () => {
+		let resolveTokenRequest;
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(
+				() =>
+					new Promise((resolve) => {
+						resolveTokenRequest = resolve;
+					})
+			)
+		);
+
+		const connectPromise = transcriptionStore.connect();
+
+		let state;
+		transcriptionStore.subscribe((value) => {
+			state = value;
+		})();
+
+		expect(state.connecting).toBe(true);
+
+		transcriptionStore.disconnect();
+
+		transcriptionStore.subscribe((value) => {
+			state = value;
+		})();
+		expect(state.connected).toBe(false);
+		expect(state.connecting).toBe(false);
+
+		resolveTokenRequest({
+			json: async () => ({ token: 'late-token' })
+		});
+		await connectPromise;
+
+		transcriptionStore.subscribe((value) => {
+			state = value;
+		})();
+		expect(state.connected).toBe(false);
+		expect(state.connecting).toBe(false);
+	});
+
+	it('finishes as soon as Deepgram acknowledges finalize', async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => ({
+				json: async () => ({ token: 'test-token' })
+			}))
+		);
+
+		class MockWebSocket {
+			static OPEN = 1;
+			static CONNECTING = 0;
+			static last = null;
+
+			constructor() {
+				this.readyState = MockWebSocket.OPEN;
+				this.send = vi.fn();
+				this.close = vi.fn(() => {
+					this.readyState = 3;
+				});
+				MockWebSocket.last = this;
+			}
+		}
+
+		vi.stubGlobal('WebSocket', MockWebSocket);
+
+		await transcriptionStore.connect();
+		MockWebSocket.last.onopen();
+
+		const finishPromise = transcriptionStore.finish({ graceMs: 2200 });
+		expect(MockWebSocket.last.send).toHaveBeenCalledWith(JSON.stringify({ type: 'Finalize' }));
+
+		MockWebSocket.last.onmessage({
+			data: JSON.stringify({
+				type: 'Results',
+				is_final: true,
+				from_finalize: true,
+				channel: {
+					alternatives: [{ transcript: 'done now' }]
+				}
+			})
+		});
+
+		const result = await finishPromise;
+
+		expect(result.text).toBe('done now');
+		expect(result.hasFinal).toBe(true);
+		expect(result.finalizeAcknowledged).toBe(true);
+		expect(MockWebSocket.last.send).toHaveBeenCalledWith(JSON.stringify({ type: 'CloseStream' }));
+		expect(MockWebSocket.last.close).toHaveBeenCalledWith(1000, 'Done recording');
+	});
+
+	it('waits for the finalize response instead of resolving on a regular final result', async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => ({
+				json: async () => ({ token: 'test-token' })
+			}))
+		);
+
+		class MockWebSocket {
+			static OPEN = 1;
+			static CONNECTING = 0;
+			static last = null;
+
+			constructor() {
+				this.readyState = MockWebSocket.OPEN;
+				this.send = vi.fn();
+				this.close = vi.fn(() => {
+					this.readyState = 3;
+				});
+				MockWebSocket.last = this;
+			}
+		}
+
+		vi.stubGlobal('WebSocket', MockWebSocket);
+
+		await transcriptionStore.connect();
+		MockWebSocket.last.onopen();
+
+		const finishPromise = transcriptionStore.finish({ graceMs: 2200 });
+		let settled = false;
+		finishPromise.then(() => {
+			settled = true;
+		});
+
+		MockWebSocket.last.onmessage({
+			data: JSON.stringify({
+				type: 'Results',
+				is_final: true,
+				channel: {
+					alternatives: [{ transcript: 'regular final' }]
+				}
+			})
+		});
+		await Promise.resolve();
+
+		expect(settled).toBe(false);
+
+		await vi.advanceTimersByTimeAsync(2200);
+		const result = await finishPromise;
+
+		expect(result.text).toBe('regular final');
+		expect(result.hasFinal).toBe(true);
+		expect(result.finalizeAcknowledged).toBe(false);
+	});
+
+	it('requests finalize after a connecting socket opens during finish', async () => {
+		vi.useFakeTimers();
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => ({
+				json: async () => ({ token: 'test-token' })
+			}))
+		);
+
+		class MockWebSocket {
+			static OPEN = 1;
+			static CONNECTING = 0;
+			static last = null;
+
+			constructor() {
+				this.readyState = MockWebSocket.CONNECTING;
+				this.send = vi.fn();
+				this.close = vi.fn(() => {
+					this.readyState = 3;
+				});
+				MockWebSocket.last = this;
+			}
+		}
+
+		vi.stubGlobal('WebSocket', MockWebSocket);
+
+		await transcriptionStore.connect();
+
+		const finishPromise = transcriptionStore.finish({ graceMs: 2200 });
+		expect(MockWebSocket.last.send).not.toHaveBeenCalledWith(JSON.stringify({ type: 'Finalize' }));
+
+		MockWebSocket.last.readyState = MockWebSocket.OPEN;
+		MockWebSocket.last.onopen();
+		expect(MockWebSocket.last.send).toHaveBeenCalledWith(JSON.stringify({ type: 'Finalize' }));
+
+		MockWebSocket.last.onmessage({
+			data: JSON.stringify({
+				from_finalize: true
+			})
+		});
+
+		const result = await finishPromise;
+
+		expect(result.text).toBe('');
+		expect(result.finalizeAcknowledged).toBe(true);
+		expect(MockWebSocket.last.send).toHaveBeenCalledWith(JSON.stringify({ type: 'CloseStream' }));
+		expect(MockWebSocket.last.close).toHaveBeenCalledWith(1000, 'Done recording');
+	});
 });

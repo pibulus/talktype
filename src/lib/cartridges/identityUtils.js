@@ -5,6 +5,19 @@
 
 const FALLBACK_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
 
+const VERBS = [
+	'drifts', 'hums', 'glows', 'floats', 'sings', 'sparks', 'roams', 'blooms',
+	'echoes', 'whispers', 'flickers', 'wanders', 'pulses', 'shines', 'orbits', 'dances',
+	'haunts', 'buzzes', 'ripples', 'dreams'
+];
+
+const PLACES = [
+	'at midnight', 'in the static', 'through the void', 'at dawn', 'in the mist',
+	'between stars', 'in the dark', 'at the edge', 'through waves', 'beyond the map',
+	'in deep space', 'at low tide', 'through fog', 'in the signal', 'under neon',
+	'past the reef', 'in the loop', 'at the horizon', 'through rain', 'in the noise'
+];
+
 const ADJECTIVES = [
 	'Speedy',
 	'Sleepy',
@@ -117,10 +130,13 @@ export function generateMemberIdentity(vaultHash) {
 	const animal = ANIMALS[hashToIndex(hash, ANIMALS, 8)];
 	const bg = BG_COLORS[hashToIndex(hash, BG_COLORS, 16)];
 	const shape = SHAPE_COLORS[hashToIndex(hash, SHAPE_COLORS, 24)];
+	const verb = VERBS[hashToIndex(hash, VERBS, 32)];
+	const place = PLACES[hashToIndex(hash, PLACES, 40)];
 	const memberId = `TT-${hash.slice(0, 4).toUpperCase()}-${hash.slice(4, 8).toUpperCase()}`;
 
 	return {
 		name: `${adj} ${animal}`,
+		phrase: `${adj.toLowerCase()} ${animal.toLowerCase()} ${verb} ${place}`,
 		memberId,
 		initials: `${adj[0]}${animal[0]}`,
 		bg,

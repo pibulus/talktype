@@ -40,7 +40,9 @@ export const STORAGE_KEYS = {
 	PWA_PROMPT_COUNT: 'talktype-pwa-prompt-count',
 	PWA_LAST_PROMPT_DATE: 'talktype-pwa-last-prompt-date',
 	PWA_LAST_PROMPT_TRANSCRIPTION_COUNT: 'talktype-pwa-last-prompt-transcription-count',
-	PWA_INSTALLED: 'talktype-pwa-installed'
+	PWA_INSTALLED: 'talktype-pwa-installed',
+	PWA_DEVICE_PRIMED: 'talktype-pwa-device-primed',
+	PWA_DEVICE_SETUP_DISMISSED: 'talktype-pwa-device-setup-dismissed'
 };
 
 export const LEGACY_STORAGE_KEYS = {
@@ -69,7 +71,8 @@ export const PROMPT_STYLES = {
 	LEET_SPEAK: 'leetSpeak',
 	SPARKLE_POP: 'sparklePop',
 	CODE_WHISPERER: 'codeWhisperer',
-	QUILL_AND_INK: 'quillAndInk'
+	QUILL_AND_INK: 'quillAndInk',
+	CUSTOM: 'custom'
 };
 
 export const DEFAULT_PROMPT_STYLE = PROMPT_STYLES.STANDARD;

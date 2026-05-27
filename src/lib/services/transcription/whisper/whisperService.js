@@ -8,10 +8,19 @@ import { get, writable } from 'svelte/store';
 import { userPreferences } from '../../infrastructure/stores';
 import { convertToWAV as convertToRawAudio } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
+import {
+	WHISPER_CACHE_NAMES,
+	WHISPER_PHASES,
+	clampPercent,
+	getLoadStatusText,
+	getProgressPercentFromEvent,
+	isLargeModelFile
+} from './statusUtils.js';
 
 const SAMPLE_RATE = 16000;
 const WARMUP_SECONDS = 0.25; // short silent clip to JIT the WASM kernels
 const MODEL_LOAD_TIMEOUT_MS = 5 * 60 * 1000; // 5 minute timeout for model download+load
+const DEFAULT_MODEL_KEY = 'tiny';
 
 let transformersModulePromise = null;
 let transformersEnvConfigured = false;
@@ -23,7 +32,6 @@ function configureTransformersEnv(env) {
 	env.allowRemoteModels = true;
 	env.allowLocalModels = false;
 	env.useBrowserCache = true;
-	env.useIndexedDB = true;
 	if (env.backends?.onnx?.wasm) {
 		const hwThreads = navigator.hardwareConcurrency || 2;
 		env.backends.onnx.wasm.numThreads = Math.min(4, hwThreads);
@@ -64,9 +72,19 @@ async function loadTransformersPipeline() {
 export const whisperStatus = writable({
 	isLoaded: false,
 	isLoading: false,
+	isTranscribing: false,
+	isCached: false,
+	cacheChecked: false,
 	progress: 0,
 	error: null,
-	selectedModel: 'tiny',
+	phase: WHISPER_PHASES.IDLE,
+	statusText: getLoadStatusText({ phase: WHISPER_PHASES.IDLE }),
+	selectedModel: DEFAULT_MODEL_KEY,
+	selectedModelName: 'Tiny English (117MB)',
+	selectedModelSize: null,
+	storagePersisted: null,
+	storageEstimate: null,
+	lastLoadedAt: null,
 	supportsWhisper: browser
 });
 
@@ -97,9 +115,12 @@ export class WhisperService {
 		this.modelLoadPromise = null;
 		this.isSupported = browser;
 		this.hasWarmedUp = false;
+		this.modelFileProgress = new Map();
+		this.modelHasSeenLargeFile = false;
 
 		this.updateStatus({ supportsWhisper: this.isSupported });
-		this.#ensurePersistentStorage();
+		this.#refreshDeviceStorageState();
+		this.refreshCachedModelStatus();
 	}
 
 	updateStatus(updates) {
@@ -109,10 +130,20 @@ export class WhisperService {
 	async preloadModel() {
 		// Check if currently loaded model matches the requested one
 		const prefs = get(userPreferences);
-		const requestedModel = prefs.whisperModel || 'tiny';
+		const requestedModel = prefs.whisperModel || DEFAULT_MODEL_KEY;
 		const currentModel = get(whisperStatus).selectedModel;
 
 		if (this.transcriber && requestedModel === currentModel) {
+			this.updateStatus({
+				isLoaded: true,
+				isLoading: false,
+				isTranscribing: false,
+				isCached: true,
+				progress: 100,
+				error: null,
+				phase: WHISPER_PHASES.READY,
+				statusText: getLoadStatusText({ phase: WHISPER_PHASES.READY })
+			});
 			return { success: true, transcriber: this.transcriber };
 		}
 
@@ -121,11 +152,24 @@ export class WhisperService {
 		}
 
 		if (!this.isSupported) {
-			this.updateStatus({ error: 'Whisper is only available in browser environment.' });
+			this.updateStatus({
+				error: 'Whisper is only available in browser environment.',
+				phase: WHISPER_PHASES.ERROR,
+				statusText: getLoadStatusText({ phase: WHISPER_PHASES.ERROR })
+			});
 			return { success: false, error: 'Unsupported environment' };
 		}
 
-		this.updateStatus({ isLoading: true, progress: 0, error: null });
+		await this.refreshCachedModelStatus();
+
+		this.updateStatus({
+			isLoading: true,
+			isTranscribing: false,
+			progress: 2,
+			error: null,
+			phase: WHISPER_PHASES.LOADING_LIBRARY,
+			statusText: getLoadStatusText({ phase: WHISPER_PHASES.LOADING_LIBRARY })
+		});
 		this.modelLoadPromise = this._loadModel();
 		return this.modelLoadPromise;
 	}
@@ -133,7 +177,7 @@ export class WhisperService {
 	async _loadModel() {
 		try {
 			const prefs = get(userPreferences);
-			const modelKey = prefs.whisperModel || 'tiny';
+			const modelKey = prefs.whisperModel || DEFAULT_MODEL_KEY;
 			const modelConfig = getModelInfo(modelKey);
 
 			if (!modelConfig) {
@@ -146,7 +190,23 @@ export class WhisperService {
 				await this.unloadModel();
 			}
 
-			this.updateStatus({ selectedModel: modelKey, progress: 5 });
+			this.modelFileProgress = new Map();
+			this.modelHasSeenLargeFile = false;
+			this.updateStatus({
+				selectedModel: modelKey,
+				selectedModelName: modelConfig.name,
+				selectedModelSize: modelConfig.size,
+				isLoaded: false,
+				isLoading: true,
+				isTranscribing: false,
+				progress: 5,
+				error: null,
+				phase: WHISPER_PHASES.LOADING_LIBRARY,
+				statusText: getLoadStatusText({
+					phase: WHISPER_PHASES.LOADING_LIBRARY,
+					modelName: modelConfig.name
+				})
+			});
 			console.log(`[WhisperService] Loading ${modelConfig.name} (WASM only)…`);
 
 			const loadStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -157,13 +217,7 @@ export class WhisperService {
 				device: 'wasm',
 				dtype: 'q8',
 				progress_callback: (progress) => {
-					if (progress.status === 'downloading') {
-						const total = progress.total || 1; // Guard against division by zero
-						const percent = Math.round((progress.loaded / total) * 100);
-						this.updateStatus({ progress: Math.min(percent, 94) });
-					} else if (progress.status === 'ready') {
-						this.updateStatus({ progress: 95 });
-					}
+					this.#handleLoadProgress(progress, modelConfig);
 				}
 			});
 
@@ -182,16 +236,132 @@ export class WhisperService {
 			const totalSecs = ((endTime - loadStart || 0) / 1000).toFixed(2);
 			console.log(`[WhisperService] Model ready in ${totalSecs}s (WASM, warmed).`);
 
-			this.updateStatus({ isLoaded: true, isLoading: false, progress: 100 });
+			this.updateStatus({
+				isLoaded: true,
+				isLoading: false,
+				isTranscribing: false,
+				isCached: true,
+				cacheChecked: true,
+				progress: 100,
+				error: null,
+				phase: WHISPER_PHASES.READY,
+				statusText: getLoadStatusText({ phase: WHISPER_PHASES.READY }),
+				lastLoadedAt: Date.now()
+			});
 			this.modelLoadPromise = null;
+			this.#refreshDeviceStorageState();
 			return { success: true, transcriber: this.transcriber };
 		} catch (error) {
 			console.error('[WhisperService] Failed to load model:', error);
-			this.updateStatus({ isLoaded: false, isLoading: false, progress: 0, error: error.message });
+			this.updateStatus({
+				isLoaded: false,
+				isLoading: false,
+				isTranscribing: false,
+				progress: 0,
+				error: error.message,
+				phase: WHISPER_PHASES.ERROR,
+				statusText: getLoadStatusText({ phase: WHISPER_PHASES.ERROR })
+			});
 			this.transcriber = null;
 			this.modelLoadPromise = null;
 			return { success: false, error };
 		}
+	}
+
+	#handleLoadProgress(progressEvent, modelConfig) {
+		const status = progressEvent?.status;
+		const currentStatus = get(whisperStatus);
+		let nextProgress = clampPercent(currentStatus.progress);
+		let phase = currentStatus.phase;
+
+		if (status === 'initiate') {
+			this.#recordFileProgress(progressEvent);
+			phase = WHISPER_PHASES.DOWNLOADING;
+			nextProgress = Math.max(nextProgress, this.modelHasSeenLargeFile ? 12 : 8);
+		} else if (status === 'download' || status === 'downloading') {
+			this.#recordFileProgress(progressEvent);
+			phase = WHISPER_PHASES.DOWNLOADING;
+			nextProgress = Math.max(nextProgress, this.modelHasSeenLargeFile ? 16 : 10);
+		} else if (status === 'progress') {
+			this.#recordFileProgress(progressEvent);
+			phase = WHISPER_PHASES.DOWNLOADING;
+			nextProgress = Math.max(nextProgress, this.#getAggregateDownloadProgress());
+		} else if (status === 'done') {
+			this.#recordFileProgress(progressEvent);
+			phase = WHISPER_PHASES.PREPARING;
+			nextProgress = Math.max(nextProgress, this.modelHasSeenLargeFile ? 88 : 24);
+		} else if (status === 'ready') {
+			phase = WHISPER_PHASES.WARMING;
+			nextProgress = Math.max(nextProgress, 96);
+		}
+
+		const safeProgress = Math.min(nextProgress, 98);
+		this.updateStatus({
+			progress: safeProgress,
+			phase,
+			statusText: getLoadStatusText({
+				phase,
+				progress: safeProgress,
+				modelName: modelConfig?.name
+			})
+		});
+	}
+
+	#recordFileProgress(progressEvent) {
+		if (!progressEvent || typeof progressEvent !== 'object') return;
+
+		const file = progressEvent.file || progressEvent.name || 'model-file';
+		const fileKey = `${progressEvent.name || 'model'}:${file}`;
+		const existing = this.modelFileProgress.get(fileKey) || {};
+		const loaded = Number(progressEvent.loaded);
+		const total = Number(progressEvent.total);
+		const percent = getProgressPercentFromEvent(progressEvent);
+		const isLarge = isLargeModelFile(file);
+
+		if (isLarge) {
+			this.modelHasSeenLargeFile = true;
+		}
+
+		let nextTotal = Number.isFinite(total) && total > 0 ? total : existing.total || null;
+		let nextLoaded = Number.isFinite(loaded) && loaded >= 0 ? loaded : existing.loaded || 0;
+
+		if (!nextTotal && percent !== null) {
+			nextTotal = 100;
+			nextLoaded = percent;
+		}
+
+		if (progressEvent.status === 'done') {
+			nextTotal = nextTotal || nextLoaded || 1;
+			nextLoaded = nextTotal;
+		}
+
+		this.modelFileProgress.set(fileKey, {
+			file,
+			loaded: nextLoaded,
+			total: nextTotal,
+			done: progressEvent.status === 'done',
+			isLarge
+		});
+	}
+
+	#getAggregateDownloadProgress() {
+		let loadedBytes = 0;
+		let totalBytes = 0;
+
+		for (const fileProgress of this.modelFileProgress.values()) {
+			if (!fileProgress.total || fileProgress.total <= 0) continue;
+			totalBytes += fileProgress.total;
+			loadedBytes += Math.min(fileProgress.loaded || 0, fileProgress.total);
+		}
+
+		if (totalBytes <= 0) {
+			return this.modelHasSeenLargeFile ? 16 : 8;
+		}
+
+		const rawPercent = clampPercent((loadedBytes / totalBytes) * 100);
+		const floor = this.modelHasSeenLargeFile ? 16 : 8;
+		const ceiling = this.modelHasSeenLargeFile ? 88 : 28;
+		return Math.round(floor + ((ceiling - floor) * rawPercent) / 100);
 	}
 
 	async #warmupTranscriber() {
@@ -259,7 +429,14 @@ export class WhisperService {
 
 		const stats = summarizeSignal(floatAudio);
 		console.log('[WhisperService] Transcribing clip:', stats);
-		this.updateStatus({ isLoading: true, progress: 30 });
+		this.updateStatus({
+			isLoading: false,
+			isTranscribing: true,
+			progress: 100,
+			error: null,
+			phase: WHISPER_PHASES.TRANSCRIBING,
+			statusText: getLoadStatusText({ phase: WHISPER_PHASES.TRANSCRIBING })
+		});
 
 		const options = {
 			task: 'transcribe',
@@ -268,16 +445,33 @@ export class WhisperService {
 			do_sample: false
 		};
 
-		const result = await this.transcriber(floatAudio, options);
-		const text = (typeof result === 'string' ? result : result?.text || '').trim();
+		try {
+			const result = await this.transcriber(floatAudio, options);
+			const text = (typeof result === 'string' ? result : result?.text || '').trim();
 
-		this.updateStatus({ isLoading: false, progress: 100, error: null });
+			this.updateStatus({
+				isLoading: false,
+				isTranscribing: false,
+				progress: 100,
+				error: null,
+				phase: WHISPER_PHASES.READY,
+				statusText: getLoadStatusText({ phase: WHISPER_PHASES.READY })
+			});
 
-		if (!text) {
-			throw new Error('Whisper returned empty text. Try again.');
+			if (!text) {
+				throw new Error('Whisper returned empty text. Try again.');
+			}
+
+			return this.cleanRepetitions(text);
+		} catch (error) {
+			this.updateStatus({
+				isLoading: false,
+				isTranscribing: false,
+				phase: WHISPER_PHASES.READY,
+				statusText: getLoadStatusText({ phase: WHISPER_PHASES.READY })
+			});
+			throw error;
 		}
-
-		return this.cleanRepetitions(text);
 	}
 
 	cleanRepetitions(text) {
@@ -297,7 +491,16 @@ export class WhisperService {
 		this.transcriber = null;
 		this.modelLoadPromise = null;
 		this.hasWarmedUp = false;
-		this.updateStatus({ isLoaded: false, progress: 0 });
+		this.updateStatus({
+			isLoaded: false,
+			isLoading: false,
+			isTranscribing: false,
+			progress: 0,
+			error: null,
+			phase: WHISPER_PHASES.IDLE,
+			statusText: getLoadStatusText({ phase: WHISPER_PHASES.IDLE })
+		});
+		this.refreshCachedModelStatus();
 	}
 
 	// Stubs retained for API compatibility elsewhere in the app
@@ -308,33 +511,117 @@ export class WhisperService {
 
 	async clearModelCache() {
 		await this.unloadModel();
-		if (typeof indexedDB === 'undefined') return;
+		if (typeof caches !== 'undefined') {
+			await Promise.all(
+				WHISPER_CACHE_NAMES.map((cacheName) =>
+					caches.delete(cacheName).catch((error) => {
+						console.warn(`[WhisperService] Failed to delete ${cacheName}:`, error);
+						return false;
+					})
+				)
+			);
+		}
 
-		await new Promise((resolve, reject) => {
-			const request = indexedDB.deleteDatabase('transformers-cache');
-			request.onsuccess = resolve;
-			request.onerror = () => reject(request.error);
-			request.onblocked = () => reject(new Error('Cache clear blocked by another tab'));
+		if (typeof indexedDB !== 'undefined') {
+			await new Promise((resolve) => {
+				const request = indexedDB.deleteDatabase('transformers-cache');
+				request.onsuccess = resolve;
+				request.onerror = resolve;
+				request.onblocked = resolve;
+			});
+		}
+
+		this.updateStatus({
+			isCached: false,
+			cacheChecked: true,
+			phase: WHISPER_PHASES.IDLE,
+			statusText: getLoadStatusText({ phase: WHISPER_PHASES.IDLE })
 		});
 	}
 
-	async #ensurePersistentStorage() {
+	async refreshCachedModelStatus() {
+		if (!browser || typeof caches === 'undefined') {
+			this.updateStatus({ cacheChecked: true });
+			return false;
+		}
+
+		const prefs = get(userPreferences);
+		const modelKey = prefs.whisperModel || DEFAULT_MODEL_KEY;
+		const modelConfig = getModelInfo(modelKey);
+		const modelId = modelConfig?.id;
+
+		if (!modelId) {
+			this.updateStatus({ isCached: false, cacheChecked: true });
+			return false;
+		}
+
+		try {
+			this.updateStatus({
+				selectedModel: modelKey,
+				selectedModelName: modelConfig.name,
+				selectedModelSize: modelConfig.size,
+				phase: get(whisperStatus).isLoading ? get(whisperStatus).phase : WHISPER_PHASES.CHECKING_CACHE,
+				statusText: getLoadStatusText({ phase: WHISPER_PHASES.CHECKING_CACHE })
+			});
+
+			let isCached = false;
+			for (const cacheName of WHISPER_CACHE_NAMES) {
+				const cache = await caches.open(cacheName);
+				const requests = await cache.keys();
+				isCached = requests.some((request) => {
+					const url = request.url || '';
+					return url.includes(modelId) && isLargeModelFile(url);
+				});
+				if (isCached) break;
+			}
+
+			const currentStatus = get(whisperStatus);
+			this.updateStatus({
+				isCached,
+				cacheChecked: true,
+				phase: currentStatus.isLoaded
+					? WHISPER_PHASES.READY
+					: currentStatus.isLoading
+						? currentStatus.phase
+						: WHISPER_PHASES.IDLE,
+				statusText: currentStatus.isLoaded
+					? getLoadStatusText({ phase: WHISPER_PHASES.READY })
+					: currentStatus.isLoading
+						? currentStatus.statusText
+						: isCached
+							? 'Offline model downloaded'
+							: getLoadStatusText({ phase: WHISPER_PHASES.IDLE })
+			});
+
+			return isCached;
+		} catch (error) {
+			console.warn('[WhisperService] Cached model check failed:', error?.message || error);
+			this.updateStatus({ cacheChecked: true });
+			return false;
+		}
+	}
+
+	async #refreshDeviceStorageState() {
 		if (typeof navigator === 'undefined' || !navigator.storage) {
 			return;
 		}
 
 		try {
 			const { storage } = navigator;
+			if (typeof storage.estimate === 'function') {
+				this.updateStatus({ storageEstimate: await storage.estimate() });
+			}
+
 			if (typeof storage.persist !== 'function' || typeof storage.persisted !== 'function') {
 				return;
 			}
 
 			const alreadyPersisted = await storage.persisted();
-			if (!alreadyPersisted) {
-				await storage.persist();
-			}
+			const storagePersisted = alreadyPersisted || (await storage.persist());
+			this.updateStatus({ storagePersisted });
 		} catch (error) {
 			console.warn('[WhisperService] Persistent storage request failed:', error?.message || error);
+			this.updateStatus({ storagePersisted: false });
 		}
 	}
 }

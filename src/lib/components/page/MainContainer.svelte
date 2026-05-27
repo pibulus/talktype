@@ -5,6 +5,7 @@
 	import GhostContainer from './GhostContainer.svelte';
 	import ContentContainer from './ContentContainer.svelte';
 	import FooterComponent from './FooterComponent.svelte';
+	import PwaDeviceSetup from '../pwa/PwaDeviceSetup.svelte';
 	import { geminiService } from '$lib/services/geminiService';
 	import { modalService } from '$lib/services/modals';
 	import { firstVisitService } from '$lib/services/first-visit';
@@ -17,12 +18,15 @@
 	import { fade } from 'svelte/transition';
 	import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
 	import { STORAGE_KEYS } from '$lib/constants';
-	import { transcriptionState, userPreferences } from '$lib/services';
+	import { transcriptionState, uiActions, userPreferences } from '$lib/services';
 
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
 	import { saveTranscript } from '$lib/services/storage/transcriptStorage';
 	import { autoBackupHistoryToVault } from '$lib/services/storage/vaultAutoBackup.js';
 	import { checkPassportNotes } from '$lib/services/storage/passportNotesCheck.js';
+
+	const AUTO_START_PERMISSION_SETTLE_MS = 1500;
+	const AUTO_START_ACTIVATION_KEYS = new Set(['Enter', ' ']);
 
 	let Settings;
 	let TranscriptHistoryModal;
@@ -114,12 +118,6 @@
 		}
 
 		contentContainer.toggleRecording();
-	}
-
-	// Function to trigger ghost click
-	function triggerGhostClick() {
-		// Forward to the toggle recording handler
-		handleToggleRecording();
 	}
 
 	// Modal control functions
@@ -242,6 +240,9 @@
 	let ghostClickRetryTimeout;
 	let autoStartGestureCleanup;
 	let autoStartVisibilityCleanup;
+	let autoStartNeedsGesture = false;
+	let pendingAutoStartSource = null;
+	let autoStartAttemptId = 0;
 
 	function getAutoStartSource() {
 		if (!browser) return null;
@@ -276,6 +277,35 @@
 		}
 	}
 
+	function clearAutoStartGesturePrompt() {
+		autoStartNeedsGesture = false;
+		pendingAutoStartSource = null;
+	}
+
+	function shouldIgnoreAutoStartGesture(event) {
+		if (event?.type === 'keydown' && !AUTO_START_ACTIVATION_KEYS.has(event.key)) {
+			return true;
+		}
+
+		return !!event?.target?.closest?.(
+			'[data-auto-start-prompt], dialog, a, button, input, textarea, select, [role="button"]'
+		);
+	}
+
+	function withAutoStartTimeout(promise) {
+		let timeoutId;
+		const timeoutPromise = new Promise((resolve) => {
+			timeoutId = setTimeout(
+				() => resolve('needs-gesture-timeout'),
+				AUTO_START_PERMISSION_SETTLE_MS
+			);
+		});
+
+		return Promise.race([promise, timeoutPromise]).finally(() => {
+			clearTimeout(timeoutId);
+		});
+	}
+
 	function scheduleAutoStartRetry(source, options, delay) {
 		if (autoRecordTimeout) {
 			clearTimeout(autoRecordTimeout);
@@ -286,11 +316,21 @@
 	}
 
 	function armAutoStartOnGesture(source) {
-		if (!browser || autoStartGestureCleanup) return;
+		if (!browser) return;
 
-		const retry = () => {
+		autoStartNeedsGesture = true;
+		pendingAutoStartSource = source;
+
+		if (autoStartGestureCleanup) return;
+
+		const retry = (event) => {
+			if (shouldIgnoreAutoStartGesture(event)) {
+				return;
+			}
+			const retrySource = pendingAutoStartSource || source;
 			clearAutoStartGestureRetry();
-			scheduleAutoStartRetry(source, { allowGestureRetry: false }, 0);
+			clearAutoStartGesturePrompt();
+			void attemptAutoStart(retrySource, { allowGestureRetry: false });
 		};
 
 		window.addEventListener('pointerup', retry, true);
@@ -299,6 +339,13 @@
 			window.removeEventListener('pointerup', retry, true);
 			window.removeEventListener('keydown', retry, true);
 		};
+	}
+
+	function handleAutoStartTap() {
+		const source = pendingAutoStartSource || getAutoStartSource();
+		clearAutoStartGestureRetry();
+		clearAutoStartGesturePrompt();
+		void attemptAutoStart(source, { allowGestureRetry: false });
 	}
 
 	function armAutoStartOnVisibility(source) {
@@ -327,6 +374,7 @@
 		}
 
 		if ($recordingStore || $transcribingStore) {
+			clearAutoStartGesturePrompt();
 			return false;
 		}
 
@@ -341,7 +389,29 @@
 		}
 
 		try {
-			const started = await contentContainer.startRecording({ source });
+			const attemptId = ++autoStartAttemptId;
+			const startPromise = contentContainer.startRecording({ source });
+			startPromise
+				.then(async (started) => {
+					if (attemptId !== autoStartAttemptId || started !== true) return;
+					await tick();
+					if (get(recordingStore)) {
+						clearAutoStartGestureRetry();
+						clearAutoStartVisibilityRetry();
+						clearAutoStartGesturePrompt();
+					}
+				})
+				.catch(() => {});
+
+			const started = await withAutoStartTimeout(startPromise);
+			if (started === 'needs-gesture-timeout') {
+				if (allowGestureRetry && !get(recordingStore) && !get(transcribingStore)) {
+					uiActions.clearErrorMessage();
+					uiActions.setPermissionError(false);
+					armAutoStartOnGesture(source);
+				}
+				return false;
+			}
 			await tick();
 			if (started !== true || !get(recordingStore)) {
 				scheduleAutoStartRetry(source, { allowGestureRetry }, 100);
@@ -349,9 +419,12 @@
 			}
 			clearAutoStartGestureRetry();
 			clearAutoStartVisibilityRetry();
+			clearAutoStartGesturePrompt();
 			return true;
 		} catch {
 			if (allowGestureRetry) {
+				uiActions.clearErrorMessage();
+				uiActions.setPermissionError(false);
 				armAutoStartOnGesture(source);
 			}
 			return false;
@@ -419,6 +492,7 @@
 			}
 			clearAutoStartGestureRetry();
 			clearAutoStartVisibilityRetry();
+			clearAutoStartGesturePrompt();
 		};
 	});
 </script>
@@ -435,6 +509,18 @@
 		ghostComponent={ghostContainer}
 		on:transcriptionCompleted={handleTranscriptionCompleted}
 	/>
+	{#if autoStartNeedsGesture && !$recordingStore && !$transcribingStore}
+		<button
+			type="button"
+			class="auto-start-prompt mt-1"
+			data-auto-start-prompt
+			on:click|preventDefault|stopPropagation={handleAutoStartTap}
+			aria-label="Tap to start recording"
+		>
+			tap to start
+		</button>
+	{/if}
+	<PwaDeviceSetup disabled={autoStartNeedsGesture || $recordingStore || $transcribingStore} />
 	<svelte:fragment slot="footer-buttons">
 		<FooterComponent
 			on:showAbout={showAboutModal}
@@ -448,11 +534,7 @@
 <!-- Modals -->
 <AboutModal {closeModal} />
 <ExtensionModal {closeModal} />
-<IntroModal
-	{closeModal}
-	markIntroAsSeen={() => firstVisitService.markIntroAsSeen()}
-	{triggerGhostClick}
-/>
+<IntroModal {closeModal} markIntroAsSeen={() => firstVisitService.markIntroAsSeen()} />
 
 <!-- Settings Modal - lazy loaded -->
 {#if Settings}
@@ -479,3 +561,53 @@
 		/>
 	</div>
 {/if}
+
+<style>
+	.auto-start-prompt {
+		display: inline-flex;
+		min-height: 56px;
+		width: min(92vw, 360px);
+		align-items: center;
+		justify-content: center;
+		border-radius: 9999px;
+		border: 1px solid rgba(249, 168, 212, 0.58);
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 237, 248, 0.94));
+		box-shadow:
+			0 16px 34px rgba(249, 168, 212, 0.28),
+			0 0 0 6px rgba(255, 255, 255, 0.74);
+		color: #111827;
+		font-size: 1.15rem;
+		font-weight: 800;
+		letter-spacing: 0;
+		touch-action: manipulation;
+		animation: auto-start-squish 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+	}
+
+	.auto-start-prompt:focus-visible {
+		outline: 3px solid rgba(245, 158, 11, 0.88);
+		outline-offset: 4px;
+	}
+
+	.auto-start-prompt:active {
+		transform: scale(0.98);
+	}
+
+	@keyframes auto-start-squish {
+		0%,
+		100% {
+			transform: scale(1);
+		}
+		42% {
+			transform: scale(1.035);
+		}
+		58% {
+			transform: scale(0.99);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.auto-start-prompt {
+			animation: none;
+		}
+	}
+</style>

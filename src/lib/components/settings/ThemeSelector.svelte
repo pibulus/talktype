@@ -3,6 +3,8 @@
 
 	export let currentTheme;
 	export let onThemeChange;
+	export let isSupporter = false;
+	export let openSupporterModal = () => {};
 
 	const vibeOptions = [
 		{
@@ -23,7 +25,16 @@
 		}
 	];
 
+	function isThemeLocked(vibe) {
+		return vibe.id === 'rainbow' && !isSupporter;
+	}
+
 	function handleThemeClick(vibe) {
+		if (isThemeLocked(vibe)) {
+			openSupporterModal();
+			return;
+		}
+
 		onThemeChange(vibe.id);
 	}
 </script>
@@ -35,11 +46,14 @@
 			class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {currentTheme ===
 			vibe.id
 				? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
-				: ''}"
+				: ''} {isThemeLocked(vibe) ? 'locked-vibe' : ''}"
 			data-vibe-type={vibe.id}
 			on:click={() => handleThemeClick(vibe)}
-			aria-label={`Choose ${vibe.name} vibe`}
-			aria-pressed={currentTheme === vibe.id}
+			aria-label={isThemeLocked(vibe)
+				? `${vibe.name} vibe requires supporter mode`
+				: `Choose ${vibe.name} vibe`}
+			aria-pressed={currentTheme === vibe.id && !isThemeLocked(vibe)}
+			title={isThemeLocked(vibe) ? 'Requires supporter mode' : `Choose ${vibe.name} vibe`}
 		>
 			<div class="preview-container mb-2">
 				<!-- Use the original DisplayGhost component with masking -->
@@ -57,7 +71,15 @@
 
 			<span class="text-xs font-medium text-gray-700">{vibe.name}</span>
 
-			{#if currentTheme === vibe.id}
+			{#if isThemeLocked(vibe)}
+				<div
+					class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-xs text-white shadow-sm"
+					title="Requires supporter mode"
+					aria-hidden="true"
+				>
+					★
+				</div>
+			{:else if currentTheme === vibe.id}
 				<div
 					class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-400 text-xs text-white shadow-sm"
 					aria-hidden="true"
@@ -129,5 +151,9 @@
 
 	.vibe-option {
 		transition: all 0.2s ease-in-out;
+	}
+
+	.locked-vibe {
+		opacity: 0.82;
 	}
 </style>

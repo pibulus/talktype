@@ -83,7 +83,7 @@
 				'Tap the Share button in Safari, then choose Add to Home Screen.';
 		} else if (isIOS) {
 			platformSpecificInstructions =
-				'Use the Share menu and choose Add to Home Screen. If that option is missing, open TalkType in Safari first.';
+				'Safari gives the cleanest iPhone install. Open TalkType in Safari, tap Share, then choose Add to Home Screen.';
 		} else if (isAndroid && isChrome) {
 			platformSpecificInstructions =
 				'Tap Install when prompted, or use Chrome menu > Add to Home screen.';

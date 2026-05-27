@@ -1,4 +1,6 @@
 <script>
+	import { customPrompt } from '$lib';
+	import { geminiService } from '$lib/services/geminiService';
 	import { PROMPT_STYLES } from '$lib/constants';
 
 	export let selectedPromptStyle = 'standard';
@@ -8,131 +10,159 @@
 	export let isSupporter = false;
 	export let openSupporterModal = () => {};
 
-	$: stylesDisabled = liveModeValue || privacyModeValue;
+	let customPromptText = '';
+	let showCustomInput = false;
+	const MAX_CUSTOM_PROMPT_LENGTH = 1200;
 
-	const availableStyles = [
-		PROMPT_STYLES.QUILL_AND_INK,
-		PROMPT_STYLES.SPARKLE_POP,
-		PROMPT_STYLES.LEET_SPEAK
+	const FREE_STYLE_IDS = new Set([PROMPT_STYLES.STANDARD, PROMPT_STYLES.SURLY_PIRATE]);
+
+	const styleOptions = [
+		{
+			id: PROMPT_STYLES.STANDARD,
+			label: 'Plain',
+			requiresSupporter: false
+		},
+		{
+			id: PROMPT_STYLES.SURLY_PIRATE,
+			label: 'Pirate',
+			requiresSupporter: false
+		},
+		{
+			id: PROMPT_STYLES.CUSTOM,
+			label: 'Edit Your Own',
+			requiresSupporter: true
+		},
+		{
+			id: PROMPT_STYLES.SPARKLE_POP,
+			label: 'Sparkle',
+			requiresSupporter: true
+		}
 	];
 
 	const styleIcons = {
-		quillAndInk: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-purple-400">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+		[PROMPT_STYLES.STANDARD]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-500">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
 		</svg>`,
-		sparklePop: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-400">
+		[PROMPT_STYLES.SURLY_PIRATE]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-amber-500">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+		</svg>`,
+		[PROMPT_STYLES.CUSTOM]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-emerald-500">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+		</svg>`,
+		[PROMPT_STYLES.SPARKLE_POP]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-400">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4M4 19h4m12-12v4m-2-2h4m-5 12v4m-2-2h4" />
-		</svg>`,
-		leetSpeak: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-blue-500">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
 		</svg>`
 	};
 
-	const styleNames = {
-		quillAndInk: 'Victorian',
-		sparklePop: 'Sparkle',
-		leetSpeak: 'L33t'
-	};
+	$: stylesBlockedByMode = liveModeValue || privacyModeValue;
+	$: availableStyleIds = styleOptions.map((style) => style.id);
+	$: if ($customPrompt && customPromptText !== $customPrompt) customPromptText = $customPrompt;
 
-	$: styleTooltips = {
-		quillAndInk: disabledTooltip('Victorian polish'),
-		sparklePop: disabledTooltip('Extra sparkle'),
-		leetSpeak: disabledTooltip('H4ck3r style')
-	};
-	$: styleNotice = !isSupporter
-		? stylesDisabled
-			? 'Supporter mode includes these presets. Choose After Stop to use them.'
-			: 'Supporter mode includes these style presets.'
-		: stylesDisabled
-			? 'Style presets are available in After Stop mode.'
-			: '';
-
-	$: if (!availableStyles.includes(selectedPromptStyle) && selectedPromptStyle !== 'standard') {
-		changePromptStyle('standard');
+	$: if (!availableStyleIds.includes(selectedPromptStyle)) {
+		changePromptStyle(PROMPT_STYLES.STANDARD);
 	}
 
-	$: if (stylesDisabled && selectedPromptStyle !== 'standard') {
-		changePromptStyle('standard');
+	$: if (!isSupporter && !FREE_STYLE_IDS.has(selectedPromptStyle)) {
+		changePromptStyle(PROMPT_STYLES.STANDARD);
 	}
 
-	$: if (!isSupporter && selectedPromptStyle !== 'standard') {
-		changePromptStyle('standard');
+	$: if (stylesBlockedByMode && selectedPromptStyle !== PROMPT_STYLES.STANDARD) {
+		changePromptStyle(PROMPT_STYLES.STANDARD);
 	}
 
-	function disabledTooltip(fallback) {
-		if (liveModeValue) return 'Use After Stop mode for style presets';
-		if (privacyModeValue) return 'Use After Stop mode for style presets';
-		if (!isSupporter) return 'Supporter mode includes style presets';
-		return fallback;
+	$: showCustomInput =
+		selectedPromptStyle === PROMPT_STYLES.CUSTOM && isSupporter && !stylesBlockedByMode;
+
+	function isStyleLocked(style) {
+		return style.requiresSupporter && !isSupporter;
+	}
+
+	function isStyleBlockedByMode(style) {
+		return stylesBlockedByMode && style.id !== PROMPT_STYLES.STANDARD;
+	}
+
+	function showToast(message) {
+		if (typeof window === 'undefined') return;
+
+		window.dispatchEvent(
+			new CustomEvent('talktype:toast', {
+				detail: { message, type: 'info' }
+			})
+		);
 	}
 
 	function handleStyleClick(style) {
-		if (!isSupporter) {
-			window.dispatchEvent(
-				new CustomEvent('talktype:toast', {
-					detail: {
-						message: 'Supporter mode includes style presets.',
-						type: 'info'
-					}
-				})
-			);
+		if (isStyleLocked(style)) {
+			showToast('Supporter mode unlocks custom transcription and extra styles.');
 			openSupporterModal();
 			return;
 		}
 
-		if (stylesDisabled) {
-			window.dispatchEvent(
-				new CustomEvent('talktype:toast', {
-					detail: {
-						message: 'Style presets work in After Stop mode.',
-						type: 'info'
-					}
-				})
-			);
+		if (isStyleBlockedByMode(style)) {
+			showToast('Choose After Stop to use transcription styles.');
 			return;
 		}
 
-		changePromptStyle(selectedPromptStyle === style ? 'standard' : style);
+		const nextStyle =
+			selectedPromptStyle === style.id && style.id !== PROMPT_STYLES.STANDARD
+				? PROMPT_STYLES.STANDARD
+				: style.id;
+
+		changePromptStyle(nextStyle);
+	}
+
+	function saveCustomPrompt() {
+		const prompt = customPromptText.trim().slice(0, MAX_CUSTOM_PROMPT_LENGTH);
+
+		customPrompt.set(prompt);
+		geminiService.setCustomPrompt(prompt);
+	}
+
+	function handleKeydown(event) {
+		if (event.key === 'Enter' && !event.shiftKey) {
+			event.preventDefault();
+			saveCustomPrompt();
+		}
 	}
 </script>
 
 <div>
-	{#if styleNotice}
-		<div class="mb-2 rounded-lg border border-pink-200 bg-pink-50/80 p-2">
-			<p class="text-xs font-medium text-pink-700">{styleNotice}</p>
-		</div>
-	{/if}
-
-	<div class="grid grid-cols-3 gap-2">
-		{#each availableStyles as style}
+	<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+		{#each styleOptions as style}
 			<button
 				type="button"
-				class={`relative flex min-h-[92px] flex-col items-center justify-center rounded-xl border bg-[#fffdf5] p-2 text-center shadow-sm transition-all duration-200 hover:border-pink-200 hover:shadow-md ${
-					selectedPromptStyle === style
-						? 'border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
+				class={`style-option relative flex min-h-[92px] flex-col items-center justify-center rounded-xl border bg-[#fffdf5] p-2 text-center shadow-sm transition-all duration-200 hover:border-pink-200 hover:shadow-md ${
+					selectedPromptStyle === style.id
+						? 'selected-style border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
 						: 'border-pink-100'
-				} ${stylesDisabled ? 'opacity-60' : ''}`}
+				} ${isStyleLocked(style) ? 'locked-style' : ''} ${isStyleBlockedByMode(style) ? 'mode-blocked-style' : ''}`}
 				on:click={() => handleStyleClick(style)}
-				aria-label={styleNames[style]}
-				aria-pressed={selectedPromptStyle === style}
-				title={styleTooltips[style]}
-				disabled={stylesDisabled}
+				aria-label={isStyleLocked(style)
+					? `${style.label} requires supporter mode`
+					: `Choose ${style.label} style`}
+				aria-pressed={selectedPromptStyle === style.id}
+				aria-disabled={isStyleBlockedByMode(style)}
+				title={isStyleLocked(style)
+					? 'Requires supporter mode'
+					: isStyleBlockedByMode(style)
+						? 'Choose After Stop for styles'
+						: `Choose ${style.label} style`}
 			>
 				<div class="mb-2 flex h-10 w-10 items-center justify-center">
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-					{@html styleIcons[style]}
+					{@html styleIcons[style.id]}
 				</div>
 
-				<span class="text-xs font-semibold text-gray-700">{styleNames[style]}</span>
+				<span class="text-xs font-semibold leading-tight text-gray-700">{style.label}</span>
 
-				{#if selectedPromptStyle === style}
+				{#if selectedPromptStyle === style.id}
 					<div
 						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-400 text-xs text-white shadow-sm"
 						aria-hidden="true"
 					>
 						✓
 					</div>
-				{:else if !isSupporter}
+				{:else if isStyleLocked(style)}
 					<div
 						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-xs text-white shadow-sm"
 						title="Requires supporter mode"
@@ -144,4 +174,55 @@
 			</button>
 		{/each}
 	</div>
+
+	{#if showCustomInput}
+		<div class="animate-in slide-in-from-top-2 mt-3 space-y-2 duration-200">
+			<textarea
+				bind:value={customPromptText}
+				on:keydown={handleKeydown}
+				on:blur={saveCustomPrompt}
+				placeholder="Write your custom transcription instructions..."
+				maxlength={MAX_CUSTOM_PROMPT_LENGTH}
+				class="w-full rounded-lg border border-pink-200 bg-white p-3 text-sm focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
+				rows="3"
+			></textarea>
+			<p class="text-xs text-gray-500">Press Enter to save your custom prompt.</p>
+		</div>
+	{/if}
 </div>
+
+<style>
+	.selected-style {
+		box-shadow:
+			0 0 0 2px rgba(249, 168, 212, 0.4),
+			0 4px 8px rgba(249, 168, 212, 0.2);
+	}
+
+	.locked-style {
+		opacity: 0.86;
+	}
+
+	.mode-blocked-style {
+		opacity: 0.62;
+	}
+
+	textarea {
+		min-height: 80px;
+		resize: vertical;
+	}
+
+	@keyframes slide-in-from-top-2 {
+		from {
+			transform: translateY(-8px);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+
+	.animate-in {
+		animation: slide-in-from-top-2 0.2s ease-out;
+	}
+</style>

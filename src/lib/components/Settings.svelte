@@ -4,11 +4,14 @@
 	import { theme, autoRecord, applyTheme, promptStyle, liveMode, privacyMode } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
+	import { offlineModelController } from '$lib/services/transcription/offlineModelController.js';
+	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
+	import { formatStorageBytes } from '$lib/services/transcription/whisper/statusUtils.js';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
-	import { SERVICE_EVENTS } from '$lib/constants';
+	import { DEFAULT_THEME, SERVICE_EVENTS } from '$lib/constants';
 
 	export let closeModal = () => {};
 
@@ -19,6 +22,7 @@
 	let privacyModeValue = false;
 	let liveModeValue = false;
 	let isSupporterValue = false;
+	let userPreferencesLoaded = false;
 
 	// Store unsubscribe functions
 	let unsubscribeTheme;
@@ -32,21 +36,61 @@
 		{
 			id: 'live',
 			label: 'Live',
-			description: 'Text appears as you talk'
+			type: 'mode'
 		},
 		{
 			id: 'standard',
 			label: 'After Stop',
-			description: 'Clean final transcript'
+			type: 'mode'
 		},
 		{
 			id: 'offline',
 			label: 'Offline',
-			description: 'Private on this device'
+			type: 'mode'
+		},
+		{
+			id: 'autoRecord',
+			label: 'On Open',
+			type: 'toggle'
 		}
 	];
 
+	function isEnabled(value) {
+		return value === true || value === 'true';
+	}
+
 	$: transcriptionMode = privacyModeValue ? 'offline' : liveModeValue ? 'live' : 'standard';
+	$: offlineModelProgress = Math.max(
+		0,
+		Math.min(100, Math.round(Number($whisperStatus.progress) || 0))
+	);
+	$: showOfflineStatus =
+		privacyModeValue ||
+		$whisperStatus.isLoaded ||
+		$whisperStatus.isLoading ||
+		$whisperStatus.isCached ||
+		$whisperStatus.error;
+	$: offlineStatusTone = $whisperStatus.error
+		? 'error'
+		: $whisperStatus.isLoaded
+			? 'ready'
+			: $whisperStatus.isLoading
+				? 'loading'
+				: $whisperStatus.isCached
+					? 'cached'
+					: 'idle';
+	$: offlineStatusLabel = getOfflineStatusLabel();
+	$: offlineStatusDetail = getOfflineStatusDetail();
+	$: offlineActionLabel = $whisperStatus.error
+		? 'Retry'
+		: $whisperStatus.isCached
+			? 'Load now'
+			: 'Download now';
+	$: storageUsageLabel = formatStorageBytes($whisperStatus.storageEstimate?.usage);
+
+	$: if (userPreferencesLoaded && !isSupporterValue && selectedVibe === 'rainbow') {
+		changeVibe(DEFAULT_THEME);
+	}
 
 	onMount(() => {
 		// Subscribe to stores only in browser
@@ -55,7 +99,7 @@
 		});
 
 		unsubscribeAutoRecord = autoRecord.subscribe((value) => {
-			autoRecordValue = value === 'true';
+			autoRecordValue = isEnabled(value);
 		});
 
 		unsubscribePromptStyle = promptStyle.subscribe((value) => {
@@ -63,15 +107,16 @@
 		});
 
 		unsubscribeLiveMode = liveMode.subscribe((value) => {
-			liveModeValue = value === 'true';
+			liveModeValue = isEnabled(value);
 		});
 
 		unsubscribePrivacyMode = privacyMode.subscribe((value) => {
-			privacyModeValue = value === 'true';
+			privacyModeValue = isEnabled(value);
 		});
 
 		unsubscribeUserPreferences = userPreferences.subscribe((value) => {
 			isSupporterValue = value.isSupporter;
+			userPreferencesLoaded = true;
 		});
 	});
 
@@ -152,6 +197,55 @@
 		dispatchSettingChanged('privacyMode', privacyModeValue);
 	}
 
+	function getOfflineStatusLabel() {
+		if ($whisperStatus.error) return 'Needs retry';
+		if ($whisperStatus.isLoaded) return 'Ready';
+		if ($whisperStatus.isLoading) return `${offlineModelProgress}%`;
+		if ($whisperStatus.isCached) return 'Downloaded';
+		if (!$whisperStatus.cacheChecked) return 'Checking';
+		return 'Not downloaded';
+	}
+
+	function getOfflineStatusDetail() {
+		if ($whisperStatus.error) return $whisperStatus.error;
+		if ($whisperStatus.isLoaded) return 'Enabled on this device.';
+		if ($whisperStatus.isLoading) return $whisperStatus.statusText || 'Downloading offline model';
+		if ($whisperStatus.isCached) return 'Saved here, ready to load when Offline is on.';
+		if (privacyModeValue) return 'Will download once, then stay here while browser storage keeps it.';
+		return 'Download once for local transcription.';
+	}
+
+	function getStorageLabel() {
+		if ($whisperStatus.storagePersisted === true) return 'Storage saved';
+		if ($whisperStatus.storagePersisted === false) return 'Best effort';
+		return 'Storage checking';
+	}
+
+	function prepareOfflineModel() {
+		if (!privacyModeValue) {
+			setTranscriptionMode('offline');
+		}
+		offlineModelController.startModelLoading();
+	}
+
+	function isTranscriptionOptionActive(option) {
+		if (option.type === 'toggle') return autoRecordValue;
+
+		return transcriptionMode === option.id;
+	}
+
+	function handleTranscriptionOption(option) {
+		if (option.type === 'toggle') {
+			toggleAutoRecord();
+			return;
+		}
+
+		setTranscriptionMode(option.id);
+		if (option.id === 'offline') {
+			offlineModelController.startModelLoading();
+		}
+	}
+
 	function handleModalClose() {
 		closeModal();
 	}
@@ -205,7 +299,12 @@
 			<!-- Vibe Selector Section -->
 			<div class="space-y-2">
 				<h4 class="text-sm font-bold text-gray-700">Vibe</h4>
-				<ThemeSelector currentTheme={selectedVibe} onThemeChange={changeVibe} />
+				<ThemeSelector
+					currentTheme={selectedVibe}
+					onThemeChange={changeVibe}
+					isSupporter={isSupporterValue}
+					{openSupporterModal}
+				/>
 			</div>
 
 			<!-- Transcription Mode Picker -->
@@ -213,33 +312,102 @@
 				class="rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm transition-all duration-200"
 			>
 				<h4 class="mb-2 text-sm font-bold text-gray-700">When Text Appears</h4>
-				<div class="grid grid-cols-3 gap-2" role="group" aria-label="Transcription mode">
+				<div
+					class="grid grid-cols-2 gap-2 sm:grid-cols-4"
+					role="group"
+					aria-label="Transcription mode"
+				>
 					{#each transcriptionModes as mode}
 						<button
 							type="button"
-							class={`flex min-h-[76px] flex-col items-center justify-center rounded-xl border px-2 py-2 text-center transition-all duration-200 ${
-								transcriptionMode === mode.id
+							class={`flex min-h-[56px] items-center justify-center rounded-xl border px-2 py-2 text-center transition-all duration-200 ${
+								isTranscriptionOptionActive(mode)
 									? 'border-pink-300 bg-pink-50 text-gray-900 shadow-sm ring-2 ring-pink-100'
 									: 'border-pink-100 bg-white/70 text-gray-600 hover:border-pink-200'
 							}`}
-							aria-pressed={transcriptionMode === mode.id}
-							on:click={() => setTranscriptionMode(mode.id)}
+							aria-pressed={isTranscriptionOptionActive(mode)}
+							aria-label={mode.id === 'autoRecord'
+								? `${autoRecordValue ? 'Disable' : 'Enable'} start listening on open`
+								: `Set transcription mode to ${mode.label}`}
+							on:click={() => handleTranscriptionOption(mode)}
 						>
 							<span class="text-sm font-bold leading-tight">{mode.label}</span>
-							<span class="mt-1 text-[11px] font-medium leading-tight text-gray-500">
-								{mode.description}
-							</span>
 						</button>
 					{/each}
 				</div>
+
+				{#if showOfflineStatus}
+					<div class="mt-3 border-t border-pink-100 pt-3" aria-live="polite">
+						<div class="flex items-center justify-between gap-3">
+							<div class="min-w-0">
+								<div class="text-xs font-black uppercase text-gray-500">Offline Model</div>
+								<div class="mt-0.5 text-sm font-bold leading-snug text-gray-800">
+									{offlineStatusDetail}
+								</div>
+							</div>
+							<span
+								class={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-black ${
+									offlineStatusTone === 'ready'
+										? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+										: offlineStatusTone === 'loading'
+											? 'border-sky-200 bg-sky-50 text-sky-800'
+											: offlineStatusTone === 'cached'
+												? 'border-violet-200 bg-violet-50 text-violet-800'
+												: offlineStatusTone === 'error'
+													? 'border-red-200 bg-red-50 text-red-800'
+													: 'border-gray-200 bg-white text-gray-600'
+								}`}
+							>
+								{offlineStatusLabel}
+							</span>
+						</div>
+
+						{#if $whisperStatus.isLoading}
+							<div
+								class="mt-3 h-2 overflow-hidden rounded-full bg-white shadow-inner"
+								role="progressbar"
+								aria-label={$whisperStatus.statusText || 'Downloading offline model'}
+								aria-valuemin="0"
+								aria-valuemax="100"
+								aria-valuenow={offlineModelProgress}
+							>
+								<div
+									class="h-full rounded-full bg-gradient-to-r from-sky-300 via-teal-300 to-violet-300 transition-all duration-300"
+									style={`width: ${offlineModelProgress}%;`}
+								></div>
+							</div>
+						{/if}
+
+						<div class="mt-3 flex flex-wrap items-center gap-2">
+							<span
+								class="rounded-full border border-pink-100 bg-white/80 px-2.5 py-1 text-xs font-bold text-gray-600"
+							>
+								{getStorageLabel()}
+							</span>
+							{#if storageUsageLabel}
+								<span
+									class="rounded-full border border-pink-100 bg-white/80 px-2.5 py-1 text-xs font-bold text-gray-600"
+								>
+									{storageUsageLabel} used
+								</span>
+							{/if}
+							{#if !$whisperStatus.isLoaded && !$whisperStatus.isLoading}
+								<button
+									type="button"
+									class="ml-auto min-h-10 rounded-full border border-pink-200 bg-white px-4 py-2 text-xs font-black text-gray-800 shadow-sm transition-colors hover:border-pink-300 hover:bg-pink-50"
+									on:click={prepareOfflineModel}
+								>
+									{offlineActionLabel}
+								</button>
+							{/if}
+						</div>
+					</div>
+				{/if}
 			</div>
 
 			<!-- Prompt Style Selection Section -->
 			<div class="space-y-2">
-				<div>
-					<h4 class="text-sm font-bold text-gray-700">Style</h4>
-					<p class="text-xs text-gray-500">Plain is best for everyday notes.</p>
-				</div>
+				<h4 class="text-sm font-bold text-gray-700">Style</h4>
 				<TranscriptionStyleSelector
 					{selectedPromptStyle}
 					{changePromptStyle}
@@ -250,47 +418,25 @@
 				/>
 			</div>
 
-			<details
-				class="rounded-xl border border-pink-100 bg-white/65 p-3 shadow-sm transition-all duration-200"
+			<button
+				type="button"
+				class="group flex w-full items-center justify-between gap-4 rounded-xl border border-amber-200 bg-white/75 px-4 py-3 text-left shadow-sm transition-all duration-200 hover:border-amber-300 hover:bg-amber-50/80"
+				on:click={openSupporterModal}
 			>
-				<summary
-					class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold text-gray-700"
+				<span>
+					<span class="block text-sm font-bold text-gray-800">
+						{isSupporterValue ? 'Supporter Mode' : 'Unlock Supporter Mode'}
+					</span>
+					<span class="mt-1 block text-xs leading-5 text-gray-600">
+						History, longer recordings, custom transcription, sync across devices.
+					</span>
+				</span>
+				<span
+					class="shrink-0 rounded-full border border-amber-200 bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900 transition-colors group-hover:bg-amber-200"
 				>
-					<span>More Options</span>
-					<span class="text-pink-500" aria-hidden="true">v</span>
-				</summary>
-
-				<div class="mt-3 space-y-3">
-					<!-- Auto-Record Toggle -->
-					<div
-						class="flex items-center justify-between gap-4 rounded-xl border border-pink-100 bg-[#fffdf5] p-3 shadow-sm"
-					>
-						<div>
-							<span class="text-base font-medium text-gray-700">Start Listening on Open</span>
-							<p class="mt-0.5 text-sm text-gray-500">Useful for one-tap capture.</p>
-						</div>
-						<label class="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
-							<span class="sr-only"
-								>Auto-Record Toggle {autoRecordValue ? 'Enabled' : 'Disabled'}</span
-							>
-							<div class="relative">
-								<input
-									type="checkbox"
-									class="peer sr-only"
-									checked={autoRecordValue}
-									on:change={toggleAutoRecord}
-								/>
-								<div
-									class={`h-6 w-11 rounded-full ${autoRecordValue ? 'bg-pink-400' : 'bg-gray-200'} transition-all duration-200`}
-								></div>
-								<div
-									class={`absolute left-0.5 top-0.5 h-5 w-5 transform rounded-full bg-white transition-all duration-200 ${autoRecordValue ? 'translate-x-5' : ''}`}
-								></div>
-							</div>
-						</label>
-					</div>
-				</div>
-			</details>
+					{isSupporterValue ? 'Open' : 'Unlock'}
+				</span>
+			</button>
 		</div>
 	</div>
 

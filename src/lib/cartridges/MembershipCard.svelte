@@ -12,10 +12,20 @@
 
 	let storedPassportCode = '';
 	let storedVaultUrl = '';
+	let cardEl;
+	let mouseX = 50;
+	let mouseY = 50;
+	let isHovered = false;
 
 	$: identity = generateMemberIdentity(vaultHash);
 	$: hasVaultHash = !identity.isFallback;
-	$: cardStyle = `--passport-bg: #${identity.bg}; --passport-shape: #${identity.shape};`;
+	$: cardStyle = [
+		`--passport-bg: #${identity.bg}`,
+		`--passport-shape: #${identity.shape}`,
+		`--mx: ${mouseX}%`,
+		`--my: ${mouseY}%`,
+		`--hovered: ${isHovered ? 1 : 0}`
+	].join('; ');
 	$: effectivePassportCode = passportCode || storedPassportCode;
 	$: passportSyncUrl =
 		hasVaultHash && effectivePassportCode
@@ -28,6 +38,12 @@
 		? getVaultHandshakeQR({ data: passportSyncUrl, style: 'sunset', size: 256 })
 		: '';
 
+	function handleMouseMove(e) {
+		const rect = cardEl.getBoundingClientRect();
+		mouseX = ((e.clientX - rect.left) / rect.width) * 100;
+		mouseY = ((e.clientY - rect.top) / rect.height) * 100;
+	}
+
 	onMount(() => {
 		storedPassportCode = readStoredSupporterCode();
 		storedVaultUrl = readStoredVaultServerUrl();
@@ -35,6 +51,7 @@
 </script>
 
 <div
+	bind:this={cardEl}
 	class="passport-card relative flex aspect-[1.586/1] w-full max-w-[320px] flex-col justify-between overflow-hidden rounded-2xl border border-[#fffdf0]/80 p-5 text-gray-900"
 	class:is-placeholder={!hasVaultHash}
 	style={cardStyle}
@@ -42,8 +59,12 @@
 	aria-label={hasVaultHash
 		? `TalkType supporter passport for ${identity.name}`
 		: 'TalkType supporter passport placeholder'}
+	on:mousemove={handleMouseMove}
+	on:mouseenter={() => (isHovered = true)}
+	on:mouseleave={() => (isHovered = false)}
 >
 	<div class="passport-glow pointer-events-none absolute inset-0"></div>
+	<div class="holofoil pointer-events-none absolute inset-0"></div>
 	<div class="passport-pattern pointer-events-none absolute right-0 top-0 h-full w-24"></div>
 
 	<div class="relative z-10 flex items-start justify-between gap-3">
@@ -68,6 +89,9 @@
 		<div class="min-w-0">
 			<p class="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-600">Supporter ID</p>
 			<p class="mt-1 font-mono text-sm font-black tracking-normal">{identity.memberId}</p>
+			{#if hasVaultHash && identity.phrase}
+				<p class="passport-phrase mt-1 italic">{identity.phrase}</p>
+			{/if}
 		</div>
 
 		{#if passportQrImageUrl}
@@ -127,6 +151,37 @@
 		);
 		mix-blend-mode: overlay;
 		opacity: 0.34;
+	}
+
+	.holofoil {
+		background:
+			radial-gradient(
+				ellipse at var(--mx) var(--my),
+				hsla(calc(var(--mx) * 3.6), 80%, 70%, 0.28) 0%,
+				hsla(calc(var(--mx) * 3.6 + 60), 70%, 65%, 0.18) 30%,
+				hsla(calc(var(--mx) * 3.6 + 120), 75%, 68%, 0.12) 60%,
+				transparent 80%
+			),
+			linear-gradient(
+				calc(var(--mx) * 1.8deg),
+				hsla(320, 70%, 75%, 0.08) 0%,
+				hsla(200, 80%, 70%, 0.06) 50%,
+				hsla(45, 85%, 72%, 0.08) 100%
+			);
+		mix-blend-mode: screen;
+		opacity: var(--hovered);
+		transition: opacity 300ms ease;
+		border-radius: inherit;
+	}
+
+	.passport-phrase {
+		font-size: 0.62rem;
+		line-height: 1.3;
+		color: rgba(55, 65, 81, 0.55);
+		max-width: 160px;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
 	}
 
 	.passport-pattern {
@@ -241,6 +296,14 @@
 		.passport-card {
 			animation: passportReveal 420ms cubic-bezier(0.2, 0.9, 0.2, 1.12) both;
 		}
+	}
+
+	.passport-card:not(.is-placeholder) {
+		transition: transform 120ms ease, box-shadow 120ms ease;
+		transform:
+			perspective(600px)
+			rotateX(calc((var(--my) - 50) * -0.06deg))
+			rotateY(calc((var(--mx) - 50) * 0.06deg));
 	}
 
 	@keyframes passportReveal {

@@ -101,9 +101,11 @@
 
 	function formatPromptStyle(style) {
 		const labels = {
+			custom: 'Custom',
 			leetSpeak: 'L33t',
 			quillAndInk: 'Victorian',
-			sparklePop: 'Sparkle'
+			sparklePop: 'Sparkle',
+			surlyPirate: 'Pirate'
 		};
 
 		return labels[style] || style;

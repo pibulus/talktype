@@ -9,6 +9,15 @@ import {
 const MODEL_ID = GEMINI_MODELS.transcription;
 const GENERATION_CONFIG = GEMINI_GENERATION_CONFIG.transcription;
 
+export function resolveGeminiTranscriptionPrompt(promptStyle, customPromptText = '') {
+	if (promptStyle !== 'custom') {
+		return getTranscriptionPrompt(promptStyle);
+	}
+
+	const customPrompt = customPromptText.trim();
+	return customPrompt || getTranscriptionPrompt('standard');
+}
+
 export async function transcribeAudio(file, promptStyle, customPromptText = '') {
 	const apiKey = getGeminiApiKey();
 	if (!apiKey) {
@@ -20,13 +29,7 @@ export async function transcribeAudio(file, promptStyle, customPromptText = '') 
 	const mimeType = file.type || 'audio/webm';
 	const displayName = file.name || `recording-${Date.now()}`;
 
-	// Determine the prompt to use
-	let prompt = '';
-	if (promptStyle === 'custom' && customPromptText) {
-		prompt = customPromptText;
-	} else {
-		prompt = getTranscriptionPrompt(promptStyle);
-	}
+	const prompt = resolveGeminiTranscriptionPrompt(promptStyle, customPromptText);
 
 	let uploadedFileName = null;
 
