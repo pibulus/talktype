@@ -14,9 +14,9 @@ This is the current local transcription path. The broader flow is documented in 
 - Implementation: `src/lib/services/transcription/whisper/whisperService.js`.
 - Library: `@xenova/transformers` (`^2.17.2` in `package.json`).
 - Current default model: `tiny`, resolving to `Xenova/whisper-tiny.en`.
-- Runtime backend: WASM only.
+- Runtime backend: WASM only, single-threaded, with the ONNX Runtime WASM binary self-hosted through Vite instead of the transformers.js CDN default.
 - Browser caching: transformers.js browser Cache API storage is enabled. The service worker no longer writes a second copy of new Hugging Face model files; it only serves legacy `whisper-models-v1` hits so transformers.js can migrate them into `transformers-cache`.
-- WebGPU is explicitly disabled in current code.
+- The current execution provider is WASM; WebGPU is not requested for Offline Mode.
 - Persistent storage is requested with `navigator.storage.persist()` when available.
 - A short silent warm-up inference runs after model load.
 

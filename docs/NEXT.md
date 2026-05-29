@@ -4,14 +4,15 @@
 
 - Current release target: `0.9.0`.
 - `main` is the active release branch.
-- Live Mode is the default transcription setting.
+- After Stop is the default transcription setting.
 - Offline Mode is explicit and overrides Live Mode.
 - Supporter mode has Square hosted checkout, signed supporter tokens, manually issued code fallback, and Passport-backed notes handoff.
 
 ## Recent Stabilization
 
 - Dependency/security cleanup committed.
-- Deepgram live streaming repaired and made the default path.
+- Deepgram live streaming repaired and kept available as the Live path.
+- Settings now presents Vibe, Transcription Style, then When Text Appears, with After Stop first.
 - Offline and live transcription modes separated.
 - Recording/offline cleanup hardened.
 - `RecordButtonWithTimer` state extracted and tested.
@@ -30,7 +31,7 @@
 - Offline Mode avoids cloud transcription when enabled.
 - Offline Mode now exposes downloaded, loading percentage, ready, storage persistence, and retry state in Settings and on the main recording button.
 - Recording uses the start-time mode through stop/transcription, so mid-recording setting changes cannot leak an Offline recording to cloud. If Whisper is still loading after Offline Mode is switched off, the local load is kept only long enough to finish that start-time Offline recording.
-- Installed iOS PWA now has a one-tap device setup pass for mic permission, persistent storage, and offline model cache priming.
+- Installed iOS PWA microphone permission stays on the primary Start Recording flow; Offline Mode handles storage/model prep when enabled.
 - Active recording requests Screen Wake Lock when the browser supports it.
 - Deepgram live stop waits for the finalize acknowledgement before trusting live text over batch fallback.
 - Free recordings now have layered spend controls: a 5 minute UI cap, server-side duration metadata check, smaller free upload cap, and dedicated `/api/transcribe` plus `/api/deepgram/token` rate buckets.

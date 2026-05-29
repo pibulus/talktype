@@ -19,19 +19,18 @@
 	// Get size classes based on the size prop
 	const sizeClass = sizeClasses[size] || sizeClasses.md;
 
-	// Handle click with both dialog closing and function call
+	// Let the shared modal service own animated closes when available.
 	function handleClick() {
+		if (typeof closeModal === 'function') {
+			closeModal();
+			return;
+		}
+
 		if (modalId) {
-			// Close the dialog by ID first
 			const modal = document.getElementById(modalId);
 			if (modal && typeof modal.close === 'function') {
 				modal.close();
 			}
-		}
-
-		// Then call the provided closeModal function
-		if (typeof closeModal === 'function') {
-			closeModal();
 		}
 	}
 </script>

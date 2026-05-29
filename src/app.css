@@ -9,7 +9,7 @@
    =================================================================== */
 :root {
 	/* Colors */
-	--color-modal-backdrop: rgba(0, 0, 0, 0.4);
+	--color-modal-backdrop: rgba(43, 38, 32, 0.46);
 	--color-pink-100: rgba(252, 231, 243, 0.7);
 	--color-pink-200: rgba(249, 168, 212, 0.5);
 
@@ -87,7 +87,7 @@ body {
 	overflow: hidden;
 }
 
-/* Support for dialog element - removed position fixed to prevent layout shift */
+/* Support for native dialog modals */
 body:has(dialog[open]) {
 	overflow: hidden;
 }
@@ -99,23 +99,86 @@ body:has(dialog[open]) {
 	position: fixed;
 	inset: 0;
 	z-index: 9999;
+	margin: 0;
+	width: 100vw;
+	max-width: none;
+	height: 100dvh;
+	max-height: none;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	align-items: center;
+	justify-items: center;
+	overscroll-behavior: contain;
+}
+
+dialog.modal[open],
+dialog.modal.modal-open {
+	display: grid;
+	grid-template-areas: 'modal';
+	place-items: center;
+	padding: clamp(0.75rem, 2.5vw, 1.5rem);
 }
 
 /* Modal backdrop */
 dialog.modal::backdrop {
+	background: transparent;
+}
+
+.modal > .modal-backdrop {
+	grid-area: modal;
+	position: fixed;
+	inset: 0;
+	align-self: stretch;
+	justify-self: stretch;
+	z-index: 0;
+	border: 0;
+	cursor: pointer;
 	background-color: var(--color-modal-backdrop);
+	-webkit-backdrop-filter: blur(2px);
+	backdrop-filter: blur(2px);
+	animation: tt-modal-backdrop-in 180ms ease-out both;
 }
 
 /* Modal box styling */
 .modal-box {
+	grid-area: modal;
+	z-index: 1;
 	max-height: var(--modal-max-height);
 	overflow-y: auto;
-	margin: var(--modal-padding) auto;
+	margin: 0 auto;
 	width: var(--modal-width);
 	border-radius: var(--modal-border-radius);
+	transform-origin: center;
+	animation: tt-modal-pop-in 260ms cubic-bezier(0.18, 0.9, 0.24, 1.18) both;
 	/* Custom scrollbar for modal */
 	scrollbar-width: thin;
 	scrollbar-color: var(--color-pink-200) transparent;
+}
+
+dialog.modal.tt-modal-closing {
+	pointer-events: none;
+}
+
+dialog.modal.tt-modal-closing > .modal-box {
+	animation: tt-modal-pop-out 170ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+dialog.modal.tt-modal-closing > .modal-backdrop {
+	animation: tt-modal-backdrop-out 170ms ease-out both;
+}
+
+@media (max-width: 639px) {
+	dialog.modal[open],
+	dialog.modal.modal-open {
+		align-items: center !important;
+		justify-items: center !important;
+	}
+
+	.modal-box {
+		max-height: min(86dvh, var(--modal-max-height));
+		width: min(92vw, var(--modal-width));
+	}
 }
 
 /* Modal scrollbar styles for WebKit */
@@ -171,6 +234,50 @@ dialog.modal::backdrop {
 	}
 	100% {
 		box-shadow: 0 0 5px rgba(255, 190, 60, 0.5);
+	}
+}
+
+@keyframes tt-modal-pop-in {
+	0% {
+		opacity: 0;
+		transform: translateY(14px) scale(0.965);
+	}
+	62% {
+		opacity: 1;
+		transform: translateY(-2px) scale(1.01);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes tt-modal-pop-out {
+	from {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(8px) scale(0.975);
+	}
+}
+
+@keyframes tt-modal-backdrop-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes tt-modal-backdrop-out {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
 	}
 }
 

@@ -1,11 +1,13 @@
 <script>
 	import { onMount } from 'svelte';
 	import ModalCloseButton from './ModalCloseButton.svelte';
+	import { ANIMATION } from '$lib/constants';
 	export let onSubmit = async () => ({ success: false, error: null });
 	export let onClose = () => {};
 
 	let token = '';
 	let submitting = false;
+	let closing = false;
 	let errorMessage = '';
 	let tokenInput;
 
@@ -38,7 +40,21 @@
 	}
 
 	function handleModalClose() {
-		if (!submitting) {
+		if (!submitting && !closing) {
+			closing = true;
+			const closeDelay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+				? 0
+				: ANIMATION.MODAL.CLOSE_DURATION;
+			setTimeout(() => {
+				closing = false;
+				onClose();
+			}, closeDelay);
+		}
+	}
+
+	function handleNativeClose(event) {
+		if (!closing) {
+			event.preventDefault();
 			onClose();
 		}
 	}
@@ -46,10 +62,10 @@
 
 <dialog
 	id="auth_modal"
-	class="modal modal-open"
+	class={`modal modal-open ${closing ? 'tt-modal-closing' : ''}`}
 	aria-labelledby="auth-modal-title"
 	aria-describedby="auth-modal-description"
-	on:close={handleModalClose}
+	on:close={handleNativeClose}
 >
 	<div
 		class="modal-box relative w-11/12 max-w-sm rounded-2xl border border-gray-200 bg-white shadow-xl"

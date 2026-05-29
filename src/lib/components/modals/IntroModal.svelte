@@ -8,7 +8,7 @@
 
 <dialog
 	id="intro_modal"
-	class="modal modal-bottom sm:modal-middle"
+	class="modal"
 	aria-labelledby="intro_modal_title"
 	aria-describedby="intro_modal_description"
 	aria-modal="true"
@@ -60,19 +60,22 @@
 				It's fast, it's fun, it's freaky good.
 			</p>
 
-			<form method="dialog">
+			<div>
 				<button
+					type="button"
 					class="min-h-11 w-full rounded-full bg-gradient-to-r from-yellow-400 to-pink-400 px-4 py-2.5 text-base font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-6 sm:py-3 sm:text-lg"
-					on:click={markIntroAsSeen}
+					on:click={() => {
+						markIntroAsSeen();
+						closeModal();
+					}}
 				>
 					click &amp; see
 				</button>
-			</form>
+			</div>
 		</div>
 	</div>
-	<form method="dialog" class="modal-backdrop">
-		<button>close</button>
-	</form>
+	<button type="button" class="modal-backdrop" on:click={closeModal} aria-label="Close intro modal"
+	></button>
 </dialog>
 
 <style>

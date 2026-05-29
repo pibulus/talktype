@@ -293,7 +293,7 @@
 	aria-modal="true"
 >
 	<div
-		class="animate-modal-enter modal-box relative flex max-h-[85vh] w-[95%] max-w-3xl flex-col overflow-hidden rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
+		class="modal-box relative flex max-h-[85vh] w-[95%] max-w-3xl flex-col overflow-hidden rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
 	>
 		<form method="dialog">
 			<ModalCloseButton
@@ -602,21 +602,6 @@
 </dialog>
 
 <style>
-	.animate-modal-enter {
-		animation: modalSlideUp 0.3s ease-out;
-	}
-
-	@keyframes modalSlideUp {
-		from {
-			transform: translateY(20px);
-			opacity: 0;
-		}
-		to {
-			transform: translateY(0);
-			opacity: 1;
-		}
-	}
-
 	/* Scrollbar styling */
 	.overflow-y-auto::-webkit-scrollbar {
 		width: 8px;

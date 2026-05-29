@@ -32,9 +32,9 @@ There is no active `static/icons/` directory and no icon generation build step.
 - Start-record shortcut: `static/manifest.json` points to
   `/?action=record&source=shortcut`, which `MainContainer.svelte` treats as an
   auto-start source.
-- Installed iOS PWA setup: `src/lib/components/pwa/PwaDeviceSetup.svelte`
-  offers a one-tap setup pass for mic permission, persistent storage, and the
-  offline model cache.
+- Installed iOS PWA microphone permission uses the normal Start Recording flow.
+  Offline Mode requests persistent storage and prepares the Whisper model cache
+  when that mode is enabled.
 
 ## Caching Behavior
 
@@ -80,5 +80,6 @@ to serve old cached model hits once and let transformers.js migrate the response
 - Launch shortcut starts the app with `?action=record&source=shortcut`.
 - Offline navigation shows cached app content or `offline.html`.
 - Offline Mode still downloads and reuses Whisper models as expected.
-- Installed iOS PWA shows the setup pill until primed or dismissed.
+- Installed iOS PWA Start Recording prompts for microphone permission without an
+  extra setup pill.
 - Active recording requests Screen Wake Lock when the browser supports it.

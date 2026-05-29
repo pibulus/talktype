@@ -56,11 +56,9 @@
 		"sharp": "0.34.5"
 	},
 	"overrides": {
-		"@xenova/transformers": {
-			"onnxruntime-web": "1.26.0"
-		},
 		"cookie": "0.7.2",
+		"protobufjs": "7.5.8",
 		"sharp": "0.34.5",
-		"tmp": "0.2.5"
+		"tmp": "0.2.7"
 	}
 }

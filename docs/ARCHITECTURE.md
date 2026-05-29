@@ -33,7 +33,7 @@ Mode resolution lives in `src/lib/services/transcription/mode.js`.
 | Offline Mode on                 | Local Whisper only. Offline Mode disables Live Mode behavior.                                           |
 | Live Mode off, Offline Mode off | Cloud batch transcription after stop. Standard style uses Deepgram; alternate/custom styles use Gemini. |
 
-Live Mode defaults to `true` in `src/lib/index.js`. Offline Mode defaults to `false`.
+After Stop is the default text timing in `src/lib/index.js`: Live Mode and Offline Mode both default to `false`. Offline Mode still wins if a legacy storage conflict has both Offline and Live enabled.
 
 ## Live Deepgram Path
 
@@ -100,7 +100,7 @@ Flow:
 3. `simpleHybridService.startBackgroundLoad()` loads Whisper once and unloads if Offline Mode was turned off before the load completed.
 4. `simpleHybridService.releaseOfflineModel()` waits for pending loads and re-checks Offline Mode before unloading, so fast off/on toggles do not drop a model the user just asked to keep.
 5. A recording that began in Offline Mode keeps that start-time mode through stop. If the user switches Offline Mode off while Whisper is still loading, the pending load is kept long enough to transcribe that recording locally, then released if Offline Mode is still off.
-6. `whisperService` loads `@xenova/transformers`, configures WASM, disables WebGPU, requests persistent storage, checks Cache API model state, warms the model, and transcribes converted audio.
+6. `whisperService` loads `@xenova/transformers`, points ONNX Runtime at the locally emitted WASM assets, forces single-threaded WASM, uses the WASM execution provider, requests persistent storage, checks Cache API model state, warms the model, and transcribes converted audio.
 7. `whisperStatus` exposes separate downloaded/cache, loading, loaded, progress, storage persistence, and retry/error state for Settings and the main recording button.
 
 Current default model is `tiny` unless `userPreferences.whisperModel` is set.
@@ -131,7 +131,6 @@ Important behaviors:
 Relevant files:
 
 - `src/lib/components/page/MainContainer.svelte`
-- `src/lib/components/pwa/PwaDeviceSetup.svelte`
 - `src/lib/services/pwa/pwaService.js`
 - `static/manifest.json`
 - `src/service-worker.js`
@@ -145,7 +144,7 @@ Auto-start is requested from:
 
 If a browser blocks or stalls the first automatic microphone start, `MainContainer` treats auto-start as armed rather than failed: it suppresses the first automatic-start warning, shows a touch-sized `tap to start` prompt, and retries on the next pointer gesture or Enter/Space activation. If that user-initiated retry still fails, the normal microphone permission messaging is allowed through.
 
-Installed iOS PWAs can show a one-tap setup pill that asks for microphone permission, requests persistent storage, and downloads/warms the offline Whisper model cache. If Offline Mode is not enabled after setup, the model is unloaded from memory but left cached.
+Installed iOS PWAs use the same primary Start Recording flow for microphone permission as Safari. Offline Mode handles its own persistent-storage request and Whisper model cache preparation when that mode is enabled, with progress surfaced in Settings and on the recording button.
 
 The service worker precaches normal app/static assets and keeps large ONNX runtime WASM files in `runtime-v1` so they are not part of install-time precache and can survive app cache version changes. Transformers.js owns the active Whisper model cache; the service worker only serves legacy model-cache hits once for migration. Runtime caching bypasses `/api/`, `/passport`, and sensitive query URLs so temporary Deepgram tokens, checkout claims, supporter tokens, and Passport links are not stored by the PWA cache.
 

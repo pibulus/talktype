@@ -5,6 +5,10 @@
 
 import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
+import ortWasmSimdUrl from '@xenova/transformers/dist/ort-wasm-simd.wasm?url';
+import ortWasmSimdThreadedUrl from '@xenova/transformers/dist/ort-wasm-simd-threaded.wasm?url';
+import ortWasmThreadedUrl from '@xenova/transformers/dist/ort-wasm-threaded.wasm?url';
+import ortWasmUrl from '@xenova/transformers/dist/ort-wasm.wasm?url';
 import { userPreferences } from '../../infrastructure/stores';
 import { convertToWAV as convertToRawAudio } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
@@ -21,27 +25,44 @@ const SAMPLE_RATE = 16000;
 const WARMUP_SECONDS = 0.25; // short silent clip to JIT the WASM kernels
 const MODEL_LOAD_TIMEOUT_MS = 5 * 60 * 1000; // 5 minute timeout for model download+load
 const DEFAULT_MODEL_KEY = 'tiny';
+const ORT_WASM_PATHS = {
+	'ort-wasm-simd-threaded.wasm': ortWasmSimdThreadedUrl,
+	'ort-wasm-threaded.wasm': ortWasmThreadedUrl,
+	'ort-wasm-simd.wasm': ortWasmSimdUrl,
+	'ort-wasm.wasm': ortWasmUrl
+};
 
 let transformersModulePromise = null;
 let transformersEnvConfigured = false;
 
-function configureTransformersEnv(env) {
+function resolveAssetUrl(assetUrl) {
+	if (!browser || !globalThis.location) return assetUrl;
+	return new URL(assetUrl, globalThis.location.href).href;
+}
+
+export function configureTransformersEnv(env) {
 	if (!env || transformersEnvConfigured) return;
 
 	// Configure transformers.js for maximum stability (WASM only)
 	env.allowRemoteModels = true;
 	env.allowLocalModels = false;
 	env.useBrowserCache = true;
-	if (env.backends?.onnx?.wasm) {
-		const hwThreads = navigator.hardwareConcurrency || 2;
-		env.backends.onnx.wasm.numThreads = Math.min(4, hwThreads);
-		env.backends.onnx.wasm.simd = true;
-	}
-
 	env.backends = env.backends || {};
-	if (env.backends.onnx?.webgpu) {
-		// Explicitly disable experimental WebGPU path for now
-		env.backends.onnx.webgpu = undefined;
+	const onnxBackend = env.backends.onnx;
+	const wasmBackend = onnxBackend?.wasm;
+
+	if (wasmBackend) {
+		// transformers.js defaults to a CDN path. Self-host the matching WASM
+		// binary for PWA reliability.
+		wasmBackend.wasmPaths = Object.fromEntries(
+			Object.entries(ORT_WASM_PATHS).map(([fileName, assetUrl]) => [
+				fileName,
+				resolveAssetUrl(assetUrl)
+			])
+		);
+		wasmBackend.numThreads = 1;
+		wasmBackend.proxy = false;
+		wasmBackend.simd = wasmBackend.simd === false ? false : true;
 	}
 
 	transformersEnvConfigured = true;
@@ -560,7 +581,9 @@ export class WhisperService {
 				selectedModel: modelKey,
 				selectedModelName: modelConfig.name,
 				selectedModelSize: modelConfig.size,
-				phase: get(whisperStatus).isLoading ? get(whisperStatus).phase : WHISPER_PHASES.CHECKING_CACHE,
+				phase: get(whisperStatus).isLoading
+					? get(whisperStatus).phase
+					: WHISPER_PHASES.CHECKING_CACHE,
 				statusText: getLoadStatusText({ phase: WHISPER_PHASES.CHECKING_CACHE })
 			});
 

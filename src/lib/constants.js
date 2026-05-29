@@ -32,6 +32,7 @@ export const STORAGE_KEYS = {
 	HISTORY_CHANGED_AT: `${APP_STORAGE_PREFIX}:history_changed_at`,
 	PRIVACY_MODE: 'talktype_privacy_mode', // Offline Whisper mode
 	LIVE_MODE: 'talktype_live_mode',
+	TEXT_TIMING_DEFAULT_MIGRATED: `${APP_STORAGE_PREFIX}:text_timing_default_after_stop_v1`,
 	LAST_TRANSCRIPTION_METHOD: 'last_transcription_method', // Track which service was used
 
 	// PWA Related
@@ -40,9 +41,7 @@ export const STORAGE_KEYS = {
 	PWA_PROMPT_COUNT: 'talktype-pwa-prompt-count',
 	PWA_LAST_PROMPT_DATE: 'talktype-pwa-last-prompt-date',
 	PWA_LAST_PROMPT_TRANSCRIPTION_COUNT: 'talktype-pwa-last-prompt-transcription-count',
-	PWA_INSTALLED: 'talktype-pwa-installed',
-	PWA_DEVICE_PRIMED: 'talktype-pwa-device-primed',
-	PWA_DEVICE_SETUP_DISMISSED: 'talktype-pwa-device-setup-dismissed'
+	PWA_INSTALLED: 'talktype-pwa-installed'
 };
 
 export const LEGACY_STORAGE_KEYS = {
@@ -103,6 +102,7 @@ export const ANIMATION = {
 	// Modal timing
 	MODAL: {
 		CLOSE_DELAY: 50, // Delay before running closeModal function
+		CLOSE_DURATION: 170,
 		PERMISSION_ERROR_DURATION: 8000 // How long the permission error shows
 	},
 

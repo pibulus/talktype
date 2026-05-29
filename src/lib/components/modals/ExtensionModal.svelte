@@ -9,7 +9,7 @@
 
 <dialog
 	id="extension_modal"
-	class="modal modal-bottom fixed z-50 overflow-y-hidden sm:modal-middle"
+	class="modal fixed z-50 overflow-y-hidden"
 	aria-labelledby="extension_modal_title"
 	aria-describedby="extension_modal_description"
 	aria-modal="true"

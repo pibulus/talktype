@@ -5,7 +5,6 @@
 	import GhostContainer from './GhostContainer.svelte';
 	import ContentContainer from './ContentContainer.svelte';
 	import FooterComponent from './FooterComponent.svelte';
-	import PwaDeviceSetup from '../pwa/PwaDeviceSetup.svelte';
 	import { geminiService } from '$lib/services/geminiService';
 	import { modalService } from '$lib/services/modals';
 	import { firstVisitService } from '$lib/services/first-visit';
@@ -520,7 +519,6 @@
 			tap to start
 		</button>
 	{/if}
-	<PwaDeviceSetup disabled={autoStartNeedsGesture || $recordingStore || $transcribingStore} />
 	<svelte:fragment slot="footer-buttons">
 		<FooterComponent
 			on:showAbout={showAboutModal}

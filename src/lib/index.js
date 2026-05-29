@@ -79,20 +79,29 @@ export const promptStyle = createLocalStorageStore(
 export const customPrompt = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.CUSTOM_PROMPT, '');
 
 // Store for live mode preference
-export const liveMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.LIVE_MODE, 'true');
+export const liveMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.LIVE_MODE, 'false');
 
 // Store for offline/private Whisper mode preference
 export const privacyMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.PRIVACY_MODE, 'false');
 
 // Repair legacy state where Offline Mode and Live Mode could both be persisted.
-// If the user only had Offline Mode saved, preserve that choice. If both were
-// saved as enabled, prefer the current default live Deepgram path.
+// If the user only had Offline Mode saved, preserve that choice. If both modes
+// were saved as enabled, keep Offline Mode and turn Live Mode off.
 if (browser) {
 	const storedPrivacyMode = localStorage.getItem(CONSTANTS.STORAGE_KEYS.PRIVACY_MODE) === 'true';
 	const storedLiveMode = localStorage.getItem(CONSTANTS.STORAGE_KEYS.LIVE_MODE);
+	const afterStopDefaultMigrated =
+		localStorage.getItem(CONSTANTS.STORAGE_KEYS.TEXT_TIMING_DEFAULT_MIGRATED) === 'true';
+
+	if (!afterStopDefaultMigrated) {
+		if (!storedPrivacyMode) {
+			liveMode.set('false');
+		}
+		localStorage.setItem(CONSTANTS.STORAGE_KEYS.TEXT_TIMING_DEFAULT_MIGRATED, 'true');
+	}
 
 	if (storedPrivacyMode && storedLiveMode === 'true') {
-		privacyMode.set('false');
+		liveMode.set('false');
 	} else if (storedPrivacyMode && storedLiveMode === null) {
 		liveMode.set('false');
 	}

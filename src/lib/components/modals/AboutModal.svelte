@@ -12,7 +12,7 @@
 
 <dialog
 	id="about_modal"
-	class="modal modal-bottom fixed z-50 overflow-y-hidden sm:modal-middle"
+	class="modal fixed z-50 overflow-y-hidden"
 	aria-labelledby="about_modal_title"
 	aria-describedby="about_modal_description"
 	aria-modal="true"

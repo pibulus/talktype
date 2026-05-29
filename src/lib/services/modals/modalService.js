@@ -1,4 +1,7 @@
 import { browser } from '$app/environment';
+import { ANIMATION } from '$lib/constants';
+
+const MODAL_CLOSE_DURATION = ANIMATION.MODAL.CLOSE_DURATION;
 
 export class ModalService {
 	constructor() {
@@ -14,54 +17,65 @@ export class ModalService {
 		const modal = document.getElementById(modalId);
 		if (!modal) return;
 
-		// Calculate scrollbar width to prevent layout shift
 		this.scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-
-		// Save scroll position
 		this.scrollPosition = window.scrollY;
 		this.modalOpen = true;
 
-		// Use overflow hidden on HTML element instead of body to prevent layout shift
-		// Also add padding to compensate for scrollbar removal
 		document.documentElement.style.overflow = 'hidden';
 		if (this.scrollbarWidth > 0) {
 			document.documentElement.style.paddingRight = `${this.scrollbarWidth}px`;
 		}
 
-		// Show the modal
 		if (typeof modal.showModal === 'function') {
 			this.bindNativeClose(modal);
-			modal.showModal();
+			if (!modal.open) {
+				modal.classList.remove('tt-modal-closing');
+				modal.showModal();
+			}
 		}
 
 		return modal;
 	}
 
 	closeModal() {
-		if (!browser || (!this.modalOpen && !document.querySelector('dialog[open]'))) return;
+		if (
+			!browser ||
+			this.isClosing ||
+			(!this.modalOpen && !document.querySelector('dialog[open], dialog.modal-open'))
+		) {
+			return;
+		}
 
-		// Close any open dialogs
 		this.isClosing = true;
-		document.querySelectorAll('dialog[open]').forEach((dialog) => {
-			if (dialog && typeof dialog.close === 'function') {
-				dialog.close();
-			}
+		const openDialogs = Array.from(document.querySelectorAll('dialog[open], dialog.modal-open'));
+
+		openDialogs.forEach((dialog) => {
+			dialog.classList.add('tt-modal-closing');
 		});
 
-		this.restorePage();
-		this.unbindAllNativeClose();
-		this.isClosing = false;
+		const closeDelay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+			? 0
+			: MODAL_CLOSE_DURATION;
+
+		window.setTimeout(() => {
+			openDialogs.forEach((dialog) => {
+				dialog.classList.remove('tt-modal-closing');
+				if (dialog && typeof dialog.close === 'function' && dialog.open) {
+					dialog.close();
+				}
+			});
+
+			this.restorePage();
+			this.unbindAllNativeClose();
+			this.isClosing = false;
+		}, closeDelay);
 	}
 
 	restorePage() {
 		if (!browser) return;
 
-		// Restore HTML element styles
 		document.documentElement.style.overflow = '';
 		document.documentElement.style.paddingRight = '';
-
-		// No need to restore scroll position since we didn't change position to fixed
-
 		this.modalOpen = false;
 	}
 
@@ -69,6 +83,11 @@ export class ModalService {
 		if (!modal) return;
 
 		this.unbindNativeClose(modal);
+
+		const handleCancel = (event) => {
+			event.preventDefault();
+			this.closeModal();
+		};
 
 		const handleNativeClose = () => {
 			if (this.isClosing) return;
@@ -82,15 +101,24 @@ export class ModalService {
 			});
 		};
 
+		modal.addEventListener('cancel', handleCancel);
 		modal.addEventListener('close', handleNativeClose);
+		modal.__talktypeCancelHandler = handleCancel;
 		modal.__talktypeCloseHandler = handleNativeClose;
 	}
 
 	unbindNativeClose(modal) {
-		if (!modal?.__talktypeCloseHandler) return;
+		if (!modal) return;
 
-		modal.removeEventListener('close', modal.__talktypeCloseHandler);
-		delete modal.__talktypeCloseHandler;
+		if (modal.__talktypeCancelHandler) {
+			modal.removeEventListener('cancel', modal.__talktypeCancelHandler);
+			delete modal.__talktypeCancelHandler;
+		}
+
+		if (modal.__talktypeCloseHandler) {
+			modal.removeEventListener('close', modal.__talktypeCloseHandler);
+			delete modal.__talktypeCloseHandler;
+		}
 	}
 
 	unbindAllNativeClose() {

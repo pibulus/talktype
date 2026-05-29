@@ -132,13 +132,13 @@
 
 <dialog
 	id="supporter_modal"
-	class="modal modal-bottom fixed z-[999] overflow-hidden sm:modal-middle"
+	class="modal fixed z-[999] overflow-hidden"
 	aria-labelledby="supporter_modal_title"
 	aria-describedby="supporter_modal_description"
 	aria-modal="true"
 >
 	<div
-		class="animate-modal-enter modal-box relative max-h-[85vh] w-[92vw] overflow-y-auto rounded-3xl border border-pink-100 bg-[#fffcf5] p-6 shadow-2xl"
+		class="modal-box relative max-h-[85vh] w-[92vw] overflow-y-auto rounded-3xl border border-pink-100 bg-[#fffcf5] p-6 shadow-2xl"
 	>
 		<form method="dialog">
 			<ModalCloseButton
@@ -345,10 +345,6 @@
 </dialog>
 
 <style>
-	.animate-modal-enter {
-		animation: modalSlideUp 360ms cubic-bezier(0.2, 0.9, 0.2, 1.12);
-	}
-
 	.chevron {
 		display: inline-block;
 		height: 0.65rem;
@@ -361,16 +357,5 @@
 
 	details[open] .chevron {
 		transform: rotate(225deg);
-	}
-
-	@keyframes modalSlideUp {
-		from {
-			transform: translateY(20px);
-			opacity: 0;
-		}
-		to {
-			transform: translateY(0);
-			opacity: 1;
-		}
 	}
 </style>

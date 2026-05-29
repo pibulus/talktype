@@ -61,7 +61,7 @@ For a release candidate:
 
 1. Run `npm test -- --run`, `npm run lint`, and `npm run build`.
 2. Start the app with `npm run dev`.
-3. Test Live Mode default on desktop: start, speak, verify live text appears, stop, verify final transcript remains.
+3. Test After Stop default on desktop: start, speak, verify text appears after stop.
 4. Test Offline Mode: toggle on, let model load, record, stop, verify no cloud request is needed.
 5. Toggle Offline Mode off and Live Mode on between recordings.
 6. Rapidly start/stop several recordings.
