@@ -221,20 +221,20 @@ export const SERVICE_EVENTS = {
 
 // CTA Button Phrases
 export const CTA_PHRASES = [
-	'Say', // Always first
-	'Tell',
-	'Spill',
-	'Go',
-	'Again',
-	'More'
+	'Say hi', // Always first
+	'Tell me',
+	'Go on',
+	'Spill it',
+	'Say more',
+	'Word time'
 ];
 
 // Button State Labels
 export const BUTTON_LABELS = {
 	DOWNLOADING: 'Offline',
 	PROCESSING: 'Processing',
-	RECORDING: 'Done',
-	DEFAULT: 'Say'
+	RECORDING: 'All done',
+	DEFAULT: 'Say hi'
 };
 
 // Clipboard Success Messages

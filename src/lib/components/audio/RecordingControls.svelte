@@ -29,7 +29,7 @@
 	let currentCta = CTA_PHRASES[0];
 
 	// Reactive button label computation
-	$: buttonLabel = $isRecording ? 'Done' : currentCta;
+	$: buttonLabel = $isRecording ? 'All done' : currentCta;
 
 	onMount(() => {
 		// Initialize services

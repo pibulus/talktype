@@ -145,7 +145,7 @@ export class RecordingControlsService {
 			});
 			const friendlyMessage = isPermissionError(err)
 				? isAutoStart
-					? 'Tap Start.'
+					? 'Tap once.'
 					: 'The mic needs permission before the ghost can listen.'
 				: 'Recording needs one more try.';
 			this.uiActions.setErrorMessage(friendlyMessage);

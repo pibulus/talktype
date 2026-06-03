@@ -32,9 +32,9 @@ describe('record button state', () => {
 	});
 
 	it('only pulses the idle primary CTA', () => {
-		expect(getRecordButtonState({ buttonLabel: 'Say' }).isIdlePrimaryCta).toBe(true);
+		expect(getRecordButtonState({ buttonLabel: 'Say hi' }).isIdlePrimaryCta).toBe(true);
 		expect(
-			getRecordButtonState({ buttonLabel: 'Say', clipboardSuccess: true }).isIdlePrimaryCta
+			getRecordButtonState({ buttonLabel: 'Say hi', clipboardSuccess: true }).isIdlePrimaryCta
 		).toBe(false);
 		expect(getRecordButtonState({ buttonLabel: 'Try again' }).isIdlePrimaryCta).toBe(false);
 	});

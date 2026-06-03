@@ -14,7 +14,7 @@
 	export let maxDuration = 300; // Default 5 minutes
 	export let warningThreshold = 60; // Seconds remaining to show warning
 	export let dangerThreshold = 10; // Seconds remaining to show danger
-	export let buttonLabel = 'Say';
+	export let buttonLabel = 'Say hi';
 	export let successMessages = ['Copied!'];
 	export let progress = 0; // For transcription progress
 
