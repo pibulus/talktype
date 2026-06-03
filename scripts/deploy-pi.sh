@@ -13,6 +13,7 @@ SMOKE_PORT="${TALKTYPE_PI_SMOKE_PORT:-19002}"
 LIVE_URL="${TALKTYPE_PI_LIVE_URL:-http://127.0.0.1:9002/}"
 APP_ENTRY="${TALKTYPE_PI_APP_ENTRY:-index.js}"
 BUILD_TARGET="${TALKTYPE_PI_BUILD_TARGET:-.}"
+ARCHIVE_BACKUP="${TALKTYPE_PI_ARCHIVE_BACKUP:-false}"
 REMOTE="${PI_USER}@${PI_HOST}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 STAGING_DIR="${STAGING_ROOT}/${APP_NAME}-${STAMP}"
@@ -147,7 +148,8 @@ remote_bash \
   "$PREVIOUS_DIR" \
   "$SERVICE" \
   "$LIVE_URL" \
-  "$APP_ENTRY" <<'REMOTE'
+  "$APP_ENTRY" \
+  "$ARCHIVE_BACKUP" <<'REMOTE'
 set -euo pipefail
 
 app_dir="$1"
@@ -157,6 +159,7 @@ previous_dir="$4"
 service="$5"
 live_url="$6"
 app_entry="$7"
+archive_backup="$8"
 
 require_safe_path() {
   case "${1:-}" in
@@ -191,7 +194,17 @@ rm -rf "$previous_dir"
 mkdir -p "$backup_path"
 
 if [[ -e "$app_dir" || -L "$app_dir" ]]; then
-  rsync -a --delete "$app_dir/" "$backup_path/"
+  if [[ "$archive_backup" == "true" ]]; then
+    rsync -a --delete "$app_dir/" "$backup_path/"
+  else
+    {
+      printf 'archive_backup=false\n'
+      printf 'app_dir=%s\n' "$app_dir"
+      printf 'created_at=%s\n' "$(date -Is)"
+      printf 'note=%s\n' 'Full rollback copy is kept only during deploy; set TALKTYPE_PI_ARCHIVE_BACKUP=true for a full historical archive.'
+    } >"$backup_path/deploy-info.txt"
+  fi
+
   mv "$app_dir" "$previous_dir"
 fi
 
