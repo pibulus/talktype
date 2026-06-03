@@ -18,14 +18,10 @@
 		uiState,
 		uiActions
 	} from '$lib/services';
-	import { liveMode, privacyMode } from '$lib';
-	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
-	import { WHISPER_PHASES } from '$lib/services/transcription/whisper/statusUtils.js';
 	import { CTA_PHRASES, ANIMATION, COPY_MESSAGES } from '$lib/constants';
 
 	// Props
 	export let ghostComponent = null;
-	export let modelReady = false;
 
 	// Local state
 	let services;
@@ -33,24 +29,7 @@
 	let currentCta = CTA_PHRASES[0];
 
 	// Reactive button label computation
-	$: buttonLabel = $isRecording ? 'Stop Recording' : currentCta;
-	$: isOfflineModelPreparing = [
-		WHISPER_PHASES.CHECKING_CACHE,
-		WHISPER_PHASES.LOADING_LIBRARY,
-		WHISPER_PHASES.DOWNLOADING,
-		WHISPER_PHASES.PREPARING,
-		WHISPER_PHASES.WARMING
-	].includes($whisperStatus.phase);
-	$: showOfflineDownloadState =
-		$privacyMode === 'true' &&
-		($whisperStatus.isLoading || isOfflineModelPreparing) &&
-		!modelReady;
-	$: offlineDownloadProgress = Math.max(
-		0,
-		Math.min(100, Math.round(Number($whisperStatus.progress) || 0))
-	);
-	$: offlineDownloadLabel = $whisperStatus.statusText || 'Getting offline model ready';
-	$: offlineDownloadDetail = $whisperStatus.selectedModelName || '';
+	$: buttonLabel = $isRecording ? 'Done' : currentCta;
 
 	onMount(() => {
 		// Initialize services
@@ -61,6 +40,7 @@
 			audioService: services.audioService,
 			transcriptionService: services.transcriptionService,
 			hapticService: services.hapticService,
+			soundService: services.soundService,
 			pwaService: services.pwaService,
 			uiActions,
 			stores: {
@@ -125,10 +105,6 @@
 			<RecordButtonWithTimer
 				recording={$isRecording}
 				transcribing={$isTranscribing}
-				downloading={showOfflineDownloadState}
-				downloadProgress={offlineDownloadProgress}
-				downloadLabel={offlineDownloadLabel}
-				downloadDetail={offlineDownloadDetail}
 				clipboardSuccess={$uiState.clipboardSuccess}
 				recordingDuration={$recordingDuration}
 				progress={$transcriptionProgress}
@@ -144,13 +120,13 @@
 		</div>
 	</div>
 
-	<!-- Audio visualizer - only show when recording AND NOT in Live Mode -->
-	{#if $isRecording && ($liveMode !== 'true' || $privacyMode === 'true')}
-		<div class="visualizer-section mt-6 flex w-full justify-center">
+	<!-- Audio visualizer -->
+	{#if $isRecording}
+		<div class="visualizer-section mt-2 flex w-full justify-center">
 			<div class="wrapper-container flex w-full justify-center">
 				<div
-					class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 p-4 shadow-lg sm:w-full"
-					style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
+					class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[1.4rem] border border-pink-100 bg-white/95 p-2 shadow-md sm:w-full"
+					style="box-shadow: 0 8px 18px -8px rgba(249, 168, 212, 0.32), 0 0 12px rgba(249, 168, 212, 0.12);"
 				>
 					<AudioVisualizer />
 				</div>
@@ -187,7 +163,7 @@
 	@keyframes localFadeIn {
 		from {
 			opacity: 0;
-			transform: translateY(10px);
+			transform: translateY(6px);
 		}
 		to {
 			opacity: 1;

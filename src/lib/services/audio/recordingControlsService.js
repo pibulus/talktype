@@ -13,13 +13,24 @@ import {
 	transcriptionState,
 	transcriptionActions
 } from '../infrastructure/stores';
-import { analytics } from '../analytics';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
+import { analytics } from '$lib/services/analytics.js';
 import { createLogger } from '$lib/utils/logger';
 import { isPermissionError } from './permissionErrors.js';
 
 const log = createLogger('RecordingControls');
+
+export function getNextCtaIndex(currentIndex, random = Math.random) {
+	if (CTA_PHRASES.length <= 1) return 0;
+
+	const safeCurrentIndex =
+		Number.isInteger(currentIndex) && currentIndex >= 0 && currentIndex < CTA_PHRASES.length
+			? currentIndex
+			: 0;
+	const offset = 1 + Math.floor(random() * (CTA_PHRASES.length - 1));
+	return (safeCurrentIndex + offset) % CTA_PHRASES.length;
+}
 
 export function getCompletedTranscriptionMethod({
 	useLiveDeepgram = false,
@@ -43,6 +54,7 @@ export class RecordingControlsService {
 		this.audioService = dependencies.audioService;
 		this.transcriptionService = dependencies.transcriptionService;
 		this.hapticService = dependencies.hapticService;
+		this.soundService = dependencies.soundService;
 		this.pwaService = dependencies.pwaService;
 		this.uiActions = dependencies.uiActions;
 		this.stores = dependencies.stores;
@@ -58,6 +70,7 @@ export class RecordingControlsService {
 			if (!isRecording || !get(isRecording)) return;
 
 			this.timeLimitStopInFlight = true;
+			analytics.recordingLimitHit({ mode: this.activeRecordingMode || getTranscriptionMode() });
 			this.uiActions.setScreenReaderMessage('Recording time limit reached. Stopping recording.');
 			this.stopRecording().finally(() => {
 				this.timeLimitStopInFlight = false;
@@ -74,8 +87,7 @@ export class RecordingControlsService {
 	}
 
 	rotateToCta() {
-		const newIndex = (this.currentCtaIndex + 1) % CTA_PHRASES.length;
-		this.currentCtaIndex = newIndex;
+		this.currentCtaIndex = getNextCtaIndex(this.currentCtaIndex);
 		return CTA_PHRASES[this.currentCtaIndex];
 	}
 
@@ -87,6 +99,7 @@ export class RecordingControlsService {
 
 		// Reset UI state
 		this.uiActions.clearErrorMessage();
+		this.uiActions.setClipboardSuccess?.(false);
 
 		// Clear previous transcription text for new recording
 		if (get(transcriptionText)) {
@@ -117,13 +130,22 @@ export class RecordingControlsService {
 
 			// Start recording using the AudioService
 			await this.audioService.startRecording({ transcriptionMode: this.activeRecordingMode });
+			analytics.recordingStarted({
+				mode: this.activeRecordingMode,
+				source: options.source || 'manual'
+			});
 
 			// State is tracked through stores now
 		} catch (err) {
 			log.error('Error in startRecording:', err);
+			analytics.recordingStartFailed({
+				mode: this.activeRecordingMode,
+				source: options.source || 'manual',
+				error: err
+			});
 			const friendlyMessage = isPermissionError(err)
 				? isAutoStart
-					? 'Tap Start Recording to finish microphone setup.'
+					? 'Tap Start.'
 					: 'The mic needs permission before the ghost can listen.'
 				: 'Recording needs one more try.';
 			this.uiActions.setErrorMessage(friendlyMessage);
@@ -146,26 +168,30 @@ export class RecordingControlsService {
 				thinkingStarted = true;
 			}
 
-			if (useLiveDeepgram) {
-				transcriptionActions.startTranscribing();
-			}
+			transcriptionActions.startTranscribing();
 
 			const audioBlob = await this.audioService.stopRecording();
 			log.log('Got audio blob:', audioBlob);
 
 			if (!audioBlob) {
+				transcriptionActions.cancelTranscribing();
 				this.uiActions.setErrorMessage('Try one more recording.');
-				if (useLiveDeepgram) transcriptionActions.completeTranscription('');
 				return;
 			}
 
 			// Validate duration
 			const estimatedDurationSeconds = audioBlob.size / 2000;
+			const durationSeconds = get(recordingState).duration || estimatedDurationSeconds;
+			analytics.recordingStopped({
+				mode: recordingMode,
+				durationSeconds,
+				reason: this.timeLimitStopInFlight ? 'limit' : 'manual'
+			});
 			if (estimatedDurationSeconds < 0.5) {
 				log.warn(`Recording too short: ~${estimatedDurationSeconds.toFixed(2)}s`);
+				transcriptionActions.cancelTranscribing();
 				this.uiActions.setErrorMessage('Speak for at least a second.');
 				await this.transcriptionService.clearPendingRecordingDraft?.();
-				if (useLiveDeepgram) transcriptionActions.completeTranscription('');
 				return;
 			}
 
@@ -185,7 +211,7 @@ export class RecordingControlsService {
 					? liveResult.text
 					: await this.transcriptionService.transcribeAudio(audioBlob, {
 							mode: recordingMode,
-							durationSeconds: get(recordingState).duration || estimatedDurationSeconds
+							durationSeconds
 						});
 			const usedLiveTranscript =
 				useLiveDeepgram &&
@@ -207,25 +233,27 @@ export class RecordingControlsService {
 				void this.transcriptionService.copyToClipboard(finalTranscript, { silent: true });
 			}
 
-			// Analytics & UI post-processing
+			// UI post-processing
 			saveLastTranscriptionMethod(completedMethod);
+			analytics.transcriptionSucceeded({
+				mode: recordingMode,
+				method: completedMethod,
+				durationSeconds
+			});
 
 			scrollToBottomIfNeeded({
 				threshold: 300,
 				delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY
 			});
 
-			const trimmedTranscript = finalTranscript.trim();
-			const wordCount = trimmedTranscript ? trimmedTranscript.split(/\s+/).length : 0;
-			analytics.completeTranscription(completedMethod, estimatedDurationSeconds, wordCount);
-
 			if (browser && 'requestIdleCallback' in window)
 				window.requestIdleCallback(() => this._incrementTranscriptionCount());
 			else setTimeout(() => this._incrementTranscriptionCount(), 0);
 		} catch (err) {
 			log.error('Error in stopRecording:', err);
+			analytics.transcriptionFailed({ mode: recordingMode, error: err });
+			transcriptionActions.cancelTranscribing();
 			this.uiActions.setErrorMessage("Let's try that recording again.");
-			if (useLiveDeepgram) transcriptionActions.completeTranscription('');
 		} finally {
 			if (thinkingStarted && this.ghostComponent?.stopThinking) this.ghostComponent.stopThinking();
 			this.activeRecordingMode = null;
@@ -253,6 +281,7 @@ export class RecordingControlsService {
 				if (this.hapticService) {
 					this.hapticService.stopRecording();
 				}
+				this.soundService?.stopRecording?.();
 
 				await this.stopRecording();
 				// Screen reader announcement
@@ -272,6 +301,7 @@ export class RecordingControlsService {
 				}
 
 				await this.startRecording({ source: 'manual' });
+				this.soundService?.startRecording?.();
 				// Screen reader announcement
 				this.uiActions.setScreenReaderMessage('Recording started. Speak now.');
 			}
@@ -288,6 +318,7 @@ export class RecordingControlsService {
 			if (this.hapticService) {
 				this.hapticService.error();
 			}
+			this.soundService?.error?.();
 
 			// Update screen reader status
 			this.uiActions.setScreenReaderMessage('Recording is ready for one more try.');

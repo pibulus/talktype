@@ -10,6 +10,7 @@
 	let animationFrameId;
 	let fallbackTimeoutId; // Separate ID for setTimeout to avoid mixing with RAF
 	let recording = false; // Track recording state within the component
+	const idleBaseLevel = 7;
 
 	// Reactive animation state
 	$: animationsEnabled = $appActive;
@@ -19,42 +20,11 @@
 
 	// Safari/iOS detection (guard against SSR where navigator is undefined)
 	const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-	const isAndroid = /Android/i.test(userAgent);
 	const isiPhone = /iPhone|iPad/i.test(userAgent);
-	const isMac = /Macintosh/i.test(userAgent);
 	const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
 
 	// Flag for fallback mode - use for Safari or iOS
 	const useFallbackVisualizer = isiPhone || isSafari;
-
-	// Tweakable variables within AudioVisualizer
-	let scalingFactor;
-	let offset;
-	let exponent;
-
-	// Platform detection for default settings
-	if (isAndroid) {
-		// Android specific settings
-		scalingFactor = 40;
-		offset = 80;
-		exponent = 0.5;
-	} else if (isiPhone) {
-		// iPhone specific settings
-		scalingFactor = 40;
-		offset = 80;
-		exponent = 0.2;
-	} else if (isMac) {
-		// macOS specific settings
-		scalingFactor = 20;
-		offset = 100;
-		exponent = 0.5;
-	} else {
-		// Default settings for other platforms (Windows/Linux)
-		// Reduced from 2000 to 80 for much better sensitivity
-		scalingFactor = 80;
-		offset = 80;
-		exponent = 0.5;
-	}
 
 	// ===== STANDARD AUDIO VISUALIZER (using waveformData from audioService) =====
 	function initStandardVisualizer() {
@@ -185,6 +155,56 @@
 	let frameSkipCounter = 0;
 	const frameSkipRate = 2; // Adjust this value to control the speed (higher value = slower animation)
 
+	function clampLevel(value) {
+		return Math.max(0, Math.min(100, value));
+	}
+
+	function getIdleLevel() {
+		return idleBaseLevel + Math.sin(Date.now() / 720) * 1.8;
+	}
+
+	function pushVisualizerLevel(level) {
+		history = [clampLevel(level), ...history];
+		if (history.length > historyLength) {
+			history.pop();
+		}
+	}
+
+	function getVisualizerLevel(dataArray) {
+		let sum = 0;
+		let peak = 0;
+		let min = 255;
+
+		for (let i = 0; i < dataArray.length; i++) {
+			const value = dataArray[i];
+			sum += value;
+			peak = Math.max(peak, value);
+			min = Math.min(min, value);
+		}
+
+		const average = sum / dataArray.length;
+
+		// Frequency-domain data is quiet on desktop mics, so peak carries useful speech movement.
+		if (min <= 40) {
+			const averageLevel = Math.max(0, average - 1.5) / 28;
+			const peakLevel = Math.max(0, peak - 8) / 110;
+			return clampLevel(Math.pow(Math.max(averageLevel, peakLevel), 0.72) * 100);
+		}
+
+		// Defensive fallback if the store ever switches to time-domain waveform data.
+		let deviationSum = 0;
+		let peakDeviation = 0;
+		for (let i = 0; i < dataArray.length; i++) {
+			const deviation = Math.abs(dataArray[i] - 128);
+			deviationSum += deviation;
+			peakDeviation = Math.max(peakDeviation, deviation);
+		}
+
+		const averageDeviation = deviationSum / dataArray.length;
+		const deviationLevel = Math.max(averageDeviation / 24, peakDeviation / 80);
+		return clampLevel(Math.pow(deviationLevel, 0.72) * 100);
+	}
+
 	// Create optimized animation controller that auto-pauses when tab is hidden
 	const visualizerAnimation = createAnimationController(() => {
 		if (!recording) return;
@@ -199,31 +219,13 @@
 		// Use waveformData from audioService store (no need for separate analyser!)
 		const dataArray = $waveformData;
 		if (!dataArray || dataArray.length === 0) {
-			// console.log('[AudioVisualizer] No waveform data');
+			pushVisualizerLevel(getIdleLevel());
 			return;
 		}
 		// console.log('[AudioVisualizer] Got data:', dataArray[0], dataArray[10]);
 
-		// Calculate average level from waveformData (Uint8Array with 0-255 values)
-		let sum = 0;
-		for (let i = 0; i < dataArray.length; i++) {
-			sum += dataArray[i];
-		}
-		let averageLevel = sum / dataArray.length;
-
-		// Apply scaling for visualization (dataArray values are 0-255)
-		let linearLevel = Math.max(0, averageLevel - (255 - offset));
-		let nonLinearLevel = Math.pow(linearLevel, exponent);
-		audioLevel = Math.max(
-			0,
-			Math.min(100, nonLinearLevel * (100 / Math.pow(scalingFactor, exponent)))
-		);
-
-		// Update history - add new level to the start, remove oldest if history is too long
-		history = [audioLevel, ...history];
-		if (history.length > historyLength) {
-			history.pop();
-		}
+		audioLevel = Math.max(getVisualizerLevel(dataArray), getIdleLevel());
+		pushVisualizerLevel(audioLevel);
 	});
 
 	// ===== COMMON CONTROL FUNCTIONS =====
@@ -236,7 +238,7 @@
 			}
 		} else if (recording) {
 			// Start optimized visualizer with auto-pause
-			history = Array(historyLength).fill(0);
+			history = Array(historyLength).fill(getIdleLevel());
 			visualizerAnimation.start();
 		}
 
@@ -327,12 +329,12 @@
 	.history-container {
 		position: relative;
 		width: 100%;
-		height: 5rem;
+		height: 3rem;
 		display: flex;
 		flex-direction: row-reverse;
-		border-radius: 1rem;
+		border-radius: 0.9rem;
 		overflow: hidden;
-		box-shadow: inset 0 0 15px rgba(249, 168, 212, 0.15);
+		box-shadow: inset 0 0 12px rgba(249, 168, 212, 0.13);
 		background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 242, 248, 0.2));
 		contain: content;
 	}

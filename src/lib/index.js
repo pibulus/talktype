@@ -2,15 +2,19 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 import * as CONSTANTS from './constants';
+import {
+	readStorageValue,
+	writeStorageValue
+} from '$lib/services/storage/localStorageMigration.js';
 
 // Initialize store with localStorage value if available
-function createLocalStorageStore(key, initialValue) {
+function createLocalStorageStore(key, initialValue, { legacyKeys = [] } = {}) {
 	// Create the writable store
 	const store = writable(initialValue);
 
 	// Initialize from localStorage if in browser context
 	if (browser) {
-		const storedValue = localStorage.getItem(key);
+		const storedValue = readStorageValue(key, { legacyKeys });
 		if (storedValue) {
 			store.set(storedValue);
 		}
@@ -21,7 +25,7 @@ function createLocalStorageStore(key, initialValue) {
 		subscribe: store.subscribe,
 		set: (value) => {
 			if (browser) {
-				localStorage.setItem(key, value);
+				writeStorageValue(key, value, { legacyKeys });
 			}
 			store.set(value);
 		},
@@ -29,7 +33,7 @@ function createLocalStorageStore(key, initialValue) {
 			store.update((storeValue) => {
 				const newValue = fn(storeValue);
 				if (browser) {
-					localStorage.setItem(key, newValue);
+					writeStorageValue(key, newValue, { legacyKeys });
 				}
 				return newValue;
 			});
@@ -72,11 +76,14 @@ export const autoRecord = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.AUTO_RE
 // Store for prompt style preference
 export const promptStyle = createLocalStorageStore(
 	CONSTANTS.STORAGE_KEYS.PROMPT_STYLE,
-	CONSTANTS.DEFAULT_PROMPT_STYLE
+	CONSTANTS.DEFAULT_PROMPT_STYLE,
+	{ legacyKeys: CONSTANTS.LEGACY_STORAGE_KEYS.PROMPT_STYLE }
 );
 
 // Store for custom prompt text
-export const customPrompt = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.CUSTOM_PROMPT, '');
+export const customPrompt = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.CUSTOM_PROMPT, '', {
+	legacyKeys: CONSTANTS.LEGACY_STORAGE_KEYS.CUSTOM_PROMPT
+});
 
 // Store for live mode preference
 export const liveMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.LIVE_MODE, 'false');

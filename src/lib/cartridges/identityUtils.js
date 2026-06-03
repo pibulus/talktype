@@ -6,16 +6,49 @@
 const FALLBACK_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
 
 const VERBS = [
-	'drifts', 'hums', 'glows', 'floats', 'sings', 'sparks', 'roams', 'blooms',
-	'echoes', 'whispers', 'flickers', 'wanders', 'pulses', 'shines', 'orbits', 'dances',
-	'haunts', 'buzzes', 'ripples', 'dreams'
+	'drifts',
+	'hums',
+	'glows',
+	'floats',
+	'sings',
+	'sparks',
+	'roams',
+	'blooms',
+	'echoes',
+	'whispers',
+	'flickers',
+	'wanders',
+	'pulses',
+	'shines',
+	'orbits',
+	'dances',
+	'haunts',
+	'buzzes',
+	'ripples',
+	'dreams'
 ];
 
 const PLACES = [
-	'at midnight', 'in the static', 'through the void', 'at dawn', 'in the mist',
-	'between stars', 'in the dark', 'at the edge', 'through waves', 'beyond the map',
-	'in deep space', 'at low tide', 'through fog', 'in the signal', 'under neon',
-	'past the reef', 'in the loop', 'at the horizon', 'through rain', 'in the noise'
+	'at midnight',
+	'in the static',
+	'through the void',
+	'at dawn',
+	'in the mist',
+	'between stars',
+	'in the dark',
+	'at the edge',
+	'through waves',
+	'beyond the map',
+	'in deep space',
+	'at low tide',
+	'through fog',
+	'in the signal',
+	'under neon',
+	'past the reef',
+	'in the loop',
+	'at the horizon',
+	'through rain',
+	'in the noise'
 ];
 
 const ADJECTIVES = [

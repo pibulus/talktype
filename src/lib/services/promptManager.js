@@ -1,10 +1,15 @@
 import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
+import { LEGACY_STORAGE_KEYS, STORAGE_KEYS } from '$lib/constants';
+import {
+	readStorageValue,
+	writeStorageValue
+} from '$lib/services/storage/localStorageMigration.js';
 import { promptTemplates, applyTemplate } from './promptTemplates';
 
 // Create a store for the current prompt style
-const STORAGE_KEY = 'talktype-prompt-style';
-const CUSTOM_PROMPT_KEY = 'talktype-custom-prompt';
+const STORAGE_KEY = STORAGE_KEYS.PROMPT_STYLE;
+const CUSTOM_PROMPT_KEY = STORAGE_KEYS.CUSTOM_PROMPT;
 const DEFAULT_STYLE = 'standard';
 
 // Initialize with stored preference or default
@@ -13,13 +18,17 @@ const createPromptStyleStore = () => {
 
 	// Initialize from localStorage if in browser
 	if (browser) {
-		const storedStyle = localStorage.getItem(STORAGE_KEY);
+		const storedStyle = readStorageValue(STORAGE_KEY, {
+			legacyKeys: LEGACY_STORAGE_KEYS.PROMPT_STYLE
+		});
 		if (storedStyle && promptTemplates[storedStyle]) {
 			store.set(storedStyle);
 		} else if (storedStyle && !promptTemplates[storedStyle]) {
 			// Handle the case where a stored style is no longer available (like 'corporate')
 			console.log(`Stored prompt style '${storedStyle}' is no longer available, using default`);
-			localStorage.setItem(STORAGE_KEY, DEFAULT_STYLE);
+			writeStorageValue(STORAGE_KEY, DEFAULT_STYLE, {
+				legacyKeys: LEGACY_STORAGE_KEYS.PROMPT_STYLE
+			});
 			store.set(DEFAULT_STYLE);
 		}
 	}
@@ -37,7 +46,9 @@ const createPromptStyleStore = () => {
 
 			// Save to localStorage if in browser
 			if (browser) {
-				localStorage.setItem(STORAGE_KEY, style);
+				writeStorageValue(STORAGE_KEY, style, {
+					legacyKeys: LEGACY_STORAGE_KEYS.PROMPT_STYLE
+				});
 			}
 
 			return true;
@@ -90,14 +101,18 @@ export const promptManager = {
 	// Custom prompt support
 	setCustomPrompt: (prompt) => {
 		if (browser) {
-			localStorage.setItem(CUSTOM_PROMPT_KEY, prompt);
+			writeStorageValue(CUSTOM_PROMPT_KEY, prompt, {
+				legacyKeys: LEGACY_STORAGE_KEYS.CUSTOM_PROMPT
+			});
 		}
 		return true;
 	},
 
 	getCustomPrompt: () => {
 		if (browser) {
-			return localStorage.getItem(CUSTOM_PROMPT_KEY) || '';
+			return readStorageValue(CUSTOM_PROMPT_KEY, {
+				legacyKeys: LEGACY_STORAGE_KEYS.CUSTOM_PROMPT
+			});
 		}
 		return '';
 	}

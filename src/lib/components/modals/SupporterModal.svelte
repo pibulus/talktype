@@ -7,6 +7,7 @@
 	import { setSupporterStatus, userPreferences } from '$lib/services';
 	import { PRICING } from '$lib/config/pricing.js';
 	import { SUPPORTER_CHECKOUT } from '$lib/constants';
+	import { analytics } from '$lib/services/analytics.js';
 	import MembershipCard from '$lib/cartridges/MembershipCard.svelte';
 	import { getVaultHash } from '$lib/services/syncService.js';
 	import {
@@ -55,6 +56,7 @@
 
 		isStartingCheckout = true;
 		errorMessage = '';
+		analytics.checkoutStarted();
 
 		try {
 			const response = await fetch('/api/supporter/checkout', {
@@ -65,6 +67,7 @@
 			if (!response.ok || !payload.checkoutUrl) {
 				errorMessage =
 					payload.error || 'Checkout needs server setup first. Supporter codes still work.';
+				analytics.checkoutFailed({ error: errorMessage });
 				return;
 			}
 
@@ -72,6 +75,7 @@
 			window.location.assign(payload.checkoutUrl);
 		} catch (error) {
 			console.error('Failed to start supporter checkout:', error);
+			analytics.checkoutFailed({ error });
 			errorMessage = 'Checkout needs one more try in a moment.';
 		} finally {
 			isStartingCheckout = false;
@@ -96,6 +100,7 @@
 
 			if (!response.ok || !payload.valid) {
 				errorMessage = payload.error || 'Check the supporter code and try once more.';
+				analytics.supporterUnlockFailed({ method: 'code', error: errorMessage });
 				return;
 			}
 
@@ -106,6 +111,7 @@
 			setSupporterStatus(true, payload.token || null);
 			code = '';
 			codePanelOpen = false;
+			analytics.supporterUnlockSucceeded({ method: 'code' });
 
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
@@ -119,6 +125,7 @@
 			dispatch('unlocked');
 		} catch (error) {
 			console.error('Failed to validate supporter code:', error);
+			analytics.supporterUnlockFailed({ method: 'code', error });
 			errorMessage = 'Code check needs one more try in a moment.';
 		} finally {
 			isSubmitting = false;

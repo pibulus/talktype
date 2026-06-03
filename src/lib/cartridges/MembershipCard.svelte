@@ -299,10 +299,10 @@
 	}
 
 	.passport-card:not(.is-placeholder) {
-		transition: transform 120ms ease, box-shadow 120ms ease;
-		transform:
-			perspective(600px)
-			rotateX(calc((var(--my) - 50) * -0.06deg))
+		transition:
+			transform 120ms ease,
+			box-shadow 120ms ease;
+		transform: perspective(600px) rotateX(calc((var(--my) - 50) * -0.06deg))
 			rotateY(calc((var(--mx) - 50) * 0.06deg));
 	}
 

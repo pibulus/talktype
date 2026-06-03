@@ -28,6 +28,8 @@ TalkType has three transcription paths:
 
 Transcript history is saved locally in the user's browser when supporter mode is unlocked. If a supporter has a Passport and notes endpoint configured, current transcripts and attached recordings can mirror themselves to the Pi drop-zone. Text and audio are encrypted client-side before upload, and local deletions remove items from the mirrored history on the next pass. Do not include private transcripts, recordings, API keys, supporter codes, or payment details in GitHub issues.
 
+Production can enable Umami for privacy-focused aggregate analytics. TalkType only sends low-cardinality product events such as recording start/stop, transcription success/error, mode changes, checkout start, and PWA install signals. It must not send transcript text, audio, supporter codes, payment details, user IDs, or session replay data.
+
 ## Documentation
 
 Start here:
@@ -80,6 +82,10 @@ Copy `.env.example` to `.env` and set the values needed for your mode:
 - `PUBLIC_FORCE_SUPPORTER_MODE`: set to `true` only for local/supporter testing.
 - `MAX_UPLOAD_BYTES`: optional upload cap for `/api/transcribe`.
 - `PUBLIC_APP_URL`: public app origin used for payment redirects.
+- `PUBLIC_UMAMI_WEBSITE_ID`: optional Umami website id. When set in production, TalkType loads the Umami tracker.
+- `PUBLIC_UMAMI_SCRIPT_URL`: optional Umami script URL; defaults to Umami Cloud.
+- `PUBLIC_UMAMI_DOMAINS`: optional Umami domain allow-list; defaults to `talktype.app`.
+- `PUBLIC_UMAMI_DISABLED`: set to `true` to suppress the Umami script even when an id is present.
 - `SQUARE_ENVIRONMENT`: `sandbox` for testing or `production` for live Square checkout.
 - `SQUARE_API_VERSION`: Square API version header. Keep pinned and bump deliberately after testing.
 - `SQUARE_ACCESS_TOKEN`: Square access token for hosted checkout.

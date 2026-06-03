@@ -2,6 +2,7 @@
 	import { customPrompt } from '$lib';
 	import { geminiService } from '$lib/services/geminiService';
 	import { PROMPT_STYLES } from '$lib/constants';
+	import { soundService } from '$lib/services/infrastructure/soundService.js';
 
 	export let selectedPromptStyle = 'standard';
 	export let changePromptStyle = () => {};
@@ -29,7 +30,7 @@
 		},
 		{
 			id: PROMPT_STYLES.CUSTOM,
-			label: 'Edit Your Own',
+			label: 'Custom',
 			requiresSupporter: true
 		},
 		{
@@ -93,13 +94,15 @@
 
 	function handleStyleClick(style) {
 		if (isStyleLocked(style)) {
-			showToast('Supporter mode unlocks custom transcription and extra styles.');
+			soundService.locked();
+			showToast('Supporter only');
 			openSupporterModal();
 			return;
 		}
 
 		if (isStyleBlockedByMode(style)) {
-			showToast('Choose After Stop to use transcription styles.');
+			soundService.locked();
+			showToast('After Stop only');
 			return;
 		}
 
@@ -108,6 +111,7 @@
 				? PROMPT_STYLES.STANDARD
 				: style.id;
 
+		soundService.select();
 		changePromptStyle(nextStyle);
 	}
 
@@ -126,12 +130,12 @@
 	}
 </script>
 
-<div>
-	<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+<div role="group" aria-label="Transcription style">
+	<div class="grid grid-cols-4 gap-2">
 		{#each styleOptions as style}
 			<button
 				type="button"
-				class={`style-option relative flex min-h-[92px] flex-col items-center justify-center rounded-xl border bg-[#fffdf5] p-2 text-center shadow-sm transition-all duration-200 hover:border-pink-200 hover:shadow-md ${
+				class={`style-option relative flex min-h-[72px] flex-col items-center justify-center rounded-xl border bg-[#fffdf5] p-1.5 text-center shadow-sm transition-all duration-200 hover:border-pink-200 hover:shadow-md ${
 					selectedPromptStyle === style.id
 						? 'selected-style border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
 						: 'border-pink-100'
@@ -143,12 +147,12 @@
 				aria-pressed={selectedPromptStyle === style.id}
 				aria-disabled={isStyleBlockedByMode(style)}
 				title={isStyleLocked(style)
-					? 'Requires supporter mode'
+					? 'Supporter'
 					: isStyleBlockedByMode(style)
-						? 'Choose After Stop for styles'
-						: `Choose ${style.label} style`}
+						? 'After Stop only'
+						: style.label}
 			>
-				<div class="mb-2 flex h-10 w-10 items-center justify-center">
+				<div class="mb-1 flex h-7 w-7 items-center justify-center">
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html styleIcons[style.id]}
 				</div>
@@ -165,7 +169,7 @@
 				{:else if isStyleLocked(style)}
 					<div
 						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-xs text-white shadow-sm"
-						title="Requires supporter mode"
+						title="Supporter"
 						aria-hidden="true"
 					>
 						★
@@ -181,12 +185,12 @@
 				bind:value={customPromptText}
 				on:keydown={handleKeydown}
 				on:blur={saveCustomPrompt}
-				placeholder="Write your custom transcription instructions..."
+				placeholder="Instructions"
 				maxlength={MAX_CUSTOM_PROMPT_LENGTH}
 				class="w-full rounded-lg border border-pink-200 bg-white p-3 text-sm focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
 				rows="3"
+				aria-label="Custom transcription instructions"
 			></textarea>
-			<p class="text-xs text-gray-500">Press Enter to save your custom prompt.</p>
 		</div>
 	{/if}
 </div>

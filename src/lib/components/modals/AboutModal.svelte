@@ -2,12 +2,7 @@
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { theme } from '$lib';
 	import { ModalCloseButton } from './index.js';
-	import { analytics } from '$lib/services/analytics';
 	export let closeModal;
-
-	function handleGithubClick() {
-		analytics.clickExternal('github-pibulus');
-	}
 </script>
 
 <dialog
@@ -84,7 +79,6 @@
 						target="_blank"
 						rel="noopener noreferrer"
 						class="inline-flex min-h-11 items-center hover:text-pink-600 hover:underline"
-						on:click={handleGithubClick}
 					>
 						Pablo / Pibulus
 					</a>

@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 import { uiActions, uiState, resetStores } from '../infrastructure/stores.js';
-import { analytics } from '../analytics';
 import { TranscriptionService } from './transcriptionService.js';
 
 vi.mock('$app/environment', () => ({
@@ -20,13 +19,6 @@ vi.mock('./simpleHybridService', () => ({
 vi.mock('../audio/recordingRecoveryStore', () => ({
 	getLatestRecordingDraft: vi.fn(),
 	deleteRecordingDraft: vi.fn()
-}));
-
-vi.mock('../analytics', () => ({
-	analytics: {
-		copyTranscript: vi.fn(),
-		shareTranscript: vi.fn()
-	}
 }));
 
 describe('TranscriptionService clipboard fallback', () => {
@@ -82,6 +74,5 @@ describe('TranscriptionService clipboard fallback', () => {
 		expect(copied).toBe(true);
 		expect(state.copyNeedsGesture).toBe(false);
 		expect(state.clipboardSuccess).toBe(true);
-		expect(analytics.copyTranscript).toHaveBeenCalledWith(2);
 	});
 });

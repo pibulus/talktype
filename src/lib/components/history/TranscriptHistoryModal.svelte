@@ -17,6 +17,7 @@
 		cleanTranscriptTags,
 		getTranscriptTagPool
 	} from '$lib/services/storage/transcriptTags.js';
+	import { soundService } from '$lib/services/infrastructure/soundService.js';
 
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { PRICING } from '$lib/config/pricing.js';
@@ -123,16 +124,17 @@
 	async function copyTranscript(text) {
 		try {
 			await navigator.clipboard.writeText(text);
+			soundService.copySuccess();
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
-					detail: { message: 'Copied to clipboard.', type: 'success' }
+					detail: { message: 'Copied', type: 'success' }
 				})
 			);
 		} catch (err) {
 			console.error('Failed to copy:', err);
 			window.dispatchEvent(
 				new CustomEvent('talktype:toast', {
-					detail: { message: 'Copy needs one more try.', type: 'info' }
+					detail: { message: 'Try again', type: 'info' }
 				})
 			);
 		}

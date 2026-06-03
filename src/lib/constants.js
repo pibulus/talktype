@@ -23,7 +23,7 @@ export const STORAGE_KEYS = {
 	THEME: 'talktype-vibe',
 	FIRST_VISIT: 'hasSeenTalkTypeIntro',
 	AUTO_RECORD: 'talktype_auto_record',
-	PROMPT_STYLE: 'talktype_prompt_style',
+	PROMPT_STYLE: 'talktype-prompt-style',
 	CUSTOM_PROMPT: 'talktype_custom_prompt',
 	SUPPORTER: `${APP_STORAGE_PREFIX}:supporter`,
 	SUPPORTER_TOKEN: `${APP_STORAGE_PREFIX}:supporter_token`,
@@ -48,7 +48,9 @@ export const LEGACY_STORAGE_KEYS = {
 	SUPPORTER: ['talktype_supporter'],
 	SUPPORTER_TOKEN: ['talktype_supporter_token'],
 	SUPPORTER_PASSPORT_CODE: ['talktype_supporter_passport_code'],
-	VAULT_SERVER_URL: ['talktype_vault_server_url']
+	VAULT_SERVER_URL: ['talktype_vault_server_url'],
+	PROMPT_STYLE: ['talktype_prompt_style'],
+	CUSTOM_PROMPT: ['talktype-custom-prompt']
 };
 
 export const SUPPORTER_CHECKOUT = {
@@ -164,7 +166,6 @@ export const ANIMATION = {
 
 	// Model Download & Loading
 	MODEL: {
-		AUTO_LOAD_DELAY: 3000, // Auto-load models after 3s if no interaction
 		DOWNLOAD_RETRY_DELAY: 2000, // Initial retry delay (exponential backoff)
 		MAX_RETRIES: 4 // Maximum number of download retries
 	}
@@ -220,44 +221,24 @@ export const SERVICE_EVENTS = {
 
 // CTA Button Phrases
 export const CTA_PHRASES = [
-	'Start Recording', // Always first
-	'Click & Speak',
-	'Talk Now',
-	'Transcribe Me Baby',
-	"Start Yer Yappin'",
-	'Say the Thing',
-	'Feed Words Now',
-	'Just Say It',
-	'Speak Up Friend',
-	'Talk to Me',
-	'Ready When You Are'
+	'Say', // Always first
+	'Tell',
+	'Spill',
+	'Go',
+	'Again',
+	'More'
 ];
 
 // Button State Labels
 export const BUTTON_LABELS = {
-	DOWNLOADING: 'Downloading offline model...',
-	PROCESSING: 'Processing...',
-	RECORDING: 'Stop Recording',
-	DEFAULT: 'Start Recording'
+	DOWNLOADING: 'Offline',
+	PROCESSING: 'Processing',
+	RECORDING: 'Done',
+	DEFAULT: 'Say'
 };
 
 // Clipboard Success Messages
-export const COPY_MESSAGES = [
-	'Copied to clipboard! ✨',
-	'Boom! In your clipboard! 🎉',
-	'Text saved to clipboard! 👍',
-	'Snagged that for you! 🙌',
-	'All yours now! 💫',
-	'Copied and ready to paste! 📋',
-	'Captured in clipboard! ✅',
-	'Text copied successfully! 🌟',
-	'Got it! Ready to paste! 🚀',
-	'Your text is saved! 💖',
-	'Copied with magic! ✨',
-	'Text safely copied! 🔮',
-	'Copied and good to go! 🎯',
-	'Saved to clipboard! 🎊'
-];
+export const COPY_MESSAGES = ['Copied'];
 
 // Offline Haikus
 export const OFFLINE_HAIKUS = [

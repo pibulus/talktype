@@ -144,7 +144,8 @@
 				on:mouseleave={() => {
 					showCopyTooltip = false;
 				}}
-				aria-label={copyNeedsGesture ? 'Copy this transcript' : 'Copy transcript to clipboard'}
+				aria-label={copyNeedsGesture ? 'Copy this transcript' : 'Copy transcript'}
+				title="Copy"
 			>
 				<!-- Ghost icon using the app's current theme -->
 				<div class="h-full w-full p-0.5">
@@ -156,7 +157,7 @@
 					<div
 						class="copy-tooltip absolute -right-2 top-12 z-[250] whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md sm:right-0 sm:top-12"
 					>
-						Copy to clipboard
+						Copy
 						<div
 							class="tooltip-arrow absolute -top-1.5 right-6 h-3 w-3 rotate-45 bg-white sm:right-4"
 						></div>
@@ -165,10 +166,14 @@
 			</button>
 			{#if copyNeedsGesture}
 				<span
-					class="copy-nudge pointer-events-none absolute -top-4 right-14 z-[190] rounded-full border border-pink-200 bg-white/95 px-3 py-1.5 text-xs font-extrabold text-gray-800 shadow-md sm:right-10"
+					class="copy-nudge pointer-events-none absolute -top-3 right-14 z-[190] flex h-7 w-11 items-center justify-center rounded-full border border-pink-200 bg-white/95 shadow-md sm:right-10"
+					aria-hidden="true"
 				>
-					Tap to copy
+					<span class="copy-nudge-dot"></span>
+					<span class="copy-nudge-dot"></span>
+					<span class="copy-nudge-dot"></span>
 				</span>
+				<span class="sr-only">Tap to copy</span>
 			{/if}
 
 			<!-- Redesigned transcript box with proper structure -->
@@ -268,6 +273,15 @@
 
 	.copy-nudge {
 		animation: copy-nudge-pop 1.65s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+	}
+
+	.copy-nudge-dot {
+		margin: 0 0.1rem;
+		height: 0.28rem;
+		width: 0.28rem;
+		border-radius: 9999px;
+		background: #ec4899;
+		box-shadow: 0 0 8px rgba(236, 72, 153, 0.24);
 	}
 
 	@keyframes copy-nudge-pop {

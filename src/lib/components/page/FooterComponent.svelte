@@ -1,26 +1,22 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { analytics } from '$lib/services/analytics';
+	import { analytics } from '$lib/services/analytics.js';
 
 	const dispatch = createEventDispatcher();
 
 	function showAbout() {
-		analytics.viewModal('about');
 		dispatch('showAbout');
 	}
 
 	function showSettings() {
-		analytics.viewModal('settings');
 		dispatch('showSettings');
 	}
 
 	function showHistory() {
-		analytics.viewModal('history');
 		dispatch('showHistory');
 	}
 
 	function showExtension() {
-		analytics.viewModal('extension');
 		dispatch('showExtension');
 	}
 
@@ -34,8 +30,10 @@
 		try {
 			if (navigator.share) {
 				await navigator.share(shareData);
+				analytics.appShared({ method: 'native' });
 			} else {
 				await navigator.clipboard.writeText(shareData.url);
+				analytics.appShared({ method: 'clipboard' });
 				// Optional: You could dispatch a toast event here if you had a toast system
 				// dispatch('showToast', { message: 'Link copied!' });
 			}

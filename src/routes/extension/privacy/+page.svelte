@@ -47,7 +47,7 @@
 				<h2 class="text-xl font-black">What TalkType does not do</h2>
 				<ul class="space-y-2 text-sm leading-relaxed text-gray-700 sm:text-base">
 					<li>It does not create a TalkType account for you.</li>
-					<li>It does not run analytics or telemetry for the extension.</li>
+					<li>It does not run telemetry for the extension.</li>
 					<li>It does not keep a TalkType-hosted transcript history for the extension.</li>
 					<li>It does not sell your data.</li>
 				</ul>

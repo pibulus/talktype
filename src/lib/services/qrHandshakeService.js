@@ -7,8 +7,14 @@ const DEFAULT_QRBUDDY_APP_URL = 'https://qrbuddy.app';
 const DEFAULT_QRBUDDY_STYLE = 'sunset';
 const DEFAULT_QR_SIZE = 256;
 
+const PUBLIC_ENV = {
+	PUBLIC_APP_URL: import.meta.env.PUBLIC_APP_URL,
+	PUBLIC_QRBUDDY_API_URL: import.meta.env.PUBLIC_QRBUDDY_API_URL,
+	PUBLIC_QRBUDDY_APP_URL: import.meta.env.PUBLIC_QRBUDDY_APP_URL
+};
+
 function getEnvValue(key, fallback) {
-	return import.meta.env?.[key]?.trim() || fallback;
+	return PUBLIC_ENV[key]?.trim() || fallback;
 }
 
 function normalizeQrSize(size) {

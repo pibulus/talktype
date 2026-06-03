@@ -1,11 +1,12 @@
 import { simpleHybridService } from './simpleHybridService';
 import { transcriptionState, transcriptionActions, uiActions } from '../infrastructure/stores';
-import { analytics } from '../analytics';
 import { COPY_MESSAGES, getRandomFromArray } from '$lib/constants';
 import { get } from 'svelte/store';
 import { getLatestRecordingDraft, deleteRecordingDraft } from '../audio/recordingRecoveryStore';
 import { browser } from '$app/environment';
+import { analytics } from '$lib/services/analytics.js';
 import { createLogger } from '$lib/utils/logger';
+import { soundService } from '$lib/services/infrastructure/soundService.js';
 
 const log = createLogger('TranscriptionService');
 
@@ -182,12 +183,16 @@ export class TranscriptionService {
 				uiActions.showClipboardSuccess();
 			}
 			uiActions.setScreenReaderMessage('Transcript copied to clipboard');
-			analytics.copyTranscript(text.split(/\s+/).length);
+			if (!silent) {
+				soundService.copySuccess();
+			}
+			analytics.copySucceeded({ trigger: silent ? 'auto' : 'manual' });
 		};
 
 		const markCopyNeedsGesture = () => {
 			uiActions.setCopyNeedsGesture(true);
 			uiActions.setScreenReaderMessage('Transcript ready. Use the copy button if needed.');
+			analytics.copyNeedsTap({ trigger: silent ? 'auto' : 'manual' });
 		};
 
 		try {
@@ -268,7 +273,7 @@ export class TranscriptionService {
 
 			uiActions.showClipboardSuccess();
 			uiActions.setScreenReaderMessage('Transcript shared successfully');
-			analytics.shareTranscript('web-share', text.split(/\s+/).length);
+			analytics.transcriptShared({ method: 'native' });
 			return true;
 		} catch (error) {
 			// Don't treat user cancellation as an error

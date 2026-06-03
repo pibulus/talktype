@@ -6,10 +6,10 @@ This directory holds the runtime service layer. For the full system map, see [..
 
 - `audio/audioService.js`: microphone permission, `MediaRecorder`, audio chunks, waveform data, iOS warm stream, cleanup.
 - `audio/recordingRecoveryStore.js`: IndexedDB recovery drafts and append-only active recording journal chunks.
-- `audio/recordingControlsService.js`: start/stop orchestration, time limits, Deepgram finalization, batch fallback, analytics, UI messages.
+- `audio/recordingControlsService.js`: start/stop orchestration, time limits, Deepgram finalization, batch fallback, UI messages.
 - `transcription/transcriptionService.js`: transcript progress state, retry of saved recordings, copy/share helpers.
 - `transcription/simpleHybridService.js`: chooses Offline Whisper or cloud batch transcription.
-- `transcription/offlineModelController.js`: controls when the offline Whisper model preloads and unloads.
+- `transcription/offlineModelController.js`: controls when the offline Whisper model loads and unloads.
 - `storage/transcriptStorage.js`: supporter transcript history, tags, and audio references in IndexedDB.
 - `storage/vaultAutoBackup.js`: best-effort current-history mirror after supporter history changes when Vault is configured.
 - `storage/vaultTranscriptBackup.js`: encrypted Vault mirror/restore orchestration for history, audio, and stale media cleanup.
@@ -20,6 +20,7 @@ This directory holds the runtime service layer. For the full system map, see [..
 - `pwa/pwaService.js`: install prompt state, installed detection, transcription count.
 - `first-visit/firstVisitService.js`: intro modal gating.
 - `modals/modalService.js`: dialog lifecycle helpers.
+- `infrastructure/soundService.js`: tiny portable WebAudio cue engine; use `createSoundService()` and `play('select')`/`play('copy')` in future apps, with TalkType-specific adapters kept as convenience methods.
 - `infrastructure/stores.js`: shared audio, recording, transcription, UI, and preference stores.
 
 ## External Transcription Boundaries

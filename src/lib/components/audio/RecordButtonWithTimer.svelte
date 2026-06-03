@@ -1,7 +1,6 @@
 <script>
 	import { createEventDispatcher, onDestroy } from 'svelte';
 	import { ANIMATION, getRandomFromArray } from '$lib/constants';
-	import DownloadingState from './states/DownloadingState.svelte';
 	import TranscribingState from './states/TranscribingState.svelte';
 	import { getRecordButtonState } from './recordButtonState.js';
 
@@ -10,18 +9,14 @@
 	// Props
 	export let recording = false;
 	export let transcribing = false;
-	export let downloading = false; // Model downloading state
 	export let clipboardSuccess = false;
 	export let recordingDuration = 0;
 	export let maxDuration = 300; // Default 5 minutes
 	export let warningThreshold = 60; // Seconds remaining to show warning
 	export let dangerThreshold = 10; // Seconds remaining to show danger
-	export let buttonLabel = 'Start Recording';
+	export let buttonLabel = 'Say';
 	export let successMessages = ['Copied!'];
 	export let progress = 0; // For transcription progress
-	export let downloadProgress = 0;
-	export let downloadLabel = '';
-	export let downloadDetail = '';
 
 	// Element refs
 	let recordButtonElement;
@@ -47,9 +42,10 @@
 		maxDuration,
 		warningThreshold,
 		dangerThreshold,
-		clipboardSuccess,
+		clipboardSuccess: clipboardSuccess && !recording,
 		buttonLabel
 	});
+	$: showClipboardSuccess = clipboardSuccess && !recording;
 
 	$: {
 		if (clipboardSuccess && !previousClipboardSuccess) {
@@ -76,18 +72,16 @@
 	}
 
 	function getCopySuccessMessage() {
-		return getRandomFromArray(successMessages?.length ? successMessages : ['Copied!']) || 'Copied!';
+		return getRandomFromArray(successMessages?.length ? successMessages : ['Copied']) || 'Copied';
 	}
 </script>
 
-{#if downloading}
-	<DownloadingState progress={downloadProgress} statusText={downloadLabel} detail={downloadDetail} />
-{:else if transcribing}
+{#if transcribing}
 	<TranscribingState {progress} />
 {:else}
 	<button
 		bind:this={recordButtonElement}
-		class="record-button pulse-subtle w-[90%] rounded-full transition-all duration-300 ease-out sm:w-[85%] {clipboardSuccess
+		class="record-button pulse-subtle w-[90%] rounded-full transition-all duration-300 ease-out sm:w-[85%] {showClipboardSuccess
 			? 'notification-pulse border border-purple-200 bg-purple-50 text-black'
 			: 'text-black'} mx-auto flex h-[64px] min-w-[280px] max-w-[420px] items-center justify-center px-6 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:text-xl md:text-2xl {recording
 			? 'recording-active'
@@ -108,16 +102,18 @@
 		>
 			<!-- Clipboard success message -->
 			<span
-				class="absolute inset-0 flex transform items-center justify-center transition-all duration-300 ease-out {clipboardSuccess
+				class="absolute inset-0 flex transform items-center justify-center transition-all duration-300 ease-out {showClipboardSuccess
 					? 'scale-100 opacity-100'
 					: 'scale-95 opacity-0'}"
-				style="visibility: {clipboardSuccess ? 'visible' : 'hidden'};"
+				style="visibility: {showClipboardSuccess ? 'visible' : 'hidden'};"
 			>
 				<span class="flex items-center justify-center gap-1">
 					<svg
 						class="mr-1 h-4 w-4 text-purple-500"
 						viewBox="0 0 24 24"
 						xmlns="http://www.w3.org/2000/svg"
+						aria-hidden="true"
+						focusable="false"
 						style="pointer-events: none;"
 					>
 						<path
@@ -134,10 +130,10 @@
 
 			<!-- Button label with integrated timer -->
 			<span
-				class="transform transition-all duration-300 ease-out {clipboardSuccess
+				class="transform transition-all duration-300 ease-out {showClipboardSuccess
 					? 'scale-90 opacity-0'
 					: 'scale-100 opacity-100'}"
-				style="visibility: {clipboardSuccess ? 'hidden' : 'visible'};"
+				style="visibility: {showClipboardSuccess ? 'hidden' : 'visible'};"
 			>
 				<span class="button-content relative z-10">
 					<!-- Main label - the button text is on top of the progress bar -->
@@ -251,19 +247,25 @@
 
 	/* Subtle breathing glow for button */
 	.pulse-subtle {
-		animation: button-breathe 3.5s ease-in-out infinite;
+		animation: button-breathe 4.8s ease-in-out infinite;
 		transform-origin: center;
 	}
 
 	@keyframes button-breathe {
 		0%,
 		100% {
-			box-shadow: 0 0 12px 2px rgba(251, 191, 36, 0.35);
+			box-shadow:
+				0 4px 6px -1px rgba(251, 191, 36, 0.2),
+				0 2px 4px -1px rgba(0, 0, 0, 0.1),
+				0 0 8px 1px rgba(251, 191, 36, 0.14);
 			transform: scale(1);
 		}
 		50% {
-			box-shadow: 0 0 20px 6px rgba(251, 191, 36, 0.5);
-			transform: scale(1.02);
+			box-shadow:
+				0 4px 7px -1px rgba(251, 191, 36, 0.22),
+				0 2px 4px -1px rgba(0, 0, 0, 0.1),
+				0 0 12px 2px rgba(251, 191, 36, 0.2);
+			transform: scale(1.004);
 		}
 	}
 

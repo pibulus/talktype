@@ -123,6 +123,30 @@ describe('SimpleHybridService', () => {
 		expect(whisperMock.whisperService.transcribeAudio).toHaveBeenCalledWith(audioBlob);
 	});
 
+	it('does not load Whisper for normal cloud transcription', async () => {
+		const { SimpleHybridService } = await import('./simpleHybridService.js');
+		const service = new SimpleHybridService();
+		const audioBlob = new Blob(['audio'], { type: 'audio/webm' });
+
+		storeMock.privacyMode.set('false');
+		vi.spyOn(service, 'transcribeWithCloud').mockResolvedValue('cloud transcript');
+
+		const result = await service.transcribeAudio(audioBlob, {
+			mode: {
+				useOfflineWhisper: false
+			}
+		});
+
+		expect(result).toBe('cloud transcript');
+		expect(service.transcribeWithCloud).toHaveBeenCalledWith(audioBlob, {
+			mode: {
+				useOfflineWhisper: false
+			}
+		});
+		expect(whisperMock.whisperService.preloadModel).not.toHaveBeenCalled();
+		expect(whisperMock.whisperService.transcribeAudio).not.toHaveBeenCalled();
+	});
+
 	it('finishes a start-time Offline recording even if Offline Mode is turned off before Whisper loads', async () => {
 		const { SimpleHybridService } = await import('./simpleHybridService.js');
 		const service = new SimpleHybridService();

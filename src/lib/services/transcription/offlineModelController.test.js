@@ -1,8 +1,8 @@
 import { writable } from 'svelte/store';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OfflineModelController } from './offlineModelController.js';
 
-function createController({ initialPrivacyMode = 'false', delayMs = 100 } = {}) {
+function createController({ initialPrivacyMode = 'false' } = {}) {
 	const privacyStore = writable(initialPrivacyMode);
 	const hybridService = {
 		startBackgroundLoad: vi.fn().mockResolvedValue({ success: true }),
@@ -11,9 +11,7 @@ function createController({ initialPrivacyMode = 'false', delayMs = 100 } = {}) 
 	const controller = new OfflineModelController({
 		hybridService,
 		privacyStore,
-		delayMs,
-		isBrowser: true,
-		target: window
+		isBrowser: true
 	});
 
 	return { controller, hybridService, privacyStore };
@@ -22,35 +20,29 @@ function createController({ initialPrivacyMode = 'false', delayMs = 100 } = {}) 
 describe('OfflineModelController', () => {
 	let controller;
 
-	beforeEach(() => {
-		vi.useFakeTimers();
-	});
-
 	afterEach(() => {
 		controller?.cleanup();
 		controller = null;
-		vi.useRealTimers();
 	});
 
-	it('does not download a model when Offline Mode is disabled', () => {
+	it('does not download a model on start or first interaction', () => {
 		const setup = createController({ initialPrivacyMode: 'false' });
 		controller = setup.controller;
 		controller.start();
 
 		window.dispatchEvent(new MouseEvent('click'));
-		vi.advanceTimersByTime(100);
 
 		expect(setup.hybridService.startBackgroundLoad).not.toHaveBeenCalled();
 	});
 
-	it('starts the model download after interaction when Offline Mode was already enabled', () => {
+	it('does not auto-download when Offline Mode was already persisted before start', () => {
 		const setup = createController({ initialPrivacyMode: 'true' });
 		controller = setup.controller;
 		controller.start();
 
 		window.dispatchEvent(new MouseEvent('click'));
 
-		expect(setup.hybridService.startBackgroundLoad).toHaveBeenCalledTimes(1);
+		expect(setup.hybridService.startBackgroundLoad).not.toHaveBeenCalled();
 	});
 
 	it('loads immediately when Offline Mode is turned on and releases when turned off', () => {

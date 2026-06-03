@@ -32,7 +32,6 @@
 	import { liveMode, privacyMode } from '$lib';
 	import { transcriptionStore } from '$lib/stores/transcriptionStore';
 	import { offlineModelController } from '$lib/services/transcription/offlineModelController.js';
-	import { whisperStatus } from '../../services/transcription/whisper/whisperService';
 
 	const dispatch = createEventDispatcher();
 
@@ -40,10 +39,7 @@
 	export let ghostComponent = null;
 	// Service instances
 	let unsubscribers = [];
-	let modelReady = false;
 
-	// Subscribe to whisper status to track when model is ready
-	$: modelReady = $whisperStatus.isLoaded;
 	$: liveTranscriptMode = $liveMode === 'true' && $privacyMode !== 'true';
 
 	// Sync streaming text to global store
@@ -174,7 +170,7 @@
 	<!-- Shared container with proper centering for mobile -->
 	<div class="mobile-centered-container flex w-full flex-col items-center justify-center">
 		<!-- Recording Controls Section -->
-		<RecordingControls bind:this={recordingControlsRef} {ghostComponent} {modelReady} />
+		<RecordingControls bind:this={recordingControlsRef} {ghostComponent} />
 
 		<!-- Dynamic content area - only render when there's content -->
 		{#if $isRecording || $isTranscribing || $transcriptionText || $errorMessage}

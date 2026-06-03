@@ -27,9 +27,10 @@ vi.mock('$lib/services/transcription/mode.js', () => ({
 	getTranscriptionMode: transcriptionModeMock.getTranscriptionMode
 }));
 
-import { STORAGE_KEYS } from '$lib/constants';
+import { CTA_PHRASES, STORAGE_KEYS } from '$lib/constants';
 import {
 	getCompletedTranscriptionMethod,
+	getNextCtaIndex,
 	RecordingControlsService,
 	saveLastTranscriptionMethod
 } from './recordingControlsService.js';
@@ -124,6 +125,47 @@ describe('RecordingControlsService', () => {
 		saveLastTranscriptionMethod('whisper', storage);
 
 		expect(storage.setItem).toHaveBeenCalledWith(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD, 'whisper');
+	});
+
+	it('picks a fresh idle CTA without repeating the current one', () => {
+		expect(getNextCtaIndex(0, () => 0)).toBe(1);
+		expect(getNextCtaIndex(0, () => 0.999)).toBe(CTA_PHRASES.length - 1);
+		expect(getNextCtaIndex(CTA_PHRASES.length - 1, () => 0.999)).not.toBe(CTA_PHRASES.length - 1);
+	});
+
+	it('clears stale clipboard success when a new recording starts', async () => {
+		const uiActions = {
+			clearErrorMessage: vi.fn(),
+			setErrorMessage: vi.fn(),
+			setScreenReaderMessage: vi.fn(),
+			setClipboardSuccess: vi.fn()
+		};
+
+		service = new RecordingControlsService({
+			audioService: {
+				startRecording: vi.fn().mockResolvedValue(true),
+				cleanup: vi.fn().mockResolvedValue()
+			},
+			transcriptionService: {
+				transcribeAudio: vi.fn(),
+				clearPendingRecordingDraft: vi.fn(),
+				copyToClipboard: vi.fn()
+			},
+			hapticService: null,
+			pwaService: {
+				incrementTranscriptionCount: vi.fn()
+			},
+			uiActions,
+			stores: {
+				isRecording,
+				isTranscribing,
+				transcriptionText
+			}
+		});
+
+		await service.startRecording();
+
+		expect(uiActions.setClipboardSuccess).toHaveBeenCalledWith(false);
 	});
 
 	it('stops recording once when the recording time limit is reached', async () => {
@@ -290,6 +332,34 @@ describe('RecordingControlsService', () => {
 			STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD,
 			'whisper'
 		);
+	});
+
+	it('stays busy while batch stop waits for the recorder to resolve', async () => {
+		const audioBlob = new Blob(['x'.repeat(1200)], { type: 'audio/webm' });
+		let resolveStop;
+		const stopPromise = new Promise((resolve) => {
+			resolveStop = resolve;
+		});
+		const audioService = {
+			stopRecording: vi.fn().mockReturnValue(stopPromise)
+		};
+		const transcriptionService = {
+			transcribeAudio: vi.fn().mockResolvedValue('batch transcript'),
+			clearPendingRecordingDraft: vi.fn().mockResolvedValue(),
+			copyToClipboard: vi.fn().mockResolvedValue()
+		};
+
+		audioActions.updateState(AudioStates.RECORDING);
+		service = createService({ audioService, transcriptionService });
+
+		const serviceStopPromise = service.stopRecording();
+		await vi.waitFor(() => expect(get(isTranscribing)).toBe(true));
+
+		resolveStop(audioBlob);
+		await serviceStopPromise;
+
+		expect(get(isTranscribing)).toBe(false);
+		expect(get(transcriptionText)).toBe('batch transcript');
 	});
 
 	it('does not mark live mode as live when it falls back to batch transcription', async () => {

@@ -138,6 +138,7 @@ export class WhisperService {
 		this.hasWarmedUp = false;
 		this.modelFileProgress = new Map();
 		this.modelHasSeenLargeFile = false;
+		this.modelProgressInterval = null;
 
 		this.updateStatus({ supportsWhisper: this.isSupported });
 		this.#refreshDeviceStorageState();
@@ -229,6 +230,7 @@ export class WhisperService {
 				})
 			});
 			console.log(`[WhisperService] Loading ${modelConfig.name} (WASM only)…`);
+			this.#startLoadProgressTicker(modelConfig);
 
 			const loadStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
 			const pipeline = await loadTransformersPipeline();
@@ -256,6 +258,7 @@ export class WhisperService {
 			const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
 			const totalSecs = ((endTime - loadStart || 0) / 1000).toFixed(2);
 			console.log(`[WhisperService] Model ready in ${totalSecs}s (WASM, warmed).`);
+			this.#stopLoadProgressTicker();
 
 			this.updateStatus({
 				isLoaded: true,
@@ -274,6 +277,7 @@ export class WhisperService {
 			return { success: true, transcriber: this.transcriber };
 		} catch (error) {
 			console.error('[WhisperService] Failed to load model:', error);
+			this.#stopLoadProgressTicker();
 			this.updateStatus({
 				isLoaded: false,
 				isLoading: false,
@@ -287,6 +291,45 @@ export class WhisperService {
 			this.modelLoadPromise = null;
 			return { success: false, error };
 		}
+	}
+
+	#startLoadProgressTicker(modelConfig) {
+		this.#stopLoadProgressTicker();
+
+		this.modelProgressInterval = setInterval(() => {
+			const status = get(whisperStatus);
+			if (!status.isLoading) return;
+
+			const phase = status.phase;
+			const phaseConfig =
+				{
+					[WHISPER_PHASES.LOADING_LIBRARY]: { ceiling: 12, step: 1 },
+					[WHISPER_PHASES.DOWNLOADING]: { ceiling: 82, step: 1.2 },
+					[WHISPER_PHASES.PREPARING]: { ceiling: 92, step: 0.8 },
+					[WHISPER_PHASES.WARMING]: { ceiling: 97, step: 0.5 }
+				}[phase] || null;
+
+			if (!phaseConfig || status.progress >= phaseConfig.ceiling) return;
+
+			const progress = Math.min(
+				phaseConfig.ceiling,
+				Number(status.progress || 0) + phaseConfig.step
+			);
+			this.updateStatus({
+				progress,
+				statusText: getLoadStatusText({
+					phase,
+					progress,
+					modelName: modelConfig?.name
+				})
+			});
+		}, 900);
+	}
+
+	#stopLoadProgressTicker() {
+		if (!this.modelProgressInterval) return;
+		clearInterval(this.modelProgressInterval);
+		this.modelProgressInterval = null;
 	}
 
 	#handleLoadProgress(progressEvent, modelConfig) {
@@ -501,6 +544,8 @@ export class WhisperService {
 	}
 
 	async unloadModel() {
+		this.#stopLoadProgressTicker();
+
 		if (!this.transcriber) return;
 
 		try {

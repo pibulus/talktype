@@ -54,6 +54,7 @@ export async function createSession(event) {
 		path: '/',
 		httpOnly: true,
 		secure: event.url.protocol === 'https:',
+		sameSite: 'lax',
 		maxAge: SESSION_TTL_MS / 1000
 	});
 }

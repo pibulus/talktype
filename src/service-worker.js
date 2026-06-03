@@ -72,8 +72,11 @@ self.addEventListener('fetch', (event) => {
 	// ignore POST requests etc
 	if (event.request.method !== 'GET') return;
 
+	const requestUrl = new URL(event.request.url);
+	if (requestUrl.origin !== self.location.origin) return;
+
 	async function respond() {
-		const url = new URL(event.request.url);
+		const url = requestUrl;
 		const cache = await caches.open(CACHE);
 
 		if (shouldBypassRuntimeCache(url)) {
@@ -115,11 +118,6 @@ self.addEventListener('fetch', (event) => {
 				return cachedResponse;
 			}
 
-			return fetch(event.request);
-		}
-
-		// Skip service worker for Umami analytics
-		if (url.href.includes('cloud.umami.is')) {
 			return fetch(event.request);
 		}
 

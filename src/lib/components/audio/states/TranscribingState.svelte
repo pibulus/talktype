@@ -1,23 +1,29 @@
 <script>
 	export let progress = 0;
+
+	$: safeProgress = Math.max(0, Math.min(100, Math.round(Number(progress) || 0)));
+	$: visualProgress = safeProgress > 0 ? safeProgress : 16;
+	$: label = 'Processing';
 </script>
 
-<!-- Transcribing: Progress bar fills up (shows actual progress) -->
 <div
 	class="progress-container relative mx-auto flex h-[64px] w-[90%] max-w-[420px] items-center justify-center overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
 	role="progressbar"
-	aria-label="Transcription progress"
-	aria-valuenow={progress}
+	aria-label={label}
+	aria-valuenow={safeProgress}
 	aria-valuemin="0"
 	aria-valuemax="100"
 >
 	<div
 		class="progress-bar h-full bg-gradient-to-r from-amber-400 to-rose-300 transition-all duration-300"
-		style="width: {progress}%;"
-	>
-		<!-- Visual-only progress bar, no text needed -->
-		<span class="sr-only">Processing {progress}%</span>
-	</div>
+		style="width: {visualProgress}%;"
+	></div>
+	<span class="sr-only">{label}</span>
+	<span class="processing-dots relative z-10" aria-hidden="true">
+		<span></span>
+		<span></span>
+		<span></span>
+	</span>
 </div>
 
 <style>
@@ -35,6 +41,41 @@
 		height: 100%;
 		transition: width 0.3s ease;
 		animation: pulse-glow 1.5s infinite ease-in-out;
+	}
+
+	.processing-dots {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+	}
+
+	.processing-dots span {
+		width: 0.55rem;
+		height: 0.55rem;
+		border-radius: 9999px;
+		background: rgba(17, 24, 39, 0.76);
+		animation: dot-breathe 1.15s ease-in-out infinite;
+	}
+
+	.processing-dots span:nth-child(2) {
+		animation-delay: 0.14s;
+	}
+
+	.processing-dots span:nth-child(3) {
+		animation-delay: 0.28s;
+	}
+
+	@keyframes dot-breathe {
+		0%,
+		100% {
+			opacity: 0.35;
+			transform: scale(0.82);
+		}
+		50% {
+			opacity: 0.9;
+			transform: scale(1);
+		}
 	}
 
 	@keyframes pulse-glow {

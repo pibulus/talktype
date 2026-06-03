@@ -1,5 +1,6 @@
 <script>
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
+	import { soundService } from '$lib/services/infrastructure/soundService.js';
 
 	export let currentTheme;
 	export let onThemeChange;
@@ -31,19 +32,21 @@
 
 	function handleThemeClick(vibe) {
 		if (isThemeLocked(vibe)) {
+			soundService.locked();
 			openSupporterModal();
 			return;
 		}
 
+		soundService.select();
 		onThemeChange(vibe.id);
 	}
 </script>
 
-<div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+<div class="grid grid-cols-4 gap-2" role="group" aria-label="Vibe">
 	{#each vibeOptions as vibe, index}
 		<button
 			type="button"
-			class="vibe-option relative flex flex-col items-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {currentTheme ===
+			class="vibe-option relative flex min-h-[72px] items-center justify-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {currentTheme ===
 			vibe.id
 				? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
 				: ''} {isThemeLocked(vibe) ? 'locked-vibe' : ''}"
@@ -53,15 +56,15 @@
 				? `${vibe.name} vibe requires supporter mode`
 				: `Choose ${vibe.name} vibe`}
 			aria-pressed={currentTheme === vibe.id && !isThemeLocked(vibe)}
-			title={isThemeLocked(vibe) ? 'Requires supporter mode' : `Choose ${vibe.name} vibe`}
+			title={isThemeLocked(vibe) ? 'Supporter' : vibe.name}
 		>
-			<div class="preview-container mb-2">
+			<div class="preview-container">
 				<!-- Use the original DisplayGhost component with masking -->
-				<div class="preview-ghost-wrapper relative h-12 w-12">
+				<div class="preview-ghost-wrapper relative h-11 w-11">
 					<div class="ghost-mask-wrapper">
 						<DisplayGhost
 							theme={vibe.id}
-							size="48px"
+							size="44px"
 							seed={index * 1000 + 12345}
 							disableJsAnimation={true}
 						/>
@@ -69,12 +72,12 @@
 				</div>
 			</div>
 
-			<span class="text-xs font-medium text-gray-700">{vibe.name}</span>
+			<span class="sr-only">{vibe.name}</span>
 
 			{#if isThemeLocked(vibe)}
 				<div
 					class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-xs text-white shadow-sm"
-					title="Requires supporter mode"
+					title="Supporter"
 					aria-hidden="true"
 				>
 					★

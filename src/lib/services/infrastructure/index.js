@@ -2,5 +2,6 @@
 export { eventBus } from './eventBus';
 export { StorageUtils } from './storageUtils';
 export { hapticService } from './hapticService';
+export { soundService } from './soundService';
 export { appActive, shouldAnimateStore } from './animationState';
 export { waveformData } from './stores';

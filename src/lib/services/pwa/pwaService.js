@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import { writable, derived, get } from 'svelte/store';
 import { StorageUtils } from '../infrastructure/storageUtils';
 import { STORAGE_KEYS } from '../../constants';
+import { analytics } from '$lib/services/analytics.js';
 
 // PWA state configuration
 const PWA_INSTALL_PROMPT_THRESHOLD = 5;
@@ -268,6 +269,7 @@ export class PwaService {
 			);
 
 			this.log(`PWA installation prompt shown (count: ${promptCount + 1})`);
+			analytics.pwaPromptShown();
 		} catch (error) {
 			console.error('Error recording PWA prompt shown:', error);
 		}
@@ -277,9 +279,13 @@ export class PwaService {
 		if (!browser) return;
 
 		try {
+			const wasInstalled = StorageUtils.getBooleanItem(STORAGE_KEYS.PWA_INSTALLED, false);
 			StorageUtils.setItem(STORAGE_KEYS.PWA_INSTALLED, 'true');
 			isPwaInstalled.set(true);
 			this.log('PWA marked as installed');
+			if (!wasInstalled) {
+				analytics.pwaInstalled();
+			}
 		} catch (error) {
 			console.error('Error marking PWA as installed:', error);
 		}

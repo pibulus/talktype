@@ -116,7 +116,7 @@ trap cleanup_smoke EXIT
 
 smoke_ok=0
 for _ in $(seq 1 30); do
-  if curl -fsS "http://${smoke_host}:${smoke_port}/" >/dev/null; then
+  if curl -fsS --max-time 5 "http://${smoke_host}:${smoke_port}/" >/dev/null; then
     smoke_ok=1
     break
   fi
@@ -201,7 +201,7 @@ systemctl is-active "$service"
 
 live_ok=0
 for _ in $(seq 1 20); do
-  if curl -fsS "$live_url" >/dev/null; then
+  if curl -fsS --max-time 5 "$live_url" >/dev/null; then
     live_ok=1
     break
   fi

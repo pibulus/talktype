@@ -1,13 +1,14 @@
 import { browser } from '$app/environment';
 import { eventBus as eventBusInstance } from './infrastructure/index';
 import { hapticService as hapticServiceInstance } from './infrastructure/index';
+import { soundService as soundServiceInstance } from './infrastructure/index';
 import { audioService as audioServiceInstance } from './audio/audioService';
 import { transcriptionService as transcriptionServiceInstance } from './transcription/transcriptionService';
 import { modalService as modalServiceInstance } from './modals/modalService';
 import { firstVisitService as firstVisitServiceInstance } from './first-visit/firstVisitService';
 import { pwaService as pwaServiceInstance } from './pwa/pwaService';
 import { resetStores } from './infrastructure/stores';
-export { eventBus, hapticService, StorageUtils } from './infrastructure/index';
+export { eventBus, hapticService, soundService, StorageUtils } from './infrastructure/index';
 export { modalService } from './modals/modalService';
 export { firstVisitService, isFirstVisit } from './first-visit/firstVisitService';
 export {
@@ -52,7 +53,7 @@ let pendingDraftRestoreStarted = false;
 
 // Convenience function to initialize all services
 export function initializeServices(options = {}) {
-	const { debug = false, haptic = true, reset = !servicesInitialized } = options;
+	const { debug = false, haptic = true, sound = true, reset = !servicesInitialized } = options;
 
 	if (reset) {
 		resetStores();
@@ -75,6 +76,12 @@ export function initializeServices(options = {}) {
 		hapticServiceInstance.disable();
 	}
 
+	if (sound) {
+		soundServiceInstance.enable();
+	} else {
+		soundServiceInstance.disable();
+	}
+
 	servicesInitialized = true;
 	return getServices();
 }
@@ -91,6 +98,7 @@ function getServices() {
 		audioService: audioServiceInstance,
 		transcriptionService: transcriptionServiceInstance,
 		hapticService: hapticServiceInstance,
+		soundService: soundServiceInstance,
 		modalService: modalServiceInstance,
 		firstVisitService: firstVisitServiceInstance,
 		pwaService: pwaServiceInstance

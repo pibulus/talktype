@@ -60,7 +60,10 @@ export const uiState = writable({
 // User options - initialize promptStyle from localStorage
 function createUserPreferences() {
 	const initialPromptStyle = browser
-		? localStorage.getItem('talktype-prompt-style') || 'standard'
+		? readStorageValue(STORAGE_KEYS.PROMPT_STYLE, {
+				legacyKeys: LEGACY_STORAGE_KEYS.PROMPT_STYLE,
+				defaultValue: 'standard'
+			})
 		: 'standard';
 	const initialSupporterStatus = browser
 		? forceSupporterMode || hasStoredSupporterToken()
@@ -234,6 +237,15 @@ export const transcriptionActions = {
 		transcriptionState.update((current) => ({
 			...current,
 			progress: Math.min(progress, 100)
+		}));
+	},
+
+	cancelTranscribing() {
+		transcriptionState.update((current) => ({
+			...current,
+			inProgress: false,
+			progress: 0,
+			timestamp: Date.now()
 		}));
 	},
 
