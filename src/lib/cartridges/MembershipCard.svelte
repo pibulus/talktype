@@ -16,6 +16,9 @@
 	let mouseX = 50;
 	let mouseY = 50;
 	let isHovered = false;
+	let qrHasLoaded = false;
+	let qrHasFailed = false;
+	let previousQrImageUrl = '';
 
 	$: identity = generateMemberIdentity(vaultHash);
 	$: hasVaultHash = !identity.isFallback;
@@ -37,6 +40,11 @@
 	$: passportQrImageUrl = passportSyncUrl
 		? getVaultHandshakeQR({ data: passportSyncUrl, style: 'sunset', size: 256 })
 		: '';
+	$: if (passportQrImageUrl !== previousQrImageUrl) {
+		previousQrImageUrl = passportQrImageUrl;
+		qrHasLoaded = false;
+		qrHasFailed = false;
+	}
 
 	function handleMouseMove(e) {
 		const rect = cardEl.getBoundingClientRect();
@@ -52,7 +60,7 @@
 
 <div
 	bind:this={cardEl}
-	class="passport-card relative flex aspect-[1.586/1] w-full max-w-[320px] flex-col justify-between overflow-hidden rounded-2xl border border-[#fffdf0]/80 p-5 text-gray-900"
+	class="passport-card relative flex aspect-[1.586/1] w-full max-w-[342px] flex-col justify-between overflow-hidden rounded-[1.55rem] border border-[#fffdf0]/80 p-5 text-gray-900"
 	class:is-placeholder={!hasVaultHash}
 	style={cardStyle}
 	role="group"
@@ -65,11 +73,13 @@
 >
 	<div class="passport-glow pointer-events-none absolute inset-0"></div>
 	<div class="holofoil pointer-events-none absolute inset-0"></div>
-	<div class="passport-pattern pointer-events-none absolute right-0 top-0 h-full w-24"></div>
+	<div class="passport-laminate pointer-events-none absolute inset-0"></div>
+	<div class="passport-pattern pointer-events-none absolute right-0 top-0 h-full w-28"></div>
+	<div class="passport-edge pointer-events-none absolute inset-0"></div>
 
 	<div class="relative z-10 flex items-start justify-between gap-3">
 		<div class="min-w-0">
-			<h3 class="text-[11px] font-black uppercase tracking-[0.18em] text-gray-600">
+			<h3 class="passport-kicker text-[11px] font-black uppercase text-gray-600">
 				TalkType Passport
 			</h3>
 			<p class="passport-name mt-1 max-w-[190px] font-black">
@@ -87,7 +97,7 @@
 
 	<div class="relative z-10 flex items-end justify-between gap-4">
 		<div class="min-w-0">
-			<p class="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-600">Supporter ID</p>
+			<p class="passport-label text-[10px] font-bold uppercase text-gray-600">Supporter ID</p>
 			<p class="mt-1 font-mono text-sm font-black tracking-normal">{identity.memberId}</p>
 			{#if hasVaultHash && identity.phrase}
 				<p class="passport-phrase mt-1 italic">{identity.phrase}</p>
@@ -97,16 +107,31 @@
 		{#if passportQrImageUrl}
 			<a
 				class="passport-qr-stamp"
+				class:is-loading={!qrHasLoaded && !qrHasFailed}
+				class:is-fallback={qrHasFailed}
 				href={passportSyncUrl}
 				aria-label={`Open TalkType on another device with ${identity.memberId}`}
 			>
-				<img
-					src={passportQrImageUrl}
-					alt=""
-					loading="lazy"
-					decoding="async"
-					referrerpolicy="no-referrer"
-				/>
+				{#if !qrHasFailed}
+					<img
+						src={passportQrImageUrl}
+						alt=""
+						loading="lazy"
+						decoding="async"
+						referrerpolicy="no-referrer"
+						on:load={() => (qrHasLoaded = true)}
+						on:error={() => {
+							qrHasFailed = true;
+							qrHasLoaded = false;
+						}}
+					/>
+				{/if}
+				{#if qrHasFailed}
+					<span class="passport-link-fallback" aria-hidden="true">
+						<span class="fallback-ghost"></span>
+						<span class="fallback-word">PASS</span>
+					</span>
+				{/if}
 			</a>
 		{:else}
 			<div
@@ -128,13 +153,16 @@
 <style>
 	.passport-card {
 		background:
-			linear-gradient(135deg, rgba(255, 253, 240, 0.78), rgba(255, 253, 240, 0.2)),
-			linear-gradient(135deg, var(--passport-bg), #fff8e7);
+			radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.58), transparent 34%),
+			linear-gradient(135deg, rgba(255, 253, 240, 0.88), rgba(255, 253, 240, 0.18) 48%),
+			linear-gradient(135deg, var(--passport-bg) 0%, #fff6df 74%, #f9d8b6 100%);
 		box-shadow:
-			0 18px 34px rgba(136, 82, 88, 0.18),
+			0 24px 46px rgba(136, 82, 88, 0.22),
+			0 8px 18px rgba(236, 72, 153, 0.1),
 			0 3px 0 rgba(255, 253, 240, 0.9) inset,
 			0 0 0 1px rgba(136, 82, 88, 0.08);
 		transform-origin: center;
+		isolation: isolate;
 	}
 
 	.passport-card.is-placeholder {
@@ -143,41 +171,70 @@
 	}
 
 	.passport-glow {
-		background: linear-gradient(
-			115deg,
-			transparent 0%,
-			rgba(255, 253, 240, 0.5) 46%,
-			transparent 72%
-		);
+		background:
+			radial-gradient(circle at 18% 22%, rgba(255, 253, 240, 0.62), transparent 32%),
+			linear-gradient(115deg, transparent 0%, rgba(255, 253, 240, 0.54) 46%, transparent 72%);
 		mix-blend-mode: overlay;
-		opacity: 0.34;
+		opacity: 0.46;
 	}
 
 	.holofoil {
 		background:
-			radial-gradient(
-				ellipse at var(--mx) var(--my),
-				hsla(calc(var(--mx) * 3.6), 80%, 70%, 0.28) 0%,
-				hsla(calc(var(--mx) * 3.6 + 60), 70%, 65%, 0.18) 30%,
-				hsla(calc(var(--mx) * 3.6 + 120), 75%, 68%, 0.12) 60%,
-				transparent 80%
-			),
 			linear-gradient(
-				calc(var(--mx) * 1.8deg),
-				hsla(320, 70%, 75%, 0.08) 0%,
-				hsla(200, 80%, 70%, 0.06) 50%,
-				hsla(45, 85%, 72%, 0.08) 100%
-			);
-		mix-blend-mode: screen;
-		opacity: var(--hovered);
-		transition: opacity 300ms ease;
+				112deg,
+				transparent 0%,
+				transparent 22%,
+				rgba(111, 211, 255, 0.16) 34%,
+				rgba(255, 129, 214, 0.18) 47%,
+				rgba(255, 224, 130, 0.16) 60%,
+				transparent 76%
+			),
+			radial-gradient(
+				ellipse at 76% 28%,
+				rgba(116, 215, 255, 0.24) 0%,
+				rgba(255, 134, 210, 0.16) 35%,
+				transparent 66%
+			),
+			linear-gradient(28deg, transparent 8%, rgba(255, 255, 255, 0.16) 34%, transparent 54%);
+		mix-blend-mode: normal;
+		opacity: calc(0.28 + (var(--hovered) * 0.24));
+		transition: opacity 260ms ease;
 		border-radius: inherit;
+		clip-path: polygon(62% 0, 100% 0, 100% 100%, 55% 100%);
+		filter: saturate(1.02);
+	}
+
+	.passport-laminate {
+		background:
+			linear-gradient(118deg, transparent 5%, rgba(255, 255, 255, 0.34) 21%, transparent 38%),
+			linear-gradient(28deg, transparent 20%, rgba(255, 255, 255, 0.18) 48%, transparent 70%),
+			repeating-linear-gradient(
+				118deg,
+				rgba(255, 255, 255, 0) 0 18px,
+				rgba(255, 255, 255, 0.18) 19px 20px,
+				rgba(255, 255, 255, 0) 21px 38px
+			);
+		opacity: 0.54;
+		mix-blend-mode: soft-light;
+	}
+
+	.passport-edge {
+		border-radius: inherit;
+		box-shadow:
+			inset 0 0 0 1px rgba(255, 253, 240, 0.88),
+			inset 0 -1px 0 rgba(136, 82, 88, 0.12),
+			inset 0 1px 0 rgba(255, 255, 255, 0.86);
+	}
+
+	.passport-kicker,
+	.passport-label {
+		letter-spacing: 0;
 	}
 
 	.passport-phrase {
-		font-size: 0.62rem;
+		font-size: 0.64rem;
 		line-height: 1.3;
-		color: rgba(55, 65, 81, 0.55);
+		color: rgba(55, 65, 81, 0.62);
 		max-width: 160px;
 		overflow: hidden;
 		white-space: nowrap;
@@ -187,12 +244,13 @@
 	.passport-pattern {
 		background: repeating-linear-gradient(
 			135deg,
-			var(--passport-shape) 0 4px,
-			rgba(255, 253, 240, 0.52) 4px 8px,
-			rgba(255, 253, 240, 0.16) 8px 12px
+			color-mix(in srgb, var(--passport-shape) 86%, #f5c86b 14%) 0 5px,
+			rgba(255, 253, 240, 0.7) 5px 10px,
+			rgba(255, 253, 240, 0.2) 10px 15px
 		);
-		clip-path: polygon(28% 0, 100% 0, 100% 100%, 0 100%);
-		opacity: 0.74;
+		clip-path: polygon(24% 0, 100% 0, 100% 100%, 0 100%);
+		opacity: 0.86;
+		filter: saturate(1.08);
 	}
 
 	.passport-card.is-placeholder .passport-pattern {
@@ -200,19 +258,23 @@
 	}
 
 	.passport-name {
-		font-size: 1.48rem;
+		font-size: 1.56rem;
 		line-height: 1.08;
 		overflow-wrap: break-word;
-		text-shadow: 0 1px 0 rgba(255, 253, 240, 0.62);
+		color: #151827;
+		text-shadow:
+			0 1px 0 rgba(255, 253, 240, 0.72),
+			0 8px 20px rgba(136, 82, 88, 0.08);
 		text-wrap: balance;
 	}
 
 	.initials-chip {
-		background: rgba(255, 253, 240, 0.86);
-		background: color-mix(in srgb, var(--passport-shape) 24%, #fffdf0 76%);
-		border: 1px solid rgba(255, 253, 240, 0.88);
+		background:
+			linear-gradient(135deg, rgba(255, 255, 255, 0.68), rgba(255, 253, 240, 0.16)),
+			color-mix(in srgb, var(--passport-shape) 26%, #fffdf0 74%);
+		border: 1px solid rgba(255, 253, 240, 0.94);
 		box-shadow:
-			0 8px 18px rgba(136, 82, 88, 0.12),
+			0 10px 24px rgba(136, 82, 88, 0.16),
 			inset 0 1px 0 rgba(255, 253, 240, 0.72);
 	}
 
@@ -224,28 +286,54 @@
 
 	.passport-qr-stamp {
 		display: grid;
-		width: 3.7rem;
-		height: 3.7rem;
+		width: 4.1rem;
+		height: 4.1rem;
 		flex-shrink: 0;
 		place-items: center;
 		overflow: hidden;
-		border-radius: 0.9rem;
-		border: 1px solid rgba(255, 253, 240, 0.9);
-		background: #fffdf0;
-		padding: 0.18rem;
+		position: relative;
+		rotate: -2deg;
+		border-radius: 1.02rem;
+		border: 1px solid rgba(255, 253, 240, 0.94);
+		background:
+			linear-gradient(135deg, rgba(255, 253, 240, 0.94), rgba(255, 246, 223, 0.88)), #fffdf0;
+		padding: 0.2rem;
 		box-shadow:
-			0 8px 18px rgba(136, 82, 88, 0.14),
-			inset 0 1px 0 rgba(255, 253, 240, 0.9);
+			0 13px 26px rgba(136, 82, 88, 0.18),
+			0 2px 0 rgba(255, 253, 240, 0.9) inset,
+			inset 0 -1px 0 rgba(136, 82, 88, 0.08);
 		transition:
 			transform 150ms ease,
 			box-shadow 150ms ease;
 	}
 
+	.passport-qr-stamp::before {
+		content: '';
+		position: absolute;
+		inset: 0.28rem;
+		border-radius: 0.74rem;
+		background:
+			linear-gradient(90deg, rgba(236, 72, 153, 0.12), transparent 42%),
+			repeating-linear-gradient(
+				135deg,
+				rgba(236, 72, 153, 0.12) 0 3px,
+				rgba(255, 253, 240, 0) 3px 7px
+			);
+		opacity: 0;
+		transition: opacity 160ms ease;
+		pointer-events: none;
+	}
+
+	.passport-qr-stamp.is-loading::before,
+	.passport-qr-stamp.is-fallback::before {
+		opacity: 1;
+	}
+
 	.passport-qr-stamp:hover,
 	.passport-qr-stamp:focus-visible {
-		transform: translateY(-1px) scale(1.02);
+		transform: translateY(-2px) scale(1.025) rotate(1deg);
 		box-shadow:
-			0 10px 22px rgba(136, 82, 88, 0.18),
+			0 16px 30px rgba(136, 82, 88, 0.2),
 			inset 0 1px 0 rgba(255, 253, 240, 0.9);
 		outline: none;
 	}
@@ -257,11 +345,63 @@
 	}
 
 	.passport-qr-stamp img {
+		position: relative;
+		z-index: 1;
 		display: block;
 		width: 100%;
 		height: 100%;
-		border-radius: 0.7rem;
+		border-radius: 0.78rem;
 		object-fit: cover;
+	}
+
+	.passport-link-fallback {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		height: 100%;
+		width: 100%;
+		place-items: center;
+		border-radius: 0.78rem;
+		background:
+			radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.86), transparent 45%),
+			linear-gradient(135deg, #fffdf0, color-mix(in srgb, var(--passport-shape) 22%, #fffdf0));
+		color: #374151;
+	}
+
+	.fallback-ghost {
+		position: relative;
+		display: block;
+		width: 1.55rem;
+		height: 1.75rem;
+		border-radius: 999px 999px 0.72rem 0.72rem;
+		background: rgba(236, 72, 153, 0.82);
+		filter: drop-shadow(0 3px 0 rgba(255, 202, 212, 0.55));
+	}
+
+	.fallback-ghost::before,
+	.fallback-ghost::after {
+		content: '';
+		position: absolute;
+		top: 0.66rem;
+		width: 0.24rem;
+		height: 0.32rem;
+		border-radius: 999px;
+		background: #2f3442;
+	}
+
+	.fallback-ghost::before {
+		left: 0.42rem;
+	}
+
+	.fallback-ghost::after {
+		right: 0.42rem;
+	}
+
+	.fallback-word {
+		margin-top: -0.18rem;
+		font-size: 0.54rem;
+		font-weight: 900;
+		letter-spacing: 0;
 	}
 
 	.ghost-mark {
@@ -286,8 +426,8 @@
 		}
 
 		.passport-qr-stamp {
-			width: 3.25rem;
-			height: 3.25rem;
+			width: 3.55rem;
+			height: 3.55rem;
 			border-radius: 0.8rem;
 		}
 	}
@@ -295,6 +435,10 @@
 	@media (prefers-reduced-motion: no-preference) {
 		.passport-card {
 			animation: passportReveal 420ms cubic-bezier(0.2, 0.9, 0.2, 1.12) both;
+		}
+
+		.holofoil {
+			animation: foilDrift 7s ease-in-out infinite alternate;
 		}
 	}
 
@@ -314,6 +458,20 @@
 		to {
 			opacity: 1;
 			transform: translateY(0) scale(1) rotate(0);
+		}
+	}
+
+	@keyframes foilDrift {
+		0% {
+			filter: hue-rotate(0deg) saturate(1);
+			transform: translateX(-2%) translateY(0);
+		}
+		50% {
+			filter: hue-rotate(12deg) saturate(1.08);
+		}
+		100% {
+			filter: hue-rotate(24deg) saturate(1.12);
+			transform: translateX(2%) translateY(-1%);
 		}
 	}
 </style>
