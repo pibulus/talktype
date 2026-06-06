@@ -5,8 +5,7 @@
 
 import { get } from 'svelte/store';
 import { browser } from '$app/environment';
-import { CTA_PHRASES, ANIMATION, STORAGE_KEYS } from '$lib/constants';
-import { scrollToBottomIfNeeded } from '$lib/utils/scrollUtils';
+import { CTA_PHRASES, STORAGE_KEYS } from '$lib/constants';
 import {
 	audioState,
 	recordingState,
@@ -113,12 +112,6 @@ export class RecordingControlsService {
 		}
 		transcriptionStore.disconnect();
 		transcriptionStore.reset();
-
-		// Scroll to bottom if needed after starting recording
-		scrollToBottomIfNeeded({
-			threshold: 200,
-			delay: ANIMATION.RECORDING.SCROLL_DELAY
-		});
 
 		try {
 			this.activeRecordingMode = getTranscriptionMode();
@@ -239,11 +232,6 @@ export class RecordingControlsService {
 				mode: recordingMode,
 				method: completedMethod,
 				durationSeconds
-			});
-
-			scrollToBottomIfNeeded({
-				threshold: 300,
-				delay: ANIMATION.RECORDING.POST_RECORDING_SCROLL_DELAY
 			});
 
 			if (browser && 'requestIdleCallback' in window)

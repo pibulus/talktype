@@ -51,6 +51,94 @@ export function scrollToBottomIfNeeded(options = {}) {
 	}
 }
 
+function getPageScrollTop(scrollElement) {
+	return (
+		scrollElement?.scrollTop ||
+		document.body?.scrollTop ||
+		window.pageYOffset ||
+		window.scrollY ||
+		0
+	);
+}
+
+function getPageScrollElement() {
+	const root = document.scrollingElement || document.documentElement;
+	const body = document.body;
+
+	if (!body) return root;
+
+	const bodyOverflowY = window.getComputedStyle(body).overflowY;
+	const bodyCanScroll =
+		body.scrollHeight > body.clientHeight &&
+		bodyOverflowY !== 'visible' &&
+		bodyOverflowY !== 'hidden';
+
+	return bodyCanScroll ? body : root;
+}
+
+function getViewportHeight() {
+	return (
+		window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight
+	);
+}
+
+/**
+ * Center an element in the usable viewport while accounting for the fixed footer.
+ * This avoids the old "scroll to bottom" behavior that could make mobile spacing
+ * feel different after the transcript appeared.
+ * @param {HTMLElement} element
+ * @param {Object} options
+ * @param {ScrollBehavior} options.behavior
+ * @param {string} options.footerSelector
+ * @param {number} options.delay
+ * @param {number} options.minTop
+ */
+export function centerElementInViewport(element, options = {}) {
+	if (typeof window === 'undefined' || typeof document === 'undefined' || !element) return;
+
+	const {
+		behavior = 'smooth',
+		footerSelector = '.footer-component',
+		delay = 0,
+		minTop = 16
+	} = options;
+
+	const performScroll = () => {
+		requestAnimationFrame(() => {
+			const rect = element.getBoundingClientRect();
+			if (!rect.width && !rect.height) return;
+
+			const scrollElement = getPageScrollElement();
+			const footerHeight = footerSelector
+				? document.querySelector(footerSelector)?.getBoundingClientRect().height || 0
+				: 0;
+			const viewportHeight = getViewportHeight();
+			const usableHeight = Math.max(240, viewportHeight - footerHeight);
+			const visibleElementHeight = Math.min(rect.height, Math.max(0, usableHeight - minTop * 2));
+			const targetViewportTop = Math.max(minTop, (usableHeight - visibleElementHeight) / 2);
+			const currentScrollTop = getPageScrollTop(scrollElement);
+			const maxScrollTop = Math.max(0, scrollElement.scrollHeight - scrollElement.clientHeight);
+			const targetScrollTop = Math.max(
+				0,
+				Math.min(maxScrollTop, currentScrollTop + rect.top - targetViewportTop)
+			);
+
+			if (typeof scrollElement.scrollTo === 'function') {
+				scrollElement.scrollTo({ top: targetScrollTop, behavior });
+				return;
+			}
+
+			window.scrollTo({ top: targetScrollTop, behavior });
+		});
+	};
+
+	if (delay > 0) {
+		setTimeout(performScroll, delay);
+	} else {
+		performScroll();
+	}
+}
+
 /**
  * Debounced scroll handler
  * @param {Function} callback - Function to call on scroll

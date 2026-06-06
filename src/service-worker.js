@@ -6,8 +6,11 @@ const CACHE = `cache-${version}`;
 const LEGACY_MODELS_CACHE = 'whisper-models-v1';
 const RUNTIME_CACHE = 'runtime-v1';
 
-const LARGE_RUNTIME_ASSET_PATTERNS = [/\/ort-.*\.wasm$/];
-const LARGE_RUNTIME_ASSETS = build.filter((asset) => isLargeRuntimeAsset(asset));
+const LARGE_RUNTIME_ASSET_PATTERNS = [
+	/\/ort-.*\.wasm$/,
+	/\/sounds\/keyboard-packs\/[^/]+\/sound\.ogg$/
+];
+const LARGE_RUNTIME_ASSETS = [...build, ...files].filter((asset) => isLargeRuntimeAsset(asset));
 const SENSITIVE_QUERY_KEYS = ['code', 'token', 'checkout_id', 'vault', 'vaultUrl'];
 
 function isLargeRuntimeAsset(pathname) {

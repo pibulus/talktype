@@ -80,9 +80,9 @@
 	/* Media queries for mobile optimization */
 	@media (max-width: 640px) {
 		section {
-			padding-top: 12vh !important;
-			padding-bottom: 14vh !important;
-			min-height: 100vh;
+			padding-top: max(env(safe-area-inset-top), clamp(4rem, 10svh, 5.5rem)) !important;
+			padding-bottom: max(6rem, calc(env(safe-area-inset-bottom) + 5.5rem)) !important;
+			min-height: 100dvh;
 			display: flex;
 			flex-direction: column;
 			justify-content: flex-start;

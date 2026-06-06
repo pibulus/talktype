@@ -22,6 +22,7 @@
 
 	// Props
 	export let ghostComponent = null;
+	export let isLiveTranscriptMode = false;
 
 	// Local state
 	let services;
@@ -121,12 +122,12 @@
 	</div>
 
 	<!-- Audio visualizer -->
-	{#if $isRecording}
-		<div class="visualizer-section mt-2 flex w-full justify-center">
+	{#if $isRecording && !isLiveTranscriptMode}
+		<div class="visualizer-section mt-6 flex w-full justify-center" aria-hidden="true">
 			<div class="wrapper-container flex w-full justify-center">
 				<div
-					class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[1.4rem] border border-pink-100 bg-white/95 p-2 shadow-md sm:w-full"
-					style="box-shadow: 0 8px 18px -8px rgba(249, 168, 212, 0.32), 0 0 12px rgba(249, 168, 212, 0.12);"
+					class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 p-4 shadow-lg sm:w-full"
+					style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
 				>
 					<AudioVisualizer />
 				</div>
@@ -163,7 +164,7 @@
 	@keyframes localFadeIn {
 		from {
 			opacity: 0;
-			transform: translateY(6px);
+			transform: translateY(10px);
 		}
 		to {
 			opacity: 1;

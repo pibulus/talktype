@@ -10,7 +10,8 @@
 	let animationFrameId;
 	let fallbackTimeoutId; // Separate ID for setTimeout to avoid mixing with RAF
 	let recording = false; // Track recording state within the component
-	const idleBaseLevel = 7;
+	let smoothedLevel = 0;
+	const idleBaseLevel = 2.5;
 
 	// Reactive animation state
 	$: animationsEnabled = $appActive;
@@ -160,7 +161,7 @@
 	}
 
 	function getIdleLevel() {
-		return idleBaseLevel + Math.sin(Date.now() / 720) * 1.8;
+		return idleBaseLevel + Math.sin(Date.now() / 900) * 0.8;
 	}
 
 	function pushVisualizerLevel(level) {
@@ -174,21 +175,33 @@
 		let sum = 0;
 		let peak = 0;
 		let min = 255;
+		const topValues = [0, 0, 0, 0, 0, 0];
 
 		for (let i = 0; i < dataArray.length; i++) {
 			const value = dataArray[i];
 			sum += value;
 			peak = Math.max(peak, value);
 			min = Math.min(min, value);
+
+			for (let j = 0; j < topValues.length; j++) {
+				if (value > topValues[j]) {
+					topValues.splice(j, 0, value);
+					topValues.pop();
+					break;
+				}
+			}
 		}
 
 		const average = sum / dataArray.length;
+		const topAverage = topValues.reduce((total, value) => total + value, 0) / topValues.length;
 
-		// Frequency-domain data is quiet on desktop mics, so peak carries useful speech movement.
+		// Frequency-domain data is quiet on desktop mics. A small top-bin average
+		// catches speech without letting one noisy bin dominate the whole display.
 		if (min <= 40) {
-			const averageLevel = Math.max(0, average - 1.5) / 28;
-			const peakLevel = Math.max(0, peak - 8) / 110;
-			return clampLevel(Math.pow(Math.max(averageLevel, peakLevel), 0.72) * 100);
+			const averageLevel = Math.max(0, average - 4) / 34;
+			const topLevel = Math.max(0, topAverage - 14) / 92;
+			const peakLevel = Math.max(0, peak - 22) / 130;
+			return clampLevel(Math.pow(Math.max(averageLevel, topLevel, peakLevel), 0.82) * 100);
 		}
 
 		// Defensive fallback if the store ever switches to time-domain waveform data.
@@ -201,8 +214,14 @@
 		}
 
 		const averageDeviation = deviationSum / dataArray.length;
-		const deviationLevel = Math.max(averageDeviation / 24, peakDeviation / 80);
-		return clampLevel(Math.pow(deviationLevel, 0.72) * 100);
+		const deviationLevel = Math.max(averageDeviation / 26, peakDeviation / 88);
+		return clampLevel(Math.pow(deviationLevel, 0.82) * 100);
+	}
+
+	function smoothVisualizerLevel(targetLevel) {
+		const factor = targetLevel > smoothedLevel ? 0.28 : 0.16;
+		smoothedLevel += (targetLevel - smoothedLevel) * factor;
+		return smoothedLevel;
 	}
 
 	// Create optimized animation controller that auto-pauses when tab is hidden
@@ -219,12 +238,14 @@
 		// Use waveformData from audioService store (no need for separate analyser!)
 		const dataArray = $waveformData;
 		if (!dataArray || dataArray.length === 0) {
-			pushVisualizerLevel(getIdleLevel());
+			audioLevel = smoothVisualizerLevel(getIdleLevel());
+			pushVisualizerLevel(audioLevel);
 			return;
 		}
 		// console.log('[AudioVisualizer] Got data:', dataArray[0], dataArray[10]);
 
-		audioLevel = Math.max(getVisualizerLevel(dataArray), getIdleLevel());
+		const targetLevel = Math.max(getVisualizerLevel(dataArray), 1.5);
+		audioLevel = smoothVisualizerLevel(targetLevel);
 		pushVisualizerLevel(audioLevel);
 	});
 
@@ -238,7 +259,8 @@
 			}
 		} else if (recording) {
 			// Start optimized visualizer with auto-pause
-			history = Array(historyLength).fill(getIdleLevel());
+			smoothedLevel = 0;
+			history = Array(historyLength).fill(0);
 			visualizerAnimation.start();
 		}
 
@@ -265,6 +287,7 @@
 				fallbackTimeoutId = null;
 			}
 			audioLevel = 0;
+			smoothedLevel = 0;
 			history = [];
 			// No audioContext to clean up - we're using audioService's stream!
 		}
@@ -329,12 +352,12 @@
 	.history-container {
 		position: relative;
 		width: 100%;
-		height: 3rem;
+		height: 5rem;
 		display: flex;
 		flex-direction: row-reverse;
-		border-radius: 0.9rem;
+		border-radius: 1rem;
 		overflow: hidden;
-		box-shadow: inset 0 0 12px rgba(249, 168, 212, 0.13);
+		box-shadow: inset 0 0 15px rgba(249, 168, 212, 0.15);
 		background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 242, 248, 0.2));
 		contain: content;
 	}

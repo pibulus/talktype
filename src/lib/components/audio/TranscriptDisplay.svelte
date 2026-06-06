@@ -1,8 +1,14 @@
 <script>
 	import { ANIMATION } from '$lib/constants';
 	import { createEventDispatcher, onMount, tick } from 'svelte';
+	import { browser } from '$app/environment';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
+	import { soundService } from '$lib/services/infrastructure/soundService.js';
+	import { typewriterSoundService } from '$lib/services/infrastructure/typewriterSoundService.js';
+	import { centerElementInViewport } from '$lib/utils/scrollUtils';
 	import { theme } from '$lib';
+
+	const TYPEWRITER_INPUT_GUARD_MS = 34;
 
 	// Props
 	export let transcript = '';
@@ -10,16 +16,24 @@
 	export let responsiveFontSize = 'text-base';
 	export let editable = true;
 	export let copyNeedsGesture = false;
+	export let autoCenterOnTranscript = true;
 
 	// Refs
 	let editableTranscript;
 	let transcriptBoxRef;
+	let transcriptWrapperRef;
 
 	// State
 	let tooltipHoverCount = 0;
 	let hasUsedCopyButton = false;
 	let isScrollable = false;
 	let previousTranscript = '';
+	let hasAutoCenteredTranscript = false;
+	let transcriptCenterTimeout;
+	let transcriptCenterFrame;
+	let transcriptCenterResetTimeout;
+	let isCenteringTranscript = false;
+	let lastTypewriterInputAt = 0;
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher();
@@ -45,6 +59,54 @@
 		hasUsedCopyButton = true;
 		showCopyTooltip = false;
 		dispatch('copy', { text: getEditedTranscript() });
+	}
+
+	function getTypewriterEventTime() {
+		return browser && window.performance?.now ? window.performance.now() : Date.now();
+	}
+
+	function canPlayTypewriterSound() {
+		return browser && editable && soundService.isEnabled();
+	}
+
+	function warmTypewriterSounds() {
+		if (!canPlayTypewriterSound()) return;
+		typewriterSoundService.prime().catch(() => {});
+	}
+
+	function handleTranscriptFocus() {
+		warmTypewriterSounds();
+		if (editable) {
+			dispatch('focus', {
+				message: 'You can edit this transcript. Use keyboard to make changes.'
+			});
+		}
+	}
+
+	function handleTranscriptBlur() {
+		if (editable) {
+			dispatch('edit', { text: getEditedTranscript() });
+		}
+		checkScrollable();
+	}
+
+	function handleTranscriptKeydown(event) {
+		if (!canPlayTypewriterSound()) return;
+		if (!typewriterSoundService.isEditKeyEvent(event)) return;
+
+		lastTypewriterInputAt = getTypewriterEventTime();
+		typewriterSoundService.playFromKeyboardEvent(event).catch(() => {});
+	}
+
+	function handleTranscriptBeforeInput(event) {
+		if (!canPlayTypewriterSound()) return;
+
+		const now = getTypewriterEventTime();
+		if (now - lastTypewriterInputAt < TYPEWRITER_INPUT_GUARD_MS) return;
+		if (!typewriterSoundService.isSupportedInputEvent(event)) return;
+
+		lastTypewriterInputAt = now;
+		typewriterSoundService.playFromInputEvent(event).catch(() => {});
 	}
 
 	// Check if content is scrollable and update UI accordingly
@@ -77,6 +139,46 @@
 		});
 	}
 
+	function clearTranscriptCenterTimers() {
+		if (transcriptCenterTimeout) {
+			clearTimeout(transcriptCenterTimeout);
+			transcriptCenterTimeout = null;
+		}
+		if (transcriptCenterFrame) {
+			cancelAnimationFrame(transcriptCenterFrame);
+			transcriptCenterFrame = null;
+		}
+		if (transcriptCenterResetTimeout) {
+			clearTimeout(transcriptCenterResetTimeout);
+			transcriptCenterResetTimeout = null;
+		}
+	}
+
+	async function scheduleTranscriptCenter() {
+		if (!browser || !autoCenterOnTranscript) return;
+
+		clearTranscriptCenterTimers();
+		await tick();
+
+		transcriptCenterTimeout = setTimeout(() => {
+			transcriptCenterTimeout = null;
+			transcriptCenterFrame = requestAnimationFrame(() => {
+				transcriptCenterFrame = null;
+				if (!transcriptWrapperRef) return;
+
+				const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+					? 'auto'
+					: 'smooth';
+				centerElementInViewport(transcriptWrapperRef, { behavior });
+				isCenteringTranscript = true;
+				transcriptCenterResetTimeout = setTimeout(() => {
+					isCenteringTranscript = false;
+					transcriptCenterResetTimeout = null;
+				}, 850);
+			});
+		}, 120);
+	}
+
 	// Safely update transcript content without breaking cursor position.
 	// During live streaming the box is read-only, so incoming text always wins.
 	$: if (editableTranscript && (!editable || document.activeElement !== editableTranscript)) {
@@ -86,6 +188,15 @@
 			scrollLiveTranscriptToBottom();
 		}
 		previousTranscript = transcript;
+	}
+
+	$: transcriptReadyForCenter = transcript.trim() && transcript.trim() !== 'Listening...';
+	$: if (!transcriptReadyForCenter) {
+		hasAutoCenteredTranscript = false;
+	}
+	$: if (transcriptReadyForCenter && !hasAutoCenteredTranscript) {
+		hasAutoCenteredTranscript = true;
+		scheduleTranscriptCenter();
 	}
 
 	onMount(() => {
@@ -120,16 +231,19 @@
 				cancelAnimationFrame(checkScrollableFrame);
 				checkScrollableFrame = null;
 			}
+			clearTranscriptCenterTimers();
 			resizeObserver?.disconnect();
 		};
 	});
 </script>
 
 <div
+	bind:this={transcriptWrapperRef}
 	class="transcript-wrapper w-full animate-fadeIn"
 	class:live-transcript={!editable}
+	class:final-transcript={editable}
+	class:transcript-arrival-focus={isCenteringTranscript}
 	on:animationend={() => {
-		// No page scrolling needed anymore with fixed layout
 		checkScrollable();
 	}}
 >
@@ -180,7 +294,7 @@
 			<div
 				class="transcript-box animate-shadow-appear relative mx-auto my-4 box-border
                rounded-[2rem] border-[1.5px] border-pink-100/70 bg-white/95
-               shadow-xl transition-all duration-300 contain-layout"
+               shadow-xl transition-all duration-300"
 			>
 				<!-- Content Area - scrollable -->
 				<div
@@ -199,19 +313,11 @@
 						tabindex="0"
 						aria-describedby="transcript-instructions"
 						bind:this={editableTranscript}
-						on:focus={() => {
-							if (editable) {
-								dispatch('focus', {
-									message: 'You can edit this transcript. Use keyboard to make changes.'
-								});
-							}
-						}}
-						on:blur={() => {
-							if (editable) {
-								dispatch('edit', { text: getEditedTranscript() });
-							}
-							checkScrollable();
-						}}
+						on:pointerdown={warmTypewriterSounds}
+						on:focus={handleTranscriptFocus}
+						on:blur={handleTranscriptBlur}
+						on:keydown={handleTranscriptKeydown}
+						on:beforeinput={handleTranscriptBeforeInput}
 					>
 						<!-- Content set via innerText in reactive statement to avoid cursor jumping -->
 					</div>
@@ -241,7 +347,6 @@
 <style>
 	/* Container layout */
 	.transcript-wrapper {
-		contain: layout;
 		margin-top: 24px; /* Reduced space between button and transcript */
 	}
 
@@ -380,6 +485,25 @@
 		transform: translateY(-0.5px) scale(1.001);
 	}
 
+	.transcript-wrapper.transcript-arrival-focus .transcript-box {
+		animation: transcriptFocusBounce 0.68s cubic-bezier(0.2, 0.88, 0.22, 1.16) both;
+	}
+
+	@keyframes transcriptFocusBounce {
+		0% {
+			transform: translateY(8px) scale(0.985);
+			box-shadow: 0 8px 24px rgba(249, 168, 212, 0.2);
+		}
+		58% {
+			transform: translateY(-2px) scale(1.006);
+			box-shadow: 0 14px 34px rgba(249, 168, 212, 0.3);
+		}
+		100% {
+			transform: translateY(0) scale(1);
+			box-shadow: 0 10px 30px rgba(249, 168, 212, 0.25);
+		}
+	}
+
 	/* Enhanced transcript text styling - dynamic sizing based on content */
 	.custom-transcript-text {
 		text-align: left;
@@ -516,6 +640,17 @@
 			scrollbar-width: none; /* Hide scrollbar on Firefox */
 		}
 
+		.final-transcript .transcript-box {
+			overflow: visible;
+		}
+
+		.final-transcript .transcript-content-area {
+			max-height: none;
+			overflow: visible;
+			overscroll-behavior: auto;
+			-webkit-overflow-scrolling: auto;
+		}
+
 		.custom-transcript-text {
 			font-size: clamp(1rem, 4.2vw, 1.25rem);
 			line-height: 1.72;
@@ -537,6 +672,10 @@
 
 		.transcript-wrapper {
 			margin-top: 24px; /* Smaller gap on mobile */
+		}
+
+		.final-transcript {
+			margin-bottom: max(14rem, 28svh);
 		}
 
 		.live-transcript {
