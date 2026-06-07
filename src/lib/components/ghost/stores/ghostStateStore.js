@@ -17,6 +17,12 @@ import {
 } from '../animationConfig.js';
 
 const RAF_RECORDING_START_TIMEOUT = 'rafRecordingStart';
+const WOBBLE_TIMEOUT_KEYS = [
+	'startWobbleDelay',
+	'stopWobbleDelay',
+	'startWobbleCleanup',
+	'stopWobbleCleanup'
+];
 
 function createGhostState(overrides = {}) {
 	return {
@@ -42,6 +48,31 @@ function createGhostState(overrides = {}) {
 function createGhostStateStore() {
 	// Internal state store (make sure this 'state' is used throughout)
 	const _state = writable(createGhostState({ current: ANIMATION_STATES.INITIAL }));
+	let wobbleTargetElement = null;
+	let wobbleTargetOwner = null;
+
+	function setWobbleTarget(element, owner = null) {
+		if (element) {
+			wobbleTargetElement = element;
+			wobbleTargetOwner = owner;
+			return;
+		}
+
+		if (!owner || owner === wobbleTargetOwner) {
+			clearWobbleTimeouts();
+			wobbleTargetElement = null;
+			wobbleTargetOwner = null;
+		}
+	}
+
+	function clearScheduledWork(stateName, handle) {
+		if (!handle) return;
+		if (stateName === RAF_RECORDING_START_TIMEOUT) {
+			cancelAnimationFrame(handle);
+			return;
+		}
+		clearTimeout(handle);
+	}
 
 	/**
 	 * Validate a state transition against the defined transition map
@@ -64,14 +95,7 @@ function createGhostStateStore() {
 	 */
 	function debugLog(message, level = 'log') {
 		const currentDebugFlag = get(_state).debug;
-		// Temporarily enable debug logging for wobble and recording issues
-		if (
-			!currentDebugFlag &&
-			!message.includes('Wobble') &&
-			!message.includes('Recording') &&
-			!message.includes('wobble')
-		)
-			return;
+		if (!currentDebugFlag) return;
 		console[level](`[GhostState] ${message}`);
 	}
 
@@ -83,9 +107,13 @@ function createGhostStateStore() {
 		const currentState = get(_state);
 
 		if (currentState.stateTimeouts[stateName]) {
-			clearTimeout(currentState.stateTimeouts[stateName]);
+			clearScheduledWork(stateName, currentState.stateTimeouts[stateName]);
 			setStateTimeout(stateName, null);
 		}
+	}
+
+	function clearWobbleTimeouts() {
+		WOBBLE_TIMEOUT_KEYS.forEach(clearStateTimeout);
 	}
 
 	function setStateTimeout(stateName, timeoutId) {
@@ -209,16 +237,22 @@ function createGhostStateStore() {
 	 * @returns {void}
 	 */
 	function applyWobbleAnimation(type) {
-		const spinPivot = document.getElementById('ghost-spin-pivot');
+		const spinPivot = wobbleTargetElement?.isConnected ? wobbleTargetElement : null;
 		if (!spinPivot) {
-			debugLog(`[Wobble] Could not find #ghost-spin-pivot element for ${type}`, 'warn');
+			debugLog(`[Wobble] Could not find .ghost-spin-pivot target for ${type}`, 'warn');
 			return;
 		}
 
+		clearWobbleTimeouts();
+
 		// Check if initial load is running before cleaning
-		const hasInitialLoad = spinPivot.classList.contains('initial-load-effect');
+		const wobbleGroup = spinPivot.querySelector('.ghost-wobble-group');
+		const hasInitialLoad =
+			spinPivot.classList.contains('initial-load-effect') ||
+			wobbleGroup?.classList.contains('initial-load-effect');
 
 		// Clean up any existing animation classes first, including initial load
+		wobbleGroup?.classList.remove('initial-load-effect');
 		spinPivot.classList.remove('initial-load-effect', 'wobble-left', 'wobble-right', 'wobble-both');
 
 		const wobbleClass =
@@ -226,10 +260,17 @@ function createGhostStateStore() {
 
 		// Small delay if initial load effect was present to let animation settle
 		if (hasInitialLoad) {
-			setTimeout(() => {
-				spinPivot.classList.add(wobbleClass);
+			const timeoutKey = `${type}WobbleDelay`;
+			const timeoutId = setTimeout(() => {
+				if (spinPivot.isConnected) {
+					void spinPivot.offsetWidth;
+					spinPivot.classList.add(wobbleClass);
+					scheduleWobbleCleanup(type, spinPivot, wobbleClass);
+				}
 				debugLog(`[Wobble] Applied ${wobbleClass} after initial load delay`);
+				clearStateTimeout(timeoutKey);
 			}, 150);
+			setStateTimeout(timeoutKey, timeoutId);
 			return;
 		}
 
@@ -238,10 +279,15 @@ function createGhostStateStore() {
 		spinPivot.classList.add(wobbleClass);
 		debugLog(`[Wobble] Applied ${wobbleClass} to spin pivot`);
 
-		// Schedule cleanup
+		scheduleWobbleCleanup(type, spinPivot, wobbleClass);
+	}
+
+	function scheduleWobbleCleanup(type, spinPivot, wobbleClass) {
 		const timeoutKey = `${type}WobbleCleanup`;
 		const timeoutId = setTimeout(() => {
-			spinPivot.classList.remove(wobbleClass);
+			if (spinPivot.isConnected) {
+				spinPivot.classList.remove(wobbleClass);
+			}
 			clearStateTimeout(timeoutKey);
 			debugLog(`[Wobble] Removed ${wobbleClass} from spin pivot`);
 		}, WOBBLE_CONFIG.DURATION + 50);
@@ -410,12 +456,14 @@ function createGhostStateStore() {
 	/**
 	 * Reset the state store
 	 */
-	function reset() {
+	function reset(owner = null) {
+		if (owner && wobbleTargetOwner && owner !== wobbleTargetOwner) return;
+
 		_state.update((s) => {
 			// Use _state
 			// Clean up all timeouts
-			Object.values(s.stateTimeouts).forEach((timeout) => {
-				if (timeout) clearTimeout(timeout);
+			Object.entries(s.stateTimeouts).forEach(([stateName, handle]) => {
+				clearScheduledWork(stateName, handle);
 			});
 
 			return createGhostState({
@@ -479,6 +527,7 @@ function createGhostStateStore() {
 		setEyePosition,
 		setEyesClosed,
 		setSpecialAnimation,
+		setWobbleTarget,
 		setDebug,
 		checkAndSetFirstVisit, // Expose the new method
 		completeFirstVisit,

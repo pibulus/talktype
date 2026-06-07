@@ -130,7 +130,6 @@
 					xlink:href={ghostPathsUrl}
 					href={ghostPathsUrl + '#ghost-background'}
 					class="ghost-shape"
-					id="ghost-shape"
 					fill="url(#{resolvedGradientId})"
 				/>
 			</g>

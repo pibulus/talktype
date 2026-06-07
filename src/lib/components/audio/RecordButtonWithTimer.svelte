@@ -46,6 +46,7 @@
 		buttonLabel
 	});
 	$: showClipboardSuccess = clipboardSuccess && !recording;
+	$: showAmbientPulse = !recording && !showClipboardSuccess;
 	$: buttonStyle = `transform-origin: center center; position: relative; --progress: ${buttonState.progressPercentage.toFixed(2)}%; --progress-ratio: ${buttonState.progressRatio.toFixed(4)};`;
 
 	$: {
@@ -82,7 +83,9 @@
 {:else}
 	<button
 		bind:this={recordButtonElement}
-		class="record-button pulse-subtle w-[90%] rounded-full transition-all duration-300 ease-out sm:w-[85%] {showClipboardSuccess
+		class="record-button w-[90%] rounded-full sm:w-[85%] {showAmbientPulse
+			? 'pulse-subtle'
+			: ''} {showClipboardSuccess
 			? 'notification-pulse border border-purple-200 bg-purple-50 text-black'
 			: 'text-black'} mx-auto flex h-[64px] min-w-[280px] max-w-[420px] items-center justify-center px-6 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:text-xl md:text-2xl {recording
 			? 'recording-active'
@@ -103,12 +106,12 @@
 
 		<!-- Main button text -->
 		<span
-			class="cta-text relative inline-block whitespace-nowrap transition-all duration-300 ease-out"
+			class="cta-text relative inline-block whitespace-nowrap transition duration-300 ease-out"
 			style="letter-spacing: 0;"
 		>
 			<!-- Clipboard success message -->
 			<span
-				class="absolute inset-0 flex transform items-center justify-center transition-all duration-300 ease-out {showClipboardSuccess
+				class="absolute inset-0 flex transform items-center justify-center transition duration-300 ease-out {showClipboardSuccess
 					? 'scale-100 opacity-100'
 					: 'scale-95 opacity-0'}"
 				style="visibility: {showClipboardSuccess ? 'visible' : 'hidden'};"
@@ -134,9 +137,9 @@
 				</span>
 			</span>
 
-			<!-- Button label with integrated timer -->
+			<!-- Button label / toast swapper -->
 			<span
-				class="transform transition-all duration-300 ease-out {showClipboardSuccess
+				class="transform transition duration-300 ease-out {showClipboardSuccess
 					? 'scale-90 opacity-0'
 					: 'scale-100 opacity-100'}"
 				style="visibility: {showClipboardSuccess ? 'hidden' : 'visible'};"
@@ -165,7 +168,7 @@
 {/if}
 
 <style>
-	/* Base button styling - mostly from original component */
+	/* Base button styling */
 	.record-button {
 		position: relative;
 		overflow: hidden;
@@ -173,8 +176,11 @@
 		text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
 		background-size: 100% 100%;
 		background-position: 0% 0%;
-		transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
-		transition-property: transform, box-shadow, background-image, background-position;
+		transition:
+			transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+			box-shadow 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+			background-image 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
+			background-position 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
 
 		/* Enhanced default gradient */
 		background-image: linear-gradient(to right, rgba(251, 191, 36, 1), rgba(245, 158, 11, 0.96));
@@ -470,8 +476,10 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.pulse-subtle,
+		:global(.button-press),
+		.notification-pulse,
 		.record-button::before {
-			animation: none;
+			animation: none !important;
 		}
 
 		.recording-progress-fill,

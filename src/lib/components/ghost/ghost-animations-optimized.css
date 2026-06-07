@@ -163,15 +163,15 @@
    Applied to parent element to avoid conflict with recording-pulse
    ======================================== */
 
-#ghost-spin-pivot.wobble-left {
+.ghost-spin-pivot.wobble-left {
 	animation: ghost-wobble-left 0.4s ease-out;
 }
 
-#ghost-spin-pivot.wobble-right {
+.ghost-spin-pivot.wobble-right {
 	animation: ghost-wobble-right 0.4s ease-out;
 }
 
-#ghost-spin-pivot.wobble-both {
+.ghost-spin-pivot.wobble-both {
 	animation: ghost-wobble-both 0.6s ease-out;
 }
 
@@ -219,7 +219,7 @@
 }
 
 /* Waking up - shake the whole ghost */
-.ghost-container.waking-up #ghost-spin-pivot {
+.ghost-container.waking-up .ghost-spin-pivot {
 	animation: ghost-wake-up-shake 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 	transform-origin: center center;
 }
@@ -328,7 +328,7 @@
    INITIAL LOAD - Single animation
    ======================================== */
 
-#ghost-wobble-group.initial-load-effect {
+.ghost-wobble-group.initial-load-effect {
 	animation: initial-appear 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -429,7 +429,7 @@
    SPECIAL ANIMATIONS - On-demand only
    ======================================== */
 
-.ghost-container.spin #ghost-spin-pivot {
+.ghost-container.spin .ghost-spin-pivot {
 	animation: ghost-spin 1.2s ease-in-out;
 }
 
@@ -443,7 +443,7 @@
 	transform-origin: center center;
 }
 
-.ghost-container.ghost-special-shimmy #ghost-spin-pivot {
+.ghost-container.ghost-special-shimmy .ghost-spin-pivot {
 	animation: ghost-tiny-shimmy 0.78s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -500,7 +500,7 @@
 }
 
 /* Ensure spin pivot stays centered */
-#ghost-spin-pivot {
+.ghost-spin-pivot {
 	transform-origin: center center;
 }
 
@@ -513,7 +513,7 @@
 	.ghost-svg,
 	.ghost-wobble-group,
 	.ghost-float-stage,
-	#ghost-spin-pivot,
+	.ghost-spin-pivot,
 	.ghost-container,
 	.ghost-eye {
 		animation: none !important;

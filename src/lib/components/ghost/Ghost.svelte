@@ -27,7 +27,9 @@
 	export let opacity = 1;
 	export let scale = 1;
 	export let clickable = true;
+	const ghostInstanceId = Symbol('ghost-instance');
 	let ghostSvg;
+	let spinPivotElement;
 	let leftEye;
 	let rightEye;
 	let backgroundElement;
@@ -112,7 +114,7 @@
 		forceReflow(svgElement);
 
 		// Get the shape element
-		const shapeElem = svgElement.querySelector('#ghost-shape');
+		const shapeElem = svgElement.querySelector('.ghost-shape');
 		if (shapeElem) {
 			// Force shape animation restart
 			forceReflow(shapeElem);
@@ -140,7 +142,8 @@
 		// NOTE: No ghost style element to remove - CSS variables now managed at layout level
 
 		// Reset ghost state
-		ghostStateStore.reset();
+		ghostStateStore.setWobbleTarget(null, ghostInstanceId);
+		ghostStateStore.reset(ghostInstanceId);
 	});
 
 	// Public methods to expose animation controls
@@ -201,6 +204,8 @@
 				rightEye,
 				backgroundElement
 			};
+
+			ghostStateStore.setWobbleTarget(spinPivotElement, ghostInstanceId);
 
 			// Initialize animation services
 			const cleanupAnimations = animationService.initAnimations(elements, {
@@ -271,7 +276,7 @@
 	});
 
 	function handleInitialAnimationComplete() {
-		if (debug) ghostStateStore.completeFirstVisit();
+		ghostStateStore.completeFirstVisit();
 		ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
 	}
 
@@ -336,12 +341,11 @@
 		>
 			<!-- Global gradient definitions are now in +layout.svelte -->
 
-			<!-- New wrapper group for wobble transform - ID is used by store -->
+			<!-- Wrapper group for wobble and special transforms -->
 
-			<g class="ghost-spin-pivot" id="ghost-spin-pivot">
+			<g bind:this={spinPivotElement} class="ghost-spin-pivot">
 				<g
 					class="ghost-wobble-group"
-					id="ghost-wobble-group"
 					use:initialGhostAnimation={fullyReady && $ghostStateStore.isFirstVisit
 						? { blinkService, leftEye, rightEye, debug, oneTimeOnly: true }
 						: undefined}
@@ -352,7 +356,6 @@
 							xlink:href={ghostPathsUrl}
 							href={ghostPathsUrl + '#ghost-background'}
 							class="ghost-shape"
-							id="ghost-shape"
 							fill="url(#{gradientId})"
 						/>
 					</g>
@@ -476,21 +479,21 @@
 	}
 
 	/* Dynamically apply animation durations from config */
-	.ghost-svg.theme-peach #ghost-shape {
+	.ghost-svg.theme-peach .ghost-shape {
 		animation-duration: var(--ghost-shimmer-duration, 5s), var(--ghost-peach-flow-duration, 9s);
 		animation-timing-function:
 			var(--ghost-shimmer-ease, ease-in-out),
 			var(--ghost-peach-flow-ease, cubic-bezier(0.4, 0, 0.6, 1));
 	}
 
-	.ghost-svg.theme-mint #ghost-shape {
+	.ghost-svg.theme-mint .ghost-shape {
 		animation-duration: var(--ghost-shimmer-duration, 6s), var(--ghost-mint-flow-duration, 10s);
 		animation-timing-function:
 			var(--ghost-shimmer-ease, ease-in-out),
 			var(--ghost-mint-flow-ease, cubic-bezier(0.4, 0, 0.6, 1));
 	}
 
-	.ghost-svg.theme-bubblegum #ghost-shape {
+	.ghost-svg.theme-bubblegum .ghost-shape {
 		animation-duration:
 			var(--ghost-shimmer-duration, 7s), var(--ghost-bubblegum-flow-duration, 12s);
 		animation-timing-function:
@@ -498,7 +501,7 @@
 			var(--ghost-bubblegum-flow-ease, cubic-bezier(0.4, 0, 0.6, 1));
 	}
 
-	.ghost-svg.theme-rainbow #ghost-shape {
+	.ghost-svg.theme-rainbow .ghost-shape {
 		animation-duration: var(--ghost-rainbow-flow-duration, 9s);
 		animation-timing-function: var(--ghost-rainbow-flow-ease, cubic-bezier(0.4, 0, 0.6, 1));
 	}
@@ -508,7 +511,7 @@
 		border: 1px dashed rgba(255, 0, 0, 0.5);
 	}
 
-	.ghost-svg.debug-animation #ghost-shape {
+	.ghost-svg.debug-animation .ghost-shape {
 		outline: 1px dotted rgba(0, 255, 0, 0.5);
 	}
 
@@ -517,17 +520,17 @@
 	}
 
 	/* Slow down animations in debug mode for easier inspection */
-	.ghost-svg.debug-animation #ghost-shape {
+	.ghost-svg.debug-animation .ghost-shape {
 		animation-duration:
 			calc(var(--ghost-shimmer-duration, 5s) * 2), calc(var(--ghost-peach-flow-duration, 9s) * 2) !important;
 	}
 
 	/* Animation state control */
-	.animations-enabled .ghost-svg #ghost-shape {
+	.animations-enabled .ghost-svg .ghost-shape {
 		animation-play-state: running;
 	}
 
-	.animations-paused .ghost-svg #ghost-shape {
+	.animations-paused .ghost-svg .ghost-shape {
 		animation-play-state: paused;
 	}
 </style>

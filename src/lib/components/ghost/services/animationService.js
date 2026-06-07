@@ -69,7 +69,7 @@ export function initThemeAnimation(svgElement, theme) {
 	forceReflow(svgElement);
 
 	// Get the shape element
-	const shapeElem = svgElement.querySelector('#ghost-shape');
+	const shapeElem = svgElement.querySelector('.ghost-shape');
 	if (shapeElem) {
 		forceReflow(shapeElem);
 	}

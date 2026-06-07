@@ -19,9 +19,7 @@ export function getRecordButtonState({
 	recordingDuration = 0,
 	maxDuration = 300,
 	warningThreshold = 60,
-	dangerThreshold = 10,
-	clipboardSuccess = false,
-	buttonLabel = 'Say hi'
+	dangerThreshold = 10
 } = {}) {
 	const safeMaxDuration = Math.max(1, toNumber(maxDuration, 300));
 	const safeRecordingDuration = Math.max(0, toNumber(recordingDuration));
@@ -36,7 +34,6 @@ export function getRecordButtonState({
 		progressPercentage: progressRatio * 100,
 		isWarning: recording && timeRemaining <= warningAt,
 		isDanger: recording && timeRemaining <= dangerAt,
-		isIdlePrimaryCta: !recording && buttonLabel === 'Say hi' && !clipboardSuccess,
 		durationLabel: `${formatDuration(safeRecordingDuration)} of ${formatDuration(safeMaxDuration)}`
 	};
 }

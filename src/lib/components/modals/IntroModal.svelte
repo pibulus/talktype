@@ -27,7 +27,7 @@
 		<div class="space-y-4 sm:space-y-5 md:space-y-6">
 			<div class="mb-3 flex justify-center sm:mb-4">
 				<div class="animate-tt-pulse-slow ghost-wrapper h-14 w-14 sm:h-16 sm:w-16">
-					<DisplayGhost size="100%" class="intro-ghost" seed={12345} />
+					<DisplayGhost size="100%" class="intro-ghost" seed={12346} />
 				</div>
 			</div>
 

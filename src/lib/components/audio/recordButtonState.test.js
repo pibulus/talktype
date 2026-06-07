@@ -44,11 +44,10 @@ describe('record button state', () => {
 		expect(state.durationLabel).toBe('0:05 of 0:01');
 	});
 
-	it('only pulses the idle primary CTA', () => {
-		expect(getRecordButtonState({ buttonLabel: 'Say hi' }).isIdlePrimaryCta).toBe(true);
-		expect(
-			getRecordButtonState({ buttonLabel: 'Say hi', clipboardSuccess: true }).isIdlePrimaryCta
-		).toBe(false);
-		expect(getRecordButtonState({ buttonLabel: 'Try again' }).isIdlePrimaryCta).toBe(false);
+	it('keeps idle progress empty', () => {
+		const state = getRecordButtonState({ buttonLabel: 'Say hi' });
+
+		expect(state.progressRatio).toBe(0);
+		expect(state.progressPercentage).toBe(0);
 	});
 });
