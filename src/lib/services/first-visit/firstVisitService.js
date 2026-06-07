@@ -1,6 +1,7 @@
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
 import { StorageUtils } from '../infrastructure/storageUtils';
+import { modalService } from '../modals/modalService';
 import { STORAGE_KEYS } from '../../constants';
 
 // Store to track first visit status
@@ -51,7 +52,6 @@ export class FirstVisitService {
 				const modal = document.getElementById(modalId);
 				if (modal) {
 					this.log('Opening intro modal on first visit');
-					modal.showModal();
 
 					// Set up event listener to handle modal close
 					const handleClose = () => {
@@ -62,6 +62,7 @@ export class FirstVisitService {
 					};
 
 					modal.addEventListener('close', handleClose, { once: true });
+					modalService.openModal(modalId);
 				} else {
 					console.error('Intro modal element not found');
 					this.log('Intro modal element not found');

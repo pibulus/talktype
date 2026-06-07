@@ -2,7 +2,9 @@
 	import { onMount } from 'svelte';
 	import ModalCloseButton from './ModalCloseButton.svelte';
 	import { ANIMATION } from '$lib/constants';
+	import { modalService } from '$lib/services/modals/modalService.js';
 	export let onSubmit = async () => ({ success: false, error: null });
+	export let onSuccess = () => {};
 	export let onClose = () => {};
 
 	let token = '';
@@ -10,13 +12,21 @@
 	let closing = false;
 	let errorMessage = '';
 	let tokenInput;
+	let closeTimer;
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
+			modalService.openModal('auth_modal');
 			queueMicrotask(() => {
 				tokenInput?.focus();
 			});
 		}
+
+		return () => {
+			if (closeTimer) {
+				clearTimeout(closeTimer);
+			}
+		};
 	});
 
 	async function handleSubmit() {
@@ -29,25 +39,34 @@
 
 		try {
 			const result = (await onSubmit(token.trim())) ?? { success: false };
+			if (result.success) {
+				submitting = false;
+				handleModalClose(onSuccess);
+				return;
+			}
+
 			if (!result.success) {
 				errorMessage = result.error || 'Check the shared access token and try once more.';
 			}
 		} catch (error) {
 			errorMessage = error?.message || 'Check the shared access token and try once more.';
 		} finally {
-			submitting = false;
+			if (!closing) {
+				submitting = false;
+			}
 		}
 	}
 
-	function handleModalClose() {
+	function handleModalClose(afterClose = onClose) {
 		if (!submitting && !closing) {
 			closing = true;
+			modalService.closeModal();
 			const closeDelay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 				? 0
 				: ANIMATION.MODAL.CLOSE_DURATION;
-			setTimeout(() => {
+			closeTimer = setTimeout(() => {
 				closing = false;
-				onClose();
+				afterClose();
 			}, closeDelay);
 		}
 	}
@@ -62,14 +81,12 @@
 
 <dialog
 	id="auth_modal"
-	class={`modal modal-open ${closing ? 'tt-modal-closing' : ''}`}
+	class={`modal ${closing ? 'tt-modal-closing' : ''}`}
 	aria-labelledby="auth-modal-title"
 	aria-describedby="auth-modal-description"
 	on:close={handleNativeClose}
 >
-	<div
-		class="modal-box relative w-11/12 max-w-sm rounded-2xl border border-gray-200 bg-white shadow-xl"
-	>
+	<div class="tt-modal-sm modal-box relative">
 		<form method="dialog" class="space-y-4" on:submit|preventDefault={handleSubmit}>
 			<div class="text-center">
 				<h3 id="auth-modal-title" class="text-lg font-bold">Shared Access</h3>
@@ -117,7 +134,7 @@
 		role="button"
 		tabindex="0"
 		aria-label="Close auth modal"
-		class="modal-backdrop bg-black/30"
+		class="modal-backdrop"
 		on:click={handleModalClose}
 		on:keydown={(event) => {
 			if (event.key === 'Enter' || event.key === ' ') {

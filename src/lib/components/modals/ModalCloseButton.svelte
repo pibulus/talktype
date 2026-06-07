@@ -3,6 +3,8 @@
 	 * A reusable modal close button component that provides consistent styling and behavior
 	 * across all modals in the application.
 	 */
+	import { modalService } from '$lib/services/modals/modalService.js';
+
 	export let position = 'right-3 top-3';
 	export let size = 'md';
 	export let label = 'Close';
@@ -27,10 +29,7 @@
 		}
 
 		if (modalId) {
-			const modal = document.getElementById(modalId);
-			if (modal && typeof modal.close === 'function') {
-				modal.close();
-			}
+			modalService.closeModal();
 		}
 	}
 </script>

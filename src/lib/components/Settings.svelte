@@ -241,15 +241,12 @@
 
 <dialog
 	id="settings_modal"
-	class="modal fixed z-50"
-	style="overflow: hidden !important; z-index: 999;"
+	class="modal"
 	aria-labelledby="settings_modal_title"
 	aria-describedby="settings_modal_description"
 	aria-modal="true"
 >
-	<div
-		class="modal-box relative max-h-[85vh] w-[92%] max-w-md overflow-y-auto rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl md:max-w-lg"
-	>
+	<div class="tt-modal-md modal-box relative">
 		<form method="dialog">
 			<ModalCloseButton
 				closeModal={handleModalClose}
@@ -259,7 +256,7 @@
 			/>
 		</form>
 
-		<div class="animate-fadeUp space-y-5">
+		<div class="space-y-5">
 			<!-- Header -->
 			<div class="mb-1 flex items-center gap-2">
 				<div
@@ -391,7 +388,7 @@
 
 	<button
 		type="button"
-		class="modal-backdrop bg-pink-950/40"
+		class="modal-backdrop"
 		on:click|self|preventDefault|stopPropagation={handleModalClose}
 		on:keydown={(e) => e.key === 'Enter' && handleModalClose()}
 		aria-label="Close modal"

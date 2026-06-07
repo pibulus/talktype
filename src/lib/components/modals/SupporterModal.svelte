@@ -139,14 +139,12 @@
 
 <dialog
 	id="supporter_modal"
-	class="modal fixed z-[999] overflow-hidden"
+	class="modal"
 	aria-labelledby="supporter_modal_title"
 	aria-describedby="supporter_modal_description"
 	aria-modal="true"
 >
-	<div
-		class="modal-box relative max-h-[85vh] w-[92vw] overflow-y-auto rounded-3xl border border-pink-100 bg-[#fffcf5] p-6 shadow-2xl"
-	>
+	<div class="tt-modal-md modal-box relative">
 		<form method="dialog">
 			<ModalCloseButton
 				closeModal={handleClose}
@@ -331,7 +329,9 @@
 					</div>
 				</details>
 
-				<div class="sticky bottom-0 z-10 -mx-6 -mb-6 bg-[#fffcf5]/95 px-6 pb-6 pt-2 backdrop-blur">
+				<div
+					class="sticky bottom-0 z-10 -mx-4 -mb-4 bg-[#fffcf5]/95 px-4 pb-4 pt-2 backdrop-blur sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6"
+				>
 					<button
 						type="button"
 						class="btn btn-ghost min-h-12 w-full border border-pink-100 bg-white/70 text-gray-700 transition-colors duration-150 hover:bg-pink-50"
@@ -345,7 +345,7 @@
 	</div>
 	<button
 		type="button"
-		class="modal-backdrop bg-pink-950/50"
+		class="modal-backdrop"
 		on:click={handleClose}
 		aria-label="Close supporter modal"
 	></button>

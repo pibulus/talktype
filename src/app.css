@@ -28,6 +28,7 @@
 	--modal-border-radius: 1.5rem;
 	--modal-max-height: 85vh;
 	--modal-width: 95%;
+	--tt-modal-panel-width: min(92vw, 32rem);
 
 	/* Transitions */
 	--transition-fast: 0.15s ease-out;
@@ -142,6 +143,11 @@ body {
 	overflow: hidden;
 }
 
+html:has(dialog[open]),
+body.tt-modal-open {
+	overflow: hidden;
+}
+
 /* Support for native dialog modals */
 body:has(dialog[open]) {
 	overflow: hidden;
@@ -199,16 +205,42 @@ dialog.modal::backdrop {
 .modal-box {
 	grid-area: modal;
 	z-index: 1;
-	max-height: var(--modal-max-height);
+	box-sizing: border-box;
+	width: var(--tt-modal-panel-width);
+	max-height: min(86dvh, var(--modal-max-height));
 	overflow-y: auto;
 	margin: 0 auto;
-	width: var(--modal-width);
+	padding: clamp(1rem, 2.6vw, 1.5rem);
+	border: 1px solid rgba(251, 207, 232, 0.86);
 	border-radius: var(--modal-border-radius);
+	background: linear-gradient(145deg, rgba(255, 252, 245, 0.99), rgba(255, 246, 230, 0.97));
+	box-shadow:
+		0 24px 64px rgba(87, 61, 37, 0.18),
+		0 8px 20px rgba(236, 72, 153, 0.14),
+		inset 0 1px 0 rgba(255, 255, 255, 0.82);
 	transform-origin: center;
-	animation: tt-modal-pop-in 260ms cubic-bezier(0.18, 0.9, 0.24, 1.18) both;
+	animation: tt-modal-pop-in 420ms cubic-bezier(0.18, 0.92, 0.2, 1.18) both;
 	/* Custom scrollbar for modal */
 	scrollbar-width: thin;
 	scrollbar-color: var(--color-pink-200) transparent;
+}
+
+.modal-box.tt-modal-sm {
+	--tt-modal-panel-width: min(92vw, 24rem);
+}
+
+.modal-box.tt-modal-md {
+	--tt-modal-panel-width: min(92vw, 32rem);
+}
+
+.modal-box.tt-modal-lg {
+	--tt-modal-panel-width: min(95vw, 48rem);
+}
+
+.modal-box.tt-modal-contained {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
 }
 
 dialog.modal.tt-modal-closing {
@@ -216,11 +248,11 @@ dialog.modal.tt-modal-closing {
 }
 
 dialog.modal.tt-modal-closing > .modal-box {
-	animation: tt-modal-pop-out 170ms cubic-bezier(0.4, 0, 0.2, 1) both;
+	animation: tt-modal-pop-out 210ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 dialog.modal.tt-modal-closing > .modal-backdrop {
-	animation: tt-modal-backdrop-out 170ms ease-out both;
+	animation: tt-modal-backdrop-out 210ms ease-out both;
 }
 
 @media (max-width: 639px) {
@@ -232,7 +264,9 @@ dialog.modal.tt-modal-closing > .modal-backdrop {
 
 	.modal-box {
 		max-height: min(86dvh, var(--modal-max-height));
-		width: min(92vw, var(--modal-width));
+		width: var(--tt-modal-panel-width);
+		padding: 1rem;
+		border-radius: 1.25rem;
 	}
 }
 
@@ -295,11 +329,15 @@ dialog.modal.tt-modal-closing > .modal-backdrop {
 @keyframes tt-modal-pop-in {
 	0% {
 		opacity: 0;
-		transform: translateY(14px) scale(0.965);
+		transform: translateY(18px) scale(0.92) rotate(-1.2deg);
 	}
-	62% {
+	58% {
 		opacity: 1;
-		transform: translateY(-2px) scale(1.01);
+		transform: translateY(-4px) scale(1.025) rotate(0.35deg);
+	}
+	78% {
+		opacity: 1;
+		transform: translateY(1px) scale(0.992) rotate(-0.12deg);
 	}
 	100% {
 		opacity: 1;
@@ -314,7 +352,7 @@ dialog.modal.tt-modal-closing > .modal-backdrop {
 	}
 	to {
 		opacity: 0;
-		transform: translateY(8px) scale(0.975);
+		transform: translateY(10px) scale(0.96) rotate(0.35deg);
 	}
 }
 

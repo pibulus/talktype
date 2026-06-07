@@ -289,14 +289,12 @@
 
 <dialog
 	id="history_modal"
-	class="modal fixed z-[999] overflow-hidden"
+	class="modal"
 	aria-labelledby="history_modal_title"
 	aria-describedby="history_modal_description"
 	aria-modal="true"
 >
-	<div
-		class="modal-box relative flex max-h-[85vh] w-[95%] max-w-3xl flex-col overflow-hidden rounded-2xl border border-pink-200 bg-gradient-to-br from-[#fffaef] to-[#fff6e6] shadow-xl"
-	>
+	<div class="tt-modal-lg tt-modal-contained modal-box relative">
 		<form method="dialog">
 			<ModalCloseButton
 				closeModal={() => closeModal()}
@@ -595,11 +593,7 @@
 			{/if}
 		</div>
 	</div>
-	<button
-		type="button"
-		class="modal-backdrop bg-black/40"
-		on:click={closeModal}
-		aria-label="Close history"
+	<button type="button" class="modal-backdrop" on:click={closeModal} aria-label="Close history"
 	></button>
 </dialog>
 

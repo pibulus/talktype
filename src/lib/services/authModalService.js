@@ -23,8 +23,6 @@ export function promptForApiToken() {
 						};
 					}
 
-					hideModal();
-					resolve();
 					return { success: true };
 				} catch (error) {
 					console.error(error);
@@ -33,6 +31,10 @@ export function promptForApiToken() {
 						error: 'Check your connection, then try the shared access token again.'
 					};
 				}
+			},
+			onSuccess: () => {
+				hideModal();
+				resolve();
 			},
 			onClose: () => {
 				hideModal();

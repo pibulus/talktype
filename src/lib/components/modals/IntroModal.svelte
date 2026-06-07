@@ -13,9 +13,7 @@
 	aria-describedby="intro_modal_description"
 	aria-modal="true"
 >
-	<div
-		class="intro-modal-box modal-box relative mx-auto w-[92%] max-w-[90vw] rounded-3xl border-0 bg-[#fff9ed] p-4 sm:max-w-md sm:p-8 md:max-w-lg md:p-10 lg:max-w-xl"
-	>
+	<div class="intro-modal-box tt-modal-md modal-box relative">
 		<form method="dialog">
 			<ModalCloseButton
 				{closeModal}
@@ -26,7 +24,7 @@
 			/>
 		</form>
 
-		<div class="animate-tt-fadeIn space-y-4 sm:space-y-5 md:space-y-6">
+		<div class="space-y-4 sm:space-y-5 md:space-y-6">
 			<div class="mb-3 flex justify-center sm:mb-4">
 				<div class="animate-tt-pulse-slow ghost-wrapper h-14 w-14 sm:h-16 sm:w-16">
 					<DisplayGhost size="100%" class="intro-ghost" seed={12345} />

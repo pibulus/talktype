@@ -9,19 +9,17 @@
 
 <dialog
 	id="extension_modal"
-	class="modal fixed z-50 overflow-y-hidden"
+	class="modal"
 	aria-labelledby="extension_modal_title"
 	aria-describedby="extension_modal_description"
 	aria-modal="true"
 >
-	<div
-		class="modal-box max-h-[85vh] w-[92vw] overflow-y-auto rounded-3xl border border-pink-100 bg-[#fffcf5] p-6 shadow-2xl"
-	>
+	<div class="tt-modal-md modal-box">
 		<form method="dialog">
 			<ModalCloseButton {closeModal} label="Close extension modal" modalId="extension_modal" />
 		</form>
 
-		<div class="animate-tt-fadeUp space-y-4">
+		<div class="space-y-4">
 			<div class="mb-1 flex items-center gap-3">
 				<div
 					class="flex h-9 w-9 items-center justify-center rounded-full border border-pink-200/60 bg-gradient-to-br from-white to-pink-50 shadow-sm"
@@ -96,7 +94,7 @@
 	</div>
 	<button
 		type="button"
-		class="modal-backdrop bg-black/40"
+		class="modal-backdrop"
 		on:click={closeModal}
 		on:keydown={(e) => e.key === 'Enter' && closeModal()}
 		aria-label="Close extension modal"

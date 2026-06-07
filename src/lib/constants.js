@@ -104,7 +104,7 @@ export const ANIMATION = {
 	// Modal timing
 	MODAL: {
 		CLOSE_DELAY: 50, // Delay before running closeModal function
-		CLOSE_DURATION: 170,
+		CLOSE_DURATION: 210,
 		PERMISSION_ERROR_DURATION: 8000 // How long the permission error shows
 	},
 

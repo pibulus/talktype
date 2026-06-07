@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import { ANIMATION } from '$lib/constants';
+import { soundService } from '$lib/services/infrastructure/soundService.js';
 
 const MODAL_CLOSE_DURATION = ANIMATION.MODAL.CLOSE_DURATION;
 
@@ -9,6 +10,7 @@ export class ModalService {
 		this.scrollPosition = 0;
 		this.scrollbarWidth = 0;
 		this.isClosing = false;
+		this.pendingModalId = null;
 	}
 
 	openModal(modalId) {
@@ -17,21 +19,37 @@ export class ModalService {
 		const modal = document.getElementById(modalId);
 		if (!modal) return;
 
+		if (this.isClosing) {
+			this.pendingModalId = modalId;
+			return modal;
+		}
+
+		const openDialogs = this.getOpenDialogs().filter((dialog) => dialog !== modal);
+		if (openDialogs.length > 0) {
+			this.pendingModalId = modalId;
+			this.closeModal();
+			return modal;
+		}
+
+		if (modal.open) {
+			return modal;
+		}
+
 		this.scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
 		this.scrollPosition = window.scrollY;
 		this.modalOpen = true;
 
 		document.documentElement.style.overflow = 'hidden';
+		document.body?.classList.add('tt-modal-open');
 		if (this.scrollbarWidth > 0) {
 			document.documentElement.style.paddingRight = `${this.scrollbarWidth}px`;
 		}
 
 		if (typeof modal.showModal === 'function') {
 			this.bindNativeClose(modal);
-			if (!modal.open) {
-				modal.classList.remove('tt-modal-closing');
-				modal.showModal();
-			}
+			modal.classList.remove('tt-modal-closing');
+			modal.showModal();
+			this.playOpenSound();
 		}
 
 		return modal;
@@ -47,7 +65,8 @@ export class ModalService {
 		}
 
 		this.isClosing = true;
-		const openDialogs = Array.from(document.querySelectorAll('dialog[open], dialog.modal-open'));
+		const openDialogs = this.getOpenDialogs();
+		this.playCloseSound();
 
 		openDialogs.forEach((dialog) => {
 			dialog.classList.add('tt-modal-closing');
@@ -68,6 +87,12 @@ export class ModalService {
 			this.restorePage();
 			this.unbindAllNativeClose();
 			this.isClosing = false;
+
+			const nextModalId = this.pendingModalId;
+			this.pendingModalId = null;
+			if (nextModalId) {
+				requestAnimationFrame(() => this.openModal(nextModalId));
+			}
 		}, closeDelay);
 	}
 
@@ -76,7 +101,22 @@ export class ModalService {
 
 		document.documentElement.style.overflow = '';
 		document.documentElement.style.paddingRight = '';
+		document.body?.classList.remove('tt-modal-open');
 		this.modalOpen = false;
+	}
+
+	getOpenDialogs() {
+		if (!browser) return [];
+
+		return Array.from(document.querySelectorAll('dialog[open], dialog.modal-open'));
+	}
+
+	playOpenSound() {
+		soundService.open().catch(() => {});
+	}
+
+	playCloseSound() {
+		soundService.close().catch(() => {});
 	}
 
 	bindNativeClose(modal) {
