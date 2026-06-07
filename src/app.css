@@ -8,6 +8,16 @@
    CSS CUSTOM PROPERTIES - Single source of truth
    =================================================================== */
 :root {
+	/* Page shell */
+	--tt-page-bg-color: #fff6e6;
+	--tt-page-bg-image: radial-gradient(
+		circle at 50% 35%,
+		#fff8ed 0%,
+		#fff6e6 52%,
+		#fff3df 82%,
+		#ffefda 100%
+	);
+
 	/* Colors */
 	--color-modal-backdrop: rgba(43, 38, 32, 0.46);
 	--color-pink-100: rgba(252, 231, 243, 0.7);
@@ -25,6 +35,39 @@
 
 	/* Scroll */
 	--scrollbar-width: 0px;
+}
+
+[data-theme='mint'] {
+	--tt-page-bg-color: #e8fff8;
+	--tt-page-bg-image: radial-gradient(
+		circle at 50% 35%,
+		#f3fffb 0%,
+		#e8fff8 54%,
+		#defff5 84%,
+		#d4fff0 100%
+	);
+}
+
+[data-theme='bubblegum'] {
+	--tt-page-bg-color: #fff0f8;
+	--tt-page-bg-image: radial-gradient(
+		circle at 50% 35%,
+		#fff8fc 0%,
+		#fff0f8 54%,
+		#ffe8f5 84%,
+		#ffe0f0 100%
+	);
+}
+
+[data-theme='rainbow'] {
+	--tt-page-bg-color: #fff5fa;
+	--tt-page-bg-image: radial-gradient(
+		circle at 50% 35%,
+		#fffaf5 0%,
+		#fff5fa 38%,
+		#f5faff 72%,
+		#fffaf5 100%
+	);
 }
 
 /* ===================================================================
@@ -63,11 +106,17 @@
 /* ===================================================================
    SCROLL BEHAVIOR - Consolidated and improved
    =================================================================== */
-html {
+html,
+html[data-theme] {
 	/* Smooth scrolling for anchor links */
 	scroll-behavior: smooth;
 	/* Remove forced scrollbar - let content dictate */
 	overflow-y: auto;
+	background-color: var(--tt-page-bg-color);
+	background-image: var(--tt-page-bg-image);
+	background-position: center top;
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
 }
 
 body {
@@ -77,6 +126,12 @@ body {
 	overscroll-behavior-y: none;
 	/* Smoother scrolling on iOS */
 	-webkit-overflow-scrolling: touch;
+	background-color: var(--tt-page-bg-color);
+	background-image: var(--tt-page-bg-image);
+	background-attachment: scroll;
+	background-position: center top;
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
 }
 
 /* ===================================================================

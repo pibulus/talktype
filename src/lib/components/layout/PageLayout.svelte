@@ -66,15 +66,15 @@
 
 <style>
 	:global(.bg-gradient-mesh) {
-		background-color: #fff6e6;
-		background-image: radial-gradient(
-			circle at center,
-			#fff6e6 0%,
-			#fff6e6 50%,
-			#fff3df 85%,
-			#ffefda 100%
+		background-color: var(--tt-page-bg-color, #fff6e6);
+		background-image: var(
+			--tt-page-bg-image,
+			radial-gradient(circle at 50% 35%, #fff8ed 0%, #fff6e6 52%, #fff3df 82%, #ffefda 100%)
 		);
-		background-attachment: fixed;
+		background-attachment: scroll;
+		background-position: center top;
+		background-repeat: no-repeat;
+		background-size: 100% 100%;
 	}
 
 	/* Media queries for mobile optimization */

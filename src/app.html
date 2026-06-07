@@ -79,20 +79,54 @@
 
 		<style>
 			/* Critical styles to prevent black flash */
+			html {
+				--tt-page-bg-color: #fff6e6;
+				--tt-page-bg-image: radial-gradient(
+					circle at 50% 35%,
+					#fff8ed 0%,
+					#fff6e6 52%,
+					#fff3df 82%,
+					#ffefda 100%
+				);
+				background-color: var(--tt-page-bg-color);
+				background-image: var(--tt-page-bg-image);
+			}
 			body {
-				background: linear-gradient(135deg, #fff8f0 0%, #fff6e6 100%);
+				background-color: var(--tt-page-bg-color);
+				background-image: var(--tt-page-bg-image);
 				margin: 0;
 				padding: 0;
 				min-height: 100vh;
 			}
-			[data-theme='mint'] body {
-				background: linear-gradient(135deg, #e8fff8 0%, #defff5 100%);
+			[data-theme='mint'] {
+				--tt-page-bg-color: #e8fff8;
+				--tt-page-bg-image: radial-gradient(
+					circle at 50% 35%,
+					#f3fffb 0%,
+					#e8fff8 54%,
+					#defff5 84%,
+					#d4fff0 100%
+				);
 			}
-			[data-theme='bubblegum'] body {
-				background: linear-gradient(135deg, #fff0f8 0%, #ffe8f5 100%);
+			[data-theme='bubblegum'] {
+				--tt-page-bg-color: #fff0f8;
+				--tt-page-bg-image: radial-gradient(
+					circle at 50% 35%,
+					#fff8fc 0%,
+					#fff0f8 54%,
+					#ffe8f5 84%,
+					#ffe0f0 100%
+				);
 			}
-			[data-theme='rainbow'] body {
-				background: linear-gradient(135deg, #fff5fa 0%, #f5faff 50%, #fffaf5 100%);
+			[data-theme='rainbow'] {
+				--tt-page-bg-color: #fff5fa;
+				--tt-page-bg-image: radial-gradient(
+					circle at 50% 35%,
+					#fffaf5 0%,
+					#fff5fa 38%,
+					#f5faff 72%,
+					#fffaf5 100%
+				);
 			}
 		</style>
 		<script>
