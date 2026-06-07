@@ -114,8 +114,6 @@ npm run build
 npm run preview
 ```
 
-Netlify config is present, but deployment details should be checked against the current adapter before launch.
-
 ## Known Build Note
 
 Offline Mode still ships a large ONNX Runtime WASM asset, but it is on the dynamic offline-transcription path and is cached at runtime rather than precached during service-worker install.

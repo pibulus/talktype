@@ -53,7 +53,6 @@
 - End-to-end Passport smoke test with the Pi drop-zone, QRBuddy, automatic history/recording mirror, delete cleanup, cross-device import, and encrypted audio restore.
 - Long-recording recovery stress pass: backgrounding, refresh/crash simulation, phone-call-style interruption, and journal reconstruction.
 - Further offline Whisper/ONNX runtime size reduction, if Offline Mode becomes a first-run priority.
-- Confirm deployment target versus current `@sveltejs/adapter-node` setup.
 
 ## Obvious Next Moves
 

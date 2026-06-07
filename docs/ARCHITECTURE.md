@@ -171,7 +171,6 @@ Relevant files:
 - `src/lib/services/storage/transcriptStorage.js`
 - `src/lib/services/syncService.js`
 - `src/lib/services/encryptionService.js`
-- `vault-server.js`
 
 Flow:
 
@@ -191,9 +190,9 @@ Flow:
 
 Square is isolated to the payment provider layer. Feature gates consume supporter entitlement state and do not know which payment provider created it.
 
-Checkout and license data use the server storage adapter. For `adapter-node`, prefer `TALKTYPE_STORAGE_ADAPTER=filesystem` with a durable `TALKTYPE_DATA_DIR`. Use `netlify-blobs` only when deploying on Netlify. `memory` is for local throwaway tests only.
+Checkout and license data use the server storage adapter. The active deployment uses `@sveltejs/adapter-node`; prefer `TALKTYPE_STORAGE_ADAPTER=filesystem` with a durable `TALKTYPE_DATA_DIR`. `netlify-blobs` remains available only as an explicit storage adapter option. `memory` is for local throwaway tests only.
 
-Passport is the user-facing shape; Vault is the backstage encrypted transport. TalkType treats the Vault as a current-state mirror and handoff helper, not a live multi-device workspace or a separate permanent archive. Supporter transcripts trigger best-effort current-history mirroring when this device already has a Passport code and notes endpoint. On app open, history open, and `/passport` import, `checkPassportNotes()` quietly compares local and remote timestamps: remote newer pulls down as the current mirror, local newer pushes up. TalkType remembers the supporter code locally as the device's Passport key after checkout/redeem so this can run without repeated prompts, and derives the vault hash from that code only when needed. Passport/Vault localStorage keys follow the `pibulus:talktype:*` convention with migration from older `talktype_*` keys. The membership card asks QRBuddy to render a QR image whose payload points straight back to TalkType `/passport#code=...&vault=...`; QRBuddy/Pi are treated as trusted Pablo-owned infrastructure for this flow. The client helpers encrypt JSON payloads before upload, and audio history is encrypted/restored as separate media payloads under the `app-media` namespace with an encrypted `app-media-index` manifest. When local history no longer references an audio blob, the next mirror pass asks the Vault to delete that stale encrypted media. The standalone `vault-server.js` stores and deletes encrypted blobs by app name and vault hash.
+Passport is the user-facing shape; Vault is the backstage encrypted transport. TalkType treats the Vault as a current-state mirror and handoff helper, not a live multi-device workspace or a separate permanent archive. Supporter transcripts trigger best-effort current-history mirroring when this device already has a Passport code and notes endpoint. On app open, history open, and `/passport` import, `checkPassportNotes()` quietly compares local and remote timestamps: remote newer pulls down as the current mirror, local newer pushes up. TalkType remembers the supporter code locally as the device's Passport key after checkout/redeem so this can run without repeated prompts, and derives the vault hash from that code only when needed. Passport/Vault localStorage keys follow the `pibulus:talktype:*` convention with migration from older `talktype_*` keys. The membership card asks QRBuddy to render a QR image whose payload points straight back to TalkType `/passport#code=...&vault=...`; QRBuddy/Pi are treated as trusted Pablo-owned infrastructure for this flow. The client helpers encrypt JSON payloads before upload, and audio history is encrypted/restored as separate media payloads under the `app-media` namespace with an encrypted `app-media-index` manifest. When local history no longer references an audio blob, the next mirror pass asks the Vault to delete that stale encrypted media.
 
 ## State Ownership
 
@@ -209,4 +208,3 @@ Passport is the user-facing shape; Vault is the backstage encrypted transport. T
 - The offline Whisper/ONNX path still depends on a large runtime WASM asset.
 - Square checkout is wired, but sandbox/production payment configuration still needs an end-to-end launch smoke test.
 - Passport check-in is intentionally simple timestamp-based mirroring, not conflict-heavy collaborative sync.
-- Netlify config exists, but the active adapter is currently `@sveltejs/adapter-node`.
