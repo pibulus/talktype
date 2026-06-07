@@ -50,11 +50,11 @@ export function buildGhostPersonality({ seed = 0, date = new Date() } = {}) {
 	const moods = ['drift', 'dozy', 'spry', 'loopy'];
 	const mood = moods[Math.floor(randomFromHash(hash, 1) * moods.length)] || 'drift';
 
-	const floatX = formatNumber(-0.75 + randomFromHash(hash, 2) * 1.5);
-	const floatY = formatNumber(-(2.2 + randomFromHash(hash, 3) * 1.8));
-	const floatTilt = formatNumber(-0.55 + randomFromHash(hash, 4) * 1.1);
-	const floatScale = formatNumber(1.001 + randomFromHash(hash, 5) * 0.004, 3);
-	const floatSpeed = formatNumber(5.2 + randomFromHash(hash, 6) * 2.2);
+	const floatX = formatNumber(-1.1 + randomFromHash(hash, 2) * 2.2);
+	const floatY = formatNumber(-(3.2 + randomFromHash(hash, 3) * 2.4));
+	const floatTilt = formatNumber(-0.65 + randomFromHash(hash, 4) * 1.3);
+	const floatScale = formatNumber(1.002 + randomFromHash(hash, 5) * 0.004, 3);
+	const floatSpeed = formatNumber(5.4 + randomFromHash(hash, 6) * 2.4);
 	const floatDelay = formatNumber(-randomFromHash(hash, 7) * floatSpeed);
 
 	return {

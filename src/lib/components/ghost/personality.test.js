@@ -26,12 +26,12 @@ describe('ghost personality', () => {
 	it('keeps motion variables subtle', () => {
 		const personality = buildGhostPersonality({ seed: 12, date: new Date(2026, 4, 27) });
 
-		expect(personality.values.floatY).toBeLessThanOrEqual(-2.2);
-		expect(personality.values.floatY).toBeGreaterThanOrEqual(-4);
-		expect(Math.abs(personality.values.floatX)).toBeLessThanOrEqual(0.75);
-		expect(Math.abs(personality.values.floatTilt)).toBeLessThanOrEqual(0.55);
-		expect(personality.values.floatScale).toBeGreaterThanOrEqual(1.001);
-		expect(personality.values.floatScale).toBeLessThanOrEqual(1.005);
+		expect(personality.values.floatY).toBeLessThanOrEqual(-3.2);
+		expect(personality.values.floatY).toBeGreaterThanOrEqual(-5.6);
+		expect(Math.abs(personality.values.floatX)).toBeLessThanOrEqual(1.1);
+		expect(Math.abs(personality.values.floatTilt)).toBeLessThanOrEqual(0.65);
+		expect(personality.values.floatScale).toBeGreaterThanOrEqual(1.002);
+		expect(personality.values.floatScale).toBeLessThanOrEqual(1.006);
 	});
 
 	it('picks only supported special animations', () => {

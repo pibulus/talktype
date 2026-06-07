@@ -28,6 +28,11 @@
 	will-change: auto; /* Only set during animation */
 }
 
+.ghost-float-stage {
+	transform-origin: center center;
+	will-change: auto;
+}
+
 .ghost-container {
 	position: relative;
 	width: 100%;
@@ -225,13 +230,21 @@
 	transform-origin: center center;
 }
 
-/* Gentle ambient floating for idle state */
-.ghost-container:not(.recording):not(.asleep) .ghost-wobble-group {
-	animation: gentle-float var(--ghost-float-speed, 5.8s) ease-in-out infinite;
+/* Gentle ambient floating for idle state.
+   Runs on the HTML stage so movement is measured in real screen pixels. */
+.ghost-container:not(.recording):not(.asleep):not(.waking-up):not(.initializing):not(.spin):not(
+		.ghost-special-peek
+	):not(.ghost-special-shimmy)
+	.ghost-float-stage {
+	animation: ghost-idle-float var(--ghost-float-speed, 5.8s) ease-in-out infinite;
 	animation-delay: var(--ghost-float-delay, 0s);
 }
 
-@keyframes gentle-float {
+.ghost-container.recording .ghost-float-stage {
+	animation: ghost-recording-float 3.4s ease-in-out infinite;
+}
+
+@keyframes ghost-idle-float {
 	0%,
 	100% {
 		transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
@@ -247,6 +260,16 @@
 	70% {
 		transform: translate3d(var(--ghost-float-x, 0.5px), var(--ghost-float-y, -3px), 0)
 			rotate(var(--ghost-float-tilt, 0.35deg)) scale(var(--ghost-float-scale, 1.002));
+	}
+}
+
+@keyframes ghost-recording-float {
+	0%,
+	100% {
+		transform: translate3d(0, 0, 0) rotate(0deg);
+	}
+	50% {
+		transform: translate3d(0, -4px, 0) rotate(0.25deg);
 	}
 }
 
@@ -489,6 +512,7 @@
 @media (prefers-reduced-motion: reduce) {
 	.ghost-svg,
 	.ghost-wobble-group,
+	.ghost-float-stage,
 	#ghost-spin-pivot,
 	.ghost-container,
 	.ghost-eye {
@@ -498,6 +522,7 @@
 }
 
 /* Force hardware acceleration on key elements */
+.ghost-float-stage,
 .ghost-wobble-group,
 .ghost-svg {
 	transform: translateZ(0);

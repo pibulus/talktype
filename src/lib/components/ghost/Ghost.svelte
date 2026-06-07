@@ -296,6 +296,7 @@
 		? CSS_CLASSES.SPIN
 		: ''}
       {specialAnimationClass}
+      {$ghostStateStore.current === ANIMATION_STATES.INITIAL ? 'initializing' : ''}
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
       {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
       {!clickable ? 'ghost-non-clickable' : ''}"
@@ -318,74 +319,76 @@
 	aria-disabled={!clickable}
 	tabindex={clickable ? '0' : '-1'}
 >
-	<svg
-		viewBox="0 0 1024 1024"
-		xmlns="http://www.w3.org/2000/svg"
-		xmlns:xlink="http://www.w3.org/1999/xlink"
-		class="ghost-svg theme-{currentTheme} {animationClass}"
-		pointer-events="none"
-		class:visible={fullyReady}
-		class:recording={$ghostStateStore.isRecording}
-		class:spin={$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG &&
-			$ghostStateStore.specialAnimation === 'spin'}
-		class:asleep={$ghostStateStore.current === ANIMATION_STATES.ASLEEP}
-		class:waking-up={$ghostStateStore.current === ANIMATION_STATES.WAKING_UP}
-		class:debug-animation={debugAnim}
-	>
-		<!-- Global gradient definitions are now in +layout.svelte -->
+	<span class="ghost-float-stage">
+		<svg
+			viewBox="0 0 1024 1024"
+			xmlns="http://www.w3.org/2000/svg"
+			xmlns:xlink="http://www.w3.org/1999/xlink"
+			class="ghost-svg theme-{currentTheme} {animationClass}"
+			pointer-events="none"
+			class:visible={fullyReady}
+			class:recording={$ghostStateStore.isRecording}
+			class:spin={$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG &&
+				$ghostStateStore.specialAnimation === 'spin'}
+			class:asleep={$ghostStateStore.current === ANIMATION_STATES.ASLEEP}
+			class:waking-up={$ghostStateStore.current === ANIMATION_STATES.WAKING_UP}
+			class:debug-animation={debugAnim}
+		>
+			<!-- Global gradient definitions are now in +layout.svelte -->
 
-		<!-- New wrapper group for wobble transform - ID is used by store -->
+			<!-- New wrapper group for wobble transform - ID is used by store -->
 
-		<g class="ghost-spin-pivot" id="ghost-spin-pivot">
-			<g
-				class="ghost-wobble-group"
-				id="ghost-wobble-group"
-				use:initialGhostAnimation={fullyReady && $ghostStateStore.isFirstVisit
-					? { blinkService, leftEye, rightEye, debug, oneTimeOnly: true }
-					: undefined}
-				on:initialAnimationComplete={handleInitialAnimationComplete}
-			>
-				<g class="ghost-layer ghost-bg" bind:this={backgroundElement}>
-					<use
-						xlink:href={ghostPathsUrl}
-						href={ghostPathsUrl + '#ghost-background'}
-						class="ghost-shape"
-						id="ghost-shape"
-						fill="url(#{gradientId})"
-					/>
+			<g class="ghost-spin-pivot" id="ghost-spin-pivot">
+				<g
+					class="ghost-wobble-group"
+					id="ghost-wobble-group"
+					use:initialGhostAnimation={fullyReady && $ghostStateStore.isFirstVisit
+						? { blinkService, leftEye, rightEye, debug, oneTimeOnly: true }
+						: undefined}
+					on:initialAnimationComplete={handleInitialAnimationComplete}
+				>
+					<g class="ghost-layer ghost-bg" bind:this={backgroundElement}>
+						<use
+							xlink:href={ghostPathsUrl}
+							href={ghostPathsUrl + '#ghost-background'}
+							class="ghost-shape"
+							id="ghost-shape"
+							fill="url(#{gradientId})"
+						/>
+					</g>
+
+					<g class="ghost-layer ghost-outline">
+						<use
+							xlink:href={ghostPathsUrl}
+							href={ghostPathsUrl + '#ghost-body-path'}
+							class="ghost-outline-path"
+							fill="#000000"
+							opacity="1"
+						/>
+					</g>
+
+					<g class="ghost-layer ghost-eyes">
+						<use
+							bind:this={leftEye}
+							xlink:href={ghostPathsUrl}
+							href={ghostPathsUrl + '#ghost-eye-left-path'}
+							class="ghost-eye ghost-eye-left"
+							fill="#000000"
+						/>
+						<use
+							bind:this={rightEye}
+							xlink:href={ghostPathsUrl}
+							href={ghostPathsUrl + '#ghost-eye-right-path'}
+							class="ghost-eye ghost-eye-right"
+							fill="#000000"
+						/>
+					</g>
 				</g>
-
-				<g class="ghost-layer ghost-outline">
-					<use
-						xlink:href={ghostPathsUrl}
-						href={ghostPathsUrl + '#ghost-body-path'}
-						class="ghost-outline-path"
-						fill="#000000"
-						opacity="1"
-					/>
-				</g>
-
-				<g class="ghost-layer ghost-eyes">
-					<use
-						bind:this={leftEye}
-						xlink:href={ghostPathsUrl}
-						href={ghostPathsUrl + '#ghost-eye-left-path'}
-						class="ghost-eye ghost-eye-left"
-						fill="#000000"
-					/>
-					<use
-						bind:this={rightEye}
-						xlink:href={ghostPathsUrl}
-						href={ghostPathsUrl + '#ghost-eye-right-path'}
-						class="ghost-eye ghost-eye-right"
-						fill="#000000"
-					/>
-				</g>
+				<!-- End of ghost-wobble-group -->
 			</g>
-			<!-- End of ghost-wobble-group -->
-		</g>
-		<!-- End of ghost-spin-pivot -->
-	</svg>
+			<!-- End of ghost-spin-pivot -->
+		</svg>
+	</span>
 </button>
 
 <style>
@@ -426,6 +429,17 @@
 	.ghost-non-clickable {
 		cursor: default;
 		pointer-events: none;
+	}
+
+	.ghost-float-stage {
+		display: flex;
+		width: 100%;
+		height: 100%;
+		align-items: center;
+		justify-content: center;
+		line-height: 0;
+		pointer-events: none;
+		transform-origin: center center;
 	}
 
 	@keyframes fadeIn {
