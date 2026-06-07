@@ -1,6 +1,6 @@
 /**
  * Simple Hybrid Transcription Service
- * Uses Gemini API for instant results while Whisper loads in background
+ * Routes offline recordings to Whisper and cloud recordings to the server transcription API.
  */
 
 import { get } from 'svelte/store';
@@ -21,13 +21,20 @@ export class SimpleHybridService {
 		this.whisperLoadPromise = null;
 		this.keepPendingOfflineLoad = false;
 		this.deviceProfile = this.detectDeviceProfile();
-		this.geminiQueue = Promise.resolve();
+		this.cloudQueue = Promise.resolve();
+		this.unsubscribeWhisperStatus = null;
 
-		// Subscribe to whisper status
 		if (browser) {
-			whisperStatus.subscribe((status) => {
+			this.unsubscribeWhisperStatus = whisperStatus.subscribe((status) => {
 				this.whisperReady = status.isLoaded;
 			});
+		}
+	}
+
+	destroy() {
+		if (this.unsubscribeWhisperStatus) {
+			this.unsubscribeWhisperStatus();
+			this.unsubscribeWhisperStatus = null;
 		}
 	}
 
@@ -188,11 +195,11 @@ export class SimpleHybridService {
 	 * Transcribe using Cloud API
 	 */
 	async transcribeWithCloud(audioBlob, options = {}) {
-		this.geminiQueue = this.geminiQueue
+		this.cloudQueue = this.cloudQueue
 			.catch(() => {})
 			.then(() => this._transcribeWithCloudInternal(audioBlob, options));
 
-		return this.geminiQueue;
+		return this.cloudQueue;
 	}
 
 	async _transcribeWithCloudInternal(audioBlob, options = {}) {
@@ -262,7 +269,7 @@ export class SimpleHybridService {
 			log.error('Cloud API transcription error:', error);
 
 			// Don't auto-fallback to Whisper - let user explicitly enable Privacy Mode if they want offline
-			// This prevents unexpected downloads and keeps Gemini API as clean default
+			// This prevents unexpected downloads and keeps the cloud API as the default path.
 			throw error;
 		}
 	}

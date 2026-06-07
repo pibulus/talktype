@@ -15,6 +15,7 @@ This directory holds the project scripts that are still maintained.
 - `npm run deploy:pi`: runs `scripts/deploy-pi.sh`.
 - `npm run build`: production build used by deploy and local verification.
 - `npm run lint`: Prettier check plus ESLint.
+- `npm run screenshots`: regenerates `static/screenshots` from `scripts/generate-screenshots.js`.
 - `npm test -- --run`: one-shot Vitest run.
 
 The old Task Master wrapper (`scripts/dev.js`) was removed because it imported a missing `scripts/modules/commands.js` module and the `npm run list`, `npm run generate`, and `npm run parse-prd` commands were broken.

@@ -1,13 +1,9 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { createRequire } from 'node:module';
-import path from 'node:path';
 import { defineConfig } from 'vite';
 
 const require = createRequire(import.meta.url);
-const transformersPackageDir = path.dirname(require.resolve('@xenova/transformers/package.json'));
-const onnxWasmEntry = require.resolve('onnxruntime-web/dist/ort.wasm.min.js', {
-	paths: [transformersPackageDir]
-});
+const onnxWasmEntry = require.resolve('onnxruntime-web/dist/ort.wasm.min.js');
 
 export default defineConfig(({ command }) => {
 	if (command === 'build' && process.env.PUBLIC_FORCE_SUPPORTER_MODE === 'true') {

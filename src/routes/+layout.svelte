@@ -5,16 +5,13 @@
 	import { env } from '$env/dynamic/public';
 	import { ensureGhostThemeStyles } from '$lib/components/ghost/themeStore';
 	import { modal } from '$lib/stores/modal';
-	import { AboutModal, AuthModal, ExtensionModal, IntroModal } from '$lib/components/modals';
+	import AuthModal from '$lib/components/modals/AuthModal.svelte';
 	import { GradientDefs } from '$lib/components/ghost';
 
 	let { children } = $props();
 	const DEFAULT_UMAMI_SCRIPT_URL = 'https://cloud.umami.is/script.js';
 	const modals = {
-		about: AboutModal,
-		auth: AuthModal,
-		extension: ExtensionModal,
-		intro: IntroModal
+		auth: AuthModal
 	};
 	const umamiWebsiteId = env.PUBLIC_UMAMI_WEBSITE_ID?.trim() || '';
 	const umamiScriptUrl = env.PUBLIC_UMAMI_SCRIPT_URL?.trim() || DEFAULT_UMAMI_SCRIPT_URL;
