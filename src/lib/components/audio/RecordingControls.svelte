@@ -126,7 +126,7 @@
 		<div class="visualizer-section mt-6 flex w-full justify-center" aria-hidden="true">
 			<div class="wrapper-container flex w-full justify-center">
 				<div
-					class="visualizer-wrapper mx-auto w-[90%] max-w-[500px] animate-fadeIn rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 p-4 shadow-lg sm:w-full"
+					class="visualizer-wrapper visualizer-appear mx-auto w-[90%] max-w-[500px] rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 p-4 shadow-lg sm:w-full"
 					style="box-shadow: 0 10px 25px -5px rgba(249, 168, 212, 0.3), 0 8px 10px -6px rgba(249, 168, 212, 0.2), 0 0 15px rgba(249, 168, 212, 0.15);"
 				>
 					<AudioVisualizer />
@@ -156,12 +156,11 @@
 		z-index: 10;
 	}
 
-	/* Common animation for fading elements in */
-	.animate-fadeIn {
-		animation: localFadeIn 0.8s ease-out forwards;
+	.visualizer-appear {
+		animation: recording-visualizer-appear 0.8s ease-out forwards;
 	}
 
-	@keyframes localFadeIn {
+	@keyframes recording-visualizer-appear {
 		from {
 			opacity: 0;
 			transform: translateY(10px);

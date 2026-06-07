@@ -27,7 +27,6 @@
 	--modal-padding: 1rem;
 	--modal-border-radius: 1.5rem;
 	--modal-max-height: 85vh;
-	--modal-width: 95%;
 	--tt-modal-panel-width: min(92vw, 32rem);
 
 	/* Transitions */
@@ -284,6 +283,24 @@ dialog.modal.tt-modal-closing > .modal-backdrop {
 	border-radius: 3px;
 }
 
+.tt-modal-scroll-area::-webkit-scrollbar {
+	width: 8px;
+}
+
+.tt-modal-scroll-area::-webkit-scrollbar-track {
+	background: #f9f5f0;
+	border-radius: 4px;
+}
+
+.tt-modal-scroll-area::-webkit-scrollbar-thumb {
+	background: #ffc9e6;
+	border-radius: 4px;
+}
+
+.tt-modal-scroll-area::-webkit-scrollbar-thumb:hover {
+	background: #ffb6de;
+}
+
 /* ===================================================================
    SCROLLBAR COMPENSATION - Prevent layout shift on modal open
    =================================================================== */
@@ -296,17 +313,6 @@ dialog.modal.tt-modal-closing > .modal-backdrop {
 	from {
 		opacity: 0;
 		transform: translateY(10px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
-@keyframes tt-fadeUp {
-	from {
-		opacity: 0;
-		transform: translateY(15px);
 	}
 	to {
 		opacity: 1;
@@ -381,10 +387,6 @@ dialog.modal.tt-modal-closing > .modal-backdrop {
 	animation: tt-fadeIn 0.5s ease-out forwards;
 }
 
-.animate-fadeUp {
-	animation: tt-fadeUp 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-}
-
 /* Custom gradient text */
 .text-gradient {
 	fill: url(#gradient-fill);
@@ -402,15 +404,6 @@ dialog.modal.tt-modal-closing > .modal-backdrop {
 	50% {
 		transform: scale(1.05);
 	}
-}
-
-/* Animation utility classes */
-.animate-tt-fadeUp {
-	animation: tt-fadeUp 0.5s ease-out forwards;
-}
-
-.animate-tt-fadeIn {
-	animation: tt-fadeIn 0.5s ease-out forwards;
 }
 
 .animate-tt-pulse-slow {

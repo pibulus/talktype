@@ -133,23 +133,11 @@ select {
 	}
 }
 
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-	*,
-	*::before,
-	*::after {
-		animation-duration: 0.01ms !important;
-		animation-iteration-count: 1 !important;
-		transition-duration: 0.01ms !important;
-		scroll-behavior: auto !important;
-	}
-}
-
 /* iOS status bar in PWA mode */
 @supports (padding-top: env(safe-area-inset-top)) {
 	.status-bar-spacer {
 		height: env(safe-area-inset-top);
-		background: var(--theme-background, #fff6e6);
+		background: var(--tt-page-bg-color, #fff6e6);
 	}
 }
 

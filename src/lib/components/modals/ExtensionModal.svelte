@@ -102,10 +102,7 @@
 </dialog>
 
 <style>
-	/* Animation now in app.css with tt- prefix */
-
-	/* Ensure ghost container is properly styled and background is hidden */
-	:global(.ghost-container) {
+	#extension_modal :global(.ghost-container) {
 		background: transparent !important;
 	}
 </style>

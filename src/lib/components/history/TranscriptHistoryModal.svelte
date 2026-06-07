@@ -397,7 +397,7 @@
 		{/if}
 
 		<!-- Content -->
-		<div class="min-h-0 flex-1 overflow-y-auto">
+		<div class="tt-modal-scroll-area min-h-0 flex-1 overflow-y-auto">
 			{#if !isSupporter}
 				<div class="space-y-4 py-12 text-center">
 					<p class="text-4xl" aria-hidden="true">🔒</p>
@@ -583,7 +583,7 @@
 								</div>
 							{:else}
 								<!-- View Mode -->
-								<div class="max-h-24 overflow-y-auto rounded bg-gray-50 p-2">
+								<div class="tt-modal-scroll-area max-h-24 overflow-y-auto rounded bg-gray-50 p-2">
 									<p class="text-sm text-gray-700">{transcript.text}</p>
 								</div>
 							{/if}
@@ -598,25 +598,6 @@
 </dialog>
 
 <style>
-	/* Scrollbar styling */
-	.overflow-y-auto::-webkit-scrollbar {
-		width: 8px;
-	}
-
-	.overflow-y-auto::-webkit-scrollbar-track {
-		background: #f9f5f0;
-		border-radius: 4px;
-	}
-
-	.overflow-y-auto::-webkit-scrollbar-thumb {
-		background: #ffc9e6;
-		border-radius: 4px;
-	}
-
-	.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-		background: #ffb6de;
-	}
-
 	.history-audio-player {
 		display: block;
 		height: 42px;

@@ -92,7 +92,3 @@
 		aria-label="Close about modal"
 	></button>
 </dialog>
-
-<style>
-	/* Animation now in app.css with tt- prefix */
-</style>
