@@ -45,7 +45,7 @@ describe('record button state', () => {
 	});
 
 	it('keeps idle progress empty', () => {
-		const state = getRecordButtonState({ buttonLabel: 'Say hi' });
+		const state = getRecordButtonState();
 
 		expect(state.progressRatio).toBe(0);
 		expect(state.progressPercentage).toBe(0);

@@ -41,9 +41,7 @@
 		recordingDuration,
 		maxDuration,
 		warningThreshold,
-		dangerThreshold,
-		clipboardSuccess: clipboardSuccess && !recording,
-		buttonLabel
+		dangerThreshold
 	});
 	$: showClipboardSuccess = clipboardSuccess && !recording;
 	$: showAmbientPulse = !recording && !showClipboardSuccess;
