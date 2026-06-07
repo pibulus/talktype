@@ -66,12 +66,13 @@ to serve old cached model hits once and let transformers.js migrate the response
 4. Update `static/manifest.json` only if filenames, sizes, or purposes change.
 5. Update `static/splash/` and `static/screenshots/` when the launch or store
    presentation changes.
-6. Run a production build and a Lighthouse PWA pass after icon changes.
+6. Run a production build, a manifest smoke check, and the normal Lighthouse
+   performance/accessibility pass after icon changes.
 
 ## Test Checklist
 
 - `npm run build` completes.
-- Lighthouse PWA checks pass in Chrome.
+- Lighthouse performance/accessibility checks pass in Chrome.
 - `/manifest.json` loads and points to existing icon files.
 - `/offline.html` is present in the production output.
 - App installs on desktop Chromium.
