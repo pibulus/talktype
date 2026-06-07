@@ -16,8 +16,21 @@ describe('record button state', () => {
 		});
 
 		expect(state.progressPercentage).toBe(100);
+		expect(state.progressRatio).toBe(1);
 		expect(state.timeRemaining).toBe(0);
 		expect(state.isDanger).toBe(true);
+	});
+
+	it('exposes normalized recording progress for the visual button', () => {
+		const state = getRecordButtonState({
+			recording: true,
+			recordingDuration: 65,
+			maxDuration: 300
+		});
+
+		expect(state.progressRatio).toBeCloseTo(0.2167, 4);
+		expect(state.progressPercentage).toBeCloseTo(21.6667, 4);
+		expect(state.durationLabel).toBe('1:05 of 5:00');
 	});
 
 	it('guards against invalid max duration values', () => {

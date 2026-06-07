@@ -46,6 +46,7 @@
 		buttonLabel
 	});
 	$: showClipboardSuccess = clipboardSuccess && !recording;
+	$: buttonStyle = `transform-origin: center center; position: relative; --progress: ${buttonState.progressPercentage.toFixed(2)}%; --progress-ratio: ${buttonState.progressRatio.toFixed(4)};`;
 
 	$: {
 		if (clipboardSuccess && !previousClipboardSuccess) {
@@ -88,13 +89,18 @@
 			: ''} {buttonState.isWarning ? 'recording-warning' : ''} {buttonState.isDanger
 			? 'recording-danger'
 			: ''}"
-		style="transform-origin: center center; position: relative; {recording
-			? `--progress: ${buttonState.progressPercentage}%`
-			: ''}"
+		style={buttonStyle}
 		on:click={() => dispatch('click')}
 		aria-label={recording ? 'Stop Recording' : 'Start Recording'}
 		aria-pressed={recording}
 	>
+		{#if recording}
+			<span class="recording-progress-track" aria-hidden="true">
+				<span class="recording-progress-fill"></span>
+				<span class="recording-progress-head"></span>
+			</span>
+		{/if}
+
 		<!-- Main button text -->
 		<span
 			class="cta-text relative inline-block whitespace-nowrap transition-all duration-300 ease-out"
@@ -163,6 +169,7 @@
 	.record-button {
 		position: relative;
 		overflow: hidden;
+		isolation: isolate;
 		text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
 		background-size: 100% 100%;
 		background-position: 0% 0%;
@@ -177,6 +184,21 @@
 			0 4px 6px -1px rgba(251, 191, 36, 0.2),
 			0 2px 4px -1px rgba(0, 0, 0, 0.1),
 			inset 0 1px 0 rgba(255, 255, 255, 0.15);
+	}
+
+	.record-button::before {
+		content: '';
+		position: absolute;
+		inset: 4px;
+		z-index: 1;
+		border-radius: inherit;
+		pointer-events: none;
+		background:
+			radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.68), transparent 42%),
+			linear-gradient(90deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0));
+		opacity: 0.34;
+		transform: scale(0.985);
+		animation: button-surface-breathe 4.8s ease-in-out infinite;
 	}
 
 	/* Focus state */
@@ -247,25 +269,35 @@
 
 	/* Subtle breathing glow for button */
 	.pulse-subtle {
-		animation: button-breathe 4.8s ease-in-out infinite;
+		animation: button-shadow-breathe 4.8s ease-in-out infinite;
 		transform-origin: center;
 	}
 
-	@keyframes button-breathe {
+	@keyframes button-shadow-breathe {
 		0%,
 		100% {
 			box-shadow:
 				0 4px 6px -1px rgba(251, 191, 36, 0.2),
 				0 2px 4px -1px rgba(0, 0, 0, 0.1),
 				0 0 8px 1px rgba(251, 191, 36, 0.14);
-			transform: scale(1);
 		}
 		50% {
 			box-shadow:
 				0 4px 7px -1px rgba(251, 191, 36, 0.22),
 				0 2px 4px -1px rgba(0, 0, 0, 0.1),
 				0 0 12px 2px rgba(251, 191, 36, 0.2);
-			transform: scale(1.004);
+		}
+	}
+
+	@keyframes button-surface-breathe {
+		0%,
+		100% {
+			opacity: 0.24;
+			transform: scale(0.985);
+		}
+		50% {
+			opacity: 0.56;
+			transform: scale(1.035);
 		}
 	}
 
@@ -304,50 +336,109 @@
 	.recording-active {
 		position: relative;
 		overflow: hidden;
-
-		/* Bright golden glow for normal recording state with noise texture */
-		background-image:
-			linear-gradient(
-				to right,
-				rgba(251, 191, 36, 1),
-				rgba(251, 191, 36, 1) var(--progress, 0%),
-				rgba(251, 191, 36, 0.5) calc(var(--progress, 0%) + 0.5%),
-				rgba(245, 158, 11, 0.4) 100%
-			),
-			/* Subtle noise texture overlay */
-				url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.07'/%3E%3C/svg%3E");
-
-		background-size: 100% 100%;
+		--record-progress-fill: linear-gradient(90deg, #fbbf24 0%, #fb923c 68%, #f472b6 100%);
+		--record-progress-track: linear-gradient(
+			90deg,
+			rgba(254, 243, 199, 0.94),
+			rgba(251, 191, 36, 0.3)
+		);
+		background-image: linear-gradient(135deg, rgba(254, 243, 199, 0.98), rgba(251, 191, 36, 0.5));
 		box-shadow:
-			0 4px 15px -1px rgba(251, 191, 36, 0.35),
-			inset 0 0 10px rgba(251, 191, 36, 0.2),
-			0 0 20px rgba(251, 191, 36, 0.2);
-		border: 1px solid rgba(251, 191, 36, 0.3);
-		/* Smoother & faster transitions for clearer state changes */
+			0 8px 18px -8px rgba(251, 146, 60, 0.44),
+			0 0 0 1px rgba(251, 191, 36, 0.34),
+			inset 0 1px 0 rgba(255, 255, 255, 0.42);
+		border: 1px solid rgba(251, 191, 36, 0.4);
 		transition:
-			background-image 0.3s ease-out,
 			box-shadow 0.3s ease-out,
-			border 0.3s ease-out,
+			border-color 0.3s ease-out,
 			transform 0.2s ease;
+	}
+
+	.recording-active::before {
+		background:
+			radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.78), transparent 38%),
+			linear-gradient(90deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+		opacity: 0.42;
+	}
+
+	.recording-progress-track {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+		overflow: hidden;
+		border-radius: inherit;
+		background: var(--record-progress-track);
+	}
+
+	.recording-progress-track::after {
+		content: '';
+		position: absolute;
+		inset: 2px;
+		border-radius: inherit;
+		border: 1px solid rgba(255, 255, 255, 0.38);
+		pointer-events: none;
+	}
+
+	.recording-progress-fill {
+		position: absolute;
+		inset: 0;
+		transform: scaleX(var(--progress-ratio, 0));
+		transform-origin: left center;
+		background: var(--record-progress-fill);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.28),
+			0 0 18px rgba(251, 146, 60, 0.28);
+		transition:
+			transform 340ms cubic-bezier(0.22, 1, 0.36, 1),
+			background 220ms ease-out;
+	}
+
+	.recording-progress-head {
+		position: absolute;
+		top: 11px;
+		bottom: 11px;
+		left: clamp(14px, var(--progress, 0%), calc(100% - 14px));
+		width: 2px;
+		transform: translateX(-50%);
+		border-radius: 9999px;
+		background: linear-gradient(
+			180deg,
+			rgba(255, 255, 255, 0),
+			rgba(255, 255, 255, 0.8) 24%,
+			rgba(255, 255, 255, 0.8) 76%,
+			rgba(255, 255, 255, 0)
+		);
+		box-shadow:
+			0 0 9px rgba(255, 255, 255, 0.58),
+			0 0 12px rgba(244, 114, 182, 0.24);
+		transition: left 340ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
 	/* Warning/danger gradients */
 	.recording-warning {
-		background-image: linear-gradient(
-			to right,
-			rgb(251, 146, 60) var(--progress, 0%),
-			rgba(251, 146, 60, 0.5) var(--progress, 0%),
-			rgba(234, 88, 12, 0.3) 100%
+		--record-progress-fill: linear-gradient(90deg, #fb923c 0%, #f97316 55%, #fb7185 100%);
+		--record-progress-track: linear-gradient(
+			90deg,
+			rgba(255, 237, 213, 0.94),
+			rgba(251, 146, 60, 0.28)
 		);
+		box-shadow:
+			0 8px 18px -8px rgba(249, 115, 22, 0.48),
+			0 0 0 1px rgba(251, 146, 60, 0.42),
+			inset 0 1px 0 rgba(255, 255, 255, 0.38);
 	}
 
 	.recording-danger {
-		background-image: linear-gradient(
-			to right,
-			rgb(239, 68, 68) var(--progress, 0%),
-			rgba(239, 68, 68, 0.5) var(--progress, 0%),
-			rgba(220, 38, 38, 0.3) 100%
+		--record-progress-fill: linear-gradient(90deg, #f97316 0%, #ef4444 58%, #ec4899 100%);
+		--record-progress-track: linear-gradient(
+			90deg,
+			rgba(254, 226, 226, 0.96),
+			rgba(239, 68, 68, 0.3)
 		);
+		box-shadow:
+			0 8px 18px -8px rgba(239, 68, 68, 0.56),
+			0 0 0 1px rgba(239, 68, 68, 0.46),
+			inset 0 1px 0 rgba(255, 255, 255, 0.36);
 	}
 
 	.button-content {
@@ -360,16 +451,32 @@
 	/* Enhanced text visibility when recording */
 	.text-shadow-recording {
 		text-shadow:
-			0 1px 2px rgba(0, 0, 0, 0.2),
-			0 0 1px rgba(0, 0, 0, 0.1);
+			0 1px 0 rgba(255, 255, 255, 0.28),
+			0 1px 8px rgba(255, 255, 255, 0.18);
 		font-weight: 700;
 		letter-spacing: 0;
+	}
+
+	.cta-text {
+		z-index: 2;
 	}
 
 	/* Responsive adjustments for mobile */
 	@media (max-width: 640px) {
 		.button-content {
 			font-size: 0.95em;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.pulse-subtle,
+		.record-button::before {
+			animation: none;
+		}
+
+		.recording-progress-fill,
+		.recording-progress-head {
+			transition-duration: 120ms;
 		}
 	}
 </style>
