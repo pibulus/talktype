@@ -74,7 +74,7 @@ Copy `.env.example` to `.env` and set the values needed for your mode:
 
 - `DEEPGRAM_API_KEY`: required for Live Mode and standard batch transcription.
 - `GEMINI_API_KEY`: required for output style presets.
-- `GEMINI_MODEL`: optional; defaults to `gemini-3.1-flash-lite-preview`.
+- `GEMINI_MODEL`: optional; defaults to `gemini-3-flash-preview`.
 - `API_AUTH_TOKEN`: optional shared token. If set, API routes require an auth session.
 - `API_COOKIE_SECRET`: required when API auth sessions are enabled.
 - `SUPPORTER_UNLOCK_CODES`: comma-separated manual supporter codes for `/api/supporter/redeem` and legacy `/api/validate-code`; matched case-insensitively.
@@ -97,13 +97,6 @@ Copy `.env.example` to `.env` and set the values needed for your mode:
 - `PUBLIC_QRBUDDY_API_URL`: QRBuddy `/render-qr` endpoint for Passport card QR stamps.
 - `PUBLIC_QRBUDDY_APP_URL`: QRBuddy app/share origin for QR links when needed.
 - `PUBLIC_PASSPORT_SERVER_URL`: optional default encrypted notes endpoint used by Passport QR/import/check-in. Falls back to `PUBLIC_VAULT_SERVER_URL` for older configs.
-
-The standalone Vault server uses:
-
-- `PORT`: Vault server port, default `3000`.
-- `VAULT_DIR`: encrypted blob storage directory, default `./vaults`.
-- `VAULT_ALLOWED_ORIGIN`: comma-separated browser origins allowed to call the Vault server.
-- `MAX_VAULT_BLOB_BYTES`: upload cap for encrypted Vault payloads, default `150MB`.
 
 ## Deployment
 

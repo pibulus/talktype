@@ -1,4 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, createPartFromUri, createUserContent } from '@google/genai';
 import { getTranscriptionPrompt } from '$lib/prompts';
 import {
 	GEMINI_MODELS,
@@ -16,6 +16,33 @@ export function resolveGeminiTranscriptionPrompt(promptStyle, customPromptText =
 
 	const customPrompt = customPromptText.trim();
 	return customPrompt || getTranscriptionPrompt('standard');
+}
+
+export function buildGeminiTranscriptionRequest({
+	uploadedFile,
+	mimeType,
+	prompt,
+	modelId = MODEL_ID
+}) {
+	if (!uploadedFile?.uri) {
+		throw new Error('File upload to Gemini failed');
+	}
+
+	const uploadedMimeType = uploadedFile.mimeType || mimeType;
+	return {
+		model: modelId,
+		contents: createUserContent([
+			{ text: prompt },
+			createPartFromUri(uploadedFile.uri, uploadedMimeType)
+		]),
+		config: GENERATION_CONFIG
+	};
+}
+
+export async function deleteUploadedGeminiFile(genAI, uploadedFileName) {
+	if (!uploadedFileName) return;
+
+	await genAI.files.delete({ name: uploadedFileName });
 }
 
 export async function transcribeAudio(file, promptStyle, customPromptText = '') {
@@ -42,31 +69,17 @@ export async function transcribeAudio(file, promptStyle, customPromptText = '') 
 			}
 		});
 
-		if (!uploadResult?.uri) {
-			throw new Error('File upload to Gemini failed');
-		}
-
-		uploadedFileName = uploadResult?.name ?? uploadResult?.file?.name ?? null;
+		uploadedFileName = uploadResult?.name ?? null;
 
 		console.log(`[GeminiService] Uploaded audio to Gemini. Style: ${promptStyle}`);
 
-		const result = await genAI.models.generateContent({
-			model: MODEL_ID,
-			contents: [
-				{
-					parts: [
-						{ text: prompt },
-						{
-							fileData: {
-								mimeType: uploadResult.mimeType || mimeType,
-								fileUri: uploadResult.uri
-							}
-						}
-					]
-				}
-			],
-			generationConfig: GENERATION_CONFIG
-		});
+		const result = await genAI.models.generateContent(
+			buildGeminiTranscriptionRequest({
+				uploadedFile: uploadResult,
+				mimeType,
+				prompt
+			})
+		);
 
 		let transcription = result.text || '';
 
@@ -85,7 +98,7 @@ export async function transcribeAudio(file, promptStyle, customPromptText = '') 
 	} finally {
 		if (uploadedFileName) {
 			try {
-				await genAI.files.delete(uploadedFileName);
+				await deleteUploadedGeminiFile(genAI, uploadedFileName);
 			} catch (cleanupError) {
 				console.warn('⚠️ Failed to delete Gemini file', uploadedFileName, cleanupError);
 			}
