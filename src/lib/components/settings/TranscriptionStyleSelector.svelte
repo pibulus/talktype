@@ -6,8 +6,6 @@
 
 	export let selectedPromptStyle = 'standard';
 	export let changePromptStyle = () => {};
-	export let privacyModeValue = false;
-	export let liveModeValue = false;
 	export let isSupporter = false;
 	export let openSupporterModal = () => {};
 
@@ -55,7 +53,6 @@
 		</svg>`
 	};
 
-	$: stylesBlockedByMode = liveModeValue || privacyModeValue;
 	$: availableStyleIds = styleOptions.map((style) => style.id);
 	$: if ($customPrompt && customPromptText !== $customPrompt) customPromptText = $customPrompt;
 
@@ -67,19 +64,10 @@
 		changePromptStyle(PROMPT_STYLES.STANDARD);
 	}
 
-	$: if (stylesBlockedByMode && selectedPromptStyle !== PROMPT_STYLES.STANDARD) {
-		changePromptStyle(PROMPT_STYLES.STANDARD);
-	}
-
-	$: showCustomInput =
-		selectedPromptStyle === PROMPT_STYLES.CUSTOM && isSupporter && !stylesBlockedByMode;
+	$: showCustomInput = selectedPromptStyle === PROMPT_STYLES.CUSTOM && isSupporter;
 
 	function isStyleLocked(style) {
 		return style.requiresSupporter && !isSupporter;
-	}
-
-	function isStyleBlockedByMode(style) {
-		return stylesBlockedByMode && style.id !== PROMPT_STYLES.STANDARD;
 	}
 
 	function showToast(message) {
@@ -97,12 +85,6 @@
 			soundService.locked();
 			showToast('Supporter only');
 			openSupporterModal();
-			return;
-		}
-
-		if (isStyleBlockedByMode(style)) {
-			soundService.locked();
-			showToast('After Stop only');
 			return;
 		}
 
@@ -139,18 +121,13 @@
 					selectedPromptStyle === style.id
 						? 'selected-style border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
 						: 'border-pink-100'
-				} ${isStyleLocked(style) ? 'locked-style' : ''} ${isStyleBlockedByMode(style) ? 'mode-blocked-style' : ''}`}
+				} ${isStyleLocked(style) ? 'locked-style' : ''}`}
 				on:click={() => handleStyleClick(style)}
 				aria-label={isStyleLocked(style)
 					? `${style.label} requires supporter mode`
 					: `Choose ${style.label} style`}
 				aria-pressed={selectedPromptStyle === style.id}
-				aria-disabled={isStyleBlockedByMode(style)}
-				title={isStyleLocked(style)
-					? 'Supporter'
-					: isStyleBlockedByMode(style)
-						? 'After Stop only'
-						: style.label}
+				title={isStyleLocked(style) ? 'Supporter' : style.label}
 			>
 				<div class="mb-1 flex h-7 w-7 items-center justify-center">
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -204,10 +181,6 @@
 
 	.locked-style {
 		opacity: 0.86;
-	}
-
-	.mode-blocked-style {
-		opacity: 0.62;
 	}
 
 	textarea {

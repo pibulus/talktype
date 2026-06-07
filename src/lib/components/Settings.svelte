@@ -268,24 +268,32 @@
 					Settings
 				</h3>
 				<p id="settings_modal_description" class="sr-only">
-					Adjust vibe, text timing, output style, and recording startup.
+					Adjust theme, output mode, output style, and recording startup.
 				</p>
 			</div>
 
-			<ThemeSelector
-				currentTheme={selectedVibe}
-				onThemeChange={changeVibe}
-				isSupporter={isSupporterValue}
-				{openSupporterModal}
-			/>
+			<section class="settings-section space-y-2" aria-labelledby="settings_theme_title">
+				<h4 id="settings_theme_title" class="settings-section-title">Theme</h4>
+				<ThemeSelector
+					currentTheme={selectedVibe}
+					onThemeChange={changeVibe}
+					isSupporter={isSupporterValue}
+					{openSupporterModal}
+				/>
+			</section>
 
 			<!-- Transcription Mode Picker -->
-			<div class="space-y-2" role="group" aria-label="When text appears">
+			<section
+				class="settings-section space-y-2"
+				role="group"
+				aria-labelledby="settings_output_mode_title"
+			>
+				<h4 id="settings_output_mode_title" class="settings-section-title">Output Mode</h4>
 				<div class="grid grid-cols-3 gap-2">
 					{#each transcriptionModes as mode}
 						<button
 							type="button"
-							class={`mode-option flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-center transition-all duration-200 ${
+							class={`mode-option flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-center transition-all duration-200 ${
 								transcriptionMode === mode.id
 									? 'border-pink-300 bg-pink-50 text-gray-900 shadow-sm ring-2 ring-pink-100'
 									: 'border-pink-100 bg-white/70 text-gray-600 hover:border-pink-200'
@@ -337,16 +345,19 @@
 						{/if}
 					</div>
 				{/if}
-			</div>
+			</section>
 
-			<TranscriptionStyleSelector
-				{selectedPromptStyle}
-				{changePromptStyle}
-				{privacyModeValue}
-				{liveModeValue}
-				isSupporter={isSupporterValue}
-				{openSupporterModal}
-			/>
+			{#if transcriptionMode === 'standard'}
+				<section class="settings-section space-y-2" aria-labelledby="settings_output_style_title">
+					<h4 id="settings_output_style_title" class="settings-section-title">Output Style</h4>
+					<TranscriptionStyleSelector
+						{selectedPromptStyle}
+						{changePromptStyle}
+						isSupporter={isSupporterValue}
+						{openSupporterModal}
+					/>
+				</section>
+			{/if}
 
 			<button
 				type="button"
@@ -537,6 +548,16 @@
 
 	.setting-row {
 		contain: content;
+	}
+
+	.settings-section-title {
+		margin: 0;
+		font-size: 0.72rem;
+		font-weight: 900;
+		line-height: 1;
+		color: #be185d;
+		text-transform: uppercase;
+		letter-spacing: 0;
 	}
 
 	@keyframes offline-breathe {
