@@ -74,7 +74,7 @@ Copy `.env.example` to `.env` and set the values needed for your mode:
 
 - `DEEPGRAM_API_KEY`: required for Live Mode and standard batch transcription.
 - `GEMINI_API_KEY`: required for output style presets.
-- `GEMINI_MODEL`: optional; defaults to `gemini-3-flash-preview`.
+- `GEMINI_MODEL`: optional; defaults to `gemini-3.1-flash-lite`.
 - `API_AUTH_TOKEN`: optional shared token. If set, API routes require an auth session.
 - `API_COOKIE_SECRET`: required when API auth sessions are enabled.
 - `SUPPORTER_UNLOCK_CODES`: comma-separated manual supporter codes for `/api/supporter/redeem` and legacy `/api/validate-code`; matched case-insensitively.
