@@ -1,5 +1,6 @@
 <script>
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, tick } from 'svelte';
+	import { browser } from '$app/environment';
 	import {
 		transcriptHistory,
 		storageStats,
@@ -18,18 +19,29 @@
 		getTranscriptTagPool
 	} from '$lib/services/storage/transcriptTags.js';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
+	import { typewriterSoundService } from '$lib/services/infrastructure/typewriterSoundService.js';
+	import { transcriptionService } from '$lib/services/transcription/transcriptionService.js';
+	import {
+		cleanTranscriptText,
+		insertPlainTranscriptTextIntoControl,
+		normalizeTranscriptText
+	} from '$lib/utils/transcriptText.js';
 
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { PRICING } from '$lib/config/pricing.js';
 
 	export let closeModal = () => {};
 
+	const TYPEWRITER_INPUT_GUARD_MS = 34;
+
 	// Supporter status check
 	$: isSupporter = $userPreferences.isSupporter;
 
 	function openSupporterModal() {
 		closeModal();
-		setTimeout(() => {
+		if (supporterOpenTimeout) clearTimeout(supporterOpenTimeout);
+		supporterOpenTimeout = setTimeout(() => {
+			supporterOpenTimeout = null;
 			window.dispatchEvent(new CustomEvent('talktype:open-supporter-modal'));
 		}, 75);
 	}
@@ -40,9 +52,12 @@
 	let editText = '';
 	let clearAllTimeout = null;
 	let deleteConfirmTimeout = null;
+	let supporterOpenTimeout = null;
 	let activeAudioId = null;
 	let activeAudioUrl = '';
 	let selectedTag = '';
+	let editTextarea;
+	let lastTypewriterInputAt = 0;
 	const iconButtonClass = 'btn btn-ghost h-12 min-h-12 w-12 px-0 text-base';
 
 	$: availableTags = getTranscriptTagPool($transcriptHistory);
@@ -54,6 +69,7 @@
 	$: if (selectedTag && !availableTags.includes(selectedTag)) {
 		selectedTag = '';
 	}
+	$: editTextReady = cleanTranscriptText(editText).length > 0;
 
 	// Format timestamp to readable date
 	function formatDate(timestamp) {
@@ -122,27 +138,21 @@
 
 	// Copy transcript to clipboard
 	async function copyTranscript(text) {
-		try {
-			await navigator.clipboard.writeText(text);
-			soundService.copySuccess();
-			window.dispatchEvent(
-				new CustomEvent('talktype:toast', {
-					detail: { message: 'Copied', type: 'success' }
-				})
-			);
-		} catch (err) {
-			console.error('Failed to copy:', err);
-			window.dispatchEvent(
-				new CustomEvent('talktype:toast', {
-					detail: { message: 'Try again', type: 'info' }
-				})
-			);
+		const normalizedText = cleanTranscriptText(text);
+		if (!normalizedText) {
+			showToast('Nothing to copy.', 'info');
+			return;
 		}
+
+		const copied = await transcriptionService.copyToClipboard(normalizedText, {
+			showSuccess: false
+		});
+		showToast(copied ? 'Copied' : 'Tap the page, then try copy.', copied ? 'success' : 'info');
 	}
 
 	// Download single transcript as text file
 	function downloadTranscript(transcript) {
-		const blob = new Blob([transcript.text], { type: 'text/plain' });
+		const blob = new Blob([normalizeTranscriptText(transcript.text)], { type: 'text/plain' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
@@ -156,23 +166,31 @@
 	// Start editing a transcript
 	function startEdit(transcript) {
 		editingId = transcript.id;
-		editText = transcript.text;
+		editText = normalizeTranscriptText(transcript.text);
+		tick().then(() => {
+			editTextarea?.focus();
+			syncEditTextareaHeight();
+		});
 	}
 
 	// Save edited transcript
 	async function saveEdit(id) {
-		if (editText.trim()) {
-			await updateTranscript(id, editText.trim());
-			editingId = null;
-			editText = '';
-			mirrorHistoryToVault();
-
-			window.dispatchEvent(
-				new CustomEvent('talktype:toast', {
-					detail: { message: 'Transcript updated.', type: 'success' }
-				})
-			);
+		const nextText = cleanTranscriptText(editText);
+		if (!nextText) {
+			showToast('Add some text or cancel the edit.', 'info');
+			return;
 		}
+
+		const updated = await updateTranscript(id, nextText);
+		if (!updated) {
+			showToast('Transcript update needs one more try.', 'info');
+			return;
+		}
+
+		editingId = null;
+		editText = '';
+		mirrorHistoryToVault();
+		showToast('Transcript updated.', 'success');
 	}
 
 	// Cancel editing
@@ -199,11 +217,7 @@
 		pendingDeleteId = null;
 		mirrorHistoryToVault();
 
-		window.dispatchEvent(
-			new CustomEvent('talktype:toast', {
-				detail: { message: 'Transcript removed from history.', type: 'info' }
-			})
-		);
+		showToast('Transcript removed from history.', 'info');
 	}
 
 	// Clear all transcripts
@@ -223,11 +237,7 @@
 		confirmClearAll = false;
 		mirrorHistoryToVault();
 
-		window.dispatchEvent(
-			new CustomEvent('talktype:toast', {
-				detail: { message: 'History cleared.', type: 'info' }
-			})
-		);
+		showToast('History cleared.', 'info');
 	}
 
 	// Play audio (if available)
@@ -256,24 +266,73 @@
 	// Batch download all transcripts
 	async function handleBatchDownload() {
 		const count = await batchDownloadTranscripts();
-		window.dispatchEvent(
-			new CustomEvent('talktype:toast', {
-				detail: {
-					message: `Downloading ${count} transcript${count !== 1 ? 's' : ''}.`,
-					type: 'success'
-				}
-			})
-		);
+		showToast(`Downloading ${count} transcript${count !== 1 ? 's' : ''}.`, 'success');
 	}
 
 	// Export as JSON
 	async function handleExportJSON() {
 		await exportAllTranscriptsJSON();
+		showToast('Exported as JSON.', 'success');
+	}
+
+	function showToast(message, type = 'info') {
 		window.dispatchEvent(
 			new CustomEvent('talktype:toast', {
-				detail: { message: 'Exported as JSON.', type: 'success' }
+				detail: { message, type }
 			})
 		);
+	}
+
+	function getTypewriterEventTime() {
+		return browser && window.performance?.now ? window.performance.now() : Date.now();
+	}
+
+	function canPlayTypewriterSound() {
+		return browser && editingId && soundService.isEnabled();
+	}
+
+	function warmTypewriterSounds() {
+		if (!canPlayTypewriterSound()) return;
+		typewriterSoundService.prime().catch(() => {});
+	}
+
+	function handleEditKeydown(event) {
+		if (!canPlayTypewriterSound()) return;
+		if (!typewriterSoundService.isEditKeyEvent(event)) return;
+
+		lastTypewriterInputAt = getTypewriterEventTime();
+		typewriterSoundService.playFromKeyboardEvent(event).catch(() => {});
+	}
+
+	function handleEditBeforeInput(event) {
+		if (!canPlayTypewriterSound()) return;
+
+		const now = getTypewriterEventTime();
+		if (now - lastTypewriterInputAt < TYPEWRITER_INPUT_GUARD_MS) return;
+		if (!typewriterSoundService.isSupportedInputEvent(event)) return;
+
+		lastTypewriterInputAt = now;
+		typewriterSoundService.playFromInputEvent(event).catch(() => {});
+	}
+
+	function handleEditPaste(event) {
+		const text = event.clipboardData?.getData('text/plain');
+		if (typeof text !== 'string') return;
+
+		event.preventDefault();
+		const nextValue = insertPlainTranscriptTextIntoControl(event.currentTarget, text);
+		if (nextValue !== null) {
+			editText = nextValue;
+			tick().then(syncEditTextareaHeight);
+		}
+	}
+
+	function syncEditTextareaHeight() {
+		if (!editTextarea) return;
+
+		editTextarea.style.height = 'auto';
+		const maxHeight = browser ? Math.max(180, window.innerHeight * 0.42) : 320;
+		editTextarea.style.height = `${Math.min(editTextarea.scrollHeight, maxHeight)}px`;
 	}
 
 	onMount(() => {
@@ -283,6 +342,7 @@
 	onDestroy(() => {
 		if (clearAllTimeout) clearTimeout(clearAllTimeout);
 		if (deleteConfirmTimeout) clearTimeout(deleteConfirmTimeout);
+		if (supporterOpenTimeout) clearTimeout(supporterOpenTimeout);
 		clearActiveAudio();
 	});
 </script>
@@ -420,6 +480,18 @@
 					<p class="mb-2 text-4xl opacity-30" aria-hidden="true">📝</p>
 					<p class="text-sm text-gray-500">No transcripts yet</p>
 					<p class="text-xs text-gray-400">Your saved transcripts will appear here</p>
+				</div>
+			{:else if visibleTranscripts.length === 0}
+				<div class="py-12 text-center">
+					<p class="mb-2 text-4xl opacity-30" aria-hidden="true">🔎</p>
+					<p class="text-sm text-gray-500">No transcripts with #{selectedTag}</p>
+					<button
+						type="button"
+						class="btn mt-4 min-h-11 border-pink-100 bg-white/80 px-4 text-sm text-gray-700 hover:bg-pink-50"
+						on:click={() => (selectedTag = '')}
+					>
+						Show all
+					</button>
 				</div>
 			{:else}
 				<!-- Transcript List -->
@@ -559,22 +631,30 @@
 								<!-- Edit Mode -->
 								<div class="space-y-2">
 									<textarea
+										bind:this={editTextarea}
 										bind:value={editText}
-										class="tt-scrollbar w-full rounded border border-pink-200 bg-white p-2 text-base focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200 sm:text-sm"
-										rows="4"
+										class="history-edit-textarea tt-scrollbar w-full resize-y rounded-xl border border-pink-200 bg-white/95 px-3 py-3 text-base text-gray-800 shadow-inner transition-all duration-150 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
+										rows="5"
 										aria-label="Edit transcript text"
+										on:pointerdown={warmTypewriterSounds}
+										on:focus={warmTypewriterSounds}
+										on:keydown={handleEditKeydown}
+										on:beforeinput={handleEditBeforeInput}
+										on:paste={handleEditPaste}
+										on:input={syncEditTextareaHeight}
 									></textarea>
-									<div class="flex justify-end gap-2">
+									<div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 										<button
 											type="button"
-											class="btn btn-ghost min-h-11 px-4 text-sm"
+											class="btn min-h-11 border-pink-100 bg-white/80 px-4 text-sm font-semibold text-gray-700 hover:bg-pink-50"
 											on:click={cancelEdit}
 										>
 											Cancel
 										</button>
 										<button
 											type="button"
-											class="btn btn-primary min-h-11 px-4 text-sm"
+											class="btn min-h-11 border-pink-200 bg-pink-500 px-4 text-sm font-bold text-white hover:border-pink-300 hover:bg-pink-600 disabled:border-gray-200 disabled:bg-gray-200 disabled:text-gray-400"
+											disabled={!editTextReady}
 											on:click={() => saveEdit(transcript.id)}
 										>
 											Save
@@ -583,8 +663,12 @@
 								</div>
 							{:else}
 								<!-- View Mode -->
-								<div class="tt-modal-scroll-area max-h-24 overflow-y-auto rounded bg-gray-50 p-2">
-									<p class="text-sm text-gray-700">{transcript.text}</p>
+								<div
+									class="history-transcript-frame tt-scrollbar max-h-44 overflow-y-auto rounded-xl border border-pink-50 bg-[#fffdf5]/90 px-3 py-3 shadow-inner sm:max-h-40"
+								>
+									<p class="history-transcript-text text-sm text-gray-700">
+										{normalizeTranscriptText(transcript.text)}
+									</p>
 								</div>
 							{/if}
 						</div>
@@ -602,5 +686,48 @@
 		display: block;
 		height: 42px;
 		border-radius: 0.75rem;
+	}
+
+	.history-transcript-frame {
+		scrollbar-gutter: stable;
+		overscroll-behavior: contain;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.history-transcript-text,
+	.history-edit-textarea {
+		font-family:
+			ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+			monospace;
+		line-height: 1.65;
+		letter-spacing: 0;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		word-break: normal;
+		tab-size: 2;
+	}
+
+	.history-edit-textarea {
+		min-height: 9rem;
+		max-height: 42vh;
+		caret-color: rgba(236, 72, 153, 1);
+	}
+
+	.history-edit-textarea::selection,
+	.history-transcript-text::selection {
+		background-color: rgba(236, 72, 153, 0.25);
+		color: #111827;
+	}
+
+	@media (max-width: 600px) {
+		.history-transcript-frame {
+			max-height: min(34vh, 15rem);
+		}
+
+		.history-edit-textarea {
+			min-height: 11rem;
+			max-height: 44vh;
+			line-height: 1.7;
+		}
 	}
 </style>

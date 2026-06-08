@@ -12,6 +12,11 @@ import {
 	generateTranscriptTags,
 	getTranscriptTagPool
 } from './transcriptTags.js';
+import {
+	cleanTranscriptText,
+	getTranscriptWordCount,
+	normalizeTranscriptText
+} from '$lib/utils/transcriptText.js';
 
 const log = createLogger('TranscriptStorage');
 
@@ -164,15 +169,16 @@ export async function saveTranscript(transcript) {
 		});
 
 		// Prepare transcript object
+		const normalizedText = normalizeTranscriptText(transcript.text);
 		const transcriptData = {
-			text: transcript.text,
+			text: normalizedText,
 			audioBlob: transcript.audioBlob, // Store audio blob for later playback/download
 			duration: transcript.duration || 0,
 			timestamp: Date.now(),
 			promptStyle: transcript.promptStyle || 'standard',
 			method: transcript.method || 'gemini', // 'gemini' or 'whisper'
-			wordCount: transcript.text ? transcript.text.split(/\s+/).length : 0,
-			tags: getGeneratedTags(transcript.text, transcript.tags)
+			wordCount: getTranscriptWordCount(normalizedText),
+			tags: getGeneratedTags(normalizedText, transcript.tags)
 		};
 
 		return new Promise((resolve, reject) => {
@@ -381,10 +387,12 @@ export async function updateTranscript(id, newText, options = {}) {
 					return;
 				}
 
+				const normalizedText = cleanTranscriptText(newText);
+
 				// Update the text and word count
-				transcript.text = newText;
-				transcript.wordCount = newText ? newText.split(/\s+/).length : 0;
-				transcript.tags = getGeneratedTags(newText, options.tags, id);
+				transcript.text = normalizedText;
+				transcript.wordCount = getTranscriptWordCount(normalizedText);
+				transcript.tags = getGeneratedTags(normalizedText, options.tags, id);
 
 				// Save the updated transcript
 				const putRequest = store.put(transcript);

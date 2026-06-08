@@ -6,6 +6,7 @@
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
 	import { typewriterSoundService } from '$lib/services/infrastructure/typewriterSoundService.js';
 	import { centerElementInViewport } from '$lib/utils/scrollUtils';
+	import { insertPlainTranscriptText, normalizeTranscriptText } from '$lib/utils/transcriptText.js';
 	import { theme } from '$lib';
 
 	const TYPEWRITER_INPUT_GUARD_MS = 34;
@@ -37,12 +38,6 @@
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher();
-
-	function normalizeTranscriptText(value = '') {
-		return String(value ?? '')
-			.replace(/\r\n?/g, '\n')
-			.replace(/\u00a0/g, ' ');
-	}
 
 	// Get the current editable content
 	export function getEditedTranscript() {
@@ -118,33 +113,6 @@
 
 		lastTypewriterInputAt = now;
 		typewriterSoundService.playFromInputEvent(event).catch(() => {});
-	}
-
-	function insertPlainTranscriptText(text) {
-		const normalizedText = normalizeTranscriptText(text);
-		if (!normalizedText || !browser) return;
-
-		try {
-			if (document.queryCommandSupported?.('insertText')) {
-				const inserted = document.execCommand('insertText', false, normalizedText);
-				if (inserted) return;
-			}
-		} catch {
-			// Fall through to the Selection API path.
-		}
-
-		const selection = window.getSelection?.();
-		if (!selection?.rangeCount) return;
-
-		const range = selection.getRangeAt(0);
-		range.deleteContents();
-
-		const textNode = document.createTextNode(normalizedText);
-		range.insertNode(textNode);
-		range.setStartAfter(textNode);
-		range.setEndAfter(textNode);
-		selection.removeAllRanges();
-		selection.addRange(range);
 	}
 
 	function handleTranscriptPaste(event) {
