@@ -38,9 +38,22 @@
 	// Event dispatcher
 	const dispatch = createEventDispatcher();
 
+	function normalizeTranscriptText(value = '') {
+		return String(value ?? '')
+			.replace(/\r\n?/g, '\n')
+			.replace(/\u00a0/g, ' ');
+	}
+
 	// Get the current editable content
 	export function getEditedTranscript() {
-		return editable && editableTranscript ? editableTranscript.innerText : transcript;
+		return normalizeTranscriptText(
+			editable && editableTranscript ? editableTranscript.innerText : transcript
+		);
+	}
+
+	function dispatchEditedTranscript() {
+		if (!editable) return;
+		dispatch('edit', { text: getEditedTranscript() });
 	}
 
 	function handleTooltipMouseEnter() {
@@ -84,9 +97,7 @@
 	}
 
 	function handleTranscriptBlur() {
-		if (editable) {
-			dispatch('edit', { text: getEditedTranscript() });
-		}
+		dispatchEditedTranscript();
 		checkScrollable();
 	}
 
@@ -107,6 +118,52 @@
 
 		lastTypewriterInputAt = now;
 		typewriterSoundService.playFromInputEvent(event).catch(() => {});
+	}
+
+	function insertPlainTranscriptText(text) {
+		const normalizedText = normalizeTranscriptText(text);
+		if (!normalizedText || !browser) return;
+
+		try {
+			if (document.queryCommandSupported?.('insertText')) {
+				const inserted = document.execCommand('insertText', false, normalizedText);
+				if (inserted) return;
+			}
+		} catch {
+			// Fall through to the Selection API path.
+		}
+
+		const selection = window.getSelection?.();
+		if (!selection?.rangeCount) return;
+
+		const range = selection.getRangeAt(0);
+		range.deleteContents();
+
+		const textNode = document.createTextNode(normalizedText);
+		range.insertNode(textNode);
+		range.setStartAfter(textNode);
+		range.setEndAfter(textNode);
+		selection.removeAllRanges();
+		selection.addRange(range);
+	}
+
+	function handleTranscriptPaste(event) {
+		if (!editable) return;
+
+		const text = event.clipboardData?.getData('text/plain');
+		if (typeof text !== 'string') return;
+
+		event.preventDefault();
+		insertPlainTranscriptText(text);
+		tick().then(() => {
+			dispatchEditedTranscript();
+			checkScrollable();
+		});
+	}
+
+	function handleTranscriptInput() {
+		dispatchEditedTranscript();
+		checkScrollable();
 	}
 
 	// Check if content is scrollable and update UI accordingly
@@ -182,7 +239,7 @@
 	// Safely update transcript content without breaking cursor position.
 	// During live streaming the box is read-only, so incoming text always wins.
 	$: if (editableTranscript && (!editable || document.activeElement !== editableTranscript)) {
-		editableTranscript.innerText = transcript;
+		editableTranscript.innerText = normalizeTranscriptText(transcript);
 		checkScrollable();
 		if (!editable && transcript !== previousTranscript) {
 			scrollLiveTranscriptToBottom();
@@ -209,7 +266,7 @@
 			// Ensure text is set after DOM is ready - handles cases where the
 			// reactive $: statement misses the initial bind:this timing.
 			if (editableTranscript && transcript) {
-				editableTranscript.innerText = transcript;
+				editableTranscript.innerText = normalizeTranscriptText(transcript);
 			}
 
 			checkScrollable();
@@ -318,6 +375,8 @@
 						on:blur={handleTranscriptBlur}
 						on:keydown={handleTranscriptKeydown}
 						on:beforeinput={handleTranscriptBeforeInput}
+						on:paste={handleTranscriptPaste}
+						on:input={handleTranscriptInput}
 					>
 						<!-- Content set via innerText in reactive statement to avoid cursor jumping -->
 					</div>
@@ -348,6 +407,10 @@
 	/* Container layout */
 	.transcript-wrapper {
 		margin-top: 24px; /* Reduced space between button and transcript */
+	}
+
+	.final-transcript {
+		margin-bottom: max(7rem, 14svh);
 	}
 
 	.copy-btn {
@@ -437,9 +500,7 @@
 			background-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
 			border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
 			box-shadow 0.38s cubic-bezier(0.22, 1, 0.36, 1);
-		animation: subtle-breathe 4s infinite ease-in-out alternate;
 		position: relative; /* For the pseudo-element highlight */
-		will-change: box-shadow; /* GPU hint for better performance */
 	}
 
 	/* Extremely subtle mouseover highlight effect */
@@ -460,22 +521,6 @@
 
 	.transcript-box:hover::before {
 		opacity: 1;
-	}
-
-	/* Subtle breathing animation - 80/20 rule applied for subtlety */
-	@keyframes subtle-breathe {
-		0% {
-			box-shadow: 0 8px 28px rgba(249, 168, 212, 0.2);
-			border-color: rgba(252, 231, 243, 0.7);
-		}
-		50% {
-			box-shadow: 0 9px 29px rgba(249, 168, 212, 0.23);
-			border-color: rgba(252, 231, 243, 0.75);
-		}
-		100% {
-			box-shadow: 0 10px 30px rgba(249, 168, 212, 0.25);
-			border-color: rgba(252, 231, 243, 0.8);
-		}
 	}
 
 	/* Elegant hover effect - extremely subtle */
@@ -518,8 +563,10 @@
 		caret-color: rgba(236, 72, 153, 1); /* Darker, more visible cursor color */
 		/* Remove explicit font-size to allow Tailwind classes to work */
 		/* Base text size now handled by responsiveFontSize classes */
-		word-break: break-word;
-		font-size: clamp(1rem, 1.1rem + 0.25vw, 1.2rem);
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		word-break: normal;
+		tab-size: 2;
 	}
 
 	/* Optimize spacing based on font size for better readability */
@@ -581,11 +628,13 @@
 	/* Content area scrolling - more refined */
 	.transcript-content-area {
 		scrollbar-width: thin;
-		scrollbar-color: rgba(249, 168, 212, 0.5) transparent;
+		scrollbar-color: var(--tt-scrollbar-thumb-color) transparent;
+		scrollbar-gutter: stable;
 		overscroll-behavior: contain; /* More controlled overscroll */
 		-webkit-overflow-scrolling: touch; /* Smoother scrolling on iOS */
-		scroll-behavior: smooth; /* Smoother scrolling */
-		transition: all 0.3s ease-out; /* Smooth transitions */
+		transition:
+			background-color 0.25s ease,
+			box-shadow 0.25s ease;
 	}
 
 	/* Elegant text selection styling - flat color for better consistency */
@@ -593,21 +642,6 @@
 		background-color: rgba(236, 72, 153, 0.25); /* Consistent with cursor color */
 		color: #111827;
 		text-shadow: none; /* Remove text shadow for cleaner selection */
-	}
-
-	/* Custom scrollbar styles for WebKit browsers */
-	.transcript-content-area::-webkit-scrollbar {
-		width: 6px;
-	}
-
-	.transcript-content-area::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	.transcript-content-area::-webkit-scrollbar-thumb {
-		background-color: rgba(249, 168, 212, 0.5);
-		border-radius: 20px;
-		border: 2px solid transparent;
 	}
 
 	/* Elegant scroll indicator for content overflow */
@@ -638,6 +672,7 @@
 			max-height: min(46vh, 340px);
 			padding: 1.25rem 1rem 1.5rem;
 			scrollbar-width: none; /* Hide scrollbar on Firefox */
+			scrollbar-gutter: auto;
 		}
 
 		.final-transcript .transcript-box {
@@ -652,7 +687,6 @@
 		}
 
 		.custom-transcript-text {
-			font-size: clamp(1rem, 4.2vw, 1.25rem);
 			line-height: 1.72;
 		}
 
@@ -688,7 +722,6 @@
 		}
 
 		.live-transcript .custom-transcript-text {
-			font-size: clamp(0.95rem, 3.5vw, 1.08rem);
 			line-height: 1.58;
 		}
 
@@ -750,6 +783,17 @@
 
 		.copy-nudge {
 			animation: none;
+		}
+
+		.transcript-box,
+		.transcript-box::before,
+		.transcript-wrapper.transcript-arrival-focus .transcript-box,
+		.custom-transcript-text,
+		.transcript-content-area,
+		.animate-shadow-appear,
+		.animate-text-appear {
+			animation: none;
+			transition-duration: 0.01ms;
 		}
 	}
 </style>

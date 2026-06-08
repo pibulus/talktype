@@ -5,7 +5,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { confettiService } from '$lib/services/effects/confettiService';
-	import { transcriptionState } from '$lib/services';
+	import { transcriptionCompletedEvent } from '$lib/services/infrastructure/stores';
 
 	// Props
 	export let ghostComponent = null;
@@ -18,17 +18,13 @@
 	let unsubscribers = [];
 
 	onMount(() => {
-		// Subscribe to transcription state changes
-		let previousText = '';
-		const transcriptionStateUnsub = transcriptionState.subscribe(async (state) => {
-			// Check if transcription just completed
-			if (!state.inProgress && state.text && state.text !== previousText) {
-				previousText = state.text;
-				await handleTranscriptCompletion(state.text);
+		const completionUnsub = transcriptionCompletedEvent.subscribe(async (text) => {
+			if (text) {
+				await handleTranscriptCompletion(text);
 			}
 		});
 
-		unsubscribers.push(transcriptionStateUnsub);
+		unsubscribers.push(completionUnsub);
 	});
 
 	onDestroy(() => {

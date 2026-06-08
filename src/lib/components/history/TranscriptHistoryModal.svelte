@@ -363,7 +363,7 @@
 
 		{#if isSupporter && availableTags.length > 0 && $transcriptHistory.length > 0}
 			<div
-				class="mb-3 flex shrink-0 gap-2 overflow-x-auto pb-1"
+				class="tt-scrollbar-x mb-3 flex shrink-0 gap-2 overflow-x-auto pb-1"
 				role="group"
 				aria-label="Filter history by tag"
 			>
@@ -560,7 +560,7 @@
 								<div class="space-y-2">
 									<textarea
 										bind:value={editText}
-										class="w-full rounded border border-pink-200 bg-white p-2 text-base focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200 sm:text-sm"
+										class="tt-scrollbar w-full rounded border border-pink-200 bg-white p-2 text-base focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200 sm:text-sm"
 										rows="4"
 										aria-label="Edit transcript text"
 									></textarea>

@@ -129,10 +129,10 @@ export const ANIMATION = {
 
 	// Confetti animation
 	CONFETTI: {
-		PIECE_COUNT: 150, // Increased number of confetti pieces for more impact
+		PIECE_COUNT: 48, // Reward burst without covering the transcript
 		MIN_SIZE: 6, // Minimum confetti size in px
-		MAX_SIZE: 16, // Maximum confetti size in px
-		ANIMATION_DURATION: 3000, // Duration of entire confetti animation
+		MAX_SIZE: 14, // Maximum confetti size in px
+		ANIMATION_DURATION: 1800, // Duration of entire confetti animation
 		COLORS: [
 			'#ff9cef',
 			'#fde68a',

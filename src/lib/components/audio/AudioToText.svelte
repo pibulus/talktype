@@ -62,13 +62,11 @@
 
 			// Use CSS-based responsive sizing rather than JS viewport detection
 			if (wordCount <= 5) {
-				return 'text-lg sm:text-xl md:text-2xl lg:text-3xl';
+				return 'text-lg sm:text-xl md:text-2xl';
 			} else if (wordCount <= 15) {
 				return 'text-base sm:text-lg md:text-xl';
-			} else if (wordCount <= 50) {
-				return 'text-sm sm:text-base md:text-lg';
 			} else {
-				return 'text-sm sm:text-base md:text-lg';
+				return 'text-base md:text-lg';
 			}
 		},
 		(text) => (text ? text.length : 0)
