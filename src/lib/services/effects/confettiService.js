@@ -69,6 +69,7 @@ export class ConfettiService {
 			if (callback) {
 				const timeoutId = setTimeout(() => {
 					callback();
+					this.activeTimeouts = this.activeTimeouts.filter((id) => id !== timeoutId);
 				}, config.duration + 500);
 				this.activeTimeouts.push(timeoutId);
 			}

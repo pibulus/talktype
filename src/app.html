@@ -133,9 +133,18 @@
 			// Minimal critical theme setup to prevent FOUC
 			// This runs synchronously but is optimized for speed
 			(function () {
-				const t = localStorage.getItem('talktype-vibe') || 'peach';
-				document.documentElement.setAttribute('data-theme', t);
-				window.__theme = t; // Store for later use
+				const allowedThemes = ['peach', 'mint', 'bubblegum', 'rainbow'];
+				let theme = 'peach';
+				try {
+					theme = localStorage.getItem('talktype-vibe') || theme;
+				} catch (error) {
+					theme = 'peach';
+				}
+				if (!allowedThemes.includes(theme)) {
+					theme = 'peach';
+				}
+				document.documentElement.setAttribute('data-theme', theme);
+				window.__theme = theme; // Store for later use
 			})();
 
 			// Global error handler for unhandled promise rejections

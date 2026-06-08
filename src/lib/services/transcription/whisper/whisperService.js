@@ -244,14 +244,17 @@ export class WhisperService {
 				}
 			});
 
+			let loadTimeoutId;
 			const timeoutPromise = new Promise((_, reject) => {
-				setTimeout(
+				loadTimeoutId = setTimeout(
 					() => reject(new Error('Model download timed out. Check your connection and try again.')),
 					MODEL_LOAD_TIMEOUT_MS
 				);
 			});
 
-			this.transcriber = await Promise.race([loadPromise, timeoutPromise]);
+			this.transcriber = await Promise.race([loadPromise, timeoutPromise]).finally(() => {
+				clearTimeout(loadTimeoutId);
+			});
 
 			await this.#warmupTranscriber();
 

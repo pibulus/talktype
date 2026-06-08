@@ -1,5 +1,5 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { setSupporterStatus } from '$lib/services';
 	import { theme } from '$lib';
@@ -17,6 +17,7 @@
 	let vaultHash = '';
 	let checkoutId = '';
 	let pollTimer;
+	let copyMessageTimer;
 	let pollAttempts = 0;
 	let copyMessage = '';
 	let showSuccessConfetti = false;
@@ -33,14 +34,23 @@
 		}
 	}
 
+	function clearCopyMessageTimer() {
+		if (copyMessageTimer) {
+			clearTimeout(copyMessageTimer);
+			copyMessageTimer = null;
+		}
+	}
+
 	async function copySupporterCode() {
 		if (!browser || !supporterCode) return;
 
 		try {
 			await navigator.clipboard.writeText(supporterCode);
 			copyMessage = 'Copied';
-			setTimeout(() => {
+			clearCopyMessageTimer();
+			copyMessageTimer = setTimeout(() => {
 				copyMessage = '';
+				copyMessageTimer = null;
 			}, 1800);
 		} catch {
 			copyMessage = 'Copy needs one more try';
@@ -140,7 +150,13 @@
 
 		return () => {
 			stopPolling();
+			clearCopyMessageTimer();
 		};
+	});
+
+	onDestroy(() => {
+		stopPolling();
+		clearCopyMessageTimer();
 	});
 </script>
 

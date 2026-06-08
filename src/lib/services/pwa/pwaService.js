@@ -82,6 +82,10 @@ function getPlatformInfo() {
 export class PwaService {
 	constructor() {
 		this.debug = false;
+		this.eventListenersReady = false;
+		this.beforeInstallPromptHandler = null;
+		this.appInstalledHandler = null;
+		this.pwaStatusCheckTimeout = null;
 
 		if (browser) {
 			// Check if we're in development mode
@@ -98,7 +102,10 @@ export class PwaService {
 			// In development, don't auto-check for PWA status
 			if (!isDevelopment) {
 				// Defer PWA check slightly to ensure document is fully loaded
-				setTimeout(() => this.checkIfRunningAsPwa(), 500);
+				this.pwaStatusCheckTimeout = setTimeout(() => {
+					this.pwaStatusCheckTimeout = null;
+					this.checkIfRunningAsPwa();
+				}, 500);
 			}
 		}
 	}
@@ -129,8 +136,11 @@ export class PwaService {
 	}
 
 	setupEventListeners() {
+		if (this.eventListenersReady) return;
+		this.eventListenersReady = true;
+
 		// Listen for beforeinstallprompt event
-		window.addEventListener('beforeinstallprompt', (e) => {
+		this.beforeInstallPromptHandler = (e) => {
 			// Prevent the mini-infobar from appearing on mobile
 			e.preventDefault();
 
@@ -141,15 +151,38 @@ export class PwaService {
 			if (this.shouldShowPwaPrompt()) {
 				showPwaInstallPrompt.set(true);
 			}
-		});
+		};
+		window.addEventListener('beforeinstallprompt', this.beforeInstallPromptHandler);
 
 		// Listen for app installed event
-		window.addEventListener('appinstalled', () => {
+		this.appInstalledHandler = () => {
 			this.log('App installed successfully');
 			this.markAsInstalled();
 			deferredInstallPrompt.set(null);
 			showPwaInstallPrompt.set(false);
-		});
+		};
+		window.addEventListener('appinstalled', this.appInstalledHandler);
+	}
+
+	cleanup() {
+		if (!browser) return;
+
+		if (this.pwaStatusCheckTimeout) {
+			clearTimeout(this.pwaStatusCheckTimeout);
+			this.pwaStatusCheckTimeout = null;
+		}
+
+		if (this.beforeInstallPromptHandler) {
+			window.removeEventListener('beforeinstallprompt', this.beforeInstallPromptHandler);
+			this.beforeInstallPromptHandler = null;
+		}
+
+		if (this.appInstalledHandler) {
+			window.removeEventListener('appinstalled', this.appInstalledHandler);
+			this.appInstalledHandler = null;
+		}
+
+		this.eventListenersReady = false;
 	}
 
 	getTranscriptionCount() {

@@ -470,6 +470,8 @@
 			if (ghostClickRetryTimeout) {
 				clearTimeout(ghostClickRetryTimeout);
 			}
+			firstVisitService.cancelPendingIntroModal();
+			modalService.cleanup();
 			clearAutoStartGestureRetry();
 			clearAutoStartVisibilityRetry();
 		};

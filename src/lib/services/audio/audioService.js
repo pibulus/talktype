@@ -72,25 +72,29 @@ export class AudioService {
 			audioActions.updateState(newState, error);
 		});
 
-		if (browser) {
-			this.visibilityChangeHandler = () => {
-				if (document.visibilityState === 'visible') {
-					this.initializeAudioContext().catch((err) =>
-						log.warn('Failed to resume audio context on visibility change:', err)
-					);
-					if (this.stateManager.getState() === AudioStates.RECORDING) {
-						void this.requestScreenWakeLock();
-					}
-				} else if (this.stateManager.getState() === AudioStates.RECORDING) {
-					void this.#checkpointRecordingDraft(
-						this.mediaRecorder?.mimeType || 'audio/webm',
-						this.activeRecordingSessionId,
-						'visibility-hidden'
-					);
+		this.ensureVisibilityListener();
+	}
+
+	ensureVisibilityListener() {
+		if (!browser || this.visibilityChangeHandler) return;
+
+		this.visibilityChangeHandler = () => {
+			if (document.visibilityState === 'visible') {
+				this.initializeAudioContext().catch((err) =>
+					log.warn('Failed to resume audio context on visibility change:', err)
+				);
+				if (this.stateManager.getState() === AudioStates.RECORDING) {
+					void this.requestScreenWakeLock();
 				}
-			};
-			document.addEventListener('visibilitychange', this.visibilityChangeHandler);
-		}
+			} else if (this.stateManager.getState() === AudioStates.RECORDING) {
+				void this.#checkpointRecordingDraft(
+					this.mediaRecorder?.mimeType || 'audio/webm',
+					this.activeRecordingSessionId,
+					'visibility-hidden'
+				);
+			}
+		};
+		document.addEventListener('visibilitychange', this.visibilityChangeHandler);
 	}
 
 	async initializeAudioContext() {
@@ -237,6 +241,7 @@ export class AudioService {
 				await this.cleanup();
 			}
 
+			this.ensureVisibilityListener();
 			this.cancelWarmStreamRelease();
 			this.stateManager.setState(AudioStates.INITIALIZING);
 			this.stateManager.setState(AudioStates.REQUESTING_PERMISSIONS);

@@ -189,6 +189,19 @@ describe('AudioService', () => {
 		expect(release).toHaveBeenCalledTimes(1);
 	});
 
+	it('re-arms the visibility listener before recording after cleanup', async () => {
+		const addListenerSpy = vi.spyOn(document, 'addEventListener');
+		const removeListenerSpy = vi.spyOn(document, 'removeEventListener');
+		installRecordingMocks();
+
+		await service.cleanup();
+		expect(removeListenerSpy).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+
+		await service.startRecording();
+
+		expect(addListenerSpy).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+	});
+
 	it('shares one in-flight MediaRecorder stop across repeated stop calls', async () => {
 		const audioChunk = new Blob(['x'.repeat(1200)], { type: 'audio/webm' });
 		const stop = vi.fn(() => {

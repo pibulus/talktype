@@ -1,9 +1,10 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { Seo } from '$lib/components/layout';
 
 	let status = 'Ready for a fresh local cache';
 	let cleared = false;
+	let reloadTimeout;
 
 	async function clearAllCaches() {
 		status = 'Clearing local caches...';
@@ -56,7 +57,10 @@
 			cleared = true;
 
 			// Reload after 2 seconds
-			setTimeout(() => {
+			if (reloadTimeout) {
+				clearTimeout(reloadTimeout);
+			}
+			reloadTimeout = setTimeout(() => {
 				status = 'Reloading TalkType...';
 				window.location.reload();
 			}, 2000);
@@ -68,6 +72,12 @@
 
 	onMount(() => {
 		console.log('Cache cleaner ready');
+	});
+
+	onDestroy(() => {
+		if (reloadTimeout) {
+			clearTimeout(reloadTimeout);
+		}
 	});
 </script>
 

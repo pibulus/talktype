@@ -11,6 +11,8 @@ export class ModalService {
 		this.scrollbarWidth = 0;
 		this.isClosing = false;
 		this.pendingModalId = null;
+		this.closeTimer = null;
+		this.pendingOpenFrame = null;
 	}
 
 	openModal(modalId) {
@@ -76,7 +78,8 @@ export class ModalService {
 			? 0
 			: MODAL_CLOSE_DURATION;
 
-		window.setTimeout(() => {
+		this.closeTimer = window.setTimeout(() => {
+			this.closeTimer = null;
 			openDialogs.forEach((dialog) => {
 				dialog.classList.remove('tt-modal-closing');
 				if (dialog && typeof dialog.close === 'function' && dialog.open) {
@@ -91,9 +94,38 @@ export class ModalService {
 			const nextModalId = this.pendingModalId;
 			this.pendingModalId = null;
 			if (nextModalId) {
-				requestAnimationFrame(() => this.openModal(nextModalId));
+				this.pendingOpenFrame = requestAnimationFrame(() => {
+					this.pendingOpenFrame = null;
+					this.openModal(nextModalId);
+				});
 			}
 		}, closeDelay);
+	}
+
+	cleanup() {
+		if (!browser) return;
+
+		if (this.closeTimer) {
+			clearTimeout(this.closeTimer);
+			this.closeTimer = null;
+		}
+
+		if (this.pendingOpenFrame) {
+			cancelAnimationFrame(this.pendingOpenFrame);
+			this.pendingOpenFrame = null;
+		}
+
+		this.getOpenDialogs().forEach((dialog) => {
+			dialog.classList.remove('tt-modal-closing');
+			this.unbindNativeClose(dialog);
+			if (dialog && typeof dialog.close === 'function' && dialog.open) {
+				dialog.close();
+			}
+		});
+
+		this.pendingModalId = null;
+		this.isClosing = false;
+		this.restorePage();
 	}
 
 	restorePage() {
