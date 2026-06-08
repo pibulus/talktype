@@ -12,43 +12,51 @@
 	// AppSuffix configuration
 	export let showAppSuffix = true;
 
+	$: titleCharacters = Array.from(title);
+
 	onMount(() => {
 		// Set up animation sequence timing (for title/subtitle)
-		setTimeout(() => {
+		const titleTimer = setTimeout(() => {
 			dispatch('titleAnimationComplete');
 		}, 1200); // After staggered animation
 
-		setTimeout(() => {
+		const subtitleTimer = setTimeout(() => {
 			dispatch('subtitleAnimationComplete');
 		}, 2000); // After subtitle slide-in
+
+		return () => {
+			clearTimeout(titleTimer);
+			clearTimeout(subtitleTimer);
+		};
 	});
+
+	function getLetterDelay(index) {
+		return `${0.05 + index * 0.05}s`;
+	}
 </script>
 
 <!-- Typography with improved kerning and weight using font-variation-settings -->
 <div class="title-container relative">
 	<h1
-		class="staggered-text mb-1 cursor-default select-none text-center text-5xl font-black tracking-tight [font-feature-settings:'kern'_1] [font-kerning:normal] [font-variation-settings:'wght'_900,'opsz'_32] [font-weight:900] [letter-spacing:-0.02em] sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
+		class="staggered-text mb-1 cursor-default select-none text-center text-5xl font-black tracking-normal [font-feature-settings:'kern'_1] [font-kerning:normal] [font-variation-settings:'wght'_900,'opsz'_32] [font-weight:900] [letter-spacing:0] sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
 		aria-label={title}
 	>
 		<!-- Use aria-hidden for spans if H1 has aria-label -->
 		<span class="talktype-main-word">
-			<span class="stagger-letter mr-[-0.06em]" aria-hidden="true">T</span><span
-				class="stagger-letter ml-[-0.04em]"
-				aria-hidden="true">a</span
-			><span class="stagger-letter" aria-hidden="true">l</span><span
-				class="stagger-letter"
-				aria-hidden="true">k</span
-			><span class="stagger-letter mr-[-0.04em]" aria-hidden="true">T</span><span
-				class="stagger-letter ml-[-0.03em]"
-				aria-hidden="true">y</span
-			><span class="stagger-letter" aria-hidden="true">p</span><span
-				class="stagger-letter"
-				aria-hidden="true">e</span
-			>
+			{#each titleCharacters as character, index}
+				<span
+					class="stagger-letter"
+					style={`--letter-delay:${getLetterDelay(index)}`}
+					aria-hidden="true">{character}</span
+				>
+			{/each}
 		</span>
 
 		{#if showAppSuffix}
-			<span class="app-suffix-container stagger-letter relative [animation-delay:0.45s]">
+			<span
+				class="app-suffix-container stagger-letter relative"
+				style={`--letter-delay:${getLetterDelay(titleCharacters.length)}`}
+			>
 				<span class="suffix-wrapper">
 					<AppSuffix
 						color="inherit"
@@ -66,7 +74,7 @@
 
 <!-- Updated subheadline with improved typography and brand voice -->
 <p
-	class="slide-in-subtitle mx-auto mb-6 mt-3 max-w-prose cursor-default select-none text-center text-sm font-medium leading-relaxed tracking-normal text-gray-600 sm:mb-7 sm:mt-6 sm:text-lg sm:font-normal sm:tracking-wide sm:text-gray-700/85 md:text-xl lg:text-2xl"
+	class="slide-in-subtitle mx-auto mb-6 mt-3 max-w-prose cursor-default select-none text-center text-sm font-medium leading-relaxed tracking-normal text-gray-600 sm:mb-7 sm:mt-6 sm:text-lg sm:font-normal sm:text-gray-700/85 md:text-xl lg:text-2xl"
 >
 	{subtitle}
 </p>
@@ -86,34 +94,9 @@
 		opacity: 0;
 		transform: translateY(15px) translateZ(0);
 		animation: staggerFadeIn 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+		animation-delay: var(--letter-delay, 0s);
 		will-change: transform, opacity;
 		backface-visibility: hidden;
-	}
-
-	/* Apply different delays to each letter */
-	.stagger-letter:nth-child(1) {
-		animation-delay: 0.05s;
-	}
-	.stagger-letter:nth-child(2) {
-		animation-delay: 0.1s;
-	}
-	.stagger-letter:nth-child(3) {
-		animation-delay: 0.15s;
-	}
-	.stagger-letter:nth-child(4) {
-		animation-delay: 0.2s;
-	}
-	.stagger-letter:nth-child(5) {
-		animation-delay: 0.25s;
-	}
-	.stagger-letter:nth-child(6) {
-		animation-delay: 0.3s;
-	}
-	.stagger-letter:nth-child(7) {
-		animation-delay: 0.35s;
-	}
-	.stagger-letter:nth-child(8) {
-		animation-delay: 0.4s;
 	}
 
 	@keyframes staggerFadeIn {
@@ -188,7 +171,7 @@
 
 	/* Simple styles for the suffix in title context */
 	:global(.title-suffix) {
-		letter-spacing: -0.01em;
+		letter-spacing: 0;
 		font-variation-settings: inherit;
 	}
 
@@ -220,6 +203,16 @@
 		.suffix-wrapper {
 			transform: scale(0.95);
 			right: 0.05em;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.stagger-letter,
+		.slide-in-subtitle {
+			opacity: 1;
+			transform: none;
+			animation: none;
+			will-change: auto;
 		}
 	}
 </style>

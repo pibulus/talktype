@@ -1,7 +1,6 @@
 <script>
 	import { theme as themeStore } from '$lib/components/ghost/themeStore.js';
 	import { THEMES } from '$lib/constants';
-	import { onMount } from 'svelte';
 
 	/**
 	 * AppSuffix Component
@@ -20,28 +19,6 @@
 
 	// Keep current theme in sync with the global theme
 	$: currentTheme = $themeStore || THEMES.PEACH;
-
-	// Listen for theme change events (for when theme changes from settings panel)
-	onMount(() => {
-		const handleThemeChange = (event) => {
-			if (event.detail && event.detail.setting === 'theme') {
-				// Theme changed, force component to update
-				currentTheme = event.detail.value;
-			}
-		};
-
-		// Listen for custom events
-		if (typeof window !== 'undefined') {
-			window.addEventListener('talktype-setting-changed', handleThemeChange);
-		}
-
-		return () => {
-			// Clean up listener
-			if (typeof window !== 'undefined') {
-				window.removeEventListener('talktype-setting-changed', handleThemeChange);
-			}
-		};
-	});
 </script>
 
 <span
@@ -59,7 +36,7 @@
 		font-size: var(--suffix-size, 30%);
 		font-weight: 700;
 		line-height: 1;
-		letter-spacing: -0.01em;
+		letter-spacing: 0;
 		font-kerning: normal;
 		position: absolute;
 		bottom: 0.15em;
@@ -78,12 +55,13 @@
 		-webkit-background-clip: text !important;
 		color: transparent !important;
 		text-shadow: 0 1px 1px rgba(0, 0, 0, 0.03);
-		transition: all 0.3s ease;
+		transition:
+			filter 0.2s ease,
+			transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 		display: inline-block;
 		position: relative;
 		transform-origin: center;
 		padding: 0.1em 0; /* Add some padding for hover effect */
-		will-change: transform, filter;
 		transform: translateZ(0);
 		backface-visibility: hidden;
 	}
@@ -120,7 +98,6 @@
 	.app-suffix:hover .app-text {
 		filter: brightness(1.05) saturate(1.05);
 		transform: rotate(-2deg) scale(1.05);
-		transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 	}
 
 	/* Position variations */
@@ -182,6 +159,16 @@
 		.top-right,
 		.top-left {
 			top: -0.52em;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.theme-rainbow .app-text {
+			animation: none;
+		}
+
+		.app-suffix:hover .app-text {
+			transform: none;
 		}
 	}
 </style>

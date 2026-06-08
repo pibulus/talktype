@@ -49,6 +49,21 @@
 		rgba(236, 72, 153, 0.82),
 		rgba(245, 158, 11, 0.82)
 	);
+
+	/* Footer */
+	--tt-footer-bg-image: linear-gradient(
+		90deg,
+		rgba(255, 246, 230, 0.92),
+		rgba(255, 234, 216, 0.92),
+		rgba(255, 241, 223, 0.92)
+	);
+	--tt-footer-border-color: rgba(251, 207, 232, 0.8);
+	--tt-footer-shadow: 0 -4px 15px rgba(249, 168, 212, 0.26);
+	--tt-footer-button-hover-bg: rgba(253, 242, 248, 0.72);
+	--tt-footer-button-hover-color: #ec4899;
+	--tt-footer-focus-ring: rgba(249, 168, 212, 0.68);
+	--tt-footer-dot-color: rgba(249, 168, 212, 0.86);
+	--tt-footer-heart-color: #ec4899;
 }
 
 [data-theme='mint'] {
@@ -72,6 +87,19 @@
 		rgba(16, 185, 129, 0.82),
 		rgba(96, 165, 250, 0.78)
 	);
+	--tt-footer-bg-image: linear-gradient(
+		90deg,
+		rgba(232, 255, 248, 0.92),
+		rgba(222, 255, 245, 0.92),
+		rgba(214, 250, 255, 0.92)
+	);
+	--tt-footer-border-color: rgba(52, 211, 153, 0.46);
+	--tt-footer-shadow: 0 -4px 15px rgba(16, 185, 129, 0.18);
+	--tt-footer-button-hover-bg: rgba(209, 250, 229, 0.7);
+	--tt-footer-button-hover-color: #059669;
+	--tt-footer-focus-ring: rgba(52, 211, 153, 0.64);
+	--tt-footer-dot-color: rgba(52, 211, 153, 0.82);
+	--tt-footer-heart-color: #10b981;
 }
 
 [data-theme='bubblegum'] {
@@ -95,6 +123,19 @@
 		rgba(232, 121, 249, 0.82),
 		rgba(219, 39, 119, 0.82)
 	);
+	--tt-footer-bg-image: linear-gradient(
+		90deg,
+		rgba(255, 240, 248, 0.92),
+		rgba(255, 232, 245, 0.92),
+		rgba(255, 224, 240, 0.92)
+	);
+	--tt-footer-border-color: rgba(244, 114, 182, 0.5);
+	--tt-footer-shadow: 0 -4px 15px rgba(236, 72, 153, 0.2);
+	--tt-footer-button-hover-bg: rgba(252, 231, 243, 0.78);
+	--tt-footer-button-hover-color: #db2777;
+	--tt-footer-focus-ring: rgba(244, 114, 182, 0.68);
+	--tt-footer-dot-color: rgba(244, 114, 182, 0.86);
+	--tt-footer-heart-color: #db2777;
 }
 
 [data-theme='rainbow'] {
@@ -120,6 +161,19 @@
 		rgba(96, 165, 250, 0.8),
 		rgba(245, 158, 11, 0.78)
 	);
+	--tt-footer-bg-image: linear-gradient(
+		90deg,
+		rgba(255, 250, 245, 0.92),
+		rgba(245, 250, 255, 0.92),
+		rgba(255, 245, 250, 0.92)
+	);
+	--tt-footer-border-color: rgba(167, 139, 250, 0.46);
+	--tt-footer-shadow: 0 -4px 15px rgba(139, 92, 246, 0.16);
+	--tt-footer-button-hover-bg: rgba(245, 243, 255, 0.72);
+	--tt-footer-button-hover-color: #7c3aed;
+	--tt-footer-focus-ring: rgba(167, 139, 250, 0.66);
+	--tt-footer-dot-color: rgba(167, 139, 250, 0.82);
+	--tt-footer-heart-color: #ec4899;
 }
 
 /* ===================================================================

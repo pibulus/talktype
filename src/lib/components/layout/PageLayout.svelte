@@ -35,7 +35,7 @@
 
 	<!-- Footer section with attribution and Chrome extension info -->
 	<footer
-		class="footer-component fixed bottom-0 left-0 right-0 z-10 box-border border-t border-pink-200/80 bg-gradient-to-r from-[#fff6e6]/90 via-[#ffead8]/90 to-[#fff1df]/90 pb-2 pt-3 text-center text-xs text-gray-600 shadow-[0_-4px_15px_rgba(249,168,212,0.3)] backdrop-blur-[3px] sm:pb-4 sm:pt-6"
+		class="footer-component tt-app-footer fixed bottom-0 left-0 right-0 z-10 box-border border-t pb-2 pt-3 text-center text-xs text-gray-600 backdrop-blur-[3px] sm:pb-4 sm:pt-6"
 	>
 		<div
 			class="container mx-auto flex flex-row items-center justify-center gap-1 sm:justify-between sm:gap-3"
@@ -44,14 +44,14 @@
 			<div
 				class="copyright ml-4 hidden flex-wrap items-center justify-center sm:ml-6 sm:flex md:ml-8"
 			>
-				<span class="mr-1 text-sm font-medium tracking-tight">
+				<span class="mr-1 text-sm font-medium tracking-normal">
 					© {footerYear} TalkType
 				</span>
-				<span class="mx-2 text-pink-300">•</span>
+				<span class="footer-dot mx-2">•</span>
 				<span class="text-sm font-light text-gray-600"
 					>Made with
 					<span
-						class="mx-0.5 inline-block transform animate-pulse text-pink-500 transition-transform duration-300 hover:scale-110"
+						class="footer-heart mx-0.5 inline-block transform animate-pulse transition-transform duration-300 hover:scale-110"
 						aria-label="love">❤️</span
 					>
 					in Melbourne
@@ -75,6 +75,20 @@
 		background-position: center top;
 		background-repeat: no-repeat;
 		background-size: 100% 100%;
+	}
+
+	.tt-app-footer {
+		border-color: var(--tt-footer-border-color);
+		background: var(--tt-footer-bg-image);
+		box-shadow: var(--tt-footer-shadow);
+	}
+
+	.footer-dot {
+		color: var(--tt-footer-dot-color);
+	}
+
+	.footer-heart {
+		color: var(--tt-footer-heart-color);
 	}
 
 	/* Media queries for mobile optimization */
@@ -114,6 +128,12 @@
 			justify-content: flex-start;
 			padding-top: 15vh !important;
 			padding-bottom: 10vh !important;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.footer-heart {
+			animation: none;
 		}
 	}
 </style>
