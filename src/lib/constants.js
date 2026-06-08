@@ -275,6 +275,7 @@ export function getRandomFromArray(array) {
 
 // Vibration Patterns
 export const VIBRATION = {
+	SELECT: 18,
 	START_RECORDING: [40, 60, 40],
 	STOP_RECORDING: 50,
 	COPY_SUCCESS: 25,

@@ -21,6 +21,10 @@ export class HapticService {
 		}
 	}
 
+	select() {
+		return this.vibrate(VIBRATION.SELECT);
+	}
+
 	startRecording() {
 		return this.vibrate(VIBRATION.START_RECORDING);
 	}

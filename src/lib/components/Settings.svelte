@@ -9,9 +9,11 @@
 	import { analytics } from '$lib/services/analytics.js';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
+	import OutputModeButton from './settings/OutputModeButton.svelte';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { ANIMATION, DEFAULT_THEME, SERVICE_EVENTS } from '$lib/constants';
+	import { hapticService } from '$lib/services/infrastructure/hapticService.js';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
 
 	export let closeModal = () => {};
@@ -66,21 +68,17 @@
 		$whisperStatus.isLoading ||
 		$whisperStatus.isCached ||
 		$whisperStatus.error;
-	$: offlineStatusTone = $whisperStatus.error
-		? 'error'
-		: $whisperStatus.isLoaded
-			? 'ready'
-			: $whisperStatus.isLoading
-				? 'loading'
-				: $whisperStatus.isCached
-					? 'cached'
-					: 'idle';
-	$: offlineStatusLabel = getOfflineStatusLabel();
-	$: offlineActionLabel = $whisperStatus.error
-		? 'Retry'
-		: $whisperStatus.isCached
-			? 'Load'
-			: 'Download';
+	$: offlineStatusLabel = getOfflineStatusLabel($whisperStatus);
+	$: offlineButtonStatus = {
+		progress: offlineModelProgress,
+		label: offlineStatusLabel,
+		statusText: $whisperStatus.statusText,
+		visible: showOfflineStatus,
+		loading: $whisperStatus.isLoading,
+		loaded: $whisperStatus.isLoaded,
+		cached: $whisperStatus.isCached,
+		error: Boolean($whisperStatus.error)
+	};
 
 	$: if (userPreferencesLoaded && !isSupporterValue && selectedVibe === 'rainbow') {
 		changeVibe(DEFAULT_THEME);
@@ -196,25 +194,20 @@
 		}
 	}
 
-	function getOfflineStatusLabel() {
-		if ($whisperStatus.error) return 'Retry';
-		if ($whisperStatus.isLoaded) return 'Ready';
-		if ($whisperStatus.isLoading) return 'Loading';
-		if ($whisperStatus.isCached) return 'Saved';
-		if (!$whisperStatus.cacheChecked) return 'Checking';
+	function getOfflineStatusLabel(status) {
+		if (status.error) return 'Retry';
+		if (status.isLoaded) return 'Ready';
+		if (status.isLoading) return 'Loading';
+		if (status.isCached) return 'Saved';
+		if (!status.cacheChecked) return 'Checking';
 		return 'Local';
-	}
-
-	function prepareOfflineModel() {
-		soundService.select();
-		if (!privacyModeValue) {
-			setTranscriptionMode('offline');
-		}
-		offlineModelController.startModelLoading();
 	}
 
 	function handleTranscriptionOption(option) {
 		soundService.select();
+		if (option.id === 'offline') {
+			hapticService.select();
+		}
 		setTranscriptionMode(option.id);
 		if (option.id === 'offline') {
 			offlineModelController.startModelLoading();
@@ -291,60 +284,14 @@
 				<h4 id="settings_output_mode_title" class="settings-section-title">Output Mode</h4>
 				<div class="grid grid-cols-3 gap-2">
 					{#each transcriptionModes as mode}
-						<button
-							type="button"
-							class={`mode-option flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-center transition-all duration-200 ${
-								transcriptionMode === mode.id
-									? 'border-pink-300 bg-pink-50 text-gray-900 shadow-sm ring-2 ring-pink-100'
-									: 'border-pink-100 bg-white/70 text-gray-600 hover:border-pink-200'
-							}`}
-							aria-pressed={transcriptionMode === mode.id}
-							aria-label={`Set text timing to ${mode.label}`}
-							on:click={() => handleTranscriptionOption(mode)}
-						>
-							<span class="mode-mark mode-mark-{mode.visual}" aria-hidden="true">
-								<span></span>
-							</span>
-							<span class="text-xs font-black leading-tight">{mode.label}</span>
-						</button>
+						<OutputModeButton
+							{mode}
+							selected={transcriptionMode === mode.id}
+							offlineStatus={offlineButtonStatus}
+							onSelect={handleTranscriptionOption}
+						/>
 					{/each}
 				</div>
-
-				{#if showOfflineStatus}
-					<div
-						class="offline-status offline-status-{offlineStatusTone} flex min-h-12 items-center gap-3 rounded-xl border border-pink-100 bg-white/75 px-3 py-2"
-						aria-live="polite"
-					>
-						<span class="offline-orb" aria-hidden="true"></span>
-						<div class="min-w-0 flex-1">
-							<span class="block text-xs font-black leading-tight text-gray-700">
-								{offlineStatusLabel}
-							</span>
-							<div
-								class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-pink-50 shadow-inner"
-								role="progressbar"
-								aria-label={$whisperStatus.statusText || 'Downloading offline model'}
-								aria-valuemin="0"
-								aria-valuemax="100"
-								aria-valuenow={offlineModelProgress}
-							>
-								<div
-									class="h-full rounded-full bg-gradient-to-r from-sky-300 via-teal-300 to-violet-300 transition-all duration-300"
-									style={`width: ${$whisperStatus.isLoading ? offlineModelProgress : $whisperStatus.isLoaded || $whisperStatus.isCached ? 100 : 14}%;`}
-								></div>
-							</div>
-						</div>
-						{#if !$whisperStatus.isLoaded && !$whisperStatus.isLoading}
-							<button
-								type="button"
-								class="min-h-10 shrink-0 rounded-full border border-pink-200 bg-white px-3 py-2 text-xs font-black text-gray-800 shadow-sm transition-colors hover:border-pink-300 hover:bg-pink-50"
-								on:click={prepareOfflineModel}
-							>
-								{offlineActionLabel}
-							</button>
-						{/if}
-					</div>
-				{/if}
 			</section>
 
 			{#if transcriptionMode === 'standard'}
@@ -407,101 +354,12 @@
 </dialog>
 
 <style>
-	.mode-mark,
 	.auto-start-glyph,
-	.supporter-glyph,
-	.offline-orb {
+	.supporter-glyph {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-	}
-
-	.mode-mark {
-		width: 2rem;
-		height: 2rem;
-		border-radius: 9999px;
-		background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 241, 248, 0.9));
-		box-shadow:
-			inset 0 0 0 1px rgba(244, 114, 182, 0.18),
-			0 4px 10px rgba(244, 114, 182, 0.12);
-	}
-
-	.mode-mark span {
-		display: block;
-	}
-
-	.mode-mark-standard span {
-		width: 0.85rem;
-		height: 0.85rem;
-		border-radius: 9999px;
-		background: #f59e0b;
-		box-shadow: 0 0 0 0.28rem rgba(245, 158, 11, 0.18);
-	}
-
-	.mode-mark-live {
-		gap: 0.12rem;
-	}
-
-	.mode-mark-live::before,
-	.mode-mark-live span,
-	.mode-mark-live::after {
-		content: '';
-		width: 0.22rem;
-		border-radius: 9999px;
-		background: #22c5cf;
-	}
-
-	.mode-mark-live::before {
-		height: 0.65rem;
-		opacity: 0.7;
-	}
-
-	.mode-mark-live span {
-		height: 1.15rem;
-	}
-
-	.mode-mark-live::after {
-		height: 0.85rem;
-		opacity: 0.8;
-	}
-
-	.mode-mark-offline span {
-		width: 1rem;
-		height: 1rem;
-		border-radius: 0.25rem;
-		background:
-			linear-gradient(45deg, transparent 49%, #8b5cf6 50% 56%, transparent 57%) 0 0 / 100% 100%,
-			linear-gradient(135deg, transparent 49%, #8b5cf6 50% 56%, transparent 57%) 0 0 / 100% 100%;
-		box-shadow: inset 0 -0.28rem 0 #8b5cf6;
-	}
-
-	.offline-orb {
-		width: 0.75rem;
-		height: 0.75rem;
-		border-radius: 9999px;
-		background: #94a3b8;
-		box-shadow: 0 0 0 0.25rem rgba(148, 163, 184, 0.13);
-	}
-
-	.offline-status-ready .offline-orb {
-		background: #10b981;
-		box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.14);
-	}
-
-	.offline-status-loading .offline-orb {
-		background: #38bdf8;
-		animation: offline-breathe 1.8s ease-in-out infinite;
-	}
-
-	.offline-status-cached .offline-orb {
-		background: #8b5cf6;
-		box-shadow: 0 0 0 0.25rem rgba(139, 92, 246, 0.14);
-	}
-
-	.offline-status-error .offline-orb {
-		background: #ef4444;
-		box-shadow: 0 0 0 0.25rem rgba(239, 68, 68, 0.14);
 	}
 
 	.auto-start-glyph {
@@ -558,17 +416,5 @@
 		color: #be185d;
 		text-transform: uppercase;
 		letter-spacing: 0;
-	}
-
-	@keyframes offline-breathe {
-		0%,
-		100% {
-			box-shadow: 0 0 0 0.22rem rgba(56, 189, 248, 0.14);
-			transform: scale(1);
-		}
-		50% {
-			box-shadow: 0 0 0 0.34rem rgba(56, 189, 248, 0.2);
-			transform: scale(1.04);
-		}
 	}
 </style>
