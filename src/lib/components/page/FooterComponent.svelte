@@ -36,8 +36,11 @@
 			} else {
 				await navigator.clipboard.writeText(shareData.url);
 				analytics.appShared({ method: 'clipboard' });
-				// Optional: You could dispatch a toast event here if you had a toast system
-				// dispatch('showToast', { message: 'Link copied!' });
+				window.dispatchEvent(
+					new CustomEvent('talktype:toast', {
+						detail: { message: 'Link copied! Share TalkType with a friend', type: 'success' }
+					})
+				);
 			}
 		} catch (err) {
 			if (err?.name !== 'AbortError') {

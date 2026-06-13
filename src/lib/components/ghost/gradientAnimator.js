@@ -8,6 +8,7 @@
 
 import { gradientAnimations, animationTiming } from './gradientConfig';
 import { getThemeColor } from './themeStore';
+import { getCssVariable } from './utils/animationUtils';
 
 // Animation state
 let animationFrames = {};
@@ -215,19 +216,6 @@ function animateStopColor(themeId, stopIndex) {
 	// Continue animation
 	animationFrames[`${themeId}_stop_${stopIndex}`] = requestAnimationFrame(() =>
 		animateStopColor(themeId, stopIndex)
-	);
-}
-
-/**
- * Helper function to get CSS variable value
- * @param {string} name - CSS variable name without -- prefix
- * @param {*} fallback - Optional fallback value
- * @returns {string} CSS variable value or fallback
- */
-function getCssVariable(name, fallback = '') {
-	if (typeof document === 'undefined') return fallback;
-	return (
-		getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim() || fallback
 	);
 }
 

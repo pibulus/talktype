@@ -31,7 +31,9 @@ export async function transcribeAudio(file, { diarize = false, paragraphs = true
 		if (!response.ok) {
 			const errorData = await response.json().catch(() => ({}));
 			console.error('[DeepgramService] API Error:', response.status, errorData);
-			throw new Error(`Deepgram API failed: ${response.statusText}`);
+			throw new Error(
+				errorData?.err_msg || errorData?.message || `Deepgram API failed: ${response.status}`
+			);
 		}
 
 		const data = await response.json();

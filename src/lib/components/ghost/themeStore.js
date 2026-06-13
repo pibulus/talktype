@@ -284,12 +284,8 @@ export function ensureGhostThemeStyles(options = {}) {
 // Function to set a new theme
 function setTheme(newTheme) {
 	const safeTheme = sanitizeTheme(newTheme);
-	if (safeTheme === newTheme) {
-		theme.set(safeTheme);
-	} else {
-		console.warn(`Invalid theme: ${newTheme}`);
-		theme.set(safeTheme);
-	}
+	if (safeTheme !== newTheme) console.warn(`Invalid theme: ${newTheme}`);
+	theme.set(safeTheme);
 }
 
 // Get theme colors for a specific theme and position

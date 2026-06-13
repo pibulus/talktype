@@ -667,8 +667,7 @@ export function formatSize(bytes) {
 
 // Initialize on import
 if (browser) {
-	initDB().then(() => {
-		loadAllTranscripts();
-		updateStats();
-	});
+	initDB()
+		.then(() => Promise.all([loadAllTranscripts(), updateStats()]))
+		.catch((err) => console.warn('[transcriptStorage] init failed:', err));
 }

@@ -303,17 +303,6 @@
 					</div>
 				{/if}
 			</button>
-			{#if copyNeedsGesture}
-				<span
-					class="copy-nudge pointer-events-none absolute -top-3 right-14 z-[190] flex h-7 w-11 items-center justify-center rounded-full border border-pink-200 bg-white/95 shadow-md sm:right-10"
-					aria-hidden="true"
-				>
-					<span class="copy-nudge-dot"></span>
-					<span class="copy-nudge-dot"></span>
-					<span class="copy-nudge-dot"></span>
-				</span>
-				<span class="sr-only">Tap to copy</span>
-			{/if}
 
 			<!-- Redesigned transcript box with proper structure -->
 			<div
@@ -323,7 +312,7 @@
 			>
 				<!-- Content Area - scrollable -->
 				<div
-					class="transcript-content-area z-5 relative max-h-[52vh] w-full overflow-y-auto px-4 pb-8 pt-7 sm:max-h-[320px] sm:px-10 sm:pb-10 sm:pt-7"
+					class="transcript-content-area z-5 relative max-h-[52svh] w-full overflow-y-auto px-4 pb-8 pt-7 sm:max-h-[320px] sm:px-10 sm:pb-10 sm:pt-7"
 					bind:this={transcriptBoxRef}
 				>
 					<div
@@ -386,6 +375,8 @@
 		min-width: 44px;
 		touch-action: manipulation;
 		transform-origin: center;
+		/* Persistent gentle breathing — implies "tap me" through motion */
+		animation: copy-breathe 2.8s ease-in-out infinite;
 	}
 
 	.copy-btn.copyNeedsGesture {
@@ -407,26 +398,13 @@
 		animation: copy-ring 1.65s ease-out infinite;
 	}
 
-	.copy-nudge {
-		animation: copy-nudge-pop 1.65s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
-	}
-
-	.copy-nudge-dot {
-		margin: 0 0.1rem;
-		height: 0.28rem;
-		width: 0.28rem;
-		border-radius: 9999px;
-		background: #ec4899;
-		box-shadow: 0 0 8px rgba(236, 72, 153, 0.24);
-	}
-
-	@keyframes copy-nudge-pop {
+	@keyframes copy-breathe {
 		0%,
 		100% {
-			transform: translateY(0);
+			transform: scale(1);
 		}
-		40% {
-			transform: translateY(-2px);
+		50% {
+			transform: scale(1.06);
 		}
 	}
 
@@ -738,6 +716,10 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		.copy-btn {
+			animation: none;
+		}
+
 		.copy-btn.copyNeedsGesture {
 			animation: none;
 			transform: scale(1.08);
@@ -747,10 +729,6 @@
 			animation: none;
 			opacity: 0.75;
 			transform: scale(1);
-		}
-
-		.copy-nudge {
-			animation: none;
 		}
 
 		.transcript-box,

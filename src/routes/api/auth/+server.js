@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { checkSession, verifyTokenAndCreateSession } from '$lib/server/authService';
+import { enforceRateLimit } from '$lib/server/rateLimiter.js';
 
 /**
  * Handles GET requests to check for a valid session.
@@ -17,6 +18,9 @@ export async function GET(event) {
  * @param {import('@sveltejs/kit').RequestEvent} event
  */
 export async function POST(event) {
+	const rateResponse = await enforceRateLimit(event);
+	if (rateResponse) return rateResponse;
+
 	try {
 		const { token } = await event.request.json();
 		const isValid = await verifyTokenAndCreateSession(token, event);
