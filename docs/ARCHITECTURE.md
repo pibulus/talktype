@@ -73,7 +73,8 @@ Flow:
 3. `/api/transcribe` applies auth/rate limiting through `guardRequest()` plus a transcription-specific rate bucket, validates upload size/duration limits, and routes by prompt style.
 4. `standard` uses Deepgram Nova-3 batch transcription.
 5. Alternate output style presets use Gemini.
-6. Gemini uploads are deleted in `finally` after transcription.
+6. If Gemini is unavailable because of quota, billing, or key problems, `/api/transcribe` falls back to a standard Deepgram transcript and returns fallback metadata.
+7. Gemini uploads are deleted in `finally` after transcription.
 
 Limits and spend controls:
 

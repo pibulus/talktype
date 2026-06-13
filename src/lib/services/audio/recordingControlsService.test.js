@@ -31,6 +31,7 @@ import { CTA_PHRASES, STORAGE_KEYS } from '$lib/constants';
 import {
 	getCompletedTranscriptionMethod,
 	getNextCtaIndex,
+	getUsableLiveTranscriptText,
 	RecordingControlsService,
 	saveLastTranscriptionMethod
 } from './recordingControlsService.js';
@@ -117,6 +118,31 @@ describe('RecordingControlsService', () => {
 		expect(getCompletedTranscriptionMethod({ useOfflineWhisper: true })).toBe('whisper');
 		expect(getCompletedTranscriptionMethod({ useLiveDeepgram: true })).toBe('cloud-batch');
 		expect(getCompletedTranscriptionMethod()).toBe('cloud-batch');
+	});
+
+	it('accepts only complete finalized live transcript text for direct live completion', () => {
+		expect(
+			getUsableLiveTranscriptText({
+				text: 'hello world',
+				hasFinal: true,
+				usedInterim: false,
+				finalizeAcknowledged: false
+			})
+		).toBe('hello world');
+		expect(
+			getUsableLiveTranscriptText({
+				text: 'hello maybe',
+				hasFinal: true,
+				usedInterim: true
+			})
+		).toBe('');
+		expect(
+			getUsableLiveTranscriptText({
+				text: 'draft only',
+				hasFinal: false,
+				usedInterim: true
+			})
+		).toBe('');
 	});
 
 	it('persists the completion method when storage is available', () => {
@@ -253,6 +279,42 @@ describe('RecordingControlsService', () => {
 		expect(transcriptionService.transcribeAudio).not.toHaveBeenCalled();
 		expect(transcriptionService.clearPendingRecordingDraft).toHaveBeenCalledTimes(1);
 		expect(transcriptionService.copyToClipboard).toHaveBeenCalledWith('hello world', {
+			silent: true
+		});
+		expect(localStorageMock.setItem).toHaveBeenCalledWith(
+			STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD,
+			'deepgram-live'
+		);
+	});
+
+	it('uses finalized Deepgram live text even if the finalize acknowledgement is late', async () => {
+		const audioBlob = new Blob(['x'.repeat(1200)], { type: 'audio/webm' });
+		const audioService = {
+			stopRecording: vi.fn().mockResolvedValue(audioBlob)
+		};
+		const transcriptionService = {
+			transcribeAudio: vi.fn().mockResolvedValue('batch transcript'),
+			clearPendingRecordingDraft: vi.fn().mockResolvedValue(),
+			copyToClipboard: vi.fn().mockResolvedValue()
+		};
+
+		transcriptionModeMock.getTranscriptionMode.mockReturnValue({
+			useLiveDeepgram: true,
+			useOfflineWhisper: false
+		});
+		transcriptionStoreMock.finish.mockResolvedValue({
+			text: 'regular final',
+			hasFinal: true,
+			usedInterim: false,
+			finalizeAcknowledged: false
+		});
+		audioActions.updateState(AudioStates.RECORDING);
+		service = createService({ audioService, transcriptionService });
+
+		await service.stopRecording();
+
+		expect(transcriptionService.transcribeAudio).not.toHaveBeenCalled();
+		expect(transcriptionService.copyToClipboard).toHaveBeenCalledWith('regular final', {
 			silent: true
 		});
 		expect(localStorageMock.setItem).toHaveBeenCalledWith(
@@ -400,6 +462,62 @@ describe('RecordingControlsService', () => {
 		expect(localStorageMock.setItem).toHaveBeenCalledWith(
 			STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD,
 			'cloud-batch'
+		);
+	});
+
+	it('uses the live snapshot when live batch fallback fails', async () => {
+		const audioBlob = new Blob(['x'.repeat(1200)], { type: 'audio/webm' });
+		const uiActions = {
+			clearErrorMessage: vi.fn(),
+			setErrorMessage: vi.fn(),
+			setScreenReaderMessage: vi.fn()
+		};
+		const audioService = {
+			stopRecording: vi.fn().mockResolvedValue(audioBlob)
+		};
+		const transcriptionService = {
+			transcribeAudio: vi.fn().mockRejectedValue(new Error('Give TalkType a moment')),
+			clearPendingRecordingDraft: vi.fn().mockResolvedValue(),
+			copyToClipboard: vi.fn().mockResolvedValue()
+		};
+
+		transcriptionModeMock.getTranscriptionMode.mockReturnValue({
+			useLiveDeepgram: true,
+			useOfflineWhisper: false
+		});
+		transcriptionStoreMock.finish.mockResolvedValue({
+			text: 'partial live words',
+			hasFinal: false,
+			usedInterim: true,
+			finalizeAcknowledged: false
+		});
+		audioActions.updateState(AudioStates.RECORDING);
+		service = new RecordingControlsService({
+			audioService,
+			transcriptionService,
+			hapticService: null,
+			pwaService: {
+				incrementTranscriptionCount: vi.fn()
+			},
+			uiActions,
+			stores: {
+				isRecording,
+				isTranscribing,
+				transcriptionText
+			}
+		});
+
+		await service.stopRecording();
+
+		expect(transcriptionService.transcribeAudio).toHaveBeenCalledTimes(1);
+		expect(get(transcriptionText)).toBe('partial live words');
+		expect(uiActions.clearErrorMessage).toHaveBeenCalled();
+		expect(transcriptionService.copyToClipboard).toHaveBeenCalledWith('partial live words', {
+			silent: true
+		});
+		expect(localStorageMock.setItem).toHaveBeenCalledWith(
+			STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD,
+			'deepgram-live'
 		);
 	});
 

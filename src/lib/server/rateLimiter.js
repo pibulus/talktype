@@ -64,16 +64,52 @@ export async function enforceRateLimit(event, options = {}) {
 	return null;
 }
 
+function cleanClientAddress(value) {
+	const candidate = value?.toString().trim();
+	if (!candidate) return '';
+
+	return candidate
+		.replace(/^["']|["']$/g, '')
+		.replace(/^\[(.+)\](?::\d+)?$/, '$1')
+		.replace(/^([^:]+):\d+$/, '$1')
+		.trim();
+}
+
+function getFirstHeaderAddress(value) {
+	const candidate = value
+		?.split(',')
+		.map((part) => cleanClientAddress(part))
+		.find(Boolean);
+
+	return candidate || '';
+}
+
+function getForwardedHeaderAddress(value) {
+	if (!value) return '';
+
+	for (const part of value.split(',')) {
+		const match = part.match(/(?:^|;)\s*for=([^;]+)/i);
+		const address = cleanClientAddress(match?.[1]);
+		if (address) return address;
+	}
+
+	return '';
+}
+
 export function getClientKey(event) {
+	const headers = event.request.headers;
+	const headerAddress =
+		cleanClientAddress(headers.get('cf-connecting-ip')) ||
+		cleanClientAddress(headers.get('x-real-ip')) ||
+		getFirstHeaderAddress(headers.get('x-forwarded-for')) ||
+		getForwardedHeaderAddress(headers.get('forwarded'));
+
+	if (headerAddress) return headerAddress;
+
 	if (event.getClientAddress) {
 		const addr = event.getClientAddress();
 		if (addr) return addr;
 	}
 
-	const forwarded = event.request.headers.get('x-forwarded-for');
-	if (forwarded) {
-		return forwarded.split(',')[0]?.trim() || 'unknown';
-	}
-
-	return event.request.headers.get('cf-connecting-ip') ?? 'unknown';
+	return 'unknown';
 }

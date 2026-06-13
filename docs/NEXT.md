@@ -25,7 +25,7 @@
 ## Looks Solid
 
 - `npm test -- --run` passes.
-- `npx eslint .` passes. `npm run lint` is still blocked by Prettier formatting in the existing cartridge files.
+- `npm run lint` passes.
 - `npm run build` passes.
 - Live transcript display is wired to Deepgram interim/final state.
 - Offline Mode avoids cloud transcription when enabled.
@@ -33,8 +33,10 @@
 - Recording uses the start-time mode through stop/transcription, so mid-recording setting changes cannot leak an Offline recording to cloud. If Whisper is still loading after Offline Mode is switched off, the local load is kept only long enough to finish that start-time Offline recording.
 - Installed iOS PWA microphone permission stays on the primary Start Recording flow; Offline Mode handles storage/model prep when enabled.
 - Active recording requests Screen Wake Lock when the browser supports it.
-- Deepgram live stop waits for the finalize acknowledgement before trusting live text over batch fallback.
+- Deepgram live stop trusts clean final live text and can fall back to the best live snapshot if batch fallback is unavailable.
 - Free recordings now have layered spend controls: a 5 minute UI cap, server-side duration metadata check, smaller free upload cap, and dedicated `/api/transcribe` plus `/api/deepgram/token` rate buckets.
+- Rate limiting keys prefer real client proxy headers before adapter socket addresses, so reverse proxies do not collapse all users into one bucket.
+- Styled Gemini transcription falls back to a standard Deepgram transcript when Gemini quota, billing, or key problems would otherwise return a dead error.
 - PWA auto-start now waits for nested recording controls to be ready.
 - PWA auto-start has a tap-to-start fallback when browser mic startup stalls or needs a gesture.
 - Permission-denied messaging handles common browser error shapes.

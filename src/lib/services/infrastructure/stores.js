@@ -262,6 +262,7 @@ export const transcriptionActions = {
 			inProgress: false,
 			progress: 100,
 			text,
+			error: null,
 			timestamp: Date.now()
 		}));
 

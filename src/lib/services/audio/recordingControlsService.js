@@ -41,6 +41,12 @@ export function getCompletedTranscriptionMethod({
 	return 'cloud-batch';
 }
 
+export function getUsableLiveTranscriptText(liveResult = null) {
+	const text = liveResult?.text?.trim() || '';
+	if (!liveResult?.hasFinal || liveResult?.usedInterim || !text) return '';
+	return text;
+}
+
 export function saveLastTranscriptionMethod(
 	method,
 	storage = globalThis.localStorage || globalThis.window?.localStorage || null
@@ -195,23 +201,28 @@ export class RecordingControlsService {
 			if (!useLiveDeepgram) {
 				transcriptionStore.disconnect();
 			}
-			const finalTranscript =
-				useLiveDeepgram &&
-				liveResult?.finalizeAcknowledged &&
-				liveResult?.hasFinal &&
-				!liveResult?.usedInterim &&
-				liveResult.text.trim().length > 0
-					? liveResult.text
-					: await this.transcriptionService.transcribeAudio(audioBlob, {
-							mode: recordingMode,
-							durationSeconds
-						});
-			const usedLiveTranscript =
-				useLiveDeepgram &&
-				liveResult?.finalizeAcknowledged &&
-				liveResult?.hasFinal &&
-				!liveResult?.usedInterim &&
-				finalTranscript === liveResult?.text;
+			let finalTranscript = getUsableLiveTranscriptText(liveResult);
+			let usedLiveTranscript = useLiveDeepgram && Boolean(finalTranscript);
+
+			if (!finalTranscript) {
+				try {
+					finalTranscript = await this.transcriptionService.transcribeAudio(audioBlob, {
+						mode: recordingMode,
+						durationSeconds
+					});
+				} catch (error) {
+					const liveFallbackText = useLiveDeepgram ? liveResult?.text?.trim() || '' : '';
+					if (!liveFallbackText) {
+						throw error;
+					}
+
+					log.warn('Batch fallback failed; using live transcript snapshot:', error);
+					this.uiActions.clearErrorMessage?.();
+					finalTranscript = liveFallbackText;
+					usedLiveTranscript = true;
+				}
+			}
+
 			const completedMethod = getCompletedTranscriptionMethod({
 				useLiveDeepgram,
 				useOfflineWhisper,

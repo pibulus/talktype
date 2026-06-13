@@ -60,6 +60,20 @@ export function _isRequestBodyOverLimit(contentLength, uploadLimitBytes) {
 	);
 }
 
+export function _shouldFallbackToDeepgramForGeminiError(error) {
+	const message = error?.message?.toString()?.toLowerCase() ?? '';
+	return [
+		'resource_exhausted',
+		'quota',
+		'billing',
+		'prepayment',
+		'credits are depleted',
+		'api key not found',
+		'api_key_invalid',
+		'missing gemini api key'
+	].some((signal) => message.includes(signal));
+}
+
 function getBearerToken(event) {
 	const authorization = event.request.headers.get('authorization') || '';
 	const match = authorization.match(/^Bearer\s+(.+)$/i);
@@ -177,10 +191,11 @@ export async function POST(event) {
 		);
 
 		let transcription = '';
+		let fallback = null;
 
 		// Routing Logic:
 		// 1. Standard -> Deepgram (High Accuracy, premium diarization for supporters)
-		// 2. Creative / Custom -> Gemini (High Vibe / Low Cost)
+		// 2. Creative / Custom -> Gemini, with Deepgram standard as a graceful outage fallback
 		if (promptStyle === PROMPT_STYLES.STANDARD) {
 			console.log('[API /transcribe] Routing to Deepgram (Standard)');
 			transcription = await transcribeAudio(file, {
@@ -191,20 +206,47 @@ export async function POST(event) {
 			console.log(`[API /transcribe] Routing to Gemini (${promptStyle})`);
 			// Dynamically import Gemini service to keep initial load light
 
-			const { transcribeAudio: transcribeWithGemini } = await import(
-				'$lib/server/geminiService.js'
-			);
-			transcription = await transcribeWithGemini(file, promptStyle, customPrompt);
+			try {
+				const { transcribeAudio: transcribeWithGemini } = await import(
+					'$lib/server/geminiService.js'
+				);
+				transcription = await transcribeWithGemini(file, promptStyle, customPrompt);
+			} catch (geminiError) {
+				if (!_shouldFallbackToDeepgramForGeminiError(geminiError)) {
+					throw geminiError;
+				}
+
+				console.warn(
+					`[API /transcribe] Gemini unavailable for ${promptStyle}; falling back to Deepgram standard:`,
+					geminiError?.message || geminiError
+				);
+				transcription = await transcribeAudio(file, {
+					diarize: false,
+					paragraphs: false
+				});
+				fallback = {
+					requested_style: promptStyle,
+					used: PROMPT_STYLES.STANDARD,
+					reason: 'gemini_unavailable'
+				};
+			}
 		}
 
-		return json({ transcription });
+		return json(fallback ? { transcription, fallback } : { transcription });
 	} catch (error) {
 		console.error('[API /transcribe] ❌ Error:', error);
 
 		let friendlyMessage = 'The ghost needs one more pass. Give it another shot?';
 
 		const message = error?.message?.toString()?.toLowerCase() ?? '';
-		if (message.includes('quota') || message.includes('limit')) {
+		if (
+			message.includes('quota') ||
+			message.includes('limit') ||
+			message.includes('resource_exhausted') ||
+			message.includes('billing') ||
+			message.includes('prepayment') ||
+			message.includes('credits are depleted')
+		) {
 			friendlyMessage = 'The ghost needs a quick breather. Try again in a moment?';
 		} else if (message.includes('network')) {
 			friendlyMessage = 'Check your connection, then try transcription again.';
