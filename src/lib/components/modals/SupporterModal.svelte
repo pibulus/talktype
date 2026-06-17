@@ -170,7 +170,7 @@
 						id="supporter_modal_title"
 						class="text-2xl font-black leading-tight tracking-tight text-gray-900"
 					>
-						One-time supporter unlock
+						Become a supporter
 					</h3>
 				</div>
 			</div>
@@ -252,13 +252,13 @@
 			{:else}
 				<div class="rounded-2xl border border-pink-100 bg-white/75 p-4 shadow-sm">
 					<p class="text-xs font-black uppercase tracking-[0.18em] text-pink-500">
-						One-time unlock
+						Supporter — one tap, lasts a year
 					</p>
 					<p class="mt-1 text-3xl font-black leading-none text-pink-600">
-						{PRICING.displayPrice}
+						{PRICING.displayPrice}<span class="text-lg font-bold text-pink-400">/year</span>
 					</p>
 					<p id="supporter_modal_description" class="mt-3 text-sm leading-6 text-gray-700">
-						Pay once, keep the extras, and help the little ghost stay free for everyone.
+						$9 a year, no subscription — keep the extras and help the little ghost stay free for everyone.
 					</p>
 				</div>
 
@@ -281,7 +281,7 @@
 					on:click={handleCheckout}
 					disabled={isStartingCheckout}
 				>
-					{isStartingCheckout ? 'Opening Square...' : `Contribute once - ${PRICING.displayPrice}`}
+					{isStartingCheckout ? 'Opening Square...' : `Support for a year - ${PRICING.displayPrice}`}
 				</button>
 
 				{#if errorMessage}

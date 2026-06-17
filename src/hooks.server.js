@@ -9,10 +9,7 @@ export async function handle({ event, resolve }) {
 	const response = await resolve(event);
 
 	// HSTS — force HTTPS for a year, including subdomains
-	response.headers.set(
-		'Strict-Transport-Security',
-		'max-age=31536000; includeSubDomains'
-	);
+	response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
 	// Don't send full Referer to cross-origin destinations (e.g. Square, Deepgram)
 	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -51,16 +48,16 @@ export async function handle({ event, resolve }) {
 
 		// connect-src — every external API the client-side code hits:
 		[
-			"connect-src",
+			'connect-src',
 			"'self'",
-			'https://api.deepgram.com',        // Deepgram STT (live + batch)
-			'wss://api.deepgram.com',           // Deepgram WebSocket streaming
+			'https://api.deepgram.com', // Deepgram STT (live + batch)
+			'wss://api.deepgram.com', // Deepgram WebSocket streaming
 			'https://generativelanguage.googleapis.com', // Gemini API (style presets)
-			'https://connect.squareup.com',     // Square payments (production)
+			'https://connect.squareup.com', // Square payments (production)
 			'https://connect.squareupsandbox.com', // Square sandbox (dev/testing)
-			'https://cloud.umami.is',           // Umami analytics beacon
-			'https://huggingface.co',           // Whisper model downloads (transformers.js)
-			'https://cdn.jsdelivr.net',         // @xenova/transformers CDN fallback path
+			'https://cloud.umami.is', // Umami analytics beacon
+			'https://huggingface.co', // Whisper model downloads (transformers.js)
+			'https://cdn.jsdelivr.net' // @xenova/transformers CDN fallback path
 		].join(' '),
 
 		// Media: microphone recordings are blob: URLs
@@ -73,7 +70,7 @@ export async function handle({ event, resolve }) {
 		"frame-ancestors 'none'",
 
 		// Block mixed content
-		"upgrade-insecure-requests",
+		'upgrade-insecure-requests'
 	].join('; ');
 
 	response.headers.set('Content-Security-Policy', csp);

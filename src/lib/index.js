@@ -45,10 +45,17 @@ function hasStoredSupporterToken() {
 	if (!browser) return false;
 	if (import.meta.env.PUBLIC_FORCE_SUPPORTER_MODE === 'true') return true;
 
-	return Boolean(
+	const hasToken = Boolean(
 		localStorage.getItem(CONSTANTS.STORAGE_KEYS.SUPPORTER_TOKEN) ||
 			CONSTANTS.LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN.some((key) => localStorage.getItem(key))
 	);
+	if (!hasToken) return false;
+
+	// Honour the soft 1-year expiry (missing stamp = legacy unlock, still valid).
+	const raw = localStorage.getItem(CONSTANTS.STORAGE_KEYS.SUPPORTER_EXPIRES);
+	if (!raw) return true;
+	const expires = Number(raw);
+	return !Number.isFinite(expires) || Date.now() < expires;
 }
 
 function sanitizeTheme(vibeId) {

@@ -8,7 +8,6 @@ export class ModalService {
 	constructor() {
 		this.modalOpen = false;
 		this.scrollPosition = 0;
-		this.scrollbarWidth = 0;
 		this.isClosing = false;
 		this.pendingModalId = null;
 		this.closeTimer = null;
@@ -37,15 +36,14 @@ export class ModalService {
 			return modal;
 		}
 
-		this.scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
 		this.scrollPosition = window.scrollY;
 		this.modalOpen = true;
 
+		// Scrollbar space is reserved permanently via `scrollbar-gutter: stable`
+		// in app.css, so hiding overflow here no longer reflows the page. No
+		// manual paddingRight compensation needed.
 		document.documentElement.style.overflow = 'hidden';
 		document.body?.classList.add('tt-modal-open');
-		if (this.scrollbarWidth > 0) {
-			document.documentElement.style.paddingRight = `${this.scrollbarWidth}px`;
-		}
 
 		if (typeof modal.showModal === 'function') {
 			this.bindNativeClose(modal);
@@ -81,10 +79,12 @@ export class ModalService {
 		this.closeTimer = window.setTimeout(() => {
 			this.closeTimer = null;
 			openDialogs.forEach((dialog) => {
-				dialog.classList.remove('tt-modal-closing');
+				// Close (remove from the top layer) BEFORE stripping the closing
+				// class, so the entrance animation can never reappear for a frame.
 				if (dialog && typeof dialog.close === 'function' && dialog.open) {
 					dialog.close();
 				}
+				dialog.classList.remove('tt-modal-closing');
 			});
 
 			this.restorePage();
@@ -132,7 +132,6 @@ export class ModalService {
 		if (!browser) return;
 
 		document.documentElement.style.overflow = '';
-		document.documentElement.style.paddingRight = '';
 		document.body?.classList.remove('tt-modal-open');
 		this.modalOpen = false;
 	}

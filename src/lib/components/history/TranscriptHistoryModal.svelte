@@ -463,15 +463,15 @@
 					<p class="text-4xl" aria-hidden="true">🔒</p>
 					<h4 class="text-lg font-black text-gray-800">Transcript History Locked</h4>
 					<p class="mx-auto max-w-sm text-sm text-gray-600">
-						Unlock transcript history, downloads, and style presets with a one-time supporter
-						contribution.
+						Unlock transcript history, downloads, and style presets by becoming a
+						supporter — $9 a year, no subscription.
 					</p>
 					<button
 						type="button"
 						class="btn min-h-12 border-pink-200 bg-pink-500 px-6 text-white hover:bg-pink-600"
 						on:click={openSupporterModal}
 					>
-						Unlock for {PRICING.displayPrice}
+						Unlock for {PRICING.displayPrice}/year
 					</button>
 				</div>
 			{:else if $transcriptHistory.length === 0}

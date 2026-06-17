@@ -218,6 +218,10 @@ html[data-theme] {
 	scroll-behavior: smooth;
 	/* Remove forced scrollbar - let content dictate */
 	overflow-y: auto;
+	/* Reserve scrollbar space permanently so opening a modal (which hides
+	   overflow) never reflows the page. Single source of truth — replaces the
+	   old JS paddingRight compensation in modalService.js. */
+	scrollbar-gutter: stable;
 	scrollbar-width: thin;
 	scrollbar-color: var(--tt-scrollbar-thumb-color) transparent;
 	background-color: var(--tt-page-bg-color);
@@ -365,7 +369,6 @@ dialog.modal::backdrop {
 		0 8px 20px rgba(236, 72, 153, 0.14),
 		inset 0 1px 0 rgba(255, 255, 255, 0.82);
 	transform-origin: center;
-	animation: tt-modal-pop-in 420ms cubic-bezier(0.18, 0.92, 0.2, 1.18) both;
 	scrollbar-width: thin;
 	scrollbar-color: var(--tt-scrollbar-thumb-color) transparent;
 	scrollbar-gutter: stable;
@@ -387,6 +390,14 @@ dialog.modal::backdrop {
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
+}
+
+/* Entrance animation scoped to open, NON-closing dialogs only.
+   Keeping it off the base .modal-box rule prevents the pop-in from briefly
+   restarting when tt-modal-closing is removed during teardown (the old
+   bottom-right flash on close). */
+dialog.modal[open]:not(.tt-modal-closing) > .modal-box {
+	animation: tt-modal-pop-in 420ms cubic-bezier(0.18, 0.92, 0.2, 1.18) both;
 }
 
 dialog.modal.tt-modal-closing {

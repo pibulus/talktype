@@ -19,7 +19,10 @@ export default defineConfig(({ command }) => {
 		server: {
 			port: 5173, // Vite default - avoids macOS ControlCenter on 5000
 			host: true, // allows access from other devices on the network
-			strictPort: true // exits if port is already taken (no fallback)
+			strictPort: true, // exits if port is already taken (no fallback)
+			// Allow cloudflared quick tunnels (*.trycloudflare.com) so Square can
+			// webhook into local dev during payment testing. Dev-only.
+			allowedHosts: ['.trycloudflare.com']
 		},
 		optimizeDeps: {
 			exclude: ['@google/generative-ai'] // Never bundle AI package client-side

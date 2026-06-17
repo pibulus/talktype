@@ -5,7 +5,7 @@ These rules apply to all code generated in this project. They are non-negotiable
 ## Secrets
 
 - NEVER put API keys, database credentials, or tokens in frontend code (anything under src/, app/, pages/, components/, public/)
-- NEVER put secret keys in environment variables prefixed with NEXT_PUBLIC_, VITE_, or REACT_APP_ (these are bundled into the client)
+- NEVER put secret keys in environment variables prefixed with NEXT*PUBLIC*, VITE*, or REACT_APP* (these are bundled into the client)
 - NEVER hardcode credentials in source files. Use environment variables loaded server-side only
 - The .env file MUST be in .gitignore before the first commit. Verify this before creating any .env file
 - Use .env.example with placeholder values only, never real credentials

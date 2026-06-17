@@ -27,6 +27,7 @@ export const STORAGE_KEYS = {
 	CUSTOM_PROMPT: 'talktype_custom_prompt',
 	SUPPORTER: `${APP_STORAGE_PREFIX}:supporter`,
 	SUPPORTER_TOKEN: `${APP_STORAGE_PREFIX}:supporter_token`,
+	SUPPORTER_EXPIRES: `${APP_STORAGE_PREFIX}:supporter_expires`,
 	SUPPORTER_PASSPORT_CODE: `${APP_STORAGE_PREFIX}:passport_code`,
 	VAULT_SERVER_URL: `${APP_STORAGE_PREFIX}:vault_url`,
 	HISTORY_CHANGED_AT: `${APP_STORAGE_PREFIX}:history_changed_at`,

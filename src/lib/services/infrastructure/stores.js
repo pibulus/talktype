@@ -2,6 +2,7 @@ import { writable, derived, get } from 'svelte/store';
 import { AudioStates } from '../audio/audioStates';
 import { ANIMATION, LEGACY_STORAGE_KEYS, STORAGE_KEYS } from '$lib/constants';
 import { browser } from '$app/environment';
+import { PRICING } from '$lib/config/pricing.js';
 import {
 	readStorageValue,
 	removeStorageValue,
@@ -9,13 +10,25 @@ import {
 } from '$lib/services/storage/localStorageMigration.js';
 
 const forceSupporterMode = import.meta.env.PUBLIC_FORCE_SUPPORTER_MODE === 'true';
+const SUPPORTER_TERM_MS = (PRICING.termDays || 365) * 24 * 60 * 60 * 1000;
+
+// Supporter is valid if there's a token AND it hasn't expired. The expiry stamp is
+// soft (client-side localStorage) — honest "lasts a year" framing for a $9 app, not
+// DRM. A missing expiry stamp is treated as still-valid (legacy unlocks pre-expiry).
+function supporterExpiryOk() {
+	const raw = readStorageValue(STORAGE_KEYS.SUPPORTER_EXPIRES);
+	if (!raw) return true; // legacy/no-stamp → don't lock out existing supporters
+	const expires = Number(raw);
+	return !Number.isFinite(expires) || Date.now() < expires;
+}
 
 function hasStoredSupporterToken() {
-	return Boolean(
+	const hasToken = Boolean(
 		readStorageValue(STORAGE_KEYS.SUPPORTER_TOKEN, {
 			legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN
 		})
 	);
+	return hasToken && supporterExpiryOk();
 }
 
 // Core audio state store
@@ -95,10 +108,13 @@ export function setSupporterStatus(isSupporter, token = null) {
 			writeStorageValue(STORAGE_KEYS.SUPPORTER_TOKEN, token, {
 				legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN
 			});
+			// Stamp a 1-year expiry from now (the supporter pass lasts a year).
+			writeStorageValue(STORAGE_KEYS.SUPPORTER_EXPIRES, String(Date.now() + SUPPORTER_TERM_MS));
 		} else if (!resolvedSupporterStatus) {
 			removeStorageValue(STORAGE_KEYS.SUPPORTER_TOKEN, {
 				legacyKeys: LEGACY_STORAGE_KEYS.SUPPORTER_TOKEN
 			});
+			removeStorageValue(STORAGE_KEYS.SUPPORTER_EXPIRES);
 		}
 	}
 }
