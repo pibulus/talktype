@@ -102,6 +102,46 @@ export const PLACEHOLDER_PALETTE = {
 };
 
 /**
+ * Convert a #rrggbb (or #rgb) hex colour to an `rgba(r, g, b, a)` string.
+ * Used to pre-mix glow/accent alphas in JS so the card never relies on CSS
+ * `color-mix()` at render time (unsupported before Safari 16.2 / Chrome 111).
+ * Non-hex input is returned as a `transparent` fallback.
+ */
+export function hexToRgba(hex, alpha = 1) {
+	if (typeof hex !== 'string') return 'transparent';
+	let h = hex.trim().replace(/^#/, '');
+	if (h.length === 3) h = h.replace(/./g, (c) => c + c);
+	if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) return 'transparent';
+	const r = parseInt(h.slice(0, 2), 16);
+	const g = parseInt(h.slice(2, 4), 16);
+	const b = parseInt(h.slice(4, 6), 16);
+	const a = Math.max(0, Math.min(1, alpha));
+	return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+function parseHex(hex) {
+	if (typeof hex !== 'string') return null;
+	let h = hex.trim().replace(/^#/, '');
+	if (h.length === 3) h = h.replace(/./g, (c) => c + c);
+	if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) return null;
+	return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+/**
+ * Blend `hex` toward `toward` (default white) by `amount` (0..1 of `hex`).
+ * `mixHex('#ff6a88', 0.45)` ≈ `color-mix(in srgb, #ff6a88 45%, #fff)`.
+ * Returns an `rgb()` string; falls back to the original input on bad hex.
+ */
+export function mixHex(hex, amount = 0.5, toward = '#ffffff') {
+	const a = parseHex(hex);
+	const b = parseHex(toward);
+	if (!a || !b) return hex;
+	const t = Math.max(0, Math.min(1, amount));
+	const m = (i) => Math.round(a[i] * t + b[i] * (1 - t));
+	return `rgb(${m(0)}, ${m(1)}, ${m(2)})`;
+}
+
+/**
  * Pick a deterministic palette from a vault hash.
  * Uses a hash segment distinct from the name/avatar segments so the palette
  * varies independently of the generated name.

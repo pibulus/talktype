@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { generateMemberIdentity } from './identityUtils.js';
+	import { hexToRgba, mixHex } from './passportPalettes.js';
 	import { buildPassportAvatar } from './passportAvatar.js';
 	import { selectSkin, selectNamedSkin } from './passportSkins.js';
 	import { buildPassportSyncUrl, getVaultHandshakeQR } from '$lib/services/qrHandshakeService.js';
@@ -72,9 +73,26 @@
 		`--p-ink: ${inkColor}`,
 		`--p-ink-soft: ${inkSoftColor}`,
 		`--p-glow: ${palette.glow}`,
-		// Pre-mixed glow alphas so frame shadows can reference them simply.
-		`--f-glow-38: color-mix(in srgb, ${palette.glow} 38%, transparent)`,
-		`--f-glow-20: color-mix(in srgb, ${palette.glow} 20%, transparent)`,
+		// Pre-mixed glow/accent alphas (rgba, no CSS color-mix dependency) so the
+		// whole card renders correctly on older Safari/Chrome.
+		`--p-glow-16: ${hexToRgba(palette.glow, 0.16)}`,
+		`--p-glow-20: ${hexToRgba(palette.glow, 0.2)}`,
+		`--p-glow-22: ${hexToRgba(palette.glow, 0.22)}`,
+		`--p-glow-24: ${hexToRgba(palette.glow, 0.24)}`,
+		`--p-glow-28: ${hexToRgba(palette.glow, 0.28)}`,
+		`--p-glow-32: ${hexToRgba(palette.glow, 0.32)}`,
+		`--p-glow-38: ${hexToRgba(palette.glow, 0.38)}`,
+		`--p-accent-18: ${hexToRgba(palette.accent, 0.18)}`,
+		`--p-accent-22: ${hexToRgba(palette.accent, 0.22)}`,
+		`--p-accent-40: ${hexToRgba(palette.accent, 0.4)}`,
+		// Accent blended toward white (for stripe pattern + ghost-mark tints).
+		`--p-accent-w22: ${mixHex(palette.accent, 0.22)}`,
+		`--p-accent-w42: ${mixHex(palette.accent, 0.42)}`,
+		`--p-accent-w45: ${mixHex(palette.accent, 0.45)}`,
+		`--p-accent-w86: ${mixHex(palette.accent, 0.86)}`,
+		// Aliases kept for frame shadows defined in passportSkins.js.
+		`--f-glow-38: ${hexToRgba(palette.glow, 0.38)}`,
+		`--f-glow-20: ${hexToRgba(palette.glow, 0.2)}`,
 		// Skin axis vars (holo / frame / texture / type) — the modular layer.
 		skin.varString
 	].join('; ');
@@ -303,6 +321,8 @@
 						<span class="fallback-word">PASS</span>
 					</span>
 				{/if}
+				<!-- Tap affordance: only shows on touch devices (no hover to hint it). -->
+				<span class="qr-tap-hint" aria-hidden="true">tap to sync</span>
 			</a>
 		{:else}
 			<div
@@ -351,6 +371,9 @@
 			--f-shadow,
 			0 24px 48px var(--f-glow-38), 0 8px 18px var(--f-glow-20)
 		);
+		/* FRAME drop-shadow (e.g. chunky's hard offset) — composites with the 3D
+		   tilt transform so the toy shadow moves with the card, not flat behind it. */
+		filter: var(--f-filter, none);
 		/* TYPE axis sets the card font. */
 		font-family: var(--t-font, inherit);
 		color: var(--p-ink);
@@ -380,7 +403,7 @@
 			linear-gradient(
 				115deg,
 				transparent 0%,
-				color-mix(in srgb, var(--p-glow) 22%, transparent) 46%,
+				var(--p-glow-22) 46%,
 				transparent 72%
 			);
 		mix-blend-mode: overlay;
@@ -484,7 +507,7 @@
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		backdrop-filter: blur(6px);
-		box-shadow: 0 6px 14px color-mix(in srgb, var(--p-glow) 28%, transparent);
+		box-shadow: 0 6px 14px var(--p-glow-28);
 		cursor: pointer;
 		transition:
 			transform 140ms ease,
@@ -548,7 +571,7 @@
 		color: var(--p-ink);
 		text-shadow:
 			0 1px 0 rgba(255, 255, 255, 0.28),
-			0 8px 20px color-mix(in srgb, var(--p-glow) 16%, transparent);
+			0 8px 20px var(--p-glow-16);
 		text-wrap: balance;
 	}
 
@@ -562,7 +585,7 @@
 	.passport-pattern {
 		background: repeating-linear-gradient(
 			135deg,
-			color-mix(in srgb, var(--p-accent) 86%, #fff 14%) 0 5px,
+			var(--p-accent-w86) 0 5px,
 			rgba(255, 255, 255, 0.18) 5px 10px,
 			rgba(255, 255, 255, 0.06) 10px 15px
 		);
@@ -583,7 +606,7 @@
 		background: rgba(255, 255, 255, 0.22);
 		border: 2.5px solid rgba(255, 255, 255, 0.72);
 		box-shadow:
-			0 8px 20px color-mix(in srgb, var(--p-glow) 32%, transparent),
+			0 8px 20px var(--p-glow-32),
 			0 2px 0 rgba(255, 255, 255, 0.52) inset;
 	}
 
@@ -604,7 +627,7 @@
 	.ghost-seal {
 		background: rgba(255, 255, 255, 0.22);
 		border: 2px solid rgba(255, 255, 255, 0.52);
-		box-shadow: 0 6px 14px color-mix(in srgb, var(--p-glow) 24%, transparent);
+		box-shadow: 0 6px 14px var(--p-glow-24);
 	}
 
 	/* =====================================================================
@@ -618,6 +641,9 @@
 		place-items: center;
 		overflow: hidden;
 		position: relative;
+		/* Small safe margin so the -2deg rotation + hover lift never clip against
+		   the card's overflow-hidden rounded edge in the bottom-right corner. */
+		margin: 0.15rem 0.15rem 0 0;
 		rotate: -2deg;
 		border-radius: 1.02rem;
 		border: 2px solid rgba(255, 255, 255, 0.72);
@@ -629,7 +655,7 @@
 			);
 		padding: 0.2rem;
 		box-shadow:
-			0 13px 26px color-mix(in srgb, var(--p-glow) 28%, transparent),
+			0 13px 26px var(--p-glow-28),
 			0 2px 0 rgba(255, 255, 255, 0.72) inset,
 			inset 0 -1px 0 rgba(0, 0, 0, 0.06);
 		transition:
@@ -643,10 +669,10 @@
 		inset: 0.28rem;
 		border-radius: 0.74rem;
 		background:
-			linear-gradient(90deg, color-mix(in srgb, var(--p-accent) 18%, transparent), transparent 42%),
+			linear-gradient(90deg, var(--p-accent-18), transparent 42%),
 			repeating-linear-gradient(
 				135deg,
-				color-mix(in srgb, var(--p-accent) 18%, transparent) 0 3px,
+				var(--p-accent-18) 0 3px,
 				rgba(255, 255, 255, 0) 3px 7px
 			);
 		opacity: 0;
@@ -661,17 +687,17 @@
 
 	.passport-qr-stamp:hover,
 	.passport-qr-stamp:focus-visible {
-		transform: translateY(-2px) scale(1.025) rotate(1deg);
+		transform: translateY(-1px) scale(1.02) rotate(1deg);
 		box-shadow:
-			0 16px 30px color-mix(in srgb, var(--p-glow) 32%, transparent),
+			0 16px 30px var(--p-glow-32),
 			inset 0 1px 0 rgba(255, 255, 255, 0.9);
 		outline: none;
 	}
 
 	.passport-qr-stamp:focus-visible {
 		box-shadow:
-			0 0 0 3px color-mix(in srgb, var(--p-accent) 40%, transparent),
-			0 10px 22px color-mix(in srgb, var(--p-glow) 24%, transparent);
+			0 0 0 3px var(--p-accent-40),
+			0 10px 22px var(--p-glow-24);
 	}
 
 	.passport-qr-stamp img {
@@ -684,6 +710,31 @@
 		object-fit: cover;
 	}
 
+	/* "tap to sync" hint — hidden by default; shown only on touch devices, where
+	   there is no hover to suggest the QR stamp is interactive. */
+	.qr-tap-hint {
+		position: absolute;
+		inset-inline: 0;
+		bottom: 0;
+		z-index: 2;
+		display: none;
+		padding: 0.12rem 0;
+		background: rgba(0, 0, 0, 0.46);
+		color: #fff;
+		font-size: 0.46rem;
+		font-weight: 800;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		text-align: center;
+		pointer-events: none;
+	}
+
+	@media (hover: none) and (pointer: coarse) {
+		.qr-tap-hint {
+			display: block;
+		}
+	}
+
 	.passport-link-fallback {
 		position: relative;
 		z-index: 1;
@@ -694,11 +745,7 @@
 		border-radius: 0.78rem;
 		background:
 			radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.86), transparent 45%),
-			linear-gradient(
-				135deg,
-				rgba(255, 255, 255, 0.9),
-				color-mix(in srgb, var(--p-accent) 22%, rgba(255, 255, 255, 0.7))
-			);
+			linear-gradient(135deg, rgba(255, 255, 255, 0.9), var(--p-accent-w22));
 		color: var(--p-ink);
 	}
 
@@ -709,7 +756,7 @@
 		height: 1.75rem;
 		border-radius: 999px 999px 0.72rem 0.72rem;
 		background: var(--p-accent);
-		filter: drop-shadow(0 3px 0 color-mix(in srgb, var(--p-accent) 45%, #fff));
+		filter: drop-shadow(0 3px 0 var(--p-accent-w45));
 	}
 
 	.fallback-ghost::before,
@@ -743,7 +790,7 @@
 		width: 32px;
 		height: 36px;
 		fill: rgba(255, 255, 255, 0.92);
-		filter: drop-shadow(0 3px 0 color-mix(in srgb, var(--p-accent) 42%, #fff));
+		filter: drop-shadow(0 3px 0 var(--p-accent-w42));
 	}
 
 	.ghost-mark circle {

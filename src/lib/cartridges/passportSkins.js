@@ -99,11 +99,15 @@ const HOLO = {
 // --f-substrate is an overlay tint painted under the content: transparent for
 // light frames, a dark wash for terminal so "hacker" reads dark regardless of
 // which palette the hash picked. --f-ink-shift flips text toward light on dark.
+// --f-filter is applied to the tilting card element, so any drop-shadow in it
+// follows the 3D transform. chunky's hard offset lives here (not box-shadow) so
+// the toy-shadow tilts WITH the card instead of staying flat behind it.
 const FRAME = {
 	chunky: {
 		'--f-radius': '1.55rem',
 		'--f-border': '3px solid rgba(0, 0, 0, 0.78)',
-		'--f-shadow': '7px 7px 0 rgba(0, 0, 0, 0.65), 0 18px 40px var(--f-glow-38)',
+		'--f-shadow': '0 18px 40px var(--f-glow-38)',
+		'--f-filter': 'drop-shadow(7px 7px 0 rgba(0, 0, 0, 0.65))',
 		'--f-substrate': 'transparent',
 		'--f-ink-shift': '0'
 	},
@@ -112,6 +116,7 @@ const FRAME = {
 		'--f-border': '2px solid rgba(255, 255, 255, 0.38)',
 		'--f-shadow':
 			'0 24px 48px var(--f-glow-38), 0 8px 18px var(--f-glow-20), 0 3px 0 rgba(255, 255, 255, 0.22) inset',
+		'--f-filter': 'none',
 		'--f-substrate': 'transparent',
 		'--f-ink-shift': '0'
 	},
@@ -119,6 +124,7 @@ const FRAME = {
 		'--f-radius': '1.1rem',
 		'--f-border': '1px solid rgba(255, 255, 255, 0.55)',
 		'--f-shadow': '0 16px 40px var(--f-glow-20), 0 2px 10px rgba(0, 0, 0, 0.06)',
+		'--f-filter': 'none',
 		// 0.22 (was 0.42): a 42% white wash fogged vivid cool gradients to grey.
 		'--f-substrate': 'rgba(255, 255, 255, 0.22)',
 		'--f-ink-shift': '0'
@@ -128,6 +134,7 @@ const FRAME = {
 		'--f-border': '1px solid var(--p-accent)',
 		'--f-shadow':
 			'0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 22px var(--f-glow-38), 0 18px 40px rgba(0, 0, 0, 0.55)',
+		'--f-filter': 'none',
 		'--f-substrate': 'rgba(8, 10, 16, 0.86)',
 		'--f-ink-shift': '1'
 	}
