@@ -57,4 +57,24 @@ describe('passport skins', () => {
 		// Expect real entropy: not all 12 seeds collapse to one combo.
 		expect(labels.size).toBeGreaterThan(3);
 	});
+
+	it('shuffle varies the palette across seeds (regression: was always Sunset)', () => {
+		const palettes = new Set(
+			Array.from({ length: 20 }, (_, i) => shuffleSkinSeed(i).palette.name)
+		);
+		expect(palettes.size).toBeGreaterThan(3);
+	});
+
+	it('caps dodging holos on white-ink palettes so they do not blow out', () => {
+		// Find a hash that lands a white-ink palette + a color-dodge/screen holo.
+		for (let n = 0; n < 4000; n += 1) {
+			const h = n.toString(16).padStart(8, '0').repeat(8).slice(0, 64);
+			const skin = selectSkin(h);
+			const blend = skin.vars['--holo-blend'];
+			if (skin.palette.ink === '#ffffff' && (blend === 'color-dodge' || blend === 'screen')) {
+				expect(Number(skin.vars['--holo-rest'])).toBeLessThanOrEqual(0.26);
+				return;
+			}
+		}
+	});
 });

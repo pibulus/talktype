@@ -35,16 +35,14 @@
 	let gyroSupported = false;
 	let gyroEnabled = false;
 	let removeGyroListener = null;
+	// Honour prefers-reduced-motion: no parallax tilt, no gyroscope.
+	let reducedMotion = false;
 
 	const clamp = (value, min = 0, max = 100) => Math.min(max, Math.max(min, value));
 
-	// Distance of the pointer from the card centre, normalised 0..1 — drives
-	// how strongly the foil/glare bloom so the effect is calm at rest.
-	$: pointerFromCenter = clamp(
-		Math.sqrt((mouseY - 50) * (mouseY - 50) + (mouseX - 50) * (mouseX - 50)) / 50,
-		0,
-		1
-	);
+	// --hovered drives the foil/glare bloom ceiling + the idle-drift stop. It
+	// changes outside pointer moves (enter/leave, gyro), so write it reactively.
+	$: if (cardEl) cardEl.style.setProperty('--hovered', isHovered || gyroEnabled ? '1' : '0');
 
 	$: identity = generateMemberIdentity(vaultHash);
 	$: hasVaultHash = !identity.isFallback;
@@ -62,8 +60,11 @@
 	$: inkColor = isDarkSubstrate ? '#e8fff0' : palette.ink;
 	$: inkSoftColor = isDarkSubstrate ? 'rgba(232, 255, 240, 0.66)' : palette.inkSoft;
 
+	// STATIC style: palette + skin vars. These change only when the supporter /
+	// skin changes, so they live on the inline style attribute. The per-frame
+	// pointer vars are written directly to cardEl.style in commitPointer() to
+	// avoid rebuilding this ~1kb string 60×/sec while the pointer moves.
 	$: cardStyle = [
-		// Palette vars — drive the colour layer.
 		`--p-bg-1: ${palette.bg[0]}`,
 		`--p-bg-2: ${palette.bg[1]}`,
 		`--p-bg-3: ${palette.bg[2] || palette.bg[1]}`,
@@ -75,17 +76,7 @@
 		`--f-glow-38: color-mix(in srgb, ${palette.glow} 38%, transparent)`,
 		`--f-glow-20: color-mix(in srgb, ${palette.glow} 20%, transparent)`,
 		// Skin axis vars (holo / frame / texture / type) — the modular layer.
-		skin.varString,
-		// Pointer / holo motion vars.
-		`--mx: ${mouseX}%`,
-		`--my: ${mouseY}%`,
-		`--pointer-x: ${mouseX}%`,
-		`--pointer-y: ${mouseY}%`,
-		// Parallax anchors for the shine gradient (kept near centre so it drifts gently).
-		`--bg-x: ${50 + (mouseX - 50) * 0.5}%`,
-		`--bg-y: ${50 + (mouseY - 50) * 0.5}%`,
-		`--from-center: ${pointerFromCenter}`,
-		`--hovered: ${isHovered || gyroEnabled ? 1 : 0}`
+		skin.varString
 	].join('; ');
 	$: effectivePassportCode = passportCode || storedPassportCode;
 	$: passportSyncUrl =
@@ -104,11 +95,26 @@
 		qrHasFailed = false;
 	}
 
+	// Write the per-frame pointer CSS vars straight onto the element. Avoids
+	// rebuilding the full inline-style string (and a setAttribute flush) 60×/sec.
+	function writePointerVars(x, y) {
+		if (!cardEl) return;
+		const s = cardEl.style;
+		s.setProperty('--mx', `${x}%`);
+		s.setProperty('--my', `${y}%`);
+		s.setProperty('--pointer-x', `${x}%`);
+		s.setProperty('--pointer-y', `${y}%`);
+		s.setProperty('--bg-x', `${50 + (x - 50) * 0.5}%`);
+		s.setProperty('--bg-y', `${50 + (y - 50) * 0.5}%`);
+		s.setProperty('--from-center', `${clamp(Math.hypot(y - 50, x - 50) / 50, 0, 1)}`);
+	}
+
 	// Push the latest pointer position once per animation frame.
 	function commitPointer() {
 		rafId = null;
 		mouseX = pendingX;
 		mouseY = pendingY;
+		writePointerVars(mouseX, mouseY);
 	}
 
 	function schedulePointer(x, y) {
@@ -167,6 +173,16 @@
 		storedPassportCode = readStoredSupporterCode();
 		storedVaultUrl = readStoredVaultServerUrl();
 
+		// Seed the per-frame pointer vars at centre so the foil starts calm.
+		writePointerVars(50, 50);
+
+		// Respect reduced-motion: skip the parallax tilt and never offer gyro.
+		reducedMotion =
+			typeof window !== 'undefined' &&
+			window.matchMedia &&
+			window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		if (reducedMotion) return cleanup;
+
 		// Coarse pointer (touch) + a motion sensor present → offer tilt.
 		const hasMotion = typeof window !== 'undefined' && 'DeviceOrientationEvent' in window;
 		const isTouch =
@@ -180,17 +196,20 @@
 			gyroSupported && typeof DeviceOrientationEvent.requestPermission === 'function';
 		if (gyroSupported && !needsPermission) attachGyro();
 
-		return () => {
-			if (rafId !== null && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(rafId);
-			if (removeGyroListener) removeGyroListener();
-		};
+		return cleanup;
 	});
+
+	function cleanup() {
+		if (rafId !== null && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(rafId);
+		if (removeGyroListener) removeGyroListener();
+	}
 </script>
 
 <div
 	bind:this={cardEl}
 	class="passport-card relative flex aspect-[1.586/1] w-full max-w-[342px] flex-col justify-between overflow-hidden p-5"
 	class:is-placeholder={!hasVaultHash}
+	class:reduced-motion={reducedMotion}
 	style={cardStyle}
 	role="group"
 	aria-label={hasVaultHash
@@ -308,6 +327,15 @@
 	   A soft top-left white bloom keeps a premium lit-from-within feel.
 	   ===================================================================== */
 	.passport-card {
+		/* Pointer-var defaults so first paint (pre-mount/SSR) is valid + centred. */
+		--mx: 50%;
+		--my: 50%;
+		--pointer-x: 50%;
+		--pointer-y: 50%;
+		--bg-x: 50%;
+		--bg-y: 50%;
+		--from-center: 0;
+		--hovered: 0;
 		/* FRAME axis drives border/radius/shadow; defaults match the soft skin. */
 		border-radius: var(--f-radius, 1.55rem);
 		background:
@@ -321,7 +349,7 @@
 		border: var(--f-border, 2px solid rgba(255, 255, 255, 0.38));
 		box-shadow: var(
 			--f-shadow,
-			0 24px 48px var(--f-glow-38) 0 8px 18px var(--f-glow-20)
+			0 24px 48px var(--f-glow-38), 0 8px 18px var(--f-glow-20)
 		);
 		/* TYPE axis sets the card font. */
 		font-family: var(--t-font, inherit);
@@ -360,13 +388,8 @@
 	}
 
 	/*
-	  HOLOFOIL — pointer-tracked rainbow sheen. Physics UNCHANGED.
-	  Technique adapted from simeydotme/pokemon-cards-css (MIT).
-	  Full spectral saturation + color-dodge blend for lush iridescent sheen
-	  on the saturated card base. The scanline sub-layer adds fine foil texture.
-	*/
-	/*
 	  HOLOFOIL — pointer-tracked iridescent sheen, fully driven by the HOLO axis.
+	  Technique adapted from simeydotme/pokemon-cards-css (MIT).
 	  Spectral stops (--holo-c1..6), sweep angle/size, blend mode, filter and
 	  opacity envelope all come from the active skin. A radial "reveal" mask
 	  centred on the pointer makes the foil BRIGHTEST where you point — so the
@@ -444,14 +467,19 @@
 		border-radius: inherit;
 	}
 
-	/* Mobile-only affordance to opt into gyroscope tilt (iOS permission gate). */
+	/* Mobile-only affordance to opt into gyroscope tilt (iOS permission gate).
+	   Sized to a >=44px tap target — it unlocks the whole gyro experience. */
 	.tilt-toggle {
-		padding: 0.28rem 0.62rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 44px;
+		padding: 0 1rem;
 		border-radius: 999px;
 		border: 2px solid rgba(255, 255, 255, 0.72);
 		background: rgba(255, 255, 255, 0.22);
 		color: var(--p-ink);
-		font-size: 0.6rem;
+		font-size: 0.7rem;
 		font-weight: 900;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
@@ -752,6 +780,8 @@
 	}
 
 	.passport-card:not(.is-placeholder) {
+		/* GPU hint: this element re-composites every pointer frame. */
+		will-change: transform;
 		transition:
 			transform 160ms ease,
 			box-shadow 120ms ease;
@@ -759,26 +789,33 @@
 			rotateY(calc((var(--mx) - 50) * 0.12deg));
 	}
 
+	/* Reduced-motion: keep depth but drop the pointer-following parallax tilt. */
+	.passport-card.reduced-motion:not(.is-placeholder) {
+		will-change: auto;
+		transform: perspective(620px);
+	}
+
+	/* Keep perspective() in both keyframes so handing off to the resting tilt
+	   transform (also perspective-based) doesn't pop. */
 	@keyframes passportReveal {
 		from {
 			opacity: 0;
-			transform: translateY(10px) scale(0.94) rotate(-1deg);
+			transform: perspective(620px) translateY(10px) scale(0.94) rotate(-1deg);
 		}
 		to {
 			opacity: 1;
-			transform: translateY(0) scale(1) rotate(0);
+			transform: perspective(620px) translateY(0) scale(1) rotate(0);
 		}
 	}
 
-	/* Idle shimmer: gently drift the spectral rainbow so the card breathes at
-	   rest. Position-only — the per-skin filter is left untouched so each holo
-	   keeps its own look. */
+	/* Idle shimmer: gently drift the spectral rainbow on a slight diagonal so the
+	   card breathes at rest. Position-only — the per-skin filter is untouched. */
 	@keyframes foilDrift {
 		0% {
-			background-position: 0% 50%;
+			background-position: 0% 35%;
 		}
 		100% {
-			background-position: 100% 50%;
+			background-position: 100% 65%;
 		}
 	}
 </style>

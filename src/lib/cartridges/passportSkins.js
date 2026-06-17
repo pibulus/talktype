@@ -102,8 +102,8 @@ const HOLO = {
 const FRAME = {
 	chunky: {
 		'--f-radius': '1.55rem',
-		'--f-border': '3px solid rgba(0, 0, 0, 0.82)',
-		'--f-shadow': '8px 8px 0 rgba(0, 0, 0, 0.82), 0 18px 40px var(--f-glow-38)',
+		'--f-border': '3px solid rgba(0, 0, 0, 0.78)',
+		'--f-shadow': '7px 7px 0 rgba(0, 0, 0, 0.65), 0 18px 40px var(--f-glow-38)',
 		'--f-substrate': 'transparent',
 		'--f-ink-shift': '0'
 	},
@@ -119,7 +119,8 @@ const FRAME = {
 		'--f-radius': '1.1rem',
 		'--f-border': '1px solid rgba(255, 255, 255, 0.55)',
 		'--f-shadow': '0 16px 40px var(--f-glow-20), 0 2px 10px rgba(0, 0, 0, 0.06)',
-		'--f-substrate': 'rgba(255, 255, 255, 0.42)',
+		// 0.22 (was 0.42): a 42% white wash fogged vivid cool gradients to grey.
+		'--f-substrate': 'rgba(255, 255, 255, 0.22)',
 		'--f-ink-shift': '0'
 	},
 	terminal: {
@@ -195,7 +196,8 @@ const TYPE = {
 	airy: {
 		'--t-font': "'Poppins', system-ui, sans-serif",
 		'--t-name-size': '1.4rem',
-		'--t-name-weight': '300',
+		// 500 floor: weight 300 lost contrast on saturated gradients (WCAG fail).
+		'--t-name-weight': '500',
 		'--t-transform': 'none',
 		'--t-tracking': '0.12em'
 	}
@@ -308,12 +310,32 @@ export function shuffleSkinSeed(seed = 0) {
 		type: pick(AXIS_KEYS.type, 4),
 		avatar: pick(AXIS_KEYS.avatar, 5)
 	};
-	const palette = PASSPORT_PALETTES[Math.abs((seed * 18000) >>> 0) % PASSPORT_PALETTES.length];
+	// 18000 % 8 === 0 made every seed pick palette[0]; use an odd multiplier.
+	const palette =
+		PASSPORT_PALETTES[Math.abs((seed * 2654435761 + 37) >>> 0) % PASSPORT_PALETTES.length];
 	return finalize('shuffle', palette, choices);
 }
 
+// White-ink palettes (Risograph, Grape Soda) sit on vivid saturated gradients.
+// The dodging holos (color-dodge / screen) blow those backgrounds toward white
+// and bury the white text. Cap their intensity so the foil stays iridescent
+// rather than bleaching the card.
+const WHITE_INK = '#ffffff';
+function guardHoloForInk(vars, palette) {
+	if (palette.ink !== WHITE_INK) return vars;
+	const blend = vars['--holo-blend'];
+	if (blend === 'color-dodge' || blend === 'screen') {
+		return {
+			...vars,
+			'--holo-rest': '0.24',
+			'--holo-bloom': '0.36'
+		};
+	}
+	return vars;
+}
+
 function finalize(name, palette, choices) {
-	const vars = resolveVars(choices);
+	const vars = guardHoloForInk(resolveVars(choices), palette);
 	const varString = Object.entries(vars)
 		.map(([k, v]) => `${k}: ${v}`)
 		.join('; ');
@@ -322,7 +344,8 @@ function finalize(name, palette, choices) {
 		palette,
 		choices,
 		vars,
-		avatarStyle: choices.avatar || palette.avatar,
+		// Always set from the AVATAR axis; palette.avatar is a pre-refactor legacy field.
+		avatarStyle: choices.avatar,
 		varString
 	};
 }
