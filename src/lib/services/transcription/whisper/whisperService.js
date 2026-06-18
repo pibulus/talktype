@@ -698,3 +698,14 @@ export class WhisperService {
 }
 
 export const whisperService = new WhisperService();
+
+// Dev-only test seam: lets Playwright drive the real model-load + transcribe path
+// without the fake-mic rig. Stripped from production builds (import.meta.env.DEV).
+if (browser && import.meta.env.DEV) {
+	globalThis.__ttWhisper = {
+		service: whisperService,
+		status: whisperStatus,
+		// Accepts a Float32Array (16kHz mono) or Blob, returns the transcript text.
+		transcribe: (audio) => whisperService.transcribeAudio(audio)
+	};
+}

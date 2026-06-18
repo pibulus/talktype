@@ -56,8 +56,11 @@ export async function handle({ event, resolve }) {
 			'https://connect.squareup.com', // Square payments (production)
 			'https://connect.squareupsandbox.com', // Square sandbox (dev/testing)
 			'https://cloud.umami.is', // Umami analytics beacon
-			'https://huggingface.co', // Whisper model downloads (transformers.js)
-			'https://cdn.jsdelivr.net' // @xenova/transformers CDN fallback path
+			'https://huggingface.co', // Whisper model metadata (transformers.js)
+			'https://*.hf.co', // HF Xet CDN — huggingface.co redirects large model files here (cdn.hf.co/xet-bridge-us/...)
+			'https://cdn-lfs.huggingface.co', // HF legacy LFS large-file host
+			'https://cas-bridge.xethub.hf.co', // HF Xet bridge (alt host)
+			'https://cdn.jsdelivr.net' // transformers.js CDN fallback path (WASM + model fallback)
 		].join(' '),
 
 		// Media: microphone recordings are blob: URLs
