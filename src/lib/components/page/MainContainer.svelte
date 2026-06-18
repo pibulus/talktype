@@ -17,7 +17,7 @@
 	import { fade } from 'svelte/transition';
 	import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
 	import { STORAGE_KEYS } from '$lib/constants';
-	import { transcriptionState, uiActions, userPreferences } from '$lib/services';
+	import { uiActions, userPreferences } from '$lib/services';
 	import { analytics } from '$lib/services/analytics.js';
 
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
@@ -32,8 +32,6 @@
 	let TranscriptHistoryModal;
 	let SupporterModal;
 	let PwaInstallPrompt;
-	let latestUnsavedTranscript = null;
-	let isSavingUnlockTranscript = false;
 
 	function createComponentLoader(importComponent, assignComponent, label) {
 		let pending = null;
@@ -152,39 +150,21 @@
 		void autoBackupHistoryToVault();
 	}
 
-	async function saveVisibleTranscriptAfterUnlock() {
-		if (!browser || isSavingUnlockTranscript || !latestUnsavedTranscript) return;
-
-		const currentText = get(transcriptionState).text;
-		const transcript = getHistoryTranscript(latestUnsavedTranscript, currentText);
-		if (!transcript) return;
-
-		isSavingUnlockTranscript = true;
-		try {
-			await saveTranscriptToHistory(transcript);
-			latestUnsavedTranscript = null;
-		} catch (err) {
-			console.error('Failed to save visible transcript after supporter unlock:', err);
-		} finally {
-			isSavingUnlockTranscript = false;
-		}
-	}
-
 	// Handle transcription completed event for PWA prompt and local transcript history
 	async function handleTranscriptionCompleted(event) {
 		if (!browser) return;
 
 		const transcript = getHistoryTranscript(event.detail.transcript);
 
-		if (transcript && $userPreferences.isSupporter) {
+		// Always persist locally — offline AND cloud, free AND supporter. The
+		// user's own words are never lost. Free tier is trimmed to the most recent
+		// N inside saveTranscript; supporters keep unlimited + vault backup.
+		if (transcript) {
 			try {
 				await saveTranscriptToHistory(transcript);
-				latestUnsavedTranscript = null;
 			} catch (err) {
 				console.error('Failed to save transcript:', err);
 			}
-		} else if (transcript) {
-			latestUnsavedTranscript = transcript;
 		}
 
 		// The PWA service handles most of the logic, but we need to lazy-load the component
@@ -201,7 +181,6 @@
 
 	async function handleSupporterUnlocked() {
 		await checkPassportNotes();
-		await saveVisibleTranscriptAfterUnlock();
 	}
 
 	// Closes the PWA install prompt

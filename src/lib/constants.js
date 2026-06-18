@@ -87,6 +87,14 @@ export const APP_CONFIG = {
 	AUTHORS: 'Pablo Alvarado'
 };
 
+// Transcript history access model:
+// Every finished transcript (offline or cloud) is ALWAYS saved locally and is
+// always readable — the user's own words are never held hostage. Free tier keeps
+// the most recent FREE_HISTORY_LIMIT; supporters get unlimited + encrypted vault.
+export const HISTORY = {
+	FREE_HISTORY_LIMIT: 15
+};
+
 // Animation Timing (in ms)
 export const ANIMATION = {
 	// Button animations
