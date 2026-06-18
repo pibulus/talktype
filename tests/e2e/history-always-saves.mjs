@@ -80,7 +80,8 @@ try {
 
 	console.log('→ result:', JSON.stringify(result));
 
-	if (!result.savedOffline) fail('offline transcript was NOT saved for a non-supporter (WS1 core guarantee)');
+	if (!result.savedOffline)
+		fail('offline transcript was NOT saved for a non-supporter (WS1 core guarantee)');
 	if (result.count > FREE_LIMIT) fail(`free tier not trimmed: ${result.count} > ${FREE_LIMIT}`);
 	if (!result.hasNewest) fail('newest transcript missing after trim');
 	if (!result.oldestGone) fail('oldest transcript should have been trimmed');

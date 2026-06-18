@@ -167,8 +167,7 @@ const TEXTURE = {
 		'--tx-opacity': '0.4'
 	},
 	halftone: {
-		'--tx-image':
-			'radial-gradient(rgba(0,0,0,0.18) 22%, transparent 23%)',
+		'--tx-image': 'radial-gradient(rgba(0,0,0,0.18) 22%, transparent 23%)',
 		'--tx-size': '7px 7px',
 		'--tx-blend': 'multiply',
 		'--tx-opacity': '0.4'
@@ -231,8 +230,20 @@ export const SKIN_AXES = {
    the palette is taken from the hash like everything else).
    =================================================================== */
 export const NAMED_SKINS = {
-	vibrant: { holo: 'rainbow', frame: 'soft', texture: 'sparkle', type: 'display', avatar: 'thumbs' },
-	neonBrut: { holo: 'rainbow', frame: 'chunky', texture: 'halftone', type: 'display', avatar: 'thumbs' },
+	vibrant: {
+		holo: 'rainbow',
+		frame: 'soft',
+		texture: 'sparkle',
+		type: 'display',
+		avatar: 'thumbs'
+	},
+	neonBrut: {
+		holo: 'rainbow',
+		frame: 'chunky',
+		texture: 'halftone',
+		type: 'display',
+		avatar: 'thumbs'
+	},
 	hacker: { holo: 'oily', frame: 'terminal', texture: 'scanlines', type: 'mono', avatar: 'bottts' },
 	unicorn: { holo: 'pearl', frame: 'hairline', texture: 'none', type: 'airy', avatar: 'adventurer' }
 };

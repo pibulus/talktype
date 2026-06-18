@@ -16,7 +16,7 @@ const log = createLogger('ModelRegistry');
 const DEFAULT_MODELS = [
 	{
 		id: 'tiny',
-		transformers_id: 'Xenova/whisper-tiny.en', // Mobile fallback (iOS compatible)
+		transformers_id: 'onnx-community/whisper-tiny.en', // v4-native ONNX export (iOS-safe baseline)
 		name: 'Tiny English (117MB)',
 		description: 'Mobile-optimized, iOS compatible',
 		size: 117 * 1024 * 1024, // ~117MB INT8 quantized
@@ -76,9 +76,9 @@ const DEFAULT_MODELS = [
 
 // Transformers.js library information
 const TRANSFORMERS_INFO = {
-	package: '@xenova/transformers',
+	package: '@huggingface/transformers',
 	version: 'latest',
-	cdn_url: 'https://cdn.jsdelivr.net/npm/@xenova/transformers',
+	cdn_url: 'https://cdn.jsdelivr.net/npm/@huggingface/transformers',
 	documentation: 'https://huggingface.co/docs/transformers.js'
 };
 

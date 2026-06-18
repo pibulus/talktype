@@ -50,9 +50,7 @@
 
 	// Skin = one coordinate in the modular axis space (holo/frame/texture/type/
 	// avatar) + palette. Deterministic from the hash, or forced via skinName.
-	$: skin = skinName
-		? selectNamedSkin(skinName, vaultHash)
-		: selectSkin(vaultHash);
+	$: skin = skinName ? selectNamedSkin(skinName, vaultHash) : selectSkin(vaultHash);
 	$: palette = skin.palette;
 	$: avatarUri = buildPassportAvatar(vaultHash || 'talktype', skin.avatarStyle);
 
@@ -162,7 +160,10 @@
 	function handleOrientation(event) {
 		const gamma = event.gamma ?? 0; // -90..90
 		const beta = event.beta ?? 0; // -180..180
-		schedulePointer(50 + clamp(gamma, -35, 35) * (50 / 35), 50 + clamp(beta - 45, -35, 35) * (50 / 35));
+		schedulePointer(
+			50 + clamp(gamma, -35, 35) * (50 / 35),
+			50 + clamp(beta - 45, -35, 35) * (50 / 35)
+		);
 	}
 
 	function attachGyro() {
@@ -258,9 +259,7 @@
 
 	<div class="relative z-10 flex items-start justify-between gap-3">
 		<div class="min-w-0">
-			<h3 class="passport-kicker text-[11px] font-black uppercase">
-				TalkType Passport
-			</h3>
+			<h3 class="passport-kicker text-[11px] font-black uppercase">TalkType Passport</h3>
 			<p class="passport-name mt-1 max-w-[190px] font-black">
 				{identity.name}
 			</p>
@@ -268,7 +267,7 @@
 
 		<!-- Avatar chip: DiceBear SVG with initials fallback -->
 		<div
-			class="avatar-chip grid h-14 w-14 shrink-0 place-items-center rounded-2xl font-black overflow-hidden"
+			class="avatar-chip grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-2xl font-black"
 			aria-hidden="true"
 		>
 			{#if avatarUri}
@@ -287,7 +286,9 @@
 	<div class="relative z-10 flex items-end justify-between gap-4">
 		<div class="min-w-0">
 			<p class="passport-label text-[10px] font-bold uppercase">Supporter ID</p>
-			<p class="mt-1 font-mono text-sm font-black tracking-normal passport-member-id">{identity.memberId}</p>
+			<p class="passport-member-id mt-1 font-mono text-sm font-black tracking-normal">
+				{identity.memberId}
+			</p>
 			{#if hasVaultHash && identity.phrase}
 				<p class="passport-phrase mt-1 italic">{identity.phrase}</p>
 			{/if}
@@ -360,17 +361,9 @@
 		border-radius: var(--f-radius, 1.55rem);
 		background:
 			radial-gradient(circle at 12% 14%, rgba(255, 255, 255, 0.32), transparent 38%),
-			linear-gradient(
-				135deg,
-				var(--p-bg-1) 0%,
-				var(--p-bg-2) 48%,
-				var(--p-bg-3) 100%
-			);
+			linear-gradient(135deg, var(--p-bg-1) 0%, var(--p-bg-2) 48%, var(--p-bg-3) 100%);
 		border: var(--f-border, 2px solid rgba(255, 255, 255, 0.38));
-		box-shadow: var(
-			--f-shadow,
-			0 24px 48px var(--f-glow-38), 0 8px 18px var(--f-glow-20)
-		);
+		box-shadow: var(--f-shadow, 0 24px 48px var(--f-glow-38), 0 8px 18px var(--f-glow-20));
 		/* FRAME drop-shadow (e.g. chunky's hard offset) — composites with the 3D
 		   tilt transform so the toy shadow moves with the card, not flat behind it. */
 		filter: var(--f-filter, none);
@@ -400,12 +393,7 @@
 	.passport-glow {
 		background:
 			radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.44), transparent 32%),
-			linear-gradient(
-				115deg,
-				transparent 0%,
-				var(--p-glow-22) 46%,
-				transparent 72%
-			);
+			linear-gradient(115deg, transparent 0%, var(--p-glow-22) 46%, transparent 72%);
 		mix-blend-mode: overlay;
 		opacity: 0.52;
 	}
@@ -420,17 +408,16 @@
 	*/
 	.holofoil {
 		background:
-			/* Drifting spectral rainbow — parallaxes against pointer via --bg-x/--bg-y. */
-			repeating-linear-gradient(
-				var(--holo-angle, 110deg),
-				var(--holo-c1) 0%,
-				var(--holo-c2) 14%,
-				var(--holo-c3) 28%,
-				var(--holo-c4) 42%,
-				var(--holo-c5) 56%,
-				var(--holo-c6) 70%,
-				var(--holo-c1) 84%
-			);
+			/* Drifting spectral rainbow — parallaxes against pointer via --bg-x/--bg-y. */ repeating-linear-gradient(
+			var(--holo-angle, 110deg),
+			var(--holo-c1) 0%,
+			var(--holo-c2) 14%,
+			var(--holo-c3) 28%,
+			var(--holo-c4) 42%,
+			var(--holo-c5) 56%,
+			var(--holo-c6) 70%,
+			var(--holo-c1) 84%
+		);
 		background-size: var(--holo-size, 400% 400%);
 		background-position: var(--bg-x) var(--bg-y);
 		mix-blend-mode: var(--holo-blend, color-dodge);
@@ -647,12 +634,7 @@
 		rotate: -2deg;
 		border-radius: 1.02rem;
 		border: 2px solid rgba(255, 255, 255, 0.72);
-		background:
-			linear-gradient(
-				135deg,
-				rgba(255, 255, 255, 0.88),
-				rgba(255, 255, 255, 0.72)
-			);
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.72));
 		padding: 0.2rem;
 		box-shadow:
 			0 13px 26px var(--p-glow-28),
@@ -670,11 +652,7 @@
 		border-radius: 0.74rem;
 		background:
 			linear-gradient(90deg, var(--p-accent-18), transparent 42%),
-			repeating-linear-gradient(
-				135deg,
-				var(--p-accent-18) 0 3px,
-				rgba(255, 255, 255, 0) 3px 7px
-			);
+			repeating-linear-gradient(135deg, var(--p-accent-18) 0 3px, rgba(255, 255, 255, 0) 3px 7px);
 		opacity: 0;
 		transition: opacity 160ms ease;
 		pointer-events: none;

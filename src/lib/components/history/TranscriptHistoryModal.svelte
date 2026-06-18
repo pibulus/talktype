@@ -463,8 +463,8 @@
 					<p class="text-4xl" aria-hidden="true">🔒</p>
 					<h4 class="text-lg font-black text-gray-800">Transcript History Locked</h4>
 					<p class="mx-auto max-w-sm text-sm text-gray-600">
-						Unlock transcript history, downloads, and style presets by becoming a
-						supporter — $9 a year, no subscription.
+						Unlock transcript history, downloads, and style presets by becoming a supporter — $9 a
+						year, no subscription.
 					</p>
 					<button
 						type="button"

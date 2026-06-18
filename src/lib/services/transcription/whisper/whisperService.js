@@ -5,10 +5,6 @@
 
 import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
-import ortWasmSimdUrl from '@xenova/transformers/dist/ort-wasm-simd.wasm?url';
-import ortWasmSimdThreadedUrl from '@xenova/transformers/dist/ort-wasm-simd-threaded.wasm?url';
-import ortWasmThreadedUrl from '@xenova/transformers/dist/ort-wasm-threaded.wasm?url';
-import ortWasmUrl from '@xenova/transformers/dist/ort-wasm.wasm?url';
 import { userPreferences } from '../../infrastructure/stores';
 import { convertToWAV as convertToRawAudio } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
@@ -25,44 +21,31 @@ const SAMPLE_RATE = 16000;
 const WARMUP_SECONDS = 0.25; // short silent clip to JIT the WASM kernels
 const MODEL_LOAD_TIMEOUT_MS = 5 * 60 * 1000; // 5 minute timeout for model download+load
 const DEFAULT_MODEL_KEY = 'tiny';
-const ORT_WASM_PATHS = {
-	'ort-wasm-simd-threaded.wasm': ortWasmSimdThreadedUrl,
-	'ort-wasm-threaded.wasm': ortWasmThreadedUrl,
-	'ort-wasm-simd.wasm': ortWasmSimdUrl,
-	'ort-wasm.wasm': ortWasmUrl
-};
 
 let transformersModulePromise = null;
 let transformersEnvConfigured = false;
 
-function resolveAssetUrl(assetUrl) {
-	if (!browser || !globalThis.location) return assetUrl;
-	return new URL(assetUrl, globalThis.location.href).href;
-}
+// Self-host the EXACT ort .wasm/.mjs files that v4 bundles (copied from
+// node_modules/@huggingface/transformers/node_modules/onnxruntime-web/dist into
+// static/onnx, served at /onnx/). v4 bundles a dev build of onnxruntime-web
+// (1.26.0-dev.*) that isn't on any CDN, and its default loader fetches the WASM
+// glue via a dynamic blob import Vite can't serve ("no available backend found /
+// Failed to fetch ... blob:"). A real same-origin base URL bypasses that and
+// guarantees the version matches the bundled runtime. Also keeps Offline Mode
+// truly offline-capable (no CDN dependency).
+const ORT_WASM_BASE = '/onnx/';
 
 export function configureTransformersEnv(env) {
 	if (!env || transformersEnvConfigured) return;
 
-	// Configure transformers.js for maximum stability (WASM only)
 	env.allowRemoteModels = true;
 	env.allowLocalModels = false;
 	env.useBrowserCache = true;
 	env.backends = env.backends || {};
-	const onnxBackend = env.backends.onnx;
-	const wasmBackend = onnxBackend?.wasm;
-
+	const wasmBackend = env.backends.onnx?.wasm;
 	if (wasmBackend) {
-		// transformers.js defaults to a CDN path. Self-host the matching WASM
-		// binary for PWA reliability.
-		wasmBackend.wasmPaths = Object.fromEntries(
-			Object.entries(ORT_WASM_PATHS).map(([fileName, assetUrl]) => [
-				fileName,
-				resolveAssetUrl(assetUrl)
-			])
-		);
-		wasmBackend.numThreads = 1;
-		wasmBackend.proxy = false;
-		wasmBackend.simd = wasmBackend.simd === false ? false : true;
+		wasmBackend.wasmPaths = ORT_WASM_BASE; // real URL base, not the broken blob import
+		wasmBackend.numThreads = 1; // single-threaded WASM for cross-browser stability (esp. iOS)
 	}
 
 	transformersEnvConfigured = true;
@@ -74,7 +57,7 @@ async function loadTransformersPipeline() {
 	}
 
 	if (!transformersModulePromise) {
-		transformersModulePromise = import('@xenova/transformers')
+		transformersModulePromise = import('@huggingface/transformers')
 			.then((module) => {
 				configureTransformersEnv(module.env);
 				return module;
@@ -235,10 +218,14 @@ export class WhisperService {
 			const loadStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
 			const pipeline = await loadTransformersPipeline();
 
-			// Race model loading against a timeout to prevent infinite hangs
+			// Race model loading against a timeout to prevent infinite hangs.
+			// device/dtype come from the model config (set by device detection in
+			// WS6); default to wasm + fp32 — the most compatible combo. The model's
+			// q8/quantized export trips a MatMulNBits scale error under this ort
+			// build, so fp32 is the reliable WASM baseline.
 			const loadPromise = pipeline('automatic-speech-recognition', modelConfig.id, {
-				device: 'wasm',
-				dtype: 'q8',
+				device: modelConfig.device || 'wasm',
+				dtype: modelConfig.dtype || 'fp32',
 				progress_callback: (progress) => {
 					this.#handleLoadProgress(progress, modelConfig);
 				}
@@ -439,8 +426,9 @@ export class WhisperService {
 		try {
 			const warmupSamples = Math.max(1, Math.floor(SAMPLE_RATE * WARMUP_SECONDS));
 			const silence = new Float32Array(warmupSamples); // zeroed buffer
+			// NB: no `task`/`language` here — v4 rejects them for English-only (.en)
+			// models. WS6 will re-add task for multilingual models.
 			await this.transcriber(silence, {
-				task: 'transcribe',
 				return_timestamps: false,
 				temperature: 0,
 				do_sample: false
@@ -505,8 +493,9 @@ export class WhisperService {
 			statusText: getLoadStatusText({ phase: WHISPER_PHASES.TRANSCRIBING })
 		});
 
+		// No `task`/`language`: v4 rejects them for English-only (.en) models.
+		// WS6 re-adds task: 'transcribe' for multilingual models.
 		const options = {
-			task: 'transcribe',
 			return_timestamps: false,
 			temperature: 0,
 			do_sample: false

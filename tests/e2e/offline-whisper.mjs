@@ -65,7 +65,9 @@ try {
 				prefs.whisperModel = 'tiny';
 				prefs.modelManuallySelected = true;
 				localStorage.setItem('userPreferences', JSON.stringify(prefs));
-			} catch {}
+			} catch {
+				// best-effort: pref defaults to tiny anyway
+			}
 
 			// Decode base64 WAV → AudioBuffer → Float32Array @ the clip's own rate,
 			// then resample to 16kHz mono (what whisperService expects).

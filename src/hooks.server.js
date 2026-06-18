@@ -31,7 +31,7 @@ export async function handle({ event, resolve }) {
 		// for hydration data and env vars. Removing this white-screens the app.
 		// TODO: replace with a nonce-based approach once SvelteKit supports it stably.
 		"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cloud.umami.is",
-		//   'wasm-unsafe-eval' — required for @xenova/transformers onnxruntime-web (Whisper WASM)
+		//   'wasm-unsafe-eval' — required for @huggingface/transformers onnxruntime-web (Whisper WASM)
 		//   https://cloud.umami.is — Umami analytics script (PUBLIC_UMAMI_SCRIPT_URL default)
 
 		// Styles — SvelteKit also inlines critical CSS

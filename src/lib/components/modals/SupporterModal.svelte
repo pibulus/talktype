@@ -258,7 +258,8 @@
 						{PRICING.displayPrice}<span class="text-lg font-bold text-pink-400">/year</span>
 					</p>
 					<p id="supporter_modal_description" class="mt-3 text-sm leading-6 text-gray-700">
-						$9 a year, no subscription — keep the extras and help the little ghost stay free for everyone.
+						$9 a year, no subscription — keep the extras and help the little ghost stay free for
+						everyone.
 					</p>
 				</div>
 
@@ -281,7 +282,9 @@
 					on:click={handleCheckout}
 					disabled={isStartingCheckout}
 				>
-					{isStartingCheckout ? 'Opening Square...' : `Support for a year - ${PRICING.displayPrice}`}
+					{isStartingCheckout
+						? 'Opening Square...'
+						: `Support for a year - ${PRICING.displayPrice}`}
 				</button>
 
 				{#if errorMessage}
