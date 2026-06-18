@@ -1,6 +1,6 @@
 import { env } from '$env/dynamic/private';
 
-export const DEFAULT_GEMINI_TRANSCRIPTION_MODEL = 'gemini-2.5-flash';
+export const DEFAULT_GEMINI_TRANSCRIPTION_MODEL = 'gemini-flash-latest';
 const STALE_GEMINI_MODEL_ALIASES = new Map([
 	['gemini-3.1-flash-lite-preview', DEFAULT_GEMINI_TRANSCRIPTION_MODEL]
 ]);
