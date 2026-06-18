@@ -218,36 +218,48 @@ export class WhisperService {
 			const loadStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
 			const pipeline = await loadTransformersPipeline();
 
-			// Race model loading against a timeout to prevent infinite hangs.
-			// device/dtype come from the model config (set by device detection in
-			// WS6); default to wasm + fp32 — the most compatible combo. The model's
-			// q8/quantized export trips a MatMulNBits scale error under this ort
-			// build, so fp32 is the reliable WASM baseline.
-			const loadPromise = pipeline('automatic-speech-recognition', modelConfig.id, {
-				device: modelConfig.device || 'wasm',
-				dtype: modelConfig.dtype || 'fp32',
-				progress_callback: (progress) => {
-					this.#handleLoadProgress(progress, modelConfig);
+			// device/dtype come from the model config (set by device detection):
+			// tiny → wasm/fp32 (universal), small → webgpu/fp16 (capable desktops).
+			let device = modelConfig.device || 'wasm';
+			let dtype = modelConfig.dtype || 'fp32';
+
+			let transcriber;
+			try {
+				transcriber = await this.#loadPipeline(pipeline, modelConfig, device, dtype);
+			} catch (loadError) {
+				// One-time WebGPU → WASM fallback: a present-but-flaky GPU adapter can
+				// fail at session creation. Drop to the tiny+WASM baseline, persist it
+				// for this device, and retry once so Offline Mode never hard-fails.
+				if (device === 'webgpu') {
+					console.warn(
+						'[WhisperService] WebGPU model load failed — falling back to tiny + WASM:',
+						loadError?.message || loadError
+					);
+					device = 'wasm';
+					dtype = 'fp32';
+					const fallbackConfig = getModelInfo('tiny');
+					userPreferences.update((p) => ({
+						...p,
+						whisperModel: 'tiny',
+						webgpuDisabled: true
+					}));
+					this.updateStatus({
+						selectedModel: 'tiny',
+						selectedModelName: fallbackConfig.name,
+						selectedModelSize: fallbackConfig.size
+					});
+					transcriber = await this.#loadPipeline(pipeline, fallbackConfig, device, dtype);
+				} else {
+					throw loadError;
 				}
-			});
-
-			let loadTimeoutId;
-			const timeoutPromise = new Promise((_, reject) => {
-				loadTimeoutId = setTimeout(
-					() => reject(new Error('Model download timed out. Check your connection and try again.')),
-					MODEL_LOAD_TIMEOUT_MS
-				);
-			});
-
-			this.transcriber = await Promise.race([loadPromise, timeoutPromise]).finally(() => {
-				clearTimeout(loadTimeoutId);
-			});
+			}
+			this.transcriber = transcriber;
 
 			await this.#warmupTranscriber();
 
 			const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
 			const totalSecs = ((endTime - loadStart || 0) / 1000).toFixed(2);
-			console.log(`[WhisperService] Model ready in ${totalSecs}s (WASM, warmed).`);
+			console.log(`[WhisperService] Model ready in ${totalSecs}s (${device}, warmed).`);
 			this.#stopLoadProgressTicker();
 
 			this.updateStatus({
@@ -281,6 +293,26 @@ export class WhisperService {
 			this.modelLoadPromise = null;
 			return { success: false, error };
 		}
+	}
+
+	// Load a pipeline for a given device/dtype, raced against a timeout to prevent
+	// infinite hangs. Returns the transcriber or throws.
+	async #loadPipeline(pipeline, modelConfig, device, dtype) {
+		const loadPromise = pipeline('automatic-speech-recognition', modelConfig.id, {
+			device,
+			dtype,
+			progress_callback: (progress) => this.#handleLoadProgress(progress, modelConfig)
+		});
+
+		let loadTimeoutId;
+		const timeoutPromise = new Promise((_, reject) => {
+			loadTimeoutId = setTimeout(
+				() => reject(new Error('Model download timed out. Check your connection and try again.')),
+				MODEL_LOAD_TIMEOUT_MS
+			);
+		});
+
+		return Promise.race([loadPromise, timeoutPromise]).finally(() => clearTimeout(loadTimeoutId));
 	}
 
 	#startLoadProgressTicker(modelConfig) {

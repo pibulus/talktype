@@ -25,9 +25,14 @@ const ORT_DIST_CANDIDATES = [
 	join(ROOT, 'node_modules/onnxruntime-web/dist')
 ];
 
-// Only the asyncify pair is loaded by the extern-wasm build for the WASM device.
-// (jsep pair would be added here when WebGPU is wired up.)
-const FILES = ['ort-wasm-simd-threaded.asyncify.wasm', 'ort-wasm-simd-threaded.asyncify.mjs'];
+// asyncify pair → the WASM device (tiny baseline, all devices).
+// jsep pair → the WebGPU device (distil-small on capable desktops, WS6).
+const FILES = [
+	'ort-wasm-simd-threaded.asyncify.wasm',
+	'ort-wasm-simd-threaded.asyncify.mjs',
+	'ort-wasm-simd-threaded.jsep.wasm',
+	'ort-wasm-simd-threaded.jsep.mjs'
+];
 
 const srcDir = ORT_DIST_CANDIDATES.find((d) => existsSync(d));
 if (!srcDir) {

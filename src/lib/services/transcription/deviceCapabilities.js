@@ -48,75 +48,80 @@ export function detectDeviceCapabilities() {
 		storage: null
 	};
 
-	// Determine device tier
+	// Tiny is the universal baseline. The only upgrade is desktop + working WebGPU,
+	// decided asynchronously in detectBestModel() (requestAdapter is async). This
+	// synchronous pass just reports the device profile + a coarse tier.
 	let tier = 'medium';
-	let recommendedModel = 'tiny'; // Default to tiny for fastest performance
-	let reason = 'Fast offline transcription with tiny model';
+	const recommendedModel = 'tiny';
+	let reason = 'Tiny model (WASM) — universal baseline';
 
-	// High-end device detection
-	if (capabilities.memory >= 8 && capabilities.cores >= 8) {
-		tier = 'high';
-		recommendedModel = 'tiny'; // Prioritize speed over accuracy
-		reason = 'High-end device, using tiny for maximum speed';
-	}
-	// Mid-high tier (good memory but maybe no WebGPU)
-	else if (capabilities.memory >= 6 && capabilities.cores >= 6) {
-		tier = 'medium-high';
-		recommendedModel = 'tiny';
-		reason = 'Using tiny model for fast transcription';
-	}
-	// Standard mid-tier
-	else if (capabilities.memory >= 4) {
-		tier = 'medium';
-		recommendedModel = 'tiny';
-		reason = 'Using tiny model for optimal speed';
-	}
-	// Low-mid tier
-	else if (capabilities.memory >= 2) {
-		tier = 'low-medium';
-		recommendedModel = 'tiny';
-		reason = 'Limited memory, using tiny model';
-	}
-	// Low-end or mobile devices
-	else if (capabilities.platform.isMobile || capabilities.memory < 2) {
-		tier = 'low';
-		recommendedModel = 'tiny';
-		reason = capabilities.platform.isMobile ? 'Mobile device' : 'Low memory device';
-	}
+	if (capabilities.memory >= 8 && capabilities.cores >= 8) tier = 'high';
+	else if (capabilities.memory >= 6 && capabilities.cores >= 6) tier = 'medium-high';
+	else if (capabilities.memory >= 4) tier = 'medium';
+	else if (capabilities.memory >= 2) tier = 'low-medium';
+	else if (capabilities.platform.isMobile || capabilities.memory < 2) tier = 'low';
 
-	// Special cases
-	if (capabilities.connection?.saveData) {
-		// User has data saver enabled, use smallest model
-		recommendedModel = 'tiny';
-		reason = 'Data saver mode enabled';
-	}
-
-	// Platform-specific adjustments based on known issues
-	if (capabilities.platform.isIOS) {
-		// iOS has known memory issues with transformers.js v3
-		// Both Safari and Chrome on iOS use WebKit and have same constraints
-		if (recommendedModel !== 'tiny') {
-			recommendedModel = 'tiny';
-			reason = 'iOS memory constraints (transformers.js v3 issue)';
-		}
-	} else if (capabilities.platform.isAndroid && capabilities.memory < 4) {
-		// Android with low memory should use tiny
-		recommendedModel = 'tiny';
-		reason = 'Android low memory optimization';
-	}
+	if (capabilities.platform.isIOS) reason = 'iOS — tiny + WASM (hard-pinned)';
+	else if (capabilities.platform.isMobile) reason = 'Mobile — tiny + WASM';
 
 	return {
 		tier,
 		recommendedModel,
 		reason,
 		capabilities,
-		// Progressive loading strategy
 		loadingStrategy: {
-			initial: 'tiny', // Always start with tiny for instant experience
-			target: 'tiny', // Use tiny for fastest offline transcription
-			fallback: null // No fallback needed when using tiny
+			initial: 'tiny', // always start instant
+			target: 'tiny', // sync default; detectBestModel may upgrade to 'small'
+			fallback: 'tiny'
 		}
 	};
+}
+
+/**
+ * Probe for a REAL, usable WebGPU adapter — not just the API surface. `'gpu' in
+ * navigator` is true even when requestAdapter() returns null (no working GPU),
+ * so we must actually request one. Result is cached for the session.
+ */
+let webgpuAdapterPromise;
+export function probeWebGPU() {
+	if (webgpuAdapterPromise) return webgpuAdapterPromise;
+	webgpuAdapterPromise = (async () => {
+		if (!browser || !navigator.gpu?.requestAdapter) return false;
+		try {
+			const adapter = await navigator.gpu.requestAdapter();
+			return Boolean(adapter);
+		} catch {
+			return false;
+		}
+	})();
+	return webgpuAdapterPromise;
+}
+
+/**
+ * Decide the best offline model for THIS device, asynchronously (needs the
+ * WebGPU adapter probe). Desktop with a working WebGPU adapter and enough memory
+ * upgrades to 'small' (distil-small on WebGPU); everything else — mobile, iOS,
+ * no-WebGPU desktop, data-saver — stays on the tiny+WASM baseline.
+ * @returns {Promise<{model: 'tiny'|'small', reason: string, hasWebGPU: boolean}>}
+ */
+export async function detectBestModel() {
+	if (!browser) return { model: 'tiny', reason: 'SSR', hasWebGPU: false };
+
+	const { capabilities } = detectDeviceCapabilities();
+	const tiny = (reason) => ({ model: 'tiny', reason, hasWebGPU: false });
+
+	// iOS / mobile / data-saver: tiny is non-negotiable (memory + the iOS WebKit
+	// constraints that originally forced the all-tiny clamp).
+	if (capabilities.platform.isIOS) return tiny('iOS — tiny + WASM (hard-pinned)');
+	if (capabilities.platform.isMobile) return tiny('Mobile — tiny + WASM');
+	if (capabilities.connection?.saveData) return tiny('Data saver — tiny + WASM');
+
+	// Desktop: upgrade only if a real WebGPU adapter exists AND there's headroom.
+	const hasWebGPU = await probeWebGPU();
+	if (!hasWebGPU) return tiny('Desktop, no WebGPU — tiny + WASM');
+	if (capabilities.memory < 8) return tiny('WebGPU but <8GB RAM — tiny + WASM');
+
+	return { model: 'small', reason: 'Desktop + WebGPU — distil-small accelerated', hasWebGPU: true };
 }
 
 /**
