@@ -9,6 +9,22 @@ import {
 const MODEL_ID = GEMINI_MODELS.transcription;
 const GENERATION_CONFIG = GEMINI_GENERATION_CONFIG.transcription;
 
+async function withRetry(fn, { tries = 3, baseMs = 600 } = {}) {
+	let lastErr;
+	for (let i = 0; i < tries; i++) {
+		try {
+			return await fn();
+		} catch (err) {
+			const msg = String(err?.message || err);
+			const transient = /\b(503|429|overload|UNAVAILABLE|RESOURCE_EXHAUSTED)\b/i.test(msg);
+			lastErr = err;
+			if (!transient || i === tries - 1) throw err;
+			await new Promise((r) => setTimeout(r, baseMs * 2 ** i));
+		}
+	}
+	throw lastErr;
+}
+
 export function resolveGeminiTranscriptionPrompt(promptStyle, customPromptText = '') {
 	if (promptStyle !== 'custom') {
 		return getTranscriptionPrompt(promptStyle);
@@ -73,12 +89,14 @@ export async function transcribeAudio(file, promptStyle, customPromptText = '') 
 
 		console.log(`[GeminiService] Uploaded audio to Gemini. Style: ${promptStyle}`);
 
-		const result = await genAI.models.generateContent(
-			buildGeminiTranscriptionRequest({
-				uploadedFile: uploadResult,
-				mimeType,
-				prompt
-			})
+		const result = await withRetry(() =>
+			genAI.models.generateContent(
+				buildGeminiTranscriptionRequest({
+					uploadedFile: uploadResult,
+					mimeType,
+					prompt
+				})
+			)
 		);
 
 		let transcription = result.text || '';
