@@ -185,6 +185,13 @@ async function trimHistoryToFreeLimit() {
 					resolve();
 					return;
 				}
+				// Re-check supporter status on every step: if the user upgrades to
+				// supporter mid-trim (e.g. pays at the exact moment), stop deleting so
+				// we never trash data they just paid to keep.
+				if (get(userPreferences)?.isSupporter) {
+					resolve();
+					return;
+				}
 				kept += 1;
 				if (kept > limit) cursor.delete();
 				cursor.continue();

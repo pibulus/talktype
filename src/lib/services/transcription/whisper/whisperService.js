@@ -5,7 +5,7 @@
 
 import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
-import { userPreferences } from '../../infrastructure/stores';
+import { userPreferences, markWebgpuDisabled } from '../../infrastructure/stores';
 import { convertToWAV as convertToRawAudio } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
 import {
@@ -239,11 +239,10 @@ export class WhisperService {
 					device = 'wasm';
 					dtype = 'fp32';
 					const fallbackConfig = getModelInfo('tiny');
-					userPreferences.update((p) => ({
-						...p,
-						whisperModel: 'tiny',
-						webgpuDisabled: true
-					}));
+					// Persist the downgrade so detectBestModel() won't re-attempt the
+					// expensive WebGPU distil-small download on the next session.
+					userPreferences.update((p) => ({ ...p, whisperModel: 'tiny' }));
+					markWebgpuDisabled();
 					this.updateStatus({
 						selectedModel: 'tiny',
 						selectedModelName: fallbackConfig.name,

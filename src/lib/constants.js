@@ -33,6 +33,8 @@ export const STORAGE_KEYS = {
 	HISTORY_CHANGED_AT: `${APP_STORAGE_PREFIX}:history_changed_at`,
 	PRIVACY_MODE: 'talktype_privacy_mode', // Offline Whisper mode
 	LIVE_MODE: 'talktype_live_mode',
+	WEBGPU_DISABLED: 'talktype_webgpu_disabled', // sticky: WebGPU model load failed on this device
+
 	TEXT_TIMING_DEFAULT_MIGRATED: `${APP_STORAGE_PREFIX}:text_timing_default_after_stop_v1`,
 	LAST_TRANSCRIPTION_METHOD: 'last_transcription_method', // Track which service was used
 

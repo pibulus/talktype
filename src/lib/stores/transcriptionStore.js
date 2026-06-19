@@ -427,6 +427,10 @@ function createTranscriptionStore() {
 			reconnectAttempts = 0;
 			const socketToFinish = socket;
 			const currentConnectionId = connectionId;
+			// If we stop with no live socket OR with audio still buffered (unsent),
+			// the live transcript may be incomplete — signal the caller to prefer the
+			// batch fallback (which transcribes the full recorded blob).
+			const liveTranscriptIncomplete = !socketToFinish || audioBuffer.length > 0;
 
 			if (
 				socketToFinish?.readyState === WebSocket.OPEN ||
@@ -437,6 +441,7 @@ function createTranscriptionStore() {
 				const finalizeReason = await finalizeWait;
 				const result = buildResult(getSnapshot());
 				result.finalizeAcknowledged = finalizeReason === 'finalized';
+				result.liveTranscriptIncomplete = liveTranscriptIncomplete;
 
 				if (socketToFinish?.readyState === WebSocket.OPEN) {
 					try {
@@ -456,6 +461,7 @@ function createTranscriptionStore() {
 
 			const result = buildResult(getSnapshot());
 			result.finalizeAcknowledged = false;
+			result.liveTranscriptIncomplete = liveTranscriptIncomplete;
 			closeActiveSocket('Done recording');
 			isConnectionOpen = false;
 			isConnecting = false;

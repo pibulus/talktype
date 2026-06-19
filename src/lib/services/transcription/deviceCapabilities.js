@@ -4,6 +4,8 @@
  */
 
 import { browser } from '$app/environment';
+import { get } from 'svelte/store';
+import { userPreferences } from '../infrastructure/stores';
 
 /**
  * Detect device capabilities and recommend optimal model
@@ -88,7 +90,12 @@ export function probeWebGPU() {
 	webgpuAdapterPromise = (async () => {
 		if (!browser || !navigator.gpu?.requestAdapter) return false;
 		try {
-			const adapter = await navigator.gpu.requestAdapter();
+			// requestAdapter() can hang forever on broken GPU drivers, which would
+			// hang model selection. Race it against a 3s timeout → treat as no-GPU.
+			const adapter = await Promise.race([
+				navigator.gpu.requestAdapter(),
+				new Promise((resolve) => setTimeout(() => resolve(null), 3000))
+			]);
 			return Boolean(adapter);
 		} catch {
 			return false;
@@ -109,6 +116,12 @@ export async function detectBestModel() {
 
 	const { capabilities } = detectDeviceCapabilities();
 	const tiny = (reason) => ({ model: 'tiny', reason, hasWebGPU: false });
+
+	// If a prior WebGPU model load failed on this device, don't retry the
+	// expensive distil-small download every session — stay on tiny+WASM.
+	if (get(userPreferences)?.webgpuDisabled) {
+		return tiny('WebGPU previously failed on this device — tiny + WASM');
+	}
 
 	// iOS / mobile / data-saver: tiny is non-negotiable (memory + the iOS WebKit
 	// constraints that originally forced the all-tiny clamp).
