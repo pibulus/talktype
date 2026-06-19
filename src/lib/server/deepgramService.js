@@ -12,10 +12,12 @@ export async function transcribeAudio(file, { diarize = false, paragraphs = true
 	}
 
 	try {
-		// Using Nova-3 for high accuracy batch transcription
+		// Using Nova-3 for high accuracy batch transcription.
+		// numerals:true keeps number formatting consistent with the live path.
 		const params = new URLSearchParams({
 			model: 'nova-3',
 			smart_format: 'true',
+			numerals: 'true',
 			paragraphs: paragraphs ? 'true' : 'false',
 			diarize: diarize ? 'true' : 'false'
 		});

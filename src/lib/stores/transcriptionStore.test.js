@@ -22,7 +22,10 @@ describe('Deepgram live transcription configuration', () => {
 		expect(url.searchParams.get('model')).toBe('nova-3');
 		expect(url.searchParams.get('language')).toBe('en-US');
 		expect(url.searchParams.get('interim_results')).toBe('true');
-		expect(url.searchParams.get('endpointing')).toBe('300');
+		// Dictation-tuned: longer endpointing so thinking pauses don't chop sentences.
+		expect(url.searchParams.get('endpointing')).toBe('600');
+		expect(url.searchParams.get('numerals')).toBe('true');
+		expect(url.searchParams.get('filler_words')).toBe('false');
 		expect(url.searchParams.has('vad_turn_delay_ms')).toBe(false);
 		expect(url.searchParams.get('model')).not.toBe('flux');
 	});

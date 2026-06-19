@@ -12,9 +12,16 @@ export function buildDeepgramLiveUrl() {
 		smart_format: 'true',
 		interim_results: 'true',
 		punctuate: 'true',
-		endpointing: '300',
+		// Dictation tuning (vs conversation defaults): a longer endpointing window
+		// (600ms) keeps natural thinking pauses from finalizing mid-sentence, so
+		// dictation isn't chopped into fragments. utterance_end_ms + vad_events
+		// still bound the longest silence.
+		endpointing: '600',
 		utterance_end_ms: '1000',
-		vad_events: 'true'
+		vad_events: 'true',
+		// Clean dictation output: format numbers as digits, drop um/uh fillers.
+		numerals: 'true',
+		filler_words: 'false'
 	});
 
 	return `${DEEPGRAM_LIVE_URL}?${params.toString()}`;
