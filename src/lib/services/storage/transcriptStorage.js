@@ -163,8 +163,18 @@ function getTranscriptHistoryTimestamp(transcripts) {
  * supporters keep unlimited. This trims OLDEST entries past the cap — it never
  * blocks reading what's kept, and supporters are never trimmed. Best-effort:
  * failures are logged, not thrown, so a trim hiccup can't break a save.
+ * Serialized via a single in-flight promise so concurrent saves can't double-trim.
  */
-async function trimHistoryToFreeLimit() {
+let trimInFlight = null;
+function trimHistoryToFreeLimit() {
+	if (trimInFlight) return trimInFlight;
+	trimInFlight = runTrimHistoryToFreeLimit().finally(() => {
+		trimInFlight = null;
+	});
+	return trimInFlight;
+}
+
+async function runTrimHistoryToFreeLimit() {
 	if (!browser) return;
 	if (get(userPreferences)?.isSupporter) return;
 
@@ -350,6 +360,9 @@ export async function importTranscriptHistory(transcripts, options = {}) {
 		}
 		updateStats();
 		await loadAllTranscripts();
+		// Enforce the free-tier cap on import too (a free user importing a large
+		// vault would otherwise exceed the limit silently). No-op for supporters.
+		await trimHistoryToFreeLimit();
 
 		return {
 			imported,

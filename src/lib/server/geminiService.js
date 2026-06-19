@@ -75,15 +75,26 @@ export async function waitForGeminiFileActive(
 	const deadline = Date.now() + maxWaitMs;
 
 	while (current?.state === 'PROCESSING') {
+		await new Promise((r) => setTimeout(r, intervalMs));
+		// Check the deadline AFTER the sleep so a hung files.get can't run past it.
 		if (Date.now() >= deadline) {
 			throw new Error('Gemini file processing timed out');
 		}
-		await new Promise((r) => setTimeout(r, intervalMs));
-		current = await genAI.files.get({ name: uploadedFile.name });
+		// Bound the individual poll call too — files.get can hang on a flaky network.
+		const remaining = Math.max(1000, deadline - Date.now());
+		current = await Promise.race([
+			genAI.files.get({ name: uploadedFile.name }),
+			new Promise((_, reject) =>
+				setTimeout(() => reject(new Error('Gemini file processing timed out')), remaining)
+			)
+		]);
 	}
 
-	if (current?.state === 'FAILED') {
-		throw new Error('Gemini file processing failed');
+	// Require an explicitly ACTIVE file — FAILED, CANCELLED, STATE_UNSPECIFIED, or
+	// a missing state from a 5xx all become a fallback-eligible error rather than
+	// proceeding to generateContent with a file that isn't ready.
+	if (current?.state !== 'ACTIVE') {
+		throw new Error(`Gemini file processing failed (state: ${current?.state ?? 'unknown'})`);
 	}
 
 	return current;

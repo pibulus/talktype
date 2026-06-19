@@ -57,7 +57,7 @@ export async function handle({ event, resolve }) {
 			'https://connect.squareupsandbox.com', // Square sandbox (dev/testing)
 			'https://cloud.umami.is', // Umami analytics beacon
 			'https://huggingface.co', // Whisper model metadata (transformers.js)
-			'https://*.hf.co', // HF Xet CDN — huggingface.co redirects large model files here (cdn.hf.co/xet-bridge-us/...)
+			'https://*.cdn.hf.co', // HF Xet CDN — model files redirect here (regional: us.aws.cdn.hf.co/xet-bridge-us/...). Scoped to the cdn subdomain, NOT all of *.hf.co (which would cover user spaces).
 			'https://cdn-lfs.huggingface.co', // HF legacy LFS large-file host
 			'https://cas-bridge.xethub.hf.co', // HF Xet bridge (alt host)
 			'https://cdn.jsdelivr.net' // transformers.js CDN fallback path (WASM + model fallback)
