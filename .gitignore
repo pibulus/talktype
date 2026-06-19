@@ -61,3 +61,4 @@ vite.config.ts.timestamp-*
 # scripts/sync-onnx-wasm.mjs (runs on `npm install` via prepare). Not committed
 # to avoid ~22MB binaries; always matches the installed @huggingface/transformers.
 /static/onnx/
+tests/e2e/launch-shots/
