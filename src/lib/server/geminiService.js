@@ -61,6 +61,34 @@ export async function deleteUploadedGeminiFile(genAI, uploadedFileName) {
 	await genAI.files.delete({ name: uploadedFileName });
 }
 
+// After upload, a Gemini file is briefly in PROCESSING; calling generateContent
+// before it's ACTIVE can fail or return empty. Poll until ACTIVE (bounded), and
+// throw a fallback-eligible error if it never becomes usable.
+export async function waitForGeminiFileActive(
+	genAI,
+	uploadedFile,
+	{ maxWaitMs = 12000, intervalMs = 500 } = {}
+) {
+	if (!uploadedFile?.name) return uploadedFile;
+
+	let current = uploadedFile;
+	const deadline = Date.now() + maxWaitMs;
+
+	while (current?.state === 'PROCESSING') {
+		if (Date.now() >= deadline) {
+			throw new Error('Gemini file processing timed out');
+		}
+		await new Promise((r) => setTimeout(r, intervalMs));
+		current = await genAI.files.get({ name: uploadedFile.name });
+	}
+
+	if (current?.state === 'FAILED') {
+		throw new Error('Gemini file processing failed');
+	}
+
+	return current;
+}
+
 export async function transcribeAudio(file, promptStyle, customPromptText = '') {
 	const apiKey = getGeminiApiKey();
 	if (!apiKey) {
@@ -89,10 +117,13 @@ export async function transcribeAudio(file, promptStyle, customPromptText = '') 
 
 		console.log(`[GeminiService] Uploaded audio to Gemini. Style: ${promptStyle}`);
 
+		// Wait for the file to finish processing before generating.
+		const activeFile = await waitForGeminiFileActive(genAI, uploadResult);
+
 		const result = await withRetry(() =>
 			genAI.models.generateContent(
 				buildGeminiTranscriptionRequest({
-					uploadedFile: uploadResult,
+					uploadedFile: activeFile,
 					mimeType,
 					prompt
 				})
@@ -108,6 +139,12 @@ export async function transcribeAudio(file, promptStyle, customPromptText = '') 
 				.map((part) => (part.text ? part.text.trim() : ''))
 				.filter(Boolean)
 				.join(' ');
+		}
+
+		// Empty Gemini output is a soft failure — throw a fallback-eligible error so
+		// the API route degrades to Deepgram instead of returning a blank transcript.
+		if (!transcription.trim()) {
+			throw new Error('Gemini returned an empty transcription');
 		}
 
 		console.log('[GeminiService] ✅ Transcription complete');

@@ -3,7 +3,8 @@ import { getTranscriptionPrompt } from '$lib/prompts';
 import {
 	buildGeminiTranscriptionRequest,
 	deleteUploadedGeminiFile,
-	resolveGeminiTranscriptionPrompt
+	resolveGeminiTranscriptionPrompt,
+	waitForGeminiFileActive
 } from './geminiService.js';
 import { GEMINI_GENERATION_CONFIG } from './geminiConfig.js';
 
@@ -66,5 +67,59 @@ describe('Gemini service helpers', () => {
 		await deleteUploadedGeminiFile(genAI, 'files/example');
 
 		expect(genAI.files.delete).toHaveBeenCalledWith({ name: 'files/example' });
+	});
+
+	describe('waitForGeminiFileActive', () => {
+		it('returns immediately when the file is already ACTIVE', async () => {
+			const genAI = { files: { get: vi.fn() } };
+			const file = { name: 'files/x', state: 'ACTIVE' };
+			const result = await waitForGeminiFileActive(genAI, file);
+			expect(result).toBe(file);
+			expect(genAI.files.get).not.toHaveBeenCalled();
+		});
+
+		it('polls until the file becomes ACTIVE', async () => {
+			const genAI = {
+				files: {
+					get: vi
+						.fn()
+						.mockResolvedValueOnce({ name: 'files/x', state: 'PROCESSING' })
+						.mockResolvedValueOnce({ name: 'files/x', state: 'ACTIVE' })
+				}
+			};
+			const result = await waitForGeminiFileActive(
+				genAI,
+				{ name: 'files/x', state: 'PROCESSING' },
+				{ intervalMs: 1, maxWaitMs: 1000 }
+			);
+			expect(result.state).toBe('ACTIVE');
+			expect(genAI.files.get).toHaveBeenCalledTimes(2);
+		});
+
+		it('throws when the file processing FAILED', async () => {
+			const genAI = {
+				files: { get: vi.fn().mockResolvedValue({ name: 'files/x', state: 'FAILED' }) }
+			};
+			await expect(
+				waitForGeminiFileActive(
+					genAI,
+					{ name: 'files/x', state: 'PROCESSING' },
+					{ intervalMs: 1, maxWaitMs: 1000 }
+				)
+			).rejects.toThrow(/failed/i);
+		});
+
+		it('throws a timeout error if it never becomes ACTIVE', async () => {
+			const genAI = {
+				files: { get: vi.fn().mockResolvedValue({ name: 'files/x', state: 'PROCESSING' }) }
+			};
+			await expect(
+				waitForGeminiFileActive(
+					genAI,
+					{ name: 'files/x', state: 'PROCESSING' },
+					{ intervalMs: 1, maxWaitMs: 5 }
+				)
+			).rejects.toThrow(/timed out/i);
+		});
 	});
 });
