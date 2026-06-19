@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { configureTransformersEnv } from './whisperService.js';
 
-describe('WhisperService environment configuration', () => {
-	it('self-hosts ONNX WASM and avoids threaded worker runtime loading', () => {
+describe('WhisperService environment configuration (v4)', () => {
+	it('enables remote models + browser cache and forces single-threaded WASM', () => {
 		const env = {
 			allowRemoteModels: false,
 			allowLocalModels: true,
@@ -10,7 +10,6 @@ describe('WhisperService environment configuration', () => {
 			backends: {
 				onnx: {
 					wasm: {
-						wasmPaths: 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/',
 						numThreads: 4,
 						proxy: true
 					},
@@ -21,21 +20,24 @@ describe('WhisperService environment configuration', () => {
 
 		configureTransformersEnv(env);
 
+		// v4 self-resolves its ONNX-runtime WASM from a versioned CDN; we no longer
+		// hand-wire a wasmPaths file map (the v4 ort .wasm filenames changed).
 		expect(env.allowRemoteModels).toBe(true);
 		expect(env.allowLocalModels).toBe(false);
 		expect(env.useBrowserCache).toBe(true);
-		expect(env.backends.onnx.wasm.wasmPaths).toMatchObject({
-			'ort-wasm-simd-threaded.wasm': expect.stringContaining('ort-wasm-simd-threaded'),
-			'ort-wasm-threaded.wasm': expect.stringContaining('ort-wasm-threaded'),
-			'ort-wasm-simd.wasm': expect.stringContaining('ort-wasm-simd'),
-			'ort-wasm.wasm': expect.stringContaining('ort-wasm')
-		});
-		for (const wasmPath of Object.values(env.backends.onnx.wasm.wasmPaths)) {
-			expect(wasmPath).not.toContain('cdn.jsdelivr.net');
-		}
+		// Single-threaded for cross-browser stability (esp. iOS Safari).
 		expect(env.backends.onnx.wasm.numThreads).toBe(1);
-		expect(env.backends.onnx.wasm.proxy).toBe(false);
-		expect(env.backends.onnx.wasm.simd).toBe(true);
+		// Self-hosted ort WASM base (matches v4's bundled onnxruntime, served at /onnx/).
+		expect(env.backends.onnx.wasm.wasmPaths).toBe('/onnx/');
+		// Other backends untouched.
 		expect(env.backends.onnx.webgpu).toEqual({});
+	});
+
+	it('is a no-op on a second call (module-level guard)', () => {
+		// configureTransformersEnv ran once above; a second call must not throw
+		// and must leave a fresh env object untouched (already-configured guard).
+		const env = { backends: { onnx: { wasm: { numThreads: 4 } } } };
+		expect(() => configureTransformersEnv(env)).not.toThrow();
+		expect(env.backends.onnx.wasm.numThreads).toBe(4);
 	});
 });

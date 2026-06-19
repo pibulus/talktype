@@ -70,7 +70,11 @@ export function _shouldFallbackToDeepgramForGeminiError(error) {
 		'credits are depleted',
 		'api key not found',
 		'api_key_invalid',
-		'missing gemini api key'
+		'missing gemini api key',
+		// Soft Gemini failures — degrade to Deepgram rather than failing the request.
+		'empty transcription',
+		'file processing timed out',
+		'file processing failed'
 	].some((signal) => message.includes(signal));
 }
 

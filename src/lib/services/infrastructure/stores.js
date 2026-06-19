@@ -81,14 +81,29 @@ function createUserPreferences() {
 	const initialSupporterStatus = browser
 		? forceSupporterMode || hasStoredSupporterToken()
 		: forceSupporterMode;
+	// Sticky: if a WebGPU model load failed before, stay on tiny+WASM across reloads.
+	const initialWebgpuDisabled = browser
+		? readStorageValue(STORAGE_KEYS.WEBGPU_DISABLED, { defaultValue: '' }) === 'true'
+		: false;
 
 	return writable({
 		isSupporter: initialSupporterStatus,
-		promptStyle: initialPromptStyle
+		promptStyle: initialPromptStyle,
+		webgpuDisabled: initialWebgpuDisabled
 	});
 }
 
 export const userPreferences = createUserPreferences();
+
+// Persistently mark this device as WebGPU-incapable for offline models (called
+// from the WebGPU→WASM fallback in whisperService). Survives reloads so we don't
+// re-attempt the expensive distil-small download every session.
+export function markWebgpuDisabled() {
+	userPreferences.update((current) => ({ ...current, webgpuDisabled: true }));
+	if (browser) {
+		writeStorageValue(STORAGE_KEYS.WEBGPU_DISABLED, 'true');
+	}
+}
 
 export function setSupporterStatus(isSupporter, token = null) {
 	const resolvedSupporterStatus = forceSupporterMode

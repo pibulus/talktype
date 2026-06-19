@@ -56,3 +56,8 @@ vite.config.ts.timestamp-*
 # Local AI tooling
 **/.claude/settings.local.json
 .claude/
+
+# ONNX-runtime WASM for offline Whisper — generated from node_modules by
+# scripts/sync-onnx-wasm.mjs (runs on `npm install` via prepare). Not committed
+# to avoid ~22MB binaries; always matches the installed @huggingface/transformers.
+/static/onnx/

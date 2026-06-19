@@ -61,6 +61,45 @@ export async function deleteUploadedGeminiFile(genAI, uploadedFileName) {
 	await genAI.files.delete({ name: uploadedFileName });
 }
 
+// After upload, a Gemini file is briefly in PROCESSING; calling generateContent
+// before it's ACTIVE can fail or return empty. Poll until ACTIVE (bounded), and
+// throw a fallback-eligible error if it never becomes usable.
+export async function waitForGeminiFileActive(
+	genAI,
+	uploadedFile,
+	{ maxWaitMs = 12000, intervalMs = 500 } = {}
+) {
+	if (!uploadedFile?.name) return uploadedFile;
+
+	let current = uploadedFile;
+	const deadline = Date.now() + maxWaitMs;
+
+	while (current?.state === 'PROCESSING') {
+		await new Promise((r) => setTimeout(r, intervalMs));
+		// Check the deadline AFTER the sleep so a hung files.get can't run past it.
+		if (Date.now() >= deadline) {
+			throw new Error('Gemini file processing timed out');
+		}
+		// Bound the individual poll call too — files.get can hang on a flaky network.
+		const remaining = Math.max(1000, deadline - Date.now());
+		current = await Promise.race([
+			genAI.files.get({ name: uploadedFile.name }),
+			new Promise((_, reject) =>
+				setTimeout(() => reject(new Error('Gemini file processing timed out')), remaining)
+			)
+		]);
+	}
+
+	// Require an explicitly ACTIVE file — FAILED, CANCELLED, STATE_UNSPECIFIED, or
+	// a missing state from a 5xx all become a fallback-eligible error rather than
+	// proceeding to generateContent with a file that isn't ready.
+	if (current?.state !== 'ACTIVE') {
+		throw new Error(`Gemini file processing failed (state: ${current?.state ?? 'unknown'})`);
+	}
+
+	return current;
+}
+
 export async function transcribeAudio(file, promptStyle, customPromptText = '') {
 	const apiKey = getGeminiApiKey();
 	if (!apiKey) {
@@ -89,10 +128,13 @@ export async function transcribeAudio(file, promptStyle, customPromptText = '') 
 
 		console.log(`[GeminiService] Uploaded audio to Gemini. Style: ${promptStyle}`);
 
+		// Wait for the file to finish processing before generating.
+		const activeFile = await waitForGeminiFileActive(genAI, uploadResult);
+
 		const result = await withRetry(() =>
 			genAI.models.generateContent(
 				buildGeminiTranscriptionRequest({
-					uploadedFile: uploadResult,
+					uploadedFile: activeFile,
 					mimeType,
 					prompt
 				})
@@ -108,6 +150,12 @@ export async function transcribeAudio(file, promptStyle, customPromptText = '') 
 				.map((part) => (part.text ? part.text.trim() : ''))
 				.filter(Boolean)
 				.join(' ');
+		}
+
+		// Empty Gemini output is a soft failure — throw a fallback-eligible error so
+		// the API route degrades to Deepgram instead of returning a blank transcript.
+		if (!transcription.trim()) {
+			throw new Error('Gemini returned an empty transcription');
 		}
 
 		console.log('[GeminiService] ✅ Transcription complete');

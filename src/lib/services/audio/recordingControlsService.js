@@ -202,6 +202,12 @@ export class RecordingControlsService {
 				transcriptionStore.disconnect();
 			}
 			let finalTranscript = getUsableLiveTranscriptText(liveResult);
+			// If the live connection dropped mid-recording (incomplete transcript),
+			// prefer the batch fallback on the full recorded blob so post-drop words
+			// aren't lost — even though we have a partial live transcript.
+			if (liveResult?.liveTranscriptIncomplete) {
+				finalTranscript = '';
+			}
 			let usedLiveTranscript = useLiveDeepgram && Boolean(finalTranscript);
 
 			if (!finalTranscript) {

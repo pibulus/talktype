@@ -17,6 +17,9 @@
 	export let buttonLabel = 'Say hi';
 	export let successMessages = ['Copied!'];
 	export let progress = 0; // For transcription progress
+	// One-shot offline-model feedback, e.g. { text: 'Offline ready', tone: 'ok' | 'error' }.
+	// A discreet pulse above the button; cleared by the parent. Never fights the timer fill.
+	export let offlineNotice = null;
 
 	// Element refs
 	let recordButtonElement;
@@ -44,6 +47,8 @@
 		dangerThreshold
 	});
 	$: showClipboardSuccess = clipboardSuccess && !recording;
+	// Show the offline notice only when idle (don't distract mid-record/transcribe).
+	$: showOfflineNotice = Boolean(offlineNotice?.text) && !recording && !transcribing;
 	$: showAmbientPulse = !recording && !showClipboardSuccess;
 	$: buttonStyle = `transform-origin: center center; position: relative; --progress: ${buttonState.progressPercentage.toFixed(2)}%; --progress-ratio: ${buttonState.progressRatio.toFixed(4)};`;
 
@@ -79,6 +84,15 @@
 {#if transcribing}
 	<TranscribingState {progress} />
 {:else}
+	{#if showOfflineNotice}
+		<div
+			class="offline-notice {offlineNotice.tone === 'error' ? 'is-error' : 'is-ok'}"
+			role="status"
+			aria-live="polite"
+		>
+			{offlineNotice.text}
+		</div>
+	{/if}
 	<button
 		bind:this={recordButtonElement}
 		class="record-button w-[90%] rounded-full sm:w-[85%] {showAmbientPulse
@@ -166,6 +180,54 @@
 {/if}
 
 <style>
+	/* Discreet one-shot offline-model notice — floats just above the button,
+	   pulses in, then the parent clears it. Pastel-punk, never blocks the timer. */
+	.offline-notice {
+		position: absolute;
+		left: 50%;
+		bottom: calc(100% + 8px);
+		transform: translateX(-50%);
+		z-index: 5;
+		white-space: nowrap;
+		border-radius: 9999px;
+		padding: 0.25rem 0.7rem;
+		font-size: 0.72rem;
+		font-weight: 900;
+		letter-spacing: 0;
+		box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+		pointer-events: none;
+		animation: offline-notice-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	.offline-notice.is-ok {
+		border: 1px solid rgba(45, 212, 191, 0.5);
+		background: rgba(240, 253, 250, 0.96);
+		color: #0f766e;
+	}
+
+	.offline-notice.is-error {
+		border: 1px solid rgba(251, 113, 133, 0.55);
+		background: rgba(255, 241, 242, 0.96);
+		color: #be123c;
+	}
+
+	@keyframes offline-notice-in {
+		from {
+			opacity: 0;
+			transform: translate(-50%, 6px) scale(0.96);
+		}
+		to {
+			opacity: 1;
+			transform: translate(-50%, 0) scale(1);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.offline-notice {
+			animation-duration: 100ms;
+		}
+	}
+
 	/* Base button styling */
 	.record-button {
 		position: relative;

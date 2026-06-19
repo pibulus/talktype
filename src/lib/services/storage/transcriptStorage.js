@@ -3,9 +3,10 @@
  * Premium feature: Save and manage transcript history
  */
 
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
-import { STORAGE_KEYS } from '$lib/constants';
+import { STORAGE_KEYS, HISTORY } from '$lib/constants';
+import { userPreferences } from '$lib/services/infrastructure/stores';
 import { createLogger } from '$lib/utils/logger';
 import {
 	cleanTranscriptTags,
@@ -157,6 +158,65 @@ function getTranscriptHistoryTimestamp(transcripts) {
  * @param {Object} transcript - Transcript data to save
  * @returns {Promise<number>} - ID of saved transcript
  */
+/**
+ * Free tier keeps only the most recent HISTORY.FREE_HISTORY_LIMIT transcripts;
+ * supporters keep unlimited. This trims OLDEST entries past the cap — it never
+ * blocks reading what's kept, and supporters are never trimmed. Best-effort:
+ * failures are logged, not thrown, so a trim hiccup can't break a save.
+ * Serialized via a single in-flight promise so concurrent saves can't double-trim.
+ */
+let trimInFlight = null;
+function trimHistoryToFreeLimit() {
+	if (trimInFlight) return trimInFlight;
+	trimInFlight = runTrimHistoryToFreeLimit().finally(() => {
+		trimInFlight = null;
+	});
+	return trimInFlight;
+}
+
+async function runTrimHistoryToFreeLimit() {
+	if (!browser) return;
+	if (get(userPreferences)?.isSupporter) return;
+
+	const limit = HISTORY.FREE_HISTORY_LIMIT;
+	try {
+		const database = await initDB();
+		const transaction = database.transaction([STORE_NAME], 'readwrite');
+		const store = transaction.objectStore(STORE_NAME);
+		const index = store.index('timestamp');
+
+		await new Promise((resolve, reject) => {
+			let kept = 0;
+			// Iterate newest-first; delete everything past the limit (the oldest).
+			const request = index.openCursor(null, 'prev');
+			request.onsuccess = (event) => {
+				const cursor = event.target.result;
+				if (!cursor) {
+					resolve();
+					return;
+				}
+				// Re-check supporter status on every step: if the user upgrades to
+				// supporter mid-trim (e.g. pays at the exact moment), stop deleting so
+				// we never trash data they just paid to keep.
+				if (get(userPreferences)?.isSupporter) {
+					resolve();
+					return;
+				}
+				kept += 1;
+				if (kept > limit) cursor.delete();
+				cursor.continue();
+			};
+			request.onerror = () => reject(request.error);
+			transaction.onerror = () => reject(transaction.error);
+			transaction.onabort = () => reject(transaction.error);
+		});
+
+		await loadAllTranscripts();
+	} catch (error) {
+		log.warn('History trim skipped:', error?.message || error);
+	}
+}
+
 export async function saveTranscript(transcript) {
 	try {
 		const database = await initDB();
@@ -192,6 +252,7 @@ export async function saveTranscript(transcript) {
 					markHistoryChangedAt();
 					updateStats();
 					await loadAllTranscripts();
+					await trimHistoryToFreeLimit();
 					resolve(savedId);
 				} catch (error) {
 					reject(error);
@@ -299,6 +360,9 @@ export async function importTranscriptHistory(transcripts, options = {}) {
 		}
 		updateStats();
 		await loadAllTranscripts();
+		// Enforce the free-tier cap on import too (a free user importing a large
+		// vault would otherwise exceed the limit silently). No-op for supporters.
+		await trimHistoryToFreeLimit();
 
 		return {
 			imported,

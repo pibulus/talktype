@@ -59,9 +59,7 @@ describe('passport skins', () => {
 	});
 
 	it('shuffle varies the palette across seeds (regression: was always Sunset)', () => {
-		const palettes = new Set(
-			Array.from({ length: 20 }, (_, i) => shuffleSkinSeed(i).palette.name)
-		);
+		const palettes = new Set(Array.from({ length: 20 }, (_, i) => shuffleSkinSeed(i).palette.name));
 		expect(palettes.size).toBeGreaterThan(3);
 	});
 

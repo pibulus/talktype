@@ -6,7 +6,7 @@
 import { writable, get, derived } from 'svelte/store';
 import { userPreferences } from '../../infrastructure/stores';
 import { browser } from '$app/environment';
-import { detectDeviceCapabilities } from '../deviceCapabilities';
+import { detectDeviceCapabilities, detectBestModel } from '../deviceCapabilities';
 import { createLogger } from '$lib/utils/logger';
 
 const log = createLogger('ModelRegistry');
@@ -16,7 +16,7 @@ const log = createLogger('ModelRegistry');
 const DEFAULT_MODELS = [
 	{
 		id: 'tiny',
-		transformers_id: 'Xenova/whisper-tiny.en', // Mobile fallback (iOS compatible)
+		transformers_id: 'onnx-community/whisper-tiny.en', // v4-native ONNX export (iOS-safe baseline)
 		name: 'Tiny English (117MB)',
 		description: 'Mobile-optimized, iOS compatible',
 		size: 117 * 1024 * 1024, // ~117MB INT8 quantized
@@ -26,21 +26,29 @@ const DEFAULT_MODELS = [
 		recommended_for: 'iOS Safari, low-memory devices',
 		speed_multiplier: 1.0,
 		accuracy_loss: '~20% vs distil-small',
-		mobile_safe: true
+		mobile_safe: true,
+		// The universal baseline runs on WASM + fp32 (most compatible; q8 trips a
+		// MatMulNBits scale error on this ort build).
+		device: 'wasm',
+		dtype: 'fp32'
 	},
 	{
 		id: 'small',
-		transformers_id: 'distil-whisper/distil-small.en', // RECOMMENDED for desktop
-		name: 'Distil-Small English (95MB)',
-		description: '5.6x faster, 4% quality vs best models',
-		size: 95 * 1024 * 1024, // ~95MB INT8 quantized
+		transformers_id: 'onnx-community/distil-small.en', // v4-native ONNX export (desktop quality upgrade)
+		name: 'Distil-Small English',
+		description: 'Better accuracy, WebGPU-accelerated on capable desktops',
+		size: 200 * 1024 * 1024, // ~200MB (fp16 encoder+decoder)
 		parameters: 166000000,
 		languages: ['en'],
 		version: '3.0.0',
-		recommended_for: 'Desktop (recommended), 3-5s for 30s audio',
+		recommended_for: 'Desktop with WebGPU',
 		speed_multiplier: 5.6,
 		accuracy_loss: '4% vs Whisper Large',
-		desktop_optimized: true
+		desktop_optimized: true,
+		// Desktop upgrade runs on WebGPU; fp16 halves memory vs fp32 with minimal
+		// quality loss and is the WebGPU sweet spot.
+		device: 'webgpu',
+		dtype: 'fp16'
 	},
 	{
 		id: 'medium',
@@ -76,9 +84,9 @@ const DEFAULT_MODELS = [
 
 // Transformers.js library information
 const TRANSFORMERS_INFO = {
-	package: '@xenova/transformers',
+	package: '@huggingface/transformers',
 	version: 'latest',
-	cdn_url: 'https://cdn.jsdelivr.net/npm/@xenova/transformers',
+	cdn_url: 'https://cdn.jsdelivr.net/npm/@huggingface/transformers',
 	documentation: 'https://huggingface.co/docs/transformers.js'
 };
 
@@ -150,7 +158,10 @@ export function getModelInfo(modelId = 'tiny') {
 		size: model.size,
 		name: model.name,
 		description: model.description,
-		recommendedFor: model.recommended_for
+		recommendedFor: model.recommended_for,
+		device: model.device || 'wasm',
+		dtype: model.dtype || 'fp32',
+		languages: model.languages || ['en']
 	};
 }
 
@@ -196,33 +207,31 @@ export function getTransformersInfo() {
 }
 
 /**
- * Auto-select the best model based on device capabilities
+ * Auto-select the best model for this device. Async because a true WebGPU check
+ * (requestAdapter) is async. Respects a manual user choice. Desktop + working
+ * WebGPU + ≥8GB upgrades to 'small'; everything else stays on 'tiny'.
+ * @returns {Promise<'tiny'|'small'>}
  */
-export function autoSelectModel() {
+export async function autoSelectModel() {
 	if (!browser) return 'tiny';
 
-	const device = detectDeviceCapabilities();
-	log.log('Device capabilities detected:', device);
-
-	// Check if user has manually selected a model
+	// Never override an explicit user choice.
 	const prefs = get(userPreferences);
 	if (prefs.modelManuallySelected) {
 		log.log('Using user-selected model:', prefs.whisperModel);
 		return prefs.whisperModel;
 	}
 
-	// Use device recommendation
-	const recommendedId = device.recommendedModel;
-	log.log(`Auto-selecting model: ${recommendedId} (${device.reason})`);
+	const { model, reason } = await detectBestModel();
+	log.log(`Auto-selecting model: ${model} (${reason})`);
 
-	// Update preferences with auto-selected model
 	userPreferences.update((p) => ({
 		...p,
-		whisperModel: recommendedId,
+		whisperModel: model,
 		modelAutoSelected: true
 	}));
 
-	return recommendedId;
+	return model;
 }
 
 /**

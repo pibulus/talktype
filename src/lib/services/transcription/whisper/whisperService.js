@@ -5,11 +5,7 @@
 
 import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
-import ortWasmSimdUrl from '@xenova/transformers/dist/ort-wasm-simd.wasm?url';
-import ortWasmSimdThreadedUrl from '@xenova/transformers/dist/ort-wasm-simd-threaded.wasm?url';
-import ortWasmThreadedUrl from '@xenova/transformers/dist/ort-wasm-threaded.wasm?url';
-import ortWasmUrl from '@xenova/transformers/dist/ort-wasm.wasm?url';
-import { userPreferences } from '../../infrastructure/stores';
+import { userPreferences, markWebgpuDisabled } from '../../infrastructure/stores';
 import { convertToWAV as convertToRawAudio } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
 import {
@@ -25,44 +21,31 @@ const SAMPLE_RATE = 16000;
 const WARMUP_SECONDS = 0.25; // short silent clip to JIT the WASM kernels
 const MODEL_LOAD_TIMEOUT_MS = 5 * 60 * 1000; // 5 minute timeout for model download+load
 const DEFAULT_MODEL_KEY = 'tiny';
-const ORT_WASM_PATHS = {
-	'ort-wasm-simd-threaded.wasm': ortWasmSimdThreadedUrl,
-	'ort-wasm-threaded.wasm': ortWasmThreadedUrl,
-	'ort-wasm-simd.wasm': ortWasmSimdUrl,
-	'ort-wasm.wasm': ortWasmUrl
-};
 
 let transformersModulePromise = null;
 let transformersEnvConfigured = false;
 
-function resolveAssetUrl(assetUrl) {
-	if (!browser || !globalThis.location) return assetUrl;
-	return new URL(assetUrl, globalThis.location.href).href;
-}
+// Self-host the EXACT ort .wasm/.mjs files that v4 bundles (copied from
+// node_modules/@huggingface/transformers/node_modules/onnxruntime-web/dist into
+// static/onnx, served at /onnx/). v4 bundles a dev build of onnxruntime-web
+// (1.26.0-dev.*) that isn't on any CDN, and its default loader fetches the WASM
+// glue via a dynamic blob import Vite can't serve ("no available backend found /
+// Failed to fetch ... blob:"). A real same-origin base URL bypasses that and
+// guarantees the version matches the bundled runtime. Also keeps Offline Mode
+// truly offline-capable (no CDN dependency).
+const ORT_WASM_BASE = '/onnx/';
 
 export function configureTransformersEnv(env) {
 	if (!env || transformersEnvConfigured) return;
 
-	// Configure transformers.js for maximum stability (WASM only)
 	env.allowRemoteModels = true;
 	env.allowLocalModels = false;
 	env.useBrowserCache = true;
 	env.backends = env.backends || {};
-	const onnxBackend = env.backends.onnx;
-	const wasmBackend = onnxBackend?.wasm;
-
+	const wasmBackend = env.backends.onnx?.wasm;
 	if (wasmBackend) {
-		// transformers.js defaults to a CDN path. Self-host the matching WASM
-		// binary for PWA reliability.
-		wasmBackend.wasmPaths = Object.fromEntries(
-			Object.entries(ORT_WASM_PATHS).map(([fileName, assetUrl]) => [
-				fileName,
-				resolveAssetUrl(assetUrl)
-			])
-		);
-		wasmBackend.numThreads = 1;
-		wasmBackend.proxy = false;
-		wasmBackend.simd = wasmBackend.simd === false ? false : true;
+		wasmBackend.wasmPaths = ORT_WASM_BASE; // real URL base, not the broken blob import
+		wasmBackend.numThreads = 1; // single-threaded WASM for cross-browser stability (esp. iOS)
 	}
 
 	transformersEnvConfigured = true;
@@ -74,7 +57,7 @@ async function loadTransformersPipeline() {
 	}
 
 	if (!transformersModulePromise) {
-		transformersModulePromise = import('@xenova/transformers')
+		transformersModulePromise = import('@huggingface/transformers')
 			.then((module) => {
 				configureTransformersEnv(module.env);
 				return module;
@@ -139,6 +122,7 @@ export class WhisperService {
 		this.modelFileProgress = new Map();
 		this.modelHasSeenLargeFile = false;
 		this.modelProgressInterval = null;
+		this.lastRealProgressAt = 0; // timestamp of last real download event (ticker defers to it)
 
 		this.updateStatus({ supportsWhisper: this.isSupported });
 		this.#refreshDeviceStorageState();
@@ -235,32 +219,47 @@ export class WhisperService {
 			const loadStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
 			const pipeline = await loadTransformersPipeline();
 
-			// Race model loading against a timeout to prevent infinite hangs
-			const loadPromise = pipeline('automatic-speech-recognition', modelConfig.id, {
-				device: 'wasm',
-				dtype: 'q8',
-				progress_callback: (progress) => {
-					this.#handleLoadProgress(progress, modelConfig);
+			// device/dtype come from the model config (set by device detection):
+			// tiny → wasm/fp32 (universal), small → webgpu/fp16 (capable desktops).
+			let device = modelConfig.device || 'wasm';
+			let dtype = modelConfig.dtype || 'fp32';
+
+			let transcriber;
+			try {
+				transcriber = await this.#loadPipeline(pipeline, modelConfig, device, dtype);
+			} catch (loadError) {
+				// One-time WebGPU → WASM fallback: a present-but-flaky GPU adapter can
+				// fail at session creation. Drop to the tiny+WASM baseline, persist it
+				// for this device, and retry once so Offline Mode never hard-fails.
+				if (device === 'webgpu') {
+					console.warn(
+						'[WhisperService] WebGPU model load failed — falling back to tiny + WASM:',
+						loadError?.message || loadError
+					);
+					device = 'wasm';
+					dtype = 'fp32';
+					const fallbackConfig = getModelInfo('tiny');
+					// Persist the downgrade so detectBestModel() won't re-attempt the
+					// expensive WebGPU distil-small download on the next session.
+					userPreferences.update((p) => ({ ...p, whisperModel: 'tiny' }));
+					markWebgpuDisabled();
+					this.updateStatus({
+						selectedModel: 'tiny',
+						selectedModelName: fallbackConfig.name,
+						selectedModelSize: fallbackConfig.size
+					});
+					transcriber = await this.#loadPipeline(pipeline, fallbackConfig, device, dtype);
+				} else {
+					throw loadError;
 				}
-			});
-
-			let loadTimeoutId;
-			const timeoutPromise = new Promise((_, reject) => {
-				loadTimeoutId = setTimeout(
-					() => reject(new Error('Model download timed out. Check your connection and try again.')),
-					MODEL_LOAD_TIMEOUT_MS
-				);
-			});
-
-			this.transcriber = await Promise.race([loadPromise, timeoutPromise]).finally(() => {
-				clearTimeout(loadTimeoutId);
-			});
+			}
+			this.transcriber = transcriber;
 
 			await this.#warmupTranscriber();
 
 			const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
 			const totalSecs = ((endTime - loadStart || 0) / 1000).toFixed(2);
-			console.log(`[WhisperService] Model ready in ${totalSecs}s (WASM, warmed).`);
+			console.log(`[WhisperService] Model ready in ${totalSecs}s (${device}, warmed).`);
 			this.#stopLoadProgressTicker();
 
 			this.updateStatus({
@@ -296,20 +295,52 @@ export class WhisperService {
 		}
 	}
 
+	// Load a pipeline for a given device/dtype, raced against a timeout to prevent
+	// infinite hangs. Returns the transcriber or throws.
+	async #loadPipeline(pipeline, modelConfig, device, dtype) {
+		const loadPromise = pipeline('automatic-speech-recognition', modelConfig.id, {
+			device,
+			dtype,
+			progress_callback: (progress) => this.#handleLoadProgress(progress, modelConfig)
+		});
+
+		let loadTimeoutId;
+		const timeoutPromise = new Promise((_, reject) => {
+			loadTimeoutId = setTimeout(
+				() => reject(new Error('Model download timed out. Check your connection and try again.')),
+				MODEL_LOAD_TIMEOUT_MS
+			);
+		});
+
+		return Promise.race([loadPromise, timeoutPromise]).finally(() => clearTimeout(loadTimeoutId));
+	}
+
 	#startLoadProgressTicker(modelConfig) {
 		this.#stopLoadProgressTicker();
 
+		// The ticker is a FALLBACK "still alive" creep, not the primary signal.
+		// Real byte progress (#handleLoadProgress) drives DOWNLOADING; the ticker
+		// only advances when no real progress event has arrived recently, so it
+		// can't fight real data or stall hard at a ceiling. This kills the old
+		// "creep to 82%, stop, then jump to 100" feel.
+		const REAL_PROGRESS_IDLE_MS = 1500;
 		this.modelProgressInterval = setInterval(() => {
 			const status = get(whisperStatus);
 			if (!status.isLoading) return;
+
+			// Defer to real byte progress while it's actively updating.
+			const sinceReal = Date.now() - (this.lastRealProgressAt || 0);
+			if (status.phase === WHISPER_PHASES.DOWNLOADING && sinceReal < REAL_PROGRESS_IDLE_MS) {
+				return;
+			}
 
 			const phase = status.phase;
 			const phaseConfig =
 				{
 					[WHISPER_PHASES.LOADING_LIBRARY]: { ceiling: 12, step: 1 },
-					[WHISPER_PHASES.DOWNLOADING]: { ceiling: 82, step: 1.2 },
-					[WHISPER_PHASES.PREPARING]: { ceiling: 92, step: 0.8 },
-					[WHISPER_PHASES.WARMING]: { ceiling: 97, step: 0.5 }
+					[WHISPER_PHASES.DOWNLOADING]: { ceiling: 90, step: 0.6 },
+					[WHISPER_PHASES.PREPARING]: { ceiling: 95, step: 0.8 },
+					[WHISPER_PHASES.WARMING]: { ceiling: 98, step: 0.5 }
 				}[phase] || null;
 
 			if (!phaseConfig || status.progress >= phaseConfig.ceiling) return;
@@ -326,7 +357,7 @@ export class WhisperService {
 					modelName: modelConfig?.name
 				})
 			});
-		}, 900);
+		}, 700);
 	}
 
 	#stopLoadProgressTicker() {
@@ -337,6 +368,9 @@ export class WhisperService {
 
 	#handleLoadProgress(progressEvent, modelConfig) {
 		const status = progressEvent?.status;
+		// Mark that real download telemetry is flowing, so the fallback ticker
+		// defers to it (see #startLoadProgressTicker).
+		this.lastRealProgressAt = Date.now();
 		const currentStatus = get(whisperStatus);
 		let nextProgress = clampPercent(currentStatus.progress);
 		let phase = currentStatus.phase;
@@ -439,8 +473,9 @@ export class WhisperService {
 		try {
 			const warmupSamples = Math.max(1, Math.floor(SAMPLE_RATE * WARMUP_SECONDS));
 			const silence = new Float32Array(warmupSamples); // zeroed buffer
+			// NB: no `task`/`language` here — v4 rejects them for English-only (.en)
+			// models. WS6 will re-add task for multilingual models.
 			await this.transcriber(silence, {
-				task: 'transcribe',
 				return_timestamps: false,
 				temperature: 0,
 				do_sample: false
@@ -505,8 +540,9 @@ export class WhisperService {
 			statusText: getLoadStatusText({ phase: WHISPER_PHASES.TRANSCRIBING })
 		});
 
+		// No `task`/`language`: v4 rejects them for English-only (.en) models.
+		// WS6 re-adds task: 'transcribe' for multilingual models.
 		const options = {
-			task: 'transcribe',
 			return_timestamps: false,
 			temperature: 0,
 			do_sample: false
@@ -698,3 +734,14 @@ export class WhisperService {
 }
 
 export const whisperService = new WhisperService();
+
+// Dev-only test seam: lets Playwright drive the real model-load + transcribe path
+// without the fake-mic rig. Stripped from production builds (import.meta.env.DEV).
+if (browser && import.meta.env.DEV) {
+	globalThis.__ttWhisper = {
+		service: whisperService,
+		status: whisperStatus,
+		// Accepts a Float32Array (16kHz mono) or Blob, returns the transcript text.
+		transcribe: (audio) => whisperService.transcribeAudio(audio)
+	};
+}

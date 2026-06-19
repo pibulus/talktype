@@ -33,6 +33,8 @@ export const STORAGE_KEYS = {
 	HISTORY_CHANGED_AT: `${APP_STORAGE_PREFIX}:history_changed_at`,
 	PRIVACY_MODE: 'talktype_privacy_mode', // Offline Whisper mode
 	LIVE_MODE: 'talktype_live_mode',
+	WEBGPU_DISABLED: 'talktype_webgpu_disabled', // sticky: WebGPU model load failed on this device
+
 	TEXT_TIMING_DEFAULT_MIGRATED: `${APP_STORAGE_PREFIX}:text_timing_default_after_stop_v1`,
 	LAST_TRANSCRIPTION_METHOD: 'last_transcription_method', // Track which service was used
 
@@ -85,6 +87,14 @@ export const APP_CONFIG = {
 	VERSION: '0.1.1',
 	DESCRIPTION: 'Fast voice-to-text with offline mode, live transcription, and saved history',
 	AUTHORS: 'Pablo Alvarado'
+};
+
+// Transcript history access model:
+// Every finished transcript (offline or cloud) is ALWAYS saved locally and is
+// always readable — the user's own words are never held hostage. Free tier keeps
+// the most recent FREE_HISTORY_LIMIT; supporters get unlimited + encrypted vault.
+export const HISTORY = {
+	FREE_HISTORY_LIMIT: 15
 };
 
 // Animation Timing (in ms)
