@@ -38,7 +38,21 @@ else
   REMOTE_BUILD_DIR="${STAGING_DIR}/${BUILD_TARGET}"
 fi
 
+# Ensure the offline-Whisper ONNX WASM is present BEFORE building. These ~22MB
+# files live in static/onnx/ (gitignored, synced from node_modules); they're
+# populated by the `prepare` hook on `npm install`, but a bare `npm run build`
+# does NOT re-run it — so sync explicitly here or the build silently omits them
+# and offline Whisper 404s on the Pi.
+npm run sync:onnx
+
 npm run build
+
+# Fail fast if the build didn't include the offline WASM (prevents shipping a
+# broken Offline Mode).
+if [[ -z "$(find build -path '*onnx*' -name '*.wasm' -print -quit 2>/dev/null)" ]]; then
+  printf 'ERROR: build/ has no onnx/*.wasm — offline Whisper would 404. Run `npm run sync:onnx` and rebuild.\n' >&2
+  exit 1
+fi
 
 remote_bash "$STAGING_DIR" "$BACKUP_DIR" "$REMOTE_BUILD_DIR" <<'REMOTE'
 set -euo pipefail
@@ -223,6 +237,15 @@ done
 
 if [[ "$live_ok" != "1" ]]; then
   printf 'live smoke test failed: %s\n' "$live_url" >&2
+  exit 1
+fi
+
+# Verify the offline-Whisper WASM is actually served (the node adapter reads its
+# static set at boot, so a missing/late onnx file 404s here). Failing this trips
+# the rollback trap rather than silently shipping a broken Offline Mode.
+onnx_url="${live_url%/}/onnx/ort-wasm-simd-threaded.asyncify.wasm"
+if ! curl -fsS --max-time 8 -o /dev/null "$onnx_url"; then
+  printf 'offline WASM smoke test failed (404?): %s\n' "$onnx_url" >&2
   exit 1
 fi
 
