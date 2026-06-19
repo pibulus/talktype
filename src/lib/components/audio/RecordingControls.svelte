@@ -19,6 +19,7 @@
 		uiActions
 	} from '$lib/services';
 	import { CTA_PHRASES, ANIMATION, COPY_MESSAGES } from '$lib/constants';
+	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 
 	// Props
 	export let ghostComponent = null;
@@ -31,6 +32,29 @@
 
 	// Reactive button label computation
 	$: buttonLabel = $isRecording ? 'All done' : currentCta;
+
+	// One-shot offline-model notice above the record button. Fires a discreet
+	// pulse when the offline model finishes loading or fails — then auto-clears.
+	let offlineNotice = null;
+	let offlineNoticeTimer = null;
+	let wasWhisperLoading = false;
+	function flashOfflineNotice(text, tone) {
+		offlineNotice = { text, tone };
+		clearTimeout(offlineNoticeTimer);
+		offlineNoticeTimer = setTimeout(() => {
+			offlineNotice = null;
+		}, 2800);
+	}
+	$: {
+		const s = $whisperStatus;
+		// Detect the loading → done/error edge (only when a load was actually running).
+		if (wasWhisperLoading && !s.isLoading) {
+			if (s.error) flashOfflineNotice('Offline download failed — tap to retry', 'error');
+			else if (s.isLoaded) flashOfflineNotice('Offline ready', 'ok');
+		}
+		wasWhisperLoading = s.isLoading;
+	}
+	onDestroy(() => clearTimeout(offlineNoticeTimer));
 
 	onMount(() => {
 		// Initialize services
@@ -115,6 +139,7 @@
 				warningThreshold={ANIMATION.RECORDING.WARNING_THRESHOLD}
 				dangerThreshold={ANIMATION.RECORDING.DANGER_THRESHOLD}
 				successMessages={COPY_MESSAGES}
+				{offlineNotice}
 				{buttonLabel}
 				on:click={handleRecordingToggle}
 			/>

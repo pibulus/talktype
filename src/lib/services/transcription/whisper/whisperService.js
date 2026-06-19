@@ -122,6 +122,7 @@ export class WhisperService {
 		this.modelFileProgress = new Map();
 		this.modelHasSeenLargeFile = false;
 		this.modelProgressInterval = null;
+		this.lastRealProgressAt = 0; // timestamp of last real download event (ticker defers to it)
 
 		this.updateStatus({ supportsWhisper: this.isSupported });
 		this.#refreshDeviceStorageState();
@@ -318,17 +319,29 @@ export class WhisperService {
 	#startLoadProgressTicker(modelConfig) {
 		this.#stopLoadProgressTicker();
 
+		// The ticker is a FALLBACK "still alive" creep, not the primary signal.
+		// Real byte progress (#handleLoadProgress) drives DOWNLOADING; the ticker
+		// only advances when no real progress event has arrived recently, so it
+		// can't fight real data or stall hard at a ceiling. This kills the old
+		// "creep to 82%, stop, then jump to 100" feel.
+		const REAL_PROGRESS_IDLE_MS = 1500;
 		this.modelProgressInterval = setInterval(() => {
 			const status = get(whisperStatus);
 			if (!status.isLoading) return;
+
+			// Defer to real byte progress while it's actively updating.
+			const sinceReal = Date.now() - (this.lastRealProgressAt || 0);
+			if (status.phase === WHISPER_PHASES.DOWNLOADING && sinceReal < REAL_PROGRESS_IDLE_MS) {
+				return;
+			}
 
 			const phase = status.phase;
 			const phaseConfig =
 				{
 					[WHISPER_PHASES.LOADING_LIBRARY]: { ceiling: 12, step: 1 },
-					[WHISPER_PHASES.DOWNLOADING]: { ceiling: 82, step: 1.2 },
-					[WHISPER_PHASES.PREPARING]: { ceiling: 92, step: 0.8 },
-					[WHISPER_PHASES.WARMING]: { ceiling: 97, step: 0.5 }
+					[WHISPER_PHASES.DOWNLOADING]: { ceiling: 90, step: 0.6 },
+					[WHISPER_PHASES.PREPARING]: { ceiling: 95, step: 0.8 },
+					[WHISPER_PHASES.WARMING]: { ceiling: 98, step: 0.5 }
 				}[phase] || null;
 
 			if (!phaseConfig || status.progress >= phaseConfig.ceiling) return;
@@ -345,7 +358,7 @@ export class WhisperService {
 					modelName: modelConfig?.name
 				})
 			});
-		}, 900);
+		}, 700);
 	}
 
 	#stopLoadProgressTicker() {
@@ -356,6 +369,9 @@ export class WhisperService {
 
 	#handleLoadProgress(progressEvent, modelConfig) {
 		const status = progressEvent?.status;
+		// Mark that real download telemetry is flowing, so the fallback ticker
+		// defers to it (see #startLoadProgressTicker).
+		this.lastRealProgressAt = Date.now();
 		const currentStatus = get(whisperStatus);
 		let nextProgress = clampPercent(currentStatus.progress);
 		let phase = currentStatus.phase;
