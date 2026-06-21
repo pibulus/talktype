@@ -27,8 +27,12 @@ describe('WhisperService environment configuration (v4)', () => {
 		expect(env.useBrowserCache).toBe(true);
 		// Single-threaded for cross-browser stability (esp. iOS Safari).
 		expect(env.backends.onnx.wasm.numThreads).toBe(1);
-		// Self-hosted ort WASM base (matches v4's bundled onnxruntime, served at /onnx/).
-		expect(env.backends.onnx.wasm.wasmPaths).toBe('/onnx/');
+		// Self-hosted ort WASM (object with .wasm/.mjs keys is required by
+		// transformers.js 4.x ensureWasmLoaded; a string base path skips the WASM cache).
+		expect(env.backends.onnx.wasm.wasmPaths).toEqual({
+			wasm: '/onnx/ort-wasm-simd-threaded.asyncify.wasm',
+			mjs: '/onnx/ort-wasm-simd-threaded.asyncify.mjs'
+		});
 		// Other backends untouched.
 		expect(env.backends.onnx.webgpu).toEqual({});
 	});

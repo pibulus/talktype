@@ -53,8 +53,7 @@
 		"@google/genai": "1.52.0",
 		"@huggingface/transformers": "4.2.0",
 		"@netlify/blobs": "10.7.7",
-		"daisyui": "^4.12.23",
-		"onnxruntime-web": "1.14.0"
+		"daisyui": "^4.12.23"
 	},
 	"overrides": {
 		"cookie": "0.7.2",

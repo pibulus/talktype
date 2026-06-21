@@ -44,7 +44,14 @@ export function configureTransformersEnv(env) {
 	env.backends = env.backends || {};
 	const wasmBackend = env.backends.onnx?.wasm;
 	if (wasmBackend) {
-		wasmBackend.wasmPaths = ORT_WASM_BASE; // real URL base, not the broken blob import
+		// transformers.js 4.x expects wasmPaths as an object with .wasm and .mjs keys,
+		// NOT a string base path. A string bypasses the WASM cache (ensureWasmLoaded)
+		// and breaks the static/onnx/ self-hosting. asyncify is the safest cross-browser
+		// variant (Safari requires it; Chrome/Firefox handle it well).
+		wasmBackend.wasmPaths = {
+			wasm: ORT_WASM_BASE + 'ort-wasm-simd-threaded.asyncify.wasm',
+			mjs: ORT_WASM_BASE + 'ort-wasm-simd-threaded.asyncify.mjs'
+		};
 		wasmBackend.numThreads = 1; // single-threaded WASM for cross-browser stability (esp. iOS)
 	}
 
@@ -122,7 +129,8 @@ export class WhisperService {
 		this.modelFileProgress = new Map();
 		this.modelHasSeenLargeFile = false;
 		this.modelProgressInterval = null;
-		this.lastRealProgressAt = 0; // timestamp of last real download event (ticker defers to it)
+		this.lastRealProgressAt = 0;
+		this.peakAggregateProgress = 0;
 
 		this.updateStatus({ supportsWhisper: this.isSupported });
 		this.#refreshDeviceStorageState();
@@ -171,7 +179,7 @@ export class WhisperService {
 		this.updateStatus({
 			isLoading: true,
 			isTranscribing: false,
-			progress: 2,
+			progress: 0,
 			error: null,
 			phase: WHISPER_PHASES.LOADING_LIBRARY,
 			statusText: getLoadStatusText({ phase: WHISPER_PHASES.LOADING_LIBRARY })
@@ -198,6 +206,7 @@ export class WhisperService {
 
 			this.modelFileProgress = new Map();
 			this.modelHasSeenLargeFile = false;
+			this.peakAggregateProgress = 0;
 			this.updateStatus({
 				selectedModel: modelKey,
 				selectedModelName: modelConfig.name,
@@ -205,7 +214,7 @@ export class WhisperService {
 				isLoaded: false,
 				isLoading: true,
 				isTranscribing: false,
-				progress: 5,
+				progress: 1,
 				error: null,
 				phase: WHISPER_PHASES.LOADING_LIBRARY,
 				statusText: getLoadStatusText({
@@ -213,7 +222,7 @@ export class WhisperService {
 					modelName: modelConfig.name
 				})
 			});
-			console.log(`[WhisperService] Loading ${modelConfig.name} (WASM only)…`);
+			console.log(`[WhisperService] Loading ${modelConfig.name} (${device} / ${dtype})…`);
 			this.#startLoadProgressTicker(modelConfig);
 
 			const loadStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -228,27 +237,30 @@ export class WhisperService {
 			try {
 				transcriber = await this.#loadPipeline(pipeline, modelConfig, device, dtype);
 			} catch (loadError) {
-				// One-time WebGPU → WASM fallback: a present-but-flaky GPU adapter can
-				// fail at session creation. Drop to the tiny+WASM baseline, persist it
-				// for this device, and retry once so Offline Mode never hard-fails.
-				if (device === 'webgpu') {
-					console.warn(
-						'[WhisperService] WebGPU model load failed — falling back to tiny + WASM:',
-						loadError?.message || loadError
-					);
-					device = 'wasm';
-					dtype = 'fp32';
-					const fallbackConfig = getModelInfo('tiny');
-					// Persist the downgrade so detectBestModel() won't re-attempt the
-					// expensive WebGPU distil-small download on the next session.
-					userPreferences.update((p) => ({ ...p, whisperModel: 'tiny' }));
-					markWebgpuDisabled();
-					this.updateStatus({
-						selectedModel: 'tiny',
-						selectedModelName: fallbackConfig.name,
-						selectedModelSize: fallbackConfig.size
-					});
-					transcriber = await this.#loadPipeline(pipeline, fallbackConfig, device, dtype);
+			// One-time WebGPU → WASM fallback: a present-but-flaky GPU adapter can
+			// fail at session creation. Drop to the tiny+WASM baseline, persist it
+			// for this device, and retry once so Offline Mode never hard-fails.
+			if (device === 'webgpu') {
+				console.warn(
+					'[WhisperService] WebGPU model load failed — falling back to tiny + WASM:',
+					loadError?.message || loadError
+				);
+				const fallbackConfig = getModelInfo('tiny');
+				// Use the fallback model's native device+dtype (currently wasm+q8)
+				// rather than hardcoding fp32, so the fallback benefits from the
+				// model config's compatibility choices.
+				const fallbackDevice = fallbackConfig.device || 'wasm';
+				const fallbackDtype = fallbackConfig.dtype || 'fp32';
+				// Persist the downgrade so detectBestModel() won't re-attempt the
+				// expensive WebGPU distil-small download on the next session.
+				userPreferences.update((p) => ({ ...p, whisperModel: 'tiny' }));
+				markWebgpuDisabled();
+				this.updateStatus({
+					selectedModel: 'tiny',
+					selectedModelName: fallbackConfig.name,
+					selectedModelSize: fallbackConfig.size
+				});
+				transcriber = await this.#loadPipeline(pipeline, fallbackConfig, fallbackDevice, fallbackDtype);
 				} else {
 					throw loadError;
 				}
@@ -318,46 +330,57 @@ export class WhisperService {
 	#startLoadProgressTicker(modelConfig) {
 		this.#stopLoadProgressTicker();
 
-		// The ticker is a FALLBACK "still alive" creep, not the primary signal.
-		// Real byte progress (#handleLoadProgress) drives DOWNLOADING; the ticker
-		// only advances when no real progress event has arrived recently, so it
-		// can't fight real data or stall hard at a ceiling. This kills the old
-		// "creep to 82%, stop, then jump to 100" feel.
-		const REAL_PROGRESS_IDLE_MS = 1500;
+		// Phase ranges: LOADING_LIBRARY 0→3, DOWNLOADING 3→92, PREPARING 92→96, WARMING 96→99.
+		// The ticker is a fallback "still alive" creep — real byte progress (#handleLoadProgress)
+		// is the primary driver during DOWNLOADING. The ticker only advances when no real
+		// progress event has arrived recently (2 s idle window), so it can't fight real data.
+		// Targets replace the old ceiling-based stalls.
+		const TICK_MS = 600;
+		const REAL_IDLE_MS = 2000;
+		const TARGETS = {
+			[WHISPER_PHASES.LOADING_LIBRARY]: 3,
+			[WHISPER_PHASES.DOWNLOADING]: 92,
+			[WHISPER_PHASES.PREPARING]: 96,
+			[WHISPER_PHASES.WARMING]: 99
+		};
+		// Creep speed per tick — faster for short non-download phases, slow for downloading
+		// (real data should drive it; ticker is just insurance against stalls).
+		const STEPS = {
+			[WHISPER_PHASES.LOADING_LIBRARY]: 0.5,
+			[WHISPER_PHASES.DOWNLOADING]: 0.3,
+			[WHISPER_PHASES.PREPARING]: 0.8,
+			[WHISPER_PHASES.WARMING]: 0.5
+		};
+
 		this.modelProgressInterval = setInterval(() => {
 			const status = get(whisperStatus);
 			if (!status.isLoading) return;
 
-			// Defer to real byte progress while it's actively updating.
+			// Defer to real progress while it's actively flowing.
 			const sinceReal = Date.now() - (this.lastRealProgressAt || 0);
-			if (status.phase === WHISPER_PHASES.DOWNLOADING && sinceReal < REAL_PROGRESS_IDLE_MS) {
+			if (status.phase === WHISPER_PHASES.DOWNLOADING && sinceReal < REAL_IDLE_MS) {
 				return;
 			}
 
-			const phase = status.phase;
-			const phaseConfig =
-				{
-					[WHISPER_PHASES.LOADING_LIBRARY]: { ceiling: 12, step: 1 },
-					[WHISPER_PHASES.DOWNLOADING]: { ceiling: 90, step: 0.6 },
-					[WHISPER_PHASES.PREPARING]: { ceiling: 95, step: 0.8 },
-					[WHISPER_PHASES.WARMING]: { ceiling: 98, step: 0.5 }
-				}[phase] || null;
+			const target = TARGETS[status.phase];
+			if (target == null) return;
+			if (status.progress >= target) return;
 
-			if (!phaseConfig || status.progress >= phaseConfig.ceiling) return;
+			const step = STEPS[status.phase] || 0.3;
+			const nextProgress = Math.min(target, Number(status.progress || 0) + step);
+			// Single-decimal resolution so the CSS transition (380 ms ease) always has
+			// a small delta to animate smoothly.
+			const smoothProgress = Math.round(nextProgress * 10) / 10;
 
-			const progress = Math.min(
-				phaseConfig.ceiling,
-				Number(status.progress || 0) + phaseConfig.step
-			);
 			this.updateStatus({
-				progress,
+				progress: smoothProgress,
 				statusText: getLoadStatusText({
-					phase,
-					progress,
+					phase: status.phase,
+					progress: smoothProgress,
 					modelName: modelConfig?.name
 				})
 			});
-		}, 700);
+		}, TICK_MS);
 	}
 
 	#stopLoadProgressTicker() {
@@ -368,41 +391,50 @@ export class WhisperService {
 
 	#handleLoadProgress(progressEvent, modelConfig) {
 		const status = progressEvent?.status;
-		// Mark that real download telemetry is flowing, so the fallback ticker
-		// defers to it (see #startLoadProgressTicker).
 		this.lastRealProgressAt = Date.now();
+		this.#recordFileProgress(progressEvent);
+
 		const currentStatus = get(whisperStatus);
-		let nextProgress = clampPercent(currentStatus.progress);
+		let nextProgress = currentStatus.progress;
 		let phase = currentStatus.phase;
 
-		if (status === 'initiate') {
-			this.#recordFileProgress(progressEvent);
-			phase = WHISPER_PHASES.DOWNLOADING;
-			nextProgress = Math.max(nextProgress, this.modelHasSeenLargeFile ? 12 : 8);
-		} else if (status === 'download' || status === 'downloading') {
-			this.#recordFileProgress(progressEvent);
-			phase = WHISPER_PHASES.DOWNLOADING;
-			nextProgress = Math.max(nextProgress, this.modelHasSeenLargeFile ? 16 : 10);
-		} else if (status === 'progress') {
-			this.#recordFileProgress(progressEvent);
-			phase = WHISPER_PHASES.DOWNLOADING;
-			nextProgress = Math.max(nextProgress, this.#getAggregateDownloadProgress());
-		} else if (status === 'done') {
-			this.#recordFileProgress(progressEvent);
-			phase = WHISPER_PHASES.PREPARING;
-			nextProgress = Math.max(nextProgress, this.modelHasSeenLargeFile ? 88 : 24);
-		} else if (status === 'ready') {
+		if (status === 'ready') {
 			phase = WHISPER_PHASES.WARMING;
 			nextProgress = Math.max(nextProgress, 96);
+		} else if (status === 'done') {
+			// A file finished — check if ALL known files are complete.
+			const allDone = this.#allFilesComplete();
+			const bytePct = this.#getAggregateDownloadProgress();
+			if (allDone || bytePct >= 100) {
+				phase = WHISPER_PHASES.PREPARING;
+				nextProgress = Math.max(nextProgress, 92);
+			} else {
+				// Still downloading other files — stay in DOWNLOADING.
+				phase = WHISPER_PHASES.DOWNLOADING;
+				const mappedProgress = 3 + (bytePct / 100) * 89; // 3–92 range
+				nextProgress = Math.max(nextProgress, Math.round(mappedProgress));
+			}
+		} else if (status === 'initiate' || status === 'download' || status === 'downloading' || status === 'progress') {
+			// Active download — map aggregate byte progress (0–100%) linearly into the
+			// download phase range (3–92%). No per-status floors or ceilings.
+			phase = WHISPER_PHASES.DOWNLOADING;
+			const bytePct = this.#getAggregateDownloadProgress();
+			const mappedProgress = 3 + (bytePct / 100) * 89;
+			nextProgress = Math.max(nextProgress, Math.round(mappedProgress));
+		}
+		// else: unknown status — don't change phase or progress.
+
+		// Never go backward — new-file initiates can briefly lower aggregate.
+		if (nextProgress < currentStatus.progress) {
+			nextProgress = currentStatus.progress;
 		}
 
-		const safeProgress = Math.min(nextProgress, 98);
 		this.updateStatus({
-			progress: safeProgress,
+			progress: nextProgress,
 			phase,
 			statusText: getLoadStatusText({
 				phase,
-				progress: safeProgress,
+				progress: nextProgress,
 				modelName: modelConfig?.name
 			})
 		});
@@ -456,13 +488,27 @@ export class WhisperService {
 		}
 
 		if (totalBytes <= 0) {
-			return this.modelHasSeenLargeFile ? 16 : 8;
+			return this.peakAggregateProgress > 0 ? this.peakAggregateProgress : 0;
 		}
 
 		const rawPercent = clampPercent((loadedBytes / totalBytes) * 100);
-		const floor = this.modelHasSeenLargeFile ? 16 : 8;
-		const ceiling = this.modelHasSeenLargeFile ? 88 : 28;
-		return Math.round(floor + ((ceiling - floor) * rawPercent) / 100);
+
+		// Monotonic guard: when a new file starts downloading the total bytes increase,
+		// which can temporarily lower the percentage. Track the peak and never report
+		// a lower value — the bar only moves forward.
+		if (rawPercent > this.peakAggregateProgress) {
+			this.peakAggregateProgress = rawPercent;
+		}
+
+		return this.peakAggregateProgress;
+	}
+
+	#allFilesComplete() {
+		if (this.modelFileProgress.size === 0) return false;
+		for (const fp of this.modelFileProgress.values()) {
+			if (!fp.done) return false;
+		}
+		return true;
 	}
 
 	async #warmupTranscriber() {
@@ -596,6 +642,7 @@ export class WhisperService {
 		this.transcriber = null;
 		this.modelLoadPromise = null;
 		this.hasWarmedUp = false;
+		this.peakAggregateProgress = 0;
 		this.updateStatus({
 			isLoaded: false,
 			isLoading: false,

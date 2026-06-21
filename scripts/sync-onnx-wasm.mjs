@@ -25,13 +25,19 @@ const ORT_DIST_CANDIDATES = [
 	join(ROOT, 'node_modules/onnxruntime-web/dist')
 ];
 
-// asyncify pair → the WASM device (tiny baseline, all devices).
+// asyncify pair → the WASM device (tiny baseline, all devices, WS6).
 // jsep pair → the WebGPU device (distil-small on capable desktops, WS6).
+// regular+jspi pairs → needed by onnxruntime-web's internal WASM loader
+// for non-Safari browsers and JSPI-capable runtimes respectively.
 const FILES = [
+	'ort-wasm-simd-threaded.wasm',
+	'ort-wasm-simd-threaded.mjs',
 	'ort-wasm-simd-threaded.asyncify.wasm',
 	'ort-wasm-simd-threaded.asyncify.mjs',
 	'ort-wasm-simd-threaded.jsep.wasm',
-	'ort-wasm-simd-threaded.jsep.mjs'
+	'ort-wasm-simd-threaded.jsep.mjs',
+	'ort-wasm-simd-threaded.jspi.wasm',
+	'ort-wasm-simd-threaded.jspi.mjs'
 ];
 
 const srcDir = ORT_DIST_CANDIDATES.find((d) => existsSync(d));

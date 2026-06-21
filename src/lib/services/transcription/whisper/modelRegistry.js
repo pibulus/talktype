@@ -16,7 +16,7 @@ const log = createLogger('ModelRegistry');
 const DEFAULT_MODELS = [
 	{
 		id: 'tiny',
-		transformers_id: 'onnx-community/whisper-tiny.en', // v4-native ONNX export (iOS-safe baseline)
+		transformers_id: 'Xenova/whisper-tiny.en', // v4-native ONNX export, updated Dec 2025
 		name: 'Tiny English (117MB)',
 		description: 'Mobile-optimized, iOS compatible',
 		size: 117 * 1024 * 1024, // ~117MB INT8 quantized
@@ -27,10 +27,10 @@ const DEFAULT_MODELS = [
 		speed_multiplier: 1.0,
 		accuracy_loss: '~20% vs distil-small',
 		mobile_safe: true,
-		// The universal baseline runs on WASM + fp32 (most compatible; q8 trips a
-		// MatMulNBits scale error on this ort build).
+		// WASM + q8 (int8 quantized) — the transformers.js default for WASM,
+		// uses _quantized.onnx files which have the broadest ort compatibility.
 		device: 'wasm',
-		dtype: 'fp32'
+		dtype: 'q8'
 	},
 	{
 		id: 'small',
@@ -45,10 +45,12 @@ const DEFAULT_MODELS = [
 		speed_multiplier: 5.6,
 		accuracy_loss: '4% vs Whisper Large',
 		desktop_optimized: true,
-		// Desktop upgrade runs on WebGPU; fp16 halves memory vs fp32 with minimal
-		// quality loss and is the WebGPU sweet spot.
+		// Desktop upgrade runs on WebGPU. Using fp32 instead of fp16 because
+		// the fp16 ONNX export from onnx-community triggers a graph validation
+		// error ("Subgraph output (logits) is an outer scope value being returned
+		// directly") with onnxruntime-web 1.26.0-dev bundled in transformers.js 4.x.
 		device: 'webgpu',
-		dtype: 'fp16'
+		dtype: 'fp32'
 	},
 	{
 		id: 'medium',
