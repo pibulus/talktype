@@ -75,17 +75,15 @@ rsync -az --delete \
 
 rsync -az -e "$rsync_rsh" package.json package-lock.json "$REMOTE:$STAGING_DIR/"
 
-remote_bash "$APP_DIR" "$STAGING_DIR" <<'REMOTE'
+# ── KEYSTONE: do NOT carry .env into the deploy. ────────────────────────────
+# Secrets/config live in /etc/talktype.env (systemd EnvironmentFile, root-owned,
+# deploy-independent — managed by ~/.claude/scripts/fleet/keys-sync). Copying an
+# app-dir .env forward here is what re-poisoned the key on every deploy. Keep the
+# app dir .env-free. To change a key: edit ~/.config/fleet/keys.env → keys-sync talktype.
+remote_bash "$APP_DIR" <<'REMOTE'
 set -euo pipefail
-
 app_dir="$1"
-staging_dir="$2"
-
-if [[ -d "$app_dir" ]]; then
-  while IFS= read -r env_file; do
-    cp -p "$env_file" "$staging_dir/"
-  done < <(find "$app_dir" -maxdepth 1 -type f \( -name ".env" -o -name ".env.*" \) -print)
-fi
+rm -f "$app_dir"/.env "$app_dir"/.env.* 2>/dev/null || true
 REMOTE
 
 remote_bash "$STAGING_DIR" "$SMOKE_HOST" "$SMOKE_PORT" "$APP_ENTRY" <<'REMOTE'
