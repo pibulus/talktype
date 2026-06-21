@@ -266,7 +266,7 @@
 			</div>
 
 			<section class="settings-section space-y-2" aria-labelledby="settings_theme_title">
-				<h4 id="settings_theme_title" class="settings-section-title">Theme</h4>
+				<h4 id="settings_theme_title" class="settings-section-title">Vibe</h4>
 				<ThemeSelector
 					currentTheme={selectedVibe}
 					onThemeChange={changeVibe}
