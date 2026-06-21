@@ -1,12 +1,12 @@
 <script>
-	import { theme as themeStore } from '$lib/components/ghost/themeStore.js';
-	import { THEMES } from '$lib/constants';
-
 	/**
 	 * AppSuffix Component
 	 *
 	 * A small tag-like suffix that appears adjacent to a product name,
 	 * designed to feel like a printed label rather than a continuation of the title.
+	 *
+	 * Self-contained: the active theme's gradient is driven entirely by the
+	 * --app-suffix-* tokens defined per theme in app.css (html[data-theme]).
 	 */
 
 	// Props with defaults
@@ -16,13 +16,10 @@
 	export let offsetX = '-0.2em'; // Horizontal positioning
 	export let offsetY = '6px'; // Vertical positioning
 	export let position = 'bottom-right'; // Position preset
-
-	// Keep current theme in sync with the global theme
-	$: currentTheme = $themeStore || THEMES.PEACH;
 </script>
 
 <span
-	class="app-suffix {customClass} {position} theme-{currentTheme}"
+	class="app-suffix {customClass} {position}"
 	style="--suffix-color: {color}; --suffix-size: {size}; --offset-x: {offsetX}; --offset-y: {offsetY};"
 	aria-hidden="true"
 >
@@ -45,12 +42,16 @@
 		font-family: inherit;
 		font-variation-settings: inherit;
 		transform: translateY(var(--offset-y, 0));
-		opacity: 0.9;
+		opacity: 0.95;
 		z-index: 1;
 		filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.12));
 	}
 
 	.app-text {
+		/* Active theme drives the gradient via tokens (app.css per data-theme) */
+		background-image: var(--app-suffix-gradient, linear-gradient(to bottom right, #ff82ca, #ffb060));
+		background-size: var(--app-suffix-bg-size, auto);
+		animation: var(--app-suffix-anim, none);
 		background-clip: text !important;
 		-webkit-background-clip: text !important;
 		color: transparent !important;
@@ -64,25 +65,6 @@
 		padding: 0.1em 0; /* Add some padding for hover effect */
 		transform: translateZ(0);
 		backface-visibility: hidden;
-	}
-
-	/* Theme-specific gradients - darker for AA contrast */
-	.theme-peach .app-text {
-		background-image: linear-gradient(to bottom right, #ff82ca, #ffb060);
-	}
-
-	.theme-mint .app-text {
-		background-image: linear-gradient(to bottom right, #4ad8cb, #67e799);
-	}
-
-	.theme-bubblegum .app-text {
-		background-image: linear-gradient(to bottom right, #9f8fff, #8183f4);
-	}
-
-	.theme-rainbow .app-text {
-		background-image: linear-gradient(to right, #ff0080, #ff8c00, #ffed00, #00ff80, #00bfff);
-		background-size: 200% auto;
-		animation: rainbow-shift 3s linear infinite;
 	}
 
 	@keyframes rainbow-shift {
@@ -163,7 +145,7 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.theme-rainbow .app-text {
+		.app-text {
 			animation: none;
 		}
 

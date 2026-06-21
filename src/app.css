@@ -64,6 +64,9 @@
 	--tt-footer-focus-ring: rgba(249, 168, 212, 0.68);
 	--tt-footer-dot-color: rgba(249, 168, 212, 0.86);
 	--tt-footer-heart-color: #ec4899;
+
+	/* App suffix (.app) gradient — peach default */
+	--app-suffix-gradient: linear-gradient(to bottom right, #ff82ca, #ffb060);
 }
 
 [data-theme='mint'] {
@@ -100,6 +103,9 @@
 	--tt-footer-focus-ring: rgba(52, 211, 153, 0.64);
 	--tt-footer-dot-color: rgba(52, 211, 153, 0.82);
 	--tt-footer-heart-color: #10b981;
+
+	/* App suffix (.app) gradient */
+	--app-suffix-gradient: linear-gradient(to bottom right, #4ad8cb, #67e799);
 }
 
 [data-theme='bubblegum'] {
@@ -136,6 +142,9 @@
 	--tt-footer-focus-ring: rgba(244, 114, 182, 0.68);
 	--tt-footer-dot-color: rgba(244, 114, 182, 0.86);
 	--tt-footer-heart-color: #db2777;
+
+	/* App suffix (.app) gradient */
+	--app-suffix-gradient: linear-gradient(to bottom right, #9f8fff, #8183f4);
 }
 
 [data-theme='rainbow'] {
@@ -174,6 +183,11 @@
 	--tt-footer-focus-ring: rgba(167, 139, 250, 0.66);
 	--tt-footer-dot-color: rgba(167, 139, 250, 0.82);
 	--tt-footer-heart-color: #ec4899;
+
+	/* App suffix (.app) gradient — animated rainbow */
+	--app-suffix-gradient: linear-gradient(to right, #ff0080, #ff8c00, #ffed00, #00ff80, #00bfff);
+	--app-suffix-bg-size: 200% auto;
+	--app-suffix-anim: rainbow-shift 3s linear infinite;
 }
 
 /* ===================================================================
