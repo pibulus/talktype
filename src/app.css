@@ -65,6 +65,20 @@
 	--tt-footer-dot-color: rgba(249, 168, 212, 0.86);
 	--tt-footer-heart-color: #ec4899;
 
+	/* Neutral footer tokens (cross-app convergence).
+	   Aliases resolve to the active theme's --tt-footer-* automatically, so they
+	   only need declaring once. --footer-text-color is a concrete value: all
+	   TalkType themes are LIGHT, so the muted-ink gray-600 (#4b5563) is readable
+	   on every theme (matches today's rendered footer color exactly). */
+	--footer-text-color: #4b5563;
+	--footer-border-color: var(--tt-footer-border-color);
+	--footer-bg: var(--tt-footer-bg-image);
+	--footer-dot-color: var(--tt-footer-dot-color);
+	--footer-heart-color: var(--tt-footer-heart-color);
+	--footer-button-hover-bg: var(--tt-footer-button-hover-bg);
+	--footer-button-hover-color: var(--tt-footer-button-hover-color);
+	--footer-focus-ring: var(--tt-footer-focus-ring);
+
 	/* App suffix (.app) gradient — peach default */
 	--app-suffix-gradient: linear-gradient(to bottom right, #ff82ca, #ffb060);
 }

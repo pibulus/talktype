@@ -11,6 +11,7 @@
 	export let includeStructuredData = true;
 	export let structuredData = null;
 	export let footerYear = new Date().getFullYear();
+	export let appName = 'TalkType';
 </script>
 
 <Seo
@@ -35,7 +36,7 @@
 
 	<!-- Footer section with attribution and Chrome extension info -->
 	<footer
-		class="footer-component tt-app-footer fixed bottom-0 left-0 right-0 z-10 box-border border-t pb-2 pt-3 text-center text-xs text-gray-600 backdrop-blur-[3px] sm:pb-4 sm:pt-6"
+		class="footer-component tt-app-footer fixed bottom-0 left-0 right-0 z-10 box-border border-t pb-2 pt-3 text-center text-xs backdrop-blur-[3px] sm:pb-4 sm:pt-6"
 	>
 		<div
 			class="container mx-auto flex flex-row items-center justify-center gap-1 sm:justify-between sm:gap-3"
@@ -45,10 +46,10 @@
 				class="copyright ml-4 hidden flex-wrap items-center justify-center sm:ml-6 sm:flex md:ml-8"
 			>
 				<span class="mr-1 text-sm font-medium tracking-normal">
-					© {footerYear} TalkType
+					© {footerYear} {appName}
 				</span>
 				<span class="footer-dot mx-2">•</span>
-				<span class="text-sm font-light text-gray-600"
+				<span class="text-sm font-light"
 					>Made with
 					<span
 						class="footer-heart mx-0.5 inline-block transform animate-pulse transition-transform duration-300 hover:scale-110"
@@ -78,17 +79,18 @@
 	}
 
 	.tt-app-footer {
-		border-color: var(--tt-footer-border-color);
-		background: var(--tt-footer-bg-image);
+		color: var(--footer-text-color, #4b5563);
+		border-color: var(--footer-border-color, var(--tt-footer-border-color));
+		background: var(--footer-bg, var(--tt-footer-bg-image));
 		box-shadow: var(--tt-footer-shadow);
 	}
 
 	.footer-dot {
-		color: var(--tt-footer-dot-color);
+		color: var(--footer-dot-color, var(--tt-footer-dot-color));
 	}
 
 	.footer-heart {
-		color: var(--tt-footer-heart-color);
+		color: var(--footer-heart-color, var(--tt-footer-heart-color));
 	}
 
 	/* Media queries for mobile optimization */
