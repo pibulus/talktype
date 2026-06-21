@@ -38,5 +38,22 @@ export function getGeminiApiKey() {
 	if (!key) {
 		console.warn('GEMINI_API_KEY is missing in environment variables');
 	}
+	clearShadowingGoogleKey();
 	return key || '';
+}
+
+// Belt-and-braces: the @google/genai SDK auto-discovers GOOGLE_API_KEY from the
+// process env and PREFERS it over an explicitly-passed key in some paths. A stale
+// GOOGLE_API_KEY (e.g. sourced from a shell profile) can therefore shadow the real
+// key in .env and make Gemini fail "for no reason". If the ambient GOOGLE_API_KEY
+// differs from our configured key, drop it so the SDK can't silently prefer it.
+// Safe to call repeatedly; only touches process.env when there's a real conflict.
+let _shadowChecked = false;
+function clearShadowingGoogleKey() {
+	if (_shadowChecked || typeof process === 'undefined') return;
+	_shadowChecked = true;
+	const ours = env.GEMINI_API_KEY;
+	if (ours && process.env.GOOGLE_API_KEY && process.env.GOOGLE_API_KEY !== ours) {
+		delete process.env.GOOGLE_API_KEY;
+	}
 }
