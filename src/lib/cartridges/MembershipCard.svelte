@@ -4,7 +4,7 @@
 	import { hexToRgba, mixHex } from './passportPalettes.js';
 	import { buildPassportAvatar } from './passportAvatar.js';
 	import { selectSkin, selectNamedSkin } from './passportSkins.js';
-	import { buildPassportSyncUrl, getVaultHandshakeQR } from '$lib/services/qrHandshakeService.js';
+	import { buildPassportSyncUrl, renderQrDataUrl } from '$lib/services/qrHandshakeService.js';
 	import {
 		readStoredSupporterCode,
 		readStoredVaultServerUrl
@@ -26,6 +26,7 @@
 	let qrHasLoaded = false;
 	let qrHasFailed = false;
 	let previousQrImageUrl = '';
+	let passportQrImageUrl = '';
 
 	// rAF throttle so we only touch the DOM once per frame while moving.
 	let rafId = null;
@@ -102,13 +103,25 @@
 					vaultUrl: storedVaultUrl
 				})
 			: '';
-	$: passportQrImageUrl = passportSyncUrl
-		? getVaultHandshakeQR({ data: passportSyncUrl, style: 'sunset', size: 256 })
-		: '';
-	$: if (passportQrImageUrl !== previousQrImageUrl) {
-		previousQrImageUrl = passportQrImageUrl;
+	// Render the QR locally so the supporter code in passportSyncUrl never leaves
+	// the device. Async because the qrcode lib is dynamically imported.
+	$: if (passportSyncUrl !== previousQrImageUrl) {
+		previousQrImageUrl = passportSyncUrl;
 		qrHasLoaded = false;
 		qrHasFailed = false;
+		if (passportSyncUrl) {
+			renderQrDataUrl(passportSyncUrl, { size: 256 })
+				.then((dataUrl) => {
+					passportQrImageUrl = dataUrl;
+				})
+				.catch((error) => {
+					console.warn('[MembershipCard] Local QR render failed:', error);
+					passportQrImageUrl = '';
+					qrHasFailed = true;
+				});
+		} else {
+			passportQrImageUrl = '';
+		}
 	}
 
 	// Write the per-frame pointer CSS vars straight onto the element. Avoids

@@ -72,6 +72,13 @@ export async function handle({ event, resolve }) {
 		// No embedding of this app in frames elsewhere
 		"frame-ancestors 'none'",
 
+		// Lock <base href> to self so injected <base> tags can't hijack relative URLs
+		"base-uri 'self'",
+
+		// Restrict form submission targets. Square checkout is a window.location
+		// redirect (not a form POST), so 'self' is enough — defense-in-depth.
+		"form-action 'self'",
+
 		// Block mixed content
 		'upgrade-insecure-requests'
 	].join('; ');

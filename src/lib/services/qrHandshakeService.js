@@ -93,3 +93,18 @@ export function buildVaultHandshakeUrl(code, syncBaseUrl = '') {
 		vaultUrl: syncBaseUrl
 	});
 }
+
+// Render the passport QR locally instead of round-tripping the payload through
+// an external QR service. The passport sync payload contains the supporter code
+// (the PBKDF2 key material for vault encryption), so it must never leave the
+// device — buildQRBuddyRenderUrl would have put it in qrbuddy.app's query logs.
+export async function renderQrDataUrl(data, options = {}) {
+	if (!data) return '';
+
+	const { default: QRCode } = await import('qrcode');
+	return QRCode.toDataURL(data, {
+		width: normalizeQrSize(options.size),
+		margin: 1,
+		errorCorrectionLevel: 'M'
+	});
+}

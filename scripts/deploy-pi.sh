@@ -221,6 +221,16 @@ if [[ -e "$app_dir" || -L "$app_dir" ]]; then
 fi
 
 mv "$staging_dir" "$app_dir"
+
+# Lock down the JSON store dir + supporter files if present (created lazily on
+# the first checkout/license write). FileSystemAdapter already writes new files
+# 0o600, but this enforces owner-only on every deploy as belt-and-braces and
+# fixes perms on any file that predates that change. No-op when data/ is absent.
+if [[ -d "$app_dir/data" ]]; then
+  chmod 700 "$app_dir/data" || true
+  find "$app_dir/data" -type f -name '*.json' -exec chmod 600 {} + || true
+fi
+
 sudo -n systemctl restart "$service"
 systemctl is-active "$service"
 

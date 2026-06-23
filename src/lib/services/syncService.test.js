@@ -8,7 +8,8 @@ import {
 	loadAudioManifestFromVault,
 	loadAudioFromVault,
 	saveAudioManifestToVault,
-	saveAudioToVault
+	saveAudioToVault,
+	saveToVault
 } from './syncService.js';
 
 describe('Vault transport helpers', () => {
@@ -136,6 +137,25 @@ describe('Vault transport helpers', () => {
 			)
 		).rejects.toThrow('Vault audio is too large');
 		expect(fetchSpy).not.toHaveBeenCalled();
+	});
+
+	it('refuses a non-HTTPS vault server URL before any fetch', async () => {
+		const fetchSpy = vi.fn();
+		vi.stubGlobal('fetch', fetchSpy);
+
+		await expect(
+			saveToVault('talktype', { hi: 'there' }, 'TT-ABCD-1234', 'http://evil.com')
+		).rejects.toThrow('Vault server must use HTTPS');
+		expect(fetchSpy).not.toHaveBeenCalled();
+	});
+
+	it('allows http only for loopback dev servers', async () => {
+		const fetchSpy = vi.fn(async () => ({ ok: true, status: 200 }));
+		vi.stubGlobal('fetch', fetchSpy);
+
+		await saveToVault('talktype', { hi: 'there' }, 'TT-ABCD-1234', 'http://localhost:8787');
+		expect(fetchSpy).toHaveBeenCalledOnce();
+		expect(fetchSpy.mock.calls[0][0].toString()).toMatch(/^http:\/\/localhost:8787\/vault\//);
 	});
 
 	it('deletes Vault JSON and audio payloads by derived address', async () => {
