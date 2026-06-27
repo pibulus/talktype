@@ -174,11 +174,16 @@
 	// Handle click on the ghost
 	function handleClick() {
 		if (clickable) {
-			// Dispatch custom window event for direct communication
-			window.dispatchEvent(new CustomEvent('talktype:toggle-recording'));
+			if (spinPivotElement) {
+				spinPivotElement.classList.remove('wobble-left', 'wobble-right', 'wobble-both');
+				void spinPivotElement.offsetWidth;
+				spinPivotElement.classList.add('wobble-both');
+				setTimeout(() => {
+					spinPivotElement.classList.remove('wobble-both');
+				}, 650);
+			}
 
-			// The wobble animation is now handled through the recording state change
-			// in the ghostStateStore when setRecording is called
+			window.dispatchEvent(new CustomEvent('talktype:toggle-recording'));
 		}
 	}
 

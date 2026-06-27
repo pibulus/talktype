@@ -47,7 +47,6 @@
 		dangerThreshold
 	});
 	$: showClipboardSuccess = clipboardSuccess && !recording;
-	// Show the offline notice only when idle (don't distract mid-record/transcribe).
 	$: showOfflineNotice = Boolean(offlineNotice?.text) && !recording && !transcribing;
 	$: showAmbientPulse = !recording && !showClipboardSuccess;
 	$: buttonStyle = `transform-origin: center center; position: relative; --progress: ${buttonState.progressPercentage.toFixed(2)}%; --progress-ratio: ${buttonState.progressRatio.toFixed(4)};`;
@@ -98,8 +97,8 @@
 		class="record-button w-[90%] rounded-full sm:w-[85%] {showAmbientPulse
 			? 'pulse-subtle'
 			: ''} {showClipboardSuccess
-			? 'notification-pulse border border-purple-200 bg-purple-50 text-black'
-			: 'text-black'} mx-auto flex h-[64px] min-w-[280px] max-w-[420px] items-center justify-center px-6 text-center text-xl font-bold shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:text-xl md:text-2xl {recording
+			? 'notification-pulse border border-purple-200 bg-purple-50'
+			: ''} mx-auto flex h-[64px] min-w-[280px] max-w-[420px] items-center justify-center px-6 text-center text-xl font-bold text-black shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:text-xl md:text-2xl {recording
 			? 'recording-active'
 			: ''} {buttonState.isWarning ? 'recording-warning' : ''} {buttonState.isDanger
 			? 'recording-danger'
@@ -117,65 +116,44 @@
 		{/if}
 
 		<!-- Main button text -->
-		<span
-			class="cta-text relative inline-block whitespace-nowrap transition duration-300 ease-out"
-			style="letter-spacing: 0;"
-		>
-			<!-- Clipboard success message -->
-			<span
-				class="absolute inset-0 flex transform items-center justify-center transition duration-300 ease-out {showClipboardSuccess
-					? 'scale-100 opacity-100'
-					: 'scale-95 opacity-0'}"
-				style="visibility: {showClipboardSuccess ? 'visible' : 'hidden'};"
-			>
-				<span class="flex items-center justify-center gap-1">
-					<svg
-						class="mr-1 h-4 w-4 text-purple-500"
-						viewBox="0 0 24 24"
-						xmlns="http://www.w3.org/2000/svg"
-						aria-hidden="true"
-						focusable="false"
-						style="pointer-events: none;"
-					>
-						<path
-							d="M12,2 C7.6,2 4,5.6 4,10 L4,17 C4,18.1 4.9,19 6,19 L8,19 L8,21 C8,21.6 8.4,22 9,22 C9.3,22 9.5,21.9 9.7,21.7 L12.4,19 L18,19 C19.1,19 20,18.1 20,17 L20,10 C20,5.6 16.4,2 12,2 Z"
-							fill="currentColor"
-							opacity="0.8"
-						/>
-						<circle cx="9" cy="10" r="1.2" fill="white" />
-						<circle cx="15" cy="10" r="1.2" fill="white" />
-					</svg>
-					{copyMessage}
-				</span>
+		{#if showClipboardSuccess}
+			<span class="button-content relative z-10 flex items-center justify-center gap-1">
+				<svg
+					class="h-4 w-4 text-purple-500"
+					viewBox="0 0 24 24"
+					xmlns="http://www.w3.org/2000/svg"
+					aria-hidden="true"
+					focusable="false"
+				>
+					<path
+						d="M12,2 C7.6,2 4,5.6 4,10 L4,17 C4,18.1 4.9,19 6,19 L8,19 L8,21 C8,21.6 8.4,22 9,22 C9.3,22 9.5,21.9 9.7,21.7 L12.4,19 L18,19 C19.1,19 20,18.1 20,17 L20,10 C20,5.6 16.4,2 12,2 Z"
+						fill="currentColor"
+						opacity="0.8"
+					/>
+					<circle cx="9" cy="10" r="1.2" fill="white" />
+					<circle cx="15" cy="10" r="1.2" fill="white" />
+				</svg>
+				{copyMessage}
 			</span>
-
-			<!-- Button label / toast swapper -->
-			<span
-				class="transform transition duration-300 ease-out {showClipboardSuccess
-					? 'scale-90 opacity-0'
-					: 'scale-100 opacity-100'}"
-				style="visibility: {showClipboardSuccess ? 'hidden' : 'visible'};"
-			>
-				<span class="button-content relative z-10">
-					<!-- Main label - the button text is on top of the progress bar -->
-					<span class="relative flex items-center justify-center">
-						<span
-							class="cta__label relative z-10 rounded-lg px-1 py-0.5 {recording
-								? 'text-shadow-recording'
-								: ''}"
-							style="font-size: clamp(1rem, 0.5vw + 0.9rem, 1.25rem); letter-spacing: 0;"
-						>
-							{buttonLabel}
-						</span>
-						<span class="sr-only">
-							{#if recording}
-								{buttonState.durationLabel}
-							{/if}
-						</span>
+		{:else}
+			<span class="button-content relative z-10">
+				<span class="relative flex items-center justify-center">
+					<span
+						class="cta__label relative z-10 rounded-lg px-1 py-0.5 {recording
+							? 'text-shadow-recording'
+							: ''}"
+						style="font-size: clamp(1rem, 0.5vw + 0.9rem, 1.25rem); letter-spacing: 0;"
+					>
+						{buttonLabel}
+					</span>
+					<span class="sr-only">
+						{#if recording}
+							{buttonState.durationLabel}
+						{/if}
 					</span>
 				</span>
 			</span>
-		</span>
+		{/if}
 	</button>
 {/if}
 
@@ -521,10 +499,6 @@
 			0 1px 8px rgba(255, 255, 255, 0.18);
 		font-weight: 700;
 		letter-spacing: 0;
-	}
-
-	.cta-text {
-		z-index: 2;
 	}
 
 	/* Responsive adjustments for mobile */

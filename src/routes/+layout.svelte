@@ -7,6 +7,7 @@
 	import { modal } from '$lib/stores/modal';
 	import AuthModal from '$lib/components/modals/AuthModal.svelte';
 	import { GradientDefs } from '$lib/components/ghost';
+	import Toast from '$lib/components/Toast.svelte';
 
 	let { children } = $props();
 	const DEFAULT_UMAMI_SCRIPT_URL = 'https://cloud.umami.is/script.js';
@@ -51,6 +52,8 @@
 </svelte:head>
 
 {@render children()}
+
+<Toast />
 
 {#if $modal}
 	{@const ActiveModal = modals[$modal.name]}
