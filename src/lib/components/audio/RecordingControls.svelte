@@ -54,6 +54,13 @@
 		}
 		wasWhisperLoading = s.isLoading;
 	}
+
+	// While transcription is waiting on the offline model, surface Whisper's
+	// real status text ("Downloading model 42%") instead of a generic label.
+	$: transcribingLabel =
+		$isTranscribing && $whisperStatus.isLoading && $whisperStatus.statusText
+			? $whisperStatus.statusText
+			: 'Processing';
 	onDestroy(() => clearTimeout(offlineNoticeTimer));
 
 	onMount(() => {
@@ -141,6 +148,7 @@
 				successMessages={COPY_MESSAGES}
 				{offlineNotice}
 				{buttonLabel}
+				{transcribingLabel}
 				on:click={handleRecordingToggle}
 			/>
 		</div>
@@ -182,7 +190,9 @@
 	}
 
 	.visualizer-appear {
-		animation: recording-visualizer-appear 0.8s ease-out forwards;
+		/* Slight delay so the button label swap lands first — two simultaneous
+		   layout events read as a jolt; staggered reads as choreography. */
+		animation: recording-visualizer-appear 0.7s ease-out 0.12s both;
 	}
 
 	@keyframes recording-visualizer-appear {

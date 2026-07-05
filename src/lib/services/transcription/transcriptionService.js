@@ -119,7 +119,10 @@ export class TranscriptionService {
 		const animate = () => {
 			if (!get(transcriptionState).inProgress) return;
 
-			progress = Math.min(95, progress + 1);
+			// Asymptotic ramp: quick early movement, then an ever-slower crawl
+			// toward 95 so multi-minute jobs (offline model download, slow
+			// network) keep visible motion instead of freezing at a fake 95%.
+			progress = Math.min(95, progress + Math.max(0.02, (95 - progress) * 0.008));
 
 			// Update store with current progress
 			transcriptionActions.updateProgress(progress);

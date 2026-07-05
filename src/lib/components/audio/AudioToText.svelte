@@ -29,6 +29,8 @@
 		transcriptionActions,
 		transcriptionCompletedEvent
 	} from '$lib/services/infrastructure/stores';
+	import { waveformData } from '$lib/services/infrastructure';
+	import { getAudioDisplayLevel } from '$lib/utils/audioLevel.js';
 	import { liveMode, privacyMode } from '$lib';
 	import { transcriptionStore } from '$lib/stores/transcriptionStore';
 	import { offlineModelController } from '$lib/services/transcription/offlineModelController.js';
@@ -41,6 +43,17 @@
 	let unsubscribers = [];
 
 	$: liveTranscriptMode = $liveMode === 'true' && $privacyMode !== 'true';
+
+	// Live Mode's "Listening..." gap: before the first Deepgram partial lands
+	// there is no moving proof the mic hears anything. Feed a tiny meter with
+	// the real analyser level; null data (blind analyser) gets a gentle pulse.
+	$: showListeningMeter = liveTranscriptMode && $isRecording && !$transcriptionText;
+	$: listeningLevel = showListeningMeter
+		? $waveformData === null
+			? null
+			: getAudioDisplayLevel($waveformData)
+		: 0;
+	const METER_BAR_SCALES = [0.55, 0.85, 1, 0.85, 0.55];
 
 	// Sync streaming text to global store
 	$: if (liveTranscriptMode && ($transcriptionStore.transcript || $transcriptionStore.interim)) {
@@ -198,6 +211,25 @@
 					/>
 				{/if}
 
+				{#if showListeningMeter}
+					<div
+						class="listening-meter {listeningLevel === null ? 'is-breathing' : ''}"
+						aria-hidden="true"
+					>
+						{#each METER_BAR_SCALES as scale, i (i)}
+							<span
+								class="listening-meter-bar"
+								style="height: {listeningLevel === null
+									? 40
+									: Math.max(
+											14,
+											Math.min(100, 14 + listeningLevel * scale)
+										)}%; animation-delay: {i * 0.12}s"
+							></span>
+						{/each}
+					</div>
+				{/if}
+
 				<!-- Status and Error Messages -->
 				<RecordingStatus />
 			</div>
@@ -221,6 +253,45 @@
 	:focus-visible {
 		outline: 2px solid #f59e0b;
 		outline-offset: 2px;
+	}
+
+	/* Tiny live-level meter for the pre-first-partial "Listening..." window */
+	.listening-meter {
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
+		gap: 4px;
+		height: 26px;
+		margin-top: 0.5rem;
+	}
+
+	.listening-meter-bar {
+		width: 5px;
+		border-radius: 9999px;
+		background: linear-gradient(to top, #fbbf24, #f472b6);
+		opacity: 0.85;
+		transition: height 0.14s ease-out;
+	}
+
+	/* Analyser is blind (suspended context) — breathe instead of lying flat */
+	.listening-meter.is-breathing .listening-meter-bar {
+		animation: listening-breathe 1.4s ease-in-out infinite;
+	}
+
+	@keyframes listening-breathe {
+		0%,
+		100% {
+			transform: scaleY(0.6);
+		}
+		50% {
+			transform: scaleY(1);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.listening-meter.is-breathing .listening-meter-bar {
+			animation: none;
+		}
 	}
 
 	/* Apply box-sizing to all elements for consistent layout */
