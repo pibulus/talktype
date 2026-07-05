@@ -95,6 +95,12 @@ export function createEyeTracking(customConfig = {}) {
 
 		// Throttled update function using RAF
 		const throttledUpdate = (event) => {
+			// Skip entirely while the tab is hidden — rAF wouldn't fire anyway,
+			// and this keeps the handler itself near-free in the background.
+			if (document.hidden) {
+				return;
+			}
+
 			state.lastEvent = event;
 
 			// If a frame is already requested, don't request another one

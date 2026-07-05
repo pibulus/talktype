@@ -134,6 +134,12 @@
 			readyRafId = null;
 		}
 
+		// Cancel pending tap-wobble reset
+		if (wobbleResetTimeout) {
+			clearTimeout(wobbleResetTimeout);
+			wobbleResetTimeout = null;
+		}
+
 		// Clean up theme store subscription
 		if (unsubscribeTheme) {
 			unsubscribeTheme();
@@ -172,14 +178,17 @@
 	}
 
 	// Handle click on the ghost
+	let wobbleResetTimeout = null;
 	function handleClick() {
 		if (clickable) {
 			if (spinPivotElement) {
 				spinPivotElement.classList.remove('wobble-left', 'wobble-right', 'wobble-both');
 				void spinPivotElement.offsetWidth;
 				spinPivotElement.classList.add('wobble-both');
-				setTimeout(() => {
-					spinPivotElement.classList.remove('wobble-both');
+				if (wobbleResetTimeout) clearTimeout(wobbleResetTimeout);
+				wobbleResetTimeout = setTimeout(() => {
+					wobbleResetTimeout = null;
+					spinPivotElement?.classList.remove('wobble-both');
 				}, 650);
 			}
 
