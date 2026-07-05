@@ -1,4 +1,63 @@
-# Fable Audit — 2026-07-05
+# Fable Audit — 2026-07-05 (+ Round 2: recording feedback surface, 2026-07-06)
+
+## Round 2 — record button, timer, audio/visual feedback, ghost
+
+Focused pass at Pablo's request on the button/timer, the recording feedback loop, Toast,
+and the ghost. Four parallel audits (button+timer, feedback pipeline, ghost correctness,
+UX/vibe) cross-checked and fixed. Verified with lint + 186 tests + build + an in-browser
+smoke driving the real stores: timer chip, warning state, real-data bars, blind-analyser
+fallback, and the cap auto-stop were all exercised visually.
+
+### Round 2 fixes, ranked
+
+1. **The countdown was invisible to everyone.** The `mm:ss` label was `sr-only`, and even
+   screen readers never heard it — the button's explicit `aria-label` overrides descendant
+   text in accessible-name computation. Now: a visible tabular-nums chip in the button
+   (elapsed → "0:15 left" at warning → pulsing in danger), duration folded into the
+   `aria-label`, and edge-triggered live-region announcements at the warning/danger
+   thresholds.
+2. **The iOS/Safari waveform was fake.** UA sniffing (which also caught desktop Safari and
+   missed modern iPads) routed to a `Math.random()` speech simulator with no connection to
+   the mic — a muted mic danced identically to a working one. Now real analyser data drives
+   the bars everywhere; the simulator survives only under an explicit contract: `null`
+   waveform data = analyser provably blind (suspended AudioContext) while MediaRecorder
+   still records. Real silence shows honest low bars.
+3. **Live Mode's "Listening..." was a static string** — zero motion until the first
+   Deepgram partial. A tiny five-bar meter now rides the real analyser level (breathing
+   pattern when the analyser is blind).
+4. **Backgrounded tabs could sail past the free cap** — the limit check lived in a
+   throttled interval. The cap is re-checked the moment the tab becomes visible.
+5. **Whisper's status text never reached the button** — "Downloading model 42%" now shows
+   in the transcribing bar instead of anonymous dots; the fake progress ramp is asymptotic
+   so multi-minute jobs never freeze at a sprinted 95%.
+6. **Focus dropped to `<body>`** when the button swapped to the transcribing bar —
+   the swap now hands focus over and back.
+7. **Toast**: safe-area-aware bottom offset (same math as PageLayout), 15px text, 2px
+   border, warmed info palette — it was doing corporate-SaaS cosplay next to pastel-punk
+   siblings.
+8. **Ghost tidy** (audit verdict: well-engineered, not fragile): deleted the unreachable
+   `applyInitialLoadEffect` and its booby-trapped once-flag, tracked the one untracked
+   tap-wobble timer, gated eye-tracking's global mousemove while the tab is hidden.
+9. Recording-active button now breathes (glow pulse, reduced-motion aware) instead of
+   going static the moment it matters most; visualizer entrance staggered 120ms behind the
+   label swap; threshold prop defaults now come from `ANIMATION.RECORDING`.
+
+### Round 2 deliberately left
+
+- **No sound/haptic mute toggle exists** — `soundService.setEnabled()` is never wired to
+  any setting. Sounds are subtle, but if "you can turn sounds off" is ever said to a user,
+  it's currently false. Decision for Pablo: add a Settings toggle post-launch.
+- Stop-tap haptic+sound fire before the stop completes (start fires sound after success).
+  Left as-is: instant tap feedback on stop feels responsive; the finalize wait would make
+  a "confirmed" sound feel laggy.
+- No "can't hear you?" nudge when real data stays flat while recording (honest low bars
+  show, but no copy). Worth considering after real-device testing.
+- The `recording` prop/reactive block inside AudioVisualizer is vestigial (the component
+  mounts/unmounts per recording) — simplified but not restructured.
+
+---
+
+# Round 1 — full launch audit (2026-07-05)
 
 Branch: `fable-audit-2026-07-05` (from `main` @ `e281e1f`). Pablo's WIP Toast SSR guard was
 stashed (`fable-audit-safepoint WIP`, left intact as a safety net), re-applied, and folded
