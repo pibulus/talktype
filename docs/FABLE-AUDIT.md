@@ -42,6 +42,22 @@ fallback, and the cap auto-stop were all exercised visually.
    going static the moment it matters most; visualizer entrance staggered 120ms behind the
    label swap; threshold prop defaults now come from `ANIMATION.RECORDING`.
 
+### Round 2 addendum — offline download & progress bar (2026-07-06)
+
+The e2e gate (`tests/e2e/offline-whisper.mjs`) was run against a real model
+download. Findings, all fixed except the last: the gate's "force tiny" seam
+wrote a localStorage key that doesn't exist (silently tested the WebGPU path
+instead — fixed to use the real sticky flag); the CSP blocked onnxruntime's
+`blob:` module import on newer Chromium, killing Offline Mode there ("no
+available backend found" — `blob:` added to script-src); the WebGPU→tiny
+fallback didn't reset progress state, so the bar pinned at the dead
+download's high-water mark (reset added, verified live: model flipped
+small→tiny with honest progress and the load succeeded). REMAINING, not
+fixed: bleeding-edge Chromium (~143) + the bundled ort `1.26-dev` rejects
+the old quantized tiny model at session creation. Current-release browsers
+are unaffected. Full diagnosis, dead ends already tried, and the fix path
+are in `docs/FABLE-HANDOFF.md` Task 1.
+
 ### Round 2 deliberately left
 
 - **No sound/haptic mute toggle exists** — `soundService.setEnabled()` is never wired to
