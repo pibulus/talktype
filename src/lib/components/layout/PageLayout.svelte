@@ -46,7 +46,8 @@
 				class="copyright ml-4 hidden flex-wrap items-center justify-center sm:ml-6 sm:flex md:ml-8"
 			>
 				<span class="mr-1 text-sm font-medium tracking-normal">
-					© {footerYear} {appName}
+					© {footerYear}
+					{appName}
 				</span>
 				<span class="footer-dot mx-2">•</span>
 				<span class="text-sm font-light"

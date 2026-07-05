@@ -20,5 +20,14 @@ export default [
 				...globals.node
 			}
 		}
+	},
+	{
+		// Catches temporal-dead-zone bugs (reading a let/const before its
+		// declaration) that only explode at runtime. Scoped to plain JS —
+		// Svelte components declare state in idiomatic non-linear order.
+		files: ['**/*.js', '**/*.mjs'],
+		rules: {
+			'no-use-before-define': ['error', { functions: false, classes: false, variables: true }]
+		}
 	}
 ];

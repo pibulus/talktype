@@ -13,7 +13,7 @@
 	aria-describedby="intro_modal_description"
 	aria-modal="true"
 >
-	<div class="intro-modal-box tt-modal-md modal-box relative tt-intro-sheet">
+	<div class="intro-modal-box tt-modal-md tt-intro-sheet modal-box relative">
 		<form method="dialog">
 			<ModalCloseButton
 				{closeModal}

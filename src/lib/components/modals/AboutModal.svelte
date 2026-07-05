@@ -12,7 +12,7 @@
 	aria-describedby="about_modal_description"
 	aria-modal="true"
 >
-	<div class="about-modal-box tt-modal-md modal-box tt-about-sheet">
+	<div class="about-modal-box tt-modal-md tt-about-sheet modal-box">
 		<form method="dialog">
 			<ModalCloseButton {closeModal} label="Close about modal" modalId="about_modal" />
 		</form>

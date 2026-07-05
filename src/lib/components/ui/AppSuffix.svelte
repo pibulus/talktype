@@ -49,7 +49,10 @@
 
 	.app-text {
 		/* Active theme drives the gradient via tokens (app.css per data-theme) */
-		background-image: var(--app-suffix-gradient, linear-gradient(to bottom right, #ff82ca, #ffb060));
+		background-image: var(
+			--app-suffix-gradient,
+			linear-gradient(to bottom right, #ff82ca, #ffb060)
+		);
 		background-size: var(--app-suffix-bg-size, auto);
 		animation: var(--app-suffix-anim, none);
 		background-clip: text !important;
