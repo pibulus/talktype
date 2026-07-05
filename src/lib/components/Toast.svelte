@@ -10,23 +10,25 @@
 		error: 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z'
 	};
 
+	// Warm pastel families to match the app's peach/mint/rose language —
+	// not the cool corporate blue/emerald defaults.
 	const TYPE_COLORS = {
 		info: {
-			bg: 'bg-blue-50',
-			border: 'border-blue-200',
-			text: 'text-blue-800',
-			icon: 'text-blue-500'
+			bg: 'bg-amber-50',
+			border: 'border-amber-200',
+			text: 'text-amber-900',
+			icon: 'text-amber-500'
 		},
 		success: {
 			bg: 'bg-emerald-50',
 			border: 'border-emerald-200',
-			text: 'text-emerald-800',
+			text: 'text-emerald-900',
 			icon: 'text-emerald-500'
 		},
 		error: {
 			bg: 'bg-rose-50',
 			border: 'border-rose-200',
-			text: 'text-rose-800',
+			text: 'text-rose-900',
 			icon: 'text-rose-500'
 		}
 	};
@@ -98,7 +100,9 @@
 <style>
 	.toast-container {
 		position: fixed;
-		bottom: 6rem;
+		/* Same safe-area math as PageLayout's footer clearance — a hardcoded
+		   offset sits inconsistently across notch/no-notch devices. */
+		bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
 		left: 50%;
 		transform: translateX(-50%);
 		z-index: 9999;
@@ -117,13 +121,13 @@
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.625rem 1rem;
-		border-radius: 0.75rem;
-		border: 1px solid;
-		font-size: 0.875rem;
+		padding: 0.625rem 1.1rem;
+		border-radius: 1rem;
+		border: 2px solid;
+		font-size: 0.9375rem;
 		font-weight: 600;
 		letter-spacing: 0;
-		box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1);
+		box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
 		max-width: 100%;
 	}
 
