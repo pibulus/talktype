@@ -75,11 +75,14 @@ function cleanClientAddress(value) {
 		.trim();
 }
 
-function getFirstHeaderAddress(value) {
+// The rightmost entry is the one written by our own reverse proxy; leftmost
+// entries are client-supplied and trivially spoofable for bucket-hopping.
+function getLastHeaderAddress(value) {
 	const candidate = value
 		?.split(',')
 		.map((part) => cleanClientAddress(part))
-		.find(Boolean);
+		.filter(Boolean)
+		.pop();
 
 	return candidate || '';
 }
@@ -87,28 +90,31 @@ function getFirstHeaderAddress(value) {
 function getForwardedHeaderAddress(value) {
 	if (!value) return '';
 
+	let lastAddress = '';
 	for (const part of value.split(',')) {
 		const match = part.match(/(?:^|;)\s*for=([^;]+)/i);
 		const address = cleanClientAddress(match?.[1]);
-		if (address) return address;
+		if (address) lastAddress = address;
 	}
 
-	return '';
+	return lastAddress;
 }
+
+const MAX_CLIENT_KEY_LENGTH = 64;
 
 export function getClientKey(event) {
 	const headers = event.request.headers;
 	const headerAddress =
 		cleanClientAddress(headers.get('cf-connecting-ip')) ||
 		cleanClientAddress(headers.get('x-real-ip')) ||
-		getFirstHeaderAddress(headers.get('x-forwarded-for')) ||
+		getLastHeaderAddress(headers.get('x-forwarded-for')) ||
 		getForwardedHeaderAddress(headers.get('forwarded'));
 
-	if (headerAddress) return headerAddress;
+	if (headerAddress) return headerAddress.slice(0, MAX_CLIENT_KEY_LENGTH);
 
 	if (event.getClientAddress) {
 		const addr = event.getClientAddress();
-		if (addr) return addr;
+		if (addr) return addr.slice(0, MAX_CLIENT_KEY_LENGTH);
 	}
 
 	return 'unknown';

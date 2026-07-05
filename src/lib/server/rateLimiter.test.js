@@ -46,7 +46,17 @@ describe('rate limiter', () => {
 	});
 
 	it('prefers proxy client headers over the adapter socket address', () => {
-		const event = createEvent('203.0.113.12, 10.0.0.20', {
+		const event = createEvent('203.0.113.12', {
+			adapterAddress: '127.0.0.1'
+		});
+
+		expect(getClientKey(event)).toBe('203.0.113.12');
+	});
+
+	it('uses the proxy-written forwarded entry, not a client-spoofed prefix', () => {
+		// A client sending its own X-Forwarded-For gets it prepended by the
+		// reverse proxy; only the rightmost entry is trustworthy.
+		const event = createEvent('6.6.6.6, 203.0.113.12', {
 			adapterAddress: '127.0.0.1'
 		});
 

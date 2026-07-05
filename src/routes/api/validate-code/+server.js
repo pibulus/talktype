@@ -16,9 +16,15 @@ export async function POST(event) {
 	const rateResponse = await enforceRateLimit(event);
 	if (rateResponse) return rateResponse;
 
+	let body;
 	try {
-		const { code } = await event.request.json();
-		const normalizedCode = normalizeSupporterCode(code);
+		body = await event.request.json();
+	} catch {
+		return json({ valid: false, error: 'Enter your supporter code to unlock.' }, { status: 400 });
+	}
+
+	try {
+		const normalizedCode = normalizeSupporterCode(body?.code);
 		const validCodes = getValidCodes();
 
 		if (!normalizedCode) {
