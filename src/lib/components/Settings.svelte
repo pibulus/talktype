@@ -2,7 +2,6 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 	import { theme, autoRecord, applyTheme, promptStyle, liveMode, privacyMode } from '$lib';
-	import { geminiService } from '$lib/services/geminiService';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { offlineModelController } from '$lib/services/transcription/offlineModelController.js';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
@@ -137,7 +136,6 @@
 
 	function changePromptStyle(style) {
 		selectedPromptStyle = style;
-		geminiService.setPromptStyle(style);
 		promptStyle.set(style);
 		userPreferences.update((prefs) => ({ ...prefs, promptStyle: style }));
 		if (browser) {

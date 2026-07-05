@@ -1,6 +1,5 @@
 <script>
 	import { customPrompt } from '$lib';
-	import { geminiService } from '$lib/services/geminiService';
 	import { PROMPT_STYLES } from '$lib/constants';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
 
@@ -101,7 +100,6 @@
 		const prompt = customPromptText.trim().slice(0, MAX_CUSTOM_PROMPT_LENGTH);
 
 		customPrompt.set(prompt);
-		geminiService.setCustomPrompt(prompt);
 	}
 
 	function handleKeydown(event) {
