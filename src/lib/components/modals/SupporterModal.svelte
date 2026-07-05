@@ -31,8 +31,14 @@
 	const MAX_SUPPORTER_CODE_LENGTH = 64;
 
 	function setCheckoutClaim(checkoutId, claimToken) {
-		if (!browser || !checkoutId || !claimToken) return;
-		sessionStorage.setItem(`${SUPPORTER_CHECKOUT.CLAIM_STORAGE_PREFIX}${checkoutId}`, claimToken);
+		if (!browser || !checkoutId || !claimToken) return false;
+		try {
+			sessionStorage.setItem(`${SUPPORTER_CHECKOUT.CLAIM_STORAGE_PREFIX}${checkoutId}`, claimToken);
+			return true;
+		} catch (error) {
+			console.warn('Failed to store checkout claim token:', error);
+			return false;
+		}
 	}
 
 	function saveVaultHash(hash) {
@@ -71,7 +77,14 @@
 				return;
 			}
 
-			setCheckoutClaim(payload.checkoutId, payload.claimToken);
+			// Without the stored claim token the success page cannot deliver the
+			// supporter code after payment — stop before money changes hands.
+			if (!setCheckoutClaim(payload.checkoutId, payload.claimToken)) {
+				errorMessage =
+					'This browser is blocking storage (private mode?). Checkout needs it to deliver your code.';
+				analytics.checkoutFailed({ error: 'claim-storage-blocked' });
+				return;
+			}
 			window.location.assign(payload.checkoutUrl);
 		} catch (error) {
 			console.error('Failed to start supporter checkout:', error);

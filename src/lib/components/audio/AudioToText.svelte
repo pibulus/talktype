@@ -113,9 +113,15 @@
 			if (text) {
 				const recState = $recordingState;
 				const prefs = $userPreferences;
-				const method = browser
-					? localStorage.getItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD) || 'gemini'
-					: 'gemini';
+				let method = 'gemini';
+				if (browser) {
+					try {
+						method = localStorage.getItem(STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD) || 'gemini';
+					} catch {
+						// Storage blocked (private mode) — keep the default so the
+						// completed transcript still reaches the history pipeline.
+					}
+				}
 
 				dispatch('transcriptionCompleted', {
 					count: 1,

@@ -5,7 +5,6 @@
 	import GhostContainer from './GhostContainer.svelte';
 	import ContentContainer from './ContentContainer.svelte';
 	import FooterComponent from './FooterComponent.svelte';
-	import { geminiService } from '$lib/services/geminiService';
 	import { modalService } from '$lib/services/modals';
 	import { firstVisitService } from '$lib/services/first-visit';
 	import { pwaService, deferredInstallPrompt, showPwaInstallPrompt } from '$lib/services/pwa';
@@ -104,7 +103,9 @@
 		// Add null check for contentContainer
 		if (!contentContainer) {
 			console.warn('[MainContainer] contentContainer not ready yet');
-			// Try again after a short delay
+			// Try again after a short delay — clearing any pending retry first so
+			// rapid taps can't stack multiple toggle timers.
+			if (ghostClickRetryTimeout) clearTimeout(ghostClickRetryTimeout);
 			ghostClickRetryTimeout = setTimeout(() => {
 				if (contentContainer && !$transcribingStore) {
 					contentContainer.toggleRecording();
@@ -214,7 +215,6 @@
 	let contentContainer;
 
 	// Event listener cleanup
-	let settingsListener;
 	let toggleRecordingListener;
 	let supporterModalListener;
 	let autoRecordTimeout;
@@ -405,17 +405,6 @@
 			window.addEventListener('talktype:open-supporter-modal', supporterModalListener);
 		}
 
-		// Listen for settings changes
-		if (browser) {
-			settingsListener = (event) => {
-				if (event.detail && event.detail.setting === 'promptStyle') {
-					// Update the prompt style in the service
-					geminiService.setPromptStyle(event.detail.value);
-				}
-			};
-			window.addEventListener('talktype-setting-changed', settingsListener);
-		}
-
 		(async () => {
 			void checkPassportNotes();
 
@@ -434,9 +423,6 @@
 		return () => {
 			destroyed = true;
 
-			if (browser && settingsListener) {
-				window.removeEventListener('talktype-setting-changed', settingsListener);
-			}
 			if (browser && toggleRecordingListener) {
 				window.removeEventListener('talktype:toggle-recording', toggleRecordingListener);
 			}

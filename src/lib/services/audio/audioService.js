@@ -95,6 +95,21 @@ export class AudioService {
 			}
 		};
 		document.addEventListener('visibilitychange', this.visibilityChangeHandler);
+
+		// visibilitychange is not guaranteed on hard tab close / back-nav on
+		// every mobile browser; pagehide is the last reliable chance to get
+		// buffered audio into the recovery journal.
+		this.pageHideHandler = () => {
+			if (this.stateManager.getState() === AudioStates.RECORDING && this.activeRecordingSessionId) {
+				void this.#flushRecoveryJournal(
+					this.mediaRecorder?.mimeType || 'audio/webm',
+					this.activeRecordingSessionId,
+					'pagehide',
+					{ requestData: true, forceMetadataUpdate: true }
+				);
+			}
+		};
+		window.addEventListener('pagehide', this.pageHideHandler);
 	}
 
 	async initializeAudioContext() {
@@ -280,6 +295,12 @@ export class AudioService {
 				this.analyser = this.audioContext.createAnalyser();
 				this.analyser.fftSize = 256;
 				this.source.connect(this.analyser);
+
+				if (this.audioContext.state !== 'running') {
+					// Recording still works (MediaRecorder is independent), but the
+					// waveform will read all zeros — leave a trace for user reports.
+					log.warn(`AudioContext is '${this.audioContext.state}' — waveform may stay flat.`);
+				}
 
 				this.startWaveformMonitoring();
 			} catch (mrError) {
@@ -726,6 +747,10 @@ export class AudioService {
 		if (browser && this.visibilityChangeHandler) {
 			document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
 			this.visibilityChangeHandler = null;
+		}
+		if (browser && this.pageHideHandler) {
+			window.removeEventListener('pagehide', this.pageHideHandler);
+			this.pageHideHandler = null;
 		}
 
 		this.cancelWarmStreamRelease();
