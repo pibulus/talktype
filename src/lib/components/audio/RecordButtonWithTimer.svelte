@@ -1,8 +1,9 @@
 <script>
-	import { createEventDispatcher, onDestroy } from 'svelte';
+	import { createEventDispatcher, onDestroy, tick } from 'svelte';
 	import { ANIMATION, getRandomFromArray } from '$lib/constants';
 	import TranscribingState from './states/TranscribingState.svelte';
 	import { getRecordButtonState } from './recordButtonState.js';
+	import { uiActions } from '$lib/services';
 
 	const dispatch = createEventDispatcher();
 
@@ -12,17 +13,21 @@
 	export let clipboardSuccess = false;
 	export let recordingDuration = 0;
 	export let maxDuration = 300; // Default 5 minutes
-	export let warningThreshold = 60; // Seconds remaining to show warning
-	export let dangerThreshold = 10; // Seconds remaining to show danger
+	// Default to the app's real thresholds so a caller that forgets to wire
+	// these props can't silently drift from production behavior.
+	export let warningThreshold = ANIMATION.RECORDING.WARNING_THRESHOLD;
+	export let dangerThreshold = ANIMATION.RECORDING.DANGER_THRESHOLD;
 	export let buttonLabel = 'Say hi';
 	export let successMessages = ['Copied!'];
 	export let progress = 0; // For transcription progress
+	export let transcribingLabel = 'Processing';
 	// One-shot offline-model feedback, e.g. { text: 'Offline ready', tone: 'ok' | 'error' }.
 	// A discreet pulse above the button; cleared by the parent. Never fights the timer fill.
 	export let offlineNotice = null;
 
 	// Element refs
 	let recordButtonElement;
+	let transcribingWrapper;
 	let animationTimeout = null;
 	let copyMessage = getCopySuccessMessage();
 	let previousClipboardSuccess = false;
@@ -58,6 +63,51 @@
 		previousClipboardSuccess = clipboardSuccess;
 	}
 
+	// Announce limit-approach to screen readers on threshold crossings only —
+	// the button's aria-label carries the running time, but a label change is
+	// not announced while pressed, so the edges need a live-region nudge.
+	let wasWarning = false;
+	let wasDanger = false;
+	$: {
+		if (recording) {
+			if (buttonState.isDanger && !wasDanger) {
+				uiActions.setScreenReaderMessage(
+					`Recording stops in ${buttonState.timeRemaining} seconds.`
+				);
+			} else if (buttonState.isWarning && !wasWarning) {
+				uiActions.setScreenReaderMessage(
+					`${buttonState.timeRemaining} seconds of recording time left.`
+				);
+			}
+			wasWarning = buttonState.isWarning;
+			wasDanger = buttonState.isDanger;
+		} else {
+			wasWarning = false;
+			wasDanger = false;
+		}
+	}
+
+	// Keep keyboard focus anchored when the button swaps to the transcribing
+	// bar and back — otherwise focus silently drops to <body> mid-flow.
+	let restoreFocusToButton = false;
+	$: void handleTranscribingFocusSwap(transcribing);
+
+	async function handleTranscribingFocusSwap(isTranscribing) {
+		if (typeof document === 'undefined') return;
+
+		if (isTranscribing) {
+			restoreFocusToButton = document.activeElement === recordButtonElement;
+			if (restoreFocusToButton) {
+				await tick();
+				transcribingWrapper?.focus({ preventScroll: true });
+			}
+		} else if (restoreFocusToButton) {
+			restoreFocusToButton = false;
+			await tick();
+			recordButtonElement?.focus({ preventScroll: true });
+		}
+	}
+
 	// Handlers
 	export function animateButtonPress() {
 		if (recordButtonElement) {
@@ -81,7 +131,14 @@
 </script>
 
 {#if transcribing}
-	<TranscribingState {progress} />
+	<div
+		bind:this={transcribingWrapper}
+		tabindex="-1"
+		class="transcribing-focus-anchor"
+		aria-label="Transcribing"
+	>
+		<TranscribingState {progress} label={transcribingLabel} />
+	</div>
 {:else}
 	{#if showOfflineNotice}
 		<div
@@ -105,13 +162,23 @@
 			: ''}"
 		style={buttonStyle}
 		on:click={() => dispatch('click')}
-		aria-label={recording ? 'Stop Recording' : 'Start Recording'}
+		aria-label={recording ? `Stop recording. ${buttonState.durationLabel}` : 'Start Recording'}
 		aria-pressed={recording}
 	>
 		{#if recording}
 			<span class="recording-progress-track" aria-hidden="true">
 				<span class="recording-progress-fill"></span>
 				<span class="recording-progress-head"></span>
+			</span>
+			<span
+				class="timer-chip {buttonState.isDanger
+					? 'is-danger'
+					: buttonState.isWarning
+						? 'is-warning'
+						: ''}"
+				aria-hidden="true"
+			>
+				{buttonState.isWarning ? `${buttonState.remainingLabel} left` : buttonState.elapsedLabel}
 			</span>
 		{/if}
 
@@ -146,11 +213,6 @@
 					>
 						{buttonLabel}
 					</span>
-					<span class="sr-only">
-						{#if recording}
-							{buttonState.durationLabel}
-						{/if}
-					</span>
 				</span>
 			</span>
 		{/if}
@@ -169,7 +231,7 @@
 		white-space: nowrap;
 		border-radius: 9999px;
 		padding: 0.25rem 0.7rem;
-		font-size: 0.72rem;
+		font-size: 0.8rem;
 		font-weight: 900;
 		letter-spacing: 0;
 		box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
@@ -376,6 +438,55 @@
 		}
 	}
 
+	.transcribing-focus-anchor {
+		outline: none;
+		width: 100%;
+	}
+
+	/* Visible countdown chip — elapsed time normally, time-left once the
+	   warning threshold hits. Absolute so it never shifts the label. */
+	.timer-chip {
+		position: absolute;
+		right: 14px;
+		top: 50%;
+		transform: translateY(-50%);
+		z-index: 10;
+		font-size: 0.8rem;
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
+		letter-spacing: 0.02em;
+		color: rgba(120, 53, 15, 0.85);
+		background: rgba(255, 255, 255, 0.55);
+		border: 1px solid rgba(255, 255, 255, 0.65);
+		border-radius: 9999px;
+		padding: 0.15rem 0.55rem;
+		pointer-events: none;
+		white-space: nowrap;
+	}
+
+	.timer-chip.is-warning {
+		color: #9a3412;
+		background: rgba(255, 247, 237, 0.85);
+		border-color: rgba(251, 146, 60, 0.5);
+	}
+
+	.timer-chip.is-danger {
+		color: #be123c;
+		background: rgba(255, 241, 242, 0.9);
+		border-color: rgba(244, 63, 94, 0.55);
+		animation: timer-chip-pulse 1s ease-in-out infinite;
+	}
+
+	@keyframes timer-chip-pulse {
+		0%,
+		100% {
+			transform: translateY(-50%) scale(1);
+		}
+		50% {
+			transform: translateY(-50%) scale(1.06);
+		}
+	}
+
 	/* Whole-button progress indicator */
 	.recording-active {
 		position: relative;
@@ -403,6 +514,30 @@
 			radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.78), transparent 38%),
 			linear-gradient(90deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
 		opacity: 0.42;
+	}
+
+	/* Keep the "I'm listening" life alive during recording — the idle state
+	   breathes, so the active state shouldn't go static. */
+	.recording-active:not(.recording-danger) {
+		animation: recording-glow-breathe 2.6s ease-in-out infinite;
+	}
+
+	@keyframes recording-glow-breathe {
+		0%,
+		100% {
+			box-shadow:
+				0 8px 18px -8px rgba(251, 146, 60, 0.44),
+				0 0 0 1px rgba(251, 191, 36, 0.34),
+				0 0 10px 1px rgba(251, 146, 60, 0.16),
+				inset 0 1px 0 rgba(255, 255, 255, 0.42);
+		}
+		50% {
+			box-shadow:
+				0 8px 20px -8px rgba(251, 146, 60, 0.52),
+				0 0 0 1px rgba(251, 191, 36, 0.4),
+				0 0 18px 4px rgba(251, 146, 60, 0.26),
+				inset 0 1px 0 rgba(255, 255, 255, 0.46);
+		}
 	}
 
 	.recording-progress-track {
@@ -512,7 +647,9 @@
 		.pulse-subtle,
 		:global(.button-press),
 		.notification-pulse,
-		.record-button::before {
+		.record-button::before,
+		.recording-active,
+		.timer-chip.is-danger {
 			animation: none !important;
 		}
 
