@@ -1,6 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 	import { ANIMATION } from '$lib/constants';
 
 	const ICONS = {
@@ -35,7 +36,9 @@
 
 	function addToast(detail) {
 		const id = ++toastId;
-		const type = detail?.type || 'info';
+		// Coerce unknown types to 'info' so one malformed event can't break
+		// TYPE_COLORS lookups for every toast on screen.
+		const type = TYPE_COLORS[detail?.type] ? detail.type : 'info';
 		const message = detail?.message || '';
 		const duration =
 			type === 'error' ? ANIMATION.TOAST.ERROR_DURATION : ANIMATION.TOAST.DISPLAY_DURATION;
@@ -60,7 +63,9 @@
 	});
 
 	onDestroy(() => {
-		window.removeEventListener('talktype:toast', handleToast);
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('talktype:toast', handleToast);
+		}
 	});
 </script>
 
@@ -70,7 +75,7 @@
 			<div
 				class="toast-item {TYPE_COLORS[toast.type].bg} {TYPE_COLORS[toast.type]
 					.border} {TYPE_COLORS[toast.type].text}"
-				transition:fly={{ y: 24, duration: 260, easing: [0.22, 1, 0.36, 1] }}
+				transition:fly={{ y: 24, duration: 260, easing: quintOut }}
 			>
 				<svg
 					class="toast-icon {TYPE_COLORS[toast.type].icon}"
