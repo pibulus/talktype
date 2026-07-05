@@ -2,14 +2,13 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { appActive, waveformData } from '$lib/services/infrastructure';
 	import { createAnimationController } from '$lib/utils/performanceUtils';
+	import { clampLevel, getAudioDisplayLevel } from '$lib/utils/audioLevel.js';
 
 	// Audio visualization configuration
 	let audioLevel = 0;
 	let history = []; // Array to store audio level history
 	const historyLength = 30; // Number of bars to display in history
-	let animationFrameId;
-	let fallbackTimeoutId; // Separate ID for setTimeout to avoid mixing with RAF
-	let recording = false; // Track recording state within the component
+	let recording = false;
 	let smoothedLevel = 0;
 	const idleBaseLevel = 2.5;
 
@@ -19,146 +18,53 @@
 	// CSS class to control animation state
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 
-	// Safari/iOS detection (guard against SSR where navigator is undefined)
-	const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-	const isiPhone = /iPhone|iPad/i.test(userAgent);
-	const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
-
-	// Flag for fallback mode - use for Safari or iOS
-	const useFallbackVisualizer = isiPhone || isSafari;
-
-	// ===== STANDARD AUDIO VISUALIZER (using waveformData from audioService) =====
-	function initStandardVisualizer() {
-		// No need to create separate stream - audioService already provides waveformData!
-		recording = true;
-		history = Array(historyLength).fill(0);
-		startVisualizer();
-	}
-
-	// ===== FALLBACK VISUALIZER FOR SAFARI/IOS =====
-	let fallbackAnimating = false;
-
-	// Persistent variables for more natural motion
+	// ===== SIMULATED LEVELS (analyser-blind rescue only) =====
+	// When the AudioContext is suspended (audioService publishes null waveform
+	// data), the analyser is blind but MediaRecorder keeps capturing. Rather
+	// than a dead-looking flat line for a working recording, we synthesize a
+	// gentle speech-like pattern. This NEVER runs while real data is flowing —
+	// real silence shows honest low bars.
 	let lastLevel = 20;
 	let trend = 0;
 	let peakCountdown = 0;
 	let silenceCountdown = 0;
 
-	function initFallbackVisualizer() {
-		// console.log('Using fallback visualizer for Safari/iOS');
-		history = Array(historyLength).fill(0);
-		fallbackAnimating = true;
-		recording = true;
-		// Reset simulation variables
-		lastLevel = 20;
-		trend = 0;
-		peakCountdown = 0;
-		silenceCountdown = 0;
-		updateFallbackVisualizer();
-	}
-
-	function updateFallbackVisualizer() {
-		if (!fallbackAnimating) return;
-
-		if (!$appActive) {
-			// If app is inactive, schedule less frequent updates with reactive store value
-			// Use separate timeout ID to avoid mixing setTimeout/RAF IDs
-			fallbackTimeoutId = setTimeout(() => {
-				animationFrameId = requestAnimationFrame(updateFallbackVisualizer);
-			}, 1000); // Check back in 1 second when inactive
-			return;
+	function nextSimulatedLevel() {
+		if (peakCountdown <= 0) {
+			if (Math.random() < 0.1) {
+				lastLevel = 60 + Math.random() * 30;
+				peakCountdown = 5 + Math.floor(Math.random() * 5);
+				silenceCountdown = 0;
+			} else if (Math.random() < 0.3) {
+				lastLevel = 40 + Math.random() * 25;
+				peakCountdown = 3 + Math.floor(Math.random() * 3);
+				silenceCountdown = 0;
+			} else if (Math.random() < 0.4) {
+				lastLevel = 5 + Math.random() * 10;
+				silenceCountdown = 4 + Math.floor(Math.random() * 4);
+			} else {
+				lastLevel = 20 + Math.random() * 25;
+				peakCountdown = 2 + Math.floor(Math.random() * 2);
+			}
+			trend = Math.random() < 0.5 ? -1 : 1;
 		}
 
-		// Only animate when recording is true
-		if (recording) {
-			// Create more dynamic, speech-like pattern with pronounced peaks
-
-			// Determine if we should create a new peak
-			if (peakCountdown <= 0) {
-				// Random chance to create a dramatic peak (simulating louder speech)
-				if (Math.random() < 0.1) {
-					// Create a big peak (60-90% height)
-					let peakHeight = 60 + Math.random() * 30;
-					lastLevel = peakHeight;
-					// Reset peak countdown - longer delay after big peaks
-					peakCountdown = 5 + Math.floor(Math.random() * 5);
-					// Reset silence countdown
-					silenceCountdown = 0;
-				} else if (Math.random() < 0.3) {
-					// Create a medium peak (40-65% height)
-					lastLevel = 40 + Math.random() * 25;
-					// Reset peak countdown - medium delay
-					peakCountdown = 3 + Math.floor(Math.random() * 3);
-					// Reset silence countdown
-					silenceCountdown = 0;
-				} else if (Math.random() < 0.4) {
-					// Occasional silence (speech pause)
-					lastLevel = 5 + Math.random() * 10;
-					silenceCountdown = 4 + Math.floor(Math.random() * 4);
-				} else {
-					// Regular level changes (20-45% height)
-					lastLevel = 20 + Math.random() * 25;
-					// Reset peak countdown - short delay
-					peakCountdown = 2 + Math.floor(Math.random() * 2);
-				}
-
-				// Change trend direction
-				trend = Math.random() < 0.5 ? -1 : 1;
-			}
-
-			// Handle silence periods
-			if (silenceCountdown > 0) {
-				lastLevel = Math.max(5, lastLevel * 0.8);
-				silenceCountdown--;
-			}
-
-			// Add some sinusoidal movement for natural "breathing" effect
-			let breathEffect = Math.sin(Date.now() / 400) * 5;
-
-			// Apply trend (gradual rise/fall between peaks)
-			lastLevel += trend * (Math.random() * 4 - 1);
-
-			// Ensure levels stay within reasonable range
-			lastLevel = Math.max(5, Math.min(90, lastLevel));
-
-			// Countdown to next peak decision
-			peakCountdown--;
-
-			// Apply breath effect and some minor randomness
-			let finalLevel = lastLevel + breathEffect + (Math.random() * 6 - 3);
-
-			// Clamp final value
-			finalLevel = Math.max(5, Math.min(90, finalLevel));
-
-			// Update history with new generated level
-			history = [finalLevel, ...history];
-			if (history.length > historyLength) {
-				history.pop();
-			}
-		} else {
-			// When not recording, quickly fade out and stop
-			history = history.map((level) => level * 0.8);
-
-			// Stop animation completely if levels are very low
-			let maxLevel = Math.max(...history);
-			if (maxLevel < 2) {
-				fallbackAnimating = false;
-				history = Array(historyLength).fill(0);
-				return; // Exit without scheduling next frame
-			}
+		if (silenceCountdown > 0) {
+			lastLevel = Math.max(5, lastLevel * 0.8);
+			silenceCountdown--;
 		}
 
-		// Schedule next update
-		animationFrameId = requestAnimationFrame(updateFallbackVisualizer);
+		const breathEffect = Math.sin(Date.now() / 400) * 5;
+		lastLevel += trend * (Math.random() * 4 - 1);
+		lastLevel = Math.max(5, Math.min(90, lastLevel));
+		peakCountdown--;
+
+		return Math.max(5, Math.min(90, lastLevel + breathEffect + (Math.random() * 6 - 3)));
 	}
 
-	// ===== STANDARD VISUALIZER UPDATE LOGIC (using waveformData from store) =====
+	// ===== VISUALIZER UPDATE LOGIC (real analyser data from audioService) =====
 	let frameSkipCounter = 0;
-	const frameSkipRate = 2; // Adjust this value to control the speed (higher value = slower animation)
-
-	function clampLevel(value) {
-		return Math.max(0, Math.min(100, value));
-	}
+	const frameSkipRate = 2; // Process every 3rd frame — smooths bars and saves work
 
 	function getIdleLevel() {
 		return idleBaseLevel + Math.sin(Date.now() / 900) * 0.8;
@@ -169,53 +75,6 @@
 		if (history.length > historyLength) {
 			history.pop();
 		}
-	}
-
-	function getVisualizerLevel(dataArray) {
-		let sum = 0;
-		let peak = 0;
-		let min = 255;
-		const topValues = [0, 0, 0, 0, 0, 0];
-
-		for (let i = 0; i < dataArray.length; i++) {
-			const value = dataArray[i];
-			sum += value;
-			peak = Math.max(peak, value);
-			min = Math.min(min, value);
-
-			for (let j = 0; j < topValues.length; j++) {
-				if (value > topValues[j]) {
-					topValues.splice(j, 0, value);
-					topValues.pop();
-					break;
-				}
-			}
-		}
-
-		const average = sum / dataArray.length;
-		const topAverage = topValues.reduce((total, value) => total + value, 0) / topValues.length;
-
-		// Frequency-domain data is quiet on desktop mics. A small top-bin average
-		// catches speech without letting one noisy bin dominate the whole display.
-		if (min <= 40) {
-			const averageLevel = Math.max(0, average - 4) / 34;
-			const topLevel = Math.max(0, topAverage - 14) / 92;
-			const peakLevel = Math.max(0, peak - 22) / 130;
-			return clampLevel(Math.pow(Math.max(averageLevel, topLevel, peakLevel), 0.82) * 100);
-		}
-
-		// Defensive fallback if the store ever switches to time-domain waveform data.
-		let deviationSum = 0;
-		let peakDeviation = 0;
-		for (let i = 0; i < dataArray.length; i++) {
-			const deviation = Math.abs(dataArray[i] - 128);
-			deviationSum += deviation;
-			peakDeviation = Math.max(peakDeviation, deviation);
-		}
-
-		const averageDeviation = deviationSum / dataArray.length;
-		const deviationLevel = Math.max(averageDeviation / 26, peakDeviation / 88);
-		return clampLevel(Math.pow(deviationLevel, 0.82) * 100);
 	}
 
 	function smoothVisualizerLevel(targetLevel) {
@@ -235,106 +94,39 @@
 		}
 		frameSkipCounter = 0;
 
-		// Use waveformData from audioService store (no need for separate analyser!)
 		const dataArray = $waveformData;
+
+		// null = analyser is blind (suspended AudioContext) but recording is
+		// live — show the simulated pattern instead of a dead flat line.
+		if (dataArray === null) {
+			audioLevel = smoothVisualizerLevel(nextSimulatedLevel());
+			pushVisualizerLevel(audioLevel);
+			return;
+		}
+
 		if (!dataArray || dataArray.length === 0) {
 			audioLevel = smoothVisualizerLevel(getIdleLevel());
 			pushVisualizerLevel(audioLevel);
 			return;
 		}
-		// console.log('[AudioVisualizer] Got data:', dataArray[0], dataArray[10]);
 
-		const targetLevel = Math.max(getVisualizerLevel(dataArray), 1.5);
+		const targetLevel = Math.max(getAudioDisplayLevel(dataArray), 1.5);
 		audioLevel = smoothVisualizerLevel(targetLevel);
 		pushVisualizerLevel(audioLevel);
 	});
 
-	// ===== COMMON CONTROL FUNCTIONS =====
-	function startVisualizer() {
-		if (useFallbackVisualizer) {
-			// Start fallback visualizer
-			if (!fallbackAnimating) {
-				fallbackAnimating = true;
-				updateFallbackVisualizer();
-			}
-		} else if (recording) {
-			// Start optimized visualizer with auto-pause
-			smoothedLevel = 0;
-			history = Array(historyLength).fill(0);
-			visualizerAnimation.start();
-		}
-
-		// Animation state is now managed through reactive variables
-		// No need to manually manipulate DOM classes
-	}
-
-	function stopVisualizer() {
-		recording = false;
-
-		if (useFallbackVisualizer) {
-			// Let the visualization fade out naturally
-			// The fadeout and stop is handled in updateFallbackVisualizer
-		} else {
-			// Stop optimized animation controller
-			visualizerAnimation.stop();
-			// Clean up animation frame and any pending timeout separately
-			if (typeof animationFrameId === 'number') {
-				cancelAnimationFrame(animationFrameId);
-				animationFrameId = null;
-			}
-			if (typeof fallbackTimeoutId === 'number') {
-				clearTimeout(fallbackTimeoutId);
-				fallbackTimeoutId = null;
-			}
-			audioLevel = 0;
-			smoothedLevel = 0;
-			history = [];
-			// No audioContext to clean up - we're using audioService's stream!
-		}
-	}
-
 	// ===== LIFECYCLE HOOKS =====
 	onMount(() => {
-		// Initialize visualizer
-		if (useFallbackVisualizer) {
-			initFallbackVisualizer();
-		} else {
-			initStandardVisualizer();
-		}
+		recording = true;
+		smoothedLevel = 0;
+		history = Array(historyLength).fill(0);
+		visualizerAnimation.start();
 	});
 
-	$: {
-		// Reactively update recording state
-		if (recording) {
-			if (useFallbackVisualizer) {
-				if (!fallbackAnimating) {
-					startVisualizer();
-				}
-			} else {
-				startVisualizer();
-			}
-		} else if (!recording) {
-			stopVisualizer();
-		}
-	}
-
 	onDestroy(() => {
-		fallbackAnimating = false;
-		stopVisualizer();
-
-		// Clean up the animation controller's visibilitychange listener
+		recording = false;
+		visualizerAnimation.stop();
 		visualizerAnimation.destroy();
-
-		// Extra cleanup for any potential timeout/animation frame
-		if (typeof animationFrameId === 'number') {
-			cancelAnimationFrame(animationFrameId);
-			animationFrameId = null;
-		}
-		if (typeof fallbackTimeoutId === 'number') {
-			clearTimeout(fallbackTimeoutId);
-			fallbackTimeoutId = null;
-		}
-		// No media stream to release - audioService manages its own stream
 	});
 </script>
 

@@ -85,6 +85,9 @@ export class AudioService {
 				);
 				if (this.stateManager.getState() === AudioStates.RECORDING) {
 					void this.requestScreenWakeLock();
+					// Backgrounded tabs throttle the timer interval, so the cap
+					// check can fire late — re-check as soon as we're visible.
+					audioActions.checkRecordingTimeLimit();
 				}
 			} else if (this.stateManager.getState() === AudioStates.RECORDING) {
 				void this.#checkpointRecordingDraft(
@@ -405,9 +408,15 @@ export class AudioService {
 			}
 
 			try {
-				this.analyser.getByteFrequencyData(dataArray);
-				// Update store instead of emitting event
-				audioActions.setWaveformData(Array.from(dataArray));
+				if (this.audioContext?.state !== 'running') {
+					// Analyser is blind (suspended context) — publish null so the
+					// visualizer can distinguish "can't see" from "hearing silence".
+					audioActions.setWaveformData(null);
+				} else {
+					this.analyser.getByteFrequencyData(dataArray);
+					// Update store instead of emitting event
+					audioActions.setWaveformData(Array.from(dataArray));
+				}
 				this.animationFrameId = requestAnimationFrame(updateWaveform);
 			} catch (error) {
 				log.warn('Waveform monitoring error:', error.message);
