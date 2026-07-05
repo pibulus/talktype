@@ -48,6 +48,19 @@ page.on('console', (m) => {
 });
 
 try {
+	// Force the tiny+WASM baseline BEFORE any app script runs: userPreferences
+	// is an in-memory store (there is no 'userPreferences' localStorage key),
+	// but the sticky WebGPU kill-switch IS read at module init. Without this,
+	// headless Chromium claims WebGPU support, the run goes distil-small/webgpu,
+	// and a failed WebGPU init can poison ONNX's cached backend state.
+	await page.addInitScript(() => {
+		try {
+			localStorage.setItem('talktype_webgpu_disabled', 'true');
+		} catch {
+			// best-effort
+		}
+	});
+
 	console.log(`→ loading ${APP_URL}`);
 	await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
 
@@ -58,17 +71,6 @@ try {
 	// Force the tiny model preference (baseline path), then run real transcribe.
 	const result = await page.evaluate(
 		async ({ wavB64, budget }) => {
-			// localStorage pref the registry reads for model selection
-			try {
-				const raw = localStorage.getItem('userPreferences');
-				const prefs = raw ? JSON.parse(raw) : {};
-				prefs.whisperModel = 'tiny';
-				prefs.modelManuallySelected = true;
-				localStorage.setItem('userPreferences', JSON.stringify(prefs));
-			} catch {
-				// best-effort: pref defaults to tiny anyway
-			}
-
 			// Decode base64 WAV → AudioBuffer → Float32Array @ the clip's own rate,
 			// then resample to 16kHz mono (what whisperService expects).
 			const bin = atob(wavB64);

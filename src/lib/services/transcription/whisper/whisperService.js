@@ -49,11 +49,16 @@ export function configureTransformersEnv(env) {
 	if (wasmBackend) {
 		// transformers.js 4.x expects wasmPaths as an object with .wasm and .mjs keys,
 		// NOT a string base path. A string bypasses the WASM cache (ensureWasmLoaded)
-		// and breaks the static/onnx/ self-hosting. asyncify is the safest cross-browser
-		// variant (Safari requires it; Chrome/Firefox handle it well).
+		// and breaks the static/onnx/ self-hosting.
+		//
+		// asyncify is the safest cross-browser variant — the jspi build (Chrome
+		// 137+ auto-pick) rejects the quantized tiny model's weight layout
+		// ("Missing required scale ... DequantizeLinear"). Pinning asyncify
+		// works everywhere BUT requires blob: in the CSP script-src, because
+		// ort's loader blob-wraps the fetched .mjs before importing it.
 		wasmBackend.wasmPaths = {
-			wasm: ORT_WASM_BASE + 'ort-wasm-simd-threaded.asyncify.wasm',
-			mjs: ORT_WASM_BASE + 'ort-wasm-simd-threaded.asyncify.mjs'
+			wasm: `${ORT_WASM_BASE}ort-wasm-simd-threaded.asyncify.wasm`,
+			mjs: `${ORT_WASM_BASE}ort-wasm-simd-threaded.asyncify.mjs`
 		};
 		wasmBackend.numThreads = 1; // single-threaded WASM for cross-browser stability (esp. iOS)
 	}
@@ -258,11 +263,25 @@ export class WhisperService {
 					// expensive WebGPU distil-small download on the next session.
 					userPreferences.update((p) => ({ ...p, whisperModel: 'tiny' }));
 					markWebgpuDisabled();
+					// Reset per-download progress state: mixing the dead distil-small
+					// bytes into the aggregate would pin the bar at its high-water
+					// mark and hide tiny's real progress behind the monotonic guard.
+					this.modelFileProgress = new Map();
+					this.modelHasSeenLargeFile = false;
+					this.peakAggregateProgress = 0;
+					this.lastRealProgressAt = 0;
 					this.updateStatus({
 						selectedModel: 'tiny',
 						selectedModelName: fallbackConfig.name,
-						selectedModelSize: fallbackConfig.size
+						selectedModelSize: fallbackConfig.size,
+						progress: 1,
+						phase: WHISPER_PHASES.LOADING_LIBRARY,
+						statusText: getLoadStatusText({
+							phase: WHISPER_PHASES.LOADING_LIBRARY,
+							modelName: fallbackConfig.name
+						})
 					});
+					this.#startLoadProgressTicker(fallbackConfig);
 					transcriber = await this.#loadPipeline(
 						pipeline,
 						fallbackConfig,
