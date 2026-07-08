@@ -13,7 +13,7 @@ This is the current local transcription path. The broader flow is documented in 
 
 - Implementation: `src/lib/services/transcription/whisper/whisperService.js`.
 - Library: `@huggingface/transformers` (`4.2.0` in `package.json`).
-- Default model: `tiny`, resolving to `Xenova/whisper-tiny.en`. Capable WebGPU desktops adaptively select `distil-small` instead (see `modelRegistry.js` device detection).
+- Default model: `tiny`, resolving to `onnx-community/whisper-tiny.en` (q4, ~96MB — the old Xenova q8 export is rejected by modern onnxruntime on newest Chromium). Capable WebGPU desktops adaptively select `distil-small` instead (see `modelRegistry.js` device detection).
 - Runtime backend: WASM single-threaded as the universal baseline, with the ONNX Runtime WASM binary self-hosted through Vite instead of the transformers.js CDN default.
 - Browser caching: transformers.js browser Cache API storage is enabled. The service worker no longer writes a second copy of new Hugging Face model files; it only serves legacy `whisper-models-v1` hits so transformers.js can migrate them into `transformers-cache`.
 - WebGPU is used only for the adaptive `distil-small` desktop path; a failed WebGPU load falls back to `tiny` + WASM once and persists that downgrade.

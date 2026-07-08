@@ -8,6 +8,7 @@ import { get, writable } from 'svelte/store';
 import { userPreferences, markWebgpuDisabled } from '../../infrastructure/stores';
 import { convertToWAV as convertToRawAudio } from './audioConverter';
 import { getModelInfo } from './modelRegistry';
+import { probeWebGPU } from '../deviceCapabilities';
 import {
 	WHISPER_CACHE_NAMES,
 	WHISPER_PHASES,
@@ -99,7 +100,7 @@ export const whisperStatus = writable({
 	phase: WHISPER_PHASES.IDLE,
 	statusText: getLoadStatusText({ phase: WHISPER_PHASES.IDLE }),
 	selectedModel: DEFAULT_MODEL_KEY,
-	selectedModelName: 'Tiny English (117MB)',
+	selectedModelName: 'Tiny English (96MB)',
 	selectedModelSize: null,
 	storagePersisted: null,
 	storageEstimate: null,
@@ -142,7 +143,27 @@ export class WhisperService {
 
 		this.updateStatus({ supportsWhisper: this.isSupported });
 		this.#refreshDeviceStorageState();
-		this.refreshCachedModelStatus();
+		this.#purgeLegacyModelCache().finally(() => this.refreshCachedModelStatus());
+	}
+
+	// One-time sweep: the tiny model moved from Xenova/whisper-tiny.en (2023 q8,
+	// rejected by modern ort) to onnx-community/whisper-tiny.en. Drop the dead
+	// Xenova bytes (~42MB) so they don't sit in storage forever.
+	async #purgeLegacyModelCache() {
+		if (!browser || typeof caches === 'undefined') return;
+		try {
+			for (const cacheName of WHISPER_CACHE_NAMES) {
+				const cache = await caches.open(cacheName);
+				const requests = await cache.keys();
+				await Promise.all(
+					requests
+						.filter((request) => (request.url || '').includes('Xenova/whisper-tiny.en'))
+						.map((request) => cache.delete(request))
+				);
+			}
+		} catch (error) {
+			console.warn('[WhisperService] Legacy cache purge failed (continuing):', error?.message);
+		}
 	}
 
 	updateStatus(updates) {
@@ -282,6 +303,8 @@ export class WhisperService {
 						})
 					});
 					this.#startLoadProgressTicker(fallbackConfig);
+					device = fallbackDevice;
+					dtype = fallbackDtype;
 					transcriber = await this.#loadPipeline(
 						pipeline,
 						fallbackConfig,
@@ -337,6 +360,13 @@ export class WhisperService {
 	// Load a pipeline for a given device/dtype, raced against a timeout to prevent
 	// infinite hangs. Returns the transcriber or throws.
 	async #loadPipeline(pipeline, modelConfig, device, dtype) {
+		// Guard even manually-selected WebGPU models: a software adapter
+		// (SwiftShader) creates sessions fine but transcribes slower than
+		// real-time. Throwing here routes into the tiny+WASM fallback.
+		if (device === 'webgpu' && !(await probeWebGPU())) {
+			throw new Error('WebGPU adapter is missing or software-only');
+		}
+
 		const loadPromise = pipeline('automatic-speech-recognition', modelConfig.id, {
 			device,
 			dtype,

@@ -109,6 +109,15 @@ export class SimpleHybridService {
 		return this.whisperLoadPromise;
 	}
 
+	/**
+	 * Are the current model's bytes already in the browser cache? Used by the
+	 * offline controller to warm from disk at startup without triggering a
+	 * surprise download.
+	 */
+	isOfflineModelCached() {
+		return whisperService.refreshCachedModelStatus();
+	}
+
 	async releaseOfflineModel() {
 		const pendingLoad = this.whisperLoadPromise;
 		this.whisperLoadPromise = null;

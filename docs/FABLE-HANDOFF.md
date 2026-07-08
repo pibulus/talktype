@@ -14,7 +14,23 @@ Ground rules for the executor:
 
 ---
 
-## TASK 1 — Offline Whisper on bleeding-edge Chromium (highest value, do first)
+## TASK 1 — Offline Whisper on bleeding-edge Chromium — ✅ DONE 2026-07-09
+
+Resolved via option 2 (option 1 is a dead end: 4.2.0 IS the latest transformers
+and pins the same 1.26.0-dev ort). Tiny now sources
+`onnx-community/whisper-tiny.en` with dtype `q4` (~96MB). Empirical results:
+q8 from onnx-community hits the SAME "Missing required scale" error — the old
+DequantizeLinear q8 layout is the problem regardless of repo; q4 (MatMulNBits
+native) loads and transcribes perfectly on the bleeding-edge build. Both e2e
+gates GREEN, cached reload verified. Bonus fixes from the same session:
+`probeWebGPU` now rejects software adapters (SwiftShader reports
+isFallbackAdapter — headless Chromium ~143 exposes one, loads distil-small at
+slower-than-realtime speed), whisperService probes before ANY webgpu load so
+even manual 'small' selection falls back to tiny, startup warms the model from
+cache when Offline Mode is already on (never downloads), controller fires
+ready/failed toasts, and stale Xenova cache bytes get purged once.
+
+### Original task (for history)
 
 ### Status quo (verified 2026-07-06, don't re-derive)
 

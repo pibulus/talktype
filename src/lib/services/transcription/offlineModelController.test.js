@@ -2,12 +2,15 @@ import { writable } from 'svelte/store';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OfflineModelController } from './offlineModelController.js';
 
-function createController({ initialPrivacyMode = 'false' } = {}) {
+function createController({ initialPrivacyMode = 'false', isModelCached } = {}) {
 	const privacyStore = writable(initialPrivacyMode);
 	const hybridService = {
 		startBackgroundLoad: vi.fn().mockResolvedValue({ success: true }),
 		releaseOfflineModel: vi.fn().mockResolvedValue()
 	};
+	if (isModelCached !== undefined) {
+		hybridService.isOfflineModelCached = vi.fn().mockResolvedValue(isModelCached);
+	}
 	const controller = new OfflineModelController({
 		hybridService,
 		privacyStore,
@@ -42,6 +45,26 @@ describe('OfflineModelController', () => {
 
 		window.dispatchEvent(new MouseEvent('click'));
 
+		expect(setup.hybridService.startBackgroundLoad).not.toHaveBeenCalled();
+	});
+
+	it('warms the model from cache at startup when Offline Mode is on and bytes are cached', async () => {
+		const setup = createController({ initialPrivacyMode: 'true', isModelCached: true });
+		controller = setup.controller;
+		controller.start();
+
+		await vi.waitFor(() => {
+			expect(setup.hybridService.startBackgroundLoad).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	it('does not download at startup when Offline Mode is on but nothing is cached', async () => {
+		const setup = createController({ initialPrivacyMode: 'true', isModelCached: false });
+		controller = setup.controller;
+		controller.start();
+
+		// Give the async cache probe a tick to resolve.
+		await new Promise((resolve) => setTimeout(resolve, 10));
 		expect(setup.hybridService.startBackgroundLoad).not.toHaveBeenCalled();
 	});
 

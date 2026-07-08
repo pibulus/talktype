@@ -82,7 +82,9 @@ export function detectDeviceCapabilities() {
 /**
  * Probe for a REAL, usable WebGPU adapter — not just the API surface. `'gpu' in
  * navigator` is true even when requestAdapter() returns null (no working GPU),
- * so we must actually request one. Result is cached for the session.
+ * and requestAdapter() can return a SOFTWARE rasterizer (SwiftShader/llvmpipe)
+ * that "works" but transcribes slower than real-time — worse than WASM. Only a
+ * hardware adapter counts. Result is cached for the session.
  */
 let webgpuAdapterPromise;
 export function probeWebGPU() {
@@ -96,7 +98,15 @@ export function probeWebGPU() {
 				navigator.gpu.requestAdapter(),
 				new Promise((resolve) => setTimeout(() => resolve(null), 3000))
 			]);
-			return Boolean(adapter);
+			if (!adapter) return false;
+			// Chrome exposes isFallbackAdapter on the adapter (older) or its info
+			// (newer); software stacks also identify via vendor/architecture strings.
+			const info = adapter.info || {};
+			if (adapter.isFallbackAdapter || info.isFallbackAdapter) return false;
+			const signature =
+				`${info.vendor || ''} ${info.architecture || ''} ${info.description || ''}`.toLowerCase();
+			if (/swiftshader|llvmpipe|lavapipe|software/.test(signature)) return false;
+			return true;
 		} catch {
 			return false;
 		}

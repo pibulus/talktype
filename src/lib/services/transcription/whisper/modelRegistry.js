@@ -16,21 +16,27 @@ const log = createLogger('ModelRegistry');
 const DEFAULT_MODELS = [
 	{
 		id: 'tiny',
-		transformers_id: 'Xenova/whisper-tiny.en', // v4-native ONNX export, updated Dec 2025
-		name: 'Tiny English (117MB)',
+		// onnx-community modern export — the old Xenova/whisper-tiny.en (2023 q8)
+		// is rejected by the ort 1.26-dev bundled in transformers.js 4.x on newest
+		// Chromium ("Missing required scale ... TransposeDQWeightsForMatMulNBits").
+		// Same source family as distil-small, which never hit that error.
+		transformers_id: 'onnx-community/whisper-tiny.en',
+		name: 'Tiny English (96MB)',
 		description: 'Mobile-optimized, iOS compatible',
-		size: 117 * 1024 * 1024, // ~117MB INT8 quantized
+		size: 96 * 1024 * 1024, // encoder_q4 (~9MB) + decoder_merged_q4 (~87MB)
 		parameters: 39000000,
 		languages: ['en'],
-		version: '1.0.0',
+		version: '2.0.0',
 		recommended_for: 'iOS Safari, low-memory devices',
 		speed_multiplier: 1.0,
 		accuracy_loss: '~20% vs distil-small',
 		mobile_safe: true,
-		// WASM + q8 (int8 quantized) — the transformers.js default for WASM,
-		// uses _quantized.onnx files which have the broadest ort compatibility.
+		// WASM + q4 — maps to the *_q4.onnx files, which use MatMulNBits natively.
+		// Both q8 layouts (Xenova AND onnx-community *_quantized.onnx) are rejected
+		// by modern ort's DQ→MatMulNBits graph transform ("Missing required scale"),
+		// so q8 is a dead end for tiny — don't go back to it.
 		device: 'wasm',
-		dtype: 'q8'
+		dtype: 'q4'
 	},
 	{
 		id: 'small',
