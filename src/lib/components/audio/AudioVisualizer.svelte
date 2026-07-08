@@ -62,6 +62,33 @@
 		return Math.max(5, Math.min(90, lastLevel + breathEffect + (Math.random() * 6 - 3)));
 	}
 
+	// ===== DEAD-MIC NUDGE =====
+	// The bars honestly show a silent mic, but nothing TELLS the user. Track
+	// consecutive processed frames of true silence (real analyser data only —
+	// dataArray === null means the analyser is blind, not that the mic is dead)
+	// and nudge once after ~8s (~20 processed frames/sec at the current cadence).
+	const SILENT_NUDGE_FRAMES = 160;
+	const SILENT_LEVEL = 2;
+	let silentFrames = 0;
+	let nudgeFired = false;
+
+	function trackSilence(level) {
+		if (level >= SILENT_LEVEL) {
+			silentFrames = 0;
+			nudgeFired = false;
+			return;
+		}
+		silentFrames++;
+		if (!nudgeFired && silentFrames >= SILENT_NUDGE_FRAMES) {
+			nudgeFired = true;
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: { type: 'info', message: "Can't hear you — check your mic?" }
+				})
+			);
+		}
+	}
+
 	// ===== VISUALIZER UPDATE LOGIC (real analyser data from audioService) =====
 	let frameSkipCounter = 0;
 	const frameSkipRate = 2; // Process every 3rd frame — smooths bars and saves work
@@ -110,7 +137,9 @@
 			return;
 		}
 
-		const targetLevel = Math.max(getAudioDisplayLevel(dataArray), 1.5);
+		const realLevel = getAudioDisplayLevel(dataArray);
+		trackSilence(realLevel);
+		const targetLevel = Math.max(realLevel, 1.5);
 		audioLevel = smoothVisualizerLevel(targetLevel);
 		pushVisualizerLevel(audioLevel);
 	});
