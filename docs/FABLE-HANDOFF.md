@@ -89,6 +89,19 @@ PW_PATH=$(npm root -g)/playwright/index.mjs node tests/e2e/offline-whisper.mjs
 
 ---
 
+> **STATUS 2026-07-09: Tasks 2–5 all DONE** (commits `13ce9be`…`59bb0e8`).
+> Task 2: "Sounds & Vibration" toggle in Settings, wired at the service layer
+> via `talktype_sound_enabled`. Task 3: dead-mic nudge in AudioVisualizer
+> (real frames only, once per silent stretch). Task 4: all four cleanups
+> (formData 400, `estimateDurationSecondsFromBlob`, isRecording delegate,
+> isFirstVisit unexport). Task 5: webgpu-fallback gate GREEN (no dead seam —
+> it drives the real store import); it also gained `TT_HEADED=1` for real-GPU
+> runs, which verified distil-small q4 on Metal (desktop download 665→251MB;
+> the old "200MB" label was wrong, fp32 was really ~665MB).
+> Remaining manual acceptance: record with the OS-level mic muted → one toast
+> after ~8s; toggle sounds off → silent clicks, survives reload.
+> Only the PABLO-ONLY section below is still open.
+
 ## TASK 2 — Sound/haptic mute toggle (Settings)
 
 There is NO user preference gating sounds/haptics today —
