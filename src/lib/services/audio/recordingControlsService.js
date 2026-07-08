@@ -17,6 +17,7 @@ import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
 import { analytics } from '$lib/services/analytics.js';
 import { createLogger } from '$lib/utils/logger';
 import { isPermissionError } from './permissionErrors.js';
+import { estimateDurationSecondsFromBlob } from './durationEstimate.js';
 
 const log = createLogger('RecordingControls');
 
@@ -179,7 +180,7 @@ export class RecordingControlsService {
 			}
 
 			// Validate duration
-			const estimatedDurationSeconds = audioBlob.size / 2000;
+			const estimatedDurationSeconds = estimateDurationSecondsFromBlob(audioBlob);
 			const durationSeconds = get(recordingState).duration || estimatedDurationSeconds;
 			analytics.recordingStopped({
 				mode: recordingMode,

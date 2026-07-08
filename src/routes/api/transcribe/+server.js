@@ -158,7 +158,17 @@ export async function POST(event) {
 			);
 		}
 
-		const formData = await event.request.formData();
+		let formData;
+		try {
+			formData = await event.request.formData();
+		} catch {
+			// Malformed/truncated multipart body — a client-side upload hiccup,
+			// not a server error. Mirror the JSON-parse 400 in validate-code.
+			return json(
+				{ error: 'That upload got scrambled in transit. Mind trying again?' },
+				{ status: 400 }
+			);
+		}
 		const file = formData.get('audio_file');
 		const promptStyle = formData.get('prompt_style')?.toString() || 'standard';
 		const customPrompt = (formData.get('custom_prompt')?.toString() || '')

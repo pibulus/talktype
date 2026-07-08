@@ -10,7 +10,7 @@ import { pwaService as pwaServiceInstance } from './pwa/pwaService';
 import { resetStores } from './infrastructure/stores';
 export { eventBus, hapticService, soundService, StorageUtils } from './infrastructure/index';
 export { modalService } from './modals/modalService';
-export { firstVisitService, isFirstVisit } from './first-visit/firstVisitService';
+export { firstVisitService } from './first-visit/firstVisitService';
 export {
 	pwaService,
 	deferredInstallPrompt,

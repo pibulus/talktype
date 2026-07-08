@@ -4,8 +4,9 @@ import { StorageUtils } from '../infrastructure/storageUtils';
 import { modalService } from '../modals/modalService';
 import { STORAGE_KEYS } from '../../constants';
 
-// Store to track first visit status
-export const isFirstVisit = writable(false);
+// Store to track first visit status (internal — nothing outside this service
+// consumes it; the ghost's isFirstVisit is an unrelated local).
+const isFirstVisit = writable(false);
 
 export class FirstVisitService {
 	constructor() {

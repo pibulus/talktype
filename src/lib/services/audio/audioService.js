@@ -18,6 +18,7 @@ import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { createLogger } from '$lib/utils/logger';
 import { isPermissionError } from './permissionErrors.js';
+import { estimateDurationSecondsFromBlob } from './durationEstimate.js';
 
 const log = createLogger('AudioService');
 const SPEECH_AUDIO_BITS_PER_SECOND = 48000;
@@ -727,7 +728,9 @@ export class AudioService {
 		try {
 			const durationFromStore = get(recordingState)?.duration;
 			const duration =
-				typeof durationFromStore === 'number' ? durationFromStore : audioBlob.size / 2000;
+				typeof durationFromStore === 'number'
+					? durationFromStore
+					: estimateDurationSecondsFromBlob(audioBlob);
 
 			const draft = await saveRecordingDraft(audioBlob, {
 				mimeType,
@@ -957,7 +960,7 @@ export class AudioService {
 	}
 
 	isRecording() {
-		return this.stateManager.getState() === AudioStates.RECORDING;
+		return this.stateManager.isRecording();
 	}
 
 	async requestScreenWakeLock() {
