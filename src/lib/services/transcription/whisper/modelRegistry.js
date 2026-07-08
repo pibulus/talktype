@@ -43,7 +43,7 @@ const DEFAULT_MODELS = [
 		transformers_id: 'onnx-community/distil-small.en', // v4-native ONNX export (desktop quality upgrade)
 		name: 'Distil-Small English',
 		description: 'Better accuracy, WebGPU-accelerated on capable desktops',
-		size: 200 * 1024 * 1024, // ~200MB (fp16 encoder+decoder)
+		size: 251 * 1024 * 1024, // encoder_q4 (~66MB) + decoder_merged_q4 (~185MB)
 		parameters: 166000000,
 		languages: ['en'],
 		version: '3.0.0',
@@ -51,12 +51,13 @@ const DEFAULT_MODELS = [
 		speed_multiplier: 5.6,
 		accuracy_loss: '4% vs Whisper Large',
 		desktop_optimized: true,
-		// Desktop upgrade runs on WebGPU. Using fp32 instead of fp16 because
-		// the fp16 ONNX export from onnx-community triggers a graph validation
-		// error ("Subgraph output (logits) is an outer scope value being returned
-		// directly") with onnxruntime-web 1.26.0-dev bundled in transformers.js 4.x.
+		// Desktop upgrade runs on WebGPU. q4 (MatMulNBits) cuts the download from
+		// fp32's ~665MB to ~251MB. fp16 is a dead end: the onnx-community fp16
+		// export triggers a graph validation error ("Subgraph output (logits) is
+		// an outer scope value being returned directly") with the ort 1.26.0-dev
+		// bundled in transformers.js 4.x.
 		device: 'webgpu',
-		dtype: 'fp32'
+		dtype: 'q4'
 	},
 	{
 		id: 'medium',
