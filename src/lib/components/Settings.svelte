@@ -1,7 +1,15 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { theme, autoRecord, applyTheme, promptStyle, liveMode, privacyMode } from '$lib';
+	import {
+		theme,
+		autoRecord,
+		applyTheme,
+		promptStyle,
+		liveMode,
+		privacyMode,
+		soundEnabled
+	} from '$lib';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { offlineModelController } from '$lib/services/transcription/offlineModelController.js';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
@@ -23,6 +31,7 @@
 	let selectedPromptStyle = 'standard';
 	let privacyModeValue = false;
 	let liveModeValue = false;
+	let soundEnabledValue = true;
 	let isSupporterValue = false;
 	let userPreferencesLoaded = false;
 
@@ -32,6 +41,7 @@
 	let unsubscribePromptStyle;
 	let unsubscribeLiveMode;
 	let unsubscribePrivacyMode;
+	let unsubscribeSoundEnabled;
 	let unsubscribeUserPreferences;
 
 	const transcriptionModes = [
@@ -105,6 +115,10 @@
 			privacyModeValue = isEnabled(value);
 		});
 
+		unsubscribeSoundEnabled = soundEnabled.subscribe((value) => {
+			soundEnabledValue = isEnabled(value);
+		});
+
 		unsubscribeUserPreferences = userPreferences.subscribe((value) => {
 			isSupporterValue = value.isSupporter;
 			userPreferencesLoaded = true;
@@ -118,6 +132,7 @@
 		if (unsubscribePromptStyle) unsubscribePromptStyle();
 		if (unsubscribeLiveMode) unsubscribeLiveMode();
 		if (unsubscribePrivacyMode) unsubscribePrivacyMode();
+		if (unsubscribeSoundEnabled) unsubscribeSoundEnabled();
 		if (unsubscribeUserPreferences) unsubscribeUserPreferences();
 	});
 
@@ -158,6 +173,16 @@
 				})
 			);
 		}
+	}
+
+	function toggleSoundEnabled() {
+		soundEnabledValue = !soundEnabledValue;
+		// Set the store first — the service-layer wiring flips setEnabled, so the
+		// confirmation click below is audible when turning ON and silent when OFF.
+		soundEnabled.set(soundEnabledValue.toString());
+		soundService.select();
+		hapticService.select?.();
+		dispatchSettingChanged('soundEnabled', soundEnabledValue);
 	}
 
 	function dispatchSettingChanged(setting, value) {
@@ -322,6 +347,26 @@
 					<span class="block text-sm font-black">Auto Start</span>
 				</span>
 				<span class="sr-only">{autoRecordValue ? 'On' : 'Off'}</span>
+			</button>
+
+			<button
+				type="button"
+				class={`setting-row flex min-h-12 w-full items-center gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition-all duration-200 ${
+					soundEnabledValue
+						? 'border-pink-300 bg-pink-50 text-gray-900 ring-2 ring-pink-100'
+						: 'border-pink-100 bg-white/75 text-gray-700 hover:border-pink-200 hover:bg-pink-50/70'
+				}`}
+				aria-pressed={soundEnabledValue}
+				aria-label={`${soundEnabledValue ? 'Disable' : 'Enable'} sounds and vibration`}
+				on:click={toggleSoundEnabled}
+			>
+				<span class="flex items-center gap-3">
+					<span class="auto-start-glyph {soundEnabledValue ? 'is-on' : ''}" aria-hidden="true">
+						<span></span>
+					</span>
+					<span class="block text-sm font-black">Sounds & Vibration</span>
+				</span>
+				<span class="sr-only">{soundEnabledValue ? 'On' : 'Off'}</span>
 			</button>
 
 			<button
