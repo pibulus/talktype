@@ -53,10 +53,12 @@
 		$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG && $ghostStateStore.specialAnimation
 			? `ghost-special-${$ghostStateStore.specialAnimation}`
 			: '';
+	// Prefix with the mascot's name so screen readers can tell the ghost apart
+	// from the main record button (whose name is just "Start Recording").
 	$: ghostLabel = clickable
 		? $ghostStateStore.isRecording
-			? 'Stop recording'
-			: 'Start recording'
+			? 'TalkType ghost — stop recording'
+			: 'TalkType ghost — start recording'
 		: 'TalkType ghost mascot';
 
 	// React to recording state changes ONLY when fully ready
