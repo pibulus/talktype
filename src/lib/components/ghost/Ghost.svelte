@@ -475,6 +475,9 @@
 		height: 100%;
 		max-width: 100%;
 		max-height: 100%;
+		/* SVGs clip to their viewBox by default — a hard square. Layer
+		   animations (grow overshoot, wobble) must paint past it. */
+		overflow: visible;
 		opacity: 1; /* Start visible to prevent flashing */
 		position: relative;
 		z-index: 1;
