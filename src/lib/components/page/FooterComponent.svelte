@@ -26,7 +26,7 @@
 		const shareData = {
 			title: 'TalkType',
 			text: "Voice-to-text that doesn't suck. Fast, free, and private when you need it.",
-			url: 'https://talktype.app'
+			url: typeof window !== 'undefined' ? window.location.href : 'https://talktype.app'
 		};
 
 		try {
