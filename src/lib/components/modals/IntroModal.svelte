@@ -24,50 +24,59 @@
 			/>
 		</form>
 
-		<div class="space-y-4 sm:space-y-5 md:space-y-6">
-			<div class="mb-3 flex justify-center sm:mb-4">
-				<div class="animate-tt-pulse-slow ghost-wrapper h-14 w-14 sm:h-16 sm:w-16">
+		<div class="space-y-4 sm:space-y-5">
+			<div class="flex justify-center pt-1">
+				<div class="animate-tt-pulse-slow ghost-wrapper h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem]">
 					<DisplayGhost size="100%" class="intro-ghost" seed={12346} />
 				</div>
 			</div>
 
-			<h1
-				id="intro_modal_title"
-				class="text-center text-2xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-3xl md:text-4xl lg:text-5xl"
-			>
-				TalkType's the best. <br /> Kick out the rest.
-			</h1>
-
-			<div id="intro_modal_description" class="space-y-3 sm:space-y-4">
-				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
-					🎯 <strong>Private when you want it</strong> — Offline mode keeps everything on your device,
-					and live mode is there when you want speed.
-				</p>
-
-				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
-					⚡ <strong>Instant Start</strong> — Tap the ghost and talk. Works offline after first use.
-				</p>
-
-				<p class="text-base font-medium leading-relaxed text-gray-700 sm:text-lg md:text-xl">
-					✨ <strong>Your words, your way</strong> — Save transcripts, switch styles, and keep the ghost
-					vibes without weird upsells.
+			<div class="space-y-1.5 text-center">
+				<h1
+					id="intro_modal_title"
+					class="text-[1.55rem] font-black leading-[1.15] tracking-tight text-gray-900 sm:text-3xl"
+				>
+					TalkType's the <span class="tt-marker">best.</span><br />Kick out the rest.
+				</h1>
+				<p class="text-sm font-bold tracking-tight text-pink-500 sm:text-base">
+					It's fast, it's fun, it's freaky good.
 				</p>
 			</div>
 
-			<p class="py-2 text-center text-base font-bold text-pink-600 sm:text-lg md:text-xl">
-				It's fast, it's fun, it's freaky good.
-			</p>
+			<ul id="intro_modal_description" class="space-y-2.5 sm:space-y-3">
+				<li class="intro-feature">
+					<span class="intro-chip intro-chip-rose" aria-hidden="true">🎯</span>
+					<span class="min-w-0">
+						<span class="intro-feature-lead">Private when you want it</span>
+						<span class="intro-feature-copy">Offline mode keeps every word on your device.</span>
+					</span>
+				</li>
+				<li class="intro-feature">
+					<span class="intro-chip intro-chip-amber" aria-hidden="true">⚡</span>
+					<span class="min-w-0">
+						<span class="intro-feature-lead">Instant start</span>
+						<span class="intro-feature-copy">Tap the ghost and talk. That's it.</span>
+					</span>
+				</li>
+				<li class="intro-feature">
+					<span class="intro-chip intro-chip-purple" aria-hidden="true">✨</span>
+					<span class="min-w-0">
+						<span class="intro-feature-lead">Your words, your way</span>
+						<span class="intro-feature-copy">Save transcripts, switch styles, pick your vibe.</span>
+					</span>
+				</li>
+			</ul>
 
-			<div>
+			<div class="pt-1">
 				<button
 					type="button"
-					class="min-h-11 w-full rounded-full bg-gradient-to-r from-yellow-400 to-pink-400 px-4 py-2.5 text-base font-bold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl sm:px-6 sm:py-3 sm:text-lg"
+					class="min-h-12 w-full rounded-full bg-gradient-to-r from-amber-400 via-pink-400 to-pink-500 px-6 py-3 text-base font-black tracking-tight text-white shadow-lg shadow-pink-200/60 transition-all duration-150 hover:scale-[1.02] hover:shadow-xl hover:shadow-pink-200/80 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-amber-400/80 active:scale-[0.97] sm:text-lg"
 					on:click={() => {
 						markIntroAsSeen();
 						closeModal();
 					}}
 				>
-					click &amp; see
+					Let's go
 				</button>
 			</div>
 		</div>
@@ -77,6 +86,81 @@
 </dialog>
 
 <style>
+	/* Signature: marker-highlight swipe under the punchline word. */
+	.tt-marker {
+		background-image: linear-gradient(
+			to top,
+			rgba(249, 168, 212, 0.55) 0%,
+			rgba(249, 168, 212, 0.55) 34%,
+			transparent 34%
+		);
+		border-radius: 2px;
+		padding: 0 0.06em;
+	}
+
+	/* Feature rows: pastel emoji chip + bold lead over one quiet line of copy. */
+	.intro-feature {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		text-align: left;
+	}
+
+	.intro-chip {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 2.35rem;
+		height: 2.35rem;
+		border-radius: 9999px;
+		font-size: 1.05rem;
+		box-shadow: 0 2px 6px rgba(244, 114, 182, 0.12);
+	}
+
+	.intro-chip-rose {
+		background: linear-gradient(135deg, #fdf2f8, #ffe4ef);
+		border: 1px solid rgba(244, 114, 182, 0.28);
+	}
+
+	.intro-chip-amber {
+		background: linear-gradient(135deg, #fffbeb, #fef3c7);
+		border: 1px solid rgba(245, 158, 11, 0.26);
+	}
+
+	.intro-chip-purple {
+		background: linear-gradient(135deg, #faf5ff, #f1e8ff);
+		border: 1px solid rgba(167, 139, 250, 0.3);
+	}
+
+	.intro-feature-lead {
+		display: block;
+		font-size: 0.875rem;
+		font-weight: 900;
+		letter-spacing: -0.01em;
+		line-height: 1.3;
+		color: #111827;
+	}
+
+	.intro-feature-copy {
+		display: block;
+		margin-top: 0.1rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		line-height: 1.45;
+		color: #4b5563;
+	}
+
+	@media (min-width: 640px) {
+		.intro-feature-lead {
+			font-size: 0.95rem;
+		}
+
+		.intro-feature-copy {
+			font-size: 0.95rem;
+		}
+	}
+
 	/* Custom pink shadow for intro modal */
 	.intro-modal-box {
 		box-shadow:
