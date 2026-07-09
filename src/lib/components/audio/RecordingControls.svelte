@@ -33,6 +33,34 @@
 	// Reactive button label computation
 	$: buttonLabel = $isRecording ? 'All done' : currentCta;
 
+	// On short desktop viewports the hero (ghost + title + button) fills the
+	// screen and the waveform card lands below the fold — the user gets zero
+	// visual feedback that the mic hears them. Once the card mounts, nudge it
+	// into view with the minimal scroll ('nearest'), after its appear animation.
+	let visualizerSection;
+	let visualizerRevealTimer = null;
+	$: if ($isRecording && !isLiveTranscriptMode && visualizerSection) {
+		scheduleVisualizerReveal();
+	}
+
+	function scheduleVisualizerReveal() {
+		if (visualizerRevealTimer) return;
+		visualizerRevealTimer = setTimeout(() => {
+			visualizerRevealTimer = null;
+			try {
+				const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+				visualizerSection?.scrollIntoView({
+					behavior: reduceMotion ? 'auto' : 'smooth',
+					block: 'end'
+				});
+			} catch {
+				// Scrolling is a nicety — never let it break recording.
+			}
+		}, 420);
+	}
+
+	onDestroy(() => clearTimeout(visualizerRevealTimer));
+
 	// One-shot offline-model notice above the record button. Fires a discreet
 	// pulse when the offline model finishes loading or fails — then auto-clears.
 	let offlineNotice = null;
@@ -156,7 +184,12 @@
 
 	<!-- Audio visualizer -->
 	{#if $isRecording && !isLiveTranscriptMode}
-		<div class="visualizer-section mt-6 flex w-full justify-center" aria-hidden="true">
+		<!-- mb-28 clears the fixed footer so scrollIntoView can fully reveal the card -->
+		<div
+			class="visualizer-section mb-28 mt-6 flex w-full justify-center"
+			aria-hidden="true"
+			bind:this={visualizerSection}
+		>
 			<div class="wrapper-container flex w-full justify-center">
 				<div
 					class="visualizer-wrapper visualizer-appear mx-auto w-[90%] max-w-[500px] rounded-[2rem] border-[1.5px] border-pink-100 bg-white/95 p-4 shadow-lg sm:w-full"
@@ -187,6 +220,9 @@
 	.visualizer-section {
 		position: relative;
 		z-index: 10;
+		/* scrollIntoView respects this (unlike margin) — keeps the card clear
+		   of the fixed footer when the reveal scroll runs. */
+		scroll-margin-bottom: 7rem;
 	}
 
 	.visualizer-appear {

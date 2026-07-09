@@ -366,8 +366,10 @@
 
 		<!-- Header -->
 		<div class="mb-4 shrink-0 border-b border-pink-100 pb-3">
-			<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<div class="flex items-center gap-2">
+			<!-- Title row keeps pr-10 so it never collides with the absolute close
+			     button; actions live on their own full-width row below. -->
+			<div class="flex flex-col gap-3">
+				<div class="flex items-center gap-2 pr-10">
 					<span class="text-2xl" aria-hidden="true">📚</span>
 					<div>
 						<h3 id="history_modal_title" class="text-xl font-black tracking-tight text-gray-800">
@@ -387,7 +389,7 @@
 				</div>
 
 				{#if $transcriptHistory.length > 0}
-					<div class="flex flex-wrap gap-2 sm:justify-end">
+					<div class="flex flex-wrap gap-2">
 						<button
 							type="button"
 							class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
