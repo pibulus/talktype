@@ -69,8 +69,8 @@
 			<p class="flex items-center gap-1.5 pt-1 text-xs leading-relaxed text-gray-500">
 				<span class="text-pink-500" aria-hidden="true">🔒</span>
 				<span
-					>Offline Mode keeps your voice entirely on your device. Standard &amp; Live modes send
-					audio to the transcriber and keep none of it — your transcripts live only here.</span
+					>Private by design — Offline Mode keeps your voice entirely on your device, and nothing
+					you say is ever stored. Your transcripts live only here.</span
 				>
 			</p>
 
