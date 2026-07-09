@@ -38,7 +38,7 @@
 <!-- Typography with improved kerning and weight using font-variation-settings -->
 <div class="title-container relative">
 	<h1
-		class="staggered-text mb-1 cursor-default select-none text-center text-5xl font-black tracking-normal [font-feature-settings:'kern'_1] [font-kerning:normal] [font-variation-settings:'wght'_900,'opsz'_32] [font-weight:900] [letter-spacing:0] sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl"
+		class="staggered-text mb-1 cursor-default select-none text-center text-[clamp(3rem,9vmin_+_1.1rem,8rem)] font-black tracking-normal [font-feature-settings:'kern'_1] [font-kerning:normal] [font-variation-settings:'wght'_900,'opsz'_32] [font-weight:900] [letter-spacing:0]"
 		aria-label={title}
 	>
 		<!-- Use aria-hidden for spans if H1 has aria-label -->
