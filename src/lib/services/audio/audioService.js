@@ -17,7 +17,7 @@ import { browser } from '$app/environment';
 import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { createLogger } from '$lib/utils/logger';
-import { isPermissionError } from './permissionErrors.js';
+import { getMicErrorMessage } from './permissionErrors.js';
 import { markMicGranted } from './micPermission.js';
 import { estimateDurationSecondsFromBlob } from './durationEstimate.js';
 
@@ -29,6 +29,9 @@ const RECOVERY_CHECKPOINT_SETTLE_MS = 120;
 const RECOVERY_JOURNAL_FLUSH_MS = 5000;
 const RECOVERY_JOURNAL_MAX_BUFFERED_CHUNKS = 20;
 const CLEANUP_RECORDER_STOP_TIMEOUT_MS = 1000;
+// Happy-path stop gets a longer leash than cleanup — give the recorder a fair
+// chance to finalize the last chunk before salvaging (the DaySay wedge lesson).
+const STOP_RECORDER_WEDGE_TIMEOUT_MS = 5000;
 const TRACK_STOP_TIMEOUT_MS = 500;
 const IOS_AUDIO_CONTEXT_RETRY_DELAY_MS = 100;
 const IOS_CLEANUP_SETTLE_MS = 300;
@@ -398,10 +401,7 @@ export class AudioService {
 			log.error('Error starting recording:', error);
 			this.stateManager.setState(AudioStates.ERROR, { error });
 
-			const friendlyMessage = isPermissionError(error)
-				? 'The mic needs permission before the ghost can listen.'
-				: 'Recording needs one more try.';
-			uiActions.setErrorMessage(friendlyMessage);
+			uiActions.setErrorMessage(getMicErrorMessage(error));
 
 			await this.cleanup();
 			throw error;
@@ -496,14 +496,26 @@ export class AudioService {
 				this.mediaRecorder.requestData();
 			}
 
-			// Assign onstop BEFORE calling stop() to avoid race condition
-			// where stop fires synchronously and the handler isn't attached yet
-			this.mediaRecorder.onstop = async () => {
-				await this.#flushRecoveryJournal(mimeType, sessionId, 'stopped', {
+			// MediaRecorder.stop() can wedge and never fire onstop. Both the
+			// normal onstop and a salvage watchdog funnel through this guarded
+			// finalizer — whoever arrives first wins, the other no-ops.
+			let stopSettled = false;
+			let wedgeTimeout = null;
+
+			const finalizeStop = async (reason) => {
+				if (stopSettled) return;
+				stopSettled = true;
+				if (wedgeTimeout) {
+					clearTimeout(wedgeTimeout);
+					wedgeTimeout = null;
+				}
+
+				await this.#flushRecoveryJournal(mimeType, sessionId, reason, {
 					forceMetadataUpdate: true
 				});
-				// Create the Blob from this.audioChunks, which now contains all chunks
-				// including the final one from the last dataavailable event.
+				// Create the Blob from this.audioChunks — on the normal path this
+				// includes the final chunk from the last dataavailable event; on the
+				// wedge path it's whatever made it in (better than hanging forever).
 				const audioBlob = new Blob(this.audioChunks, { type: mimeType });
 				log.log('Created audio blob:', audioBlob.size, 'bytes, type:', mimeType);
 
@@ -528,8 +540,8 @@ export class AudioService {
 				// Persist before transcription starts so success cleanup cannot race a late draft write.
 				await this.#persistRecordingDraft(audioBlob, mimeType, {
 					recovery: {
-						isPartial: false,
-						reason: 'stopped',
+						isPartial: reason !== 'stopped',
+						reason,
 						checkpointedAt: new Date().toISOString()
 					}
 				});
@@ -540,12 +552,26 @@ export class AudioService {
 				resolve(audioBlob);
 			};
 
+			// Assign onstop BEFORE calling stop() to avoid race condition
+			// where stop fires synchronously and the handler isn't attached yet
+			this.mediaRecorder.onstop = () => void finalizeStop('stopped');
+
 			// Small delay to ensure final audio chunk from requestData() is captured
 			setTimeout(() => {
 				try {
 					this.mediaRecorder.stop();
+					// Wedge watchdog: if onstop never fires, salvage the chunks we
+					// have instead of hanging the ghost in "thinking" forever.
+					wedgeTimeout = setTimeout(() => {
+						if (!stopSettled) {
+							log.warn('MediaRecorder onstop never fired — salvaging recorded chunks');
+							void finalizeStop('stop-wedged');
+						}
+					}, STOP_RECORDER_WEDGE_TIMEOUT_MS);
 				} catch (error) {
 					log.warn('Error stopping MediaRecorder:', error.message);
+					if (stopSettled) return;
+					stopSettled = true;
 
 					// Ensure tracks are stopped even if MediaRecorder stop fails
 					this.disconnectAudioGraph();

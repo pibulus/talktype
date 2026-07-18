@@ -191,8 +191,12 @@ export class RecordingControlsService {
 				durationSeconds,
 				reason: this.timeLimitStopInFlight ? 'limit' : 'manual'
 			});
-			if (estimatedDurationSeconds < 0.5) {
-				log.warn(`Recording too short: ~${estimatedDurationSeconds.toFixed(2)}s`);
+			// Duration heuristic catches blink-taps; the byte floor catches blobs
+			// the estimator can't judge (a container header with no real audio).
+			if (estimatedDurationSeconds < 0.5 || audioBlob.size < 1200) {
+				log.warn(
+					`Recording too short: ~${estimatedDurationSeconds.toFixed(2)}s, ${audioBlob.size} bytes`
+				);
 				transcriptionActions.cancelTranscribing();
 				this.uiActions.setErrorMessage('Speak for at least a second.');
 				await this.transcriptionService.clearPendingRecordingDraft?.();
