@@ -18,6 +18,7 @@ import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { createLogger } from '$lib/utils/logger';
 import { isPermissionError } from './permissionErrors.js';
+import { markMicGranted } from './micPermission.js';
 import { estimateDurationSecondsFromBlob } from './durationEstimate.js';
 
 const log = createLogger('AudioService');
@@ -229,6 +230,7 @@ export class AudioService {
 
 	#permissionResultFromStream(stream, errorMessage) {
 		if (stream?.active) {
+			markMicGranted();
 			return { granted: true, stream };
 		}
 
@@ -294,6 +296,25 @@ export class AudioService {
 
 				await this.initializeAudioContext();
 				this.disconnectAudioGraph();
+
+				// iOS reroutes the mic hardware (usually to 48kHz) once capture starts.
+				// An AudioContext created before getUserMedia keeps its old rate and
+				// stays 'running', but createMediaStreamSource then feeds the analyser
+				// pure silence — flat bars while the recording itself works. Recreate
+				// the context at the mic's actual rate before wiring the graph.
+				const micRate = this.stream.getAudioTracks()[0]?.getSettings?.()?.sampleRate;
+				if (this.isIOS && micRate && this.audioContext.sampleRate !== micRate) {
+					log.warn(
+						`AudioContext rate ${this.audioContext.sampleRate} != mic rate ${micRate} — recreating context`
+					);
+					try {
+						await this.audioContext.close();
+					} catch {
+						// A dying context that refuses to close still gets replaced below.
+					}
+					this.audioContext = null;
+					await this.initializeAudioContext();
+				}
 
 				this.source = this.audioContext.createMediaStreamSource(this.stream);
 				this.analyser = this.audioContext.createAnalyser();
@@ -398,6 +419,16 @@ export class AudioService {
 
 		const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
 
+		// iOS watchdog: a route change or second capture can mute the track or
+		// leave the graph dead while the context still reads 'running' — literal
+		// all-zero frames. Real ambience never reads exactly 0 in every bin with
+		// AGC on, so after ~1s of it rebuild the graph once; if still dead,
+		// publish null so the visualizer shows its rescue pattern, not a flat
+		// line. iOS-only: on desktop exact zeros mean a dead mic, and the
+		// dead-mic nudge needs to see that silence for real.
+		let zeroFrames = 0;
+		let graphRebuilt = false;
+
 		const updateWaveform = () => {
 			// Double check that we're still recording and have valid analyser
 			if (this.stateManager.getState() !== AudioStates.RECORDING || !this.analyser) {
@@ -413,10 +444,21 @@ export class AudioService {
 					// Analyser is blind (suspended context) — publish null so the
 					// visualizer can distinguish "can't see" from "hearing silence".
 					audioActions.setWaveformData(null);
+				} else if (this.isIOS && this.stream?.getAudioTracks?.()[0]?.muted) {
+					audioActions.setWaveformData(null);
 				} else {
 					this.analyser.getByteFrequencyData(dataArray);
-					// Update store instead of emitting event
-					audioActions.setWaveformData(Array.from(dataArray));
+					if (this.isIOS && dataArray.every((v) => v === 0)) {
+						zeroFrames++;
+						if (zeroFrames === 60 && !graphRebuilt) {
+							graphRebuilt = true;
+							this.rebuildAnalyserGraph();
+						}
+						audioActions.setWaveformData(zeroFrames >= 120 ? null : Array.from(dataArray));
+					} else {
+						zeroFrames = 0;
+						audioActions.setWaveformData(Array.from(dataArray));
+					}
 				}
 				this.animationFrameId = requestAnimationFrame(updateWaveform);
 			} catch (error) {
@@ -928,6 +970,34 @@ export class AudioService {
 
 		stopMediaStreamTracks(this.stream);
 		this.stream = null;
+	}
+
+	// Mid-recording rescue for a silently dead graph (iOS route changes):
+	// rewires source→analyser on the live context and stream WITHOUT touching
+	// the animation loop that called it — disconnectAudioGraph would cancel it.
+	rebuildAnalyserGraph() {
+		if (!this.audioContext || !this.stream) return;
+
+		try {
+			this.source?.disconnect();
+		} catch {
+			// Already-dead nodes disconnect noisily; the rebuild below replaces them.
+		}
+		try {
+			this.analyser?.disconnect();
+		} catch {
+			// Same as above.
+		}
+
+		try {
+			this.source = this.audioContext.createMediaStreamSource(this.stream);
+			this.analyser = this.audioContext.createAnalyser();
+			this.analyser.fftSize = 256;
+			this.source.connect(this.analyser);
+			log.warn('Rebuilt analyser graph after sustained all-zero frames');
+		} catch (rebuildError) {
+			log.warn('Analyser graph rebuild failed:', rebuildError.message);
+		}
 	}
 
 	disconnectAudioGraph() {
