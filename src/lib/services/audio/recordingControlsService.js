@@ -18,6 +18,10 @@ import { analytics } from '$lib/services/analytics.js';
 import { createLogger } from '$lib/utils/logger';
 import { isPermissionError } from './permissionErrors.js';
 import { estimateDurationSecondsFromBlob } from './durationEstimate.js';
+import {
+	applyCustomWords,
+	getStoredCustomWords
+} from '$lib/services/transcription/transcriptCleanup.js';
 
 const log = createLogger('RecordingControls');
 
@@ -235,6 +239,10 @@ export class RecordingControlsService {
 				useOfflineWhisper,
 				usedLiveTranscript
 			});
+
+			// User vocabulary correction ("Charge B" → "ChargeBee") — post-processing,
+			// so it works identically across live, batch, Gemini, and offline paths.
+			finalTranscript = applyCustomWords(finalTranscript, getStoredCustomWords());
 
 			log.log('Transcription result:', finalTranscript);
 			transcriptionActions.completeTranscription(finalTranscript);

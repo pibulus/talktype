@@ -7,6 +7,7 @@ import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
 import { userPreferences, markWebgpuDisabled } from '../../infrastructure/stores';
 import { convertToWAV as convertToRawAudio } from './audioConverter';
+import { filterTranscriptionOutput } from '../transcriptCleanup.js';
 import { getModelInfo } from './modelRegistry';
 import { probeWebGPU } from '../deviceCapabilities';
 import {
@@ -673,7 +674,10 @@ export class WhisperService {
 				throw new Error('Whisper returned empty text. Try again.');
 			}
 
-			return this.cleanRepetitions(text);
+			// Whisper is the one backend with no server-side cleanup — Deepgram
+			// drops fillers via filler_words:false and Gemini via prompt. The
+			// current models are English-only (.en), so 'en' filler rules apply.
+			return filterTranscriptionOutput(this.cleanRepetitions(text), 'en');
 		} catch (error) {
 			this.updateStatus({
 				isLoading: false,
