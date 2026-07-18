@@ -29,6 +29,15 @@
 	--modal-max-height: 85vh;
 	--tt-modal-panel-width: min(92vw, 32rem);
 
+	/* Modal motion — one source of truth. Opens are unhurried enough to feel
+	   tactile, closes are quicker so dismissal feels responsive. Keep
+	   --tt-modal-close-ms in sync with ANIMATION.MODAL.CLOSE_DURATION in
+	   src/lib/constants.js; modalService uses it to time DOM teardown. */
+	--tt-modal-open-ms: 280ms;
+	--tt-modal-close-ms: 180ms;
+	--tt-modal-open-ease: cubic-bezier(0.16, 0.84, 0.24, 1.06);
+	--tt-modal-close-ease: cubic-bezier(0.4, 0, 0.24, 1);
+
 	/* Transitions */
 	--transition-fast: 0.15s ease-out;
 	--transition-medium: 0.3s ease-out;
@@ -376,7 +385,22 @@ dialog.modal::backdrop {
 	background-color: var(--color-modal-backdrop);
 	-webkit-backdrop-filter: blur(2px);
 	backdrop-filter: blur(2px);
-	animation: tt-modal-backdrop-in 180ms ease-out both;
+	animation: tt-modal-backdrop-in var(--tt-modal-close-ms) ease-out both;
+}
+
+/* One reduced-motion rule for every modal. Panels still fade so the state
+   change stays legible; they just don't travel or scale. */
+@media (prefers-reduced-motion: reduce) {
+	dialog.modal[open]:not(.tt-modal-closing) > .modal-box,
+	dialog.modal.tt-modal-closing > .modal-box {
+		animation-duration: 1ms;
+		animation-timing-function: linear;
+	}
+
+	.modal > .modal-backdrop,
+	dialog.modal.tt-modal-closing > .modal-backdrop {
+		animation-duration: 1ms;
+	}
 }
 
 /* Modal box styling */
@@ -384,6 +408,8 @@ dialog.modal::backdrop {
 	grid-area: modal;
 	z-index: 1;
 	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
 	width: var(--tt-modal-panel-width);
 	max-height: min(86dvh, var(--modal-max-height));
 	overflow-y: auto;
@@ -414,10 +440,45 @@ dialog.modal::backdrop {
 	--tt-modal-panel-width: min(95vw, 48rem);
 }
 
+/* Panels that own their internal scrolling (a .tt-modal-scroll-area child does
+   the scrolling instead of the box). The box itself must not scroll, or the
+   pinned header scrolls with it. */
 .modal-box.tt-modal-contained {
-	display: flex;
-	flex-direction: column;
 	overflow: hidden;
+}
+
+/* Every modal wraps its close button in a bare `<form method="dialog">`. That
+   wrapper is the only thing between the button and the box, so make IT sticky:
+   the button then rides along at the top of the panel instead of scrolling out
+   of reach. Zero-height so it never displaces the content beneath it. */
+.modal-box > form:has(> .modal-close-btn) {
+	position: sticky;
+	top: 0;
+	z-index: 60;
+	height: 0;
+	overflow: visible;
+}
+
+/* Content scrolling under the pinned close button would otherwise collide with
+   it. This fades the top edge of the panel to its own background so content
+   dissolves out instead of sliding behind the button mid-glyph. Sits under the
+   button (z-index 60) and above the content, and never eats pointer events. */
+.modal-box > form:has(> .modal-close-btn)::before {
+	content: '';
+	position: absolute;
+	top: calc(-1 * clamp(1rem, 2.6vw, 1.5rem));
+	left: calc(-1 * clamp(1rem, 2.6vw, 1.5rem));
+	right: calc(-1 * clamp(1rem, 2.6vw, 1.5rem));
+	height: 4rem;
+	z-index: -1;
+	pointer-events: none;
+	background: linear-gradient(
+		to bottom,
+		rgba(255, 252, 245, 0.97) 0%,
+		rgba(255, 252, 245, 0.9) 55%,
+		rgba(255, 252, 245, 0) 100%
+	);
+	border-radius: var(--modal-border-radius) var(--modal-border-radius) 0 0;
 }
 
 /* Entrance animation scoped to open, NON-closing dialogs only.
@@ -425,7 +486,7 @@ dialog.modal::backdrop {
    restarting when tt-modal-closing is removed during teardown (the old
    bottom-right flash on close). */
 dialog.modal[open]:not(.tt-modal-closing) > .modal-box {
-	animation: tt-modal-pop-in 420ms cubic-bezier(0.18, 0.92, 0.2, 1.18) both;
+	animation: tt-modal-pop-in var(--tt-modal-open-ms) var(--tt-modal-open-ease) both;
 }
 
 dialog.modal.tt-modal-closing {
@@ -433,25 +494,28 @@ dialog.modal.tt-modal-closing {
 }
 
 dialog.modal.tt-modal-closing > .modal-box {
-	animation: tt-modal-pop-out 210ms cubic-bezier(0.4, 0, 0.2, 1) both;
+	animation: tt-modal-pop-out var(--tt-modal-close-ms) var(--tt-modal-close-ease) both;
 }
 
 dialog.modal.tt-modal-closing > .modal-backdrop {
-	animation: tt-modal-backdrop-out 210ms ease-out both;
+	animation: tt-modal-backdrop-out var(--tt-modal-close-ms) ease-out both;
 }
 
+/* Every modal is a centered floating card at every breakpoint — no bottom
+   sheets. Mobile only tightens the padding and corner radius so the panel
+   reads as a card rather than a full-bleed page. */
 @media (max-width: 639px) {
-	dialog.modal[open],
-	dialog.modal.modal-open {
-		align-items: center !important;
-		justify-items: center !important;
-	}
-
 	.modal-box {
 		max-height: min(86dvh, var(--modal-max-height));
 		width: var(--tt-modal-panel-width);
 		padding: 1rem;
 		border-radius: 1.25rem;
+	}
+
+	/* Wide panels (History) collapse to the shared footprint so all six modals
+	   occupy identical space on a phone. */
+	.modal-box.tt-modal-lg {
+		--tt-modal-panel-width: min(92vw, 32rem);
 	}
 }
 
@@ -593,18 +657,18 @@ dialog.modal.tt-modal-closing > .modal-backdrop {
 	}
 }
 
+/* Rises and settles with one small overshoot. No rotation — a wobble is
+   charming once, but these fire five times a session from the footer nav, and
+   the tilt reads as noise at that frequency. The 1.015 peak keeps the panel
+   feeling like it has weight without turning into a bounce. */
 @keyframes tt-modal-pop-in {
 	0% {
 		opacity: 0;
-		transform: translateY(18px) scale(0.92) rotate(-1.2deg);
+		transform: translateY(12px) scale(0.96);
 	}
-	58% {
+	60% {
 		opacity: 1;
-		transform: translateY(-4px) scale(1.025) rotate(0.35deg);
-	}
-	78% {
-		opacity: 1;
-		transform: translateY(1px) scale(0.992) rotate(-0.12deg);
+		transform: translateY(-2px) scale(1.015);
 	}
 	100% {
 		opacity: 1;
@@ -619,7 +683,7 @@ dialog.modal.tt-modal-closing > .modal-backdrop {
 	}
 	to {
 		opacity: 0;
-		transform: translateY(10px) scale(0.96) rotate(0.35deg);
+		transform: translateY(8px) scale(0.97);
 	}
 }
 

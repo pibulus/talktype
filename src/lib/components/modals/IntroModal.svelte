@@ -13,7 +13,7 @@
 	aria-describedby="intro_modal_description"
 	aria-modal="true"
 >
-	<div class="intro-modal-box tt-modal-md tt-intro-sheet modal-box relative">
+	<div class="intro-modal-box tt-modal-md modal-box relative">
 		<form method="dialog">
 			<ModalCloseButton
 				{closeModal}
@@ -169,80 +169,11 @@
 			0 0 15px rgba(249, 168, 212, 0.15);
 	}
 
-	/* SKELETON: cap intro panel width to 28rem (overrides shared tt-modal-md
-	   32rem for this modal only — keeps a tighter, focused first-run card). */
-	.intro-modal-box.tt-intro-sheet {
+	/* Tighter than the shared tt-modal-md 32rem — the first-run card stays
+	   focused. Positioning and motion come from the shared layer in app.css. */
+	.intro-modal-box {
 		--tt-modal-panel-width: min(92vw, 28rem);
 	}
-
-	/* SKELETON: mobile bottom-sheet below 640px — full-width docked panel,
-	   rounded top only, safe-area-inset-bottom padding. Above 640px it stays
-	   the centered card (default .modal-box behaviour). Scoped via :global to
-	   #intro_modal so sibling modals are untouched. */
-	@media (max-width: 639px) {
-		:global(#intro_modal.modal[open]),
-		:global(#intro_modal.modal.modal-open) {
-			align-items: end !important;
-			justify-items: stretch !important;
-			padding: 0 !important;
-		}
-
-		.intro-modal-box.tt-intro-sheet {
-			--tt-modal-panel-width: 100%;
-			width: 100%;
-			max-width: 100%;
-			max-height: min(90dvh, var(--modal-max-height));
-			margin: 0;
-			align-self: end;
-			border-bottom: 0;
-			border-radius: 1.5rem 1.5rem 0 0;
-			padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
-		}
-	}
-
-	/* SKELETON: on mobile the sheet rises from the bottom edge instead of the
-	   default centered pop. Honors the shared closing/reduced-motion handling
-	   from app.css (close anim + prefers-reduced-motion already live there). */
-	@media (max-width: 639px) {
-		:global(#intro_modal.modal[open]:not(.tt-modal-closing) > .intro-modal-box.tt-intro-sheet) {
-			animation: tt-intro-sheet-up 360ms cubic-bezier(0.18, 0.92, 0.2, 1.08) both;
-		}
-
-		:global(#intro_modal.modal.tt-modal-closing > .intro-modal-box.tt-intro-sheet) {
-			animation: tt-intro-sheet-down 220ms cubic-bezier(0.4, 0, 0.2, 1) both;
-		}
-	}
-
-	@keyframes tt-intro-sheet-up {
-		from {
-			opacity: 0;
-			transform: translateY(100%);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	@keyframes tt-intro-sheet-down {
-		from {
-			opacity: 1;
-			transform: translateY(0);
-		}
-		to {
-			opacity: 0;
-			transform: translateY(100%);
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		:global(#intro_modal.modal[open]:not(.tt-modal-closing) > .intro-modal-box.tt-intro-sheet),
-		:global(#intro_modal.modal.tt-modal-closing > .intro-modal-box.tt-intro-sheet) {
-			animation: none;
-		}
-	}
-
-	/* Animations now in app.css with tt- prefix */
 
 	/* Ghost wrapper styles to hide background container */
 	.ghost-wrapper {

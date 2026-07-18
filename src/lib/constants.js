@@ -116,7 +116,10 @@ export const ANIMATION = {
 	// Modal timing
 	MODAL: {
 		CLOSE_DELAY: 50, // Delay before running closeModal function
-		CLOSE_DURATION: 210,
+		// Must match --tt-modal-close-ms in app.css. modalService waits this long
+		// before removing the dialog from the top layer; too short clips the
+		// close animation, too long leaves a dead frame after it finishes.
+		CLOSE_DURATION: 180,
 		PERMISSION_ERROR_DURATION: 8000 // How long the permission error shows
 	},
 
