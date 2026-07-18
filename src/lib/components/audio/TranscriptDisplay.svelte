@@ -392,6 +392,8 @@
 		min-width: 44px;
 		touch-action: manipulation;
 		transform-origin: center;
+		/* Thin rim so the ghost doesn't melt into the page background */
+		border: 1px solid rgba(216, 180, 254, 0.65);
 		/* Attention motion is now owned by the WiggleButton charm wrapper
 		   (softstack-charms) — it wiggles periodically and stops after the first
 		   copy. No persistent breathing here anymore. */

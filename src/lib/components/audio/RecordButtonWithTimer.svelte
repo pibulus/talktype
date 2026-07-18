@@ -170,16 +170,6 @@
 				<span class="recording-progress-fill"></span>
 				<span class="recording-progress-head"></span>
 			</span>
-			<span
-				class="timer-chip {buttonState.isDanger
-					? 'is-danger'
-					: buttonState.isWarning
-						? 'is-warning'
-						: ''}"
-				aria-hidden="true"
-			>
-				{buttonState.isWarning ? `${buttonState.remainingLabel} left` : buttonState.elapsedLabel}
-			</span>
 		{/if}
 
 		<!-- Main button text -->
@@ -443,50 +433,6 @@
 		width: 100%;
 	}
 
-	/* Visible countdown chip — elapsed time normally, time-left once the
-	   warning threshold hits. Absolute so it never shifts the label. */
-	.timer-chip {
-		position: absolute;
-		right: 14px;
-		top: 50%;
-		transform: translateY(-50%);
-		z-index: 10;
-		font-size: 0.8rem;
-		font-weight: 800;
-		font-variant-numeric: tabular-nums;
-		letter-spacing: 0.02em;
-		color: rgba(120, 53, 15, 0.85);
-		background: rgba(255, 255, 255, 0.55);
-		border: 1px solid rgba(255, 255, 255, 0.65);
-		border-radius: 9999px;
-		padding: 0.15rem 0.55rem;
-		pointer-events: none;
-		white-space: nowrap;
-	}
-
-	.timer-chip.is-warning {
-		color: #9a3412;
-		background: rgba(255, 247, 237, 0.85);
-		border-color: rgba(251, 146, 60, 0.5);
-	}
-
-	.timer-chip.is-danger {
-		color: #be123c;
-		background: rgba(255, 241, 242, 0.9);
-		border-color: rgba(244, 63, 94, 0.55);
-		animation: timer-chip-pulse 1s ease-in-out infinite;
-	}
-
-	@keyframes timer-chip-pulse {
-		0%,
-		100% {
-			transform: translateY(-50%) scale(1);
-		}
-		50% {
-			transform: translateY(-50%) scale(1.06);
-		}
-	}
-
 	/* Whole-button progress indicator */
 	.recording-active {
 		position: relative;
@@ -648,8 +594,7 @@
 		:global(.button-press),
 		.notification-pulse,
 		.record-button::before,
-		.recording-active,
-		.timer-chip.is-danger {
+		.recording-active {
 			animation: none !important;
 		}
 
