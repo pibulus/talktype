@@ -227,8 +227,11 @@
 		if (!browser) return null;
 
 		const params = new URLSearchParams(window.location.search);
-		if (params.get('action') === 'record') {
-			return 'launch-shortcut';
+		// `?autostart=1` is an alias for `?action=record` (fable-pwa-autostart POC)
+		// so external deep links (shortcuts, notifications, iOS Shortcuts "Open URL")
+		// can use either form.
+		if (params.get('action') === 'record' || params.get('autostart') === '1') {
+			return params.get('source') === 'notification' ? 'notification' : 'launch-shortcut';
 		}
 
 		if (StorageUtils.getBooleanItem(STORAGE_KEYS.AUTO_RECORD, false)) {
