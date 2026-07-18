@@ -43,6 +43,12 @@
 	// Applied as fuzzy post-processing on every transcription path.
 	let customWords = [];
 	let customWordInput = '';
+	let yourWordsOpen = false;
+
+	function toggleYourWords() {
+		yourWordsOpen = !yourWordsOpen;
+		soundService.select();
+	}
 
 	function addCustomWord() {
 		const word = customWordInput.trim();
@@ -357,49 +363,80 @@
 				</section>
 			{/if}
 
-			<section class="settings-section space-y-2" aria-labelledby="settings_your_words_title">
-				<h4 id="settings_your_words_title" class="settings-section-title">Your Words</h4>
-				<p class="text-xs text-gray-500">
-					Teach the ghost names and words it should always get right — they're fixed up in every
-					transcript.
-				</p>
-				<form class="flex gap-2" on:submit|preventDefault={addCustomWord}>
-					<input
-						type="text"
-						class="min-h-11 flex-1 rounded-xl border border-pink-100 bg-white/75 px-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-100"
-						placeholder="e.g. Hexbloop, R&D, ChargeBee"
-						maxlength="50"
-						bind:value={customWordInput}
-						aria-label="Add a word for the ghost to learn"
-					/>
-					<button
-						type="submit"
-						class="btn min-h-11 border-pink-200 bg-pink-500 px-4 text-white hover:bg-pink-600"
-						disabled={!customWordInput.trim()}
-					>
-						Add
-					</button>
-				</form>
-				{#if customWords.length}
-					<div class="flex flex-wrap gap-1.5">
-						{#each customWords as word (word)}
-							<button
-								type="button"
-								class="group flex min-h-9 items-center gap-1.5 rounded-full border border-pink-100 bg-white/80 px-3 text-xs font-bold text-gray-600 transition-colors duration-150 hover:border-pink-200 hover:bg-pink-50"
-								on:click={() => removeCustomWord(word)}
-								title={`Remove ${word}`}
-								aria-label={`Remove ${word} from your words`}
+			<!-- Your Words folds into one row (matching the toggle-row idiom) so the
+			     modal stays scroll-free on phones — most sessions never open it. -->
+			<div class="space-y-2">
+				<button
+					type="button"
+					class={`setting-row flex min-h-12 w-full items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition-all duration-200 ${
+						yourWordsOpen
+							? 'border-pink-300 bg-pink-50 text-gray-900 ring-2 ring-pink-100'
+							: 'border-pink-100 bg-white/75 text-gray-700 hover:border-pink-200 hover:bg-pink-50/70'
+					}`}
+					aria-expanded={yourWordsOpen}
+					aria-controls="settings_your_words_panel"
+					on:click={toggleYourWords}
+				>
+					<span class="flex items-center gap-3">
+						<span class="block text-sm font-black">Your Words</span>
+						{#if customWords.length}
+							<span
+								class="rounded-full border border-pink-200 bg-white/80 px-2 py-0.5 text-[11px] font-bold text-pink-700"
 							>
-								{word}
-								<span
-									class="text-pink-300 transition-colors group-hover:text-pink-500"
-									aria-hidden="true">×</span
-								>
+								{customWords.length}
+							</span>
+						{/if}
+					</span>
+					<span
+						class="text-pink-300 transition-transform duration-200 {yourWordsOpen
+							? 'rotate-90'
+							: ''}"
+						aria-hidden="true">▸</span
+					>
+				</button>
+
+				{#if yourWordsOpen}
+					<div id="settings_your_words_panel" class="space-y-2 px-1">
+						<p class="text-xs text-gray-500">Names the ghost always gets right.</p>
+						<form class="flex gap-2" on:submit|preventDefault={addCustomWord}>
+							<input
+								type="text"
+								class="min-h-11 min-w-0 flex-1 rounded-xl border border-pink-100 bg-white/75 px-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-100"
+								placeholder="e.g. Hexbloop, R&D"
+								maxlength="50"
+								bind:value={customWordInput}
+								aria-label="Add a word for the ghost to learn"
+							/>
+							<button
+								type="submit"
+								class="btn min-h-11 border-pink-200 bg-pink-500 px-4 text-white hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-200 disabled:text-white/90"
+								disabled={!customWordInput.trim()}
+							>
+								Add
 							</button>
-						{/each}
+						</form>
+						{#if customWords.length}
+							<div class="flex flex-wrap gap-1.5">
+								{#each customWords as word (word)}
+									<button
+										type="button"
+										class="group flex min-h-9 items-center gap-1.5 rounded-full border border-pink-100 bg-white/80 px-3 text-xs font-bold text-gray-600 transition-colors duration-150 hover:border-pink-200 hover:bg-pink-50"
+										on:click={() => removeCustomWord(word)}
+										title={`Remove ${word}`}
+										aria-label={`Remove ${word} from your words`}
+									>
+										{word}
+										<span
+											class="text-pink-300 transition-colors group-hover:text-pink-500"
+											aria-hidden="true">×</span
+										>
+									</button>
+								{/each}
+							</div>
+						{/if}
 					</div>
 				{/if}
-			</section>
+			</div>
 
 			<button
 				type="button"
