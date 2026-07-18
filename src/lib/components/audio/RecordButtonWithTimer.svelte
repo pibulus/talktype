@@ -608,15 +608,15 @@
 	}
 
 	.recording-danger {
-		--record-progress-fill: linear-gradient(90deg, #f97316 0%, #ef4444 58%, #ec4899 100%);
+		--record-progress-fill: linear-gradient(90deg, #f97316 0%, #fb7185 58%, #ec4899 100%);
 		--record-progress-track: linear-gradient(
 			90deg,
-			rgba(254, 226, 226, 0.96),
-			rgba(239, 68, 68, 0.3)
+			rgba(255, 228, 230, 0.96),
+			rgba(251, 113, 133, 0.3)
 		);
 		box-shadow:
-			0 8px 18px -8px rgba(239, 68, 68, 0.56),
-			0 0 0 1px rgba(239, 68, 68, 0.46),
+			0 8px 18px -8px rgba(251, 113, 133, 0.56),
+			0 0 0 1px rgba(251, 113, 133, 0.46),
 			inset 0 1px 0 rgba(255, 255, 255, 0.36);
 	}
 
