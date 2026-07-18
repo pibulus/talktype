@@ -646,9 +646,38 @@ export async function exportTranscriptsAsJSON() {
 	};
 }
 
+function buildTranscriptFileContent(transcript) {
+	let content = `TalkType Transcript\n`;
+	content += `Date: ${new Date(transcript.timestamp).toLocaleString()}\n`;
+	content += `Duration: ${transcript.duration}s\n`;
+	content += `Method: ${transcript.method}\n`;
+	content += `Style: ${transcript.promptStyle}\n`;
+	content += `Word Count: ${transcript.wordCount}\n`;
+	if (transcript.tags?.length) {
+		content += `Tags: ${cleanTranscriptTags(transcript.tags)
+			.map((tag) => `#${tag}`)
+			.join(' ')}\n`;
+	}
+	content += `\n${'='.repeat(50)}\n\n`;
+	content += transcript.text;
+	return content;
+}
+
+function downloadBlob(blob, filename) {
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+
 /**
- * Batch download all transcripts as individual text files
- * @returns {Promise<number>} - Number of files downloaded
+ * Batch download all transcripts as one ZIP of text files — a single download
+ * the browser can't block, instead of N staggered ones.
+ * @returns {Promise<number>} - Number of transcripts in the ZIP
  */
 export async function batchDownloadTranscripts() {
 	const transcripts = await loadAllTranscripts();
@@ -657,43 +686,62 @@ export async function batchDownloadTranscripts() {
 		return 0;
 	}
 
-	// Download each transcript as a text file
+	const { zipSync, strToU8 } = await import('fflate');
+
+	const files = {};
 	transcripts.forEach((transcript, index) => {
 		const date = new Date(transcript.timestamp).toISOString().slice(0, 10);
-		const filename = `transcript-${date}-${index + 1}.txt`;
-
-		// Create file content
-		let content = `TalkType Transcript\n`;
-		content += `Date: ${new Date(transcript.timestamp).toLocaleString()}\n`;
-		content += `Duration: ${transcript.duration}s\n`;
-		content += `Method: ${transcript.method}\n`;
-		content += `Style: ${transcript.promptStyle}\n`;
-		content += `Word Count: ${transcript.wordCount}\n`;
-		if (transcript.tags?.length) {
-			content += `Tags: ${cleanTranscriptTags(transcript.tags)
-				.map((tag) => `#${tag}`)
-				.join(' ')}\n`;
-		}
-		content += `\n${'='.repeat(50)}\n\n`;
-		content += transcript.text;
-
-		// Download file
-		const blob = new Blob([content], { type: 'text/plain' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = filename;
-
-		// Small delay between downloads to avoid browser blocking
-		setTimeout(() => {
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-			URL.revokeObjectURL(url);
-		}, index * 200);
+		files[`transcript-${date}-${index + 1}.txt`] = strToU8(buildTranscriptFileContent(transcript));
 	});
 
+	const zipped = zipSync(files, { level: 6 });
+	downloadBlob(
+		new Blob([zipped], { type: 'application/zip' }),
+		`talktype-transcripts-${new Date().toISOString().slice(0, 10)}.zip`
+	);
+
 	return transcripts.length;
+}
+
+/**
+ * Export all transcripts as one Markdown file — dated headings, tags, text.
+ * Made for pasting or dropping straight into Obsidian/notes.
+ * @returns {Promise<boolean>}
+ */
+export async function exportAllTranscriptsMarkdown() {
+	const transcripts = await loadAllTranscripts();
+
+	if (transcripts.length === 0) {
+		return false;
+	}
+
+	const exportedOn = new Date();
+	const lines = [
+		`# TalkType Transcripts`,
+		``,
+		`Exported ${exportedOn.toLocaleString()} · ${transcripts.length} transcript${
+			transcripts.length !== 1 ? 's' : ''
+		}`,
+		``
+	];
+
+	for (const transcript of transcripts) {
+		const when = new Date(transcript.timestamp).toLocaleString();
+		const method = transcript.method ? ` · ${transcript.method}` : '';
+		lines.push(`## ${when}${method}`);
+		const tags = cleanTranscriptTags(transcript.tags || []);
+		if (tags.length) {
+			lines.push('', tags.map((tag) => `#${tag}`).join(' '));
+		}
+		lines.push('', transcript.text, '', '---', '');
+	}
+
+	downloadBlob(
+		new Blob([lines.join('\n')], { type: 'text/markdown' }),
+		`talktype-transcripts-${exportedOn.toISOString().slice(0, 10)}.md`
+	);
+
+	return true;
 }
 
 /**
