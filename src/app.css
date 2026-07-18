@@ -348,9 +348,13 @@ body:has(dialog[open]) {
 	inset: 0;
 	z-index: 9999;
 	margin: 0;
-	width: 100vw;
+	/* 100% (not 100vw/100dvh): the permanently-reserved scrollbar gutter means
+	   100vw includes the scrollbar, so the "centered" card sits ~7px off-centre
+	   on classic-scrollbar browsers. Percentages resolve against the viewport
+	   minus scrollbar. */
+	width: 100%;
 	max-width: none;
-	height: 100dvh;
+	height: 100%;
 	max-height: none;
 	border: 0;
 	background: transparent;
