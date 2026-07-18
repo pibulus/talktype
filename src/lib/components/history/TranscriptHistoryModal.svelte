@@ -107,7 +107,7 @@
 	function formatMethod(method) {
 		const labels = {
 			'deepgram-live': 'Live',
-			gemini: 'Gemini',
+			gemini: 'Cloud',
 			whisper: 'Offline',
 			'offline-whisper': 'Offline',
 			'cloud-batch': 'Cloud'
