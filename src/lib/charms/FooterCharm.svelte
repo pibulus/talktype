@@ -16,7 +16,25 @@
 
 	/** The app's charm pool — one is chosen at random each page-load. */
 	export let charms = ['❤️'];
-	export let label = 'love';
+	/** Lucky pulls — a rare surprise instead of the usual pool. */
+	export let rare = ['🌮'];
+	export let rareChance = 0.08;
+	/** Per-app word overrides; merged over the built-in map below. */
+	export let labels = {};
+
+	// What the footer sentence says to screen readers: "Made with ___ in
+	// Melbourne" should be as alive read aloud as it looks.
+	const WORDS = {
+		'❤️': 'love',
+		'💜': 'love',
+		'☕': 'coffee',
+		'👻': 'a friendly ghost',
+		'📖': 'a good book',
+		'🌙': 'moonlight',
+		'🍒': 'cherries',
+		'⚡': 'lightning',
+		'🌮': 'tacos'
+	};
 
 	// SSR renders the first charm; the random pick happens client-side so
 	// server and first client paint never disagree.
@@ -24,8 +42,13 @@
 	let bursts = [];
 	let nextId = 0;
 
+	$: label = labels[charm] ?? WORDS[charm] ?? 'love';
+
 	onMount(() => {
-		charm = charms[Math.floor(Math.random() * charms.length)];
+		charm =
+			rare.length && Math.random() < rareChance
+				? rare[Math.floor(Math.random() * rare.length)]
+				: charms[Math.floor(Math.random() * charms.length)];
 	});
 
 	function pop() {
