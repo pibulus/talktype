@@ -67,6 +67,7 @@
 			</div>
 
 			<p class="flex items-center gap-1.5 pt-1 text-xs leading-relaxed text-gray-500">
+				<span class="text-pink-500" aria-hidden="true">🔒</span>
 				<span
 					>Private by design — Offline Mode keeps your voice entirely on your device, and nothing
 					you say is ever stored. Your transcripts live only here.</span
@@ -74,7 +75,7 @@
 			</p>
 
 			<div class="flex flex-wrap items-center justify-between gap-3 pt-2">
-				<p class="text-xs text-gray-500">Made with coffee in Melbourne, Australia</p>
+				<p class="text-xs text-gray-500">Made with ☕ in Melbourne, Australia</p>
 				<div class="flex items-center gap-1">
 					<a
 						href="https://github.com/pibulus"
@@ -83,6 +84,7 @@
 						class="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-gray-600 transition-colors hover:bg-pink-50 hover:text-pink-600"
 						aria-label="Pablo on GitHub"
 					>
+						<span class="text-base" aria-hidden="true">🐙</span>
 						<span>GitHub</span>
 					</a>
 					<a
@@ -92,6 +94,7 @@
 						class="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-gray-600 transition-colors hover:bg-amber-50 hover:text-amber-600"
 						aria-label="Support on Ko-fi"
 					>
+						<span class="text-base" aria-hidden="true">☕</span>
 						<span>Ko-fi</span>
 					</a>
 				</div>
