@@ -1,5 +1,6 @@
 <script>
 	import Seo from './Seo.svelte';
+	import FooterCharm from '$lib/charms/FooterCharm.svelte';
 	import { DEFAULT_SEO } from '$lib/config/seo.js';
 
 	export let title = DEFAULT_SEO.title;
@@ -59,10 +60,7 @@
 				<span class="footer-dot mx-2 shrink-0">•</span>
 				<span class="flex min-w-0 items-center text-sm font-light">
 					<span class="shrink-0">Made with</span>
-					<span
-						class="footer-heart mx-0.5 inline-block shrink-0 transform animate-pulse transition-transform duration-300 hover:scale-110"
-						aria-label="love">❤️</span
-					>
+					<FooterCharm charms={['❤️', '☕', '👻']} />
 					<span class="footer-place ml-0.5 truncate">in Melbourne</span>
 				</span>
 			</div>
