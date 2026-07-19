@@ -61,7 +61,7 @@
 					<span class="shrink-0">Made with</span>
 					<span
 						class="footer-heart mx-0.5 inline-block shrink-0 transform animate-pulse transition-transform duration-300 hover:scale-110"
-						aria-label="love">❤️</span
+						>love</span
 					>
 					<span class="footer-place ml-0.5 truncate">in Melbourne</span>
 				</span>

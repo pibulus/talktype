@@ -44,17 +44,38 @@
 </button>
 
 <style>
+	/* Smaller + tucked + squishy — scoped styles outrank the Tailwind size
+	   utilities, so the restyle lives here without touching the markup. */
 	.modal-close-btn {
+		top: 0.55rem;
+		right: 0.55rem;
+		width: 32px;
+		height: 32px;
+		font-size: 1rem;
+		background: rgba(0, 0, 0, 0.06);
 		-webkit-tap-highlight-color: transparent;
 		cursor: pointer;
 		user-select: none;
+		transition:
+			background 0.15s ease,
+			color 0.15s ease,
+			transform 0.22s linear(0, 0.5 15%, 1.15 40%, 0.97 65%, 1);
 	}
 
 	.modal-close-btn:hover {
-		transform: scale(1.05);
+		background: rgba(0, 0, 0, 0.12);
+		transform: scale(1.1);
 	}
 
 	.modal-close-btn:active {
-		transform: scale(0.95);
+		transform: scale(0.86);
+	}
+
+	/* Fingers get a bigger target than pointers do. */
+	@media (pointer: coarse) {
+		.modal-close-btn {
+			width: 40px;
+			height: 40px;
+		}
 	}
 </style>

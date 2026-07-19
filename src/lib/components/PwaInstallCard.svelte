@@ -241,29 +241,38 @@
 
   .pwa-dismiss {
     position: absolute;
-    top: 0.4rem;
-    right: 0.4rem;
-    width: 34px;
-    height: 34px;
+    top: 0.3rem;
+    right: 0.3rem;
+    width: 26px;
+    height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 999px;
-    background: rgba(0, 0, 0, 0.06);
-    font-size: 1.05rem;
+    background: rgba(0, 0, 0, 0.05);
+    font-size: 0.85rem;
     line-height: 1;
     color: var(--ds-ink, #2a2233);
-    opacity: 0.55;
+    opacity: 0.5;
     cursor: pointer;
     transition:
       background 0.15s ease,
       opacity 0.15s ease,
-      transform 0.2s ease;
+      transform 0.22s linear(0, 0.5 15%, 1.15 40%, 0.97 65%, 1);
   }
   .pwa-dismiss:hover {
     opacity: 1;
     background: rgba(0, 0, 0, 0.12);
-    transform: scale(1.05);
+    transform: scale(1.12);
+  }
+  .pwa-dismiss:active {
+    transform: scale(0.85);
+  }
+  @media (pointer: coarse) {
+    .pwa-dismiss {
+      width: 34px;
+      height: 34px;
+    }
   }
 
   .pwa-head {
