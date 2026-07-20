@@ -106,7 +106,7 @@
 	// Lifecycle hooks
 	onMount(() => {
 		// Initialize services
-		initializeServices({ debug: false });
+		initializeServices();
 
 		offlineModelController.start();
 

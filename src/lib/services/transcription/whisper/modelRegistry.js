@@ -58,36 +58,6 @@ const DEFAULT_MODELS = [
 		// bundled in transformers.js 4.x.
 		device: 'webgpu',
 		dtype: 'q4'
-	},
-	{
-		id: 'medium',
-		transformers_id: 'distil-whisper/distil-medium.en', // Larger desktop option
-		name: 'Distil-Medium English (150MB)',
-		description: '5.6x faster, better accuracy',
-		size: 150 * 1024 * 1024, // ~150MB INT8 quantized
-		parameters: 394000000,
-		languages: ['en'],
-		version: '3.0.0',
-		recommended_for: 'Desktop with >4GB RAM',
-		speed_multiplier: 5.6,
-		accuracy_loss: '2% vs Whisper Large',
-		desktop_optimized: true
-	},
-	{
-		id: 'large',
-		transformers_id: 'distil-whisper/distil-large-v3', // Pro multilingual
-		name: 'Distil-Large Pro (750MB)',
-		description: '99 languages, 5.6x faster than regular Large',
-		size: 750 * 1024 * 1024, // ~750MB
-		parameters: 1550000000,
-		languages: ['multi'], // 99 languages
-		version: '3.0.0',
-		recommended_for: 'Pro users, multilingual, WebGPU',
-		speed_multiplier: 5.6,
-		accuracy_loss: 'minimal',
-		webgpu_optimized: true,
-		pro_feature: true,
-		desktop_only: true
 	}
 ];
 
