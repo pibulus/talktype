@@ -61,18 +61,9 @@ const DEFAULT_MODELS = [
 	}
 ];
 
-// Transformers.js library information
-const TRANSFORMERS_INFO = {
-	package: '@huggingface/transformers',
-	version: 'latest',
-	cdn_url: 'https://cdn.jsdelivr.net/npm/@huggingface/transformers',
-	documentation: 'https://huggingface.co/docs/transformers.js'
-};
-
 // Create stores for the registry data
 export const modelRegistry = writable({
 	models: DEFAULT_MODELS,
-	transformersInfo: TRANSFORMERS_INFO,
 	lastUpdated: Date.now(),
 	initialized: false
 });
@@ -103,21 +94,6 @@ export async function initializeModelRegistry() {
 	}));
 
 	return get(modelRegistry);
-}
-
-/**
- * Check if the registry needs to be updated
- */
-export async function checkForRegistryUpdates() {
-	if (!browser) return false;
-
-	// For transformers.js, updates are handled automatically by the library
-	modelRegistry.update((reg) => ({
-		...reg,
-		lastUpdated: Date.now()
-	}));
-
-	return false;
 }
 
 /**
@@ -165,24 +141,10 @@ export function selectModel(modelId) {
 }
 
 /**
- * Get all available models
- */
-export function getAvailableModels() {
-	return get(modelRegistry).models;
-}
-
-/**
  * Get the currently selected model
  */
 export function getCurrentModel() {
 	return get(selectedModel);
-}
-
-/**
- * Get transformers.js library information
- */
-export function getTransformersInfo() {
-	return get(modelRegistry).transformersInfo;
 }
 
 /**
