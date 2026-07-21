@@ -37,7 +37,7 @@
 
 	<!-- Footer section with attribution and Chrome extension info -->
 	<footer
-		class="footer-component tt-app-footer fixed bottom-0 left-0 right-0 z-10 box-border border-t px-4 py-3 text-center text-xs backdrop-blur-[3px] sm:px-6 sm:py-4 md:px-8"
+		class="footer-component tt-app-footer fixed bottom-0 left-0 right-0 z-10 box-border border-t px-4 py-3 text-center text-xs sm:px-6 sm:py-4 md:px-8"
 	>
 		<!-- Full-width row (not .container, whose breakpoint max-width would bunch
 		     both blocks toward the middle). The footer's own px-* provides the edge
@@ -89,6 +89,21 @@
 		border-color: var(--footer-border-color, var(--tt-footer-border-color));
 		background: var(--footer-bg, var(--tt-footer-bg-image));
 		box-shadow: var(--tt-footer-shadow);
+		/* Fleet-standard frosted footer (2026-07-21) — same values across
+		   ziplist / talktype / daysay / riffrap / dr_shrink. Declared in CSS
+		   rather than a backdrop-blur-* utility so it can't be dropped by a
+		   later class shuffle. 3px was too weak to frost anything; 14px +
+		   saturation is what makes it read as glass instead of a thin veil. */
+		-webkit-backdrop-filter: blur(14px) saturate(1.5);
+		backdrop-filter: blur(14px) saturate(1.5);
+	}
+
+	/* No backdrop-filter support: go nearly opaque. The translucency only
+	   earns its keep when a blur is actually frosting what's behind it. */
+	@supports not (backdrop-filter: blur(1px)) {
+		.tt-app-footer {
+			background: rgba(255, 246, 230, 0.97);
+		}
 	}
 
 	.footer-dot {
