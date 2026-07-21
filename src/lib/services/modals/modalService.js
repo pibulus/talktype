@@ -79,12 +79,14 @@ export class ModalService {
 		this.closeTimer = window.setTimeout(() => {
 			this.closeTimer = null;
 			openDialogs.forEach((dialog) => {
-				// Close (remove from the top layer) BEFORE stripping the closing
-				// class, so the entrance animation can never reappear for a frame.
 				if (dialog && typeof dialog.close === 'function' && dialog.open) {
 					dialog.close();
 				}
-				dialog.classList.remove('tt-modal-closing');
+				// Deliberately KEEP .tt-modal-closing after close(). DaisyUI's
+				// .modal fades out via a ~200ms opacity transition once [open] is
+				// removed; stripping the class now snaps .modal-box back to full
+				// opacity mid-fade — a visible "ghost flash" of the modal.
+				// openModal() (and cleanup()) clear it before the next showModal().
 			});
 
 			this.restorePage();
