@@ -2,6 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const storageState = vi.hoisted(() => new Map());
 
+// vi.stubEnv only touches process.env; licenseCrypto reads SvelteKit's
+// $env/dynamic/private, so the secret has to be mocked at the module. Without
+// this the suite only passes on machines with a real .env (green locally, red in CI).
+vi.mock('$env/dynamic/private', () => ({
+	env: { SUPPORTER_LICENSE_SECRET: 'test-supporter-secret-with-enough-length' }
+}));
+
 vi.mock('../storage/index.js', () => ({
 	storage: {
 		get: vi.fn(async (key) => storageState.get(key) || null),
@@ -26,7 +33,6 @@ const checkout = {
 describe('license store', () => {
 	beforeEach(() => {
 		storageState.clear();
-		vi.stubEnv('SUPPORTER_LICENSE_SECRET', SECRET);
 	});
 
 	it('derives a stable, UUID-shaped license id from the checkout id', () => {
