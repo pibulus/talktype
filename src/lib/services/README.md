@@ -19,7 +19,7 @@ This directory holds the runtime service layer. For the full system map, see [..
 - `qrHandshakeService.js`: Passport import URL and QRBuddy render URL helpers.
 - `pwa/pwaService.js`: install prompt state, installed detection, transcription count.
 - `first-visit/firstVisitService.js`: intro modal gating.
-- `modals/modalService.js`: dialog lifecycle helpers.
+- `modalService.js`: dialog lifecycle helpers.
 - `infrastructure/soundService.js`: tiny portable WebAudio cue engine; use `createSoundService()` and `play('select')`/`play('copy')` in future apps, with TalkType-specific adapters kept as convenience methods.
 - `infrastructure/stores.js`: shared audio, recording, transcription, UI, and preference stores.
 

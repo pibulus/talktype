@@ -3,7 +3,7 @@
 	 * A reusable modal close button component that provides consistent styling and behavior
 	 * across all modals in the application.
 	 */
-	import { modalService } from '$lib/services/modals/modalService.js';
+	import { modalService } from '$lib/services/modalService.js';
 
 	export let position = 'right-3 top-3';
 	export let size = 'md';

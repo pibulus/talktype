@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import ModalCloseButton from './ModalCloseButton.svelte';
 	import { ANIMATION } from '$lib/constants';
-	import { modalService } from '$lib/services/modals/modalService.js';
+	import { modalService } from '$lib/services/modalService.js';
 	export let onSubmit = async () => ({ success: false, error: null });
 	export let onSuccess = () => {};
 	export let onClose = () => {};

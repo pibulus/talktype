@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
 import { StorageUtils } from '../infrastructure/storageUtils';
-import { modalService } from '../modals/modalService';
+import { modalService } from '../modalService.js';
 import { STORAGE_KEYS } from '../../constants';
 
 // Store to track first visit status (internal — nothing outside this service

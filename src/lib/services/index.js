@@ -3,12 +3,12 @@ import { hapticService as hapticServiceInstance } from './infrastructure/index';
 import { soundService as soundServiceInstance } from './infrastructure/index';
 import { audioService as audioServiceInstance } from './audio/audioService';
 import { transcriptionService as transcriptionServiceInstance } from './transcription/transcriptionService';
-import { modalService as modalServiceInstance } from './modals/modalService';
+import { modalService as modalServiceInstance } from './modalService.js';
 import { firstVisitService as firstVisitServiceInstance } from './first-visit/firstVisitService';
 import { pwaService as pwaServiceInstance } from './pwa/pwaService';
 import { resetStores } from './infrastructure/stores';
 export { hapticService, soundService, StorageUtils } from './infrastructure/index';
-export { modalService } from './modals/modalService';
+export { modalService } from './modalService.js';
 export { firstVisitService } from './first-visit/firstVisitService';
 export {
 	pwaService,

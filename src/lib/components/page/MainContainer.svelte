@@ -6,7 +6,7 @@
 	import GhostContainer from './GhostContainer.svelte';
 	import ContentContainer from './ContentContainer.svelte';
 	import FooterComponent from './FooterComponent.svelte';
-	import { modalService } from '$lib/services/modals';
+	import { modalService } from '$lib/services/modalService.js';
 	import { firstVisitService } from '$lib/services/first-visit';
 	import { pwaService, deferredInstallPrompt, showPwaInstallPrompt } from '$lib/services/pwa';
 	import {
