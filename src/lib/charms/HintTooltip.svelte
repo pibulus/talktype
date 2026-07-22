@@ -66,8 +66,7 @@
 		showTimer = setTimeout(reveal, delay);
 		// wire aria-describedby onto the first focusable/interactive child
 		await tick();
-		const target =
-			wrapEl?.querySelector('button, a, [role="button"], input, [tabindex]') ?? wrapEl;
+		const target = wrapEl?.querySelector('button, a, [role="button"], input, [tabindex]') ?? wrapEl;
 		if (target) target.setAttribute('aria-describedby', tipId);
 	});
 
@@ -79,7 +78,6 @@
 
 <!-- Decorative wrapper: only listens (capture phase) to dismiss on first
      interaction. The slotted control carries the real role/label. -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <span
 	class="charm-hint-wrap"
 	bind:this={wrapEl}
@@ -90,11 +88,7 @@
 	<slot />
 
 	{#if visible && text}
-		<span
-			id={tipId}
-			role="tooltip"
-			class="charm-hint charm-hint--{placement}"
-		>
+		<span id={tipId} role="tooltip" class="charm-hint charm-hint--{placement}">
 			{text}
 			<span class="charm-hint-arrow" aria-hidden="true"></span>
 		</span>

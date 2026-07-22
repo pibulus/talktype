@@ -60,11 +60,13 @@
 	);
 
 	/* Footer */
+	/* 0.82 is the fleet-standard footer alpha (2026-07-21) — low enough to
+	   let the blur behind it show as frost, high enough to stay readable. */
 	--tt-footer-bg-image: linear-gradient(
 		90deg,
-		rgba(255, 246, 230, 0.92),
-		rgba(255, 234, 216, 0.92),
-		rgba(255, 241, 223, 0.92)
+		rgba(255, 246, 230, 0.82),
+		rgba(255, 234, 216, 0.82),
+		rgba(255, 241, 223, 0.82)
 	);
 	--tt-footer-border-color: rgba(251, 207, 232, 0.8);
 	--tt-footer-shadow: 0 -4px 15px rgba(249, 168, 212, 0.26);
@@ -115,9 +117,9 @@
 	);
 	--tt-footer-bg-image: linear-gradient(
 		90deg,
-		rgba(232, 255, 248, 0.92),
-		rgba(222, 255, 245, 0.92),
-		rgba(214, 250, 255, 0.92)
+		rgba(232, 255, 248, 0.82),
+		rgba(222, 255, 245, 0.82),
+		rgba(214, 250, 255, 0.82)
 	);
 	--tt-footer-border-color: rgba(52, 211, 153, 0.46);
 	--tt-footer-shadow: 0 -4px 15px rgba(16, 185, 129, 0.18);
@@ -154,9 +156,9 @@
 	);
 	--tt-footer-bg-image: linear-gradient(
 		90deg,
-		rgba(255, 240, 248, 0.92),
-		rgba(255, 232, 245, 0.92),
-		rgba(255, 224, 240, 0.92)
+		rgba(255, 240, 248, 0.82),
+		rgba(255, 232, 245, 0.82),
+		rgba(255, 224, 240, 0.82)
 	);
 	--tt-footer-border-color: rgba(244, 114, 182, 0.5);
 	--tt-footer-shadow: 0 -4px 15px rgba(236, 72, 153, 0.2);
@@ -195,9 +197,9 @@
 	);
 	--tt-footer-bg-image: linear-gradient(
 		90deg,
-		rgba(255, 250, 245, 0.92),
-		rgba(245, 250, 255, 0.92),
-		rgba(255, 245, 250, 0.92)
+		rgba(255, 250, 245, 0.82),
+		rgba(245, 250, 255, 0.82),
+		rgba(255, 245, 250, 0.82)
 	);
 	--tt-footer-border-color: rgba(167, 139, 250, 0.46);
 	--tt-footer-shadow: 0 -4px 15px rgba(139, 92, 246, 0.16);
@@ -463,26 +465,25 @@ dialog.modal::backdrop {
 	overflow: visible;
 }
 
-/* Content scrolling under the pinned close button would otherwise collide with
-   it. This fades the top edge of the panel to its own background so content
-   dissolves out instead of sliding behind the button mid-glyph. Sits under the
-   button (z-index 60) and above the content, and never eats pointer events. */
+/* Keep the pinned close button legible when content scrolls beneath it —
+   a soft corner radial ONLY behind the button, never a full-width wash
+   (the old full-width strip bleached icons/mascots at the modal top). */
 .modal-box > form:has(> .modal-close-btn)::before {
 	content: '';
 	position: absolute;
 	top: calc(-1 * clamp(1rem, 2.6vw, 1.5rem));
-	left: calc(-1 * clamp(1rem, 2.6vw, 1.5rem));
 	right: calc(-1 * clamp(1rem, 2.6vw, 1.5rem));
+	width: 6.5rem;
 	height: 4rem;
 	z-index: -1;
 	pointer-events: none;
-	background: linear-gradient(
-		to bottom,
-		rgba(255, 252, 245, 0.97) 0%,
-		rgba(255, 252, 245, 0.9) 55%,
-		rgba(255, 252, 245, 0) 100%
+	background: radial-gradient(
+		ellipse at top right,
+		rgba(255, 252, 245, 0.88) 0%,
+		rgba(255, 252, 245, 0.55) 50%,
+		transparent 78%
 	);
-	border-radius: var(--modal-border-radius) var(--modal-border-radius) 0 0;
+	border-radius: 0 var(--modal-border-radius) 0 0;
 }
 
 /* Entrance animation scoped to open, NON-closing dialogs only.

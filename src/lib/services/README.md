@@ -45,7 +45,6 @@ RecordingControls.svelte
 
 ## Notes
 
-- `eventBus` still exists for compatibility and infrastructure, but the current app relies mostly on Svelte stores and direct service calls.
 - `initializeServices()` is idempotent and restores pending recording drafts once per browser session.
 - Offline Mode overrides Live Mode.
 - The supporter code is the Passport key on trusted devices; vault hashes are derived on demand rather than cached.

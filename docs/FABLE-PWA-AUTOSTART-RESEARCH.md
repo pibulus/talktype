@@ -4,7 +4,7 @@
 or trigger an action WITHOUT the user tapping a button inside the app first?
 
 **Short answer:** True zero-interaction mic capture is not possible in any browser, by
-design, and that will not change — getUserMedia is gated on a *permission grant*, and on
+design, and that will not change — getUserMedia is gated on a _permission grant_, and on
 iOS that grant does not reliably persist. But "one OS-level tap → already recording" IS
 possible today on Android/desktop Chromium, and **TalkType already ships most of the
 wiring for it** (manifest shortcut + `?action=record` auto-start, added in commit
@@ -20,6 +20,7 @@ training-data vintage claims about PWA capabilities).
 ## Verdicts per angle
 
 ### 1. Manifest `shortcuts` → deep link that auto-starts on load
+
 **POSSIBLE (Android/Chromium) / NOT POSSIBLE (iOS).**
 Long-press app icon → "Record" → app opens at `/?action=record` → `getUserMedia` fires on
 mount. Crucially, `getUserMedia` does **not** require transient activation (kept
@@ -30,7 +31,7 @@ starts with zero in-app taps. Supported on Chrome/Edge/Samsung on Android (WebAP
 desktop Chromium. **iOS: the `shortcuts` member is still not supported in iOS 26** — no
 long-press menu for home-screen web apps ([firt.dev iOS PWA compat](https://firt.dev/notes/pwa-ios/),
 [MagicBell iOS PWA guide 2026](https://www.magicbell.com/blog/pwa-ios-limitations-safari-support-complete-guide)).
-iOS 26's big change is that *every* Add-to-Home-Screen site opens as a web app by default
+iOS 26's big change is that _every_ Add-to-Home-Screen site opens as a web app by default
 ([mjtsai on Web Apps in iOS 26](https://mjtsai.com/blog/2025/10/03/web-apps-in-ios-26/)) —
 nice, but it adds no shortcut/menu surface.
 **Status in TalkType: ALREADY SHIPPED on main** (manifest shortcut "Start Recording" →
@@ -38,6 +39,7 @@ nice, but it adds no shortcut/menu surface.
 `src/lib/components/page/MainContainer.svelte`).
 
 ### 2. Web Share Target (share TO TalkType)
+
 **POSSIBLE WITH CAVEATS (Android/Chromium only).**
 `share_target` in the manifest can register TalkType in the OS share sheet — including
 receiving **audio files** via `method: POST` + `enctype: multipart/form-data` + a service
@@ -48,6 +50,7 @@ since 2019), no Firefox. Different use case than auto-record (receiving, not cap
 worth building later as an Android-only enhancement, NOT built in this POC (kept minimal).
 
 ### 3. Badging / Periodic Background Sync / Background Fetch
+
 **NOT POSSIBLE for mic; POSSIBLE as "re-engage then one-tap" glue.**
 None of these grant mic access — `getUserMedia` needs a window client, never a service
 worker. Current support: Badging works on iOS/iPadOS 16.4+ but only for installed web
@@ -58,6 +61,7 @@ The useful pattern here is angle 6's: a notification whose tap lands the user in
 already-arming app.
 
 ### 4. iOS PWA mic reality (2026)
+
 **POSSIBLE WITH CAVEATS — the caveat is permission persistence, not the API.**
 `getUserMedia` works in installed home-screen web apps (since the iOS 13.x era;
 [WebKit bug #185448](https://bugs.webkit.org/show_bug.cgi?id=185448) long fixed). But
@@ -73,7 +77,9 @@ arms a **first-tap-anywhere starts recording** listener, which is the correct iO
 fallback (one generous tap target instead of a small button).
 
 ### 5. OS-level widgets / iOS Shortcuts app / Android App Actions
+
 **NOT POSSIBLE for a pure PWA (needs a native wrapper), with one honest partial.**
+
 - iOS: home-screen web apps are not exposed to the Shortcuts app's "Open App" action, get
   no widgets, no Siri, no Quick Actions. A Shortcuts "Open URL" automation opens the URL
   in the **browser**, not the installed web app — with `?autostart=1` that still
@@ -82,19 +88,20 @@ fallback (one generous tap target instead of a small button).
   store-published PWABuilder-style) wrapper — that's the honest boundary.
 - Android: App Actions/widgets are native-app surfaces (require an APK/TWA). But Android
   doesn't need them for this use case — angle 1's long-press shortcut already gives
-  one-tap record. (You can also pin a *browser-created* home-screen shortcut directly to
+  one-tap record. (You can also pin a _browser-created_ home-screen shortcut directly to
   the deep-link URL.)
 - Desktop: PWA widgets exist only as an experimental Edge/Windows 11 Widgets Board thing
   ([Microsoft Edge docs](https://learn.microsoft.com/en-us/microsoft-edge/progressive-web-apps/how-to/widgets)) — irrelevant here.
 
 ### 6. Notification tap → open app → recording (persisted permission + SW)
+
 **POSSIBLE (Chromium, zero in-app taps) / POSSIBLE WITH ONE EXTRA TAP (iOS).**
 A `notificationclick` handler can focus/open the app on `/?action=record`. Since
 `getUserMedia` needs no gesture (angle 1) and Chromium persists "Allow", the tap on the
 notification is the only tap. On iOS 16.4+ notification taps do open the installed web
 app ([WebKit web push post](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/)),
 but the per-session mic prompt (angle 4) usually adds one "Allow" tap. **Built in this
-POC** — see below. Caveat: to fire notifications while the app is *closed* you need Web
+POC** — see below. Caveat: to fire notifications while the app is _closed_ you need Web
 Push (server-sent); a locally-scheduled `showNotification` only works while the SW can
 run. The handler covers both trigger types identically.
 
@@ -121,14 +128,16 @@ visibility-retry fallbacks, and the settings-level "auto-record on every launch"
 ### How to test
 
 **Android (Chrome) — the headline flow:**
-1. Visit talktype.app (or a deployed build of this branch), tap ⋮ → *Add to Home screen*
-   → *Install*.
+
+1. Visit talktype.app (or a deployed build of this branch), tap ⋮ → _Add to Home screen_
+   → _Install_.
 2. Open it once, start a recording manually, choose **"Allow" (While using / every
    visit)** — not "Only this time" — at the mic prompt.
 3. Close the app. **Long-press the home-screen icon → tap "Record".**
 4. Expected: app opens and is already recording. One OS tap, zero in-app taps.
 
 **Notification path (this branch's POC, Android/desktop Chromium):**
+
 1. In the installed app, grant notification permission (DevTools console is fine for the
    POC): `Notification.requestPermission()`.
 2. Fire a test notification:
@@ -138,6 +147,7 @@ visibility-retry fallbacks, and the settings-level "auto-record on every launch"
    the Android flow above was done once).
 
 **iOS (installed web app):**
+
 1. Safari → Share → Add to Home Screen (iOS 26 installs it as a web app by default).
 2. There is no long-press shortcut menu (expected — unsupported). Open the app with the
    auto-record setting on, or via a deep link `https://talktype.app/?autostart=1`.
@@ -164,7 +174,7 @@ visibility-retry fallbacks, and the settings-level "auto-record on every launch"
 ## Final recommendation
 
 **Ship the Android story now; it's already 95% built.** The best achievable "auto-start"
-is: *long-press TalkType's icon → "Record" → app opens already recording* (plus the
+is: _long-press TalkType's icon → "Record" → app opens already recording_ (plus the
 existing auto-record-on-open setting for people who want every open to start listening).
 That's on main today — the remaining work is not code, it's (a) an on-device pass on a
 real Android phone to confirm the persisted-permission flow end-to-end, and (b) telling
@@ -177,5 +187,5 @@ Capacitor-wrapper project (Kit's territory), not a PWA tweak.
 
 Merge-worthy from this branch: the `notificationclick` handler + `?autostart=1` alias are
 small, harmless, and open the door to a later "remind me to journal → tap → recording"
-feature. The share-target (angle 2) is the best *next* research-to-feature candidate:
+feature. The share-target (angle 2) is the best _next_ research-to-feature candidate:
 "share any voice memo to TalkType to transcribe it" on Android.

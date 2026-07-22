@@ -132,18 +132,9 @@ function normalizeHash(vaultHash) {
 }
 
 function hashToIndex(hash, array, offset = 0) {
+	// hash is always a hex SHA-256 string here (normalizeHash guards the empty case)
 	const segment = hash.slice(offset, offset + 8) || hash;
-	const parsed = Number.parseInt(segment, 16);
-
-	if (Number.isFinite(parsed)) {
-		return parsed % array.length;
-	}
-
-	let total = 0;
-	for (let index = 0; index < segment.length; index += 1) {
-		total += segment.charCodeAt(index) * (index + 1);
-	}
-	return total % array.length;
+	return Number.parseInt(segment, 16) % array.length;
 }
 
 export function generateMemberIdentity(vaultHash) {

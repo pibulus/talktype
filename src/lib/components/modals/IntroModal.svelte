@@ -45,21 +45,21 @@
 
 			<ul id="intro_modal_description" class="space-y-2.5 sm:space-y-3">
 				<li class="intro-feature">
-					<span class="intro-chip intro-chip-rose" aria-hidden="true">🎯</span>
+					<span class="intro-chip intro-chip-rose" aria-hidden="true">✦</span>
 					<span class="min-w-0">
 						<span class="intro-feature-lead">Private when you want it</span>
 						<span class="intro-feature-copy">Offline mode keeps every word on your device.</span>
 					</span>
 				</li>
 				<li class="intro-feature">
-					<span class="intro-chip intro-chip-amber" aria-hidden="true">⚡</span>
+					<span class="intro-chip intro-chip-amber" aria-hidden="true">✦</span>
 					<span class="min-w-0">
 						<span class="intro-feature-lead">Instant start</span>
 						<span class="intro-feature-copy">Tap the ghost and talk. That's it.</span>
 					</span>
 				</li>
 				<li class="intro-feature">
-					<span class="intro-chip intro-chip-purple" aria-hidden="true">✨</span>
+					<span class="intro-chip intro-chip-purple" aria-hidden="true">✦</span>
 					<span class="min-w-0">
 						<span class="intro-feature-lead">Your words, your way</span>
 						<span class="intro-feature-copy">Save transcripts, switch styles, pick your vibe.</span>

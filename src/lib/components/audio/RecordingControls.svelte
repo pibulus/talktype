@@ -93,7 +93,7 @@
 
 	onMount(() => {
 		// Initialize services
-		services = initializeServices({ debug: false });
+		services = initializeServices();
 
 		// Create recording controls service
 		recordingControlsService = createRecordingControlsService({

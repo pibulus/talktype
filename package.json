@@ -11,6 +11,7 @@
 		"preview": "vite preview",
 		"sync:onnx": "node scripts/sync-onnx-wasm.mjs",
 		"prepare": "svelte-kit sync || echo '' ; node scripts/sync-onnx-wasm.mjs",
+		"postinstall": "node scripts/stub-sharp.js",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
 		"lighthouse": "npm run build && lhci autorun",

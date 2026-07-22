@@ -62,3 +62,4 @@ vite.config.ts.timestamp-*
 # to avoid ~22MB binaries; always matches the installed @huggingface/transformers.
 /static/onnx/
 tests/e2e/launch-shots/
+.playwright-mcp/

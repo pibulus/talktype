@@ -6,6 +6,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { confettiService } from '$lib/services/effects/confettiService';
 	import { transcriptionCompletedEvent } from '$lib/services/infrastructure/stores';
+	import { notePwaMoment } from '$lib/components/PwaInstallCard.svelte';
 
 	// Props
 	export let ghostComponent = null;
@@ -43,6 +44,7 @@
 
 		// Run lightweight completion effects when transcription finishes.
 		if (textToProcess) {
+			notePwaMoment(); // a finished transcription earns the install suggestion
 			// Show confetti celebration as a random Easter egg
 			const confettiResult = await confettiService.triggerConfetti(targetSelector, () => {
 				showConfetti = false;
