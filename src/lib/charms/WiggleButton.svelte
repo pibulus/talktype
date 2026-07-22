@@ -88,7 +88,6 @@
 <!-- Decorative wrapper: it only listens (capture phase) to quiet the charm on
      first use. The real interactive element is the slotted control, which keeps
      its own role/label — so this span is presentational. -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <span
 	class="charm-wiggle"
 	class:is-wiggling={wiggling}
@@ -121,8 +120,7 @@
 	/* the wiggle rides on an inner transform so the slotted element can keep
 	   its own transforms (hover:scale etc.) via the child, not the wrapper */
 	.charm-wiggle.is-wiggling {
-		animation: charm-wiggle-squish var(--charm-wiggle-dur, 900ms)
-			cubic-bezier(0.34, 1.56, 0.64, 1);
+		animation: charm-wiggle-squish var(--charm-wiggle-dur, 900ms) cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
 	@keyframes charm-wiggle-squish {

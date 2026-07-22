@@ -110,10 +110,6 @@
 		color: var(--footer-dot-color, var(--tt-footer-dot-color));
 	}
 
-	.footer-heart {
-		color: var(--footer-heart-color, var(--tt-footer-heart-color));
-	}
-
 	/* Between sm and lg the attribution and the five nav buttons are both on the
 	   row but there isn't room for every word. Shed the least-load-bearing parts
 	   first — the place name, then the dot separator — so the copyright and the
@@ -162,12 +158,6 @@
 			justify-content: flex-start;
 			padding-top: 15vh !important;
 			padding-bottom: 10vh !important;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.footer-heart {
-			animation: none;
 		}
 	}
 </style>

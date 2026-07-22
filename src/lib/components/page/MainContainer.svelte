@@ -33,6 +33,10 @@
 	let SupporterModal;
 	let PwaInstallPrompt;
 
+	// Retired in favor of the family PwaInstallCard (chassis kernel, rendered in
+	// +layout.svelte). Flip to true to restore the old in-app prompt.
+	const LEGACY_PWA_PROMPT_ENABLED = false;
+
 	function createComponentLoader(importComponent, assignComponent, label) {
 		let pending = null;
 
@@ -491,10 +495,9 @@
 	<svelte:component this={SupporterModal} {closeModal} on:unlocked={handleSupporterUnlocked} />
 {/if}
 
-<!-- PWA Install Prompt — retired in favor of the family PwaInstallCard
-     (chassis kernel, rendered in +layout.svelte). The old pwaService system
-     stays intact below/in services; re-enable by restoring this block. -->
-{#if false && $showPwaInstallPrompt && PwaInstallPrompt}
+<!-- PWA Install Prompt — retired; see LEGACY_PWA_PROMPT_ENABLED above. The old
+     pwaService system stays intact in services. -->
+{#if LEGACY_PWA_PROMPT_ENABLED && $showPwaInstallPrompt && PwaInstallPrompt}
 	<div transition:fade={{ duration: 300 }}>
 		<svelte:component
 			this={PwaInstallPrompt}

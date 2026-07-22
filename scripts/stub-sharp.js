@@ -84,4 +84,6 @@ for (const dir of sharpDirs) {
 	);
 }
 
-console.log(`✓ stubbed sharp in ${sharpDirs.length} location(s) (unused native dep of @huggingface/transformers)`);
+console.log(
+	`✓ stubbed sharp in ${sharpDirs.length} location(s) (unused native dep of @huggingface/transformers)`
+);

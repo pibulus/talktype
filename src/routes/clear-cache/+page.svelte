@@ -95,8 +95,8 @@
 
 		<div class="rounded-3xl border border-pink-100 bg-white/75 p-6 shadow-xl backdrop-blur-md">
 			<p class="mb-6 text-gray-600">
-				This clears the cached offline model and browser storage so TalkType can fetch a fresh
-				local copy the next time Offline Mode is used.
+				This clears the cached offline model and browser storage so TalkType can fetch a fresh local
+				copy the next time Offline Mode is used.
 			</p>
 
 			<button

@@ -68,8 +68,10 @@
 <button type="button" class="footer-charm" aria-label={label} on:click={pop}>
 	<span class="charm-beat" aria-hidden="true">{charm}</span>
 	{#each bursts as b (b.id)}
-		<span class="charm-float" style="--dx: {b.dx}px; animation-delay: {b.delay}ms" aria-hidden="true"
-			>{charm}</span
+		<span
+			class="charm-float"
+			style="--dx: {b.dx}px; animation-delay: {b.delay}ms"
+			aria-hidden="true">{charm}</span
 		>
 	{/each}
 </button>
