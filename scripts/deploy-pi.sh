@@ -5,6 +5,11 @@ PI_USER="${TALKTYPE_PI_USER:-pibulus}"
 PI_HOST="${TALKTYPE_PI_HOST:-pibulus.local}"
 APP_NAME="${TALKTYPE_PI_APP_NAME:-talktype}"
 APP_DIR="${TALKTYPE_PI_APP_DIR:-/home/pibulus/apps/talktype}"
+# Persistent JSON store (supporter licenses/checkouts). MUST live OUTSIDE APP_DIR:
+# the deploy swaps APP_DIR wholesale (mv $staging $app_dir), so a data/ inside it
+# would be wiped every deploy once payments are live. The app reads this path from
+# TALKTYPE_DATA_DIR in /etc/talktype.env; the deploy just guarantees the dir exists.
+DATA_DIR="${TALKTYPE_PI_DATA_DIR:-/home/pibulus/apps-data/talktype}"
 BACKUP_DIR="${TALKTYPE_PI_BACKUP_DIR:-/home/pibulus/apps-backups}"
 STAGING_ROOT="${TALKTYPE_PI_STAGING_ROOT:-/home/pibulus/apps-staging}"
 SERVICE="${TALKTYPE_PI_SERVICE:-talktype}"
@@ -161,7 +166,8 @@ remote_bash \
   "$SERVICE" \
   "$LIVE_URL" \
   "$APP_ENTRY" \
-  "$ARCHIVE_BACKUP" <<'REMOTE'
+  "$ARCHIVE_BACKUP" \
+  "$DATA_DIR" <<'REMOTE'
 set -euo pipefail
 
 app_dir="$1"
@@ -172,6 +178,7 @@ service="$5"
 live_url="$6"
 app_entry="$7"
 archive_backup="$8"
+data_dir="$9"
 
 require_safe_path() {
   case "${1:-}" in
@@ -198,9 +205,22 @@ require_safe_path "$app_dir"
 require_safe_path "$staging_dir"
 require_safe_path "$backup_path"
 require_safe_path "$previous_dir"
+require_safe_path "$data_dir"
 
 test -d "$staging_dir"
 test -s "$staging_dir/$app_entry"
+
+# Persistent store lives OUTSIDE app_dir so the swap below can't wipe it.
+mkdir -p "$data_dir"
+chmod 700 "$data_dir" || true
+
+# One-time rescue: if an OLD build ever wrote data/ inside app_dir (pre-external
+# store), migrate those files out before app_dir is moved away. --ignore-existing
+# so the live external store always wins over a stale in-app copy.
+if [[ -d "$app_dir/data" ]]; then
+  printf 'rescuing legacy in-app store -> %s\n' "$data_dir"
+  rsync -a --ignore-existing "$app_dir/data/" "$data_dir/" || true
+fi
 
 rm -rf "$previous_dir"
 mkdir -p "$backup_path"
@@ -221,6 +241,16 @@ if [[ -e "$app_dir" || -L "$app_dir" ]]; then
 fi
 
 mv "$staging_dir" "$app_dir"
+
+# Lock down the external JSON store files (created lazily on first checkout/license
+# write). FileSystemAdapter already writes new files 0o600, but this enforces
+# owner-only on every deploy as belt-and-braces and fixes perms on any predating
+# file. No-op when the store is still empty.
+if [[ -d "$data_dir" ]]; then
+  chmod 700 "$data_dir" || true
+  find "$data_dir" -type f -name '*.json' -exec chmod 600 {} + || true
+fi
+
 sudo -n systemctl restart "$service"
 systemctl is-active "$service"
 

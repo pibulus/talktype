@@ -10,6 +10,7 @@
 		clearAllTranscripts,
 		batchDownloadTranscripts,
 		exportAllTranscriptsJSON,
+		exportAllTranscriptsMarkdown,
 		formatSize
 	} from '$lib/services/storage/transcriptStorage';
 	import { autoBackupHistoryToVault } from '$lib/services/storage/vaultAutoBackup.js';
@@ -29,6 +30,7 @@
 
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { PRICING } from '$lib/config/pricing.js';
+	import { HISTORY } from '$lib/constants';
 
 	export let closeModal = () => {};
 
@@ -107,7 +109,7 @@
 	function formatMethod(method) {
 		const labels = {
 			'deepgram-live': 'Live',
-			gemini: 'Gemini',
+			gemini: 'Cloud',
 			whisper: 'Offline',
 			'offline-whisper': 'Offline',
 			'cloud-batch': 'Cloud'
@@ -150,6 +152,17 @@
 		showToast(copied ? 'Copied' : 'Tap the page, then try copy.', copied ? 'success' : 'info');
 	}
 
+	// Share single transcript via the native share sheet (mobile's "send to
+	// Notes/Messages" path). Falls back to clipboard inside the service.
+	async function shareTranscriptItem(transcript) {
+		const text = cleanTranscriptText(transcript.text);
+		if (!text) {
+			showToast('Nothing to share.', 'info');
+			return;
+		}
+		await transcriptionService.shareTranscript(text);
+	}
+
 	// Download single transcript as text file
 	function downloadTranscript(transcript) {
 		const blob = new Blob([normalizeTranscriptText(transcript.text)], { type: 'text/plain' });
@@ -181,7 +194,19 @@
 			return;
 		}
 
-		const updated = await updateTranscript(id, nextText);
+		// Pass the existing tags through — otherwise updateTranscript regenerates
+		// them and quietly discards any hand-curated ones. try/catch because it
+		// rejects (not returns false) when the record vanished, e.g. trimmed out
+		// from under the editor on the free tier.
+		const existing = $transcriptHistory.find((t) => t.id === id);
+		let updated = false;
+		try {
+			updated = await updateTranscript(id, nextText, {
+				tags: existing?.tags?.length ? existing.tags : undefined
+			});
+		} catch {
+			updated = false;
+		}
 		if (!updated) {
 			showToast('Transcript update needs one more try.', 'info');
 			return;
@@ -263,16 +288,22 @@
 		activeAudioUrl = URL.createObjectURL(transcript.audioBlob);
 	}
 
-	// Batch download all transcripts
+	// Batch download all transcripts as one ZIP
 	async function handleBatchDownload() {
 		const count = await batchDownloadTranscripts();
-		showToast(`Downloading ${count} transcript${count !== 1 ? 's' : ''}.`, 'success');
+		showToast(`Zipped ${count} transcript${count !== 1 ? 's' : ''} for download.`, 'success');
 	}
 
 	// Export as JSON
 	async function handleExportJSON() {
 		await exportAllTranscriptsJSON();
 		showToast('Exported as JSON.', 'success');
+	}
+
+	// Export everything as one Markdown file
+	async function handleExportMarkdown() {
+		const exported = await exportAllTranscriptsMarkdown();
+		showToast(exported ? 'Exported as Markdown.' : 'Nothing to export yet.', 'success');
 	}
 
 	function showToast(message, type = 'info') {
@@ -366,9 +397,10 @@
 
 		<!-- Header -->
 		<div class="mb-4 shrink-0 border-b border-pink-100 pb-3">
-			<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<div class="flex items-center gap-2">
-					<span class="text-2xl" aria-hidden="true">📚</span>
+			<!-- Title row keeps pr-10 so it never collides with the absolute close
+			     button; actions live on their own full-width row below. -->
+			<div class="flex flex-col gap-3">
+				<div class="flex items-center gap-2 pr-10">
 					<div>
 						<h3 id="history_modal_title" class="text-xl font-black tracking-tight text-gray-800">
 							Transcript History
@@ -387,25 +419,36 @@
 				</div>
 
 				{#if $transcriptHistory.length > 0}
-					<div class="flex flex-wrap gap-2 sm:justify-end">
-						<button
-							type="button"
-							class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
-							on:click={handleBatchDownload}
-							title="Download all as text files"
-							aria-label="Download all transcripts as text files"
-						>
-							Download
-						</button>
-						<button
-							type="button"
-							class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
-							on:click={handleExportJSON}
-							title="Export as JSON"
-							aria-label="Export transcript history as JSON"
-						>
-							JSON
-						</button>
+					<div class="flex flex-wrap gap-2">
+						{#if isSupporter}
+							<button
+								type="button"
+								class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
+								on:click={handleBatchDownload}
+								title="Download all as a ZIP of text files"
+								aria-label="Download all transcripts as a ZIP of text files"
+							>
+								ZIP
+							</button>
+							<button
+								type="button"
+								class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
+								on:click={handleExportMarkdown}
+								title="Export all as one Markdown file"
+								aria-label="Export transcript history as one Markdown file"
+							>
+								Markdown
+							</button>
+							<button
+								type="button"
+								class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
+								on:click={handleExportJSON}
+								title="Export as JSON"
+								aria-label="Export transcript history as JSON"
+							>
+								JSON
+							</button>
+						{/if}
 						<button
 							type="button"
 							class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
@@ -458,23 +501,26 @@
 
 		<!-- Content -->
 		<div class="tt-modal-scroll-area min-h-0 flex-1 overflow-y-auto">
-			{#if !isSupporter}
-				<div class="space-y-4 py-12 text-center">
-					<p class="text-4xl" aria-hidden="true">🔒</p>
-					<h4 class="text-lg font-black text-gray-800">Transcript History Locked</h4>
-					<p class="mx-auto max-w-sm text-sm text-gray-600">
-						Unlock transcript history, downloads, and style presets by becoming a supporter — $9 a
-						year, no subscription.
+			{#if !isSupporter && $transcriptHistory.length > 0}
+				<!-- Free tier reads everything it keeps — the user's words are never
+				     locked. Supporter adds unlimited retention + vault + batch export. -->
+				<div
+					class="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-pink-100 bg-pink-50/60 px-3 py-2"
+				>
+					<p class="text-xs text-gray-600">
+						Free keeps your latest {HISTORY.FREE_HISTORY_LIMIT} transcripts. Supporters keep everything,
+						plus backup and export.
 					</p>
 					<button
 						type="button"
-						class="btn min-h-12 border-pink-200 bg-pink-500 px-6 text-white hover:bg-pink-600"
+						class="btn btn-xs min-h-9 border-pink-200 bg-pink-500 px-3 text-white hover:bg-pink-600"
 						on:click={openSupporterModal}
 					>
-						Unlock for {PRICING.displayPrice}/year
+						Keep it all — {PRICING.displayPrice}/year
 					</button>
 				</div>
-			{:else if $transcriptHistory.length === 0}
+			{/if}
+			{#if $transcriptHistory.length === 0}
 				<!-- Empty State -->
 				<div class="py-12 text-center">
 					<p class="mb-2 text-4xl opacity-30" aria-hidden="true">📝</p>
@@ -584,6 +630,17 @@
 										>
 											<span aria-hidden="true">📋</span>
 										</button>
+										{#if transcriptionService.isShareSupported()}
+											<button
+												type="button"
+												class={iconButtonClass}
+												on:click={() => shareTranscriptItem(transcript)}
+												title="Share"
+												aria-label={`Share transcript from ${formatDate(transcript.timestamp)}`}
+											>
+												<span aria-hidden="true">📤</span>
+											</button>
+										{/if}
 										<button
 											type="button"
 											class={iconButtonClass}

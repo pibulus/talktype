@@ -33,6 +33,7 @@ export const STORAGE_KEYS = {
 	HISTORY_CHANGED_AT: `${APP_STORAGE_PREFIX}:history_changed_at`,
 	PRIVACY_MODE: 'talktype_privacy_mode', // Offline Whisper mode
 	LIVE_MODE: 'talktype_live_mode',
+	SOUND_ENABLED: 'talktype_sound_enabled', // UI sounds + haptics master switch
 	WEBGPU_DISABLED: 'talktype_webgpu_disabled', // sticky: WebGPU model load failed on this device
 
 	TEXT_TIMING_DEFAULT_MIGRATED: `${APP_STORAGE_PREFIX}:text_timing_default_after_stop_v1`,
@@ -115,7 +116,10 @@ export const ANIMATION = {
 	// Modal timing
 	MODAL: {
 		CLOSE_DELAY: 50, // Delay before running closeModal function
-		CLOSE_DURATION: 210,
+		// Must match --tt-modal-close-ms in app.css. modalService waits this long
+		// before removing the dialog from the top layer; too short clips the
+		// close animation, too long leaves a dead frame after it finishes.
+		CLOSE_DURATION: 180,
 		PERMISSION_ERROR_DURATION: 8000 // How long the permission error shows
 	},
 

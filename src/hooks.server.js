@@ -30,8 +30,11 @@ export async function handle({ event, resolve }) {
 		// 'unsafe-inline' needed because SvelteKit injects inline <script> blocks
 		// for hydration data and env vars. Removing this white-screens the app.
 		// TODO: replace with a nonce-based approach once SvelteKit supports it stably.
-		"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cloud.umami.is https://static.cloudflareinsights.com",
+		"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://cloud.umami.is https://static.cloudflareinsights.com",
 		//   'wasm-unsafe-eval' — required for @huggingface/transformers onnxruntime-web (Whisper WASM)
+		//   blob: — onnxruntime-web's JSPI loader (Chrome 137+) wraps its fetched
+		//   .mjs glue in a blob and dynamic-imports it; without blob: here Offline
+		//   Mode dies with "no available backend found" on modern Chrome.
 		//   https://cloud.umami.is — Umami analytics script (PUBLIC_UMAMI_SCRIPT_URL default)
 
 		// Styles — SvelteKit also inlines critical CSS
@@ -71,6 +74,13 @@ export async function handle({ event, resolve }) {
 
 		// No embedding of this app in frames elsewhere
 		"frame-ancestors 'none'",
+
+		// Lock <base href> to self so injected <base> tags can't hijack relative URLs
+		"base-uri 'self'",
+
+		// Restrict form submission targets. Square checkout is a window.location
+		// redirect (not a form POST), so 'self' is enough — defense-in-depth.
+		"form-action 'self'",
 
 		// Block mixed content
 		'upgrade-insecure-requests'

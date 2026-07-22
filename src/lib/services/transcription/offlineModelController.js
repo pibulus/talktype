@@ -30,6 +30,16 @@ export class OfflineModelController {
 		this.unsubscribePrivacyMode = this.privacyStore.subscribe((value) => {
 			if (initialPrivacyValue) {
 				initialPrivacyValue = false;
+				// Policy: never auto-DOWNLOAD on app open. But when Offline Mode is
+				// already on AND the model bytes are already cached, warm it from
+				// disk so the first recording doesn't stall on a cold load.
+				if (isPrivacyModeEnabled(value)) {
+					Promise.resolve(this.hybridService.isOfflineModelCached?.())
+						.then((cached) => {
+							if (cached) this.startModelLoading({ quiet: true });
+						})
+						.catch(() => {});
+				}
 				return;
 			}
 
@@ -41,7 +51,7 @@ export class OfflineModelController {
 		});
 	}
 
-	startModelLoading() {
+	startModelLoading({ quiet = false } = {}) {
 		if (this.modelLoadStarted || !isPrivacyModeEnabled(get(this.privacyStore))) return;
 
 		this.modelLoadStarted = true;
@@ -51,16 +61,31 @@ export class OfflineModelController {
 			.then((result) => {
 				if (result?.success) {
 					analytics.offlineModelReady({ alreadyLoaded: result.alreadyLoaded === true });
+					if (!quiet && !result.alreadyLoaded) {
+						this.#toast('success', 'Offline model ready — transcription runs on this device.');
+					}
+					return;
 				}
-				if (!result?.success) {
-					this.modelLoadStarted = false;
-					analytics.offlineModelFailed({ error: result?.error || 'load_failed' });
+				this.modelLoadStarted = false;
+				// User switched away mid-load and the model was released — not a failure.
+				if (result?.unloaded) return;
+				analytics.offlineModelFailed({ error: result?.error || 'load_failed' });
+				if (!quiet) {
+					this.#toast('error', "Offline model couldn't load — tap Offline to retry.");
 				}
 			})
 			.catch((error) => {
 				this.modelLoadStarted = false;
 				analytics.offlineModelFailed({ error });
+				if (!quiet) {
+					this.#toast('error', "Offline model couldn't load — tap Offline to retry.");
+				}
 			});
+	}
+
+	#toast(type, message) {
+		if (!this.isBrowser || typeof window === 'undefined') return;
+		window.dispatchEvent(new CustomEvent('talktype:toast', { detail: { type, message } }));
 	}
 
 	releaseModel() {

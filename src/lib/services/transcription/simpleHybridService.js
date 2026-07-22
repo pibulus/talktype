@@ -8,7 +8,7 @@ import { whisperService, whisperStatus } from './whisper/whisperService';
 import { userPreferences } from '../infrastructure/stores';
 import { customPrompt, privacyMode } from '$lib';
 import { browser } from '$app/environment';
-import { LEGACY_STORAGE_KEYS, STORAGE_KEYS } from '$lib/constants';
+import { LEGACY_STORAGE_KEYS, PROMPT_STYLES, STORAGE_KEYS } from '$lib/constants';
 import { readStorageValue } from '$lib/services/storage/localStorageMigration.js';
 import { ensureApiSession } from '../apiSession.js';
 import { createLogger } from '$lib/utils/logger';
@@ -109,6 +109,15 @@ export class SimpleHybridService {
 		return this.whisperLoadPromise;
 	}
 
+	/**
+	 * Are the current model's bytes already in the browser cache? Used by the
+	 * offline controller to warm from disk at startup without triggering a
+	 * surprise download.
+	 */
+	isOfflineModelCached() {
+		return whisperService.refreshCachedModelStatus();
+	}
+
 	async releaseOfflineModel() {
 		const pendingLoad = this.whisperLoadPromise;
 		this.whisperLoadPromise = null;
@@ -204,7 +213,12 @@ export class SimpleHybridService {
 
 	async _transcribeWithCloudInternal(audioBlob, options = {}) {
 		try {
-			const promptStyle = get(userPreferences).promptStyle || 'standard';
+			// Guard against a stale stored style (e.g. a preset that no longer
+			// exists) — the server rejects unknown styles with a 400.
+			const storedStyle = get(userPreferences).promptStyle || 'standard';
+			const promptStyle = Object.values(PROMPT_STYLES).includes(storedStyle)
+				? storedStyle
+				: 'standard';
 			const controller = new AbortController();
 			// Increase timeout to 60s for longer recordings
 			const timeoutId = setTimeout(() => controller.abort(), 60000);

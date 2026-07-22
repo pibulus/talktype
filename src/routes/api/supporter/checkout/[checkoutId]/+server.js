@@ -18,6 +18,18 @@ export async function GET(event) {
 	const rateResponse = await enforceRateLimit(event);
 	if (rateResponse) return rateResponse;
 
+	try {
+		return await handleClaim(event);
+	} catch (error) {
+		console.error('[SupporterCheckout] Claim poll failed:', error?.message || error);
+		return json(
+			{ error: 'Checkout needs one more try in a moment.' },
+			{ status: 500, headers: NO_STORE_HEADERS }
+		);
+	}
+}
+
+async function handleClaim(event) {
 	const checkoutId = event.params.checkoutId;
 	const claimToken = event.request.headers.get(SUPPORTER_CHECKOUT.CLAIM_HEADER) || '';
 	const checkout = await getCheckoutById(checkoutId);

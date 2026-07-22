@@ -1,8 +1,15 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { theme, autoRecord, applyTheme, promptStyle, liveMode, privacyMode } from '$lib';
-	import { geminiService } from '$lib/services/geminiService';
+	import {
+		theme,
+		autoRecord,
+		applyTheme,
+		promptStyle,
+		liveMode,
+		privacyMode,
+		soundEnabled
+	} from '$lib';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { offlineModelController } from '$lib/services/transcription/offlineModelController.js';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
@@ -15,6 +22,10 @@
 	import { ANIMATION, DEFAULT_THEME, SERVICE_EVENTS } from '$lib/constants';
 	import { hapticService } from '$lib/services/infrastructure/hapticService.js';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
+	import {
+		getStoredCustomWords,
+		setStoredCustomWords
+	} from '$lib/services/transcription/transcriptCleanup.js';
 
 	export let closeModal = () => {};
 
@@ -24,8 +35,37 @@
 	let selectedPromptStyle = 'standard';
 	let privacyModeValue = false;
 	let liveModeValue = false;
+	let soundEnabledValue = true;
 	let isSupporterValue = false;
 	let userPreferencesLoaded = false;
+
+	// Custom vocabulary — names/words the ghost should always get right.
+	// Applied as fuzzy post-processing on every transcription path.
+	let customWords = [];
+	let customWordInput = '';
+	let yourWordsOpen = false;
+
+	function toggleYourWords() {
+		yourWordsOpen = !yourWordsOpen;
+		soundService.select();
+	}
+
+	function addCustomWord() {
+		const word = customWordInput.trim();
+		customWordInput = '';
+		if (!word) return;
+		if (customWords.some((w) => w.toLowerCase() === word.toLowerCase())) return;
+
+		customWords = [...customWords, word];
+		setStoredCustomWords(customWords);
+		soundService.select();
+	}
+
+	function removeCustomWord(word) {
+		customWords = customWords.filter((w) => w !== word);
+		setStoredCustomWords(customWords);
+		soundService.select();
+	}
 
 	// Store unsubscribe functions
 	let unsubscribeTheme;
@@ -33,6 +73,7 @@
 	let unsubscribePromptStyle;
 	let unsubscribeLiveMode;
 	let unsubscribePrivacyMode;
+	let unsubscribeSoundEnabled;
 	let unsubscribeUserPreferences;
 
 	const transcriptionModes = [
@@ -85,6 +126,8 @@
 	}
 
 	onMount(() => {
+		customWords = getStoredCustomWords();
+
 		// Subscribe to stores only in browser
 		unsubscribeTheme = theme.subscribe((value) => {
 			selectedVibe = value;
@@ -106,6 +149,10 @@
 			privacyModeValue = isEnabled(value);
 		});
 
+		unsubscribeSoundEnabled = soundEnabled.subscribe((value) => {
+			soundEnabledValue = isEnabled(value);
+		});
+
 		unsubscribeUserPreferences = userPreferences.subscribe((value) => {
 			isSupporterValue = value.isSupporter;
 			userPreferencesLoaded = true;
@@ -119,6 +166,7 @@
 		if (unsubscribePromptStyle) unsubscribePromptStyle();
 		if (unsubscribeLiveMode) unsubscribeLiveMode();
 		if (unsubscribePrivacyMode) unsubscribePrivacyMode();
+		if (unsubscribeSoundEnabled) unsubscribeSoundEnabled();
 		if (unsubscribeUserPreferences) unsubscribeUserPreferences();
 	});
 
@@ -137,7 +185,6 @@
 
 	function changePromptStyle(style) {
 		selectedPromptStyle = style;
-		geminiService.setPromptStyle(style);
 		promptStyle.set(style);
 		userPreferences.update((prefs) => ({ ...prefs, promptStyle: style }));
 		if (browser) {
@@ -160,6 +207,16 @@
 				})
 			);
 		}
+	}
+
+	function toggleSoundEnabled() {
+		soundEnabledValue = !soundEnabledValue;
+		// Set the store first — the service-layer wiring flips setEnabled, so the
+		// confirmation click below is audible when turning ON and silent when OFF.
+		soundEnabled.set(soundEnabledValue.toString());
+		soundService.select();
+		hapticService.select?.();
+		dispatchSettingChanged('soundEnabled', soundEnabledValue);
 	}
 
 	function dispatchSettingChanged(setting, value) {
@@ -306,6 +363,81 @@
 				</section>
 			{/if}
 
+			<!-- Your Words folds into one row (matching the toggle-row idiom) so the
+			     modal stays scroll-free on phones — most sessions never open it. -->
+			<div class="space-y-2">
+				<button
+					type="button"
+					class={`setting-row flex min-h-12 w-full items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition-all duration-200 ${
+						yourWordsOpen
+							? 'border-pink-300 bg-pink-50 text-gray-900 ring-2 ring-pink-100'
+							: 'border-pink-100 bg-white/75 text-gray-700 hover:border-pink-200 hover:bg-pink-50/70'
+					}`}
+					aria-expanded={yourWordsOpen}
+					aria-controls="settings_your_words_panel"
+					on:click={toggleYourWords}
+				>
+					<span class="flex items-center gap-3">
+						<span class="block text-sm font-black">Your Words</span>
+						{#if customWords.length}
+							<span
+								class="rounded-full border border-pink-200 bg-white/80 px-2 py-0.5 text-[11px] font-bold text-pink-700"
+							>
+								{customWords.length}
+							</span>
+						{/if}
+					</span>
+					<span
+						class="text-pink-300 transition-transform duration-200 {yourWordsOpen
+							? 'rotate-90'
+							: ''}"
+						aria-hidden="true">▸</span
+					>
+				</button>
+
+				{#if yourWordsOpen}
+					<div id="settings_your_words_panel" class="space-y-2 px-1">
+						<p class="text-xs text-gray-500">Names the ghost always gets right.</p>
+						<form class="flex gap-2" on:submit|preventDefault={addCustomWord}>
+							<input
+								type="text"
+								class="min-h-11 min-w-0 flex-1 rounded-xl border border-pink-100 bg-white/75 px-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-100"
+								placeholder="e.g. Hexbloop, R&D"
+								maxlength="50"
+								bind:value={customWordInput}
+								aria-label="Add a word for the ghost to learn"
+							/>
+							<button
+								type="submit"
+								class="btn min-h-11 border-pink-200 bg-pink-500 px-4 text-white hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-200 disabled:text-white/90"
+								disabled={!customWordInput.trim()}
+							>
+								Add
+							</button>
+						</form>
+						{#if customWords.length}
+							<div class="flex flex-wrap gap-1.5">
+								{#each customWords as word (word)}
+									<button
+										type="button"
+										class="group flex min-h-9 items-center gap-1.5 rounded-full border border-pink-100 bg-white/80 px-3 text-xs font-bold text-gray-600 transition-colors duration-150 hover:border-pink-200 hover:bg-pink-50"
+										on:click={() => removeCustomWord(word)}
+										title={`Remove ${word}`}
+										aria-label={`Remove ${word} from your words`}
+									>
+										{word}
+										<span
+											class="text-pink-300 transition-colors group-hover:text-pink-500"
+											aria-hidden="true">×</span
+										>
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</div>
+
 			<button
 				type="button"
 				class={`setting-row flex min-h-12 w-full items-center gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition-all duration-200 ${
@@ -324,6 +456,26 @@
 					<span class="block text-sm font-black">Auto Start</span>
 				</span>
 				<span class="sr-only">{autoRecordValue ? 'On' : 'Off'}</span>
+			</button>
+
+			<button
+				type="button"
+				class={`setting-row flex min-h-12 w-full items-center gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition-all duration-200 ${
+					soundEnabledValue
+						? 'border-pink-300 bg-pink-50 text-gray-900 ring-2 ring-pink-100'
+						: 'border-pink-100 bg-white/75 text-gray-700 hover:border-pink-200 hover:bg-pink-50/70'
+				}`}
+				aria-pressed={soundEnabledValue}
+				aria-label={`${soundEnabledValue ? 'Disable' : 'Enable'} sounds and vibration`}
+				on:click={toggleSoundEnabled}
+			>
+				<span class="flex items-center gap-3">
+					<span class="auto-start-glyph {soundEnabledValue ? 'is-on' : ''}" aria-hidden="true">
+						<span></span>
+					</span>
+					<span class="block text-sm font-black">Sounds & Vibration</span>
+				</span>
+				<span class="sr-only">{soundEnabledValue ? 'On' : 'Off'}</span>
 			</button>
 
 			<button

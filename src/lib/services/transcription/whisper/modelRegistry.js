@@ -16,28 +16,34 @@ const log = createLogger('ModelRegistry');
 const DEFAULT_MODELS = [
 	{
 		id: 'tiny',
-		transformers_id: 'Xenova/whisper-tiny.en', // v4-native ONNX export, updated Dec 2025
-		name: 'Tiny English (117MB)',
+		// onnx-community modern export — the old Xenova/whisper-tiny.en (2023 q8)
+		// is rejected by the ort 1.26-dev bundled in transformers.js 4.x on newest
+		// Chromium ("Missing required scale ... TransposeDQWeightsForMatMulNBits").
+		// Same source family as distil-small, which never hit that error.
+		transformers_id: 'onnx-community/whisper-tiny.en',
+		name: 'Tiny English (96MB)',
 		description: 'Mobile-optimized, iOS compatible',
-		size: 117 * 1024 * 1024, // ~117MB INT8 quantized
+		size: 96 * 1024 * 1024, // encoder_q4 (~9MB) + decoder_merged_q4 (~87MB)
 		parameters: 39000000,
 		languages: ['en'],
-		version: '1.0.0',
+		version: '2.0.0',
 		recommended_for: 'iOS Safari, low-memory devices',
 		speed_multiplier: 1.0,
 		accuracy_loss: '~20% vs distil-small',
 		mobile_safe: true,
-		// WASM + q8 (int8 quantized) — the transformers.js default for WASM,
-		// uses _quantized.onnx files which have the broadest ort compatibility.
+		// WASM + q4 — maps to the *_q4.onnx files, which use MatMulNBits natively.
+		// Both q8 layouts (Xenova AND onnx-community *_quantized.onnx) are rejected
+		// by modern ort's DQ→MatMulNBits graph transform ("Missing required scale"),
+		// so q8 is a dead end for tiny — don't go back to it.
 		device: 'wasm',
-		dtype: 'q8'
+		dtype: 'q4'
 	},
 	{
 		id: 'small',
 		transformers_id: 'onnx-community/distil-small.en', // v4-native ONNX export (desktop quality upgrade)
 		name: 'Distil-Small English',
 		description: 'Better accuracy, WebGPU-accelerated on capable desktops',
-		size: 200 * 1024 * 1024, // ~200MB (fp16 encoder+decoder)
+		size: 251 * 1024 * 1024, // encoder_q4 (~66MB) + decoder_merged_q4 (~185MB)
 		parameters: 166000000,
 		languages: ['en'],
 		version: '3.0.0',
@@ -45,57 +51,19 @@ const DEFAULT_MODELS = [
 		speed_multiplier: 5.6,
 		accuracy_loss: '4% vs Whisper Large',
 		desktop_optimized: true,
-		// Desktop upgrade runs on WebGPU. Using fp32 instead of fp16 because
-		// the fp16 ONNX export from onnx-community triggers a graph validation
-		// error ("Subgraph output (logits) is an outer scope value being returned
-		// directly") with onnxruntime-web 1.26.0-dev bundled in transformers.js 4.x.
+		// Desktop upgrade runs on WebGPU. q4 (MatMulNBits) cuts the download from
+		// fp32's ~665MB to ~251MB. fp16 is a dead end: the onnx-community fp16
+		// export triggers a graph validation error ("Subgraph output (logits) is
+		// an outer scope value being returned directly") with the ort 1.26.0-dev
+		// bundled in transformers.js 4.x.
 		device: 'webgpu',
-		dtype: 'fp32'
-	},
-	{
-		id: 'medium',
-		transformers_id: 'distil-whisper/distil-medium.en', // Larger desktop option
-		name: 'Distil-Medium English (150MB)',
-		description: '5.6x faster, better accuracy',
-		size: 150 * 1024 * 1024, // ~150MB INT8 quantized
-		parameters: 394000000,
-		languages: ['en'],
-		version: '3.0.0',
-		recommended_for: 'Desktop with >4GB RAM',
-		speed_multiplier: 5.6,
-		accuracy_loss: '2% vs Whisper Large',
-		desktop_optimized: true
-	},
-	{
-		id: 'large',
-		transformers_id: 'distil-whisper/distil-large-v3', // Pro multilingual
-		name: 'Distil-Large Pro (750MB)',
-		description: '99 languages, 5.6x faster than regular Large',
-		size: 750 * 1024 * 1024, // ~750MB
-		parameters: 1550000000,
-		languages: ['multi'], // 99 languages
-		version: '3.0.0',
-		recommended_for: 'Pro users, multilingual, WebGPU',
-		speed_multiplier: 5.6,
-		accuracy_loss: 'minimal',
-		webgpu_optimized: true,
-		pro_feature: true,
-		desktop_only: true
+		dtype: 'q4'
 	}
 ];
-
-// Transformers.js library information
-const TRANSFORMERS_INFO = {
-	package: '@huggingface/transformers',
-	version: 'latest',
-	cdn_url: 'https://cdn.jsdelivr.net/npm/@huggingface/transformers',
-	documentation: 'https://huggingface.co/docs/transformers.js'
-};
 
 // Create stores for the registry data
 export const modelRegistry = writable({
 	models: DEFAULT_MODELS,
-	transformersInfo: TRANSFORMERS_INFO,
 	lastUpdated: Date.now(),
 	initialized: false
 });
@@ -126,21 +94,6 @@ export async function initializeModelRegistry() {
 	}));
 
 	return get(modelRegistry);
-}
-
-/**
- * Check if the registry needs to be updated
- */
-export async function checkForRegistryUpdates() {
-	if (!browser) return false;
-
-	// For transformers.js, updates are handled automatically by the library
-	modelRegistry.update((reg) => ({
-		...reg,
-		lastUpdated: Date.now()
-	}));
-
-	return false;
 }
 
 /**
@@ -188,24 +141,10 @@ export function selectModel(modelId) {
 }
 
 /**
- * Get all available models
- */
-export function getAvailableModels() {
-	return get(modelRegistry).models;
-}
-
-/**
  * Get the currently selected model
  */
 export function getCurrentModel() {
 	return get(selectedModel);
-}
-
-/**
- * Get transformers.js library information
- */
-export function getTransformersInfo() {
-	return get(modelRegistry).transformersInfo;
 }
 
 /**

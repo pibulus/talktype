@@ -9,10 +9,10 @@ Try it at [talktype.app](https://talktype.app).
 
 ## Current Shape
 
-- **Live Mode is the default**: Deepgram realtime WebSocket transcription streams text while the user speaks.
-- **Standard batch fallback**: Standard post-recording transcription routes to Deepgram Nova-3 through `/api/transcribe`.
+- **After Stop is the default**: recordings transcribe on stop through `/api/transcribe` (Deepgram Nova-3 for standard output).
+- **Live Mode is opt-in**: Deepgram realtime WebSocket transcription streams text while the user speaks.
 - **Style presets**: Non-standard output styles route to Gemini through the same server endpoint.
-- **Offline Mode is explicit**: When enabled, local Whisper runs in the browser with `@xenova/transformers`, WASM, IndexedDB/browser cache, and no cloud transcription.
+- **Offline Mode is explicit**: When enabled, local Whisper runs in the browser with `@huggingface/transformers`, WASM (WebGPU on capable desktops), browser cache, and no cloud transcription.
 - **PWA-first UX**: Install prompt, launch shortcut recording, auto-record preference, iOS safe areas, touch targets, and installed-app microphone handling are part of the core app.
 - **Supporter mode**: History/export/style preset features are unlocked by one-time Square checkout, with manually issued supporter codes as a fallback.
 - **Supporter Passport**: Supporter codes become deterministic Passport cards with QRBuddy QR handoff, and saved notes/recordings quietly follow the Passport through an encrypted Pi mirror.
@@ -74,7 +74,7 @@ Copy `.env.example` to `.env` and set the values needed for your mode:
 
 - `DEEPGRAM_API_KEY`: required for Live Mode and standard batch transcription.
 - `GEMINI_API_KEY`: required for output style presets.
-- `GEMINI_MODEL`: optional; defaults to `gemini-3.1-flash-lite`.
+- `GEMINI_MODEL`: optional; defaults to the rolling `gemini-flash-latest` alias.
 - `API_AUTH_TOKEN`: optional shared token. If set, API routes require an auth session.
 - `API_COOKIE_SECRET`: required when API auth sessions are enabled.
 - `SUPPORTER_UNLOCK_CODES`: comma-separated manual supporter codes for `/api/supporter/redeem` and legacy `/api/validate-code`; matched case-insensitively.

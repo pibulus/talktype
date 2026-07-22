@@ -126,6 +126,8 @@ Important behaviors:
 - iOS installed PWA mode can keep the microphone stream warm briefly after stop to reduce repeated permission/stream churn.
 - Active recordings request Screen Wake Lock when supported so the display is less likely to sleep mid-note. The lock is released on stop, cleanup, or browser release.
 - Cleanup closes Deepgram, cancels waveform animation, stops recorder/streams, and closes the audio context.
+- Waveform feedback is honest on every platform: the visualizer renders real analyser levels (shared math in `src/lib/utils/audioLevel.js`). When the AudioContext is suspended (analyser blind while `MediaRecorder` still records), `audioService` publishes `null` waveform data and the visualizer/live meter switch to a clearly decorative pattern instead of a dead flat line. There is no user-agent-sniffed fake path.
+- On `pagehide` the recovery journal takes a final flush, and when the tab returns to the foreground the recording cap is re-checked immediately (background tabs throttle the interval-based check).
 
 ## PWA And Auto-Start
 

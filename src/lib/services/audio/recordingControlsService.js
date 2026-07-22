@@ -17,6 +17,11 @@ import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
 import { analytics } from '$lib/services/analytics.js';
 import { createLogger } from '$lib/utils/logger';
 import { isPermissionError } from './permissionErrors.js';
+import { estimateDurationSecondsFromBlob } from './durationEstimate.js';
+import {
+	applyCustomWords,
+	getStoredCustomWords
+} from '$lib/services/transcription/transcriptCleanup.js';
 
 const log = createLogger('RecordingControls');
 
@@ -179,15 +184,19 @@ export class RecordingControlsService {
 			}
 
 			// Validate duration
-			const estimatedDurationSeconds = audioBlob.size / 2000;
+			const estimatedDurationSeconds = estimateDurationSecondsFromBlob(audioBlob);
 			const durationSeconds = get(recordingState).duration || estimatedDurationSeconds;
 			analytics.recordingStopped({
 				mode: recordingMode,
 				durationSeconds,
 				reason: this.timeLimitStopInFlight ? 'limit' : 'manual'
 			});
-			if (estimatedDurationSeconds < 0.5) {
-				log.warn(`Recording too short: ~${estimatedDurationSeconds.toFixed(2)}s`);
+			// Duration heuristic catches blink-taps; the byte floor catches blobs
+			// the estimator can't judge (a container header with no real audio).
+			if (estimatedDurationSeconds < 0.5 || audioBlob.size < 1200) {
+				log.warn(
+					`Recording too short: ~${estimatedDurationSeconds.toFixed(2)}s, ${audioBlob.size} bytes`
+				);
 				transcriptionActions.cancelTranscribing();
 				this.uiActions.setErrorMessage('Speak for at least a second.');
 				await this.transcriptionService.clearPendingRecordingDraft?.();
@@ -234,6 +243,10 @@ export class RecordingControlsService {
 				useOfflineWhisper,
 				usedLiveTranscript
 			});
+
+			// User vocabulary correction ("Charge B" → "ChargeBee") — post-processing,
+			// so it works identically across live, batch, Gemini, and offline paths.
+			finalTranscript = applyCustomWords(finalTranscript, getStoredCustomWords());
 
 			log.log('Transcription result:', finalTranscript);
 			transcriptionActions.completeTranscription(finalTranscript);

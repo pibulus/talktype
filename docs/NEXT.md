@@ -2,7 +2,11 @@
 
 ## Release Baseline
 
-- Current release target: `0.9.0`.
+- Current release: `1.0.0` (2026-07-09) — the Fable audit branch (22 commits)
+  is merged to `main`: offline tiny model moved to a modern export that
+  survives new Chromium, software-GPU guard, distil-small download cut
+  665MB→251MB, warm-start + toasts for the offline download, dead-mic nudge,
+  sounds/vibration toggle, intro modal redesign, server sad-path hardening.
 - `main` is the active release branch.
 - After Stop is the default transcription setting.
 - Offline Mode is explicit and overrides Live Mode.

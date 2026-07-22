@@ -42,15 +42,25 @@ export async function POST(event) {
 		return json({ received: true, ignored: true });
 	}
 
-	const checkout = await getCheckoutByProviderOrderId(payment.order_id);
-	if (!checkout) {
-		console.warn('[SquareWebhook] Payment did not match a TalkType checkout:', payment.order_id);
-		return json({ received: true, ignored: true });
-	}
+	try {
+		const checkout = await getCheckoutByProviderOrderId(payment.order_id);
+		if (!checkout) {
+			console.warn('[SquareWebhook] Payment did not match a TalkType checkout:', payment.order_id);
+			return json({ received: true, ignored: true });
+		}
 
-	const paidCheckout = await markCheckoutPaid(payment.order_id, payment);
-	if (paidCheckout) {
-		await createLicenseForCheckout(paidCheckout);
+		const paidCheckout = await markCheckoutPaid(payment.order_id, payment);
+		if (paidCheckout) {
+			await createLicenseForCheckout(paidCheckout);
+		}
+	} catch (error) {
+		// A completed payment we could not persist: return 500 on purpose so
+		// Square retries until the license store is writable again.
+		console.error(
+			`[SquareWebhook] Failed to process paid order ${payment.order_id}:`,
+			error?.message || error
+		);
+		return json({ error: 'Payment processing failed. Retry expected.' }, { status: 500 });
 	}
 
 	return json({ received: true });

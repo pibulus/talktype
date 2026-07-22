@@ -7,7 +7,9 @@ import { browser } from '$app/environment';
 import { get, writable } from 'svelte/store';
 import { userPreferences, markWebgpuDisabled } from '../../infrastructure/stores';
 import { convertToWAV as convertToRawAudio } from './audioConverter';
+import { filterTranscriptionOutput } from '../transcriptCleanup.js';
 import { getModelInfo } from './modelRegistry';
+import { probeWebGPU } from '../deviceCapabilities';
 import {
 	WHISPER_CACHE_NAMES,
 	WHISPER_PHASES,
@@ -16,6 +18,9 @@ import {
 	getProgressPercentFromEvent,
 	isLargeModelFile
 } from './statusUtils.js';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('WhisperService');
 
 const SAMPLE_RATE = 16000;
 const WARMUP_SECONDS = 0.25; // short silent clip to JIT the WASM kernels
@@ -46,11 +51,16 @@ export function configureTransformersEnv(env) {
 	if (wasmBackend) {
 		// transformers.js 4.x expects wasmPaths as an object with .wasm and .mjs keys,
 		// NOT a string base path. A string bypasses the WASM cache (ensureWasmLoaded)
-		// and breaks the static/onnx/ self-hosting. asyncify is the safest cross-browser
-		// variant (Safari requires it; Chrome/Firefox handle it well).
+		// and breaks the static/onnx/ self-hosting.
+		//
+		// asyncify is the safest cross-browser variant — the jspi build (Chrome
+		// 137+ auto-pick) rejects the quantized tiny model's weight layout
+		// ("Missing required scale ... DequantizeLinear"). Pinning asyncify
+		// works everywhere BUT requires blob: in the CSP script-src, because
+		// ort's loader blob-wraps the fetched .mjs before importing it.
 		wasmBackend.wasmPaths = {
-			wasm: ORT_WASM_BASE + 'ort-wasm-simd-threaded.asyncify.wasm',
-			mjs: ORT_WASM_BASE + 'ort-wasm-simd-threaded.asyncify.mjs'
+			wasm: `${ORT_WASM_BASE}ort-wasm-simd-threaded.asyncify.wasm`,
+			mjs: `${ORT_WASM_BASE}ort-wasm-simd-threaded.asyncify.mjs`
 		};
 		wasmBackend.numThreads = 1; // single-threaded WASM for cross-browser stability (esp. iOS)
 	}
@@ -91,7 +101,7 @@ export const whisperStatus = writable({
 	phase: WHISPER_PHASES.IDLE,
 	statusText: getLoadStatusText({ phase: WHISPER_PHASES.IDLE }),
 	selectedModel: DEFAULT_MODEL_KEY,
-	selectedModelName: 'Tiny English (117MB)',
+	selectedModelName: 'Tiny English (96MB)',
 	selectedModelSize: null,
 	storagePersisted: null,
 	storageEstimate: null,
@@ -134,7 +144,27 @@ export class WhisperService {
 
 		this.updateStatus({ supportsWhisper: this.isSupported });
 		this.#refreshDeviceStorageState();
-		this.refreshCachedModelStatus();
+		this.#purgeLegacyModelCache().finally(() => this.refreshCachedModelStatus());
+	}
+
+	// One-time sweep: the tiny model moved from Xenova/whisper-tiny.en (2023 q8,
+	// rejected by modern ort) to onnx-community/whisper-tiny.en. Drop the dead
+	// Xenova bytes (~42MB) so they don't sit in storage forever.
+	async #purgeLegacyModelCache() {
+		if (!browser || typeof caches === 'undefined') return;
+		try {
+			for (const cacheName of WHISPER_CACHE_NAMES) {
+				const cache = await caches.open(cacheName);
+				const requests = await cache.keys();
+				await Promise.all(
+					requests
+						.filter((request) => (request.url || '').includes('Xenova/whisper-tiny.en'))
+						.map((request) => cache.delete(request))
+				);
+			}
+		} catch (error) {
+			console.warn('[WhisperService] Legacy cache purge failed (continuing):', error?.message);
+		}
 	}
 
 	updateStatus(updates) {
@@ -200,7 +230,7 @@ export class WhisperService {
 
 			// Unload any previously loaded model to free memory before loading the new one
 			if (this.transcriber) {
-				console.log('[WhisperService] Unloading previous model before loading new one');
+				log.log('Unloading previous model before loading new one');
 				await this.unloadModel();
 			}
 
@@ -222,45 +252,66 @@ export class WhisperService {
 					modelName: modelConfig.name
 				})
 			});
-			console.log(`[WhisperService] Loading ${modelConfig.name} (${device} / ${dtype})…`);
-			this.#startLoadProgressTicker(modelConfig);
-
-			const loadStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
-			const pipeline = await loadTransformersPipeline();
-
 			// device/dtype come from the model config (set by device detection):
 			// tiny → wasm/fp32 (universal), small → webgpu/fp16 (capable desktops).
 			let device = modelConfig.device || 'wasm';
 			let dtype = modelConfig.dtype || 'fp32';
 
+			log.log(`Loading ${modelConfig.name} (${device} / ${dtype})…`);
+			this.#startLoadProgressTicker(modelConfig);
+
+			const loadStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
+			const pipeline = await loadTransformersPipeline();
+
 			let transcriber;
 			try {
 				transcriber = await this.#loadPipeline(pipeline, modelConfig, device, dtype);
 			} catch (loadError) {
-			// One-time WebGPU → WASM fallback: a present-but-flaky GPU adapter can
-			// fail at session creation. Drop to the tiny+WASM baseline, persist it
-			// for this device, and retry once so Offline Mode never hard-fails.
-			if (device === 'webgpu') {
-				console.warn(
-					'[WhisperService] WebGPU model load failed — falling back to tiny + WASM:',
-					loadError?.message || loadError
-				);
-				const fallbackConfig = getModelInfo('tiny');
-				// Use the fallback model's native device+dtype (currently wasm+q8)
-				// rather than hardcoding fp32, so the fallback benefits from the
-				// model config's compatibility choices.
-				const fallbackDevice = fallbackConfig.device || 'wasm';
-				const fallbackDtype = fallbackConfig.dtype || 'fp32';
-				// Persist the downgrade so detectBestModel() won't re-attempt the
-				// expensive WebGPU distil-small download on the next session.
-				userPreferences.update((p) => ({ ...p, whisperModel: 'tiny' }));
-				markWebgpuDisabled();
-				this.updateStatus({
-					selectedModel: 'tiny',
-					selectedModelName: fallbackConfig.name,
-					selectedModelSize: fallbackConfig.size
-				});
-				transcriber = await this.#loadPipeline(pipeline, fallbackConfig, fallbackDevice, fallbackDtype);
+				// One-time WebGPU → WASM fallback: a present-but-flaky GPU adapter can
+				// fail at session creation. Drop to the tiny+WASM baseline, persist it
+				// for this device, and retry once so Offline Mode never hard-fails.
+				if (device === 'webgpu') {
+					console.warn(
+						'[WhisperService] WebGPU model load failed — falling back to tiny + WASM:',
+						loadError?.message || loadError
+					);
+					const fallbackConfig = getModelInfo('tiny');
+					// Use the fallback model's native device+dtype (currently wasm+q8)
+					// rather than hardcoding fp32, so the fallback benefits from the
+					// model config's compatibility choices.
+					const fallbackDevice = fallbackConfig.device || 'wasm';
+					const fallbackDtype = fallbackConfig.dtype || 'fp32';
+					// Persist the downgrade so detectBestModel() won't re-attempt the
+					// expensive WebGPU distil-small download on the next session.
+					userPreferences.update((p) => ({ ...p, whisperModel: 'tiny' }));
+					markWebgpuDisabled();
+					// Reset per-download progress state: mixing the dead distil-small
+					// bytes into the aggregate would pin the bar at its high-water
+					// mark and hide tiny's real progress behind the monotonic guard.
+					this.modelFileProgress = new Map();
+					this.modelHasSeenLargeFile = false;
+					this.peakAggregateProgress = 0;
+					this.lastRealProgressAt = 0;
+					this.updateStatus({
+						selectedModel: 'tiny',
+						selectedModelName: fallbackConfig.name,
+						selectedModelSize: fallbackConfig.size,
+						progress: 1,
+						phase: WHISPER_PHASES.LOADING_LIBRARY,
+						statusText: getLoadStatusText({
+							phase: WHISPER_PHASES.LOADING_LIBRARY,
+							modelName: fallbackConfig.name
+						})
+					});
+					this.#startLoadProgressTicker(fallbackConfig);
+					device = fallbackDevice;
+					dtype = fallbackDtype;
+					transcriber = await this.#loadPipeline(
+						pipeline,
+						fallbackConfig,
+						fallbackDevice,
+						fallbackDtype
+					);
 				} else {
 					throw loadError;
 				}
@@ -271,7 +322,7 @@ export class WhisperService {
 
 			const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
 			const totalSecs = ((endTime - loadStart || 0) / 1000).toFixed(2);
-			console.log(`[WhisperService] Model ready in ${totalSecs}s (${device}, warmed).`);
+			log.log(`Model ready in ${totalSecs}s (${device}, warmed).`);
 			this.#stopLoadProgressTicker();
 
 			this.updateStatus({
@@ -310,6 +361,13 @@ export class WhisperService {
 	// Load a pipeline for a given device/dtype, raced against a timeout to prevent
 	// infinite hangs. Returns the transcriber or throws.
 	async #loadPipeline(pipeline, modelConfig, device, dtype) {
+		// Guard even manually-selected WebGPU models: a software adapter
+		// (SwiftShader) creates sessions fine but transcribes slower than
+		// real-time. Throwing here routes into the tiny+WASM fallback.
+		if (device === 'webgpu' && !(await probeWebGPU())) {
+			throw new Error('WebGPU adapter is missing or software-only');
+		}
+
 		const loadPromise = pipeline('automatic-speech-recognition', modelConfig.id, {
 			device,
 			dtype,
@@ -333,7 +391,7 @@ export class WhisperService {
 		// Phase ranges: LOADING_LIBRARY 0→3, DOWNLOADING 3→92, PREPARING 92→96, WARMING 96→99.
 		// The ticker is a fallback "still alive" creep — real byte progress (#handleLoadProgress)
 		// is the primary driver during DOWNLOADING. The ticker only advances when no real
-		// progress event has arrived recently (2 s idle window), so it can't fight real data.
+		// progress event has arrived recently (2 s idle window), so it can't fight real data.
 		// Targets replace the old ceiling-based stalls.
 		const TICK_MS = 600;
 		const REAL_IDLE_MS = 2000;
@@ -368,7 +426,7 @@ export class WhisperService {
 
 			const step = STEPS[status.phase] || 0.3;
 			const nextProgress = Math.min(target, Number(status.progress || 0) + step);
-			// Single-decimal resolution so the CSS transition (380 ms ease) always has
+			// Single-decimal resolution so the CSS transition (380 ms ease) always has
 			// a small delta to animate smoothly.
 			const smoothProgress = Math.round(nextProgress * 10) / 10;
 
@@ -414,7 +472,12 @@ export class WhisperService {
 				const mappedProgress = 3 + (bytePct / 100) * 89; // 3–92 range
 				nextProgress = Math.max(nextProgress, Math.round(mappedProgress));
 			}
-		} else if (status === 'initiate' || status === 'download' || status === 'downloading' || status === 'progress') {
+		} else if (
+			status === 'initiate' ||
+			status === 'download' ||
+			status === 'downloading' ||
+			status === 'progress'
+		) {
 			// Active download — map aggregate byte progress (0–100%) linearly into the
 			// download phase range (3–92%). No per-status floors or ceilings.
 			phase = WHISPER_PHASES.DOWNLOADING;
@@ -576,7 +639,7 @@ export class WhisperService {
 		}
 
 		const stats = summarizeSignal(floatAudio);
-		console.log('[WhisperService] Transcribing clip:', stats);
+		log.log('Transcribing clip:', stats);
 		this.updateStatus({
 			isLoading: false,
 			isTranscribing: true,
@@ -611,7 +674,10 @@ export class WhisperService {
 				throw new Error('Whisper returned empty text. Try again.');
 			}
 
-			return this.cleanRepetitions(text);
+			// Whisper is the one backend with no server-side cleanup — Deepgram
+			// drops fillers via filler_words:false and Gemini via prompt. The
+			// current models are English-only (.en), so 'en' filler rules apply.
+			return filterTranscriptionOutput(this.cleanRepetitions(text), 'en');
 		} catch (error) {
 			this.updateStatus({
 				isLoading: false,

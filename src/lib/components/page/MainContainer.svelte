@@ -1,11 +1,11 @@
 <script>
 	import { onMount, tick } from 'svelte';
+	import { shouldWarnMicReprompt } from '$lib/services/audio/micPermission.js';
 	import { browser } from '$app/environment';
 	import { get } from 'svelte/store';
 	import GhostContainer from './GhostContainer.svelte';
 	import ContentContainer from './ContentContainer.svelte';
 	import FooterComponent from './FooterComponent.svelte';
-	import { geminiService } from '$lib/services/geminiService';
 	import { modalService } from '$lib/services/modals';
 	import { firstVisitService } from '$lib/services/first-visit';
 	import { pwaService, deferredInstallPrompt, showPwaInstallPrompt } from '$lib/services/pwa';
@@ -17,7 +17,7 @@
 	import { fade } from 'svelte/transition';
 	import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
 	import { STORAGE_KEYS } from '$lib/constants';
-	import { uiActions, userPreferences } from '$lib/services';
+	import { uiActions } from '$lib/services';
 	import { analytics } from '$lib/services/analytics.js';
 
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
@@ -32,6 +32,10 @@
 	let TranscriptHistoryModal;
 	let SupporterModal;
 	let PwaInstallPrompt;
+
+	// Retired in favor of the family PwaInstallCard (chassis kernel, rendered in
+	// +layout.svelte). Flip to true to restore the old in-app prompt.
+	const LEGACY_PWA_PROMPT_ENABLED = false;
 
 	function createComponentLoader(importComponent, assignComponent, label) {
 		let pending = null;
@@ -104,7 +108,9 @@
 		// Add null check for contentContainer
 		if (!contentContainer) {
 			console.warn('[MainContainer] contentContainer not ready yet');
-			// Try again after a short delay
+			// Try again after a short delay — clearing any pending retry first so
+			// rapid taps can't stack multiple toggle timers.
+			if (ghostClickRetryTimeout) clearTimeout(ghostClickRetryTimeout);
 			ghostClickRetryTimeout = setTimeout(() => {
 				if (contentContainer && !$transcribingStore) {
 					contentContainer.toggleRecording();
@@ -189,21 +195,9 @@
 		pwaService.dismissPrompt();
 	}
 
-	// Open history modal
+	// Open history modal — free users read their kept transcripts too (the
+	// user's words are never locked); supporter perks are gated inside the modal.
 	async function openHistoryModal() {
-		if (!$userPreferences.isSupporter) {
-			window.dispatchEvent(
-				new CustomEvent('talktype:toast', {
-					detail: {
-						message: 'Supporter mode unlocks transcript history, downloads, and export.',
-						type: 'info'
-					}
-				})
-			);
-			openSupporterModal('history_gate');
-			return;
-		}
-
 		void checkPassportNotes();
 		if (!TranscriptHistoryModal && !(await loadTranscriptHistoryModal())) return;
 		openDialogAfterRender('history_modal');
@@ -214,7 +208,6 @@
 	let contentContainer;
 
 	// Event listener cleanup
-	let settingsListener;
 	let toggleRecordingListener;
 	let supporterModalListener;
 	let autoRecordTimeout;
@@ -227,8 +220,11 @@
 		if (!browser) return null;
 
 		const params = new URLSearchParams(window.location.search);
-		if (params.get('action') === 'record') {
-			return 'launch-shortcut';
+		// `?autostart=1` is an alias for `?action=record` (fable-pwa-autostart POC)
+		// so external deep links (shortcuts, notifications, iOS Shortcuts "Open URL")
+		// can use either form.
+		if (params.get('action') === 'record' || params.get('autostart') === '1') {
+			return params.get('source') === 'notification' ? 'notification' : 'launch-shortcut';
 		}
 
 		if (StorageUtils.getBooleanItem(STORAGE_KEYS.AUTO_RECORD, false)) {
@@ -405,19 +401,22 @@
 			window.addEventListener('talktype:open-supporter-modal', supporterModalListener);
 		}
 
-		// Listen for settings changes
-		if (browser) {
-			settingsListener = (event) => {
-				if (event.detail && event.detail.setting === 'promptStyle') {
-					// Update the prompt style in the service
-					geminiService.setPromptStyle(event.detail.value);
-				}
-			};
-			window.addEventListener('talktype-setting-changed', settingsListener);
-		}
-
 		(async () => {
 			void checkPassportNotes();
+
+			// iOS forgets mic grants between PWA launches (WebKit, unfixable) —
+			// pre-warn returning users so the re-prompt isn't mistaken for a bug.
+			void shouldWarnMicReprompt().then((warn) => {
+				if (!warn || destroyed) return;
+				window.dispatchEvent(
+					new CustomEvent('talktype:toast', {
+						detail: {
+							message: "iPhone asks for the mic again each visit — tap Allow and we're rolling.",
+							type: 'info'
+						}
+					})
+				);
+			});
 
 			// Check if first visit to show intro
 			const introWasShown = await firstVisitService.showIntroModal();
@@ -434,9 +433,6 @@
 		return () => {
 			destroyed = true;
 
-			if (browser && settingsListener) {
-				window.removeEventListener('talktype-setting-changed', settingsListener);
-			}
 			if (browser && toggleRecordingListener) {
 				window.removeEventListener('talktype:toggle-recording', toggleRecordingListener);
 			}
@@ -499,8 +495,9 @@
 	<svelte:component this={SupporterModal} {closeModal} on:unlocked={handleSupporterUnlocked} />
 {/if}
 
-<!-- PWA Install Prompt -->
-{#if $showPwaInstallPrompt && PwaInstallPrompt}
+<!-- PWA Install Prompt — retired; see LEGACY_PWA_PROMPT_ENABLED above. The old
+     pwaService system stays intact in services. -->
+{#if LEGACY_PWA_PROMPT_ENABLED && $showPwaInstallPrompt && PwaInstallPrompt}
 	<div transition:fade={{ duration: 300 }}>
 		<svelte:component
 			this={PwaInstallPrompt}

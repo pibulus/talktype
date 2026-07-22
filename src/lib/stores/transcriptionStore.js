@@ -1,4 +1,7 @@
 import { writable } from 'svelte/store';
+import { createLogger } from '$lib/utils/logger';
+
+const log = createLogger('Deepgram');
 
 const DEEPGRAM_LIVE_URL = 'wss://api.deepgram.com/v1/listen';
 export const DEEPGRAM_TOKEN_PROTOCOL = 'bearer';
@@ -256,7 +259,7 @@ function createTranscriptionStore() {
 					return;
 				}
 
-				console.log('[Deepgram] Connected');
+				log.log('Connected');
 				isConnectionOpen = true;
 				isConnecting = false;
 				reconnectAttempts = 0; // healthy connection — reset backoff

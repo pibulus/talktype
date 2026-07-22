@@ -82,7 +82,9 @@ export function detectDeviceCapabilities() {
 /**
  * Probe for a REAL, usable WebGPU adapter — not just the API surface. `'gpu' in
  * navigator` is true even when requestAdapter() returns null (no working GPU),
- * so we must actually request one. Result is cached for the session.
+ * and requestAdapter() can return a SOFTWARE rasterizer (SwiftShader/llvmpipe)
+ * that "works" but transcribes slower than real-time — worse than WASM. Only a
+ * hardware adapter counts. Result is cached for the session.
  */
 let webgpuAdapterPromise;
 export function probeWebGPU() {
@@ -96,7 +98,15 @@ export function probeWebGPU() {
 				navigator.gpu.requestAdapter(),
 				new Promise((resolve) => setTimeout(() => resolve(null), 3000))
 			]);
-			return Boolean(adapter);
+			if (!adapter) return false;
+			// Chrome exposes isFallbackAdapter on the adapter (older) or its info
+			// (newer); software stacks also identify via vendor/architecture strings.
+			const info = adapter.info || {};
+			if (adapter.isFallbackAdapter || info.isFallbackAdapter) return false;
+			const signature =
+				`${info.vendor || ''} ${info.architecture || ''} ${info.description || ''}`.toLowerCase();
+			if (/swiftshader|llvmpipe|lavapipe|software/.test(signature)) return false;
+			return true;
 		} catch {
 			return false;
 		}
@@ -160,117 +170,3 @@ export async function estimateStorage() {
 		return { available: null, canStore: true };
 	}
 }
-
-/**
- * Get performance benchmark for transcription
- */
-export function getPerformanceEstimate(modelId, deviceTier) {
-	// Rough estimates based on research and testing
-	const estimates = {
-		tiny: {
-			high: { speed: '50x', loadTime: '1s' },
-			medium: { speed: '30x', loadTime: '2s' },
-			low: { speed: '10x', loadTime: '3s' }
-		},
-		small: {
-			high: { speed: '20x', loadTime: '5s' },
-			medium: { speed: '12x', loadTime: '8s' },
-			low: { speed: '5x', loadTime: '12s' }
-		},
-		medium: {
-			high: { speed: '10x', loadTime: '15s' },
-			medium: { speed: '6x', loadTime: '25s' },
-			low: { speed: '2x', loadTime: '40s' }
-		},
-		large: {
-			high: { speed: '5x', loadTime: '30s' },
-			medium: { speed: '3x', loadTime: '50s' },
-			low: { speed: '1x', loadTime: '90s' }
-		}
-	};
-
-	const tierKey = deviceTier.includes('high')
-		? 'high'
-		: deviceTier.includes('low')
-			? 'low'
-			: 'medium';
-
-	return estimates[modelId]?.[tierKey] || { speed: '10x', loadTime: '5s' };
-}
-
-/**
- * Monitor performance and suggest model changes
- */
-export class PerformanceMonitor {
-	constructor() {
-		this.metrics = [];
-		this.maxSamples = 10;
-	}
-
-	recordTranscription(duration, audioLength, modelId) {
-		const rtf = duration / (audioLength * 1000); // Real-time factor
-
-		this.metrics.push({
-			timestamp: Date.now(),
-			duration,
-			audioLength,
-			modelId,
-			rtf,
-			speed: rtf > 0 ? (1 / rtf).toFixed(1) + 'x' : 'N/A'
-		});
-
-		// Keep only recent samples
-		if (this.metrics.length > this.maxSamples) {
-			this.metrics.shift();
-		}
-
-		return this.analyze();
-	}
-
-	analyze() {
-		if (this.metrics.length < 3) {
-			return { suggestion: null, reason: 'Not enough data' };
-		}
-
-		const avgRtf = this.metrics.reduce((sum, m) => sum + m.rtf, 0) / this.metrics.length;
-		const currentModel = this.metrics[this.metrics.length - 1].modelId;
-
-		// If processing is slower than 5x real-time, suggest smaller model
-		if (avgRtf > 0.2) {
-			return {
-				suggestion: 'downgrade',
-				reason: `Processing only ${(1 / avgRtf).toFixed(1)}x real-time`,
-				recommended: this.getSmallerModel(currentModel)
-			};
-		}
-
-		// If processing is faster than 20x real-time, can try larger model
-		if (avgRtf < 0.05) {
-			return {
-				suggestion: 'upgrade',
-				reason: `Processing at ${(1 / avgRtf).toFixed(1)}x real-time`,
-				recommended: this.getLargerModel(currentModel)
-			};
-		}
-
-		return {
-			suggestion: null,
-			reason: `Performance optimal at ${(1 / avgRtf).toFixed(1)}x real-time`
-		};
-	}
-
-	getSmallerModel(current) {
-		const models = ['tiny', 'small', 'medium', 'large'];
-		const idx = models.indexOf(current);
-		return idx > 0 ? models[idx - 1] : current;
-	}
-
-	getLargerModel(current) {
-		const models = ['tiny', 'small', 'medium', 'large'];
-		const idx = models.indexOf(current);
-		return idx < models.length - 1 ? models[idx + 1] : current;
-	}
-}
-
-// Export singleton monitor
-export const performanceMonitor = new PerformanceMonitor();

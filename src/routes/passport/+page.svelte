@@ -185,7 +185,7 @@
 				{status === 'getting'
 					? 'Fetching your memories'
 					: status === 'ready' && showConfetti
-						? 'Welcome home 👻'
+						? 'Welcome home'
 						: status === 'ready'
 							? 'Ghost remembers you'
 							: status === 'importing'
@@ -251,7 +251,7 @@
 
 			{#if restoreSummary && restoreSummary.action === 'pulled'}
 				<p class="mt-3 text-sm font-bold text-emerald-700" aria-live="polite">
-					Your notes followed you here. ✨
+					Your notes followed you here.
 				</p>
 			{/if}
 		</div>

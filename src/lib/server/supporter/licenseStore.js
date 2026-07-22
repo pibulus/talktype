@@ -1,6 +1,10 @@
-import crypto from 'crypto';
 import { storage } from '../storage/index.js';
-import { generateLicenseCode, hashSupporterCode, issueSupporterToken } from './licenseCrypto.js';
+import {
+	generateLicenseCode,
+	hashSupporterCode,
+	issueSupporterToken,
+	licenseIdForCheckout
+} from './licenseCrypto.js';
 
 const STORE_KEY = 'supporter-licenses';
 
@@ -43,7 +47,8 @@ export async function createLicenseForCheckout(checkout) {
 
 	const now = new Date().toISOString();
 	const license = {
-		id: crypto.randomUUID(),
+		// Deterministic id so a webhook-vs-claim race mints identical objects.
+		id: licenseIdForCheckout(checkout.id),
 		codeHash: checkout.codeHash,
 		tier: 'supporter',
 		status: 'active',
@@ -58,8 +63,22 @@ export async function createLicenseForCheckout(checkout) {
 		lastSeenAt: null
 	};
 
-	store.licenses.push(license);
-	await writeStore(store);
+	// Re-read inside the same tick window and guard the push by id. This narrows
+	// (does not eliminate) the read-modify-write race over the JSON blob: if a
+	// concurrent caller already wrote this license, return theirs instead of
+	// pushing a duplicate. Because ids are deterministic, even a true last-write
+	// overwrite is a no-op rather than a lost license.
+	const fresh = await readStore();
+	const raced = fresh.licenses.find((candidate) => candidate.id === license.id);
+	if (raced) {
+		return {
+			license: publicLicense(raced),
+			code: generateLicenseCode(checkout.id)
+		};
+	}
+
+	fresh.licenses.push(license);
+	await writeStore(fresh);
 
 	return {
 		license: publicLicense(license),

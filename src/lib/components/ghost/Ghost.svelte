@@ -53,10 +53,12 @@
 		$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG && $ghostStateStore.specialAnimation
 			? `ghost-special-${$ghostStateStore.specialAnimation}`
 			: '';
+	// Prefix with the mascot's name so screen readers can tell the ghost apart
+	// from the main record button (whose name is just "Start Recording").
 	$: ghostLabel = clickable
 		? $ghostStateStore.isRecording
-			? 'Stop recording'
-			: 'Start recording'
+			? 'TalkType ghost — stop recording'
+			: 'TalkType ghost — start recording'
 		: 'TalkType ghost mascot';
 
 	// React to recording state changes ONLY when fully ready
@@ -134,6 +136,12 @@
 			readyRafId = null;
 		}
 
+		// Cancel pending tap-wobble reset
+		if (wobbleResetTimeout) {
+			clearTimeout(wobbleResetTimeout);
+			wobbleResetTimeout = null;
+		}
+
 		// Clean up theme store subscription
 		if (unsubscribeTheme) {
 			unsubscribeTheme();
@@ -172,13 +180,21 @@
 	}
 
 	// Handle click on the ghost
+	let wobbleResetTimeout = null;
 	function handleClick() {
 		if (clickable) {
-			// Dispatch custom window event for direct communication
-			window.dispatchEvent(new CustomEvent('talktype:toggle-recording'));
+			if (spinPivotElement) {
+				spinPivotElement.classList.remove('wobble-left', 'wobble-right', 'wobble-both');
+				void spinPivotElement.offsetWidth;
+				spinPivotElement.classList.add('wobble-both');
+				if (wobbleResetTimeout) clearTimeout(wobbleResetTimeout);
+				wobbleResetTimeout = setTimeout(() => {
+					wobbleResetTimeout = null;
+					spinPivotElement?.classList.remove('wobble-both');
+				}, 650);
+			}
 
-			// The wobble animation is now handled through the recording state change
-			// in the ghostStateStore when setRecording is called
+			window.dispatchEvent(new CustomEvent('talktype:toggle-recording'));
 		}
 	}
 
@@ -459,6 +475,9 @@
 		height: 100%;
 		max-width: 100%;
 		max-height: 100%;
+		/* SVGs clip to their viewBox by default — a hard square. Layer
+		   animations (grow overshoot, wobble) must paint past it. */
+		overflow: visible;
 		opacity: 1; /* Start visible to prevent flashing */
 		position: relative;
 		z-index: 1;

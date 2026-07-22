@@ -17,7 +17,9 @@ import { browser } from '$app/environment';
 import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { createLogger } from '$lib/utils/logger';
-import { isPermissionError } from './permissionErrors.js';
+import { getMicErrorMessage } from './permissionErrors.js';
+import { markMicGranted } from './micPermission.js';
+import { estimateDurationSecondsFromBlob } from './durationEstimate.js';
 
 const log = createLogger('AudioService');
 const SPEECH_AUDIO_BITS_PER_SECOND = 48000;
@@ -27,6 +29,9 @@ const RECOVERY_CHECKPOINT_SETTLE_MS = 120;
 const RECOVERY_JOURNAL_FLUSH_MS = 5000;
 const RECOVERY_JOURNAL_MAX_BUFFERED_CHUNKS = 20;
 const CLEANUP_RECORDER_STOP_TIMEOUT_MS = 1000;
+// Happy-path stop gets a longer leash than cleanup — give the recorder a fair
+// chance to finalize the last chunk before salvaging (the DaySay wedge lesson).
+const STOP_RECORDER_WEDGE_TIMEOUT_MS = 5000;
 const TRACK_STOP_TIMEOUT_MS = 500;
 const IOS_AUDIO_CONTEXT_RETRY_DELAY_MS = 100;
 const IOS_CLEANUP_SETTLE_MS = 300;
@@ -85,6 +90,9 @@ export class AudioService {
 				);
 				if (this.stateManager.getState() === AudioStates.RECORDING) {
 					void this.requestScreenWakeLock();
+					// Backgrounded tabs throttle the timer interval, so the cap
+					// check can fire late — re-check as soon as we're visible.
+					audioActions.checkRecordingTimeLimit();
 				}
 			} else if (this.stateManager.getState() === AudioStates.RECORDING) {
 				void this.#checkpointRecordingDraft(
@@ -95,6 +103,21 @@ export class AudioService {
 			}
 		};
 		document.addEventListener('visibilitychange', this.visibilityChangeHandler);
+
+		// visibilitychange is not guaranteed on hard tab close / back-nav on
+		// every mobile browser; pagehide is the last reliable chance to get
+		// buffered audio into the recovery journal.
+		this.pageHideHandler = () => {
+			if (this.stateManager.getState() === AudioStates.RECORDING && this.activeRecordingSessionId) {
+				void this.#flushRecoveryJournal(
+					this.mediaRecorder?.mimeType || 'audio/webm',
+					this.activeRecordingSessionId,
+					'pagehide',
+					{ requestData: true, forceMetadataUpdate: true }
+				);
+			}
+		};
+		window.addEventListener('pagehide', this.pageHideHandler);
 	}
 
 	async initializeAudioContext() {
@@ -210,6 +233,7 @@ export class AudioService {
 
 	#permissionResultFromStream(stream, errorMessage) {
 		if (stream?.active) {
+			markMicGranted();
 			return { granted: true, stream };
 		}
 
@@ -276,10 +300,35 @@ export class AudioService {
 				await this.initializeAudioContext();
 				this.disconnectAudioGraph();
 
+				// iOS reroutes the mic hardware (usually to 48kHz) once capture starts.
+				// An AudioContext created before getUserMedia keeps its old rate and
+				// stays 'running', but createMediaStreamSource then feeds the analyser
+				// pure silence — flat bars while the recording itself works. Recreate
+				// the context at the mic's actual rate before wiring the graph.
+				const micRate = this.stream.getAudioTracks()[0]?.getSettings?.()?.sampleRate;
+				if (this.isIOS && micRate && this.audioContext.sampleRate !== micRate) {
+					log.warn(
+						`AudioContext rate ${this.audioContext.sampleRate} != mic rate ${micRate} — recreating context`
+					);
+					try {
+						await this.audioContext.close();
+					} catch {
+						// A dying context that refuses to close still gets replaced below.
+					}
+					this.audioContext = null;
+					await this.initializeAudioContext();
+				}
+
 				this.source = this.audioContext.createMediaStreamSource(this.stream);
 				this.analyser = this.audioContext.createAnalyser();
 				this.analyser.fftSize = 256;
 				this.source.connect(this.analyser);
+
+				if (this.audioContext.state !== 'running') {
+					// Recording still works (MediaRecorder is independent), but the
+					// waveform will read all zeros — leave a trace for user reports.
+					log.warn(`AudioContext is '${this.audioContext.state}' — waveform may stay flat.`);
+				}
 
 				this.startWaveformMonitoring();
 			} catch (mrError) {
@@ -352,10 +401,7 @@ export class AudioService {
 			log.error('Error starting recording:', error);
 			this.stateManager.setState(AudioStates.ERROR, { error });
 
-			const friendlyMessage = isPermissionError(error)
-				? 'The mic needs permission before the ghost can listen.'
-				: 'Recording needs one more try.';
-			uiActions.setErrorMessage(friendlyMessage);
+			uiActions.setErrorMessage(getMicErrorMessage(error));
 
 			await this.cleanup();
 			throw error;
@@ -373,6 +419,16 @@ export class AudioService {
 
 		const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
 
+		// iOS watchdog: a route change or second capture can mute the track or
+		// leave the graph dead while the context still reads 'running' — literal
+		// all-zero frames. Real ambience never reads exactly 0 in every bin with
+		// AGC on, so after ~1s of it rebuild the graph once; if still dead,
+		// publish null so the visualizer shows its rescue pattern, not a flat
+		// line. iOS-only: on desktop exact zeros mean a dead mic, and the
+		// dead-mic nudge needs to see that silence for real.
+		let zeroFrames = 0;
+		let graphRebuilt = false;
+
 		const updateWaveform = () => {
 			// Double check that we're still recording and have valid analyser
 			if (this.stateManager.getState() !== AudioStates.RECORDING || !this.analyser) {
@@ -384,9 +440,26 @@ export class AudioService {
 			}
 
 			try {
-				this.analyser.getByteFrequencyData(dataArray);
-				// Update store instead of emitting event
-				audioActions.setWaveformData(Array.from(dataArray));
+				if (this.audioContext?.state !== 'running') {
+					// Analyser is blind (suspended context) — publish null so the
+					// visualizer can distinguish "can't see" from "hearing silence".
+					audioActions.setWaveformData(null);
+				} else if (this.isIOS && this.stream?.getAudioTracks?.()[0]?.muted) {
+					audioActions.setWaveformData(null);
+				} else {
+					this.analyser.getByteFrequencyData(dataArray);
+					if (this.isIOS && dataArray.every((v) => v === 0)) {
+						zeroFrames++;
+						if (zeroFrames === 60 && !graphRebuilt) {
+							graphRebuilt = true;
+							this.rebuildAnalyserGraph();
+						}
+						audioActions.setWaveformData(zeroFrames >= 120 ? null : Array.from(dataArray));
+					} else {
+						zeroFrames = 0;
+						audioActions.setWaveformData(Array.from(dataArray));
+					}
+				}
 				this.animationFrameId = requestAnimationFrame(updateWaveform);
 			} catch (error) {
 				log.warn('Waveform monitoring error:', error.message);
@@ -423,14 +496,26 @@ export class AudioService {
 				this.mediaRecorder.requestData();
 			}
 
-			// Assign onstop BEFORE calling stop() to avoid race condition
-			// where stop fires synchronously and the handler isn't attached yet
-			this.mediaRecorder.onstop = async () => {
-				await this.#flushRecoveryJournal(mimeType, sessionId, 'stopped', {
+			// MediaRecorder.stop() can wedge and never fire onstop. Both the
+			// normal onstop and a salvage watchdog funnel through this guarded
+			// finalizer — whoever arrives first wins, the other no-ops.
+			let stopSettled = false;
+			let wedgeTimeout = null;
+
+			const finalizeStop = async (reason) => {
+				if (stopSettled) return;
+				stopSettled = true;
+				if (wedgeTimeout) {
+					clearTimeout(wedgeTimeout);
+					wedgeTimeout = null;
+				}
+
+				await this.#flushRecoveryJournal(mimeType, sessionId, reason, {
 					forceMetadataUpdate: true
 				});
-				// Create the Blob from this.audioChunks, which now contains all chunks
-				// including the final one from the last dataavailable event.
+				// Create the Blob from this.audioChunks — on the normal path this
+				// includes the final chunk from the last dataavailable event; on the
+				// wedge path it's whatever made it in (better than hanging forever).
 				const audioBlob = new Blob(this.audioChunks, { type: mimeType });
 				log.log('Created audio blob:', audioBlob.size, 'bytes, type:', mimeType);
 
@@ -455,8 +540,8 @@ export class AudioService {
 				// Persist before transcription starts so success cleanup cannot race a late draft write.
 				await this.#persistRecordingDraft(audioBlob, mimeType, {
 					recovery: {
-						isPartial: false,
-						reason: 'stopped',
+						isPartial: reason !== 'stopped',
+						reason,
 						checkpointedAt: new Date().toISOString()
 					}
 				});
@@ -467,12 +552,26 @@ export class AudioService {
 				resolve(audioBlob);
 			};
 
+			// Assign onstop BEFORE calling stop() to avoid race condition
+			// where stop fires synchronously and the handler isn't attached yet
+			this.mediaRecorder.onstop = () => void finalizeStop('stopped');
+
 			// Small delay to ensure final audio chunk from requestData() is captured
 			setTimeout(() => {
 				try {
 					this.mediaRecorder.stop();
+					// Wedge watchdog: if onstop never fires, salvage the chunks we
+					// have instead of hanging the ghost in "thinking" forever.
+					wedgeTimeout = setTimeout(() => {
+						if (!stopSettled) {
+							log.warn('MediaRecorder onstop never fired — salvaging recorded chunks');
+							void finalizeStop('stop-wedged');
+						}
+					}, STOP_RECORDER_WEDGE_TIMEOUT_MS);
 				} catch (error) {
 					log.warn('Error stopping MediaRecorder:', error.message);
+					if (stopSettled) return;
+					stopSettled = true;
 
 					// Ensure tracks are stopped even if MediaRecorder stop fails
 					this.disconnectAudioGraph();
@@ -697,7 +796,9 @@ export class AudioService {
 		try {
 			const durationFromStore = get(recordingState)?.duration;
 			const duration =
-				typeof durationFromStore === 'number' ? durationFromStore : audioBlob.size / 2000;
+				typeof durationFromStore === 'number'
+					? durationFromStore
+					: estimateDurationSecondsFromBlob(audioBlob);
 
 			const draft = await saveRecordingDraft(audioBlob, {
 				mimeType,
@@ -726,6 +827,10 @@ export class AudioService {
 		if (browser && this.visibilityChangeHandler) {
 			document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
 			this.visibilityChangeHandler = null;
+		}
+		if (browser && this.pageHideHandler) {
+			window.removeEventListener('pagehide', this.pageHideHandler);
+			this.pageHideHandler = null;
 		}
 
 		this.cancelWarmStreamRelease();
@@ -893,6 +998,34 @@ export class AudioService {
 		this.stream = null;
 	}
 
+	// Mid-recording rescue for a silently dead graph (iOS route changes):
+	// rewires source→analyser on the live context and stream WITHOUT touching
+	// the animation loop that called it — disconnectAudioGraph would cancel it.
+	rebuildAnalyserGraph() {
+		if (!this.audioContext || !this.stream) return;
+
+		try {
+			this.source?.disconnect();
+		} catch {
+			// Already-dead nodes disconnect noisily; the rebuild below replaces them.
+		}
+		try {
+			this.analyser?.disconnect();
+		} catch {
+			// Same as above.
+		}
+
+		try {
+			this.source = this.audioContext.createMediaStreamSource(this.stream);
+			this.analyser = this.audioContext.createAnalyser();
+			this.analyser.fftSize = 256;
+			this.source.connect(this.analyser);
+			log.warn('Rebuilt analyser graph after sustained all-zero frames');
+		} catch (rebuildError) {
+			log.warn('Analyser graph rebuild failed:', rebuildError.message);
+		}
+	}
+
 	disconnectAudioGraph() {
 		if (this.animationFrameId) {
 			cancelAnimationFrame(this.animationFrameId);
@@ -923,7 +1056,7 @@ export class AudioService {
 	}
 
 	isRecording() {
-		return this.stateManager.getState() === AudioStates.RECORDING;
+		return this.stateManager.isRecording();
 	}
 
 	async requestScreenWakeLock() {

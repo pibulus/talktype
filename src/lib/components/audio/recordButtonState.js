@@ -34,6 +34,8 @@ export function getRecordButtonState({
 		progressPercentage: progressRatio * 100,
 		isWarning: recording && timeRemaining <= warningAt,
 		isDanger: recording && timeRemaining <= dangerAt,
+		elapsedLabel: formatDuration(safeRecordingDuration),
+		remainingLabel: formatDuration(timeRemaining),
 		durationLabel: `${formatDuration(safeRecordingDuration)} of ${formatDuration(safeMaxDuration)}`
 	};
 }

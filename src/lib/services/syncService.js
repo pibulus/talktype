@@ -58,10 +58,35 @@ export async function getVaultMediaHash(code, mediaId) {
 	return hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+// Reject vault server URLs that aren't HTTPS (or loopback for local dev). The
+// URL comes from localStorage and is user/attacker-controllable; without this an
+// injected http://evil.com would receive every encrypted vault blob via fetch().
+function assertSafeVaultOrigin(serverUrl) {
+	let parsed;
+	try {
+		parsed = new URL(serverUrl);
+	} catch {
+		throw new Error('Invalid Vault server URL');
+	}
+
+	const isLoopback =
+		parsed.hostname === 'localhost' ||
+		parsed.hostname === '127.0.0.1' ||
+		parsed.hostname === '[::1]';
+
+	if (parsed.protocol !== 'https:' && !(parsed.protocol === 'http:' && isLoopback)) {
+		throw new Error('Vault server must use HTTPS');
+	}
+
+	return parsed;
+}
+
 function getVaultUrl(serverUrl, appName, hash) {
 	if (!APP_NAME_PATTERN.test(appName)) {
 		throw new Error('Invalid Vault app name');
 	}
+
+	assertSafeVaultOrigin(serverUrl);
 
 	return `${serverUrl.replace(/\/+$/, '')}/vault/${encodeURIComponent(appName)}/${hash}`;
 }

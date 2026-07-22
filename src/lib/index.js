@@ -6,6 +6,8 @@ import {
 	readStorageValue,
 	writeStorageValue
 } from '$lib/services/storage/localStorageMigration.js';
+import { soundService } from '$lib/services/infrastructure/soundService.js';
+import { hapticService } from '$lib/services/infrastructure/hapticService.js';
 
 // Initialize store with localStorage value if available
 function createLocalStorageStore(key, initialValue, { legacyKeys = [] } = {}) {
@@ -97,6 +99,19 @@ export const liveMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.LIVE_MODE
 
 // Store for offline/private Whisper mode preference
 export const privacyMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.PRIVACY_MODE, 'false');
+
+// Master switch for UI sounds + haptics. Wired at the service layer so every
+// cue (clicks, record start/stop, vibration) respects it without per-call checks.
+export const soundEnabled = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.SOUND_ENABLED, 'true');
+
+if (browser) {
+	soundEnabled.subscribe((value) => {
+		const on = value === true || value === 'true';
+		soundService.setEnabled(on);
+		if (on) hapticService.enable();
+		else hapticService.disable();
+	});
+}
 
 // Repair legacy state where Offline Mode and Live Mode could both be persisted.
 // If the user only had Offline Mode saved, preserve that choice. If both modes

@@ -8,12 +8,7 @@
 
 import { get } from 'svelte/store';
 import { forceReflow, seedRandom, isBrowser, cleanupTimers } from '../utils/animationUtils.js';
-import {
-	ANIMATION_STATES,
-	CSS_CLASSES,
-	SPECIAL_CONFIG,
-	ANIMATION_TIMING
-} from '../animationConfig.js';
+import { ANIMATION_STATES, CSS_CLASSES, SPECIAL_CONFIG } from '../animationConfig.js';
 import { ghostStateStore } from '../stores/ghostStateStore.js';
 import { initGradientAnimation } from '../gradientAnimator.js';
 import { pickSpecialAnimation } from '../personality.js';
@@ -24,9 +19,6 @@ const timers = {
 	wobbleTimeoutId: null
 };
 let specialAnimationCounter = 0;
-
-// Flag to ensure initial load effect runs only once
-let initialLoadEffectApplied = false;
 
 /**
  * Initialize all animation systems
@@ -76,68 +68,6 @@ export function initThemeAnimation(svgElement, theme) {
 
 	// Initialize gradient animations
 	initGradientAnimation(theme, svgElement);
-}
-
-/**
- * Apply the initial loading animation
- *
- * @param {HTMLElement} ghostSvg - Ghost SVG container element
- */
-export function applyInitialLoadEffect(ghostSvg) {
-	// --- Prevent multiple executions ---
-	if (initialLoadEffectApplied || !isBrowser()) {
-		return;
-	}
-	// --- Mark as applied ---
-	initialLoadEffectApplied = true;
-
-	const state = get(ghostStateStore);
-
-	// Skip if not first visit
-	if (!state.isFirstVisit) {
-		return;
-	}
-
-	// Find the wobble group element within the provided ghostSvg container
-	const wobbleGroup = ghostSvg?.querySelector('.ghost-wobble-group');
-
-	if (!wobbleGroup) {
-		return;
-	}
-
-	// --- Delay adding the class until the next frame ---
-	requestAnimationFrame(() => {
-		// Double-check the element still exists in case of rapid unmount
-		if (!document.body.contains(wobbleGroup)) {
-			return;
-		}
-
-		// Apply the combined animation class directly to the wobble group
-		wobbleGroup.classList.add('initial-load-effect');
-
-		// Set a single timeout to clean up after the combined animation finishes
-		const cleanupDelay = ANIMATION_TIMING.INITIAL_LOAD_DURATION;
-
-		setTimeout(() => {
-			// Remove the animation class
-			wobbleGroup.classList.remove('initial-load-effect');
-
-			// Explicitly reset transform/opacity left by "forwards" fill mode
-			wobbleGroup.style.transform = '';
-			wobbleGroup.style.opacity = '';
-
-			// Mark first visit as complete in the store
-			ghostStateStore.completeFirstVisit();
-
-			// Ensure final state is IDLE (unless something else changed it)
-			if (
-				get(ghostStateStore).current === ANIMATION_STATES.INITIAL ||
-				get(ghostStateStore).current === ANIMATION_STATES.IDLE
-			) {
-				ghostStateStore.setAnimationState(ANIMATION_STATES.IDLE);
-			}
-		}, cleanupDelay);
-	}); // End of requestAnimationFrame callback
 }
 
 /**
@@ -221,9 +151,7 @@ export function applyPulseEffect(ghostSvg, duration) {
 export default {
 	initAnimations,
 	initThemeAnimation,
-	applyInitialLoadEffect,
 	applyPulseEffect,
-	// performSpecialAnimation, // No longer exported or used externally for spin
 	startSpecialAnimationWatch,
 	stopSpecialAnimationWatch
 };

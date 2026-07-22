@@ -155,7 +155,11 @@ export const recordingDuration = derived(recordingState, ($state) => $state.dura
 
 export const errorMessage = derived(uiState, ($state) => $state.errorMessage);
 
-export const waveformData = derived(audioState, ($state) => $state.waveformData || []);
+// null is a meaningful value here: the analyser is blind (suspended
+// AudioContext) but recording is live. Only coerce undefined to [].
+export const waveformData = derived(audioState, ($state) =>
+	$state.waveformData === null ? null : $state.waveformData || []
+);
 
 // Action functions to update the stores
 export const audioActions = {
@@ -236,6 +240,22 @@ export const audioActions = {
 		if (this.recordingTimer) {
 			clearInterval(this.recordingTimer);
 			this.recordingTimer = null;
+		}
+	},
+
+	// Immediate cap re-check for when the tab returns to the foreground —
+	// background throttling can delay the interval-based check by seconds.
+	checkRecordingTimeLimit() {
+		if (!this.recordingTimer || !this.startTime) return;
+
+		const duration = (Date.now() - this.startTime) / 1000;
+		const isSupporter = get(userPreferences).isSupporter;
+		const timeLimit = isSupporter
+			? ANIMATION.RECORDING.SUPPORTER_LIMIT
+			: ANIMATION.RECORDING.FREE_LIMIT;
+
+		if (Math.floor(duration) >= timeLimit) {
+			this.recordingTimeLimitReached();
 		}
 	},
 

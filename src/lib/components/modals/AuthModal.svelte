@@ -57,18 +57,22 @@
 		}
 	}
 
+	// modalService owns the close animation and the reduced-motion branch; this
+	// only waits out the same duration before handing control back to the caller.
 	function handleModalClose(afterClose = onClose) {
-		if (!submitting && !closing) {
-			closing = true;
-			modalService.closeModal();
-			const closeDelay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-				? 0
-				: ANIMATION.MODAL.CLOSE_DURATION;
-			closeTimer = setTimeout(() => {
-				closing = false;
-				afterClose();
-			}, closeDelay);
-		}
+		if (submitting || closing) return;
+
+		closing = true;
+		modalService.closeModal();
+
+		const closeDelay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+			? 0
+			: ANIMATION.MODAL.CLOSE_DURATION;
+
+		closeTimer = setTimeout(() => {
+			closing = false;
+			afterClose();
+		}, closeDelay);
 	}
 
 	function handleNativeClose(event) {
@@ -130,17 +134,11 @@
 		</form>
 		<ModalCloseButton closeModal={handleModalClose} />
 	</div>
-	<div
-		role="button"
-		tabindex="0"
-		aria-label="Close auth modal"
+	<button
+		type="button"
 		class="modal-backdrop"
+		aria-label="Close auth modal"
 		on:click={handleModalClose}
-		on:keydown={(event) => {
-			if (event.key === 'Enter' || event.key === ' ') {
-				event.preventDefault();
-				handleModalClose();
-			}
-		}}
-	></div>
+		on:keydown={(event) => event.key === 'Enter' && handleModalClose()}
+	></button>
 </dialog>

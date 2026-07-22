@@ -163,3 +163,38 @@ self.addEventListener('fetch', (event) => {
 
 	event.respondWith(respond());
 });
+
+// POC (fable-pwa-autostart research, 2026-07-18): a notification tap is a user
+// gesture at the OS level. Tapping any TalkType notification focuses (or opens)
+// the app on /?action=record, which the existing auto-start wiring in
+// MainContainer picks up. With a persisted mic permission (Chromium), this is
+// "tap notification -> recording" with zero in-app taps.
+// Trigger a local test notification from the app's console:
+//   navigator.serviceWorker.ready.then((r) =>
+//     r.showNotification('TalkType', { body: 'Tap to start recording' })
+//   );
+self.addEventListener('notificationclick', (event) => {
+	event.notification.close();
+
+	const targetUrl = new URL('/?action=record&source=notification', self.location.origin).href;
+
+	event.waitUntil(
+		(async () => {
+			const windowClients = await self.clients.matchAll({
+				type: 'window',
+				includeUncontrolled: true
+			});
+
+			const existing = windowClients.find((client) => 'focus' in client);
+			if (existing) {
+				await existing.focus();
+				if ('navigate' in existing) {
+					await existing.navigate(targetUrl).catch(() => {});
+				}
+				return;
+			}
+
+			await self.clients.openWindow(targetUrl);
+		})()
+	);
+});

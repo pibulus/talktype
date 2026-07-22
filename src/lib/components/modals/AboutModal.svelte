@@ -12,7 +12,7 @@
 	aria-describedby="about_modal_description"
 	aria-modal="true"
 >
-	<div class="about-modal-box tt-modal-md modal-box tt-about-sheet">
+	<div class="tt-modal-md modal-box">
 		<form method="dialog">
 			<ModalCloseButton {closeModal} label="Close about modal" modalId="about_modal" />
 		</form>
@@ -68,7 +68,10 @@
 
 			<p class="flex items-center gap-1.5 pt-1 text-xs leading-relaxed text-gray-500">
 				<span class="text-pink-500" aria-hidden="true">🔒</span>
-				<span>Local-first &amp; private — offline mode keeps your voice on your device.</span>
+				<span
+					>Private by design — Offline Mode keeps your voice entirely on your device, and nothing
+					you say is ever stored. Your transcripts live only here.</span
+				>
 			</p>
 
 			<div class="flex flex-wrap items-center justify-between gap-3 pt-2">
@@ -106,72 +109,3 @@
 		aria-label="Close about modal"
 	></button>
 </dialog>
-
-<style>
-	/* SKELETON: mobile bottom-sheet below 640px — full-width docked panel,
-	   rounded top only, safe-area-inset-bottom padding. Above 640px it stays
-	   the centered card (default .modal-box behaviour). Scoped via :global to
-	   #about_modal so sibling modals are untouched. Mirrors IntroModal. */
-	@media (max-width: 639px) {
-		:global(#about_modal.modal[open]),
-		:global(#about_modal.modal.modal-open) {
-			align-items: end !important;
-			justify-items: stretch !important;
-			padding: 0 !important;
-		}
-
-		.about-modal-box.tt-about-sheet {
-			--tt-modal-panel-width: 100%;
-			width: 100%;
-			max-width: 100%;
-			max-height: min(90dvh, var(--modal-max-height));
-			margin: 0;
-			align-self: end;
-			border-bottom: 0;
-			border-radius: 1.5rem 1.5rem 0 0;
-			padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
-		}
-	}
-
-	/* SKELETON: on mobile the sheet rises from the bottom edge instead of the
-	   default centered pop. Honors the shared closing/reduced-motion handling
-	   from app.css (close anim + prefers-reduced-motion already live there). */
-	@media (max-width: 639px) {
-		:global(#about_modal.modal[open]:not(.tt-modal-closing) > .about-modal-box.tt-about-sheet) {
-			animation: tt-about-sheet-up 360ms cubic-bezier(0.18, 0.92, 0.2, 1.08) both;
-		}
-
-		:global(#about_modal.modal.tt-modal-closing > .about-modal-box.tt-about-sheet) {
-			animation: tt-about-sheet-down 220ms cubic-bezier(0.4, 0, 0.2, 1) both;
-		}
-	}
-
-	@keyframes tt-about-sheet-up {
-		from {
-			opacity: 0;
-			transform: translateY(100%);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	@keyframes tt-about-sheet-down {
-		from {
-			opacity: 1;
-			transform: translateY(0);
-		}
-		to {
-			opacity: 0;
-			transform: translateY(100%);
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		:global(#about_modal.modal[open]:not(.tt-modal-closing) > .about-modal-box.tt-about-sheet),
-		:global(#about_modal.modal.tt-modal-closing > .about-modal-box.tt-about-sheet) {
-			animation: none;
-		}
-	}
-</style>

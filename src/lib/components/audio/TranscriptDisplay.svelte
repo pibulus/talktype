@@ -3,6 +3,7 @@
 	import { createEventDispatcher, onMount, tick } from 'svelte';
 	import { browser } from '$app/environment';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
+	import WiggleButton from '$lib/charms/WiggleButton.svelte';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
 	import { typewriterSoundService } from '$lib/services/infrastructure/typewriterSoundService.js';
 	import { centerElementInViewport } from '$lib/utils/scrollUtils';
@@ -23,6 +24,7 @@
 	let editableTranscript;
 	let transcriptBoxRef;
 	let transcriptWrapperRef;
+	let copyWiggle; // WiggleButton charm ref — quiets the copy ghost after first use
 
 	// State
 	let tooltipHoverCount = 0;
@@ -66,6 +68,7 @@
 	function handleCopyClick() {
 		hasUsedCopyButton = true;
 		showCopyTooltip = false;
+		copyWiggle?.acknowledge(); // charm goes quiet for good (localStorage-remembered)
 		dispatch('copy', { text: getEditedTranscript() });
 	}
 
@@ -274,35 +277,49 @@
 >
 	<div class="wrapper-container flex w-full justify-center">
 		<div class="transcript-box-container relative mx-auto w-[96%] max-w-[580px] px-0 sm:w-full">
-			<!-- Copy button with themed ghost icon -->
-			<button
-				class="copy-btn share-chip absolute -top-5 right-0 z-[200] h-12 w-12 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95 sm:-right-4 sm:-top-4 sm:h-11 sm:w-11"
-				class:copyNeedsGesture
-				on:click|preventDefault={handleCopyClick}
-				on:mouseenter={handleTooltipMouseEnter}
-				on:mouseleave={() => {
-					showCopyTooltip = false;
-				}}
-				aria-label={copyNeedsGesture ? 'Copy this transcript' : 'Copy transcript'}
-				title="Copy"
-			>
-				<!-- Ghost icon using the app's current theme -->
-				<div class="h-full w-full p-0.5">
-					<DisplayGhost theme={$theme} size="100%" disableJsAnimation={true} />
-				</div>
-
-				<!-- Smart tooltip - only shows for first few hovers -->
-				{#if showCopyTooltip}
-					<div
-						class="copy-tooltip absolute -right-2 top-12 z-[250] whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md sm:right-0 sm:top-12"
+			<!-- Copy button with themed ghost icon.
+			     WiggleButton (softstack-charms) wiggles the ghost periodically + shows
+			     a "tap to copy" tooltip until the FIRST copy, then quiets forever
+			     (localStorage). The charm anchor carries the absolute positioning. -->
+			<div class="copy-charm-anchor absolute -top-5 right-0 z-[200] sm:-right-4 sm:-top-4">
+				<WiggleButton
+					bind:this={copyWiggle}
+					id="copy-ghost"
+					label="tap to copy"
+					tooltipPlacement="bottom"
+					interval={4200}
+					amplitude={1.08}
+				>
+					<button
+						class="copy-btn share-chip h-12 w-12 rounded-full bg-gradient-to-r from-pink-100 to-purple-50 p-1.5 shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:ring-offset-2 active:scale-95 sm:h-11 sm:w-11"
+						class:copyNeedsGesture
+						on:click|preventDefault={handleCopyClick}
+						on:mouseenter={handleTooltipMouseEnter}
+						on:mouseleave={() => {
+							showCopyTooltip = false;
+						}}
+						aria-label={copyNeedsGesture ? 'Copy this transcript' : 'Copy transcript'}
+						title="Copy"
 					>
-						Copy
-						<div
-							class="tooltip-arrow absolute -top-1.5 right-6 h-3 w-3 rotate-45 bg-white sm:right-4"
-						></div>
-					</div>
-				{/if}
-			</button>
+						<!-- Ghost icon using the app's current theme -->
+						<div class="h-full w-full p-0.5">
+							<DisplayGhost theme={$theme} size="100%" disableJsAnimation={true} />
+						</div>
+
+						<!-- Desktop hover affordance — the "Copy" label on mouseenter -->
+						{#if showCopyTooltip}
+							<div
+								class="copy-tooltip absolute -right-2 top-12 z-[250] whitespace-nowrap rounded-full bg-white px-3 py-1.5 text-xs font-medium text-purple-800 shadow-md sm:right-0 sm:top-12"
+							>
+								Copy
+								<div
+									class="tooltip-arrow absolute -top-1.5 right-6 h-3 w-3 rotate-45 bg-white sm:right-4"
+								></div>
+							</div>
+						{/if}
+					</button>
+				</WiggleButton>
+			</div>
 
 			<!-- Redesigned transcript box with proper structure -->
 			<div
@@ -375,8 +392,20 @@
 		min-width: 44px;
 		touch-action: manipulation;
 		transform-origin: center;
-		/* Persistent gentle breathing — implies "tap me" through motion */
-		animation: copy-breathe 2.8s ease-in-out infinite;
+		/* Thin rim so the ghost doesn't melt into the page background */
+		border: 1px solid rgba(216, 180, 254, 0.65);
+		/* Attention motion is now owned by the WiggleButton charm wrapper
+		   (softstack-charms) — it wiggles periodically and stops after the first
+		   copy. No persistent breathing here anymore. */
+	}
+
+	.copy-charm-anchor {
+		/* charm tooltip tokens → on-brand pastel, sits below the modal scale (9999) */
+		--charm-tip-bg: #ffffff;
+		--charm-tip-ink: #6b21a8;
+		--charm-tip-shadow: 0 4px 14px rgba(249, 168, 212, 0.32);
+		--charm-tip-z: 250;
+		--charm-accent: rgba(249, 168, 212, 0.55);
 	}
 
 	.copy-btn.copyNeedsGesture {
@@ -396,16 +425,6 @@
 		border: 2px solid rgba(249, 168, 212, 0.42);
 		pointer-events: none;
 		animation: copy-ring 1.65s ease-out infinite;
-	}
-
-	@keyframes copy-breathe {
-		0%,
-		100% {
-			transform: scale(1);
-		}
-		50% {
-			transform: scale(1.06);
-		}
 	}
 
 	@keyframes copy-squeeze {

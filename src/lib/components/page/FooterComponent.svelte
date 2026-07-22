@@ -26,7 +26,7 @@
 		const shareData = {
 			title: 'TalkType',
 			text: "Voice-to-text that doesn't suck. Fast, free, and private when you need it.",
-			url: 'https://talktype.app'
+			url: typeof window !== 'undefined' ? window.location.href : 'https://talktype.app'
 		};
 
 		try {
@@ -50,7 +50,10 @@
 	}
 </script>
 
-<nav class="flex items-center space-x-1 sm:space-x-2" aria-label="TalkType footer">
+<nav
+	class="tt-footer-nav flex max-w-full items-center justify-center space-x-1 sm:space-x-2"
+	aria-label="TalkType footer"
+>
 	<button class={footerButtonClass} on:click={showAbout} aria-label="About TalkType">
 		About
 	</button>
@@ -71,7 +74,23 @@
 </nav>
 
 <style>
+	/* On very narrow phones the five labels can still exceed the viewport. Let
+	   the row scroll horizontally rather than clip the last button off-screen.
+	   The scrollbar itself is hidden — the overflow is a safety valve, not a
+	   control the user is meant to notice. */
+	.tt-footer-nav {
+		overflow-x: auto;
+		scrollbar-width: none;
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior-x: contain;
+	}
+
+	.tt-footer-nav::-webkit-scrollbar {
+		display: none;
+	}
+
 	.footer-nav-button {
+		flex: 0 0 auto;
 		border-radius: 0.75rem;
 	}
 

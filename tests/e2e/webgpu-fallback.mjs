@@ -32,9 +32,12 @@ const pass = (m) => {
 };
 
 const wavBase64 = readFileSync(FIXTURE).toString('base64');
-// Try to enable WebGPU in headless; many CI/headless envs still won't expose an adapter.
+// Try to enable WebGPU in headless; many CI/headless envs still won't expose an
+// adapter (or expose a SwiftShader software one, which the app now rejects).
+// TT_HEADED=1 launches a visible browser with the machine's REAL GPU — the only
+// way to exercise the actual WebGPU load path locally.
 const browser = await chromium.launch({
-	headless: true,
+	headless: !process.env.TT_HEADED,
 	args: ['--enable-unsafe-webgpu', '--enable-features=Vulkan']
 });
 const page = await browser.newPage();

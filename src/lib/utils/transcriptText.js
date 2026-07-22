@@ -1,3 +1,8 @@
+// Cap pasted text so a giant clipboard dump can't jank the contenteditable,
+// bloat saved history entries, or stall the export/copy pipeline. Applied to
+// paste insertion only \u2014 real transcripts are never truncated.
+export const MAX_PASTED_TRANSCRIPT_LENGTH = 50_000;
+
 export function normalizeTranscriptText(value = '') {
 	return String(value ?? '')
 		.replace(/\r\n?/g, '\n')
@@ -14,7 +19,7 @@ export function getTranscriptWordCount(value = '') {
 }
 
 export function insertPlainTranscriptText(text) {
-	const normalizedText = normalizeTranscriptText(text);
+	const normalizedText = normalizeTranscriptText(text).slice(0, MAX_PASTED_TRANSCRIPT_LENGTH);
 	if (!normalizedText || typeof document === 'undefined' || typeof window === 'undefined') {
 		return false;
 	}
@@ -43,7 +48,7 @@ export function insertPlainTranscriptText(text) {
 }
 
 export function insertPlainTranscriptTextIntoControl(control, text) {
-	const normalizedText = normalizeTranscriptText(text);
+	const normalizedText = normalizeTranscriptText(text).slice(0, MAX_PASTED_TRANSCRIPT_LENGTH);
 	if (!control || !normalizedText) return null;
 
 	const currentValue = String(control.value ?? '');

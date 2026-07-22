@@ -41,6 +41,27 @@ const FREE_PROMPT_STYLES = new Set([PROMPT_STYLES.STANDARD, PROMPT_STYLES.SURLY_
 const VALID_PROMPT_STYLES = new Set(Object.values(PROMPT_STYLES));
 const DURATION_GRACE_SECONDS = 5;
 const MULTIPART_OVERHEAD_GRACE_BYTES = 512 * 1024;
+// Allowlist of audio MIME types we hand off to Deepgram/Gemini. Empty type is
+// allowed because some MediaRecorder blobs report no type — we don't want to
+// reject real recordings; downstream services sniff the container regardless.
+const ALLOWED_AUDIO_TYPES = new Set([
+	'audio/webm',
+	'audio/ogg',
+	'audio/mp4',
+	'audio/mpeg',
+	'audio/mp3',
+	'audio/wav',
+	'audio/x-wav',
+	'audio/aac',
+	'audio/flac',
+	'audio/x-m4a',
+	'audio/m4a'
+]);
+
+export function _isAllowedAudioType(type) {
+	if (!type) return true; // typeless blob — let the transcription service decide
+	return ALLOWED_AUDIO_TYPES.has(type.split(';')[0].trim().toLowerCase());
+}
 
 export function _getUploadLimitForSupporter(isSupporter) {
 	return isSupporter ? MAX_UPLOAD_BYTES : FREE_MAX_UPLOAD_BYTES;
@@ -137,7 +158,17 @@ export async function POST(event) {
 			);
 		}
 
-		const formData = await event.request.formData();
+		let formData;
+		try {
+			formData = await event.request.formData();
+		} catch {
+			// Malformed/truncated multipart body — a client-side upload hiccup,
+			// not a server error. Mirror the JSON-parse 400 in validate-code.
+			return json(
+				{ error: 'That upload got scrambled in transit. Mind trying again?' },
+				{ status: 400 }
+			);
+		}
 		const file = formData.get('audio_file');
 		const promptStyle = formData.get('prompt_style')?.toString() || 'standard';
 		const customPrompt = (formData.get('custom_prompt')?.toString() || '')
@@ -153,6 +184,11 @@ export async function POST(event) {
 				},
 				{ status: 400 }
 			);
+		}
+
+		if (!_isAllowedAudioType(file.type)) {
+			console.warn(`[API /transcribe] Rejected unsupported audio type: ${file.type}`);
+			return json({ error: 'That audio format is not supported.' }, { status: 400 });
 		}
 
 		if (!isSupporter && _isFreeDurationOverLimit(durationSeconds)) {

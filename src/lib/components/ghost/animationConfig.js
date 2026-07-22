@@ -163,9 +163,9 @@ export const ANIMATION_EFFECTS = {
 
 // CSS class names for consistent reference
 export const CSS_CLASSES = {
-	WOBBLE_LEFT: 'wobble-left', // Still used? Maybe for other triggers? Keep for now.
-	WOBBLE_RIGHT: 'wobble-right', // Still used? Maybe for other triggers? Keep for now.
-	WOBBLE_BOTH: 'wobble-both', // New class for combined wobble
+	WOBBLE_LEFT: 'wobble-left', // Recording-start wobble (WOBBLE_CONFIG.RECORDING_START_CLASS)
+	WOBBLE_RIGHT: 'wobble-right', // Recording-stop wobble (WOBBLE_CONFIG.STOP_CLASS)
+	WOBBLE_BOTH: 'wobble-both', // Combined wobble for direct ghost taps
 	SPIN: 'spin',
 	PULSE: 'ghost-pulse',
 	INITIAL_LOAD: 'initial-load',

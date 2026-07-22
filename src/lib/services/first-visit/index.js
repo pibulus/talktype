@@ -1,1 +1,1 @@
-export { firstVisitService, isFirstVisit } from './firstVisitService';
+export { firstVisitService } from './firstVisitService';

@@ -1,10 +1,13 @@
 <script>
 	export let progress = 0;
+	export let label = 'Processing';
 
 	$: safeProgress = Math.max(0, Math.min(100, Math.round(Number(progress) || 0)));
 	$: visualProgress = safeProgress > 0 ? safeProgress : 16;
 	$: visualRatio = visualProgress / 100;
-	$: label = 'Processing';
+	// Show status text visibly when it says something more specific than the
+	// default (e.g. "Downloading model 42%") — otherwise dots carry the vibe.
+	$: showVisibleLabel = label && label !== 'Processing';
 </script>
 
 <div
@@ -20,7 +23,15 @@
 		style="--progress-ratio: {visualRatio};"
 	></div>
 	<span class="sr-only">{label}</span>
-	<span class="processing-dots relative z-10" aria-hidden="true">
+	{#if showVisibleLabel}
+		<span
+			class="status-label relative z-10 max-w-[75%] truncate text-sm font-bold text-amber-900/85"
+			aria-hidden="true"
+		>
+			{label}
+		</span>
+	{/if}
+	<span class="processing-dots relative z-10 {showVisibleLabel ? 'ml-2' : ''}" aria-hidden="true">
 		<span></span>
 		<span></span>
 		<span></span>
