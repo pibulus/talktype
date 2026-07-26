@@ -277,7 +277,7 @@ export class WhisperService {
 						loadError?.message || loadError
 					);
 					const fallbackConfig = getModelInfo('tiny');
-					// Use the fallback model's native device+dtype (currently wasm+q8)
+					// Use the fallback model's native device+dtype (currently wasm+q4)
 					// rather than hardcoding fp32, so the fallback benefits from the
 					// model config's compatibility choices.
 					const fallbackDevice = fallbackConfig.device || 'wasm';
