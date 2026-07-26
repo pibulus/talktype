@@ -10,6 +10,11 @@ import { soundService } from '$lib/services/infrastructure/soundService.js';
 
 const log = createLogger('TranscriptionService');
 
+// How long a rescuable recording stays offered on the recovery card. Generous
+// on purpose: this deletes the user's audio, so it has to be past any plausible
+// "I'll get back to that" window, not just past annoying.
+const STALE_DRAFT_MS = 7 * 24 * 60 * 60 * 1000;
+
 export class TranscriptionService {
 	constructor(dependencies = {}) {
 		this.hybridService = dependencies.hybridService || simpleHybridService;
@@ -102,6 +107,14 @@ export class TranscriptionService {
 
 		try {
 			const draft = await getLatestRecordingDraft({ includeBlob: false });
+
+			// A failed recording leaves its draft behind on purpose — that's what
+			// retry is for. But a draft from days ago is nagging, not rescuing.
+			if (draft?.createdAt && Date.now() - draft.createdAt > STALE_DRAFT_MS) {
+				await deleteRecordingDraft();
+				return;
+			}
+
 			if (draft?.id) {
 				transcriptionActions.setPendingRecording({
 					id: draft.id,

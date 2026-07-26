@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
-import { uiActions, uiState, resetStores } from '../infrastructure/stores.js';
+import { uiActions, uiState, transcriptionState, resetStores } from '../infrastructure/stores.js';
 import { TranscriptionService } from './transcriptionService.js';
+import { getLatestRecordingDraft, deleteRecordingDraft } from '../audio/recordingRecoveryStore';
 
 vi.mock('$app/environment', () => ({
 	browser: true,
@@ -74,5 +75,65 @@ describe('TranscriptionService clipboard fallback', () => {
 		expect(copied).toBe(true);
 		expect(state.copyNeedsGesture).toBe(false);
 		expect(state.clipboardSuccess).toBe(true);
+	});
+});
+
+describe('TranscriptionService crash recovery', () => {
+	let service;
+
+	beforeEach(() => {
+		resetStores();
+		service = new TranscriptionService({ hybridService: { transcribeAudio: vi.fn() } });
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+		resetStores();
+	});
+
+	// The recovery card can only offer "Get text back" if the live transcript
+	// snapshot survives the trip from IndexedDB metadata into pendingRecording.
+	it('carries the saved live transcript into pendingRecording', async () => {
+		getLatestRecordingDraft.mockResolvedValue({
+			id: 'latest',
+			createdAt: Date.now(),
+			metadata: {
+				duration: 220,
+				liveTranscript: { text: 'three minutes of thoughts' }
+			}
+		});
+
+		await service.restorePendingRecordingDraft();
+
+		expect(get(transcriptionState).pendingRecording?.liveTranscript?.text).toBe(
+			'three minutes of thoughts'
+		);
+	});
+});
+
+describe('TranscriptionService stale drafts', () => {
+	let service;
+
+	beforeEach(() => {
+		resetStores();
+		service = new TranscriptionService({ hybridService: { transcribeAudio: vi.fn() } });
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+		resetStores();
+	});
+
+	it('drops a draft older than a week instead of nagging forever', async () => {
+		getLatestRecordingDraft.mockResolvedValue({
+			id: 'latest',
+			createdAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
+			metadata: { duration: 12 }
+		});
+
+		await service.restorePendingRecordingDraft();
+
+		expect(deleteRecordingDraft).toHaveBeenCalled();
+		expect(get(transcriptionState).pendingRecording).toBeFalsy();
 	});
 });

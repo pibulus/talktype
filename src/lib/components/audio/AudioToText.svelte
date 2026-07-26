@@ -23,6 +23,7 @@
 		userPreferences,
 		uiState,
 		uiActions,
+		transcriptionState,
 		transcriptionService
 	} from '$lib/services';
 	import {
@@ -193,8 +194,10 @@
 			isLiveTranscriptMode={liveTranscriptMode}
 		/>
 
-		<!-- Dynamic content area - only render when there's content -->
-		{#if $isRecording || $isTranscribing || $transcriptionText || $errorMessage}
+		<!-- Dynamic content area - only render when there's content.
+		     pendingRecording must be here: after a crash/reload nothing else is
+		     true, and the recovery card lives inside RecordingStatus. -->
+		{#if $isRecording || $isTranscribing || $transcriptionText || $errorMessage || $transcriptionState.pendingRecording}
 			<div
 				class="content-wrapper relative mb-10 mt-2 flex w-full flex-col items-center transition-all duration-300 ease-in-out"
 			>
