@@ -136,6 +136,7 @@ export class WhisperService {
 		this.modelLoadPromise = null;
 		this.isSupported = browser;
 		this.hasWarmedUp = false;
+		this.warmupPromise = null;
 		this.modelFileProgress = new Map();
 		this.modelHasSeenLargeFile = false;
 		this.modelProgressInterval = null;
@@ -318,11 +319,9 @@ export class WhisperService {
 			}
 			this.transcriber = transcriber;
 
-			await this.#warmupTranscriber();
-
 			const endTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
 			const totalSecs = ((endTime - loadStart || 0) / 1000).toFixed(2);
-			log.log(`Model ready in ${totalSecs}s (${device}, warmed).`);
+			log.log(`Model ready in ${totalSecs}s (${device}).`);
 			this.#stopLoadProgressTicker();
 
 			this.updateStatus({
@@ -338,6 +337,10 @@ export class WhisperService {
 				lastLoadedAt: Date.now()
 			});
 			this.modelLoadPromise = null;
+			// Warmup is best-effort and can take many seconds on mobile WASM. Ready
+			// means "downloaded and usable" — don't hold the UI on it. The first
+			// transcription awaits this promise, so nothing races the session.
+			this.warmupPromise = this.#warmupTranscriber();
 			this.#refreshDeviceStorageState();
 			return { success: true, transcriber: this.transcriber };
 		} catch (error) {
@@ -626,6 +629,10 @@ export class WhisperService {
 			throw error || new Error('Failed to load Whisper model');
 		}
 
+		// Load flips to ready before warmup finishes — never run two inferences
+		// on the same session at once.
+		await this.warmupPromise;
+
 		this.validateAudioData(audioBlob);
 
 		let floatAudio = audioBlob;
@@ -698,6 +705,10 @@ export class WhisperService {
 		this.#stopLoadProgressTicker();
 
 		if (!this.transcriber) return;
+
+		// Don't dispose out from under an in-flight warmup run.
+		await this.warmupPromise;
+		this.warmupPromise = null;
 
 		try {
 			await this.transcriber.dispose?.();
