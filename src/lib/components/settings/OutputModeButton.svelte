@@ -10,14 +10,9 @@
 
 	$: isOffline = mode.id === 'offline';
 	$: safeProgress = Math.max(0, Math.min(100, Math.round(Number(offlineStatus.progress) || 0)));
-	$: hasOfflineState =
-		isOffline &&
-		(selected ||
-			offlineStatus.visible ||
-			offlineStatus.loading ||
-			offlineStatus.loaded ||
-			offlineStatus.cached ||
-			offlineStatus.error);
+	// The offline sub-label is always worth showing: before download it carries
+	// the size (~96 MB), which is the one thing you want to know BEFORE tapping.
+	$: hasOfflineState = isOffline;
 	$: offlineFillPercent =
 		!isOffline || !hasOfflineState
 			? 0

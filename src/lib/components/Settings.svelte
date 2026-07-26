@@ -13,6 +13,7 @@
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { offlineModelController } from '$lib/services/transcription/offlineModelController.js';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
+	import { formatStorageBytes } from '$lib/services/transcription/whisper/statusUtils.js';
 	import { analytics } from '$lib/services/analytics.js';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
@@ -257,7 +258,9 @@
 		if (status.isLoading) return 'Loading';
 		if (status.isCached) return 'Saved';
 		if (!status.cacheChecked) return 'Checking';
-		return 'Local';
+		// Not downloaded yet. Tapping this pulls ~96 MB, possibly over mobile
+		// data — say what it costs instead of a shrug labelled "Local".
+		return formatStorageBytes(status.selectedModelSize) || 'Local';
 	}
 
 	function handleTranscriptionOption(option) {
