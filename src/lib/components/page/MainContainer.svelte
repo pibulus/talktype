@@ -1,6 +1,5 @@
 <script>
 	import { onMount, tick } from 'svelte';
-	import { shouldWarnMicReprompt } from '$lib/services/audio/micPermission.js';
 	import { browser } from '$app/environment';
 	import { get } from 'svelte/store';
 	import GhostContainer from './GhostContainer.svelte';
@@ -403,20 +402,6 @@
 
 		(async () => {
 			void checkPassportNotes();
-
-			// iOS forgets mic grants between PWA launches (WebKit, unfixable) —
-			// pre-warn returning users so the re-prompt isn't mistaken for a bug.
-			void shouldWarnMicReprompt().then((warn) => {
-				if (!warn || destroyed) return;
-				window.dispatchEvent(
-					new CustomEvent('talktype:toast', {
-						detail: {
-							message: "iPhone asks for the mic again each visit — tap Allow and we're rolling.",
-							type: 'info'
-						}
-					})
-				);
-			});
 
 			// Check if first visit to show intro
 			const introWasShown = await firstVisitService.showIntroModal();

@@ -8,7 +8,10 @@ const RUNTIME_CACHE = 'runtime-v1';
 
 const LARGE_RUNTIME_ASSET_PATTERNS = [
 	/\/ort-.*\.wasm$/,
-	/\/sounds\/keyboard-packs\/[^/]+\/sound\.ogg$/
+	/\/sounds\/keyboard-packs\/[^/]+\/sound\.ogg$/,
+	// 4 iOS splash screens, ~1.2 MB each, and a device only ever uses one.
+	// Precaching all of them put 4.7 MB on the install path for nothing.
+	/\/splash\/apple-splash-[\d-]+\.png$/
 ];
 const LARGE_RUNTIME_ASSETS = [...build, ...files].filter((asset) => isLargeRuntimeAsset(asset));
 const SENSITIVE_QUERY_KEYS = ['code', 'token', 'checkout_id', 'vault', 'vaultUrl'];

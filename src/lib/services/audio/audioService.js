@@ -18,7 +18,6 @@ import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { createLogger } from '$lib/utils/logger';
 import { getMicErrorMessage } from './permissionErrors.js';
-import { markMicGranted } from './micPermission.js';
 import { estimateDurationSecondsFromBlob } from './durationEstimate.js';
 
 const log = createLogger('AudioService');
@@ -233,7 +232,6 @@ export class AudioService {
 
 	#permissionResultFromStream(stream, errorMessage) {
 		if (stream?.active) {
-			markMicGranted();
 			return { granted: true, stream };
 		}
 
@@ -454,10 +452,13 @@ export class AudioService {
 							graphRebuilt = true;
 							this.rebuildAnalyserGraph();
 						}
-						audioActions.setWaveformData(zeroFrames >= 120 ? null : Array.from(dataArray));
+						// Publish the analyser's own buffer — both consumers only index
+						// into it per frame. Copying it built 60 throwaway arrays a
+						// second, which is real GC pressure across a long recording.
+						audioActions.setWaveformData(zeroFrames >= 120 ? null : dataArray);
 					} else {
 						zeroFrames = 0;
-						audioActions.setWaveformData(Array.from(dataArray));
+						audioActions.setWaveformData(dataArray);
 					}
 				}
 				this.animationFrameId = requestAnimationFrame(updateWaveform);
