@@ -185,12 +185,7 @@
 					{/if}
 				</div>
 			{:else}
-				<p>Add TalkType to your home screen for:</p>
-				<ul class="benefits-list">
-					<li>Faster loading</li>
-					<li>Full-screen experience</li>
-					<li>Offline support</li>
-				</ul>
+				<p>On your home screen it opens faster, full screen, and works offline.</p>
 			{/if}
 		</div>
 
@@ -211,7 +206,7 @@
 		bottom: 20px;
 		right: 20px;
 		width: 320px;
-		background: white;
+		background: #fffef7;
 		border-radius: 12px;
 		box-shadow:
 			0 4px 12px rgba(0, 0, 0, 0.15),
@@ -290,17 +285,6 @@
 		color: #444;
 	}
 
-	.benefits-list {
-		margin: 8px 0;
-		padding-left: 24px;
-	}
-
-	.benefits-list li {
-		margin-bottom: 4px;
-		font-size: 14px;
-		color: #555;
-	}
-
 	.install-button {
 		width: 100%;
 		min-height: 48px;
@@ -361,7 +345,7 @@
 		align-items: center;
 		justify-content: center;
 		border-radius: 999px;
-		background: #fff;
+		background: #fffef7;
 		font-size: 13px;
 		font-weight: 700;
 		color: #444;
@@ -409,7 +393,6 @@
 		}
 
 		.prompt-description p,
-		.benefits-list li,
 		.platform-instructions {
 			font-size: 15px;
 		}

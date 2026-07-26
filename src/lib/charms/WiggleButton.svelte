@@ -159,7 +159,7 @@
 		font-weight: 600;
 		line-height: 1;
 		color: var(--charm-tip-ink, #6b21a8);
-		background: var(--charm-tip-bg, #ffffff);
+		background: var(--charm-tip-bg, #fffef7);
 		border-radius: 9999px;
 		box-shadow: var(--charm-tip-shadow, 0 4px 14px rgba(0, 0, 0, 0.12));
 		pointer-events: none;
@@ -169,7 +169,7 @@
 		position: absolute;
 		width: 0.55rem;
 		height: 0.55rem;
-		background: var(--charm-tip-bg, #ffffff);
+		background: var(--charm-tip-bg, #fffef7);
 		transform: rotate(45deg);
 	}
 

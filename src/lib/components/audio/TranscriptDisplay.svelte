@@ -401,7 +401,7 @@
 
 	.copy-charm-anchor {
 		/* charm tooltip tokens → on-brand pastel, sits below the modal scale (9999) */
-		--charm-tip-bg: #ffffff;
+		--charm-tip-bg: #fffef7;
 		--charm-tip-ink: #6b21a8;
 		--charm-tip-shadow: 0 4px 14px rgba(249, 168, 212, 0.32);
 		--charm-tip-z: 250;

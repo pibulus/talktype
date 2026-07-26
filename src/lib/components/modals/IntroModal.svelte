@@ -45,25 +45,16 @@
 
 			<ul id="intro_modal_description" class="space-y-2.5 sm:space-y-3">
 				<li class="intro-feature">
-					<span class="intro-chip intro-chip-rose" aria-hidden="true">✦</span>
-					<span class="min-w-0">
-						<span class="intro-feature-lead">Private when you want it</span>
-						<span class="intro-feature-copy">Offline mode keeps every word on your device.</span>
-					</span>
+					<span class="intro-chip intro-chip-amber" aria-hidden="true">✦</span>
+					<span class="intro-feature-lead min-w-0">Tap the ghost. Talk. That's it.</span>
 				</li>
 				<li class="intro-feature">
-					<span class="intro-chip intro-chip-amber" aria-hidden="true">✦</span>
-					<span class="min-w-0">
-						<span class="intro-feature-lead">Instant start</span>
-						<span class="intro-feature-copy">Tap the ghost and talk. That's it.</span>
-					</span>
+					<span class="intro-chip intro-chip-rose" aria-hidden="true">✦</span>
+					<span class="intro-feature-lead min-w-0">Offline mode keeps it on your device.</span>
 				</li>
 				<li class="intro-feature">
 					<span class="intro-chip intro-chip-purple" aria-hidden="true">✦</span>
-					<span class="min-w-0">
-						<span class="intro-feature-lead">Your words, your way</span>
-						<span class="intro-feature-copy">Save transcripts, switch styles, pick your vibe.</span>
-					</span>
+					<span class="intro-feature-lead min-w-0">Save it, restyle it, pick your vibe.</span>
 				</li>
 			</ul>
 
@@ -98,10 +89,10 @@
 		padding: 0 0.06em;
 	}
 
-	/* Feature rows: pastel emoji chip + bold lead over one quiet line of copy. */
+	/* Feature rows: pastel chip + one line. Single line, so centre on the chip. */
 	.intro-feature {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		gap: 0.75rem;
 		text-align: left;
 	}
@@ -142,21 +133,8 @@
 		color: #111827;
 	}
 
-	.intro-feature-copy {
-		display: block;
-		margin-top: 0.1rem;
-		font-size: 0.875rem;
-		font-weight: 500;
-		line-height: 1.45;
-		color: #4b5563;
-	}
-
 	@media (min-width: 640px) {
 		.intro-feature-lead {
-			font-size: 0.95rem;
-		}
-
-		.intro-feature-copy {
 			font-size: 0.95rem;
 		}
 	}

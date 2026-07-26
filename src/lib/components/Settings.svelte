@@ -530,7 +530,7 @@
 		width: 0.82rem;
 		height: 0.82rem;
 		border-radius: 9999px;
-		background: white;
+		background: #fffef7;
 		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
 		transition: transform 0.2s ease;
 	}

@@ -33,33 +33,11 @@
 				class="rounded-lg border border-pink-200/60 bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 shadow-sm"
 			>
 				<p id="about_modal_description" class="text-base leading-relaxed text-gray-700">
-					TalkType is a minimalist voice-to-text tool that transforms your speech into text
-					effortlessly. Built with love for people who think tech should be <span
-						class="font-medium text-pink-600">simple</span
-					>,
+					Some ideas come out better talked than typed. So: talk, get text. Built for people who
+					think tools should be <span class="font-medium text-pink-600">simple</span>,
 					<span class="font-medium text-amber-600">delightful</span>, and actually
 					<span class="font-medium text-pink-600">helpful</span>.
 				</p>
-			</div>
-
-			<div>
-				<h4 class="mb-2 text-sm font-bold text-gray-700">Why we made this:</h4>
-				<ul class="space-y-1.5 text-sm text-gray-600">
-					<li class="flex items-start gap-2">
-						<span class="text-lg text-pink-500" aria-hidden="true">⬩</span>
-						<span
-							>Some ideas come out better by <span class="italic">talking</span>, not typing</span
-						>
-					</li>
-					<li class="flex items-start gap-2">
-						<span class="text-lg text-pink-500" aria-hidden="true">⬩</span>
-						<span>Other voice-typing tools are either expensive or clunky</span>
-					</li>
-					<li class="flex items-start gap-2">
-						<span class="text-lg text-pink-500" aria-hidden="true">⬩</span>
-						<span>We wanted something beautiful that just works</span>
-					</li>
-				</ul>
 			</div>
 
 			<div class="border-l-3 my-2 ml-1 border-pink-300 py-1 pl-4 italic text-gray-600">
@@ -68,10 +46,7 @@
 
 			<p class="flex items-center gap-1.5 pt-1 text-xs leading-relaxed text-gray-500">
 				<span class="text-pink-500" aria-hidden="true">🔒</span>
-				<span
-					>Private by design — Offline Mode keeps your voice entirely on your device, and nothing
-					you say is ever stored. Your transcripts live only here.</span
-				>
+				<span>Nothing you say is stored. Offline Mode keeps it all on your device.</span>
 			</p>
 
 			<div class="flex flex-wrap items-center justify-between gap-3 pt-2">

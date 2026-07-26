@@ -69,15 +69,7 @@
 		</div>
 
 		<!-- Permission error message -->
-		<p id="permission_error_description">
-			{#if isIOS}
-				TalkType needs the mic before it can listen. Give this site microphone access in Safari,
-				then try recording again.
-			{:else}
-				TalkType needs the mic before it can listen. Allow microphone access in your browser, then
-				try recording again.
-			{/if}
-		</p>
+		<p id="permission_error_description">The mic is blocked. Three taps to fix it:</p>
 
 		<!-- Solution steps -->
 		<div class="error-steps">

@@ -35,20 +35,14 @@
 				class="rounded-lg border border-pink-200/60 bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 shadow-sm"
 			>
 				<p id="extension_modal_description" class="text-sm leading-relaxed text-gray-700">
-					Use TalkType across desktop Chrome. The extension drops voice typing into text boxes,
-					textareas, and rich editors so you can dictate straight into Gmail, Notion, chat apps,
-					forms, and docs.
+					Voice typing in any text box on desktop Chrome. Gmail, Notion, chat, forms, docs.
 				</p>
 			</div>
 
 			<div
 				class="rounded-xl border border-pink-200/60 bg-gradient-to-br from-white to-pink-50/50 p-4 shadow-sm"
 			>
-				<h4 class="mb-2 text-sm font-bold text-gray-800">Right now:</h4>
-				<p class="mb-3 text-sm leading-relaxed text-gray-700">
-					The extension is a downloadable manual-install zip while the Chrome Web Store listing gets
-					packaged.
-				</p>
+				<h4 class="mb-3 text-sm font-bold text-gray-800">Manual install, for now:</h4>
 				<ol class="mt-2 list-decimal space-y-2 pl-5 text-left text-sm text-gray-700">
 					<li class="pb-1">Download and unzip the extension package</li>
 					<li class="pb-1">
