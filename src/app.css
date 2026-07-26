@@ -8,7 +8,9 @@
    CSS CUSTOM PROPERTIES - Single source of truth
    =================================================================== */
 :root {
-	/* Page shell */
+	/* Page shell. The cream stays put — themes recolour the ghost, footer, and
+	   scrollbar, never the paper underneath. Do not override these in a
+	   [data-theme] block. */
 	--tt-page-bg-color: #fff6e6;
 	--tt-page-bg-image: radial-gradient(
 		circle at 50% 35%,
@@ -95,14 +97,6 @@
 }
 
 [data-theme='mint'] {
-	--tt-page-bg-color: #e8fff8;
-	--tt-page-bg-image: radial-gradient(
-		circle at 50% 35%,
-		#f3fffb 0%,
-		#e8fff8 54%,
-		#defff5 84%,
-		#d4fff0 100%
-	);
 	--tt-scrollbar-thumb-color: rgba(16, 185, 129, 0.58);
 	--tt-scrollbar-thumb-active-color: rgba(96, 165, 250, 0.72);
 	--tt-scrollbar-thumb-bg: linear-gradient(
@@ -134,14 +128,6 @@
 }
 
 [data-theme='bubblegum'] {
-	--tt-page-bg-color: #fff0f8;
-	--tt-page-bg-image: radial-gradient(
-		circle at 50% 35%,
-		#fff8fc 0%,
-		#fff0f8 54%,
-		#ffe8f5 84%,
-		#ffe0f0 100%
-	);
 	--tt-scrollbar-thumb-color: rgba(236, 72, 153, 0.66);
 	--tt-scrollbar-thumb-active-color: rgba(232, 121, 249, 0.74);
 	--tt-scrollbar-thumb-bg: linear-gradient(
@@ -173,14 +159,6 @@
 }
 
 [data-theme='rainbow'] {
-	--tt-page-bg-color: #fff5fa;
-	--tt-page-bg-image: radial-gradient(
-		circle at 50% 35%,
-		#fffaf5 0%,
-		#fff5fa 38%,
-		#f5faff 72%,
-		#fffaf5 100%
-	);
 	--tt-scrollbar-thumb-color: rgba(139, 92, 246, 0.6);
 	--tt-scrollbar-thumb-active-color: rgba(245, 158, 11, 0.74);
 	--tt-scrollbar-thumb-bg: linear-gradient(

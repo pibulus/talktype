@@ -37,7 +37,11 @@ const TRANSCRIBE_RATE_WINDOW_MS = parseNonNegativeNumber(
 const TRANSCRIBE_RATE_LIMIT = parseNonNegativeNumber(env.TRANSCRIBE_RATE_LIMIT, 20);
 const MAX_CUSTOM_PROMPT_CHARS = 1200;
 const SUPPORTER_TOKEN_HEADER = 'x-talktype-supporter-token';
-const FREE_PROMPT_STYLES = new Set([PROMPT_STYLES.STANDARD, PROMPT_STYLES.SURLY_PIRATE]);
+// Every preset style is free. Supporter mode buys ONE thing here: writing your
+// own prompt.
+const FREE_PROMPT_STYLES = new Set(
+	Object.values(PROMPT_STYLES).filter((style) => style !== PROMPT_STYLES.CUSTOM)
+);
 const VALID_PROMPT_STYLES = new Set(Object.values(PROMPT_STYLES));
 const DURATION_GRACE_SECONDS = 5;
 const MULTIPART_OVERHEAD_GRACE_BYTES = 512 * 1024;
@@ -219,7 +223,7 @@ export async function POST(event) {
 
 		if (!isSupporter && !FREE_PROMPT_STYLES.has(promptStyle)) {
 			return json(
-				{ error: 'Supporter mode unlocks custom transcription and extra styles.' },
+				{ error: 'Writing your own prompt is a supporter thing. Every preset style is free.' },
 				{ status: 403 }
 			);
 		}

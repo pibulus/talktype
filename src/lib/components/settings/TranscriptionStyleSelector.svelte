@@ -12,8 +12,6 @@
 	let showCustomInput = false;
 	const MAX_CUSTOM_PROMPT_LENGTH = 1200;
 
-	const FREE_STYLE_IDS = new Set([PROMPT_STYLES.STANDARD, PROMPT_STYLES.SURLY_PIRATE]);
-
 	const styleOptions = [
 		{
 			id: PROMPT_STYLES.STANDARD,
@@ -33,7 +31,7 @@
 		{
 			id: PROMPT_STYLES.SPARKLE_POP,
 			label: 'Sparkle',
-			requiresSupporter: true
+			requiresSupporter: false
 		}
 	];
 
@@ -59,7 +57,10 @@
 		changePromptStyle(PROMPT_STYLES.STANDARD);
 	}
 
-	$: if (!isSupporter && !FREE_STYLE_IDS.has(selectedPromptStyle)) {
+	$: if (
+		!isSupporter &&
+		styleOptions.find((s) => s.id === selectedPromptStyle)?.requiresSupporter
+	) {
 		changePromptStyle(PROMPT_STYLES.STANDARD);
 	}
 
