@@ -85,10 +85,16 @@
 
 	// While transcription is waiting on the offline model, surface Whisper's
 	// real status text ("Downloading model 42%") instead of a generic label.
+	$: waitingOnOfflineDownload = $isTranscribing && $whisperStatus.isLoading;
 	$: transcribingLabel =
-		$isTranscribing && $whisperStatus.isLoading && $whisperStatus.statusText
+		waitingOnOfflineDownload && $whisperStatus.statusText
 			? $whisperStatus.statusText
 			: 'Processing';
+	// The label already reports Whisper's real percentage — drive the bar from the
+	// same number so it doesn't creep along on the generic ramp saying something else.
+	$: transcribeProgress = waitingOnOfflineDownload
+		? $whisperStatus.progress
+		: $transcriptionProgress;
 	onDestroy(() => clearTimeout(offlineNoticeTimer));
 
 	onMount(() => {
@@ -167,7 +173,7 @@
 				transcribing={$isTranscribing}
 				clipboardSuccess={$uiState.clipboardSuccess}
 				recordingDuration={$recordingDuration}
-				progress={$transcriptionProgress}
+				progress={transcribeProgress}
 				maxDuration={$userPreferences.isSupporter
 					? ANIMATION.RECORDING.SUPPORTER_LIMIT
 					: ANIMATION.RECORDING.FREE_LIMIT}

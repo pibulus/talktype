@@ -9,11 +9,12 @@ import { userPreferences, markWebgpuDisabled } from '../../infrastructure/stores
 import { convertToWAV as convertToRawAudio } from './audioConverter';
 import { filterTranscriptionOutput } from '../transcriptCleanup.js';
 import { getModelInfo } from './modelRegistry';
-import { probeWebGPU } from '../deviceCapabilities';
+import { estimateStorage, probeWebGPU } from '../deviceCapabilities';
 import {
 	WHISPER_CACHE_NAMES,
 	WHISPER_PHASES,
 	clampPercent,
+	formatStorageBytes,
 	getLoadStatusText,
 	getProgressPercentFromEvent,
 	isLargeModelFile
@@ -227,6 +228,14 @@ export class WhisperService {
 
 			if (!modelConfig) {
 				throw new Error(`Unknown model: ${modelKey}`);
+			}
+
+			// Fail fast on a full disk. Without this the download dies most of the
+			// way through 96 MB and comes back as a generic retry message, so the
+			// user burns the data again to hit the same wall.
+			if (!(await this.#hasRoomFor(modelConfig))) {
+				const needed = formatStorageBytes(modelConfig.size) || 'space';
+				throw new Error(`Not enough storage free for the offline model (needs about ${needed}).`);
 			}
 
 			// Unload any previously loaded model to free memory before loading the new one
@@ -830,6 +839,17 @@ export class WhisperService {
 			this.updateStatus({ cacheChecked: true });
 			return false;
 		}
+	}
+
+	// Cached models already on disk don't need headroom — only a fresh download
+	// does. Unknown quota (Safari often) resolves to true: never block on a guess.
+	async #hasRoomFor(modelConfig) {
+		if (get(whisperStatus).isCached) return true;
+
+		const { available } = await estimateStorage();
+		if (available === null) return true;
+
+		return available >= Math.ceil((modelConfig.size / (1024 * 1024)) * 1.2);
 	}
 
 	async #refreshDeviceStorageState() {
