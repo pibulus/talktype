@@ -182,7 +182,12 @@ function keywordTags(text) {
 		counts.set(clean, (counts.get(clean) || 0) + 1);
 	}
 
+	// A word that appears once carries no signal — on a short transcript every
+	// word is a singleton, so this used to pad every row out to MAX_AUTO_TAGS
+	// with whatever sorted first alphabetically (#chip, #judge, #length).
+	// No repeat, no tag: better an untagged transcript than a mislabelled one.
 	return Array.from(counts.entries())
+		.filter(([, count]) => count > 1)
 		.sort((first, second) => second[1] - first[1] || first[0].localeCompare(second[0]))
 		.map(([tag]) => tag);
 }

@@ -3,15 +3,13 @@
 	import { browser } from '$app/environment';
 	import {
 		transcriptHistory,
-		storageStats,
 		loadAllTranscripts,
 		updateTranscript,
 		deleteTranscript,
 		clearAllTranscripts,
 		batchDownloadTranscripts,
 		exportAllTranscriptsJSON,
-		exportAllTranscriptsMarkdown,
-		formatSize
+		exportAllTranscriptsMarkdown
 	} from '$lib/services/storage/transcriptStorage';
 	import { autoBackupHistoryToVault } from '$lib/services/storage/vaultAutoBackup.js';
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
@@ -59,8 +57,19 @@
 	let activeAudioUrl = '';
 	let selectedTag = '';
 	let editTextarea;
+	let openMenuId = null;
+	let showExportFormats = false;
 	let lastTypewriterInputAt = 0;
 	const iconButtonClass = 'btn btn-ghost h-12 min-h-12 w-12 px-0 text-base';
+	// Secondary actions stay borderless — the transcript should be the loudest
+	// thing in the row, not the chrome around it.
+	const menuButtonClass =
+		'inline-flex min-h-11 items-center rounded-full px-3 text-sm font-bold text-gray-600 transition hover:bg-pink-50 hover:text-pink-700';
+
+	function toggleMenu(id) {
+		openMenuId = openMenuId === id ? null : id;
+		if (openMenuId !== id) pendingDeleteId = null;
+	}
 
 	$: availableTags = getTranscriptTagPool($transcriptHistory);
 	$: visibleTranscripts = selectedTag
@@ -104,18 +113,6 @@
 			hour: 'numeric',
 			minute: '2-digit'
 		});
-	}
-
-	function formatMethod(method) {
-		const labels = {
-			'deepgram-live': 'Live',
-			gemini: 'Cloud',
-			whisper: 'Offline',
-			'offline-whisper': 'Offline',
-			'cloud-batch': 'Cloud'
-		};
-
-		return labels[method] || method;
 	}
 
 	function formatPromptStyle(style) {
@@ -178,6 +175,7 @@
 
 	// Start editing a transcript
 	function startEdit(transcript) {
+		openMenuId = null;
 		editingId = transcript.id;
 		editText = normalizeTranscriptText(transcript.text);
 		tick().then(() => {
@@ -399,59 +397,43 @@
 		<div class="mb-4 shrink-0 border-b border-pink-100 pb-3">
 			<!-- Title row keeps pr-10 so it never collides with the absolute close
 			     button; actions live on their own full-width row below. -->
-			<div class="flex flex-col gap-3">
-				<div class="flex items-center gap-2 pr-10">
+			<div class="flex flex-col gap-1">
+				<div class="flex items-start justify-between gap-2 pr-10">
 					<div>
 						<h3 id="history_modal_title" class="text-xl font-black tracking-tight text-gray-800">
 							Transcript History
 						</h3>
-						<p id="history_modal_description" class="sr-only">
-							Review, copy, edit, download, export, or clear saved transcripts.
-						</p>
-						<p class="text-xs text-gray-500">
-							{$storageStats.count} transcript{$storageStats.count !== 1 ? 's' : ''} •
-							{formatSize($storageStats.totalSize)}
-							{#if selectedTag}
-								• #{selectedTag}
-							{/if}
-						</p>
+						<p id="history_modal_description" class="sr-only">Your saved transcripts.</p>
+						{#if selectedTag}
+							<p class="text-xs text-gray-500">#{selectedTag}</p>
+						{/if}
 					</div>
 				</div>
 
 				{#if $transcriptHistory.length > 0}
-					<div class="flex flex-wrap gap-2">
+					<div class="flex flex-wrap items-center gap-1">
 						{#if isSupporter}
 							<button
 								type="button"
-								class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
+								class={menuButtonClass}
 								on:click={handleBatchDownload}
-								title="Download all as a ZIP of text files"
 								aria-label="Download all transcripts as a ZIP of text files"
 							>
-								ZIP
+								Export all
 							</button>
 							<button
 								type="button"
-								class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
-								on:click={handleExportMarkdown}
-								title="Export all as one Markdown file"
-								aria-label="Export transcript history as one Markdown file"
+								class={menuButtonClass}
+								on:click={() => (showExportFormats = !showExportFormats)}
+								aria-expanded={showExportFormats}
+								aria-label="Other export formats"
 							>
-								Markdown
-							</button>
-							<button
-								type="button"
-								class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
-								on:click={handleExportJSON}
-								title="Export as JSON"
-								aria-label="Export transcript history as JSON"
-							>
-								JSON
+								<span aria-hidden="true">⋯</span>
 							</button>
 						{/if}
 						<button
 							type="button"
-							class="btn min-h-11 flex-1 border-pink-100 bg-white/75 px-2 text-sm text-gray-700 hover:bg-pink-50 sm:flex-none sm:px-3"
+							class={menuButtonClass}
 							on:click={handleClearAll}
 							aria-label={confirmClearAll
 								? 'Tap again to clear transcript history'
@@ -460,6 +442,16 @@
 							{confirmClearAll ? 'Tap again' : 'Clear'}
 						</button>
 					</div>
+					{#if isSupporter && showExportFormats}
+						<div class="flex flex-wrap gap-2">
+							<button type="button" class={menuButtonClass} on:click={handleExportMarkdown}>
+								One Markdown file
+							</button>
+							<button type="button" class={menuButtonClass} on:click={handleExportJSON}>
+								JSON
+							</button>
+						</div>
+					{/if}
 				{/if}
 			</div>
 		</div>
@@ -501,31 +493,11 @@
 
 		<!-- Content -->
 		<div class="tt-modal-scroll-area min-h-0 flex-1 overflow-y-auto">
-			{#if !isSupporter && $transcriptHistory.length > 0}
-				<!-- Free tier reads everything it keeps — the user's words are never
-				     locked. Supporter adds unlimited retention + vault + batch export. -->
-				<div
-					class="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-pink-100 bg-pink-50/60 px-3 py-2"
-				>
-					<p class="text-xs text-gray-600">
-						Free keeps your latest {HISTORY.FREE_HISTORY_LIMIT} transcripts. Supporters keep everything,
-						plus backup and export.
-					</p>
-					<button
-						type="button"
-						class="btn btn-xs min-h-9 border-pink-200 bg-pink-500 px-3 text-white hover:bg-pink-600"
-						on:click={openSupporterModal}
-					>
-						Keep it all — {PRICING.displayPrice}/year
-					</button>
-				</div>
-			{/if}
 			{#if $transcriptHistory.length === 0}
 				<!-- Empty State -->
 				<div class="py-12 text-center">
 					<p class="mb-2 text-4xl opacity-30" aria-hidden="true">📝</p>
-					<p class="text-sm text-gray-500">No transcripts yet</p>
-					<p class="text-xs text-gray-400">Your saved transcripts will appear here</p>
+					<p class="text-sm text-gray-500">Nothing saved yet</p>
 				</div>
 			{:else if visibleTranscripts.length === 0}
 				<div class="py-12 text-center">
@@ -553,24 +525,14 @@
 										<span class="text-xs font-medium text-gray-500">
 											{formatDate(transcript.timestamp)}
 										</span>
-										{#if transcript.method}
-											<span
-												class="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700"
-											>
-												{formatMethod(transcript.method)}
-											</span>
-										{/if}
 										{#if transcript.promptStyle && transcript.promptStyle !== 'standard'}
 											<span
-												class="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700"
+												class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-medium text-pink-700"
 											>
 												{formatPromptStyle(transcript.promptStyle)}
 											</span>
 										{/if}
 									</div>
-									<p class="text-xs text-gray-400">
-										{transcript.wordCount} words • {transcript.duration}s
-									</p>
 									{#if transcript.tags?.length}
 										<div class="mt-2 flex flex-wrap gap-1.5">
 											{#each cleanTranscriptTags(transcript.tags).slice(0, 5) as tag}
@@ -591,10 +553,9 @@
 									{/if}
 								</div>
 
-								<!-- Actions -->
-								<div
-									class="flex w-full shrink-0 justify-between gap-1 opacity-100 transition-opacity sm:w-auto sm:flex-wrap sm:justify-end sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100"
-								>
+								<!-- Actions. Copy is the whole job 95% of the time; everything
+								     else lives one tap deeper so a long list stays readable. -->
+								<div class="flex shrink-0 items-center gap-1 self-start">
 									{#if editingId !== transcript.id}
 										{#if transcript.audioBlob}
 											<button
@@ -614,61 +575,62 @@
 										{/if}
 										<button
 											type="button"
-											class={iconButtonClass}
-											on:click={() => startEdit(transcript)}
-											title="Edit"
-											aria-label={`Edit transcript from ${formatDate(transcript.timestamp)}`}
-										>
-											<span aria-hidden="true">✏️</span>
-										</button>
-										<button
-											type="button"
-											class={iconButtonClass}
+											class="inline-flex min-h-11 items-center justify-center rounded-full bg-white/70 px-4 text-sm font-bold text-pink-600 ring-1 ring-pink-200 transition hover:bg-pink-50 active:scale-[0.97]"
 											on:click={() => copyTranscript(transcript.text)}
-											title="Copy text"
 											aria-label={`Copy transcript from ${formatDate(transcript.timestamp)}`}
 										>
-											<span aria-hidden="true">📋</span>
-										</button>
-										{#if transcriptionService.isShareSupported()}
-											<button
-												type="button"
-												class={iconButtonClass}
-												on:click={() => shareTranscriptItem(transcript)}
-												title="Share"
-												aria-label={`Share transcript from ${formatDate(transcript.timestamp)}`}
-											>
-												<span aria-hidden="true">📤</span>
-											</button>
-										{/if}
-										<button
-											type="button"
-											class={iconButtonClass}
-											on:click={() => downloadTranscript(transcript)}
-											title="Download"
-											aria-label={`Download transcript from ${formatDate(transcript.timestamp)}`}
-										>
-											<span aria-hidden="true">💾</span>
+											Copy
 										</button>
 										<button
 											type="button"
-											class={`${iconButtonClass} text-amber-700 hover:bg-amber-50`}
-											on:click={() =>
-												pendingDeleteId === transcript.id
-													? confirmDelete(transcript.id)
-													: requestDelete(transcript.id)}
-											title="Remove"
-											aria-label={pendingDeleteId === transcript.id
-												? `Tap again to remove transcript from ${formatDate(transcript.timestamp)}`
-												: `Remove transcript from ${formatDate(transcript.timestamp)}`}
+											class={`${iconButtonClass} ${openMenuId === transcript.id ? 'bg-pink-50 text-pink-700' : ''}`}
+											on:click={() => toggleMenu(transcript.id)}
+											aria-expanded={openMenuId === transcript.id}
+											aria-label={`More actions for transcript from ${formatDate(transcript.timestamp)}`}
 										>
-											<span aria-hidden="true">
-												{pendingDeleteId === transcript.id ? '✓' : '×'}
-											</span>
+											<span aria-hidden="true">⋯</span>
 										</button>
 									{/if}
 								</div>
 							</div>
+
+							{#if openMenuId === transcript.id && editingId !== transcript.id}
+								<div class="mb-2 flex flex-wrap gap-2 border-t border-pink-100 pt-2">
+									<button
+										type="button"
+										class={menuButtonClass}
+										on:click={() => startEdit(transcript)}
+									>
+										Edit
+									</button>
+									{#if transcriptionService.isShareSupported()}
+										<button
+											type="button"
+											class={menuButtonClass}
+											on:click={() => shareTranscriptItem(transcript)}
+										>
+											Share
+										</button>
+									{/if}
+									<button
+										type="button"
+										class={menuButtonClass}
+										on:click={() => downloadTranscript(transcript)}
+									>
+										Download
+									</button>
+									<button
+										type="button"
+										class={`${menuButtonClass} text-pink-700`}
+										on:click={() =>
+											pendingDeleteId === transcript.id
+												? confirmDelete(transcript.id)
+												: requestDelete(transcript.id)}
+									>
+										{pendingDeleteId === transcript.id ? 'Tap again' : 'Remove'}
+									</button>
+								</div>
+							{/if}
 
 							{#if activeAudioId === transcript.id && activeAudioUrl}
 								<div class="mb-2 rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-inner">
@@ -721,7 +683,7 @@
 							{:else}
 								<!-- View Mode -->
 								<div
-									class="history-transcript-frame tt-scrollbar max-h-44 overflow-y-auto rounded-xl border border-pink-50 bg-[#fffdf5]/90 px-3 py-3 shadow-inner sm:max-h-40"
+									class="history-transcript-frame tt-scrollbar max-h-44 overflow-y-auto sm:max-h-40"
 								>
 									<p class="history-transcript-text text-sm text-gray-700">
 										{normalizeTranscriptText(transcript.text)}
@@ -731,6 +693,22 @@
 						</div>
 					{/each}
 				</div>
+
+				{#if !isSupporter}
+					<!-- Free tier reads everything it keeps — the user's words are never
+					     locked. This sits AFTER the list on purpose: the header is for
+					     getting to your transcripts, not for being sold to. -->
+					<p class="mt-4 px-1 text-center text-xs text-gray-400">
+						Keeping your latest {HISTORY.FREE_HISTORY_LIMIT}.
+						<button
+							type="button"
+							class="font-bold text-pink-500 underline decoration-pink-200 underline-offset-2 hover:text-pink-600"
+							on:click={openSupporterModal}
+						>
+							Keep everything for {PRICING.displayPrice}/year
+						</button>
+					</p>
+				{/if}
 			{/if}
 		</div>
 	</div>

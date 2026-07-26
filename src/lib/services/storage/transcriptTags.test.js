@@ -42,3 +42,19 @@ describe('transcriptTags', () => {
 		).toEqual(['client-call', 'very-long-tag-name-past']);
 	});
 });
+
+describe('transcriptTags keyword filler', () => {
+	it('does not invent tags from one-off words in a short transcript', () => {
+		// Every word here is a singleton — the old filler picked whatever sorted
+		// first and stamped four meaningless chips on the row.
+		const tags = generateTranscriptTags('Sparkle style test should show a pink chip.');
+
+		expect(tags).toEqual([]);
+	});
+
+	it('still tags a word the speaker actually repeats', () => {
+		const tags = generateTranscriptTags('Melbourne weather. Melbourne traffic. Melbourne rent.');
+
+		expect(tags).toContain('melbourne');
+	});
+});
