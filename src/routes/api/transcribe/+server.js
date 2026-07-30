@@ -5,6 +5,7 @@ import { enforceRateLimit } from '$lib/server/rateLimiter.js';
 import { transcribeAudio } from '$lib/server/deepgramService.js';
 import { verifySupporterToken } from '$lib/server/supporter/licenseCrypto.js';
 import { ANIMATION, LEGACY_STORAGE_KEYS, PROMPT_STYLES, STORAGE_KEYS } from '$lib/constants';
+import { MAX_CUSTOM_PROMPT_CHARS } from '$lib/prompts';
 
 const DEFAULT_MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 const DEFAULT_FREE_MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
@@ -35,7 +36,6 @@ const TRANSCRIBE_RATE_WINDOW_MS = parseNonNegativeNumber(
 	10 * 60 * 1000
 );
 const TRANSCRIBE_RATE_LIMIT = parseNonNegativeNumber(env.TRANSCRIBE_RATE_LIMIT, 20);
-const MAX_CUSTOM_PROMPT_CHARS = 1200;
 const SUPPORTER_TOKEN_HEADER = 'x-talktype-supporter-token';
 // Every preset style is free. Supporter mode buys ONE thing here: writing your
 // own prompt.

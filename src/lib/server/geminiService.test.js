@@ -9,10 +9,15 @@ import {
 import { GEMINI_GENERATION_CONFIG } from './geminiConfig.js';
 
 describe('Gemini service helpers', () => {
-	it('uses the saved custom prompt when provided', () => {
-		expect(resolveGeminiTranscriptionPrompt('custom', '  rewrite this neatly  ')).toBe(
-			'rewrite this neatly'
-		);
+	it('frames the saved custom prompt instead of handing it over raw', () => {
+		// It used to return the user's text verbatim as the entire prompt, which
+		// inherited no output contract. It is now fenced, with our rules last.
+		const prompt = resolveGeminiTranscriptionPrompt('custom', '  rewrite this neatly  ');
+
+		expect(prompt).toContain('rewrite this neatly');
+		expect(prompt).toContain('--- STYLE INSTRUCTIONS ---');
+		expect(prompt).toMatch(/Output the transcription text and nothing else/);
+		expect(prompt).not.toBe('rewrite this neatly');
 	});
 
 	it('falls back to the standard prompt when custom is empty', () => {

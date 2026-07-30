@@ -1,6 +1,7 @@
 <script>
 	import { customPrompt } from '$lib';
 	import { PROMPT_STYLES } from '$lib/constants';
+	import { MAX_CUSTOM_PROMPT_CHARS } from '$lib/prompts';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
 
 	export let selectedPromptStyle = 'standard';
@@ -9,66 +10,56 @@
 	export let openSupporterModal = () => {};
 
 	let customPromptText = '';
-	let showCustomInput = false;
-	const MAX_CUSTOM_PROMPT_LENGTH = 1200;
 
+	// Three demo styles, not four, and no tile for "Plain" — plain IS no
+	// selection, so a whole panel saying "nothing happens" was dead space and
+	// left the row misaligned with the 3-up Output Mode grid above it.
+	//
+	// The three are deliberately on DIFFERENT axes, because the point of this
+	// row is to make someone realise they could write their own:
+	//   Pirate — funny        (voice)
+	//   Austen — beautiful    (register and craft)
+	//   Code   — useful       (restructures rambling into a usable prompt)
+	// Three joke voices would only ever demonstrate jokes.
 	const styleOptions = [
-		{
-			id: PROMPT_STYLES.STANDARD,
-			label: 'Plain',
-			requiresSupporter: false
-		},
-		{
-			id: PROMPT_STYLES.SURLY_PIRATE,
-			label: 'Pirate',
-			requiresSupporter: false
-		},
-		{
-			id: PROMPT_STYLES.CUSTOM,
-			label: 'Custom',
-			requiresSupporter: true
-		},
-		{
-			id: PROMPT_STYLES.SPARKLE_POP,
-			label: 'Sparkle',
-			requiresSupporter: false
-		}
+		{ id: PROMPT_STYLES.SURLY_PIRATE, label: 'Pirate' },
+		{ id: PROMPT_STYLES.QUILL_AND_INK, label: 'Austen' },
+		{ id: PROMPT_STYLES.CODE_WHISPERER, label: 'Code' }
 	];
 
 	const styleIcons = {
-		[PROMPT_STYLES.STANDARD]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-500">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-		</svg>`,
 		[PROMPT_STYLES.SURLY_PIRATE]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-amber-500">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
 		</svg>`,
-		[PROMPT_STYLES.CUSTOM]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-emerald-500">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+		[PROMPT_STYLES.QUILL_AND_INK]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-violet-500">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
 		</svg>`,
-		[PROMPT_STYLES.SPARKLE_POP]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-400">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4M4 19h4m12-12v4m-2-2h4m-5 12v4m-2-2h4" />
+		[PROMPT_STYLES.CODE_WHISPERER]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-emerald-500">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
 		</svg>`
 	};
 
-	$: availableStyleIds = styleOptions.map((style) => style.id);
+	// Anyone carrying a retired style in localStorage (Sparkle, l33t) lands back
+	// on plain rather than on a tile that no longer exists.
+	const validStyleIds = [
+		PROMPT_STYLES.STANDARD,
+		PROMPT_STYLES.CUSTOM,
+		...styleOptions.map((s) => s.id)
+	];
+
+	$: if (!validStyleIds.includes(selectedPromptStyle)) {
+		changePromptStyle(PROMPT_STYLES.STANDARD);
+	}
+
 	$: if ($customPrompt && customPromptText !== $customPrompt) customPromptText = $customPrompt;
 
-	$: if (!availableStyleIds.includes(selectedPromptStyle)) {
+	$: if (!isSupporter && selectedPromptStyle === PROMPT_STYLES.CUSTOM) {
 		changePromptStyle(PROMPT_STYLES.STANDARD);
 	}
 
-	$: if (
-		!isSupporter &&
-		styleOptions.find((s) => s.id === selectedPromptStyle)?.requiresSupporter
-	) {
-		changePromptStyle(PROMPT_STYLES.STANDARD);
-	}
-
-	$: showCustomInput = selectedPromptStyle === PROMPT_STYLES.CUSTOM && isSupporter;
-
-	function isStyleLocked(style) {
-		return style.requiresSupporter && !isSupporter;
-	}
+	$: isCustomOn = selectedPromptStyle === PROMPT_STYLES.CUSTOM;
+	$: showCustomInput = isCustomOn && isSupporter;
+	$: customRemaining = MAX_CUSTOM_PROMPT_CHARS - customPromptText.length;
 
 	function showToast(message) {
 		if (typeof window === 'undefined') return;
@@ -81,26 +72,27 @@
 	}
 
 	function handleStyleClick(style) {
-		if (isStyleLocked(style)) {
+		// Tapping the active tile turns it off — plain is the absence of a choice.
+		const nextStyle = selectedPromptStyle === style.id ? PROMPT_STYLES.STANDARD : style.id;
+
+		soundService.select();
+		changePromptStyle(nextStyle);
+	}
+
+	function handleCustomClick() {
+		if (!isSupporter) {
 			soundService.locked();
 			showToast('Supporter only');
 			openSupporterModal();
 			return;
 		}
 
-		const nextStyle =
-			selectedPromptStyle === style.id && style.id !== PROMPT_STYLES.STANDARD
-				? PROMPT_STYLES.STANDARD
-				: style.id;
-
 		soundService.select();
-		changePromptStyle(nextStyle);
+		changePromptStyle(isCustomOn ? PROMPT_STYLES.STANDARD : PROMPT_STYLES.CUSTOM);
 	}
 
 	function saveCustomPrompt() {
-		const prompt = customPromptText.trim().slice(0, MAX_CUSTOM_PROMPT_LENGTH);
-
-		customPrompt.set(prompt);
+		customPrompt.set(customPromptText.trim().slice(0, MAX_CUSTOM_PROMPT_CHARS));
 	}
 
 	function handleKeydown(event) {
@@ -111,8 +103,8 @@
 	}
 </script>
 
-<div role="group" aria-label="Transcription style">
-	<div class="grid grid-cols-4 gap-2">
+<div role="group" aria-label="Transcription style" class="space-y-2">
+	<div class="grid grid-cols-3 gap-2">
 		{#each styleOptions as style}
 			<button
 				type="button"
@@ -120,13 +112,11 @@
 					selectedPromptStyle === style.id
 						? 'selected-style border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
 						: 'border-pink-100'
-				} ${isStyleLocked(style) ? 'locked-style' : ''}`}
+				}`}
 				on:click={() => handleStyleClick(style)}
-				aria-label={isStyleLocked(style)
-					? `${style.label} requires supporter mode`
-					: `Choose ${style.label} style`}
+				aria-label={`Choose ${style.label} style`}
 				aria-pressed={selectedPromptStyle === style.id}
-				title={isStyleLocked(style) ? 'Supporter' : style.label}
+				title={style.label}
 			>
 				<div class="mb-1 flex h-7 w-7 items-center justify-center">
 					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -142,31 +132,59 @@
 					>
 						✓
 					</div>
-				{:else if isStyleLocked(style)}
-					<div
-						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-xs text-white shadow-sm"
-						title="Supporter"
-						aria-hidden="true"
-					>
-						★
-					</div>
 				{/if}
 			</button>
 		{/each}
 	</div>
 
+	<!-- Custom gets its own row rather than a fourth tile. It isn't a peer of the
+	     presets — it's the door the presets are advertising — and the row idiom
+	     matches Your Words and Auto Start further down the modal. -->
+	<button
+		type="button"
+		class={`setting-row flex min-h-12 w-full items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition-all duration-200 ${
+			isCustomOn
+				? 'border-pink-300 bg-pink-50 text-gray-900 ring-2 ring-pink-100'
+				: 'border-pink-100 bg-[#fffdf5] text-gray-700 hover:border-pink-200 hover:bg-pink-50/70'
+		}`}
+		aria-pressed={isCustomOn}
+		aria-label={isSupporter
+			? 'Write your own output style'
+			: 'Writing your own style requires supporter mode'}
+		on:click={handleCustomClick}
+	>
+		<span class="flex items-center gap-3">
+			<span class="block text-sm font-black">Write your own</span>
+		</span>
+		{#if !isSupporter}
+			<span
+				class="shrink-0 rounded-full border border-amber-200 bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900"
+			>
+				Unlock
+			</span>
+		{:else}
+			<span
+				class="text-pink-300 transition-transform duration-200 {isCustomOn ? 'rotate-90' : ''}"
+				aria-hidden="true">▸</span
+			>
+		{/if}
+	</button>
+
 	{#if showCustomInput}
-		<div class="animate-in slide-in-from-top-2 mt-3 space-y-2 duration-200">
+		<div class="animate-in slide-in-from-top-2 space-y-1 px-1 duration-200">
 			<textarea
 				bind:value={customPromptText}
 				on:keydown={handleKeydown}
 				on:blur={saveCustomPrompt}
-				placeholder="Instructions"
-				maxlength={MAX_CUSTOM_PROMPT_LENGTH}
-				class="w-full rounded-lg border border-pink-200 bg-white p-3 text-sm focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
+				placeholder="Describe how you want it to read. Try: like a nature documentary narrator."
+				maxlength={MAX_CUSTOM_PROMPT_CHARS}
+				class="w-full rounded-lg border border-pink-200 bg-[#fffdf5] p-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
 				rows="3"
 				aria-label="Custom transcription instructions"
 			></textarea>
+			<p class="text-right text-[11px] text-gray-400" aria-live="polite">
+				{customRemaining} left
+			</p>
 		</div>
 	{/if}
 </div>
@@ -178,8 +196,8 @@
 			0 4px 8px rgba(249, 168, 212, 0.2);
 	}
 
-	.locked-style {
-		opacity: 0.86;
+	.setting-row {
+		contain: content;
 	}
 
 	textarea {

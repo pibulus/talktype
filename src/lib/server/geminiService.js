@@ -1,5 +1,5 @@
 import { GoogleGenAI, createPartFromUri, createUserContent } from '@google/genai';
-import { getTranscriptionPrompt } from '$lib/prompts';
+import { buildCustomPrompt, getTranscriptionPrompt } from '$lib/prompts';
 import {
 	GEMINI_MODELS,
 	GEMINI_GENERATION_CONFIG,
@@ -30,8 +30,9 @@ export function resolveGeminiTranscriptionPrompt(promptStyle, customPromptText =
 		return getTranscriptionPrompt(promptStyle);
 	}
 
-	const customPrompt = customPromptText.trim();
-	return customPrompt || getTranscriptionPrompt('standard');
+	// Framed, fenced, sanitized, and the output contract appended last — a
+	// custom style used to replace this prompt outright and inherited none of it.
+	return buildCustomPrompt(customPromptText);
 }
 
 export function buildGeminiTranscriptionRequest({
