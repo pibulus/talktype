@@ -7,6 +7,7 @@ import { writable, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import { STORAGE_KEYS, HISTORY } from '$lib/constants';
 import { userPreferences } from '$lib/services/infrastructure/stores';
+import { ensureDurableStorage } from './durableStorage.js';
 import { createLogger } from '$lib/utils/logger';
 import {
 	cleanTranscriptTags,
@@ -247,6 +248,11 @@ export async function saveTranscript(transcript) {
 			request.onsuccess = async () => {
 				const savedId = request.result;
 				log.log('Transcript saved:', request.result);
+				// There is now a transcript worth keeping, so this is the moment to
+				// ask the browser not to evict it. Fire-and-forget, at most once per
+				// browser — asking on page load would prompt about protecting data
+				// that doesn't exist yet.
+				void ensureDurableStorage();
 				try {
 					await transactionComplete;
 					markHistoryChangedAt();

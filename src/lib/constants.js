@@ -22,6 +22,9 @@ export const STORAGE_KEYS = {
 	// Application Settings
 	THEME: 'talktype-vibe',
 	FIRST_VISIT: 'hasSeenTalkTypeIntro',
+	// Remembers we already asked for durable storage, so someone who declined
+	// Firefox's prompt isn't asked again on every save.
+	DURABLE_STORAGE_ASKED: 'talktype-durable-storage-asked',
 	AUTO_RECORD: 'talktype_auto_record',
 	PROMPT_STYLE: 'talktype-prompt-style',
 	CUSTOM_PROMPT: 'talktype_custom_prompt',
