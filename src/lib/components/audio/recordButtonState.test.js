@@ -51,3 +51,50 @@ describe('record button state', () => {
 		expect(state.progressPercentage).toBe(0);
 	});
 });
+
+// The label shown ON the button while recording. Replaced the word "All done"
+// (2026-07-31) after a user read it, next to a filling bar, as a countdown to a
+// deadline they hadn't been told about. Counting up reads as a tally instead,
+// and doubles as the "how long did I speak for?" figure they asked for.
+// This mirrors the derivation in RecordButtonWithTimer.svelte — if that changes,
+// change this with it.
+const recordingLabelFor = (state) =>
+	state.isWarning ? `${state.remainingLabel} left` : state.elapsedLabel;
+
+describe('recording button label', () => {
+	it('counts elapsed time up while there is plenty left', () => {
+		const state = getRecordButtonState({
+			recording: true,
+			recordingDuration: 42,
+			maxDuration: 300,
+			warningThreshold: 60
+		});
+
+		expect(recordingLabelFor(state)).toBe('0:42');
+		expect(state.isWarning).toBe(false);
+	});
+
+	it('switches to remaining time only once the warning window opens', () => {
+		const state = getRecordButtonState({
+			recording: true,
+			recordingDuration: 250,
+			maxDuration: 300,
+			warningThreshold: 60
+		});
+
+		expect(state.isWarning).toBe(true);
+		expect(recordingLabelFor(state)).toBe('0:50 left');
+	});
+
+	it('never shows a bare countdown early in a long recording', () => {
+		for (const seconds of [0, 5, 30, 120, 200]) {
+			const state = getRecordButtonState({
+				recording: true,
+				recordingDuration: seconds,
+				maxDuration: 300,
+				warningThreshold: 60
+			});
+			expect(recordingLabelFor(state)).not.toContain('left');
+		}
+	});
+});

@@ -153,6 +153,14 @@ export const hasPermissionError = derived(
 
 export const recordingDuration = derived(recordingState, ($state) => $state.duration);
 
+// How long the last finished recording ran, in seconds. recordingDuration above
+// resets when the next recording starts, so it can't answer "how long did I just
+// speak for?" once transcription completes — which is the question a user asked
+// us directly (2026-07-31: "I need the app to record how long I speak for as
+// well as convert to text", after resorting to a second voice app for it).
+// stopRecording already computes this figure for analytics; this keeps it.
+export const lastRecordingDuration = writable(0);
+
 export const errorMessage = derived(uiState, ($state) => $state.errorMessage);
 
 // null is a meaningful value here: the analyser is blind (suspended

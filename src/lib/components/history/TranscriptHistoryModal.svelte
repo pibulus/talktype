@@ -17,6 +17,7 @@
 		cleanTranscriptTags,
 		getTranscriptTagPool
 	} from '$lib/services/storage/transcriptTags.js';
+	import { formatDuration } from '$lib/components/audio/recordButtonState.js';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
 	import { typewriterSoundService } from '$lib/services/infrastructure/typewriterSoundService.js';
 	import { transcriptionService } from '$lib/services/transcription/transcriptionService.js';
@@ -525,6 +526,17 @@
 										<span class="text-xs font-medium text-gray-500">
 											{formatDate(transcript.timestamp)}
 										</span>
+										<!-- Guarded on > 0: entries saved before 2026-07-31 have no
+										     duration, because nothing ever filled the field. Showing
+										     "0:00" on old clips would look like a bug. -->
+										{#if transcript.duration > 0}
+											<span
+												class="text-xs font-medium tabular-nums text-gray-400"
+												title="How long this recording ran"
+											>
+												{formatDuration(transcript.duration)}
+											</span>
+										{/if}
 										{#if transcript.promptStyle && transcript.promptStyle !== 'standard'}
 											<span
 												class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-medium text-pink-700"

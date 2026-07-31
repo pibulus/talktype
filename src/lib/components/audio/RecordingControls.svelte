@@ -30,8 +30,10 @@
 	let recordingControlsService;
 	let currentCta = CTA_PHRASES[0];
 
-	// Reactive button label computation
-	$: buttonLabel = $isRecording ? 'All done' : currentCta;
+	// Only the idle CTA now. The recording-time readout that replaced "All done"
+	// is computed inside RecordButtonWithTimer, which already has the elapsed
+	// and remaining figures — no need to thread them back out to here.
+	$: buttonLabel = currentCta;
 
 	// On short desktop viewports the hero (ghost + title + button) fills the
 	// screen and the waveform card lands below the fold — the user gets zero

@@ -51,6 +51,20 @@
 		warningThreshold,
 		dangerThreshold
 	});
+	// While recording, the button used to read "All done" over a filling bar.
+	// A user reported that combination "made me feel fear that I had a time
+	// limit" — a word that sounds like an ending, sitting on a bar racing to
+	// fill. The same person separately asked for the app to tell them how long
+	// they'd spoken, and used a second app to get it.
+	//
+	// One change answers both: count UP. Elapsed time accumulates rather than
+	// runs out, so it reads as a tally instead of a countdown, and it is the
+	// number they wanted. Remaining time only appears once it genuinely matters
+	// — inside the warning window — where urgency is the honest signal.
+	$: recordingLabel = buttonState.isWarning
+		? `${buttonState.remainingLabel} left`
+		: buttonState.elapsedLabel;
+	$: displayLabel = recording ? recordingLabel : buttonLabel;
 	$: showClipboardSuccess = clipboardSuccess && !recording;
 	$: showOfflineNotice = Boolean(offlineNotice?.text) && !recording && !transcribing;
 	$: showAmbientPulse = !recording && !showClipboardSuccess;
@@ -201,7 +215,7 @@
 							: ''}"
 						style="font-size: clamp(1rem, 0.5vw + 0.9rem, 1.25rem); letter-spacing: 0;"
 					>
-						{buttonLabel}
+						{displayLabel}
 					</span>
 				</span>
 			</span>

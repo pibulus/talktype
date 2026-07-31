@@ -10,7 +10,8 @@ import {
 	audioState,
 	recordingState,
 	transcriptionState,
-	transcriptionActions
+	transcriptionActions,
+	lastRecordingDuration
 } from '../infrastructure/stores';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
@@ -186,6 +187,9 @@ export class RecordingControlsService {
 			// Validate duration
 			const estimatedDurationSeconds = estimateDurationSecondsFromBlob(audioBlob);
 			const durationSeconds = get(recordingState).duration || estimatedDurationSeconds;
+			// Keep it. This figure was computed for analytics and then dropped on
+			// the floor, which is why history could never show how long a clip ran.
+			lastRecordingDuration.set(durationSeconds);
 			analytics.recordingStopped({
 				mode: recordingMode,
 				durationSeconds,

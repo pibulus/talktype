@@ -17,6 +17,8 @@
 	import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
 	import { STORAGE_KEYS } from '$lib/constants';
 	import { uiActions } from '$lib/services';
+	import { lastRecordingDuration } from '$lib/services/infrastructure/stores';
+	import { formatDuration } from '$lib/components/audio/recordButtonState.js';
 	import { analytics } from '$lib/services/analytics.js';
 
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
@@ -144,7 +146,10 @@
 		return {
 			text,
 			audioBlob: transcript?.audioBlob || null,
-			duration: transcript?.duration || 0,
+			// Falls back to the figure stopRecording captured. transcriptStorage has
+			// always had a duration field, but nothing ever filled it, so every
+			// history entry recorded 0 seconds.
+			duration: transcript?.duration || get(lastRecordingDuration) || 0,
 			promptStyle: transcript?.promptStyle || 'standard',
 			method: transcript?.method || 'gemini'
 		};
@@ -169,6 +174,22 @@
 				await saveTranscriptToHistory(transcript);
 			} catch (err) {
 				console.error('Failed to save transcript:', err);
+			}
+
+			// Acknowledge the capture and name its length. The button has already
+			// reset to its idle CTA by now, so without this the recording just
+			// quietly vanishes into history and the elapsed time you were watching
+			// is gone — which is exactly the gap that sent a user to a second
+			// voice-recorder app to find out how long they'd spoken.
+			if (transcript.duration > 0) {
+				window.dispatchEvent(
+					new CustomEvent('talktype:toast', {
+						detail: {
+							type: 'success',
+							message: `Captured ${formatDuration(transcript.duration)}`
+						}
+					})
+				);
 			}
 		}
 
