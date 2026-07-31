@@ -6,7 +6,11 @@ export const DEFAULT_SEO = {
 	description:
 		'TalkType is a fast, free voice-to-text app for dictation, live transcription, and private offline speech recognition. Tap the ghost, speak, and get editable text.',
 	image: '/og-image.png',
-	imageAlt: 'TalkType pink ghost mascot with the words voice-to-text that does not suck.',
+	// Describes og-image.png as it actually is. The previous wording ended
+	// "...with the words voice-to-text that does not suck", which stopped being
+	// true on 2026-07-31 when the card became mascot-only — alt text has to
+	// track the art, or a screen reader is told about words that aren't there.
+	imageAlt: "TalkType's pink and orange ghost mascot on a warm cream background.",
 	locale: 'en_US',
 	type: 'website'
 };

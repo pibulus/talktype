@@ -6,6 +6,12 @@ import daisyui from 'daisyui';
 
 /** @type {import('tailwindcss').Config} */
 export default {
+  // Touch devices fire :hover on tap and hold it until you tap elsewhere,
+  // leaving buttons stuck in their hover state. Gates every hover: utility
+  // behind (hover: hover).
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
 	content: ['./src/**/*.{html,js,svelte,ts}'],
 	theme: {
 		extend: {
