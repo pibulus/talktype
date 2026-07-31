@@ -1,3 +1,5 @@
+import { getUnsupportedBrowserMessage, isRecordingUnsupported } from './inAppBrowser.js';
+
 export function isPermissionError(error) {
 	const rawError = typeof error === 'string' ? error : '';
 	const name = error?.name?.toString().toLowerCase() || '';
@@ -19,6 +21,16 @@ export function isPermissionError(error) {
  * Falls back to permission copy for permission-shaped errors, then generic.
  */
 export function getMicErrorMessage(error) {
+	// Checked FIRST, before the switch. audioService throws a bare
+	// Error('MediaDevices API not available') here, which has no .name and no
+	// permission-shaped words, so it used to land on "Recording needs one more
+	// try." — sending people to retry something that cannot ever succeed in
+	// this browser. Real feedback (2026-07-31): a user opened a link from
+	// Messenger, pressed record, got nothing, and concluded the app was broken.
+	if (isRecordingUnsupported()) {
+		return getUnsupportedBrowserMessage();
+	}
+
 	switch (error?.name) {
 		case 'NotAllowedError':
 		case 'SecurityError':
