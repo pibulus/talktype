@@ -1,7 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { theme, autoRecord, applyTheme, promptStyle, liveMode, privacyMode } from '$lib';
+	import { theme, applyTheme, promptStyle, liveMode, privacyMode } from '$lib';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import { formatStorageBytes } from '$lib/services/transcription/whisper/statusUtils.js';
@@ -11,13 +11,11 @@
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { ANIMATION, DEFAULT_THEME, SERVICE_EVENTS } from '$lib/constants';
-	import { soundService } from '$lib/services/infrastructure/soundService.js';
 
 	export let closeModal = () => {};
 
 	// State management
 	let selectedVibe;
-	let autoRecordValue = false;
 	let selectedPromptStyle = 'standard';
 	let privacyModeValue = false;
 	let liveModeValue = false;
@@ -29,23 +27,10 @@
 
 	// Store unsubscribe functions
 	let unsubscribeTheme;
-	let unsubscribeAutoRecord;
 	let unsubscribePromptStyle;
 	let unsubscribeLiveMode;
 	let unsubscribePrivacyMode;
 	let unsubscribeUserPreferences;
-
-	// Auto Start cannot work in a mobile browser tab — the mic needs a user
-	// gesture, so the toggle would promise something it can never deliver.
-	// Desktop and installed PWAs can honour it.
-	let canAutoStart = false;
-	onMount(() => {
-		const standalone =
-			window.matchMedia?.('(display-mode: standalone)').matches === true ||
-			navigator.standalone === true;
-		const desktop = window.matchMedia?.('(pointer: fine)').matches === true;
-		canAutoStart = standalone || desktop;
-	});
 
 	function isEnabled(value) {
 		return value === true || value === 'true';
@@ -84,10 +69,6 @@
 			selectedVibe = value;
 		});
 
-		unsubscribeAutoRecord = autoRecord.subscribe((value) => {
-			autoRecordValue = isEnabled(value);
-		});
-
 		unsubscribePromptStyle = promptStyle.subscribe((value) => {
 			selectedPromptStyle = value;
 		});
@@ -109,7 +90,6 @@
 	onDestroy(() => {
 		// Clean up subscriptions
 		if (unsubscribeTheme) unsubscribeTheme();
-		if (unsubscribeAutoRecord) unsubscribeAutoRecord();
 		if (unsubscribePromptStyle) unsubscribePromptStyle();
 		if (unsubscribeLiveMode) unsubscribeLiveMode();
 		if (unsubscribePrivacyMode) unsubscribePrivacyMode();
@@ -137,19 +117,6 @@
 			window.dispatchEvent(
 				new CustomEvent('talktype-setting-changed', {
 					detail: { setting: 'promptStyle', value: style }
-				})
-			);
-		}
-	}
-
-	function toggleAutoRecord() {
-		soundService.select();
-		autoRecordValue = !autoRecordValue;
-		autoRecord.set(autoRecordValue.toString());
-		if (browser) {
-			window.dispatchEvent(
-				new CustomEvent('talktype-setting-changed', {
-					detail: { setting: 'autoRecord', value: autoRecordValue }
 				})
 			);
 		}
@@ -285,7 +252,7 @@
 						: 'border-pink-100 bg-white/75 text-gray-700 hover:border-pink-200 hover:bg-pink-50/70'
 				}`}
 				aria-pressed={transcriptionMode === 'offline'}
-				aria-label={`${transcriptionMode === 'offline' ? 'Disable' : 'Enable'} offline mode`}
+				aria-label={`${transcriptionMode === 'offline' ? 'Disable' : 'Enable'} on-device transcription`}
 				on:click={toggleOffline}
 			>
 				<span class="flex items-center gap-3">
@@ -293,55 +260,32 @@
 						class="auto-start-glyph {transcriptionMode === 'offline' ? 'is-on' : ''}"
 						aria-hidden="true"><span></span></span
 					>
-					<span class="block text-sm font-black">Offline</span>
-					{#if offlineButtonStatus?.visible && transcriptionMode === 'offline'}
-						<span class="text-[11px] font-bold text-pink-600">{offlineStatusLabel}</span>
-					{/if}
+					<span class="block">
+						<span class="block text-sm font-black leading-tight">On device</span>
+						<span class="block text-[11px] font-bold leading-tight text-gray-500">
+							{#if offlineButtonStatus?.visible && transcriptionMode === 'offline'}
+								{offlineStatusLabel}
+							{:else}
+								Private. No signal needed.
+							{/if}
+						</span>
+					</span>
 				</span>
 				<span class="sr-only">{transcriptionMode === 'offline' ? 'On' : 'Off'}</span>
 			</button>
 
-			{#if canAutoStart}{/if}
-
+			<!-- Wears the intro modal's "Let's go" gradient on purpose: that's the
+			     button everybody already tapped, so this reads as the same
+			     invitation instead of a new kind of ask. -->
 			<button
 				type="button"
-				class={`setting-row flex min-h-12 w-full items-center gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition-all duration-200 ${
-					autoRecordValue
-						? 'border-pink-300 bg-pink-50 text-gray-900 ring-2 ring-pink-100'
-						: 'border-pink-100 bg-white/75 text-gray-700 hover:border-pink-200 hover:bg-pink-50/70'
-				}`}
-				aria-pressed={autoRecordValue}
-				aria-label={`${autoRecordValue ? 'Disable' : 'Enable'} start recording on open`}
-				on:click={toggleAutoRecord}
-			>
-				<span class="flex items-center gap-3">
-					<span class="auto-start-glyph {autoRecordValue ? 'is-on' : ''}" aria-hidden="true">
-						<span></span>
-					</span>
-					<span class="block text-sm font-black">Auto Start</span>
-				</span>
-				<span class="sr-only">{autoRecordValue ? 'On' : 'Off'}</span>
-			</button>
-
-			<!-- The one button in here that should feel like a treat: full brand pink,
-			     squishy, and it names what you actually get instead of just "Unlock". -->
-			<button
-				type="button"
-				class="supporter-row group flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left"
-				title="Supporter unlocks the rainbow vibe, longer notes, local history and downloads"
+				class="supporter-row group flex w-full items-center justify-center gap-2.5 rounded-full px-6 py-3"
+				title="Rainbow vibe, your own output style, longer notes, history and downloads"
 				on:click={() => openSupporterModal('settings')}
 			>
-				<span class="flex items-center gap-3">
-					<span class="supporter-glyph" aria-hidden="true"></span>
-					<span class="block">
-						<span class="block text-sm font-black leading-tight">Supporter</span>
-						<span class="block text-[11px] font-bold leading-tight opacity-90">
-							Rainbow vibe · longer notes · history
-						</span>
-					</span>
-				</span>
-				<span class="supporter-pill shrink-0 rounded-full px-3 py-1 text-xs font-black">
-					{isSupporterValue ? 'Open' : 'Unlock'}
+				<span class="text-base" aria-hidden="true">✦</span>
+				<span class="text-base font-black tracking-tight">
+					{isSupporterValue ? 'Supporter mode' : 'Become a Supporter'}
 				</span>
 			</button>
 		</div>
@@ -357,27 +301,22 @@
 </dialog>
 
 <style>
-	/* Brand pink, the one the mascot wears. Squish matches the family X-button
-	   curve so it feels like the same hand made it. */
+	/* Same gradient as the intro modal's "Let's go" — one yummy button language. */
 	.supporter-row {
-		background: linear-gradient(135deg, #ff7bab, #ff5c9f);
-		border: 1px solid rgba(255, 92, 159, 0.55);
+		background: linear-gradient(90deg, #fbbf24, #f472b6 55%, #ec4899);
 		color: #fffdf5;
-		box-shadow: 0 10px 22px rgba(255, 92, 159, 0.22);
+		border: 0;
+		box-shadow: 0 10px 22px rgba(249, 168, 212, 0.5);
 		transition:
-			transform 0.22s linear(0, 0.5 15%, 1.15 40%, 0.97 65%, 1),
-			box-shadow 0.2s ease;
+			transform 0.15s ease,
+			box-shadow 0.15s ease;
 	}
 	.supporter-row:hover {
 		transform: scale(1.02);
-		box-shadow: 0 14px 28px rgba(255, 92, 159, 0.3);
+		box-shadow: 0 14px 30px rgba(249, 168, 212, 0.7);
 	}
 	.supporter-row:active {
-		transform: scale(0.96);
-	}
-	.supporter-pill {
-		background: rgba(255, 253, 245, 0.95);
-		color: #c2185b;
+		transform: scale(0.97);
 	}
 
 	.auto-start-glyph,
