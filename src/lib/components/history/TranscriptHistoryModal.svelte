@@ -180,8 +180,6 @@
 		saveBlob(blob, `transcript-${new Date(transcript.timestamp).toISOString().slice(0, 10)}.txt`);
 	}
 
-	// The recording itself is the user's — hand it back on request, both raw
-	// and through the 80/20 mastering pass (audioPolish).
 	function audioExt(type) {
 		if (!type) return 'webm';
 		if (type.includes('mp4')) return 'm4a';
@@ -190,7 +188,7 @@
 		return 'webm';
 	}
 
-	// "talk aug 7 2.30pm.webm" — a note from a day, not a database row.
+	// "talk-aug7-230pm" — friendly but shell-safe: no spaces, no stray dots.
 	function audioStamp(transcript) {
 		const d = new Date(transcript.timestamp);
 		const mon = d.toLocaleString('en-US', { month: 'short' }).toLowerCase();
@@ -198,27 +196,25 @@
 		const ampm = h >= 12 ? 'pm' : 'am';
 		h = h % 12 || 12;
 		const min = String(d.getMinutes()).padStart(2, '0');
-		return `${mon} ${d.getDate()} ${h}.${min}${ampm}`;
+		return `${mon}${d.getDate()}-${h}${min}${ampm}`;
 	}
 
-	function downloadAudio(transcript) {
-		saveBlob(
-			transcript.audioBlob,
-			`talk ${audioStamp(transcript)}.${audioExt(transcript.audioBlob.type)}`
-		);
-	}
-
-	async function downloadPolishedAudio(transcript) {
+	// One button, no decisions: "Save audio" quietly runs the 80/20 mastering
+	// pass (audioPolish) and hands back a clean WAV. People don't need to know
+	// there was ever a rough version. If the render fails, the original goes
+	// out instead — polish never stands between someone and their recording.
+	async function downloadAudio(transcript) {
 		if (polishingId) return;
 		polishingId = transcript.id;
 		try {
 			const wav = await polishAudioBlob(transcript.audioBlob);
-			saveBlob(wav, `talk ${audioStamp(transcript)} polished.wav`);
+			saveBlob(wav, `talk-${audioStamp(transcript)}.wav`);
 		} catch (err) {
-			// Polish should never stand between someone and their recording —
-			// if the render fails, hand back the original.
 			console.error('Audio polish failed, downloading original:', err);
-			downloadAudio(transcript);
+			saveBlob(
+				transcript.audioBlob,
+				`talk-${audioStamp(transcript)}.${audioExt(transcript.audioBlob.type)}`
+			);
 		} finally {
 			polishingId = null;
 		}
@@ -688,17 +684,10 @@
 										<button
 											type="button"
 											class={menuButtonClass}
+											disabled={polishingId === transcript.id}
 											on:click={() => downloadAudio(transcript)}
 										>
-											Save audio
-										</button>
-										<button
-											type="button"
-											class={menuButtonClass}
-											disabled={polishingId === transcript.id}
-											on:click={() => downloadPolishedAudio(transcript)}
-										>
-											{polishingId === transcript.id ? 'Polishing…' : 'Save polished'}
+											{polishingId === transcript.id ? 'Saving…' : 'Save audio'}
 										</button>
 									{/if}
 									<button
