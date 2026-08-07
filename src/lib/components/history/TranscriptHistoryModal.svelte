@@ -18,6 +18,7 @@
 		getTranscriptTagPool
 	} from '$lib/services/storage/transcriptTags.js';
 	import { formatDuration } from '$lib/components/audio/recordButtonState.js';
+	import { polishAudioBlob } from '$lib/services/audio/audioPolish.js';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
 	import { typewriterSoundService } from '$lib/services/infrastructure/typewriterSoundService.js';
 	import { transcriptionService } from '$lib/services/transcription/transcriptionService.js';
@@ -48,6 +49,7 @@
 	}
 
 	let confirmClearAll = false;
+	let polishingId = null;
 	let pendingDeleteId = null;
 	let editingId = null;
 	let editText = '';
@@ -161,17 +163,62 @@
 		await transcriptionService.shareTranscript(text);
 	}
 
-	// Download single transcript as text file
-	function downloadTranscript(transcript) {
-		const blob = new Blob([normalizeTranscriptText(transcript.text)], { type: 'text/plain' });
+	function saveBlob(blob, filename) {
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `transcript-${new Date(transcript.timestamp).toISOString().slice(0, 10)}.txt`;
+		a.download = filename;
 		document.body.appendChild(a);
 		a.click();
 		document.body.removeChild(a);
 		URL.revokeObjectURL(url);
+	}
+
+	// Download single transcript as text file
+	function downloadTranscript(transcript) {
+		const blob = new Blob([normalizeTranscriptText(transcript.text)], { type: 'text/plain' });
+		saveBlob(blob, `transcript-${new Date(transcript.timestamp).toISOString().slice(0, 10)}.txt`);
+	}
+
+	// The recording itself is the user's — hand it back on request, both raw
+	// and through the 80/20 mastering pass (audioPolish).
+	function audioExt(type) {
+		if (!type) return 'webm';
+		if (type.includes('mp4')) return 'm4a';
+		if (type.includes('ogg')) return 'ogg';
+		if (type.includes('wav')) return 'wav';
+		return 'webm';
+	}
+
+	function audioStamp(transcript) {
+		return new Date(transcript.timestamp)
+			.toISOString()
+			.slice(0, 16)
+			.replace('T', '-')
+			.replace(':', '');
+	}
+
+	function downloadAudio(transcript) {
+		saveBlob(
+			transcript.audioBlob,
+			`talktype-${audioStamp(transcript)}.${audioExt(transcript.audioBlob.type)}`
+		);
+	}
+
+	async function downloadPolishedAudio(transcript) {
+		if (polishingId) return;
+		polishingId = transcript.id;
+		try {
+			const wav = await polishAudioBlob(transcript.audioBlob);
+			saveBlob(wav, `talktype-${audioStamp(transcript)}-polished.wav`);
+		} catch (err) {
+			// Polish should never stand between someone and their recording —
+			// if the render fails, hand back the original.
+			console.error('Audio polish failed, downloading original:', err);
+			downloadAudio(transcript);
+		} finally {
+			polishingId = null;
+		}
 	}
 
 	// Start editing a transcript
@@ -499,6 +546,9 @@
 				<div class="py-12 text-center">
 					<p class="mb-2 text-4xl opacity-30" aria-hidden="true">📝</p>
 					<p class="text-sm text-gray-500">Nothing saved yet</p>
+					<p class="mt-1 text-xs text-gray-400">
+						Transcripts and audio will save here — on this device only.
+					</p>
 				</div>
 			{:else if visibleTranscripts.length === 0}
 				<div class="py-12 text-center">
@@ -631,6 +681,23 @@
 									>
 										Download
 									</button>
+									{#if transcript.audioBlob}
+										<button
+											type="button"
+											class={menuButtonClass}
+											on:click={() => downloadAudio(transcript)}
+										>
+											Save audio
+										</button>
+										<button
+											type="button"
+											class={menuButtonClass}
+											disabled={polishingId === transcript.id}
+											on:click={() => downloadPolishedAudio(transcript)}
+										>
+											{polishingId === transcript.id ? 'Polishing…' : 'Save polished'}
+										</button>
+									{/if}
 									<button
 										type="button"
 										class={`${menuButtonClass} text-pink-700`}
@@ -711,7 +778,9 @@
 					     locked. This sits AFTER the list on purpose: the header is for
 					     getting to your transcripts, not for being sold to. -->
 					<p class="mt-4 px-1 text-center text-xs text-gray-400">
-						Keeping your latest {HISTORY.FREE_HISTORY_LIMIT}.
+						{$transcriptHistory.length >= HISTORY.FREE_HISTORY_LIMIT
+							? `Your latest ${HISTORY.FREE_HISTORY_LIMIT} — the oldest makes way when a new one lands.`
+							: `Keeping your latest ${HISTORY.FREE_HISTORY_LIMIT}.`}
 						<button
 							type="button"
 							class="font-bold text-pink-500 underline decoration-pink-200 underline-offset-2 hover:text-pink-600"
