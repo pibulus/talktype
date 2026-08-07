@@ -43,20 +43,11 @@
 				</p>
 			</div>
 
-			<ul id="intro_modal_description" class="space-y-2.5 sm:space-y-3">
-				<li class="intro-feature">
-					<span class="intro-chip intro-chip-amber" aria-hidden="true">✦</span>
-					<span class="intro-feature-lead min-w-0">Tap the ghost. Talk. That's it.</span>
-				</li>
-				<li class="intro-feature">
-					<span class="intro-chip intro-chip-rose" aria-hidden="true">✦</span>
-					<span class="intro-feature-lead min-w-0">Offline mode keeps it on your device.</span>
-				</li>
-				<li class="intro-feature">
-					<span class="intro-chip intro-chip-purple" aria-hidden="true">✦</span>
-					<span class="intro-feature-lead min-w-0">Save it, restyle it, pick your vibe.</span>
-				</li>
-			</ul>
+			<div id="intro_modal_description" class="space-y-1.5 text-center">
+				<p class="intro-line">Tap the ghost. Talk. That's it.</p>
+				<p class="intro-line">Offline mode keeps it on your device.</p>
+				<p class="intro-line">Save it, restyle it, pick your vibe.</p>
+			</div>
 
 			<div class="pt-1">
 				<button
@@ -89,53 +80,19 @@
 		padding: 0 0.06em;
 	}
 
-	/* Feature rows: pastel chip + one line. Single line, so centre on the chip. */
-	.intro-feature {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		text-align: left;
-	}
-
-	.intro-chip {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		flex-shrink: 0;
-		width: 2.35rem;
-		height: 2.35rem;
-		border-radius: 9999px;
-		font-size: 1.05rem;
-		box-shadow: 0 2px 6px rgba(244, 114, 182, 0.12);
-	}
-
-	.intro-chip-rose {
-		background: linear-gradient(135deg, #fdf2f8, #ffe4ef);
-		border: 1px solid rgba(244, 114, 182, 0.28);
-	}
-
-	.intro-chip-amber {
-		background: linear-gradient(135deg, #fffbeb, #fef3c7);
-		border: 1px solid rgba(245, 158, 11, 0.26);
-	}
-
-	.intro-chip-purple {
-		background: linear-gradient(135deg, #faf5ff, #f1e8ff);
-		border: 1px solid rgba(167, 139, 250, 0.3);
-	}
-
-	.intro-feature-lead {
-		display: block;
-		font-size: 0.875rem;
-		font-weight: 900;
+	/* Feature lines: plain and centred — the words carry it, no chrome.
+	   (The pastel chip row was evicted 2026-08-07: Pablo hates pillboxes.) */
+	.intro-line {
+		font-size: 0.92rem;
+		font-weight: 800;
 		letter-spacing: -0.01em;
-		line-height: 1.3;
-		color: #111827;
+		line-height: 1.45;
+		color: #1f2937;
 	}
 
 	@media (min-width: 640px) {
-		.intro-feature-lead {
-			font-size: 0.95rem;
+		.intro-line {
+			font-size: 1rem;
 		}
 	}
 
