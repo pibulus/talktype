@@ -11,22 +11,15 @@
 		soundEnabled
 	} from '$lib';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
-	import { offlineModelController } from '$lib/services/transcription/offlineModelController.js';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import { formatStorageBytes } from '$lib/services/transcription/whisper/statusUtils.js';
 	import { analytics } from '$lib/services/analytics.js';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './modals/index.js';
-	import OutputModeButton from './settings/OutputModeButton.svelte';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
 	import { ANIMATION, DEFAULT_THEME, SERVICE_EVENTS } from '$lib/constants';
-	import { hapticService } from '$lib/services/infrastructure/hapticService.js';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
-	import {
-		getStoredCustomWords,
-		setStoredCustomWords
-	} from '$lib/services/transcription/transcriptCleanup.js';
 
 	export let closeModal = () => {};
 
@@ -36,37 +29,11 @@
 	let selectedPromptStyle = 'standard';
 	let privacyModeValue = false;
 	let liveModeValue = false;
-	let soundEnabledValue = true;
 	let isSupporterValue = false;
 	let userPreferencesLoaded = false;
 
 	// Custom vocabulary — names/words the ghost should always get right.
 	// Applied as fuzzy post-processing on every transcription path.
-	let customWords = [];
-	let customWordInput = '';
-	let yourWordsOpen = false;
-
-	function toggleYourWords() {
-		yourWordsOpen = !yourWordsOpen;
-		soundService.select();
-	}
-
-	function addCustomWord() {
-		const word = customWordInput.trim();
-		customWordInput = '';
-		if (!word) return;
-		if (customWords.some((w) => w.toLowerCase() === word.toLowerCase())) return;
-
-		customWords = [...customWords, word];
-		setStoredCustomWords(customWords);
-		soundService.select();
-	}
-
-	function removeCustomWord(word) {
-		customWords = customWords.filter((w) => w !== word);
-		setStoredCustomWords(customWords);
-		soundService.select();
-	}
 
 	// Store unsubscribe functions
 	let unsubscribeTheme;
@@ -74,7 +41,6 @@
 	let unsubscribePromptStyle;
 	let unsubscribeLiveMode;
 	let unsubscribePrivacyMode;
-	let unsubscribeSoundEnabled;
 	let unsubscribeUserPreferences;
 
 	// Auto Start cannot work in a mobile browser tab — the mic needs a user
@@ -88,24 +54,6 @@
 		const desktop = window.matchMedia?.('(pointer: fine)').matches === true;
 		canAutoStart = standalone || desktop;
 	});
-
-	const transcriptionModes = [
-		{
-			id: 'standard',
-			label: 'After Stop',
-			visual: 'standard'
-		},
-		{
-			id: 'live',
-			label: 'Live',
-			visual: 'live'
-		},
-		{
-			id: 'offline',
-			label: 'Offline',
-			visual: 'offline'
-		}
-	];
 
 	function isEnabled(value) {
 		return value === true || value === 'true';
@@ -139,8 +87,6 @@
 	}
 
 	onMount(() => {
-		customWords = getStoredCustomWords();
-
 		// Subscribe to stores only in browser
 		unsubscribeTheme = theme.subscribe((value) => {
 			selectedVibe = value;
@@ -162,10 +108,6 @@
 			privacyModeValue = isEnabled(value);
 		});
 
-		unsubscribeSoundEnabled = soundEnabled.subscribe((value) => {
-			soundEnabledValue = isEnabled(value);
-		});
-
 		unsubscribeUserPreferences = userPreferences.subscribe((value) => {
 			isSupporterValue = value.isSupporter;
 			userPreferencesLoaded = true;
@@ -179,7 +121,6 @@
 		if (unsubscribePromptStyle) unsubscribePromptStyle();
 		if (unsubscribeLiveMode) unsubscribeLiveMode();
 		if (unsubscribePrivacyMode) unsubscribePrivacyMode();
-		if (unsubscribeSoundEnabled) unsubscribeSoundEnabled();
 		if (unsubscribeUserPreferences) unsubscribeUserPreferences();
 	});
 
@@ -220,16 +161,6 @@
 				})
 			);
 		}
-	}
-
-	function toggleSoundEnabled() {
-		soundEnabledValue = !soundEnabledValue;
-		// Set the store first — the service-layer wiring flips setEnabled, so the
-		// confirmation click below is audible when turning ON and silent when OFF.
-		soundEnabled.set(soundEnabledValue.toString());
-		soundService.select();
-		hapticService.select?.();
-		dispatchSettingChanged('soundEnabled', soundEnabledValue);
 	}
 
 	function dispatchSettingChanged(setting, value) {
@@ -279,17 +210,6 @@
 		// Not downloaded yet. Tapping this pulls ~96 MB, possibly over mobile
 		// data — say what it costs instead of a shrug labelled "Local".
 		return formatStorageBytes(status.selectedModelSize) || 'Local';
-	}
-
-	function handleTranscriptionOption(option) {
-		soundService.select();
-		if (option.id === 'offline') {
-			hapticService.select();
-		}
-		setTranscriptionMode(option.id);
-		if (option.id === 'offline') {
-			offlineModelController.startModelLoading();
-		}
 	}
 
 	function handleModalClose() {

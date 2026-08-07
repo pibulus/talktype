@@ -1,15 +1,11 @@
 <script>
-	import { customPrompt } from '$lib';
 	import { PROMPT_STYLES } from '$lib/constants';
-	import { MAX_CUSTOM_PROMPT_CHARS } from '$lib/prompts';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
 
 	export let selectedPromptStyle = 'standard';
 	export let changePromptStyle = () => {};
 	export let isSupporter = false;
-	export let openSupporterModal = () => {};
-
-	let customPromptText = '';
+	export const openSupporterModal = () => {};
 
 	// Four tiles, Plain included. Plain used to be "no selection", which meant
 	// the row was 3 wide and the only way back to plain was clicking your
@@ -56,24 +52,8 @@
 		changePromptStyle(PROMPT_STYLES.STANDARD);
 	}
 
-	$: if ($customPrompt && customPromptText !== $customPrompt) customPromptText = $customPrompt;
-
 	$: if (!isSupporter && selectedPromptStyle === PROMPT_STYLES.CUSTOM) {
 		changePromptStyle(PROMPT_STYLES.STANDARD);
-	}
-
-	$: isCustomOn = selectedPromptStyle === PROMPT_STYLES.CUSTOM;
-	$: showCustomInput = isCustomOn && isSupporter;
-	$: customRemaining = MAX_CUSTOM_PROMPT_CHARS - customPromptText.length;
-
-	function showToast(message) {
-		if (typeof window === 'undefined') return;
-
-		window.dispatchEvent(
-			new CustomEvent('talktype:toast', {
-				detail: { message, type: 'info' }
-			})
-		);
 	}
 
 	function handleStyleClick(style) {
@@ -82,29 +62,6 @@
 
 		soundService.select();
 		changePromptStyle(nextStyle);
-	}
-
-	function handleCustomClick() {
-		if (!isSupporter) {
-			soundService.locked();
-			showToast('Supporter only');
-			openSupporterModal();
-			return;
-		}
-
-		soundService.select();
-		changePromptStyle(isCustomOn ? PROMPT_STYLES.STANDARD : PROMPT_STYLES.CUSTOM);
-	}
-
-	function saveCustomPrompt() {
-		customPrompt.set(customPromptText.trim().slice(0, MAX_CUSTOM_PROMPT_CHARS));
-	}
-
-	function handleKeydown(event) {
-		if (event.key === 'Enter' && !event.shiftKey) {
-			event.preventDefault();
-			saveCustomPrompt();
-		}
 	}
 </script>
 
@@ -152,11 +109,6 @@
 
 	.setting-row {
 		contain: content;
-	}
-
-	textarea {
-		min-height: 80px;
-		resize: vertical;
 	}
 
 	@keyframes slide-in-from-top-2 {

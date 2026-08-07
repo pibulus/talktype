@@ -302,6 +302,48 @@ body::-webkit-scrollbar-corner {
 	background: transparent;
 }
 
+/* Every OTHER scroller — modals, history, any inner pane — used to fall back
+   to the chunky default grey bar, because the rules above only name html and
+   body. Same theme-aware thumb, one size smaller so it reads as trim inside a
+   panel. Firefox gets it via scrollbar-width/color; webkit via the pseudos. */
+*,
+*::before,
+*::after {
+	scrollbar-width: thin;
+	scrollbar-color: var(--tt-scrollbar-thumb-color) transparent;
+}
+
+*::-webkit-scrollbar {
+	width: var(--tt-scrollbar-size-compact);
+	height: var(--tt-scrollbar-size-compact);
+}
+
+*::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+	min-height: 2.25rem;
+	border: 2px solid transparent;
+	border-radius: 999px;
+	background: var(--tt-scrollbar-thumb-bg);
+	background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+	background: var(--tt-scrollbar-thumb-hover-bg);
+	background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:active {
+	background: var(--tt-scrollbar-thumb-active-color);
+	background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+	background: transparent;
+}
+
 /* ===================================================================
    MODAL HANDLING - Clean and maintainable
    =================================================================== */
