@@ -33,16 +33,14 @@
 				class="rounded-lg border border-pink-200/60 bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 shadow-sm"
 			>
 				<p id="about_modal_description" class="text-base leading-relaxed text-gray-700">
-					Some ideas come out better talked than typed. So: talk, get text. Built for people who
-					think tools should be <span class="font-medium text-pink-600">simple</span>,
-					<span class="font-medium text-amber-600">delightful</span>, and actually
-					<span class="font-medium text-pink-600">helpful</span>.
+					Some ideas come out better talked than typed. So: talk, get text.
 				</p>
 			</div>
 
-			<div class="border-l-3 my-2 ml-1 border-pink-300 py-1 pl-4 italic text-gray-600">
-				"A little bit of soul, a hint of chaos, and a deep love for clarity."
-			</div>
+			<p class="text-sm leading-relaxed text-gray-600">
+				I made it because I think faster out loud, and everything else wanted an account first. No
+				sign-up, no upsell to use it, runs on your phone.
+			</p>
 
 			<p class="flex items-center gap-1.5 pt-1 text-xs leading-relaxed text-gray-500">
 				<span class="text-pink-500" aria-hidden="true">🔒</span>
@@ -50,7 +48,7 @@
 			</p>
 
 			<div class="flex flex-wrap items-center justify-between gap-3 pt-2">
-				<p class="text-xs text-gray-500">Made with ☕ in Melbourne, Australia</p>
+				<p class="text-xs text-gray-500">Made by Pablo in Melbourne ☕</p>
 				<div class="flex items-center gap-1">
 					<a
 						href="https://github.com/pibulus"
