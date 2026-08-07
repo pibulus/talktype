@@ -4,6 +4,7 @@
 -->
 <script>
 	import PermissionError from './PermissionError.svelte';
+	import { get } from 'svelte/store';
 	import {
 		errorMessage,
 		uiState,
@@ -11,9 +12,23 @@
 		transcriptionState,
 		isRecording,
 		isTranscribing,
-		transcriptionService
+		transcriptionService,
+		audioState,
+		audioActions,
+		AudioStates
 	} from '$lib/services';
 	import { transcriptionActions } from '$lib/services/infrastructure/stores';
+
+	// ZipList's escape hatch, ported (see memory mic-permission-deadlock):
+	// PERMISSION_DENIED must not be a terminal state. Dismissing the error UI
+	// is the user's "I've dealt with it" gesture — return the machine to IDLE
+	// so the next record tap can actually start.
+	function closePermissionError() {
+		uiActions.setPermissionError(false);
+		if (get(audioState).state === AudioStates.PERMISSION_DENIED) {
+			audioActions.updateState(AudioStates.IDLE);
+		}
+	}
 
 	// Screen reader announcements
 	$: screenReaderMessage = $uiState.screenReaderMessage;
@@ -106,7 +121,7 @@
 
 <!-- Permission error modal -->
 {#if $uiState.showPermissionError}
-	<PermissionError on:close={() => uiActions.setPermissionError(false)} />
+	<PermissionError on:close={closePermissionError} />
 {/if}
 
 <style>
