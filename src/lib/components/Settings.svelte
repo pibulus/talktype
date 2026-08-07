@@ -342,7 +342,7 @@
 				aria-labelledby="settings_output_mode_title"
 			>
 				<h4 id="settings_output_mode_title" class="settings-section-title">Output Mode</h4>
-				<div class="grid grid-cols-3 gap-2">
+				<div class="flex flex-wrap justify-center gap-2">
 					{#each transcriptionModes as mode}
 						<OutputModeButton
 							{mode}

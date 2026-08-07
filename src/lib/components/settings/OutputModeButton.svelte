@@ -39,7 +39,7 @@
 
 <button
 	type="button"
-	class="mode-option"
+	class="mode-option basis-[calc(25%-6px)] grow-0 shrink-0"
 	class:is-selected={selected}
 	class:is-offline={isOffline}
 	class:has-offline-state={hasOfflineState}

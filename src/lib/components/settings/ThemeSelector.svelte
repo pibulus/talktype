@@ -42,11 +42,11 @@
 	}
 </script>
 
-<div class="grid grid-cols-4 gap-2" role="group" aria-label="Vibe">
+<div class="flex flex-wrap justify-center gap-2" role="group" aria-label="Vibe">
 	{#each vibeOptions as vibe, index}
 		<button
 			type="button"
-			class="vibe-option relative flex min-h-[72px] items-center justify-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {currentTheme ===
+			class="vibe-option relative basis-[calc(25%-6px)] grow-0 shrink-0 flex min-h-[72px] items-center justify-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {currentTheme ===
 			vibe.id
 				? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
 				: ''} {isThemeLocked(vibe) ? 'locked-vibe' : ''}"
