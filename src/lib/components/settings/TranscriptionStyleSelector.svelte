@@ -109,11 +109,11 @@
 </script>
 
 <div role="group" aria-label="Transcription style" class="space-y-2">
-	<div class="flex flex-wrap justify-center gap-2">
+	<div class="grid grid-cols-4 gap-2">
 		{#each styleOptions as style}
 			<button
 				type="button"
-				class={`style-option relative flex min-h-[72px] shrink-0 grow-0 basis-[calc(25%-6px)] flex-col items-center justify-center rounded-xl border bg-[#fffdf5] p-1.5 text-center shadow-sm transition-all duration-200 hover:border-pink-200 hover:shadow-md ${
+				class={`style-option relative flex min-h-[72px] flex-col items-center justify-center rounded-xl border bg-[#fffdf5] p-1.5 text-center shadow-sm transition-all duration-200 hover:border-pink-200 hover:shadow-md ${
 					selectedPromptStyle === style.id
 						? 'selected-style border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
 						: 'border-pink-100'
