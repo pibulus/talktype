@@ -98,7 +98,7 @@ export const APP_CONFIG = {
 // always readable — the user's own words are never held hostage. Free tier keeps
 // the most recent FREE_HISTORY_LIMIT; supporters get unlimited + encrypted vault.
 export const HISTORY = {
-	FREE_HISTORY_LIMIT: 15
+	FREE_HISTORY_LIMIT: 12
 };
 
 // Animation Timing (in ms)

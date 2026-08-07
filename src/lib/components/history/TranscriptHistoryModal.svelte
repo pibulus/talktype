@@ -190,18 +190,21 @@
 		return 'webm';
 	}
 
+	// "talk aug 7 2.30pm.webm" — a note from a day, not a database row.
 	function audioStamp(transcript) {
-		return new Date(transcript.timestamp)
-			.toISOString()
-			.slice(0, 16)
-			.replace('T', '-')
-			.replace(':', '');
+		const d = new Date(transcript.timestamp);
+		const mon = d.toLocaleString('en-US', { month: 'short' }).toLowerCase();
+		let h = d.getHours();
+		const ampm = h >= 12 ? 'pm' : 'am';
+		h = h % 12 || 12;
+		const min = String(d.getMinutes()).padStart(2, '0');
+		return `${mon} ${d.getDate()} ${h}.${min}${ampm}`;
 	}
 
 	function downloadAudio(transcript) {
 		saveBlob(
 			transcript.audioBlob,
-			`talktype-${audioStamp(transcript)}.${audioExt(transcript.audioBlob.type)}`
+			`talk ${audioStamp(transcript)}.${audioExt(transcript.audioBlob.type)}`
 		);
 	}
 
@@ -210,7 +213,7 @@
 		polishingId = transcript.id;
 		try {
 			const wav = await polishAudioBlob(transcript.audioBlob);
-			saveBlob(wav, `talktype-${audioStamp(transcript)}-polished.wav`);
+			saveBlob(wav, `talk ${audioStamp(transcript)} polished.wav`);
 		} catch (err) {
 			// Polish should never stand between someone and their recording —
 			// if the render fails, hand back the original.
