@@ -52,18 +52,18 @@ export async function ensureDurableStorage() {
 	if (!navigator.storage?.persist) return null;
 
 	try {
-	  // Cheap and prompt-free: if it's already granted there is nothing to ask.
-	  if (navigator.storage.persisted && (await navigator.storage.persisted())) {
-	    return true;
-	  }
+		// Cheap and prompt-free: if it's already granted there is nothing to ask.
+		if (navigator.storage.persisted && (await navigator.storage.persisted())) {
+			return true;
+		}
 
-	  if (localStorage.getItem(ASKED_KEY)) return null;
-	  localStorage.setItem(ASKED_KEY, '1');
+		if (localStorage.getItem(ASKED_KEY)) return null;
+		localStorage.setItem(ASKED_KEY, '1');
 
-	  return await navigator.storage.persist();
+		return await navigator.storage.persist();
 	} catch {
-	  // Private-browsing modes can throw on both storage APIs. Losing durability
-	  // is not worth losing the save that triggered this.
-	  return null;
+		// Private-browsing modes can throw on both storage APIs. Losing durability
+		// is not worth losing the save that triggered this.
+		return null;
 	}
 }

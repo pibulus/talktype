@@ -71,15 +71,18 @@ export const MAX_CUSTOM_PROMPT_CHARS = 1200;
 // that Custom is supporter-only. What this stops is a custom prompt silently
 // turning the app into a chatbot.
 export function sanitizeCustomInstructions(text) {
-	return String(text || '')
-		// Can't close the fence early and escape into instruction space.
-		.replace(/-{2,}\s*(?:END\s+)?STYLE INSTRUCTIONS\s*-{2,}/gi, '')
-		// Control characters — invisible steering, and nothing legitimate needs them.
-		.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
-		// Newline bloat is the cheapest way to pad a prompt toward the cap.
-		.replace(/\n{3,}/g, '\n\n')
-		.trim()
-		.slice(0, MAX_CUSTOM_PROMPT_CHARS);
+	return (
+		String(text || '')
+			// Can't close the fence early and escape into instruction space.
+			.replace(/-{2,}\s*(?:END\s+)?STYLE INSTRUCTIONS\s*-{2,}/gi, '')
+			// Control characters — invisible steering, and nothing legitimate needs them.
+			// eslint-disable-next-line no-control-regex -- stripping them IS the point
+			.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+			// Newline bloat is the cheapest way to pad a prompt toward the cap.
+			.replace(/\n{3,}/g, '\n\n')
+			.trim()
+			.slice(0, MAX_CUSTOM_PROMPT_CHARS)
+	);
 }
 
 export function buildCustomPrompt(instructions = '') {

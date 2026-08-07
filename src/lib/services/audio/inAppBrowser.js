@@ -38,8 +38,7 @@ const IN_APP_BROWSERS = [
  * @returns {string|null} e.g. "Messenger", or null when not detected
  */
 export function getInAppBrowserName(userAgent) {
-	const ua =
-		userAgent ?? (typeof navigator === 'undefined' ? '' : navigator.userAgent || '');
+	const ua = userAgent ?? (typeof navigator === 'undefined' ? '' : navigator.userAgent || '');
 	if (!ua) return null;
 
 	for (const { pattern, name } of IN_APP_BROWSERS) {
