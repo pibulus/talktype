@@ -77,6 +77,18 @@
 	let unsubscribeSoundEnabled;
 	let unsubscribeUserPreferences;
 
+	// Auto Start cannot work in a mobile browser tab — the mic needs a user
+	// gesture, so the toggle would promise something it can never deliver.
+	// Desktop and installed PWAs can honour it.
+	let canAutoStart = false;
+	onMount(() => {
+		const standalone =
+			window.matchMedia?.('(display-mode: standalone)').matches === true ||
+			navigator.standalone === true;
+		const desktop = window.matchMedia?.('(pointer: fine)').matches === true;
+		canAutoStart = standalone || desktop;
+	});
+
 	const transcriptionModes = [
 		{
 			id: 'standard',
@@ -230,6 +242,12 @@
 		);
 	}
 
+	// Offline on/off. Off returns to the standard cloud path — the app decides
+	// which engine that is; the user is not asked to pick a vendor.
+	function toggleOffline() {
+		setTranscriptionMode(transcriptionMode === 'offline' ? 'standard' : 'offline');
+	}
+
 	function setTranscriptionMode(mode) {
 		const previousMode = transcriptionMode;
 		const nextLiveMode = mode === 'live';
@@ -335,111 +353,43 @@
 				/>
 			</section>
 
-			<!-- Transcription Mode Picker -->
-			<section
-				class="settings-section space-y-2"
-				role="group"
-				aria-labelledby="settings_output_mode_title"
-			>
-				<h4 id="settings_output_mode_title" class="settings-section-title">Output Mode</h4>
-				<div class="flex flex-wrap justify-center gap-2">
-					{#each transcriptionModes as mode}
-						<OutputModeButton
-							{mode}
-							selected={transcriptionMode === mode.id}
-							offlineStatus={offlineButtonStatus}
-							onSelect={handleTranscriptionOption}
-						/>
-					{/each}
-				</div>
+			<section class="settings-section space-y-2" aria-labelledby="settings_output_style_title">
+				<h4 id="settings_output_style_title" class="settings-section-title">Output Style</h4>
+				<TranscriptionStyleSelector
+					{selectedPromptStyle}
+					{changePromptStyle}
+					isSupporter={isSupporterValue}
+					{openSupporterModal}
+				/>
 			</section>
 
-			{#if transcriptionMode === 'standard'}
-				<section class="settings-section space-y-2" aria-labelledby="settings_output_style_title">
-					<h4 id="settings_output_style_title" class="settings-section-title">Output Style</h4>
-					<TranscriptionStyleSelector
-						{selectedPromptStyle}
-						{changePromptStyle}
-						isSupporter={isSupporterValue}
-						{openSupporterModal}
-					/>
-				</section>
-			{/if}
-
-			<!-- Your Words folds into one row (matching the toggle-row idiom) so the
-			     modal stays scroll-free on phones — most sessions never open it. -->
-			<div class="space-y-2">
-				<button
-					type="button"
-					class={`setting-row flex min-h-12 w-full items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition-all duration-200 ${
-						yourWordsOpen
-							? 'border-pink-300 bg-pink-50 text-gray-900 ring-2 ring-pink-100'
-							: 'border-pink-100 bg-white/75 text-gray-700 hover:border-pink-200 hover:bg-pink-50/70'
-					}`}
-					aria-expanded={yourWordsOpen}
-					aria-controls="settings_your_words_panel"
-					on:click={toggleYourWords}
-				>
-					<span class="flex items-center gap-3">
-						<span class="block text-sm font-black">Your Words</span>
-						{#if customWords.length}
-							<span
-								class="rounded-full border border-pink-200 bg-white/80 px-2 py-0.5 text-[11px] font-bold text-pink-700"
-							>
-								{customWords.length}
-							</span>
-						{/if}
-					</span>
+			<!-- Offline is the only engine choice a person can actually reason about:
+			     it is about privacy and signal, not about which vendor transcribes. -->
+			<button
+				type="button"
+				class={`setting-row flex min-h-12 w-full items-center gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition-all duration-200 ${
+					transcriptionMode === 'offline'
+						? 'border-pink-300 bg-pink-50 text-gray-900 ring-2 ring-pink-100'
+						: 'border-pink-100 bg-white/75 text-gray-700 hover:border-pink-200 hover:bg-pink-50/70'
+				}`}
+				aria-pressed={transcriptionMode === 'offline'}
+				aria-label={`${transcriptionMode === 'offline' ? 'Disable' : 'Enable'} offline mode`}
+				on:click={toggleOffline}
+			>
+				<span class="flex items-center gap-3">
 					<span
-						class="text-pink-300 transition-transform duration-200 {yourWordsOpen
-							? 'rotate-90'
-							: ''}"
-						aria-hidden="true">▸</span
+						class="auto-start-glyph {transcriptionMode === 'offline' ? 'is-on' : ''}"
+						aria-hidden="true"><span></span></span
 					>
-				</button>
+					<span class="block text-sm font-black">Offline</span>
+					{#if offlineButtonStatus?.visible && transcriptionMode === 'offline'}
+						<span class="text-[11px] font-bold text-pink-600">{offlineStatusLabel}</span>
+					{/if}
+				</span>
+				<span class="sr-only">{transcriptionMode === 'offline' ? 'On' : 'Off'}</span>
+			</button>
 
-				{#if yourWordsOpen}
-					<div id="settings_your_words_panel" class="space-y-2 px-1">
-						<p class="text-xs text-gray-500">Names the ghost always gets right.</p>
-						<form class="flex gap-2" on:submit|preventDefault={addCustomWord}>
-							<input
-								type="text"
-								class="min-h-11 min-w-0 flex-1 rounded-xl border border-pink-100 bg-white/75 px-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-100"
-								placeholder="e.g. Hexbloop, R&D"
-								maxlength="50"
-								bind:value={customWordInput}
-								aria-label="Add a word for the ghost to learn"
-							/>
-							<button
-								type="submit"
-								class="btn min-h-11 border-pink-200 bg-pink-500 px-4 text-white hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-200 disabled:text-white/90"
-								disabled={!customWordInput.trim()}
-							>
-								Add
-							</button>
-						</form>
-						{#if customWords.length}
-							<div class="flex flex-wrap gap-1.5">
-								{#each customWords as word (word)}
-									<button
-										type="button"
-										class="group flex min-h-9 items-center gap-1.5 rounded-full border border-pink-100 bg-white/80 px-3 text-xs font-bold text-gray-600 transition-colors duration-150 hover:border-pink-200 hover:bg-pink-50"
-										on:click={() => removeCustomWord(word)}
-										title={`Remove ${word}`}
-										aria-label={`Remove ${word} from your words`}
-									>
-										{word}
-										<span
-											class="text-pink-300 transition-colors group-hover:text-pink-500"
-											aria-hidden="true">×</span
-										>
-									</button>
-								{/each}
-							</div>
-						{/if}
-					</div>
-				{/if}
-			</div>
+			{#if canAutoStart}{/if}
 
 			<button
 				type="button"
@@ -461,38 +411,24 @@
 				<span class="sr-only">{autoRecordValue ? 'On' : 'Off'}</span>
 			</button>
 
+			<!-- The one button in here that should feel like a treat: full brand pink,
+			     squishy, and it names what you actually get instead of just "Unlock". -->
 			<button
 				type="button"
-				class={`setting-row flex min-h-12 w-full items-center gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition-all duration-200 ${
-					soundEnabledValue
-						? 'border-pink-300 bg-pink-50 text-gray-900 ring-2 ring-pink-100'
-						: 'border-pink-100 bg-white/75 text-gray-700 hover:border-pink-200 hover:bg-pink-50/70'
-				}`}
-				aria-pressed={soundEnabledValue}
-				aria-label={`${soundEnabledValue ? 'Disable' : 'Enable'} sounds and vibration`}
-				on:click={toggleSoundEnabled}
-			>
-				<span class="flex items-center gap-3">
-					<span class="auto-start-glyph {soundEnabledValue ? 'is-on' : ''}" aria-hidden="true">
-						<span></span>
-					</span>
-					<span class="block text-sm font-black">Sounds & Vibration</span>
-				</span>
-				<span class="sr-only">{soundEnabledValue ? 'On' : 'Off'}</span>
-			</button>
-
-			<button
-				type="button"
-				class="setting-row group flex w-full items-center justify-between gap-4 rounded-xl border border-amber-200 bg-white/75 px-4 py-3 text-left shadow-sm transition-all duration-200 hover:border-amber-300 hover:bg-amber-50/80"
+				class="supporter-row group flex w-full items-center justify-between gap-4 rounded-xl px-4 py-3 text-left"
+				title="Supporter unlocks the rainbow vibe, longer notes, local history and downloads"
 				on:click={() => openSupporterModal('settings')}
 			>
 				<span class="flex items-center gap-3">
 					<span class="supporter-glyph" aria-hidden="true"></span>
-					<span class="block text-sm font-black text-gray-800">Supporter</span>
+					<span class="block">
+						<span class="block text-sm font-black leading-tight">Supporter</span>
+						<span class="block text-[11px] font-bold leading-tight opacity-90">
+							Rainbow vibe · longer notes · history
+						</span>
+					</span>
 				</span>
-				<span
-					class="shrink-0 rounded-full border border-amber-200 bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900 transition-colors group-hover:bg-amber-200"
-				>
+				<span class="supporter-pill shrink-0 rounded-full px-3 py-1 text-xs font-black">
 					{isSupporterValue ? 'Open' : 'Unlock'}
 				</span>
 			</button>
@@ -509,6 +445,29 @@
 </dialog>
 
 <style>
+	/* Brand pink, the one the mascot wears. Squish matches the family X-button
+	   curve so it feels like the same hand made it. */
+	.supporter-row {
+		background: linear-gradient(135deg, #ff7bab, #ff5c9f);
+		border: 1px solid rgba(255, 92, 159, 0.55);
+		color: #fffdf5;
+		box-shadow: 0 10px 22px rgba(255, 92, 159, 0.22);
+		transition:
+			transform 0.22s linear(0, 0.5 15%, 1.15 40%, 0.97 65%, 1),
+			box-shadow 0.2s ease;
+	}
+	.supporter-row:hover {
+		transform: scale(1.02);
+		box-shadow: 0 14px 28px rgba(255, 92, 159, 0.3);
+	}
+	.supporter-row:active {
+		transform: scale(0.96);
+	}
+	.supporter-pill {
+		background: rgba(255, 253, 245, 0.95);
+		color: #c2185b;
+	}
+
 	.auto-start-glyph,
 	.supporter-glyph {
 		display: inline-flex;

@@ -11,9 +11,10 @@
 
 	let customPromptText = '';
 
-	// Three demo styles, not four, and no tile for "Plain" — plain IS no
-	// selection, so a whole panel saying "nothing happens" was dead space and
-	// left the row misaligned with the 3-up Output Mode grid above it.
+	// Four tiles, Plain included. Plain used to be "no selection", which meant
+	// the row was 3 wide and the only way back to plain was clicking your
+	// current style again — an invisible affordance. A real tile is honest and
+	// it makes the row match the 4-up Vibe grid above it.
 	//
 	// The three are deliberately on DIFFERENT axes, because the point of this
 	// row is to make someone realise they could write their own:
@@ -22,12 +23,16 @@
 	//   Code   — useful       (restructures rambling into a usable prompt)
 	// Three joke voices would only ever demonstrate jokes.
 	const styleOptions = [
+		{ id: PROMPT_STYLES.STANDARD, label: 'Plain' },
 		{ id: PROMPT_STYLES.SURLY_PIRATE, label: 'Pirate' },
 		{ id: PROMPT_STYLES.QUILL_AND_INK, label: 'Austen' },
 		{ id: PROMPT_STYLES.CODE_WHISPERER, label: 'Code' }
 	];
 
 	const styleIcons = {
+		[PROMPT_STYLES.STANDARD]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-pink-400">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h10" />
+		</svg>`,
 		[PROMPT_STYLES.SURLY_PIRATE]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-amber-500">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
 		</svg>`,
@@ -108,7 +113,7 @@
 		{#each styleOptions as style}
 			<button
 				type="button"
-				class={`style-option relative basis-[calc(25%-6px)] grow-0 shrink-0 flex min-h-[72px] flex-col items-center justify-center rounded-xl border bg-[#fffdf5] p-1.5 text-center shadow-sm transition-all duration-200 hover:border-pink-200 hover:shadow-md ${
+				class={`style-option relative flex min-h-[72px] shrink-0 grow-0 basis-[calc(25%-6px)] flex-col items-center justify-center rounded-xl border bg-[#fffdf5] p-1.5 text-center shadow-sm transition-all duration-200 hover:border-pink-200 hover:shadow-md ${
 					selectedPromptStyle === style.id
 						? 'selected-style border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
 						: 'border-pink-100'
@@ -136,57 +141,6 @@
 			</button>
 		{/each}
 	</div>
-
-	<!-- Custom gets its own row rather than a fourth tile. It isn't a peer of the
-	     presets — it's the door the presets are advertising — and the row idiom
-	     matches Your Words and Auto Start further down the modal. -->
-	<button
-		type="button"
-		class={`setting-row flex min-h-12 w-full items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition-all duration-200 ${
-			isCustomOn
-				? 'border-pink-300 bg-pink-50 text-gray-900 ring-2 ring-pink-100'
-				: 'border-pink-100 bg-[#fffdf5] text-gray-700 hover:border-pink-200 hover:bg-pink-50/70'
-		}`}
-		aria-pressed={isCustomOn}
-		aria-label={isSupporter
-			? 'Write your own output style'
-			: 'Writing your own style requires supporter mode'}
-		on:click={handleCustomClick}
-	>
-		<span class="flex items-center gap-3">
-			<span class="block text-sm font-black">Write your own</span>
-		</span>
-		{#if !isSupporter}
-			<span
-				class="shrink-0 rounded-full border border-amber-200 bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900"
-			>
-				Unlock
-			</span>
-		{:else}
-			<span
-				class="text-pink-300 transition-transform duration-200 {isCustomOn ? 'rotate-90' : ''}"
-				aria-hidden="true">▸</span
-			>
-		{/if}
-	</button>
-
-	{#if showCustomInput}
-		<div class="animate-in slide-in-from-top-2 space-y-1 px-1 duration-200">
-			<textarea
-				bind:value={customPromptText}
-				on:keydown={handleKeydown}
-				on:blur={saveCustomPrompt}
-				placeholder="Describe how you want it to read. Try: like a nature documentary narrator."
-				maxlength={MAX_CUSTOM_PROMPT_CHARS}
-				class="w-full rounded-lg border border-pink-200 bg-[#fffdf5] p-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
-				rows="3"
-				aria-label="Custom transcription instructions"
-			></textarea>
-			<p class="text-right text-[11px] text-gray-400" aria-live="polite">
-				{customRemaining} left
-			</p>
-		</div>
-	{/if}
 </div>
 
 <style>
