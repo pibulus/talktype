@@ -1,15 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import {
-		theme,
-		autoRecord,
-		applyTheme,
-		promptStyle,
-		liveMode,
-		privacyMode,
-		soundEnabled
-	} from '$lib';
+	import { theme, autoRecord, applyTheme, promptStyle, liveMode, privacyMode } from '$lib';
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
 	import { formatStorageBytes } from '$lib/services/transcription/whisper/statusUtils.js';
