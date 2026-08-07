@@ -5,12 +5,11 @@ export const DEFAULT_SEO = {
 	title: 'TalkType | Free Voice-to-Text Dictation App',
 	description:
 		'TalkType is a fast, free voice-to-text app for dictation, live transcription, and private offline speech recognition. Tap the ghost, speak, and get editable text.',
-	image: '/og-image.png',
-	// Describes og-image.png as it actually is. The previous wording ended
-	// "...with the words voice-to-text that does not suck", which stopped being
-	// true on 2026-07-31 when the card became mascot-only — alt text has to
-	// track the art, or a screen reader is told about words that aren't there.
-	imageAlt: "TalkType's pink and orange ghost mascot on a warm cream background.",
+	image: '/og-card.jpg',
+	// Describes og-card.jpg as it actually is — the classic yellow-strip card,
+	// restored 2026-08-07 by Pablo's decree. Alt text has to track the art.
+	imageAlt:
+		"TalkType's pink and orange ghost above the TalkType.app wordmark, a yellow strip reading: spooky good, freaky fast, and a pink works-offline badge.",
 	locale: 'en_US',
 	type: 'website'
 };
