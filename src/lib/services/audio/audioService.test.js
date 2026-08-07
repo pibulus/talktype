@@ -371,4 +371,56 @@ describe('AudioService', () => {
 			})
 		});
 	});
+
+	it('keeps the waveform loop alive across the async gap before RECORDING', async () => {
+		// Regression 534eb11 (2026-05-23): the visualizer sat flat for months.
+		// startWaveformMonitoring's rAF loop returns WITHOUT rescheduling unless
+		// state is already RECORDING, and it used to be started BEFORE the
+		// awaited IndexedDB journal write — so the first frame to land during
+		// that write killed the loop for good. ZipList survives the same shape
+		// only because its await settles as a microtask, ahead of any frame.
+		//
+		// The default journal mock resolves immediately, which is exactly why
+		// this bug hid: no frame ever lands mid-await. So hold the write open
+		// and paint a frame inside it, the way a real device does.
+		installRecordingMocks();
+
+		const frames = [];
+		const raf = vi.fn((cb) => {
+			frames.push(cb);
+			return frames.length;
+		});
+		window.requestAnimationFrame = raf;
+		global.requestAnimationFrame = raf;
+
+		let finishJournalWrite;
+		vi.mocked(beginRecordingDraftJournal).mockImplementation(async (_id, metadata) => {
+			await new Promise((resolve) => {
+				finishJournalWrite = resolve;
+			});
+			return { id: 'latest', createdAt: Date.now(), metadata };
+		});
+
+		const startPromise = service.startRecording();
+
+		// let execution reach the journal await
+		for (let i = 0; i < 10 && !finishJournalWrite; i++) {
+			await Promise.resolve();
+		}
+		expect(finishJournalWrite).toBeDefined();
+
+		// the browser paints while the write is still in flight
+		while (frames.length) {
+			frames.shift()();
+		}
+
+		finishJournalWrite();
+		await startPromise;
+		await Promise.resolve();
+
+		// A live loop is scheduled once recording actually starts. The
+		// regression left animationFrameId null and frames empty forever.
+		expect(service.animationFrameId).not.toBeNull();
+		expect(frames.length).toBeGreaterThan(0);
+	});
 });

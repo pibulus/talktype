@@ -328,7 +328,16 @@ export class AudioService {
 					log.warn(`AudioContext is '${this.audioContext.state}' — waveform may stay flat.`);
 				}
 
-				this.startWaveformMonitoring();
+				// NOT started here. startWaveformMonitoring's rAF loop guards on
+				// state === RECORDING and returns WITHOUT rescheduling if it
+				// isn't — and setState(RECORDING) is still ~40 lines and one
+				// real await away (beginRecordingDraftJournal, an IndexedDB
+				// write spanning several frames). The first frame therefore
+				// killed the loop permanently and the visualizer sat flat.
+				// Regression dates to 534eb11 "add recording recovery journal"
+				// (2026-05-23). ZipList survives the same shape only because
+				// its await (wakeLock) settles as a microtask, before any frame.
+				// Start it where its own precondition is actually true.
 			} catch (mrError) {
 				stopMediaStreamTracks(stream);
 				throw mrError;
@@ -378,6 +387,7 @@ export class AudioService {
 			// This helps prevent losing the last bit of audio
 			this.mediaRecorder.start(MEDIA_RECORDER_TIMESLICE_MS);
 			this.stateManager.setState(AudioStates.RECORDING);
+			this.startWaveformMonitoring();
 			void this.requestScreenWakeLock();
 
 			// Update the store with mimeType
