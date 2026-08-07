@@ -38,8 +38,7 @@
 			</div>
 
 			<p class="text-sm leading-relaxed text-gray-600">
-				I made it because I think faster out loud, and everything else wanted an account first. No
-				sign-up, no upsell to use it, runs on your phone.
+				No account, no upsell to use it. It runs on your phone, and talking is faster than thumbs.
 			</p>
 
 			<p class="flex items-center gap-1.5 pt-1 text-xs leading-relaxed text-gray-500">
