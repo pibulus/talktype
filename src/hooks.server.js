@@ -30,12 +30,14 @@ export async function handle({ event, resolve }) {
 		// 'unsafe-inline' needed because SvelteKit injects inline <script> blocks
 		// for hydration data and env vars. Removing this white-screens the app.
 		// TODO: replace with a nonce-based approach once SvelteKit supports it stably.
-		"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://cloud.umami.is https://static.cloudflareinsights.com",
+		"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://cloud.umami.is https://static.cloudflareinsights.com https://fleetcount.pibulus.deno.net",
 		//   'wasm-unsafe-eval' — required for @huggingface/transformers onnxruntime-web (Whisper WASM)
 		//   blob: — onnxruntime-web's JSPI loader (Chrome 137+) wraps its fetched
 		//   .mjs glue in a blob and dynamic-imports it; without blob: here Offline
 		//   Mode dies with "no available backend found" on modern Chrome.
 		//   https://cloud.umami.is — Umami analytics script (PUBLIC_UMAMI_SCRIPT_URL default)
+		//   https://fleetcount.pibulus.deno.net — the beacon in app.html. It shipped
+		//   without a CSP entry, so it was blocked on every load and counted nobody.
 
 		// Styles — SvelteKit also inlines critical CSS
 		"style-src 'self' 'unsafe-inline'",
@@ -59,6 +61,7 @@ export async function handle({ event, resolve }) {
 			'https://connect.squareup.com', // Square payments (production)
 			'https://connect.squareupsandbox.com', // Square sandbox (dev/testing)
 			'https://cloud.umami.is', // Umami analytics beacon
+			'https://fleetcount.pibulus.deno.net', // fleetcount visitor beacon (app.html)
 			'https://huggingface.co', // Whisper model metadata (transformers.js)
 			'https://*.cdn.hf.co', // HF Xet CDN — model files redirect here (regional: us.aws.cdn.hf.co/xet-bridge-us/...). Scoped to the cdn subdomain, NOT all of *.hf.co (which would cover user spaces).
 			'https://cdn-lfs.huggingface.co', // HF legacy LFS large-file host
