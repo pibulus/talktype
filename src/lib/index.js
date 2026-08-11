@@ -94,8 +94,9 @@ export const customPrompt = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.CUSTO
 	legacyKeys: CONSTANTS.LEGACY_STORAGE_KEYS.CUSTOM_PROMPT
 });
 
-// Store for live mode preference
-export const liveMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.LIVE_MODE, 'false');
+// Live streaming is the default outcome — words land while you talk. On device
+// is the only other outcome, and it wins whenever both end up set.
+export const liveMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.LIVE_MODE, 'true');
 
 // Store for offline/private Whisper mode preference
 export const privacyMode = createLocalStorageStore(CONSTANTS.STORAGE_KEYS.PRIVACY_MODE, 'false');
@@ -113,25 +114,24 @@ if (browser) {
 	});
 }
 
-// Repair legacy state where Offline Mode and Live Mode could both be persisted.
-// If the user only had Offline Mode saved, preserve that choice. If both modes
-// were saved as enabled, keep Offline Mode and turn Live Mode off.
+// One-time default flip. A device that already chose On device keeps it; every
+// other device moves to live streaming, which is where the app is going.
+// Changing the default alone would not reach anyone whose 'false' is already
+// written to storage by the previous migration.
 if (browser) {
 	const storedPrivacyMode = localStorage.getItem(CONSTANTS.STORAGE_KEYS.PRIVACY_MODE) === 'true';
-	const storedLiveMode = localStorage.getItem(CONSTANTS.STORAGE_KEYS.LIVE_MODE);
-	const afterStopDefaultMigrated =
+	const liveDefaultMigrated =
 		localStorage.getItem(CONSTANTS.STORAGE_KEYS.TEXT_TIMING_DEFAULT_MIGRATED) === 'true';
 
-	if (!afterStopDefaultMigrated) {
+	if (!liveDefaultMigrated) {
 		if (!storedPrivacyMode) {
-			liveMode.set('false');
+			liveMode.set('true');
 		}
 		localStorage.setItem(CONSTANTS.STORAGE_KEYS.TEXT_TIMING_DEFAULT_MIGRATED, 'true');
 	}
 
-	if (storedPrivacyMode && storedLiveMode === 'true') {
-		liveMode.set('false');
-	} else if (storedPrivacyMode && storedLiveMode === null) {
+	// On device always wins — it is a privacy promise, not a preference.
+	if (storedPrivacyMode) {
 		liveMode.set('false');
 	}
 }

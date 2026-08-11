@@ -5,13 +5,14 @@
 
 import { get } from 'svelte/store';
 import { browser } from '$app/environment';
-import { CTA_PHRASES, STORAGE_KEYS } from '$lib/constants';
+import { CTA_PHRASES, PROMPT_STYLES, STORAGE_KEYS } from '$lib/constants';
 import {
 	audioState,
 	recordingState,
 	transcriptionState,
 	transcriptionActions,
-	lastRecordingDuration
+	lastRecordingDuration,
+	userPreferences
 } from '../infrastructure/stores';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
 import { getTranscriptionMode } from '$lib/services/transcription/mode.js';
@@ -223,12 +224,19 @@ export class RecordingControlsService {
 			}
 			let usedLiveTranscript = useLiveDeepgram && Boolean(finalTranscript);
 
-			if (!finalTranscript) {
+			// Live text is already the answer for Plain, so only spend the styled
+			// round trip when a style is actually set. That is the whole reason two
+			// models exist: Deepgram for the words, Gemini for the voice you picked.
+			const storedStyle = get(userPreferences).promptStyle || PROMPT_STYLES.STANDARD;
+			const styledPassWanted = !useOfflineWhisper && storedStyle !== PROMPT_STYLES.STANDARD;
+
+			if (!finalTranscript || styledPassWanted) {
 				try {
 					finalTranscript = await this.transcriptionService.transcribeAudio(audioBlob, {
 						mode: recordingMode,
 						durationSeconds
 					});
+					usedLiveTranscript = false;
 				} catch (error) {
 					const liveFallbackText = useLiveDeepgram ? liveResult?.text?.trim() || '' : '';
 					if (!liveFallbackText) {
@@ -254,6 +262,9 @@ export class RecordingControlsService {
 
 			log.log('Transcription result:', finalTranscript);
 			transcriptionActions.completeTranscription(finalTranscript);
+			// The stop cue fires the instant you tap stop, before the round trip.
+			// This one fires when the words actually land.
+			this.soundService?.transcriptionComplete?.();
 			await this.transcriptionService.clearPendingRecordingDraft?.();
 
 			if (usedLiveTranscript) {

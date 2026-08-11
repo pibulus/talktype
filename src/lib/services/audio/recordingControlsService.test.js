@@ -41,7 +41,8 @@ import {
 	isRecording,
 	isTranscribing,
 	resetStores,
-	transcriptionText
+	transcriptionText,
+	userPreferences
 } from '../infrastructure/stores.js';
 
 function createService(overrides = {}) {
@@ -285,6 +286,71 @@ describe('RecordingControlsService', () => {
 			STORAGE_KEYS.LAST_TRANSCRIPTION_METHOD,
 			'deepgram-live'
 		);
+	});
+
+	// Live text is the answer for Plain. A style is a different ask, so the styled
+	// pass has to run even when live already produced usable words — otherwise you
+	// pick Pirate and quietly get plain text back.
+	it('still runs the styled pass when a style is set, even with usable live text', async () => {
+		const audioBlob = new Blob(['x'.repeat(1200)], { type: 'audio/webm' });
+		const audioService = {
+			stopRecording: vi.fn().mockResolvedValue(audioBlob)
+		};
+		const transcriptionService = {
+			transcribeAudio: vi.fn().mockResolvedValue('arr, hello world'),
+			clearPendingRecordingDraft: vi.fn().mockResolvedValue(),
+			copyToClipboard: vi.fn().mockResolvedValue()
+		};
+
+		userPreferences.update((current) => ({ ...current, promptStyle: 'surlyPirate' }));
+		transcriptionModeMock.getTranscriptionMode.mockReturnValue({
+			useLiveDeepgram: true,
+			useOfflineWhisper: false
+		});
+		transcriptionStoreMock.finish.mockResolvedValue({
+			text: 'hello world',
+			hasFinal: true,
+			usedInterim: false,
+			finalizeAcknowledged: true
+		});
+		audioActions.updateState(AudioStates.RECORDING);
+		service = createService({ audioService, transcriptionService });
+
+		await service.stopRecording();
+
+		expect(transcriptionService.transcribeAudio).toHaveBeenCalledTimes(1);
+		expect(get(transcriptionText)).toBe('arr, hello world');
+	});
+
+	it('skips the styled pass on the plain style so live text ships as-is', async () => {
+		const audioBlob = new Blob(['x'.repeat(1200)], { type: 'audio/webm' });
+		const audioService = {
+			stopRecording: vi.fn().mockResolvedValue(audioBlob)
+		};
+		const transcriptionService = {
+			transcribeAudio: vi.fn().mockResolvedValue('batch transcript'),
+			clearPendingRecordingDraft: vi.fn().mockResolvedValue(),
+			copyToClipboard: vi.fn().mockResolvedValue()
+		};
+
+		userPreferences.update((current) => ({ ...current, promptStyle: 'standard' }));
+		transcriptionModeMock.getTranscriptionMode.mockReturnValue({
+			useLiveDeepgram: true,
+			useOfflineWhisper: false
+		});
+		transcriptionStoreMock.finish.mockResolvedValue({
+			text: 'hello world',
+			hasFinal: true,
+			usedInterim: false,
+			finalizeAcknowledged: true
+		});
+		audioActions.updateState(AudioStates.RECORDING);
+		service = createService({ audioService, transcriptionService });
+
+		await service.stopRecording();
+
+		expect(transcriptionService.transcribeAudio).not.toHaveBeenCalled();
+		expect(get(transcriptionText)).toBe('hello world');
 	});
 
 	it('uses finalized Deepgram live text even if the finalize acknowledgement is late', async () => {

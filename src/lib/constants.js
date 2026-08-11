@@ -39,7 +39,9 @@ export const STORAGE_KEYS = {
 	SOUND_ENABLED: 'talktype_sound_enabled', // UI sounds + haptics master switch
 	WEBGPU_DISABLED: 'talktype_webgpu_disabled', // sticky: WebGPU model load failed on this device
 
-	TEXT_TIMING_DEFAULT_MIGRATED: `${APP_STORAGE_PREFIX}:text_timing_default_after_stop_v1`,
+	// v1 moved everyone to after-stop. v2 reverses it: live streaming is the
+	// default now. Bumping the key is what makes the flip run once per device.
+	TEXT_TIMING_DEFAULT_MIGRATED: `${APP_STORAGE_PREFIX}:text_timing_default_live_v2`,
 	LAST_TRANSCRIPTION_METHOD: 'last_transcription_method', // Track which service was used
 
 	// PWA Related
@@ -239,7 +241,11 @@ export const SERVICE_EVENTS = {
 
 // CTA Button Phrases
 export const CTA_PHRASES = [
-	'Say hi', // Always first
+	// First impression must name the ACTION. "Say hi" read as an instruction to
+	// literally say the word "hi" — a real person froze on exactly that. The
+	// playful lines below only run for someone who has already pressed it once
+	// and knows what it does.
+	'Start talking', // Always first
 	'Tell me',
 	'Go on',
 	'Spill it',
