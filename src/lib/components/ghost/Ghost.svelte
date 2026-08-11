@@ -312,6 +312,7 @@
 	bind:this={ghostSvg}
 	class="ghost-container theme-{currentTheme} {animationClass}
       {$ghostStateStore.isRecording ? CSS_CLASSES.RECORDING : ''}
+      {$ghostStateStore.current === ANIMATION_STATES.THINKING ? CSS_CLASSES.THINKING : ''}
       {$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG &&
 	$ghostStateStore.specialAnimation === 'spin'
 		? CSS_CLASSES.SPIN
@@ -381,7 +382,7 @@
 							xlink:href={ghostPathsUrl}
 							href={ghostPathsUrl + '#ghost-body-path'}
 							class="ghost-outline-path"
-							fill="#000000"
+							fill="#1e1714"
 							opacity="1"
 						/>
 					</g>
@@ -392,14 +393,14 @@
 							xlink:href={ghostPathsUrl}
 							href={ghostPathsUrl + '#ghost-eye-left-path'}
 							class="ghost-eye ghost-eye-left"
-							fill="#000000"
+							fill="#1e1714"
 						/>
 						<use
 							bind:this={rightEye}
 							xlink:href={ghostPathsUrl}
 							href={ghostPathsUrl + '#ghost-eye-right-path'}
 							class="ghost-eye ghost-eye-right"
-							fill="#000000"
+							fill="#1e1714"
 						/>
 					</g>
 				</g>

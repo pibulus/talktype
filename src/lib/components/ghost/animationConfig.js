@@ -170,9 +170,7 @@ export const CSS_CLASSES = {
 	PULSE: 'ghost-pulse',
 	INITIAL_LOAD: 'initial-load',
 	RECORDING: 'recording',
-	RECORDING_PEACH: 'recording-glow-peach',
-	RECORDING_MINT: 'recording-glow-mint',
-	RECORDING_BUBBLEGUM: 'recording-glow-bubblegum',
+	THINKING: 'thinking',
 	RAINBOW_CYCLE: 'rainbow-color-cycle',
 	ASLEEP: 'asleep', // CSS class for the asleep state
 	WAKING_UP: 'waking-up' // CSS class for the waking up state

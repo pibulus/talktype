@@ -62,12 +62,8 @@
 		padding: 1rem; /* Add padding for glow space */
 	}
 
-	/* Recording ghost effect - enhanced contrast for accessibility */
-	:global(.ghost.recording) {
-		filter: drop-shadow(0 0 12px rgba(0, 180, 140, 0.85));
-		/* Enhanced outline for better contrast on cream backgrounds */
-		outline: 2px solid rgba(0, 120, 100, 0.4);
-		outline-offset: 2px;
-		border-radius: 50%;
-	}
+	/* The .ghost.recording rule that lived here was dead — Ghost.svelte emits
+	   ghost-container / ghost-svg / ghost-float-stage, never a bare `ghost`, so
+	   it never rendered once. The real recording treatment is in
+	   ghost-animations-optimized.css. */
 </style>
