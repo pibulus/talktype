@@ -1,4 +1,8 @@
-const MASTER_LEVEL = 0.72;
+// Cue gains sit around 0.02, so master is what decides whether any of this is
+// actually audible. At 0.72 the cues landed near -37dBFS — technically playing,
+// practically inaudible on a phone speaker. This is the one number to turn if
+// they ever feel loud; the compressor downstream catches the peaks.
+const MASTER_LEVEL = 3.0;
 const MIN_GAIN = 0.0001;
 const DEFAULT_VOLUME = 0.85;
 const DEFAULT_MAX_VOICES = 14;
@@ -181,6 +185,28 @@ export const DEFAULT_SOUND_CUES = {
 		timeJitter: 0.004,
 		panJitter: 0.04,
 		variants: [[{ frequency: 430, duration: 0.06, gain: 0.02, voice: 'knock' }]]
+	},
+	// The words landing is the moment the whole app exists for, and it was the
+	// one thing that happened in silence. An ascending resolve — borrowed from
+	// stargram's transmissionComplete, which solves exactly this beat.
+	complete: {
+		cooldownMs: 400,
+		detuneCents: 5,
+		gainJitter: 0.08,
+		timeJitter: 0.004,
+		panJitter: 0.04,
+		variants: [
+			[
+				{ frequency: 392, duration: 0.06, gain: 0.022, voice: 'tap' },
+				{ frequency: 523, offset: 0.065, duration: 0.08, gain: 0.024, voice: 'bloom' },
+				{ frequency: 784, offset: 0.145, duration: 0.16, gain: 0.02, voice: 'sparkle' }
+			],
+			[
+				{ frequency: 440, duration: 0.06, gain: 0.021, voice: 'tap' },
+				{ frequency: 587, offset: 0.065, duration: 0.08, gain: 0.023, voice: 'bloom' },
+				{ frequency: 880, offset: 0.145, duration: 0.16, gain: 0.019, voice: 'sparkle' }
+			]
+		]
 	}
 };
 
@@ -480,6 +506,10 @@ export class SoundService {
 
 	copySuccess() {
 		return this.play('copy');
+	}
+
+	transcriptionComplete() {
+		return this.play('complete');
 	}
 
 	success() {

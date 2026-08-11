@@ -47,8 +47,8 @@
 	/* Smaller + tucked + squishy — scoped styles outrank the Tailwind size
 	   utilities, so the restyle lives here without touching the markup. */
 	.modal-close-btn {
-		top: 0.55rem;
-		right: 0.55rem;
+		top: 0.35rem;
+		right: 0.35rem;
 		width: 32px;
 		height: 32px;
 		font-size: 1rem;
@@ -68,7 +68,7 @@
 	}
 
 	.modal-close-btn:active {
-		transform: scale(0.86);
+		transform: scale(0.82);
 	}
 
 	/* Fingers get a bigger target than pointers do. */

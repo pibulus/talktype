@@ -60,8 +60,13 @@
 				<span class="footer-dot mx-2 shrink-0">•</span>
 				<span class="flex min-w-0 items-center text-sm font-light">
 					<span class="shrink-0">Made with</span>
-					<FooterCharm charms={['❤️', '☕', '👻']} />
-					<span class="footer-place ml-0.5 truncate">in Melbourne</span>
+					<FooterCharm charms={['❤️']} rare={['👻', '🌮']} />
+					<a
+						class="footer-place ml-0.5 truncate"
+						href="https://github.com/pibulus"
+						target="_blank"
+						rel="noopener noreferrer">in Melbourne</a
+					>
 				</span>
 			</div>
 			<div class="flex shrink-0 items-center">
@@ -85,7 +90,7 @@
 	}
 
 	.tt-app-footer {
-		color: var(--footer-text-color, #4b5563);
+		color: var(--footer-text-color, #463f3a);
 		border-color: var(--footer-border-color, var(--tt-footer-border-color));
 		background: var(--footer-bg, var(--tt-footer-bg-image));
 		box-shadow: var(--tt-footer-shadow);

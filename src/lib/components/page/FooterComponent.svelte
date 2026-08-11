@@ -1,6 +1,5 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import { analytics } from '$lib/services/analytics.js';
 
 	const dispatch = createEventDispatcher();
 	const footerButtonClass =
@@ -18,6 +17,7 @@
 		dispatch('showHistory');
 	}
 
+	/* Parked with the footer buttons — see the note in the markup below.
 	function showExtension() {
 		dispatch('showExtension');
 	}
@@ -48,6 +48,7 @@
 			}
 		}
 	}
+	*/
 </script>
 
 <nav
@@ -63,14 +64,9 @@
 	<button class={footerButtonClass} on:click={showHistory} aria-label="View Transcript History">
 		History
 	</button>
-	<button
-		class={footerButtonClass}
-		on:click={showExtension}
-		aria-label="Open Chrome Extension info"
-	>
-		Extension
-	</button>
-	<button class={footerButtonClass} on:click={shareApp} aria-label="Share TalkType"> Share </button>
+	<!-- Extension and Share are parked, not retired. The extension isn't ready to
+	     be advertised yet, and the footer reads calmer at three. Handlers below
+	     are commented out with them so lint stays quiet. -->
 </nav>
 
 <style>

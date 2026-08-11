@@ -261,12 +261,12 @@
 						aria-hidden="true"><span></span></span
 					>
 					<span class="block">
-						<span class="block text-sm font-black leading-tight">On device</span>
+						<span class="block text-sm font-black leading-tight">Keep it private</span>
 						<span class="block text-[11px] font-bold leading-tight text-gray-500">
 							{#if offlineButtonStatus?.visible && transcriptionMode === 'offline'}
 								{offlineStatusLabel}
 							{:else}
-								Private. No signal needed.
+								Works with no signal. Nothing leaves your phone.
 							{/if}
 						</span>
 					</span>

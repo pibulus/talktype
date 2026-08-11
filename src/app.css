@@ -83,7 +83,8 @@
 	   only need declaring once. --footer-text-color is a concrete value: all
 	   TalkType themes are LIGHT, so the muted-ink gray-600 (#4b5563) is readable
 	   on every theme (matches today's rendered footer color exactly). */
-	--footer-text-color: #4b5563;
+	/* Was #4b5563 (cool gray-600) and it sank into the warm footer wash. */
+	--footer-text-color: #463f3a;
 	--footer-border-color: var(--tt-footer-border-color);
 	--footer-bg: var(--tt-footer-bg-image);
 	--footer-dot-color: var(--tt-footer-dot-color);
