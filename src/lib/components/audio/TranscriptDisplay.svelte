@@ -1,16 +1,45 @@
 <script>
 	import { ANIMATION } from '$lib/constants';
-	import { createEventDispatcher, onMount, tick } from 'svelte';
+	import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
 	import { browser } from '$app/environment';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import WiggleButton from '$lib/charms/WiggleButton.svelte';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
 	import { typewriterSoundService } from '$lib/services/infrastructure/typewriterSoundService.js';
 	import { centerElementInViewport } from '$lib/utils/scrollUtils';
-	import { insertPlainTranscriptText, normalizeTranscriptText } from '$lib/utils/transcriptText.js';
+	import {
+		getTranscriptWordCount,
+		insertPlainTranscriptText,
+		normalizeTranscriptText
+	} from '$lib/utils/transcriptText.js';
+	import { recordingState, lastRecordingDuration } from '$lib/services/infrastructure/stores';
+	import { formatDuration } from './recordButtonState.js';
 	import { theme } from '$lib';
 
 	const TYPEWRITER_INPUT_GUARD_MS = 34;
+
+	// The recording you just made was invisible until you opened History — the
+	// blob already survives a successful transcription, nothing was playing it.
+	let takeAudioUrl = null;
+	let takeAudioBlob = null;
+
+	$: {
+		const blob = $recordingState.audioBlob || null;
+		if (blob !== takeAudioBlob) {
+			if (takeAudioUrl) URL.revokeObjectURL(takeAudioUrl);
+			takeAudioUrl = blob ? URL.createObjectURL(blob) : null;
+			takeAudioBlob = blob;
+		}
+	}
+
+	onDestroy(() => {
+		if (takeAudioUrl) URL.revokeObjectURL(takeAudioUrl);
+	});
+
+	// `editable` is already false while recording or transcribing, so it doubles
+	// as "the take is finished" without inventing a second signal.
+	$: takeWordCount = transcript ? getTranscriptWordCount(transcript) : 0;
+	$: showTakeMeta = editable && takeWordCount > 0;
 
 	// Props
 	export let transcript = '';
@@ -371,6 +400,32 @@
 							class="scroll-indicator-bottom pointer-events-none absolute left-0 right-0 top-[-32px] z-10"
 						></div>
 					{/if}
+
+					{#if showTakeMeta}
+						<div class="take-meta flex flex-wrap items-center gap-x-3 gap-y-1 pt-2">
+							<span class="text-xs font-medium tabular-nums text-gray-400">
+								{takeWordCount}
+								{takeWordCount === 1 ? 'word' : 'words'}
+							</span>
+							{#if $lastRecordingDuration > 0}
+								<span class="text-xs font-medium tabular-nums text-gray-400">
+									{formatDuration($lastRecordingDuration)}
+								</span>
+							{/if}
+						</div>
+
+						{#if takeAudioUrl}
+							<div class="mt-2 rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-inner">
+								<audio
+									class="take-audio-player w-full"
+									src={takeAudioUrl}
+									controls
+									preload="metadata"
+									aria-label="Play the recording behind this transcript"
+								></audio>
+							</div>
+						{/if}
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -378,6 +433,13 @@
 </div>
 
 <style>
+	/* Matches the History player so audio looks like one thing in both places. */
+	.take-audio-player {
+		display: block;
+		height: 42px;
+		border-radius: 0.75rem;
+	}
+
 	/* Container layout */
 	.transcript-wrapper {
 		margin-top: 24px; /* Reduced space between button and transcript */

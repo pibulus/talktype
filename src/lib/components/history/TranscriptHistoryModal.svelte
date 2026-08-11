@@ -24,9 +24,12 @@
 	import { transcriptionService } from '$lib/services/transcription/transcriptionService.js';
 	import {
 		cleanTranscriptText,
+		getTranscriptWordCount,
 		insertPlainTranscriptTextIntoControl,
 		normalizeTranscriptText
 	} from '$lib/utils/transcriptText.js';
+	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
+	import { theme } from '$lib';
 
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { PRICING } from '$lib/config/pricing.js';
@@ -138,8 +141,19 @@
 		void autoBackupHistoryToVault({ allowEmptyHistory: true });
 	}
 
-	// Copy transcript to clipboard
-	async function copyTranscript(text) {
+	// Copy transcript to clipboard. The toast lands at the bottom of the screen,
+	// which in a scrolled list is nowhere near the thumb — so the button itself
+	// confirms too, at the point of contact.
+	let copiedId = null;
+	let copiedTimer = null;
+
+	// wordCount has been stored on every transcript for ages; older rows predate
+	// the field, so fall back to counting the text we already have.
+	function wordCountOf(transcript) {
+		return transcript.wordCount ?? getTranscriptWordCount(transcript.text);
+	}
+
+	async function copyTranscript(text, id = null) {
 		const normalizedText = cleanTranscriptText(text);
 		if (!normalizedText) {
 			showToast('Nothing to copy.', 'info');
@@ -149,6 +163,11 @@
 		const copied = await transcriptionService.copyToClipboard(normalizedText, {
 			showSuccess: false
 		});
+		if (copied && id) {
+			clearTimeout(copiedTimer);
+			copiedId = id;
+			copiedTimer = setTimeout(() => (copiedId = null), 1400);
+		}
 		showToast(copied ? 'Copied' : 'Tap the page, then try copy.', copied ? 'success' : 'info');
 	}
 
@@ -586,6 +605,16 @@
 												{formatDuration(transcript.duration)}
 											</span>
 										{/if}
+										<!-- Stored on every transcript and shown nowhere until now. -->
+										{#if wordCountOf(transcript) > 0}
+											<span
+												class="text-xs font-medium tabular-nums text-gray-400"
+												title="Words in this transcript"
+											>
+												{wordCountOf(transcript)}
+												{wordCountOf(transcript) === 1 ? 'word' : 'words'}
+											</span>
+										{/if}
 										{#if transcript.promptStyle && transcript.promptStyle !== 'standard'}
 											<span
 												class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-medium text-pink-700"
@@ -634,13 +663,23 @@
 												>
 											</button>
 										{/if}
+										<!-- Same ghost chip as the main transcript's copy button, so
+										     "copy" looks like one thing across the whole app. -->
 										<button
 											type="button"
-											class="inline-flex min-h-11 items-center justify-center rounded-full bg-white/70 px-4 text-sm font-bold text-pink-600 ring-1 ring-pink-200 transition hover:bg-pink-50 active:scale-[0.97]"
-											on:click={() => copyTranscript(transcript.text)}
+											class="history-copy-chip h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-pink-100 to-purple-50 p-1 shadow-sm ring-1 ring-pink-200/70 transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95"
+											class:is-copied={copiedId === transcript.id}
+											on:click={() => copyTranscript(transcript.text, transcript.id)}
 											aria-label={`Copy transcript from ${formatDate(transcript.timestamp)}`}
+											title={copiedId === transcript.id ? 'Copied' : 'Copy'}
 										>
-											Copy
+											{#if copiedId === transcript.id}
+												<span class="copy-tick" aria-hidden="true">✓</span>
+											{:else}
+												<span class="block h-full w-full p-0.5">
+													<DisplayGhost theme={$theme} size="100%" disableJsAnimation={true} />
+												</span>
+											{/if}
 										</button>
 										<button
 											type="button"
@@ -796,10 +835,36 @@
 		border-radius: 0.75rem;
 	}
 
+	/* The inner frame must NOT contain. It used to, while the outer list did not,
+	   so a gesture starting on a long transcript refused to hand off to the modal
+	   — and a short one (not scrollable) propagated fine. That flipped the
+	   behaviour per row depending on text length. Containment belongs on the
+	   outermost scroller in the stack, which is the list. */
 	.history-transcript-frame {
 		scrollbar-gutter: stable;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.tt-modal-scroll-area {
 		overscroll-behavior: contain;
 		-webkit-overflow-scrolling: touch;
+	}
+
+	.history-copy-chip {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.history-copy-chip.is-copied {
+		background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+	}
+
+	.copy-tick {
+		font-size: 1.1rem;
+		font-weight: 700;
+		line-height: 1;
+		color: #be185d;
 	}
 
 	.history-transcript-text,
