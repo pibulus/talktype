@@ -34,13 +34,16 @@ export function getAudioDisplayLevel(dataArray) {
 	const average = sum / dataArray.length;
 	const topAverage = topValues.reduce((total, value) => total + value, 0) / topValues.length;
 
-	// Frequency-domain data is quiet on desktop mics. A small top-bin average
-	// catches speech without letting one noisy bin dominate the whole display.
+	// Full scale is a raised voice, not a whisper. The previous divisors were
+	// tuned for a quiet desktop mic and saturated on everything above room tone —
+	// quiet speech already pinned at 100%, so the bars had no range left to show.
+	// Calibration is pinned by audioLevel.test.js; retune there, not by eye.
 	if (min <= 40) {
-		const averageLevel = Math.max(0, average - 4) / 34;
-		const topLevel = Math.max(0, topAverage - 14) / 92;
-		const peakLevel = Math.max(0, peak - 22) / 130;
-		return clampLevel(Math.pow(Math.max(averageLevel, topLevel, peakLevel), 0.82) * 100);
+		const averageLevel = Math.max(0, average - 8) / 118;
+		const topLevel = Math.max(0, topAverage - 30) / 228;
+		const peakLevel = Math.max(0, peak - 34) / 230;
+		const combined = Math.min(1, Math.max(averageLevel, topLevel, peakLevel));
+		return clampLevel(Math.pow(combined, 0.9) * 100);
 	}
 
 	// Defensive fallback if the source ever switches to time-domain waveform data.

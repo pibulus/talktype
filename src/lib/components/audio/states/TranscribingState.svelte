@@ -2,8 +2,13 @@
 	export let progress = 0;
 	export let label = 'Processing';
 
-	$: safeProgress = Math.max(0, Math.min(100, Math.round(Number(progress) || 0)));
-	$: visualProgress = safeProgress > 0 ? safeProgress : 16;
+	// Keep the fraction. Rounding to whole percent turned a smooth crawl into
+	// 4px hops with over a second of dead air between them, because the feeder
+	// decays to hundredths of a percent near the end. Only aria gets the integer.
+	$: safeProgress = Math.max(0, Math.min(100, Number(progress) || 0));
+	// A floor, not a placeholder — the old ternary showed 16% then snapped
+	// backwards to the first real tick.
+	$: visualProgress = Math.max(safeProgress, 16);
 	$: visualRatio = visualProgress / 100;
 	// Show status text visibly when it says something more specific than the
 	// default (e.g. "Downloading model 42%") — otherwise dots carry the vibe.
@@ -14,7 +19,7 @@
 	class="progress-container relative mx-auto flex h-[64px] w-[90%] max-w-[420px] items-center justify-center overflow-hidden rounded-full bg-amber-200 shadow-md shadow-black/10 sm:h-[64px] sm:w-[85%]"
 	role="progressbar"
 	aria-label={label}
-	aria-valuenow={safeProgress}
+	aria-valuenow={Math.round(safeProgress)}
 	aria-valuemin="0"
 	aria-valuemax="100"
 >
