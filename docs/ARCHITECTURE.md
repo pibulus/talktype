@@ -71,7 +71,7 @@ Flow:
 1. `TranscriptionService.transcribeAudio()` starts progress UI and delegates to `simpleHybridService`.
 2. If Offline Mode is off, `simpleHybridService` posts the recorded blob to `/api/transcribe`.
 3. `/api/transcribe` applies auth/rate limiting through `guardRequest()` plus a transcription-specific rate bucket, validates upload size/duration limits, and routes by prompt style.
-4. `standard` uses Deepgram Nova-3 batch transcription.
+4. `standard` uses Deepgram Nova-3 batch transcription. When `CHONK_TRANSCRIBE_URL` is set, free-tier `standard` requests up to `CHONK_MAX_DURATION_SECONDS` (default 120) are tried first against the in-house transcriber on the Chonk home server (`chonk-transcriber/`, transcribe.cpp + Parakeet TDT 0.6B v3, proxied via `src/lib/server/chonkService.js`), falling back to Deepgram on any failure. Supporters always use Deepgram (diarization/paragraphs are their perk). Benchmarks and deploy notes live in `chonk-transcriber/README.md`.
 5. Alternate output style presets use Gemini.
 6. If Gemini is unavailable because of quota, billing, or key problems, `/api/transcribe` falls back to a standard Deepgram transcript and returns fallback metadata.
 7. Gemini uploads are deleted in `finally` after transcription.
