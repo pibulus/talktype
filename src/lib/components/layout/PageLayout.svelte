@@ -43,17 +43,17 @@
 		     both blocks toward the middle). The footer's own px-* provides the edge
 		     inset, so the attribution sits hard left and the nav hard right. -->
 		<div
-			class="footer-row mx-auto flex w-full flex-row items-center justify-center gap-3 sm:justify-between"
+			class="footer-row mx-auto flex w-full flex-row items-center justify-between gap-2 sm:gap-3"
 		>
 			<!-- Attribution left, nav right. The attribution shrinks before the nav
 			     does (shrink + min-w-0 here, shrink-0 on the nav), so a tight window
 			     trims this text instead of pushing the last nav button off-screen.
 			     "in Melbourne" is the first thing dropped when space runs out. -->
 			<div
-				class="copyright hidden min-w-0 shrink items-center whitespace-nowrap sm:flex"
+				class="copyright flex min-w-0 shrink items-center whitespace-nowrap"
 				title="© {footerYear} {appName} — Made with love in Melbourne"
 			>
-				<span class="shrink-0 text-sm font-medium tracking-normal">
+				<span class="footer-copy shrink-0 text-sm font-medium tracking-normal">
 					© {footerYear}
 					{appName}
 				</span>
@@ -129,6 +129,25 @@
 		.copyright .footer-dot {
 			margin-left: 0.375rem;
 			margin-right: 0.375rem;
+		}
+	}
+
+	/* Under 640px the copyright used to be hidden outright, which left two nav
+	   words floating in an empty band. Keep the row anchored instead: the ©
+	   line and the charm stay, the place name goes. */
+	@media (max-width: 639px) {
+		/* A phone cannot hold the full attribution AND three nav words without
+		   them colliding. Keep the charm — that's the personality — and shed the
+		   rest; the nav is the load-bearing half. Same shed order as ZipList so
+		   the family's footers behave identically. */
+		.copyright .footer-place,
+		.copyright .footer-copy,
+		.copyright .footer-dot {
+			display: none;
+		}
+
+		.copyright {
+			font-size: 0.78rem;
 		}
 	}
 
