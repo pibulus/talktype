@@ -3,6 +3,10 @@ import { env } from '$env/dynamic/private';
 import { guardRequest } from '$lib/server/authService.js';
 import { enforceRateLimit } from '$lib/server/rateLimiter.js';
 import { transcribeAudio } from '$lib/server/deepgramService.js';
+import {
+	isChonkConfigured,
+	transcribeAudio as transcribeWithChonk
+} from '$lib/server/chonkService.js';
 import { verifySupporterToken } from '$lib/server/supporter/licenseCrypto.js';
 import { ANIMATION, LEGACY_STORAGE_KEYS, PROMPT_STYLES, STORAGE_KEYS } from '$lib/constants';
 import { MAX_CUSTOM_PROMPT_CHARS } from '$lib/prompts';
@@ -238,14 +242,30 @@ export async function POST(event) {
 		let fallback = null;
 
 		// Routing Logic:
-		// 1. Standard -> Deepgram (High Accuracy, premium diarization for supporters)
-		// 2. Creative / Custom -> Gemini, with Deepgram standard as a graceful outage fallback
+		// 1. Standard + free + Chonk configured -> in-house transcribe.cpp on the
+		//    home server, with Deepgram as a graceful fallback. Supporters stay on
+		//    Deepgram: diarization/paragraphs are their perk and Parakeet has neither.
+		// 2. Standard otherwise -> Deepgram (High Accuracy)
+		// 3. Creative / Custom -> Gemini, with Deepgram standard as a graceful outage fallback
 		if (promptStyle === PROMPT_STYLES.STANDARD) {
-			console.log('[API /transcribe] Routing to Deepgram (Standard)');
-			transcription = await transcribeAudio(file, {
-				diarize: isSupporter,
-				paragraphs: isSupporter
-			});
+			if (!isSupporter && isChonkConfigured()) {
+				try {
+					console.log('[API /transcribe] Routing to Chonk (in-house)');
+					transcription = await transcribeWithChonk(file);
+				} catch (chonkError) {
+					console.warn(
+						'[API /transcribe] Chonk unavailable; falling back to Deepgram:',
+						chonkError?.message || chonkError
+					);
+				}
+			}
+			if (!transcription) {
+				console.log('[API /transcribe] Routing to Deepgram (Standard)');
+				transcription = await transcribeAudio(file, {
+					diarize: isSupporter,
+					paragraphs: isSupporter
+				});
+			}
 		} else {
 			console.log(`[API /transcribe] Routing to Gemini (${promptStyle})`);
 			// Dynamically import Gemini service to keep initial load light
