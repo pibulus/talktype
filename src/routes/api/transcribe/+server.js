@@ -40,6 +40,11 @@ const TRANSCRIBE_RATE_WINDOW_MS = parseNonNegativeNumber(
 	10 * 60 * 1000
 );
 const TRANSCRIBE_RATE_LIMIT = parseNonNegativeNumber(env.TRANSCRIBE_RATE_LIMIT, 20);
+// Chonk runs ~9x realtime on short clips but ~4.6x on long ones (measured
+// 2026-08-12: 65s for a 5-min clip — past the client's 60s budget). Gate
+// chonk-first routing to clips short enough to finish fast; longer ones go
+// straight to Deepgram instead of burning 40s before falling back.
+const CHONK_MAX_DURATION_SECONDS = parsePositiveNumber(env.CHONK_MAX_DURATION_SECONDS, 120);
 const SUPPORTER_TOKEN_HEADER = 'x-talktype-supporter-token';
 // Every preset style is free. Supporter mode buys ONE thing here: writing your
 // own prompt.
@@ -248,7 +253,9 @@ export async function POST(event) {
 		// 2. Standard otherwise -> Deepgram (High Accuracy)
 		// 3. Creative / Custom -> Gemini, with Deepgram standard as a graceful outage fallback
 		if (promptStyle === PROMPT_STYLES.STANDARD) {
-			if (!isSupporter && isChonkConfigured()) {
+			const chonkEligible =
+				Number.isFinite(durationSeconds) && durationSeconds <= CHONK_MAX_DURATION_SECONDS;
+			if (!isSupporter && chonkEligible && isChonkConfigured()) {
 				try {
 					console.log('[API /transcribe] Routing to Chonk (in-house)');
 					transcription = await transcribeWithChonk(file);

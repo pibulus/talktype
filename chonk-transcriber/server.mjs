@@ -7,7 +7,7 @@
 // ===================================================================
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 
@@ -20,24 +20,6 @@ const CLI =
 	join(HOME, 'talktype-transcriber/transcribe.cpp/build/bin/transcribe-cli');
 const MAX_BYTES = 50 * 1024 * 1024; // mirrors the TalkType upload cap
 const JOB_TIMEOUT_MS = 120_000; // a wedged ffmpeg/cli must not jam the queue
-
-/**
- * transcribe-cli is "more or less a drop-in whisper.cpp replacement", so its
- * stdout may carry whisper-style "[00:00:00.000 --> 00:00:02.000] text"
- * segment lines. Strip timestamps if present, pass plain output through.
- */
-export function cleanCliOutput(raw) {
-	const lines = (raw || '').split('\n');
-	const cleaned = lines
-		.map((line) => {
-			const match = line.match(/^\s*\[[\d:.,]+\s*-->\s*[\d:.,]+\]\s*(.*)$/);
-			return match ? match[1] : line;
-		})
-		.join('\n')
-		.replace(/\n{2,}/g, '\n')
-		.trim();
-	return cleaned;
-}
 
 function run(cmd, args) {
 	return new Promise((resolve, reject) => {
@@ -81,8 +63,11 @@ async function transcribe(buffer) {
 			'1',
 			wav
 		]);
-		const { stdout } = await run(CLI, ['-m', MODEL, wav]);
-		return cleanCliOutput(stdout);
+		const out = join(dir, 'out.txt');
+		// -o writes the bare transcript to a file (verified on chonk) — no
+		// stdout log parsing needed. --timestamps none keeps it prose-only.
+		await run(CLI, ['-q', '--timestamps', 'none', '-m', MODEL, '-o', out, wav]);
+		return (await readFile(out, 'utf8')).trim();
 	} finally {
 		await rm(dir, { recursive: true, force: true });
 	}
@@ -116,25 +101,6 @@ function readBody(req, res) {
 		req.on('end', () => resolve(Buffer.concat(chunks)));
 		req.on('error', reject);
 	});
-}
-
-if (process.argv[2] === '--selftest') {
-	const assert = (cond, msg) => {
-		if (!cond) {
-			console.error(`FAIL: ${msg}`);
-			process.exit(1);
-		}
-	};
-	assert(cleanCliOutput('plain text out\n') === 'plain text out', 'plain passthrough');
-	assert(
-		cleanCliOutput(
-			'[00:00:00.000 --> 00:00:02.500]   Hello there.\n[00:00:02.500 --> 00:00:04.000]  General Kenobi.'
-		) === 'Hello there.\nGeneral Kenobi.',
-		'whisper timestamps stripped'
-	);
-	assert(cleanCliOutput('') === '', 'empty ok');
-	console.log('selftest ok');
-	process.exit(0);
 }
 
 createServer(async (req, res) => {

@@ -11,14 +11,16 @@
 set -euo pipefail
 
 BASE="${BASE:-$HOME/talktype-transcriber}"
-MODEL_URL="${MODEL_URL:-https://huggingface.co/handy-computer/parakeet-tdt-0.6b-v3/resolve/main/parakeet-tdt-0.6b-v3-Q8_0.gguf}"
+MODEL_URL="${MODEL_URL:-https://huggingface.co/handy-computer/parakeet-tdt-0.6b-v3-gguf/resolve/main/parakeet-tdt-0.6b-v3-Q8_0.gguf}"
 MODEL_FILE="$(basename "$MODEL_URL")"
 
 echo "==> deps"
 sudo apt-get update -qq
 sudo apt-get install -y git cmake build-essential ffmpeg libopenblas-dev curl
 if [ -n "${VULKAN:-}" ]; then
-	sudo apt-get install -y libvulkan-dev glslc
+	sudo apt-get install -y libvulkan-dev glslc spirv-headers glslang-tools
+	# The iGPU render node is root:render — without this, Vulkan only sees llvmpipe.
+	sudo usermod -aG render "$USER"
 fi
 command -v node >/dev/null || {
 	echo "node is required (sudo apt-get install -y nodejs)"
@@ -46,7 +48,6 @@ fi
 echo "==> install wrapper"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cp "$SCRIPT_DIR/server.mjs" "$BASE/server.mjs"
-node "$BASE/server.mjs" --selftest
 
 echo "==> smoke test the CLI"
 "$CLI" --help 2>&1 | head -20 || true
