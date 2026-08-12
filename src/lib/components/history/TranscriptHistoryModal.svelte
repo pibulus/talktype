@@ -1,5 +1,6 @@
 <script>
 	import { onDestroy, onMount, tick } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { browser } from '$app/environment';
 	import {
 		transcriptHistory,
@@ -66,11 +67,12 @@
 	let openMenuId = null;
 	let showExportFormats = false;
 	let lastTypewriterInputAt = 0;
-	const iconButtonClass = 'btn btn-ghost h-12 min-h-12 w-12 px-0 text-base';
+	const iconButtonClass =
+		'btn btn-ghost h-11 min-h-11 w-11 px-0 text-base transition-colors duration-150';
 	// Secondary actions stay borderless — the transcript should be the loudest
 	// thing in the row, not the chrome around it.
 	const menuButtonClass =
-		'inline-flex min-h-11 items-center rounded-full px-3 text-sm font-bold text-gray-600 transition hover:bg-pink-50 hover:text-pink-700';
+		'inline-flex min-h-11 items-center rounded-full px-4 py-2.5 text-sm font-bold text-gray-600 transition-colors duration-150 hover:bg-pink-50 hover:text-pink-700 active:bg-pink-100 active:scale-95';
 
 	function toggleMenu(id) {
 		openMenuId = openMenuId === id ? null : id;
@@ -460,10 +462,10 @@
 		</form>
 
 		<!-- Header -->
-		<div class="mb-4 shrink-0 border-b border-pink-100 pb-3">
+		<div class="mb-4 shrink-0 border-b border-pink-100 pb-4">
 			<!-- Title row keeps pr-10 so it never collides with the absolute close
 			     button; actions live on their own full-width row below. -->
-			<div class="flex flex-col gap-1">
+			<div class="flex flex-col gap-3">
 				<div class="flex items-start justify-between gap-2 pr-10">
 					<div>
 						<h3 id="history_modal_title" class="text-xl font-black tracking-tight text-gray-800">
@@ -477,7 +479,7 @@
 				</div>
 
 				{#if $transcriptHistory.length > 0}
-					<div class="flex flex-wrap items-center gap-1">
+					<div class="flex flex-wrap items-center gap-2">
 						{#if isSupporter}
 							<button
 								type="button"
@@ -499,7 +501,7 @@
 						{/if}
 						<button
 							type="button"
-							class={menuButtonClass}
+							class={`${menuButtonClass} ${confirmClearAll ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 active:bg-amber-200' : ''}`}
 							on:click={handleClearAll}
 							aria-label={confirmClearAll
 								? 'Tap again to clear transcript history'
@@ -509,7 +511,7 @@
 						</button>
 					</div>
 					{#if isSupporter && showExportFormats}
-						<div class="flex flex-wrap gap-2">
+						<div class="flex flex-wrap gap-2" transition:fade={{ duration: 150 }}>
 							<button type="button" class={menuButtonClass} on:click={handleExportMarkdown}>
 								One Markdown file
 							</button>
@@ -530,10 +532,10 @@
 			>
 				<button
 					type="button"
-					class={`min-h-10 shrink-0 rounded-full border px-3 text-xs font-bold transition-colors duration-150 ${
+					class={`min-h-10 shrink-0 rounded-full border px-3 text-xs font-bold transition-all duration-150 ${
 						!selectedTag
 							? 'border-pink-300 bg-pink-50 text-pink-800'
-							: 'border-pink-100 bg-white/75 text-gray-600 hover:bg-pink-50'
+							: 'border-pink-100 bg-white/75 text-gray-600 hover:bg-pink-50 active:scale-95'
 					}`}
 					aria-pressed={!selectedTag}
 					on:click={() => (selectedTag = '')}
@@ -543,10 +545,10 @@
 				{#each availableTags.slice(0, 14) as tag}
 					<button
 						type="button"
-						class={`min-h-10 shrink-0 rounded-full border px-3 text-xs font-bold transition-colors duration-150 ${
+						class={`min-h-10 shrink-0 rounded-full border px-3 text-xs font-bold transition-all duration-150 ${
 							selectedTag === tag
 								? 'border-pink-300 bg-pink-50 text-pink-800'
-								: 'border-pink-100 bg-white/75 text-gray-600 hover:bg-pink-50'
+								: 'border-pink-100 bg-white/75 text-gray-600 hover:bg-pink-50 active:scale-95'
 						}`}
 						aria-pressed={selectedTag === tag}
 						on:click={() => toggleTag(tag)}
@@ -561,20 +563,20 @@
 		<div class="tt-modal-scroll-area min-h-0 flex-1 overflow-y-auto">
 			{#if $transcriptHistory.length === 0}
 				<!-- Empty State -->
-				<div class="py-12 text-center">
-					<p class="mb-2 text-4xl opacity-30" aria-hidden="true">📝</p>
-					<p class="text-sm text-gray-500">Nothing saved yet</p>
-					<p class="mt-1 text-xs text-gray-400">
-						Transcripts and audio will save here — on this device only.
+				<div class="py-16 text-center">
+					<p class="mb-3 text-5xl opacity-25" aria-hidden="true">📝</p>
+					<p class="text-base font-bold text-gray-600">Nothing saved yet</p>
+					<p class="mt-2 text-sm leading-relaxed text-gray-500">
+						Transcripts and audio will save here<br />— on this device only.
 					</p>
 				</div>
 			{:else if visibleTranscripts.length === 0}
-				<div class="py-12 text-center">
-					<p class="mb-2 text-4xl opacity-30" aria-hidden="true">🔎</p>
-					<p class="text-sm text-gray-500">No transcripts with #{selectedTag}</p>
+				<div class="py-16 text-center">
+					<p class="mb-3 text-5xl opacity-25" aria-hidden="true">🔎</p>
+					<p class="text-base font-bold text-gray-600">No transcripts with #{selectedTag}</p>
 					<button
 						type="button"
-						class="btn mt-4 min-h-11 border-pink-100 bg-white/80 px-4 text-sm text-gray-700 hover:bg-pink-50"
+						class="btn mt-6 min-h-12 border-pink-200 bg-pink-50/80 px-6 text-sm font-bold text-pink-700 hover:bg-pink-100 active:scale-95"
 						on:click={() => (selectedTag = '')}
 					>
 						Show all
@@ -582,10 +584,10 @@
 				</div>
 			{:else}
 				<!-- Transcript List -->
-				<div class="space-y-3">
+				<div class="space-y-4">
 					{#each visibleTranscripts as transcript (transcript.id)}
 						<div
-							class="group rounded-lg border border-pink-100 bg-white/50 p-3 shadow-sm transition-all hover:shadow-md"
+							class="group rounded-xl border-2 border-pink-100 bg-white/50 p-4 shadow-sm transition-shadow duration-200 hover:shadow-md"
 						>
 							<!-- Header -->
 							<div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -628,10 +630,10 @@
 											{#each cleanTranscriptTags(transcript.tags).slice(0, 5) as tag}
 												<button
 													type="button"
-													class={`rounded-full border px-2 py-1 text-[10px] font-bold transition-colors duration-150 ${
+													class={`rounded-full border px-2 py-1 text-[10px] font-bold transition-all duration-150 ${
 														selectedTag === tag
 															? 'border-pink-300 bg-pink-50 text-pink-800'
-															: 'border-pink-100 bg-white/80 text-gray-500 hover:bg-pink-50'
+															: 'border-pink-100 bg-white/80 text-gray-500 hover:bg-pink-50 active:scale-95'
 													}`}
 													aria-pressed={selectedTag === tag}
 													on:click={() => toggleTag(tag)}
@@ -645,12 +647,12 @@
 
 								<!-- Actions. Copy is the whole job 95% of the time; everything
 								     else lives one tap deeper so a long list stays readable. -->
-								<div class="flex shrink-0 items-center gap-1 self-start">
+								<div class="flex shrink-0 items-center gap-2 self-start">
 									{#if editingId !== transcript.id}
 										{#if transcript.audioBlob}
 											<button
 												type="button"
-												class={`${iconButtonClass} ${activeAudioId === transcript.id ? 'bg-pink-50 text-pink-700' : ''}`}
+												class={`${iconButtonClass} ${activeAudioId === transcript.id ? 'bg-pink-100 text-pink-700 hover:bg-pink-100' : 'hover:bg-pink-50 active:scale-95 active:bg-pink-100'}`}
 												on:click={() => toggleAudioPlayer(transcript)}
 												title={activeAudioId === transcript.id ? 'Hide player' : 'Play audio'}
 												aria-expanded={activeAudioId === transcript.id}
@@ -658,7 +660,7 @@
 													? `Hide audio player for ${formatDate(transcript.timestamp)}`
 													: `Play audio from ${formatDate(transcript.timestamp)}`}
 											>
-												<span aria-hidden="true"
+												<span class="text-base" aria-hidden="true"
 													>{activeAudioId === transcript.id ? '⏸' : '▶'}</span
 												>
 											</button>
@@ -667,7 +669,7 @@
 										     "copy" looks like one thing across the whole app. -->
 										<button
 											type="button"
-											class="history-copy-chip h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-pink-100 to-purple-50 p-1 shadow-sm ring-1 ring-pink-200/70 transition-all duration-200 hover:scale-105 hover:shadow-md active:scale-95"
+											class="history-copy-chip h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-pink-100 to-purple-50 p-1 shadow-sm ring-1 ring-pink-200/70 transition-transform duration-200 hover:scale-105 hover:shadow-md active:scale-95"
 											class:is-copied={copiedId === transcript.id}
 											on:click={() => copyTranscript(transcript.text, transcript.id)}
 											aria-label={`Copy transcript from ${formatDate(transcript.timestamp)}`}
@@ -683,19 +685,22 @@
 										</button>
 										<button
 											type="button"
-											class={`${iconButtonClass} ${openMenuId === transcript.id ? 'bg-pink-50 text-pink-700' : ''}`}
+											class={`${iconButtonClass} ${openMenuId === transcript.id ? 'bg-pink-100 text-pink-700 hover:bg-pink-100' : 'hover:bg-pink-50 active:scale-95 active:bg-pink-100'}`}
 											on:click={() => toggleMenu(transcript.id)}
 											aria-expanded={openMenuId === transcript.id}
 											aria-label={`More actions for transcript from ${formatDate(transcript.timestamp)}`}
 										>
-											<span aria-hidden="true">⋯</span>
+											<span class="text-lg" aria-hidden="true">⋯</span>
 										</button>
 									{/if}
 								</div>
 							</div>
 
 							{#if openMenuId === transcript.id && editingId !== transcript.id}
-								<div class="mb-2 flex flex-wrap gap-2 border-t border-pink-100 pt-2">
+								<div
+									class="mb-3 flex flex-wrap gap-2 border-t border-pink-100 pt-3"
+									transition:fade={{ duration: 150 }}
+								>
 									<button
 										type="button"
 										class={menuButtonClass}
@@ -722,7 +727,7 @@
 									{#if transcript.audioBlob}
 										<button
 											type="button"
-											class={menuButtonClass}
+											class={`${menuButtonClass} transition-opacity duration-150 disabled:cursor-not-allowed disabled:opacity-50`}
 											disabled={polishingId === transcript.id}
 											on:click={() => downloadAudio(transcript)}
 										>
@@ -731,7 +736,7 @@
 									{/if}
 									<button
 										type="button"
-										class={`${menuButtonClass} text-pink-700`}
+										class={`${menuButtonClass} ${pendingDeleteId === transcript.id ? 'bg-pink-100 text-pink-700 hover:bg-pink-200 active:bg-pink-300' : 'text-pink-700 hover:bg-pink-50'}`}
 										on:click={() =>
 											pendingDeleteId === transcript.id
 												? confirmDelete(transcript.id)
@@ -743,7 +748,10 @@
 							{/if}
 
 							{#if activeAudioId === transcript.id && activeAudioUrl}
-								<div class="mb-2 rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-inner">
+								<div
+									class="mb-3 rounded-xl border-2 border-pink-200 bg-[#fffdf5] p-3 shadow-inner"
+									transition:fade={{ duration: 150 }}
+								>
 									<audio
 										class="history-audio-player w-full"
 										src={activeAudioUrl}
@@ -775,14 +783,14 @@
 									<div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 										<button
 											type="button"
-											class="btn min-h-11 border-pink-100 bg-white/80 px-4 text-sm font-semibold text-gray-700 hover:bg-pink-50"
+											class="btn min-h-12 border-pink-100 bg-white/80 px-6 text-sm font-semibold text-gray-700 transition-all duration-150 hover:bg-pink-50 active:scale-95"
 											on:click={cancelEdit}
 										>
 											Cancel
 										</button>
 										<button
 											type="button"
-											class="btn min-h-11 border-pink-200 bg-pink-500 px-4 text-sm font-bold text-white hover:border-pink-300 hover:bg-pink-600 disabled:border-gray-200 disabled:bg-gray-200 disabled:text-gray-400"
+											class="btn min-h-12 border-pink-200 bg-pink-500 px-6 text-sm font-bold text-white transition-all duration-150 hover:border-pink-300 hover:bg-pink-600 active:scale-95 disabled:border-gray-200 disabled:bg-gray-200 disabled:text-gray-400 disabled:active:scale-100"
 											disabled={!editTextReady}
 											on:click={() => saveEdit(transcript.id)}
 										>
@@ -858,6 +866,7 @@
 
 	.history-copy-chip.is-copied {
 		background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+		transition: background 200ms ease;
 	}
 
 	.copy-tick {
@@ -865,6 +874,18 @@
 		font-weight: 700;
 		line-height: 1;
 		color: #be185d;
+		animation: tick-appear 200ms ease;
+	}
+
+	@keyframes tick-appear {
+		from {
+			opacity: 0;
+			transform: scale(0.8);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
 	}
 
 	.history-transcript-text,
