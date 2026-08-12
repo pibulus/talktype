@@ -30,9 +30,11 @@ Long audio: Parakeet drops to ~4.6x RT (65s wall for a 5-min clip) — hence the
 clips go straight to Deepgram). Model load is ~1s of every request (CLI spawn
 per job; upgrade path = long-lived process via the TS bindings).
 
-Bonus finding: Deepgram Nova-3 `standard` returns an EMPTY transcript for
-Spanish batch audio (defaults to English) — the Chonk path is currently the
-only thing serving Spanish batch users. Runner-up models remain downloaded in
+Bonus finding: Deepgram Nova-3 without `language=multi` returns an EMPTY
+transcript for Spanish batch audio. Chonk surfaced this; the batch path now
+sends `language: 'multi'` (fixed 2026-08-13, verified identical English
+output). Live Mode still hardcodes `en-US` — that's config work for the
+Mexican-URL version. Runner-up models remain downloaded in
 `~/talktype-transcriber/models/` on chonk.
 
 Vulkan on the UHD 630 iGPU: tested and rejected — slower than CPU on short

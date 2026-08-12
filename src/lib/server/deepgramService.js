@@ -14,8 +14,11 @@ export async function transcribeAudio(file, { diarize = false, paragraphs = true
 	try {
 		// Using Nova-3 for high accuracy batch transcription.
 		// numerals:true keeps number formatting consistent with the live path.
+		// language:multi — without it Nova-3 returns an EMPTY transcript for
+		// non-English audio (verified with es_MX clips, 2026-08-13).
 		const params = new URLSearchParams({
 			model: 'nova-3',
+			language: 'multi',
 			smart_format: 'true',
 			numerals: 'true',
 			paragraphs: paragraphs ? 'true' : 'false',
