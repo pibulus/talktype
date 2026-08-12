@@ -19,6 +19,12 @@ works, so a per-user model picker later is just a parameter.
 | canary-1b-v2             | 5.0s (5x)        | 0.57s     | FAILED — half-translated to English without `-l es` |
 | whisper-large-v3-turbo   | 12.5s (2x)       | 11.5s (!) | perfect but fixed 30s window kills short clips      |
 
+End-to-end wall time vs the cloud (same clips, measured 2026-08-13, LAN +
+live APIs): Deepgram 0.3–1.7s (3s clip) / ~1.2s (27s clip); Chonk ~3s / ~9s;
+Gemini styled 14–19s / ~11s. Deepgram is 3–8x faster than Chonk today —
+Chonk's gap is mostly per-request model load + ffmpeg, so a resident-model
+wrapper (TS bindings) would bring short clips near ~1s if it ever matters.
+
 Long audio: Parakeet drops to ~4.6x RT (65s wall for a 5-min clip) — hence the
 `CHONK_MAX_DURATION_SECONDS` gate in `/api/transcribe` (default 120s; longer
 clips go straight to Deepgram). Model load is ~1s of every request (CLI spawn
