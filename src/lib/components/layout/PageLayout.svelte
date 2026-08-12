@@ -59,13 +59,16 @@
 				</span>
 				<span class="footer-dot mx-2 shrink-0">•</span>
 				<span class="flex min-w-0 items-center text-sm font-light">
-					<span class="shrink-0">Made with</span>
+					<!-- "Made with ❤️" alone is a sentence fragment; it asks for an
+					     ending that isn't there. Mobile drops the lead-in and the "in"
+					     instead, landing on "❤️ Melbourne" — short, complete, warm. -->
+					<span class="footer-lead shrink-0">Made with</span>
 					<FooterCharm charms={['❤️']} rare={['👻', '🌮']} />
 					<a
 						class="footer-place ml-0.5 truncate"
 						href="https://github.com/pibulus"
 						target="_blank"
-						rel="noopener noreferrer">in Melbourne</a
+						rel="noopener noreferrer"><span class="footer-in">in&nbsp;</span>Melbourne</a
 					>
 				</span>
 			</div>
@@ -140,7 +143,8 @@
 		   them colliding. Keep the charm — that's the personality — and shed the
 		   rest; the nav is the load-bearing half. Same shed order as ZipList so
 		   the family's footers behave identically. */
-		.copyright .footer-place,
+		.copyright .footer-lead,
+		.copyright .footer-in,
 		.copyright .footer-copy,
 		.copyright .footer-dot {
 			display: none;
