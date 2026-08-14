@@ -10,6 +10,10 @@
 	import { ModalCloseButton } from './modals/index.js';
 	import ThemeSelector from './settings/ThemeSelector.svelte';
 	import TranscriptionStyleSelector from './settings/TranscriptionStyleSelector.svelte';
+	import {
+		getStoredCustomWords,
+		setStoredCustomWords
+	} from '$lib/services/transcription/transcriptCleanup.js';
 	import { ANIMATION, DEFAULT_THEME, SERVICE_EVENTS } from '$lib/constants';
 
 	export let closeModal = () => {};
@@ -23,7 +27,19 @@
 	let userPreferencesLoaded = false;
 
 	// Custom vocabulary — names/words the ghost should always get right.
-	// Applied as fuzzy post-processing on every transcription path.
+	// Applied as fuzzy post-processing on every transcription path
+	// (recordingControlsService → applyCustomWords), so live, batch, styled
+	// and offline all benefit. Stored in localStorage; saved on blur.
+	let customWordsText = '';
+
+	function saveCustomWords() {
+		const words = customWordsText
+			.split(/[\n,]/)
+			.map((w) => w.trim())
+			.filter(Boolean);
+		setStoredCustomWords(words);
+		customWordsText = words.join('\n');
+	}
 
 	// Store unsubscribe functions
 	let unsubscribeTheme;
@@ -64,6 +80,8 @@
 	}
 
 	onMount(() => {
+		customWordsText = getStoredCustomWords().join('\n');
+
 		// Subscribe to stores only in browser
 		unsubscribeTheme = theme.subscribe((value) => {
 			selectedVibe = value;
@@ -242,6 +260,21 @@
 				/>
 			</section>
 
+			<section class="settings-section space-y-2" aria-labelledby="settings_vocab_title">
+				<h4 id="settings_vocab_title" class="settings-section-title">Your Words</h4>
+				<textarea
+					bind:value={customWordsText}
+					on:blur={saveCustomWords}
+					placeholder="Names and words that keep coming out wrong — one per line."
+					rows="3"
+					class="custom-words-input w-full rounded-lg border border-pink-200 bg-[#fffdf5] p-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
+					aria-label="Custom vocabulary — words transcripts should always spell your way"
+				></textarea>
+				<p class="px-1 text-[11px] leading-snug text-gray-500">
+					Transcripts will spell these your way, every time.
+				</p>
+			</section>
+
 			<!-- Offline is the only engine choice a person can actually reason about:
 			     it is about privacy and signal, not about which vendor transcribes. -->
 			<button
@@ -371,6 +404,11 @@
 
 	.setting-row {
 		contain: content;
+	}
+
+	.custom-words-input {
+		min-height: 4.5rem;
+		resize: vertical;
 	}
 
 	.settings-section-title {
