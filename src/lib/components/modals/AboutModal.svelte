@@ -38,10 +38,12 @@
 			</div>
 
 			<!-- Same short-line rhythm as the intro modal on purpose: that's the
-			     voice everybody already met on their first visit. -->
+			     voice everybody already met on their first visit. The first-person
+			     line came back by request — an About with no person in it read
+			     like a spec sheet, and this one sentence is the whole why. -->
 			<div class="space-y-1.5 text-sm leading-relaxed text-gray-600">
-				<p>No account. No sign-up. No upsell to use it.</p>
-				<p>Talking runs about three times faster than thumbs do.</p>
+				<p>I made this because I think faster out loud — and everything else wanted an account first.</p>
+				<p>So: no account. No sign-up. No upsell to use it.</p>
 				<p>Nothing said here is stored anywhere. Keep it private and it never leaves the phone.</p>
 				<p>Pick a vibe, pick a voice, keep what's worth keeping.</p>
 			</div>
