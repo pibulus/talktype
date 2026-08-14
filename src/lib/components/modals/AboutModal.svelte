@@ -42,7 +42,9 @@
 			     line came back by request — an About with no person in it read
 			     like a spec sheet, and this one sentence is the whole why. -->
 			<div class="space-y-1.5 text-sm leading-relaxed text-gray-600">
-				<p>I made this because I think faster out loud — and everything else wanted an account first.</p>
+				<p>
+					I made this because I think faster out loud — and everything else wanted an account first.
+				</p>
 				<p>So: no account. No sign-up. No upsell to use it.</p>
 				<p>Nothing said here is stored anywhere. Keep it private and it never leaves the phone.</p>
 				<p>Pick a vibe, pick a voice, keep what's worth keeping.</p>

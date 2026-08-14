@@ -271,8 +271,8 @@
 						{PRICING.displayPrice}<span class="text-lg font-bold text-pink-400">/year</span>
 					</p>
 					<p id="supporter_modal_description" class="mt-3 text-sm leading-6 text-gray-700">
-						{PRICING.displayPrice} a year, no subscription — keep the extras and help the little
-						ghost stay free for everyone.
+						{PRICING.displayPrice} a year, no subscription — keep the extras and help the little ghost
+						stay free for everyone.
 					</p>
 				</div>
 
