@@ -4,6 +4,7 @@
 	import TranscribingState from './states/TranscribingState.svelte';
 	import { getRecordButtonState } from './recordButtonState.js';
 	import { uiActions } from '$lib/services';
+	import { soundService } from '$lib/services/infrastructure/soundService.js';
 
 	const dispatch = createEventDispatcher();
 
@@ -92,6 +93,9 @@
 				uiActions.setScreenReaderMessage(
 					`${buttonState.timeRemaining} seconds of recording time left.`
 				);
+				// The bar reddening is easy to miss mid-sentence — a soft audible
+				// nudge means people stop talking before the recording does.
+				soundService.timeLow().catch(() => {});
 			}
 			wasWarning = buttonState.isWarning;
 			wasDanger = buttonState.isDanger;

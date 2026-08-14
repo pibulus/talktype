@@ -98,6 +98,23 @@ export const DEFAULT_SOUND_CUES = {
 			]
 		]
 	},
+	// Recording time running low — a soft descending two-note "heads up".
+	// Deliberately quiet: it plays while the mic is hot, so it must warn the
+	// speaker without landing audibly in their recording. Long cooldown means
+	// it fires once per crossing, never nags.
+	timeLow: {
+		cooldownMs: 5000,
+		detuneCents: 5,
+		gainJitter: 0.06,
+		timeJitter: 0.004,
+		panJitter: 0.03,
+		variants: [
+			[
+				{ frequency: 523, duration: 0.09, gain: 0.02, voice: 'warn' },
+				{ frequency: 392, offset: 0.11, duration: 0.12, gain: 0.018, voice: 'warn' }
+			]
+		]
+	},
 	start: {
 		cooldownMs: 120,
 		detuneCents: 7,
@@ -502,6 +519,10 @@ export class SoundService {
 
 	stopRecording() {
 		return this.play('stop');
+	}
+
+	timeLow() {
+		return this.play('timeLow');
 	}
 
 	copySuccess() {
