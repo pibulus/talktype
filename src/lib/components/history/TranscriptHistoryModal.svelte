@@ -33,7 +33,6 @@
 	import { theme } from '$lib';
 
 	import { userPreferences } from '$lib/services/infrastructure/stores';
-	import { PRICING } from '$lib/config/pricing.js';
 	import { HISTORY } from '$lib/constants';
 
 	export let closeModal = () => {};
@@ -820,12 +819,14 @@
 						{$transcriptHistory.length >= HISTORY.FREE_HISTORY_LIMIT
 							? `Your latest ${HISTORY.FREE_HISTORY_LIMIT} — the oldest makes way when a new one lands.`
 							: `Keeping your latest ${HISTORY.FREE_HISTORY_LIMIT}.`}
+						<!-- No price here on purpose: the nudge alludes warmly, the
+						     supporter modal does the actual asking. -->
 						<button
 							type="button"
 							class="font-bold text-pink-500 underline decoration-pink-200 underline-offset-2 hover:text-pink-600"
 							on:click={openSupporterModal}
 						>
-							Keep everything for {PRICING.displayPrice}/year
+							Supporters keep every single one.
 						</button>
 					</p>
 				{/if}

@@ -13,7 +13,7 @@ const forceSupporterMode = import.meta.env.PUBLIC_FORCE_SUPPORTER_MODE === 'true
 const SUPPORTER_TERM_MS = (PRICING.termDays || 365) * 24 * 60 * 60 * 1000;
 
 // Supporter is valid if there's a token AND it hasn't expired. The expiry stamp is
-// soft (client-side localStorage) — honest "lasts a year" framing for a $9 app, not
+// soft (client-side localStorage) — honest "lasts a year" framing for a pocket-money app, not
 // DRM. A missing expiry stamp is treated as still-valid (legacy unlocks pre-expiry).
 function supporterExpiryOk() {
 	const raw = readStorageValue(STORAGE_KEYS.SUPPORTER_EXPIRES);
