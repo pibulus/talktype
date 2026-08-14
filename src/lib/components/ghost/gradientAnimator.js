@@ -15,6 +15,28 @@ let animationFrames = {};
 let gradientPositions = {};
 let stopColors = {};
 
+// The drift is a slow sine — 30fps is visually identical to 60/120fps and
+// halves (or quarters, on ProMotion) the SVG repaint work. Phase stepping is
+// time-based so the drift speed is the same on every display; it used to be
+// per-frame, which ran the whole animation twice as fast on 120Hz screens.
+const FRAME_INTERVAL_MS = 1000 / 30;
+const REFERENCE_FRAME_MS = 1000 / 60; // speeds in config were tuned per-60fps-frame
+
+/**
+ * Timestamp gate for a rAF loop throttled to FRAME_INTERVAL_MS.
+ * Returns 0 when this frame should be skipped, otherwise the number of
+ * reference (60fps) frames elapsed, capped so tab-hidden gaps don't jump.
+ * @param {Object} state - Animation state object (gets a lastFrame field)
+ * @returns {number}
+ */
+function frameStep(state) {
+	const now = performance.now();
+	if (state.lastFrame && now - state.lastFrame < FRAME_INTERVAL_MS) return 0;
+	const elapsed = state.lastFrame ? now - state.lastFrame : REFERENCE_FRAME_MS;
+	state.lastFrame = now;
+	return Math.min(elapsed / REFERENCE_FRAME_MS, 4);
+}
+
 /**
  * Initialize gradient animation for a specific theme
  * @param {string} themeId - Theme identifier (peach, mint, bubblegum, rainbow)
@@ -90,18 +112,21 @@ function animateGradientPosition(themeId, gradient) {
 
 	const pos = gradientPositions[themeId];
 
-	// Update position phase
-	pos.phase += pos.speed;
+	const step = frameStep(pos);
+	if (step) {
+		// Update position phase (time-based, display-rate independent)
+		pos.phase += pos.speed * step;
 
-	// Calculate new positions with sine waves
-	const xOffset = Math.sin(pos.phase) * pos.amplitude;
-	const yOffset = Math.cos(pos.phase * 1.3) * pos.amplitude;
+		// Calculate new positions with sine waves
+		const xOffset = Math.sin(pos.phase) * pos.amplitude;
+		const yOffset = Math.cos(pos.phase * 1.3) * pos.amplitude;
 
-	// Set gradient coordinates
-	gradient.setAttribute('x1', `${pos.x1 + xOffset}%`);
-	gradient.setAttribute('y1', `${pos.y1 + yOffset}%`);
-	gradient.setAttribute('x2', `${pos.x2 - xOffset}%`);
-	gradient.setAttribute('y2', `${pos.y2 - yOffset}%`);
+		// Set gradient coordinates
+		gradient.setAttribute('x1', `${pos.x1 + xOffset}%`);
+		gradient.setAttribute('y1', `${pos.y1 + yOffset}%`);
+		gradient.setAttribute('x2', `${pos.x2 - xOffset}%`);
+		gradient.setAttribute('y2', `${pos.y2 - yOffset}%`);
+	}
 
 	// Continue animation
 	animationFrames[`${themeId}_position`] = requestAnimationFrame(() =>
@@ -191,27 +216,32 @@ function animateStopColor(themeId, stopIndex) {
 	const colorState = stopColors[themeId]?.[stopIndex];
 	if (!colorState) return;
 
-	// Update phase
-	colorState.phase += colorState.speed;
+	const step = frameStep(colorState);
+	if (step) {
+		// Update phase (time-based, display-rate independent)
+		colorState.phase += colorState.speed * step;
 
-	// Calculate interpolation factor (0-1) using sine wave
-	const factor = (Math.sin(colorState.phase) + 1) / 2;
+		// Calculate interpolation factor (0-1) using sine wave
+		const factor = (Math.sin(colorState.phase) + 1) / 2;
 
-	// Update opacity based on interpolation
-	const opacity =
-		colorState.opacity.base + factor * (colorState.opacity.bright - colorState.opacity.base);
+		// Update opacity based on interpolation
+		const opacity =
+			colorState.opacity.base + factor * (colorState.opacity.bright - colorState.opacity.base);
 
-	// Toggle between base and bright color based on factor
-	if (factor > 0.5) {
-		// Use bright color when factor is high
-		colorState.stop.setAttribute('stop-color', getThemeColor(themeId, colorState.position, true));
-	} else {
-		// Use base color when factor is low
-		colorState.stop.setAttribute('stop-color', getThemeColor(themeId, colorState.position, false));
+		// Toggle between base and bright color — only touch the attribute when
+		// the side actually flips; it used to rewrite the same value every frame.
+		const bright = factor > 0.5;
+		if (bright !== colorState.bright) {
+			colorState.bright = bright;
+			colorState.stop.setAttribute(
+				'stop-color',
+				getThemeColor(themeId, colorState.position, bright)
+			);
+		}
+
+		// Apply opacity
+		colorState.stop.setAttribute('stop-opacity', opacity.toFixed(2));
 	}
-
-	// Apply opacity
-	colorState.stop.setAttribute('stop-opacity', opacity.toFixed(2));
 
 	// Continue animation
 	animationFrames[`${themeId}_stop_${stopIndex}`] = requestAnimationFrame(() =>

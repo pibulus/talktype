@@ -377,26 +377,16 @@
 		}
 	}
 
-	/* Subtle breathing glow for button */
+	/* Static glow at the old breathe's midpoint. The visible breathing is
+	   carried by button-surface-breathe on ::before (opacity + transform,
+	   compositable); animating box-shadow here as well repainted the button
+	   region every frame for the life of the tab for a wobble nobody could
+	   see under the surface breathe. */
 	.pulse-subtle {
-		animation: button-shadow-breathe 4.8s ease-in-out infinite;
-		transform-origin: center;
-	}
-
-	@keyframes button-shadow-breathe {
-		0%,
-		100% {
-			box-shadow:
-				0 4px 6px -1px rgba(251, 191, 36, 0.2),
-				0 2px 4px -1px rgba(0, 0, 0, 0.1),
-				0 0 8px 1px rgba(251, 191, 36, 0.14);
-		}
-		50% {
-			box-shadow:
-				0 4px 7px -1px rgba(251, 191, 36, 0.22),
-				0 2px 4px -1px rgba(0, 0, 0, 0.1),
-				0 0 12px 2px rgba(251, 191, 36, 0.2);
-		}
+		box-shadow:
+			0 4px 6px -1px rgba(251, 191, 36, 0.21),
+			0 2px 4px -1px rgba(0, 0, 0, 0.1),
+			0 0 10px 1.5px rgba(251, 191, 36, 0.17);
 	}
 
 	@keyframes button-surface-breathe {
