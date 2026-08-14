@@ -64,6 +64,9 @@
 
 	$: isCustomOn = selectedPromptStyle === PROMPT_STYLES.CUSTOM;
 	$: showCustomInput = isCustomOn && isSupporter;
+	// "Plain is the absence of a choice" is a fine model, but it was invisible
+	// — nothing told you a second tap clears the style. One quiet line does.
+	$: activeStyleLabel = styleOptions.find((s) => s.id === selectedPromptStyle)?.label || '';
 	$: customRemaining = MAX_CUSTOM_PROMPT_CHARS - customPromptText.length;
 
 	function showToast(message) {
@@ -150,6 +153,12 @@
 			</button>
 		{/each}
 	</div>
+
+	{#if activeStyleLabel}
+		<p class="px-1 text-[11px] leading-snug text-gray-400" aria-live="polite">
+			Tap {activeStyleLabel} again to go back to plain.
+		</p>
+	{/if}
 
 	{#if showCustomInput}
 		<div class="animate-in slide-in-from-top-2 space-y-1 px-1 duration-200">
