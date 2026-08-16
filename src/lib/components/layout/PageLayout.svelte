@@ -140,11 +140,10 @@
 	   line and the charm stay, the place name goes. */
 	@media (max-width: 639px) {
 		/* A phone cannot hold the full attribution AND three nav words without
-		   them colliding. Keep the charm — that's the personality — and shed the
-		   rest; the nav is the load-bearing half. Same shed order as ZipList so
-		   the family's footers behave identically. */
-		.copyright .footer-lead,
-		.copyright .footer-in,
+		   them colliding. Keep "Made with ❤️" — the love is the personality,
+		   the city is trivia — and shed the rest; the nav is the load-bearing
+		   half. */
+		.copyright .footer-place,
 		.copyright .footer-copy,
 		.copyright .footer-dot {
 			display: none;

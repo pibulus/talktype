@@ -1,5 +1,5 @@
 <script>
-	import { onMount, tick } from 'svelte';
+	import { onDestroy, onMount, tick } from 'svelte';
 	import { browser } from '$app/environment';
 	import { get } from 'svelte/store';
 	import GhostContainer from './GhostContainer.svelte';
@@ -22,7 +22,7 @@
 	import { analytics } from '$lib/services/analytics.js';
 
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
-	import { saveTranscript } from '$lib/services/storage/transcriptStorage';
+	import { saveTranscript, updateTranscript } from '$lib/services/storage/transcriptStorage';
 	import { autoBackupHistoryToVault } from '$lib/services/storage/vaultAutoBackup.js';
 	import { checkPassportNotes } from '$lib/services/storage/passportNotesCheck.js';
 
@@ -151,13 +151,45 @@
 			// history entry recorded 0 seconds.
 			duration: transcript?.duration || get(lastRecordingDuration) || 0,
 			promptStyle: transcript?.promptStyle || 'standard',
+			originalText: transcript?.originalText || '',
 			method: transcript?.method || 'gemini'
 		};
 	}
 
 	async function saveTranscriptToHistory(transcript) {
-		await saveTranscript(transcript);
+		const savedId = await saveTranscript(transcript);
 		void autoBackupHistoryToVault();
+		return savedId;
+	}
+
+	// The history row this screen's transcript came from, so typed edits land on
+	// the same entry instead of being lost. Cleared when a new take starts.
+	let liveHistoryId = null;
+	let editSaveTimeout = null;
+
+	onDestroy(() => {
+		if (editSaveTimeout) clearTimeout(editSaveTimeout);
+	});
+
+	async function handleTranscriptEdited(event) {
+		const text = (event.detail?.text || '').trim();
+		if (!browser || liveHistoryId === null || !text) return;
+
+		// Debounced: this fires on every keystroke, and each save rewrites the
+		// row and reloads the whole history store.
+		if (editSaveTimeout) clearTimeout(editSaveTimeout);
+		editSaveTimeout = setTimeout(async () => {
+			editSaveTimeout = null;
+			try {
+				await updateTranscript(liveHistoryId, text);
+				void autoBackupHistoryToVault();
+			} catch {
+				// The row can vanish under us — free-tier trimming, or a manual
+				// clear while the editor is open. Losing the sync is not worth
+				// interrupting someone mid-sentence over.
+				liveHistoryId = null;
+			}
+		}, 900);
 	}
 
 	// Handle transcription completed event for PWA prompt and local transcript history
@@ -171,8 +203,9 @@
 		// N inside saveTranscript; supporters keep unlimited + vault backup.
 		if (transcript) {
 			try {
-				await saveTranscriptToHistory(transcript);
+				liveHistoryId = await saveTranscriptToHistory(transcript);
 			} catch (err) {
+				liveHistoryId = null;
 				console.error('Failed to save transcript:', err);
 			}
 
@@ -470,6 +503,7 @@
 		bind:this={contentContainer}
 		ghostComponent={ghostContainer}
 		on:transcriptionCompleted={handleTranscriptionCompleted}
+		on:transcriptEdited={handleTranscriptEdited}
 	/>
 	<svelte:fragment slot="footer-buttons">
 		<FooterComponent

@@ -12,6 +12,7 @@ import {
 	transcriptionState,
 	transcriptionActions,
 	lastRecordingDuration,
+	lastOriginalTranscript,
 	userPreferences
 } from '../infrastructure/stores';
 import { transcriptionStore } from '$lib/stores/transcriptionStore';
@@ -229,6 +230,11 @@ export class RecordingControlsService {
 			// models exist: Deepgram for the words, Gemini for the voice you picked.
 			const storedStyle = get(userPreferences).promptStyle || PROMPT_STYLES.STANDARD;
 			const styledPassWanted = !useOfflineWhisper && storedStyle !== PROMPT_STYLES.STANDARD;
+
+			// Keep the plain words before a style overwrites them, so history can
+			// offer both. Only the live path has them — a batch styled take is
+			// generated from audio and never had a plain version.
+			lastOriginalTranscript.set(styledPassWanted ? finalTranscript || '' : '');
 
 			if (!finalTranscript || styledPassWanted) {
 				try {

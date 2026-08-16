@@ -42,6 +42,7 @@ export {
 	waveformData,
 	hasPermissionError,
 	recordingDuration,
+	lastOriginalTranscript,
 	audioActions,
 	transcriptionActions,
 	uiActions

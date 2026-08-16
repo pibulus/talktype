@@ -47,6 +47,10 @@
 	function forwardTranscriptionCompleted(event) {
 		dispatch('transcriptionCompleted', event.detail);
 	}
+
+	function forwardTranscriptEdited(event) {
+		dispatch('transcriptEdited', event.detail);
+	}
 </script>
 
 <AnimatedTitle
@@ -60,5 +64,6 @@
 		bind:this={audioToTextComponent}
 		{ghostComponent}
 		on:transcriptionCompleted={forwardTranscriptionCompleted}
+		on:transcriptEdited={forwardTranscriptEdited}
 	/>
 </div>

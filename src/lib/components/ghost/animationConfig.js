@@ -27,7 +27,11 @@ export const WOBBLE_CONFIG = {
 
 export const SPECIAL_CONFIG = {
 	CHECK_INTERVAL: 5000, // Time between special animation checks (ms)
-	CHANCE: 0.05, // Probability (0-1) of special animation occurring
+	// 0.05 meant the spin/eye-pop/shimmy easter eggs mathematically never fired:
+	// checks land every ~5s ± 5s but the ghost falls asleep after 12 idle seconds,
+	// so a session saw at most 2 rolls. 0.16 ≈ one glitch per ~30s of awake idle —
+	// rare enough to feel like a secret, common enough to actually exist.
+	CHANCE: 0.16, // Probability (0-1) of special animation occurring
 	DURATION: 2000 // Duration of special animation (ms)
 };
 

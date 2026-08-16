@@ -19,6 +19,7 @@
 		getTranscriptTagPool
 	} from '$lib/services/storage/transcriptTags.js';
 	import { formatDuration } from '$lib/components/audio/recordButtonState.js';
+	import CutePlayer from '$lib/components/audio/CutePlayer.svelte';
 	import { polishAudioBlob } from '$lib/services/audio/audioPolish.js';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
 	import { typewriterSoundService } from '$lib/services/infrastructure/typewriterSoundService.js';
@@ -29,8 +30,6 @@
 		insertPlainTranscriptTextIntoControl,
 		normalizeTranscriptText
 	} from '$lib/utils/transcriptText.js';
-	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
-	import { theme } from '$lib';
 
 	import { userPreferences } from '$lib/services/infrastructure/stores';
 	import { HISTORY } from '$lib/constants';
@@ -138,6 +137,31 @@
 		selectedTag = selectedTag === tag ? '' : tag;
 	}
 
+	// Styled takes that also kept their plain words can be flipped between the
+	// two. Set of ids currently showing the original.
+	let showingOriginal = new Set();
+
+	function hasOriginal(transcript) {
+		const original = normalizeTranscriptText(transcript?.originalText || '');
+		return Boolean(original) && original !== normalizeTranscriptText(transcript.text);
+	}
+
+	function toggleOriginal(id) {
+		// Reassign — Svelte does not track Set mutation.
+		const next = new Set(showingOriginal);
+		if (next.has(id)) next.delete(id);
+		else next.add(id);
+		showingOriginal = next;
+	}
+
+	// Only for handlers (copy/share/download) — the markup inlines the same
+	// choice so Svelte can see showingOriginal as a dependency.
+	function displayedText(transcript) {
+		return normalizeTranscriptText(
+			showingOriginal.has(transcript.id) ? transcript.originalText : transcript.text
+		);
+	}
+
 	function mirrorHistoryToVault() {
 		void autoBackupHistoryToVault({ allowEmptyHistory: true });
 	}
@@ -175,7 +199,7 @@
 	// Share single transcript via the native share sheet (mobile's "send to
 	// Notes/Messages" path). Falls back to clipboard inside the service.
 	async function shareTranscriptItem(transcript) {
-		const text = cleanTranscriptText(transcript.text);
+		const text = cleanTranscriptText(displayedText(transcript));
 		if (!text) {
 			showToast('Nothing to share.', 'info');
 			return;
@@ -196,7 +220,7 @@
 
 	// Download single transcript as text file
 	function downloadTranscript(transcript) {
-		const blob = new Blob([normalizeTranscriptText(transcript.text)], { type: 'text/plain' });
+		const blob = new Blob([displayedText(transcript)], { type: 'text/plain' });
 		saveBlob(blob, `transcript-${new Date(transcript.timestamp).toISOString().slice(0, 10)}.txt`);
 	}
 
@@ -617,11 +641,26 @@
 											</span>
 										{/if}
 										{#if transcript.promptStyle && transcript.promptStyle !== 'standard'}
-											<span
-												class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-medium text-pink-700"
-											>
-												{formatPromptStyle(transcript.promptStyle)}
-											</span>
+											{#if hasOriginal(transcript)}
+												<!-- Both versions survived, so the badge becomes the switch. -->
+												<button
+													type="button"
+													class="rounded-full border border-pink-200 bg-pink-100 px-2 py-0.5 text-[10px] font-medium text-pink-700 transition-colors duration-150 hover:bg-pink-200 active:scale-95"
+													aria-pressed={showingOriginal.has(transcript.id)}
+													title="Switch between the styled version and your plain words"
+													on:click={() => toggleOriginal(transcript.id)}
+												>
+													{showingOriginal.has(transcript.id)
+														? 'Plain'
+														: formatPromptStyle(transcript.promptStyle)}
+												</button>
+											{:else}
+												<span
+													class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-medium text-pink-700"
+												>
+													{formatPromptStyle(transcript.promptStyle)}
+												</span>
+											{/if}
 										{/if}
 									</div>
 									{#if transcript.tags?.length}
@@ -664,22 +703,34 @@
 												>
 											</button>
 										{/if}
-										<!-- Same ghost chip as the main transcript's copy button, so
-										     "copy" looks like one thing across the whole app. -->
+										<!-- A ghost per row read as a haunted list, not a button — so
+										     history rows use a plain copy glyph in the same chip dress. -->
 										<button
 											type="button"
 											class="history-copy-chip h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-pink-100 to-purple-50 p-1 shadow-sm ring-1 ring-pink-200/70 transition-transform duration-200 hover:scale-105 hover:shadow-md active:scale-95"
 											class:is-copied={copiedId === transcript.id}
-											on:click={() => copyTranscript(transcript.text, transcript.id)}
+											on:click={() => copyTranscript(displayedText(transcript), transcript.id)}
 											aria-label={`Copy transcript from ${formatDate(transcript.timestamp)}`}
 											title={copiedId === transcript.id ? 'Copied' : 'Copy'}
 										>
 											{#if copiedId === transcript.id}
 												<span class="copy-tick" aria-hidden="true">✓</span>
 											{:else}
-												<span class="block h-full w-full p-0.5">
-													<DisplayGhost theme={$theme} size="100%" disableJsAnimation={true} />
-												</span>
+												<svg
+													class="h-5 w-5 text-pink-700"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													stroke-width="2.25"
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													aria-hidden="true"
+												>
+													<rect x="9" y="9" width="11" height="11" rx="2.5" />
+													<path
+														d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"
+													/>
+												</svg>
 											{/if}
 										</button>
 										<button
@@ -751,14 +802,11 @@
 									class="mb-3 rounded-xl border-2 border-pink-200 bg-[#fffdf5] p-3 shadow-inner"
 									transition:fade={{ duration: 150 }}
 								>
-									<audio
-										class="history-audio-player w-full"
+									<CutePlayer
 										src={activeAudioUrl}
-										controls
 										autoplay
-										preload="metadata"
-										aria-label={`Recording audio from ${formatDate(transcript.timestamp)}`}
-									></audio>
+										label={`Recording audio from ${formatDate(transcript.timestamp)}`}
+									/>
 								</div>
 							{/if}
 
@@ -802,8 +850,13 @@
 								<div
 									class="history-transcript-frame tt-scrollbar max-h-44 overflow-y-auto sm:max-h-40"
 								>
+									<!-- showingOriginal referenced inline on purpose: a helper(transcript)
+									     call here would hide it as a dependency and the flip would
+									     render once, then lie. -->
 									<p class="history-transcript-text text-sm text-gray-700">
-										{normalizeTranscriptText(transcript.text)}
+										{normalizeTranscriptText(
+											showingOriginal.has(transcript.id) ? transcript.originalText : transcript.text
+										)}
 									</p>
 								</div>
 							{/if}
@@ -838,12 +891,6 @@
 </dialog>
 
 <style>
-	.history-audio-player {
-		display: block;
-		height: 42px;
-		border-radius: 0.75rem;
-	}
-
 	/* The inner frame must NOT contain. It used to, while the outer list did not,
 	   so a gesture starting on a long transcript refused to hand off to the modal
 	   — and a short one (not scrollable) propagated fine. That flipped the

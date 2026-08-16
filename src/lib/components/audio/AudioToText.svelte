@@ -21,6 +21,7 @@
 		hasPermissionError,
 		recordingState,
 		userPreferences,
+		lastOriginalTranscript,
 		uiState,
 		uiActions,
 		transcriptionState,
@@ -100,6 +101,9 @@
 		// Handle edit event
 		if (type === 'edit' && detail?.text !== undefined) {
 			transcriptionActions.updateText(detail.text);
+			// Typed edits used to live only in the store — reload the page and
+			// history still held what you originally said, not what you fixed.
+			dispatch('transcriptEdited', { text: detail.text });
 		}
 		// Forward other events to child components as needed
 	}
@@ -144,6 +148,7 @@
 						audioBlob: recState.audioBlob || null,
 						duration: recState.duration || 0,
 						promptStyle: prefs.promptStyle || 'standard',
+						originalText: $lastOriginalTranscript || '',
 						method
 					}
 				});

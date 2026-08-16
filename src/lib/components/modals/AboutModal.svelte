@@ -47,7 +47,7 @@
 				</p>
 				<p>So: no account. No sign-up. No upsell to use it.</p>
 				<p>Nothing said here is stored anywhere. Keep it private and it never leaves the phone.</p>
-				<p>Pick a vibe, pick a voice, keep what's worth keeping.</p>
+				<p>Vibes to try, voices to borrow, words that stay yours.</p>
 			</div>
 
 			<div class="flex flex-wrap items-center justify-between gap-3 pt-2">

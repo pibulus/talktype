@@ -128,6 +128,7 @@ Important behaviors:
 - Cleanup closes Deepgram, cancels waveform animation, stops recorder/streams, and closes the audio context.
 - Waveform feedback is honest on every platform: the visualizer renders real analyser levels (shared math in `src/lib/utils/audioLevel.js`). When the AudioContext is suspended (analyser blind while `MediaRecorder` still records), `audioService` publishes `null` waveform data and the visualizer/live meter switch to a clearly decorative pattern instead of a dead flat line. There is no user-agent-sniffed fake path.
 - On `pagehide` the recovery journal takes a final flush, and when the tab returns to the foreground the recording cap is re-checked immediately (background tabs throttle the interval-based check).
+- **Backgrounding an installed iOS PWA stops capture, and no web API can prevent it.** TalkType never stops recording itself on `visibilitychange` — the handler only checkpoints the journal. The stop comes from WebKit suspending a backgrounded PWA's JS and media capture, so "record while I use another app" is not achievable on iOS from a web app. What TalkType does instead is lose as little as possible: checkpoint on `visibility-hidden`, final flush on `pagehide`, and offer the captured audio back through the recovery card on return. Screen Wake Lock covers the adjacent screen-sleep case. Do not "fix" this by adding timers or keep-alive hacks; verify before changing anything here.
 
 ## PWA And Auto-Start
 

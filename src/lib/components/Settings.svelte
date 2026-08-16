@@ -265,13 +265,13 @@
 				<textarea
 					bind:value={customWordsText}
 					on:blur={saveCustomWords}
-					placeholder="Names and words that keep coming out wrong — one per line."
+					placeholder="Names and tricky words, one per line — spelled the way you want them."
 					rows="3"
 					class="custom-words-input w-full rounded-lg border border-pink-200 bg-[#fffdf5] p-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
 					aria-label="Custom vocabulary — words transcripts should always spell your way"
 				></textarea>
 				<p class="px-1 text-[11px] leading-snug text-gray-500">
-					Transcripts will spell these your way, every time.
+					Anything transcripts keep mangling — they'll come out your way, every time.
 				</p>
 			</section>
 
@@ -294,12 +294,12 @@
 						aria-hidden="true"><span></span></span
 					>
 					<span class="block">
-						<span class="block text-sm font-black leading-tight">Keep it private</span>
+						<span class="block text-sm font-black leading-tight">Offline Mode</span>
 						<span class="block text-[11px] font-bold leading-tight text-gray-500">
 							{#if offlineButtonStatus?.visible && transcriptionMode === 'offline'}
 								{offlineStatusLabel}
 							{:else}
-								Works with no signal. Nothing leaves your phone.
+								Private, no signal needed, works anywhere. A touch rougher.
 							{/if}
 						</span>
 					</span>

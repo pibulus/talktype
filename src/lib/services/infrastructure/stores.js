@@ -161,6 +161,14 @@ export const recordingDuration = derived(recordingState, ($state) => $state.dura
 // stopRecording already computes this figure for analytics; this keeps it.
 export const lastRecordingDuration = writable(0);
 
+// The plain Deepgram words behind a styled take, when a style was applied on top
+// of a live transcript. Styling used to overwrite the original in place and it
+// was gone for good — including from history, which is a shame when the styled
+// one is the funny one and you wanted the real one too. Empty when no styled
+// pass ran, or when the style came straight from audio (batch/Gemini path),
+// where a plain version never existed.
+export const lastOriginalTranscript = writable('');
+
 export const errorMessage = derived(uiState, ($state) => $state.errorMessage);
 
 // null is a meaningful value here: the analyser is blind (suspended

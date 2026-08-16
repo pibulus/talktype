@@ -237,6 +237,9 @@ export async function saveTranscript(transcript) {
 			duration: transcript.duration || 0,
 			timestamp: Date.now(),
 			promptStyle: transcript.promptStyle || 'standard',
+			// The plain words behind a styled take, when both exist. Lets history
+			// flip between "what you said" and "what the pirate said".
+			originalText: normalizeTranscriptText(transcript.originalText || ''),
 			method: transcript.method || 'gemini', // 'gemini' or 'whisper'
 			wordCount: getTranscriptWordCount(normalizedText),
 			tags: getGeneratedTags(normalizedText, transcript.tags)

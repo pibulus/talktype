@@ -4,6 +4,7 @@
 	import { browser } from '$app/environment';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import WiggleButton from '$lib/charms/WiggleButton.svelte';
+	import CutePlayer from './CutePlayer.svelte';
 	import { soundService } from '$lib/services/infrastructure/soundService.js';
 	import { typewriterSoundService } from '$lib/services/infrastructure/typewriterSoundService.js';
 	import { centerElementInViewport } from '$lib/utils/scrollUtils';
@@ -402,7 +403,11 @@
 					{/if}
 
 					{#if showTakeMeta}
-						<div class="take-meta flex flex-wrap items-center gap-x-3 gap-y-1 pt-2">
+						<!-- Meta shares the text's own left edge (px-4/sm:px-10) — flush
+						     against the rounded border it read as misaligned. -->
+						<div
+							class="take-meta flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pb-3 pt-2 sm:px-10"
+						>
 							<span class="text-xs font-medium tabular-nums text-gray-400">
 								{takeWordCount}
 								{takeWordCount === 1 ? 'word' : 'words'}
@@ -415,14 +420,8 @@
 						</div>
 
 						{#if takeAudioUrl}
-							<div class="mt-2 rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-inner">
-								<audio
-									class="take-audio-player w-full"
-									src={takeAudioUrl}
-									controls
-									preload="metadata"
-									aria-label="Play the recording behind this transcript"
-								></audio>
+							<div class="mx-4 mb-4 mt-1 sm:mx-10">
+								<CutePlayer src={takeAudioUrl} label="Play the recording behind this transcript" />
 							</div>
 						{/if}
 					{/if}
@@ -433,13 +432,6 @@
 </div>
 
 <style>
-	/* Matches the History player so audio looks like one thing in both places. */
-	.take-audio-player {
-		display: block;
-		height: 42px;
-		border-radius: 0.75rem;
-	}
-
 	/* Container layout */
 	.transcript-wrapper {
 		margin-top: 24px; /* Reduced space between button and transcript */
@@ -713,6 +705,19 @@
 			-webkit-overflow-scrolling: auto;
 		}
 
+		/* On mobile the finished transcript grows unbounded and the page scrolls,
+		   which used to carry the copy ghost clean off-screen. Sticky keeps it
+		   floating along inside the transcript's bounds — always a thumb away. */
+		.final-transcript .copy-charm-anchor {
+			position: sticky;
+			top: max(0.75rem, env(safe-area-inset-top));
+			right: auto;
+			height: 0;
+			display: flex;
+			justify-content: flex-end;
+			padding-right: 0.35rem;
+		}
+
 		.custom-transcript-text {
 			line-height: 1.72;
 		}
@@ -744,7 +749,9 @@
 		}
 
 		.live-transcript .transcript-content-area {
-			max-height: min(22vh, 190px);
+			/* Grows with the words (max-height, not height). 22vh trapped a good
+			   rant in a peephole — give the live take real room before scrolling. */
+			max-height: min(40svh, 320px);
 			padding: 1rem 1rem 1.25rem;
 		}
 

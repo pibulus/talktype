@@ -1,5 +1,6 @@
 <script>
 	import { createEventDispatcher, onMount } from 'svelte';
+	import { slide } from 'svelte/transition';
 	import { browser } from '$app/environment';
 	import { ModalCloseButton } from './index.js';
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
@@ -27,7 +28,31 @@
 	let vaultHash = '';
 	let passportCode = '';
 
-	const benefits = ['Local history', 'Downloads', 'Style presets', 'Longer notes'];
+	// Four words told people nothing about what they'd actually get. Tap one and
+	// it says what changes — the detail sells, the label just gets you there.
+	const benefits = [
+		{
+			label: 'Every transcript',
+			detail:
+				'Free keeps your last 15. Supporter keeps the lot — searchable, taggable, still only on your device.'
+		},
+		{
+			label: 'Take it with you',
+			detail:
+				'Save any recording as clean audio, export the whole history as text, Markdown, or JSON. Your words, your files.'
+		},
+		{
+			label: 'Pick a voice',
+			detail:
+				'Pirate, Victorian, Sparkle, L33t — or write your own. Same words, wearing whatever you like.'
+		},
+		{
+			label: 'Room to ramble',
+			detail:
+				'Longer recordings, the Rainbow ghost, and a passport that syncs it all to another device.'
+		}
+	];
+	let openBenefit = null;
 	const MAX_SUPPORTER_CODE_LENGTH = 64;
 
 	function setCheckoutClaim(checkoutId, claimToken) {
@@ -164,28 +189,26 @@
 				label="Close supporter modal"
 				position="right-2 top-2"
 				modalId="supporter_modal"
+				tone="candy"
 			/>
 		</form>
 
 		<div class="space-y-4">
-			<div class="flex items-start gap-3 pr-10">
+			<!-- Ghost and title on one line: the eyebrow above the headline made two
+			     stacked rows of chrome before anyone reached the actual offer. -->
+			<div class="flex items-center gap-3 pr-8">
 				<div
-					class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-pink-200/70 bg-white/75 shadow-sm"
+					class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-pink-200/70 bg-white/75 shadow-sm"
 					aria-hidden="true"
 				>
-					<DisplayGhost size="34px" theme={$theme} seed={24680} disableJsAnimation={true} />
+					<DisplayGhost size="32px" theme={$theme} seed={24680} disableJsAnimation={true} />
 				</div>
-				<div class="min-w-0 space-y-1">
-					<p class="text-xs font-bold uppercase tracking-[0.22em] text-pink-500">
-						Support TalkType
-					</p>
-					<h3
-						id="supporter_modal_title"
-						class="text-2xl font-black leading-tight tracking-tight text-gray-900"
-					>
-						Become a supporter
-					</h3>
-				</div>
+				<h3
+					id="supporter_modal_title"
+					class="min-w-0 text-xl font-black leading-tight tracking-tight text-gray-900 sm:text-2xl"
+				>
+					Become a supporter
+				</h3>
 			</div>
 
 			{#if $userPreferences.isSupporter && vaultHash}
@@ -263,27 +286,48 @@
 					</p>
 				{/if}
 			{:else}
+				<!-- Price and pitch share one card, with the number as the hero. -->
 				<div class="rounded-2xl border border-pink-100 bg-white/75 p-4 shadow-sm">
-					<p class="text-xs font-black uppercase tracking-[0.18em] text-pink-500">
-						Supporter — one tap, lasts a year
-					</p>
-					<p class="mt-1 text-3xl font-black leading-none text-pink-600">
-						{PRICING.displayPrice}<span class="text-lg font-bold text-pink-400">/year</span>
-					</p>
-					<p id="supporter_modal_description" class="mt-3 text-sm leading-6 text-gray-700">
-						{PRICING.displayPrice} a year, no subscription — keep the extras and help the little ghost
-						stay free for everyone.
+					<div class="flex items-baseline gap-2">
+						<span class="text-4xl font-black leading-none text-pink-600"
+							>{PRICING.displayPrice}</span
+						>
+						<span class="text-sm font-bold text-pink-400">a year</span>
+					</div>
+					<p id="supporter_modal_description" class="mt-2 text-sm leading-6 text-gray-700">
+						Once. Not a subscription, not a login. It keeps the ghost free for everyone else and
+						hands you the good stuff.
 					</p>
 				</div>
 
 				<div>
-					<p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-gray-500">Includes</p>
-					<ul class="grid grid-cols-2 gap-2 text-sm font-semibold text-gray-700">
-						{#each benefits as benefit}
-							<li
-								class="flex min-h-12 items-center justify-center rounded-xl border border-pink-100 bg-pink-50/70 px-3 py-2 text-center leading-tight"
-							>
-								{benefit}
+					<p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-gray-500">
+						What you get
+					</p>
+					<ul class="space-y-2 text-sm">
+						{#each benefits as benefit, i}
+							<li>
+								<button
+									type="button"
+									class="flex w-full items-center gap-2 rounded-xl border border-pink-100 bg-pink-50/70 px-3 py-3 text-left font-bold leading-tight text-gray-700 transition-colors duration-150 hover:bg-pink-100/70 active:scale-[0.99]"
+									aria-expanded={openBenefit === i}
+									on:click={() => (openBenefit = openBenefit === i ? null : i)}
+								>
+									<span class="min-w-0 flex-1">{benefit.label}</span>
+									<span
+										class="shrink-0 text-pink-400 transition-transform duration-200"
+										class:rotate-45={openBenefit === i}
+										aria-hidden="true">+</span
+									>
+								</button>
+								{#if openBenefit === i}
+									<p
+										class="px-3 pb-1 pt-2 text-[13px] leading-relaxed text-gray-600"
+										transition:slide={{ duration: 180 }}
+									>
+										{benefit.detail}
+									</p>
+								{/if}
 							</li>
 						{/each}
 					</ul>
@@ -295,9 +339,7 @@
 					on:click={handleCheckout}
 					disabled={isStartingCheckout}
 				>
-					{isStartingCheckout
-						? 'Opening Square...'
-						: `Support for a year - ${PRICING.displayPrice}`}
+					{isStartingCheckout ? 'Opening Square...' : `I'm in — ${PRICING.displayPrice}`}
 				</button>
 
 				{#if errorMessage}
