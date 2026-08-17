@@ -78,11 +78,15 @@
 	}
 
 	$: availableTags = getTranscriptTagPool($transcriptHistory);
-	$: visibleTranscripts = selectedTag
+	// Newest-first is the right default — but the oldest note is the hardest one
+	// to reach in a long list, and it was previously unreachable except by scroll.
+	let oldestFirst = false;
+	$: filteredTranscripts = selectedTag
 		? $transcriptHistory.filter((transcript) =>
 				cleanTranscriptTags(transcript.tags || []).includes(selectedTag)
 			)
 		: $transcriptHistory;
+	$: visibleTranscripts = oldestFirst ? [...filteredTranscripts].reverse() : filteredTranscripts;
 	$: if (selectedTag && !availableTags.includes(selectedTag)) {
 		selectedTag = '';
 	}
@@ -122,8 +126,11 @@
 	}
 
 	function formatPromptStyle(style) {
+		// Retired styles keep their labels: old entries were saved under them and
+		// should not suddenly display a raw id.
 		const labels = {
 			custom: 'Custom',
+			codeWhisperer: 'Code',
 			leetSpeak: 'L33t',
 			quillAndInk: 'Victorian',
 			sparklePop: 'Sparkle',
@@ -215,7 +222,9 @@
 		document.body.appendChild(a);
 		a.click();
 		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
+		// Revoking in the same tick can cancel the download in Safari and Firefox,
+		// which read the blob after the click returns. One tick is enough.
+		setTimeout(() => URL.revokeObjectURL(url), 0);
 	}
 
 	// Download single transcript as text file
@@ -463,6 +472,7 @@
 		if (clearAllTimeout) clearTimeout(clearAllTimeout);
 		if (deleteConfirmTimeout) clearTimeout(deleteConfirmTimeout);
 		if (supporterOpenTimeout) clearTimeout(supporterOpenTimeout);
+		if (copiedTimer) clearTimeout(copiedTimer);
 		clearActiveAudio();
 	});
 </script>
@@ -503,6 +513,15 @@
 
 				{#if $transcriptHistory.length > 0}
 					<div class="flex flex-wrap items-center gap-2">
+						<button
+							type="button"
+							class={menuButtonClass}
+							aria-pressed={oldestFirst}
+							title="Switch between newest and oldest first"
+							on:click={() => (oldestFirst = !oldestFirst)}
+						>
+							{oldestFirst ? 'Oldest first' : 'Newest first'}
+						</button>
 						{#if isSupporter}
 							<button
 								type="button"

@@ -14,8 +14,19 @@ import { SUPPORTER_CHECKOUT } from '$lib/constants';
 
 const NO_STORE_HEADERS = { 'Cache-Control': 'no-store' };
 
+// The success page polls this every POLL_INTERVAL_MS up to MAX_POLLS times while
+// Square's webhook lands. On the shared 'global' bucket (API_RATE_LIMIT=5/min in
+// production) a paying customer got 429'd after ~10s and the page gave up — money
+// taken, code not shown. Own bucket, sized for the poll loop plus a refresh.
+const CLAIM_RATE_WINDOW_MS = 60_000;
+const CLAIM_RATE_LIMIT = SUPPORTER_CHECKOUT.MAX_POLLS * 3;
+
 export async function GET(event) {
-	const rateResponse = await enforceRateLimit(event);
+	const rateResponse = await enforceRateLimit(event, {
+		bucket: 'supporter-claim',
+		windowMs: CLAIM_RATE_WINDOW_MS,
+		max: CLAIM_RATE_LIMIT
+	});
 	if (rateResponse) return rateResponse;
 
 	try {

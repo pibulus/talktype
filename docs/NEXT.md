@@ -14,6 +14,19 @@
 
 ## Recent Stabilization
 
+- Supporter claim polling moved off the shared `global` rate-limit bucket. With
+  `API_RATE_LIMIT=5/min` in production, the success page's 2.5s poll was 429'd
+  about ten seconds after payment and treated that as terminal — money taken,
+  code never shown. It now has its own `supporter-claim` bucket, and the page
+  treats 408/429/5xx as "ask again" instead of giving up.
+- Transcript edits made on the main screen now update the history entry they
+  came from; styled takes keep the plain words alongside the styled ones and
+  history can flip between them.
+- Output styles are Plain / Pirate / Victorian / BYO. Plain is a real tile now
+  instead of "tap the active tile again", which nobody could guess.
+- Ghost gradient rAF loops are cancelled on cleanup; they previously repainted
+  for the life of the page.
+
 - Dependency/security cleanup committed.
 - Deepgram live streaming repaired and kept available as the Live path.
 - Settings now presents Vibe, Transcription Style, then When Text Appears, with After Stop first.
@@ -50,6 +63,23 @@
 - Passport storage is simplified: the supporter code is stored on trusted devices and vault hashes are derived on demand.
 - QRBuddy-backed Passport QR stamps point to `/passport#code=...&vault=...` for cross-device import and notes check-in.
 - Passport has a clear product line: notes can follow the card through a simple encrypted current-state mirror. It is not a separate permanent archive.
+
+## Launch Blockers (2026-08-17)
+
+- **Production Square is still pointed at SANDBOX.** `~/.config/fleet/keys.env`
+  → `TALKTYPE_EXTRA_ENV` carries `SQUARE_ENVIRONMENT=sandbox`, so
+  `talktype.app` currently issues `connect.squareupsandbox.com` checkout links
+  and accepts only test cards. Real money cannot be taken until
+  `SQUARE_ENVIRONMENT=production` **and** the production
+  `SQUARE_ACCESS_TOKEN` / `SQUARE_LOCATION_ID` / `SQUARE_WEBHOOK_SIGNATURE_KEY`
+  replace their sandbox counterparts (sandbox values are silently invalid
+  against production). Then `apikey sync talktype` → `apikey doctor`.
+- **Register the production webhook** in the Square dashboard: exactly
+  `https://talktype.app/api/square/webhook`, event `payment.updated`, and copy
+  its signature key into `keys.env`. Without it, payments complete and nobody
+  ever unlocks.
+- Deploy is required for the claim-poll rate-limit fix (see below) — without
+  it, every payer risks a 429 stall right after paying.
 
 ## Still Needs Attention
 

@@ -11,22 +11,19 @@
 
 	let customPromptText = '';
 
-	// Four tiles: three demos plus the door they are advertising. Custom sits
-	// IN the rack rather than in a row underneath, because a supporter-locked
-	// tile among the free ones is the whole pitch — you can see what you'd get.
-	// Plain remains "no selection": tap your current style again to clear it.
+	// Plain / Pirate / Victorian / BYO. Plain used to be "the absence of a
+	// choice" — you cleared a style by tapping its tile again, which nobody
+	// could be expected to guess. It is a tile now, so the off switch is
+	// visible and the row reads as four straight options.
 	//
-	// The three are deliberately on DIFFERENT axes, because the point of this
-	// row is to make someone realise they could write their own:
-	//   Pirate — funny        (voice)
-	//   Austen — beautiful    (register and craft)
-	//   Code   — useful       (restructures rambling into a usable prompt)
-	// Three joke voices would only ever demonstrate jokes.
+	// Custom sits IN the rack rather than in a row underneath, because a
+	// supporter-locked tile among the free ones is the whole pitch — you can
+	// see what you'd get.
 	const styleOptions = [
+		{ id: PROMPT_STYLES.STANDARD, label: 'Plain' },
 		{ id: PROMPT_STYLES.SURLY_PIRATE, label: 'Pirate' },
-		{ id: PROMPT_STYLES.QUILL_AND_INK, label: 'Austen' },
-		{ id: PROMPT_STYLES.CODE_WHISPERER, label: 'Code' },
-		{ id: PROMPT_STYLES.CUSTOM, label: 'Your own', custom: true }
+		{ id: PROMPT_STYLES.QUILL_AND_INK, label: 'Victorian' },
+		{ id: PROMPT_STYLES.CUSTOM, label: 'BYO', custom: true }
 	];
 
 	const styleIcons = {
@@ -39,8 +36,8 @@
 		[PROMPT_STYLES.QUILL_AND_INK]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-violet-500">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
 		</svg>`,
-		[PROMPT_STYLES.CODE_WHISPERER]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-emerald-500">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+		[PROMPT_STYLES.STANDARD]: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="text-slate-400">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h10" />
 		</svg>`
 	};
 
@@ -64,9 +61,6 @@
 
 	$: isCustomOn = selectedPromptStyle === PROMPT_STYLES.CUSTOM;
 	$: showCustomInput = isCustomOn && isSupporter;
-	// "Plain is the absence of a choice" is a fine model, but it was invisible
-	// — nothing told you a second tap clears the style. One quiet line does.
-	$: activeStyleLabel = styleOptions.find((s) => s.id === selectedPromptStyle)?.label || '';
 	$: customRemaining = MAX_CUSTOM_PROMPT_CHARS - customPromptText.length;
 
 	function showToast(message) {
@@ -80,11 +74,8 @@
 	}
 
 	function handleStyleClick(style) {
-		// Tapping the active tile turns it off — plain is the absence of a choice.
-		const nextStyle = selectedPromptStyle === style.id ? PROMPT_STYLES.STANDARD : style.id;
-
 		soundService.select();
-		changePromptStyle(nextStyle);
+		changePromptStyle(style.id);
 	}
 
 	function handleCustomClick() {
@@ -96,7 +87,7 @@
 		}
 
 		soundService.select();
-		changePromptStyle(isCustomOn ? PROMPT_STYLES.STANDARD : PROMPT_STYLES.CUSTOM);
+		changePromptStyle(PROMPT_STYLES.CUSTOM);
 	}
 
 	function saveCustomPrompt() {
@@ -153,12 +144,6 @@
 			</button>
 		{/each}
 	</div>
-
-	{#if activeStyleLabel}
-		<p class="px-1 text-[11px] leading-snug text-gray-400" aria-live="polite">
-			Tap {activeStyleLabel} again to go back to plain.
-		</p>
-	{/if}
 
 	{#if showCustomInput}
 		<div class="animate-in slide-in-from-top-2 space-y-1 px-1 duration-200">

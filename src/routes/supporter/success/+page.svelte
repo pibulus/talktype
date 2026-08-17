@@ -79,6 +79,19 @@
 			const payload = await response.json().catch(() => ({}));
 
 			if (!response.ok) {
+				// The money already left their account by the time this page loads,
+				// so a blip must not end the wait. Rate limits, timeouts and server
+				// errors are all "ask again in 2.5s"; only a definitive answer about
+				// this claim (403 wrong token, 404 unknown, 410 already claimed)
+				// is worth stopping for.
+				const isTransient =
+					response.status === 408 || response.status === 429 || response.status >= 500;
+				if (isTransient) {
+					status = 'pending';
+					message = 'Payment is being confirmed. This usually takes a few seconds.';
+					return;
+				}
+
 				status = 'error';
 				message = payload.error || 'Checkout status needs one more try in a moment.';
 				return;

@@ -10,7 +10,7 @@ import { get } from 'svelte/store';
 import { forceReflow, seedRandom, isBrowser, cleanupTimers } from '../utils/animationUtils.js';
 import { ANIMATION_STATES, CSS_CLASSES, SPECIAL_CONFIG } from '../animationConfig.js';
 import { ghostStateStore } from '../stores/ghostStateStore.js';
-import { initGradientAnimation } from '../gradientAnimator.js';
+import { initGradientAnimation, cleanupAllAnimations } from '../gradientAnimator.js';
 import { pickSpecialAnimation } from '../personality.js';
 
 // Animation timers
@@ -45,6 +45,10 @@ export function initAnimations(elements, config = {}) {
 	return () => {
 		stopSpecialAnimationWatch();
 		cleanupTimers(timers);
+		// The gradient animator runs one rAF loop for the position plus one per
+		// colour stop, and nothing ever cancelled them — they kept repainting a
+		// detached ghost for the life of the page.
+		cleanupAllAnimations();
 	};
 }
 
