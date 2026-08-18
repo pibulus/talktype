@@ -1273,6 +1273,18 @@
 			0 14px 28px rgba(190, 24, 93, 0.12),
 			0 2px 0 rgba(190, 24, 93, 0.12);
 		transform-origin: top right;
+		animation: history-pop-up 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.06) both;
+	}
+
+	@keyframes history-pop-up {
+		from {
+			opacity: 0;
+			transform: translateY(8px) scale(0.96);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
 	}
 
 	.history-menu-icon {
