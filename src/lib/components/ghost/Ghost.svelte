@@ -31,6 +31,7 @@
 	const ghostInstanceId = Symbol('ghost-instance');
 	let ghostSvg;
 	let spinPivotElement;
+	let wobbleGroupElement;
 	let leftEye;
 	let rightEye;
 	let backgroundElement;
@@ -152,9 +153,9 @@
 		}
 
 		// Cancel pending tap-wobble reset
-		if (wobbleResetTimeout) {
-			clearTimeout(wobbleResetTimeout);
-			wobbleResetTimeout = null;
+		if (squishTimer) {
+			clearTimeout(squishTimer);
+			squishTimer = null;
 		}
 
 		// Clean up theme store subscription
@@ -171,10 +172,8 @@
 
 	// Public methods to expose animation controls
 	export function pulse() {
-		// Add subtle pulse animation
-		if (ghostSvg) {
-			// Pass duration from config
-			animationService.applyPulseEffect(ghostSvg, PULSE_CONFIG.DURATION);
+		if (wobbleGroupElement) {
+			animationService.applyPulseEffect(wobbleGroupElement, PULSE_CONFIG.DURATION);
 		}
 	}
 
@@ -194,24 +193,31 @@
 		blinkService.reactToTranscript({ leftEye, rightEye }, textLength);
 	}
 
-	// Handle click on the ghost
-	let wobbleResetTimeout = null;
-	function handleClick() {
-		if (clickable) {
-			if (spinPivotElement) {
-				spinPivotElement.classList.remove('wobble-left', 'wobble-right', 'wobble-both');
-				void spinPivotElement.offsetWidth;
-				spinPivotElement.classList.add('wobble-both');
-				if (wobbleResetTimeout) clearTimeout(wobbleResetTimeout);
-				wobbleResetTimeout = setTimeout(() => {
-					wobbleResetTimeout = null;
-					spinPivotElement?.classList.remove('wobble-both');
-				}, 650);
-			}
+	let squishTimer;
+	function squishFrom(side) {
+		const el = spinPivotElement;
+		if (!el) return;
+		const cls = side === 'left' ? 'wobble-right' : 'wobble-left';
+		el.classList.remove('wobble-left', 'wobble-right', 'wobble-both');
+		forceReflow(el);
+		el.classList.add(cls);
+		clearTimeout(squishTimer);
+		squishTimer = setTimeout(() => el.classList.remove(cls), 450);
+	}
 
-			if (!$ghostStateStore.isRecording) {
-				window.dispatchEvent(new CustomEvent('talktype:toggle-recording'));
-			}
+	// Handle click on the ghost
+	function handleClick(e) {
+		if (!clickable) return;
+		let side = Math.random() < 0.5 ? 'left' : 'right';
+		if (e && typeof e.clientX === 'number' && ghostSvg) {
+			const r = ghostSvg.getBoundingClientRect();
+			side = e.clientX < r.left + r.width / 2 ? 'left' : 'right';
+		}
+		squishFrom(side);
+		pulse();
+
+		if (!$ghostStateStore.isRecording) {
+			window.dispatchEvent(new CustomEvent('talktype:toggle-recording'));
 		}
 	}
 
@@ -341,16 +347,16 @@
       {!clickable ? 'ghost-non-clickable' : ''}"
 	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale(calc({scale} * {audioScale})); {personalityStyle}"
 	data-ghost-mood={personalityMood}
-	on:click={() => {
+	on:click={(e) => {
 		if (clickable) {
-			handleClick();
+			handleClick(e);
 			handleUserInteraction();
 		}
 	}}
 	on:keydown={(e) => {
 		if (clickable && (e.key === 'Enter' || e.key === ' ')) {
 			e.preventDefault();
-			handleClick();
+			handleClick(e);
 		}
 	}}
 	aria-label={ghostLabel}
@@ -379,6 +385,7 @@
 
 			<g bind:this={spinPivotElement} class="ghost-spin-pivot">
 				<g
+					bind:this={wobbleGroupElement}
 					class="ghost-wobble-group"
 					use:initialGhostAnimation={fullyReady && $ghostStateStore.isFirstVisit
 						? { blinkService, leftEye, rightEye, debug, oneTimeOnly: true }
