@@ -181,7 +181,9 @@
 	function getOfflineStatusLabel(status) {
 		if (status.error) return 'Retry';
 		if (status.isLoaded) return 'Ready';
-		if (status.isLoading) return 'Loading';
+		if (status.isLoading) {
+			return status.progress > 0 ? `Loading ${Math.round(status.progress)}%` : 'Loading';
+		}
 		if (status.isCached) return 'Saved';
 		if (!status.cacheChecked) return 'Checking';
 		// Not downloaded yet. Tapping this pulls ~96 MB, possibly over mobile

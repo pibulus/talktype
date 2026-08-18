@@ -215,9 +215,9 @@ export class SimpleHybridService {
 		try {
 			// Guard against a stale stored style (e.g. a preset that no longer
 			// exists) — the server rejects unknown styles with a 400.
-			const storedStyle = get(userPreferences).promptStyle || 'standard';
-			const promptStyle = Object.values(PROMPT_STYLES).includes(storedStyle)
-				? storedStyle
+			const requestedStyle = options.promptStyle || get(userPreferences).promptStyle || 'standard';
+			const promptStyle = Object.values(PROMPT_STYLES).includes(requestedStyle)
+				? requestedStyle
 				: 'standard';
 			const controller = new AbortController();
 			// Increase timeout to 60s for longer recordings
@@ -240,7 +240,7 @@ export class SimpleHybridService {
 
 				// Add custom prompt text if style is custom
 				if (promptStyle === 'custom') {
-					const customPromptText = get(customPrompt);
+					const customPromptText = options.customPromptText ?? get(customPrompt);
 					if (customPromptText) {
 						formData.append('custom_prompt', customPromptText);
 					}

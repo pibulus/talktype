@@ -466,6 +466,15 @@ export async function updateTranscript(id, newText, options = {}) {
 				transcript.text = normalizedText;
 				transcript.wordCount = getTranscriptWordCount(normalizedText);
 				transcript.tags = getGeneratedTags(normalizedText, options.tags, id);
+				if ('promptStyle' in options) {
+					transcript.promptStyle = options.promptStyle || 'standard';
+				}
+				if ('originalText' in options) {
+					transcript.originalText = normalizeTranscriptText(options.originalText || '');
+				}
+				if ('method' in options) {
+					transcript.method = options.method || transcript.method;
+				}
 
 				// Save the updated transcript
 				const putRequest = store.put(transcript);

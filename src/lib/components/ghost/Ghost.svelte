@@ -1,7 +1,8 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { appActive } from '$lib/services/infrastructure';
+	import { appActive, waveformData } from '$lib/services/infrastructure';
+	import { getAudioDisplayLevel } from '$lib/utils/audioLevel.js';
 
 	import './ghost-animations-optimized.css';
 	import ghostPathsUrl from './ghost-paths.svg?url';
@@ -43,6 +44,20 @@
 	let personalityStyle = '';
 	let personalityMood = 'drift';
 	const validThemes = new Set(['peach', 'mint', 'bubblegum', 'rainbow']);
+
+	let audioLevelSmoothed = 0;
+	$: audioScale = 1;
+
+	// Make the ghost audio-reactive while capturing
+	$: if ($ghostStateStore.isRecording && $waveformData && $waveformData.length > 0) {
+		const level = getAudioDisplayLevel($waveformData);
+		audioLevelSmoothed += (level - audioLevelSmoothed) * 0.25;
+		// Map level (0-100) to a gentle scale bump (1.0 - 1.15)
+		audioScale = 1 + (Math.max(2, audioLevelSmoothed) / 100) * 0.15;
+	} else {
+		audioLevelSmoothed = 0;
+		audioScale = 1;
+	}
 
 	// === REACTIVE DECLARATIONS ===
 	// All reactive logic gated by fullyReady to prevent cascade during initialization
@@ -194,7 +209,9 @@
 				}, 650);
 			}
 
-			window.dispatchEvent(new CustomEvent('talktype:toggle-recording'));
+			if (!$ghostStateStore.isRecording) {
+				window.dispatchEvent(new CustomEvent('talktype:toggle-recording'));
+			}
 		}
 	}
 
@@ -322,7 +339,7 @@
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
       {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
       {!clickable ? 'ghost-non-clickable' : ''}"
-	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale({scale}); {personalityStyle}"
+	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale(calc({scale} * {audioScale})); {personalityStyle}"
 	data-ghost-mood={personalityMood}
 	on:click={() => {
 		if (clickable) {
