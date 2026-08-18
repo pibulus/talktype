@@ -9,6 +9,7 @@
 	import { GradientDefs } from '$lib/components/ghost';
 	import Toast from '$lib/components/Toast.svelte';
 	import PwaInstallCard from '$lib/components/PwaInstallCard.svelte';
+	import { syncStore } from '$lib/stores/syncStore.js';
 
 	let { children } = $props();
 	const DEFAULT_UMAMI_SCRIPT_URL = 'https://cloud.umami.is/script.js';
@@ -32,6 +33,8 @@
 			if (shouldLoadUmami) {
 				window.__talktypeUmamiExpected = true;
 			}
+
+			syncStore.init();
 
 			return ensureGhostThemeStyles();
 		});

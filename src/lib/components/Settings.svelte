@@ -15,6 +15,7 @@
 		setStoredCustomWords
 	} from '$lib/services/transcription/transcriptCleanup.js';
 	import { ANIMATION, DEFAULT_THEME, SERVICE_EVENTS } from '$lib/constants';
+	import { syncStore } from '$lib/stores/syncStore.js';
 
 	export let closeModal = () => {};
 
@@ -308,6 +309,39 @@
 				</span>
 				<span class="sr-only">{transcriptionMode === 'offline' ? 'On' : 'Off'}</span>
 			</button>
+
+			<!-- Sync Mode -->
+			<div class="mb-4">
+				<div class="mb-2 flex items-center justify-between">
+					<h3 class="settings-section-title tracking-widest text-[#f9a8d4]">Device Sync</h3>
+					{#if $syncStore.status === 'connected'}
+						<span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400"
+							>Live</span
+						>
+					{:else if $syncStore.status === 'connecting'}
+						<span class="text-[10px] font-bold uppercase tracking-widest text-amber-400"
+							>Connecting</span
+						>
+					{/if}
+				</div>
+				<div
+					class="setting-row flex flex-col gap-2 rounded-[22px] bg-white p-3.5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+				>
+					<div class="flex flex-col">
+						<span class="text-[15px] font-bold text-slate-800">Secret Phrase</span>
+						<span class="text-[11px] font-bold leading-tight text-gray-500">
+							Type this exact phrase on another device to link them invisibly.
+						</span>
+					</div>
+					<input
+						class="w-full rounded-xl bg-gray-50 px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#f9a8d4] sm:w-48"
+						type="text"
+						value={$syncStore.phrase}
+						on:blur={(e) => syncStore.setPhrase(e.target.value)}
+						on:keydown={(e) => e.key === 'Enter' && e.target.blur()}
+					/>
+				</div>
+			</div>
 
 			<!-- Wears the intro modal's "Let's go" gradient on purpose: that's the
 			     button everybody already tapped, so this reads as the same

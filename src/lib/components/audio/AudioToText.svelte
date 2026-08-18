@@ -36,6 +36,7 @@
 	import { liveMode, privacyMode } from '$lib';
 	import { transcriptionStore } from '$lib/stores/transcriptionStore';
 	import { offlineModelController } from '$lib/services/transcription/offlineModelController.js';
+	import { syncStore } from '$lib/stores/syncStore.js';
 
 	const dispatch = createEventDispatcher();
 
@@ -60,6 +61,15 @@
 	// Sync streaming text to global store
 	$: if (liveTranscriptMode && ($transcriptionStore.transcript || $transcriptionStore.interim)) {
 		const fullText = ($transcriptionStore.transcript + ' ' + $transcriptionStore.interim).trim();
+		if (fullText) {
+			transcriptionActions.updateText(fullText);
+		}
+	}
+
+	// Sync remote text from another device (PartyKit)
+	$: if (!$isRecording && $syncStore.remoteState) {
+		const remoteState = $syncStore.remoteState;
+		const fullText = ((remoteState.transcript || '') + ' ' + (remoteState.interim || '')).trim();
 		if (fullText) {
 			transcriptionActions.updateText(fullText);
 		}
