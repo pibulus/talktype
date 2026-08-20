@@ -19,6 +19,10 @@
 
 	$: canonicalUrl = absoluteUrl(path);
 	$: imageUrl = absoluteUrl(image);
+	// Derived, not hardcoded: Facebook validates og:image:type against the real
+	// bytes and drops the card on a mismatch, while every other platform sniffs
+	// and forgives. A stale literal here is invisible until a link hits Messenger.
+	$: imageType = /\.jpe?g$/i.test(image) ? 'image/jpeg' : 'image/png';
 	$: robots = noindex
 		? 'noindex, nofollow'
 		: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1';
@@ -51,7 +55,7 @@
 	<meta property="og:image" content={imageUrl} />
 	<meta property="og:image:url" content={imageUrl} />
 	<meta property="og:image:secure_url" content={imageUrl} />
-	<meta property="og:image:type" content="image/png" />
+	<meta property="og:image:type" content={imageType} />
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
 	<meta property="og:image:alt" content={imageAlt} />
