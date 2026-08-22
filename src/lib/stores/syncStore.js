@@ -5,7 +5,7 @@ import {
 	deriveRoomIdFromPhrase,
 	connectToLiveRoom,
 	sendUpdate
-} from 'softstack-sync';
+} from '$lib/softstack-sync/index.js';
 import { transcriptionStore } from './transcriptionStore.js';
 
 const STORAGE_KEY = 'talktype_sync_phrase';
