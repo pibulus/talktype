@@ -48,46 +48,53 @@
 </button>
 
 <style>
-	/* Smaller + tucked + squishy — scoped styles outrank the Tailwind size
-	   utilities, so the restyle lives here without touching the markup. */
+	/* Solid, tactile pastel badge button — no transparent wash */
 	.modal-close-btn {
-		top: 0.35rem;
-		right: 0.35rem;
+		top: 0.75rem;
+		right: 0.75rem;
 		width: 32px;
 		height: 32px;
-		font-size: 1rem;
-		background: rgba(0, 0, 0, 0.06);
+		font-size: 0.85rem;
+		font-weight: 900;
+		background: #ffffff;
+		border: 1.5px solid rgba(244, 114, 182, 0.45);
+		color: #db2777;
+		box-shadow: 0 2px 6px rgba(244, 114, 182, 0.18);
 		-webkit-tap-highlight-color: transparent;
 		cursor: pointer;
 		user-select: none;
 		transition:
 			background 0.15s ease,
+			border-color 0.15s ease,
 			color 0.15s ease,
-			transform 0.22s linear(0, 0.5 15%, 1.15 40%, 0.97 65%, 1);
+			transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+			box-shadow 0.15s ease;
 	}
 
 	.modal-close-btn:hover {
-		background: rgba(0, 0, 0, 0.12);
+		background: #fdf2f8;
+		border-color: #f472b6;
+		color: #be185d;
 		transform: scale(1.1);
+		box-shadow: 0 4px 10px rgba(244, 114, 182, 0.28);
 	}
 
 	.modal-close-btn:active {
-		transform: scale(0.82);
+		transform: scale(0.9);
 	}
 
-	/* Candy: a tiny pink pill with a warm sepia rim — never full black. Sits
-	   tighter to the corner so the pitch below it reads as the loudest thing. */
+	/* Candy: a tiny pink pill with a warm sepia rim — never full black. */
 	.modal-close-btn.is-candy {
-		top: 0.3rem;
-		right: 0.3rem;
-		width: 26px;
-		height: 26px;
-		font-size: 0.72rem;
-		font-weight: 800;
-		background: #f9a8d4;
+		top: 0.65rem;
+		right: 0.65rem;
+		width: 28px;
+		height: 28px;
+		font-size: 0.75rem;
+		font-weight: 900;
+		background: #fdf2f8;
 		border: 1.5px solid rgba(30, 23, 20, 0.85);
 		color: rgba(30, 23, 20, 0.85);
-		box-shadow: 0 1px 0 rgba(30, 23, 20, 0.18);
+		box-shadow: 0 1.5px 0 rgba(30, 23, 20, 0.18);
 	}
 
 	.modal-close-btn.is-candy:hover {
@@ -95,11 +102,11 @@
 		color: rgba(30, 23, 20, 0.95);
 	}
 
-	/* Fingers get a bigger target than pointers do. */
+	/* Fingers get a slightly bigger target */
 	@media (pointer: coarse) {
 		.modal-close-btn {
-			width: 40px;
-			height: 40px;
+			width: 36px;
+			height: 36px;
 		}
 
 		.modal-close-btn.is-candy {

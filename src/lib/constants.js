@@ -38,6 +38,8 @@ export const STORAGE_KEYS = {
 	LIVE_MODE: 'talktype_live_mode',
 	SOUND_ENABLED: 'talktype_sound_enabled', // UI sounds + haptics master switch
 	WEBGPU_DISABLED: 'talktype_webgpu_disabled', // sticky: WebGPU model load failed on this device
+	BYOK_DEEPGRAM_KEY: `${APP_STORAGE_PREFIX}:byok_deepgram_key`,
+	BYOK_GEMINI_KEY: `${APP_STORAGE_PREFIX}:byok_gemini_key`,
 
 	// v1 moved everyone to after-stop. v2 reverses it: live streaming is the
 	// default now. Bumping the key is what makes the flip run once per device.
@@ -58,8 +60,10 @@ export const LEGACY_STORAGE_KEYS = {
 	SUPPORTER_TOKEN: ['talktype_supporter_token'],
 	SUPPORTER_PASSPORT_CODE: ['talktype_supporter_passport_code'],
 	VAULT_SERVER_URL: ['talktype_vault_server_url'],
-	PROMPT_STYLE: ['talktype_prompt_style'],
-	CUSTOM_PROMPT: ['talktype-custom-prompt']
+	PROMPT_STYLE: ['promptStyle', 'talktype_prompt_style'],
+	CUSTOM_PROMPT: ['customPrompt', 'custom_prompt', 'talktype_custom_prompt'],
+	THEME: ['theme', 'talktype_theme'],
+	LAST_TRANSCRIPTION_METHOD: ['talktype_last_transcription_method']
 };
 
 export const SUPPORTER_CHECKOUT = {
@@ -131,8 +135,10 @@ export const ANIMATION = {
 	// Recording time limits
 	RECORDING: {
 		FREE_LIMIT: 300, // Free recordings are capped at 5 minutes
-		SUPPORTER_LIMIT: 7200, // Effectively unlimited for supporter mode
-		PREMIUM_LIMIT: 7200, // Legacy alias kept aligned with supporter limit
+		SUPPORTER_LIMIT: 3600, // 60 minutes for supporter mode (plenty for long takes)
+		PREMIUM_LIMIT: 3600, // Legacy alias kept aligned with supporter limit
+		SILENCE_LIMIT: 180, // 3 minutes of continuous room tone silence auto-saves recording
+		SILENCE_THRESHOLD_LEVEL: 3.5, // Audio level floor for speech activity
 		WARNING_THRESHOLD: 15, // Seconds remaining when to start showing warning
 		DANGER_THRESHOLD: 8, // Seconds remaining when to start showing danger state
 		ALMOST_DONE_THRESHOLD: 3, // Seconds remaining for final warning flash

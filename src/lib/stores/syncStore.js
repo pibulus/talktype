@@ -16,7 +16,7 @@ function createSyncStore() {
 		? window.localStorage.getItem(STORAGE_KEY) || generateSyncPhrase()
 		: generateSyncPhrase();
 
-	const { subscribe, set, update } = writable({
+	const { subscribe, update } = writable({
 		phrase: initialPhrase,
 		roomId: '',
 		status: 'disconnected', // 'disconnected', 'connecting', 'connected', 'error'

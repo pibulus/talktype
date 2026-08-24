@@ -115,7 +115,12 @@
 			// history still held what you originally said, not what you fixed.
 			dispatch('transcriptEdited', { text: detail.text });
 		}
-		// Forward other events to child components as needed
+		// Handle append / continue recording
+		if (type === 'append') {
+			if (recordingControlsRef) {
+				await recordingControlsRef.startRecording({ append: true });
+			}
+		}
 	}
 
 	// Lifecycle hooks
@@ -226,6 +231,7 @@
 						on:copy={handleTranscriptEvent}
 						on:edit={handleTranscriptEvent}
 						on:focus={handleTranscriptEvent}
+						on:append={handleTranscriptEvent}
 					/>
 				{/if}
 

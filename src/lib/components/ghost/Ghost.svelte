@@ -16,6 +16,9 @@
 	import { getGradientId } from './gradients.js';
 	import { buildGhostPersonality } from './personality.js';
 
+	import { promptStyle as promptStyleStore } from '$lib';
+	import { getAccessory, getAccessoryForPromptStyle } from './accessories.js';
+
 	export let isRecording = false;
 
 	export let isProcessing = false;
@@ -28,6 +31,8 @@
 	export let opacity = 1;
 	export let scale = 1;
 	export let clickable = true;
+	export let accessory = null;
+	export let aura = true;
 	const ghostInstanceId = Symbol('ghost-instance');
 	let ghostSvg;
 	let spinPivotElement;
@@ -47,17 +52,20 @@
 	const validThemes = new Set(['peach', 'mint', 'bubblegum', 'rainbow']);
 
 	let audioLevelSmoothed = 0;
-	$: audioScale = 1;
+	let audioSquishX = 1;
+	let audioSquishY = 1;
 
-	// Make the ghost audio-reactive while capturing
+	// Make the ghost audio-reactive with squash & stretch physics while capturing
 	$: if ($ghostStateStore.isRecording && $waveformData && $waveformData.length > 0) {
 		const level = getAudioDisplayLevel($waveformData);
-		audioLevelSmoothed += (level - audioLevelSmoothed) * 0.25;
-		// Map level (0-100) to a gentle scale bump (1.0 - 1.15)
-		audioScale = 1 + (Math.max(2, audioLevelSmoothed) / 100) * 0.15;
+		audioLevelSmoothed += (level - audioLevelSmoothed) * 0.35;
+		const norm = Math.max(0, Math.min(100, audioLevelSmoothed)) / 100;
+		audioSquishX = 1 + norm * 0.16;
+		audioSquishY = 1 - norm * 0.08;
 	} else {
 		audioLevelSmoothed = 0;
-		audioScale = 1;
+		audioSquishX = 1;
+		audioSquishY = 1;
 	}
 
 	// === REACTIVE DECLARATIONS ===
@@ -65,6 +73,8 @@
 	$: animationsEnabled = $appActive;
 	$: animationClass = animationsEnabled ? 'animations-enabled' : 'animations-paused';
 	$: gradientId = getGradientId(currentTheme);
+	$: effectiveAccessory = accessory ?? getAccessoryForPromptStyle($promptStyleStore);
+	$: accessorySvg = getAccessory(effectiveAccessory)?.svg || '';
 	$: specialAnimationClass =
 		$ghostStateStore.current === ANIMATION_STATES.EASTER_EGG && $ghostStateStore.specialAnimation
 			? `ghost-special-${$ghostStateStore.specialAnimation}`
@@ -344,8 +354,9 @@
       {$ghostStateStore.current === ANIMATION_STATES.INITIAL ? 'initializing' : ''}
       {$ghostStateStore.current === ANIMATION_STATES.ASLEEP ? CSS_CLASSES.ASLEEP : ''}
       {$ghostStateStore.current === ANIMATION_STATES.WAKING_UP ? CSS_CLASSES.WAKING_UP : ''}
+      {aura && clickable && !$ghostStateStore.isRecording ? 'has-aura' : ''}
       {!clickable ? 'ghost-non-clickable' : ''}"
-	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale(calc({scale} * {audioScale})); {personalityStyle}"
+	style="width: {width}; height: {height}; opacity: {opacity}; transform: scale(calc({scale} * {audioSquishX}), calc({scale} * {audioSquishY})); {personalityStyle}"
 	data-ghost-mood={personalityMood}
 	on:click={(e) => {
 		if (clickable) {
@@ -427,6 +438,14 @@
 							fill="#1e1714"
 						/>
 					</g>
+
+					{#if accessorySvg}
+						<!-- Worn accessory (pirate patch, monocle, top hat) riding the float/wobble -->
+						<g class="ghost-layer ghost-accessory">
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+							{@html accessorySvg}
+						</g>
+					{/if}
 				</g>
 				<!-- End of ghost-wobble-group -->
 			</g>
@@ -449,10 +468,64 @@
 		justify-content: center;
 		align-items: center;
 		contain: layout;
+		overflow: visible;
 		/* Safari-specific fixes for flashing */
 		-webkit-backface-visibility: hidden;
 		-webkit-transform: translateZ(0);
 		transform: translateZ(0);
+	}
+
+	/* Idle "tappable" aura — a soft pulse-ring that hints the ghost is pressable */
+	.ghost-container.has-aura {
+		--ghost-aura-color-1: rgba(255, 204, 51, 0.22);
+		--ghost-aura-color-2: rgba(255, 106, 194, 0.16);
+		--ghost-aura-color-3: rgba(113, 201, 206, 0.1);
+		--ghost-aura-radius: 48px;
+		--ghost-aura-duration: 3.4s;
+		--ghost-aura-delay: 1.8s;
+	}
+
+	.ghost-container.has-aura::after {
+		content: '';
+		position: absolute;
+		inset: -14px;
+		border-radius: var(--ghost-aura-radius, 48px);
+		background: radial-gradient(
+			circle at 50% 52%,
+			var(--ghost-aura-color-1) 0%,
+			var(--ghost-aura-color-2) 42%,
+			var(--ghost-aura-color-3) 60%,
+			transparent 75%
+		);
+		filter: blur(2px);
+		animation: ghost-aura var(--ghost-aura-duration, 3.4s) ease-in-out infinite;
+		animation-delay: var(--ghost-aura-delay, 1.8s);
+		opacity: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	@keyframes ghost-aura {
+		0% {
+			opacity: 0;
+			transform: scale(0.92);
+		}
+		36% {
+			opacity: 0.76;
+		}
+		72% {
+			opacity: 0.38;
+		}
+		100% {
+			opacity: 0;
+			transform: scale(1.08);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.ghost-container.has-aura::after {
+			animation: none;
+		}
 	}
 
 	.ghost-container:focus,

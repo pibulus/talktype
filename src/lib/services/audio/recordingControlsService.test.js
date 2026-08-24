@@ -41,6 +41,7 @@ import {
 	isRecording,
 	isTranscribing,
 	resetStores,
+	transcriptionActions,
 	transcriptionText,
 	userPreferences
 } from '../infrastructure/stores.js';
@@ -664,5 +665,42 @@ describe('RecordingControlsService', () => {
 		} finally {
 			consoleError.mockRestore();
 		}
+	});
+
+	it('appends newly recorded transcript to existing text when options.append is true', async () => {
+		const validAudioBlob = new Blob([new Uint8Array(2000)], { type: 'audio/webm' });
+		const service = createService({
+			audioService: {
+				startRecording: vi.fn().mockResolvedValue(true),
+				stopRecording: vi.fn().mockResolvedValue(validAudioBlob)
+			},
+			transcriptionService: {
+				transcribeAudio: vi.fn().mockResolvedValue('second paragraph'),
+				clearPendingRecordingDraft: vi.fn().mockResolvedValue(),
+				copyToClipboard: vi.fn().mockResolvedValue()
+			}
+		});
+
+		// Pre-populate with existing text
+		transcriptionActions.updateText('first paragraph');
+
+		await service.startRecording({ append: true });
+		audioActions.updateState(AudioStates.RECORDING);
+		audioActions.setAudioBlob(validAudioBlob, 'audio/webm');
+
+		await service.stopRecording();
+
+		expect(get(transcriptionText)).toBe('first paragraph\n\nsecond paragraph');
+	});
+
+	it('triggers auto-stop when silenceLimit is reached', async () => {
+		const stopSpy = vi.fn().mockResolvedValue(undefined);
+		const service = createService();
+		vi.spyOn(service, 'stopRecording').mockImplementation(stopSpy);
+
+		audioActions.updateState(AudioStates.RECORDING);
+		audioState.update((s) => ({ ...s, silenceLimit: true }));
+
+		expect(stopSpy).toHaveBeenCalled();
 	});
 });

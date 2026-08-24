@@ -51,7 +51,7 @@
 			     "in Melbourne" is the first thing dropped when space runs out. -->
 			<div
 				class="copyright flex min-w-0 shrink items-center whitespace-nowrap"
-				title="© {footerYear} {appName} — Made with love in Melbourne"
+				title="© {footerYear} {appName} — Made by Pablo in Melbourne"
 			>
 				<span class="footer-copy shrink-0 text-sm font-medium tracking-normal">
 					© {footerYear}
@@ -59,17 +59,14 @@
 				</span>
 				<span class="footer-dot mx-2 shrink-0">•</span>
 				<span class="flex min-w-0 items-center text-sm font-light">
-					<!-- "Made with ❤️" alone is a sentence fragment; it asks for an
-					     ending that isn't there. Mobile drops the lead-in and the "in"
-					     instead, landing on "❤️ Melbourne" — short, complete, warm. -->
-					<span class="footer-lead shrink-0">Made with</span>
-					<FooterCharm charms={['❤️']} rare={['👻', '🌮']} />
+					<span class="footer-lead shrink-0">Made by</span>
 					<a
-						class="footer-place ml-0.5 truncate"
-						href="https://github.com/pibulus"
+						class="footer-place ml-1 font-medium underline underline-offset-2 hover:text-pink-600"
+						href="https://madebypablo.app"
 						target="_blank"
-						rel="noopener noreferrer"><span class="footer-in">in&nbsp;</span>Melbourne</a
+						rel="noopener noreferrer">Pablo</a
 					>
+					<FooterCharm charms={['❤️']} rare={['👻', '🌮']} />
 				</span>
 			</div>
 			<div class="flex shrink-0 items-center">

@@ -3,6 +3,7 @@ import { AudioStates } from '../audio/audioStates';
 import { ANIMATION, LEGACY_STORAGE_KEYS, STORAGE_KEYS } from '$lib/constants';
 import { browser } from '$app/environment';
 import { PRICING } from '$lib/config/pricing.js';
+import { getAudioDisplayLevel } from '$lib/utils/audioLevel.js';
 import {
 	readStorageValue,
 	removeStorageValue,
@@ -39,7 +40,8 @@ export const audioState = writable({
 	timestamp: Date.now(),
 	mimeType: null,
 	waveformData: [],
-	timeLimit: false
+	timeLimit: false,
+	silenceLimit: false
 });
 
 // Recording state
@@ -199,11 +201,20 @@ export const audioActions = {
 		}
 	},
 
+	lastVoiceActivityTimestamp: null,
+
 	setWaveformData(dataArray) {
 		audioState.update((current) => ({
 			...current,
 			waveformData: dataArray
 		}));
+
+		if (dataArray && dataArray.length > 0) {
+			const level = getAudioDisplayLevel(dataArray);
+			if (level >= (ANIMATION.RECORDING.SILENCE_THRESHOLD_LEVEL || 3.5)) {
+				this.lastVoiceActivityTimestamp = Date.now();
+			}
+		}
 	},
 
 	setAudioBlob(blob, mimeType) {
@@ -227,10 +238,12 @@ export const audioActions = {
 	startRecordingTimer() {
 		this.stopRecordingTimer();
 		this.startTime = Date.now();
+		this.lastVoiceActivityTimestamp = Date.now();
 		recordingState.update((current) => ({ ...current, duration: 0 }));
 
 		this.recordingTimer = setInterval(() => {
-			const elapsed = Date.now() - this.startTime;
+			const now = Date.now();
+			const elapsed = now - this.startTime;
 			// Use float for more precise duration - will appear smoother in UI
 			const duration = elapsed / 1000;
 
@@ -248,6 +261,16 @@ export const audioActions = {
 			if (Math.floor(duration) >= timeLimit) {
 				// Signal that recording should stop due to time limit
 				this.recordingTimeLimitReached();
+				return;
+			}
+
+			// Check silence / inactivity auto-stop (3 minutes of room tone)
+			// Only trigger if recording has run for at least 15 seconds
+			if (duration >= 15 && this.lastVoiceActivityTimestamp) {
+				const silenceSeconds = (now - this.lastVoiceActivityTimestamp) / 1000;
+				if (silenceSeconds >= (ANIMATION.RECORDING.SILENCE_LIMIT || 180)) {
+					this.recordingSilenceLimitReached();
+				}
 			}
 		}, 50); // Update 20 times per second for ultra-smooth animation
 	},
@@ -257,6 +280,7 @@ export const audioActions = {
 			clearInterval(this.recordingTimer);
 			this.recordingTimer = null;
 		}
+		this.lastVoiceActivityTimestamp = null;
 	},
 
 	// Immediate cap re-check for when the tab returns to the foreground —
@@ -284,8 +308,16 @@ export const audioActions = {
 				timeLimit: true
 			};
 		});
+	},
 
-		// For reliable auto-stop, subscribers react to the timeLimit flag.
+	recordingSilenceLimitReached() {
+		audioState.update((current) => {
+			if (current.silenceLimit) return current;
+			return {
+				...current,
+				silenceLimit: true
+			};
+		});
 	}
 };
 

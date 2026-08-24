@@ -100,29 +100,31 @@
 	100% {
 		transform: scale(1, 1);
 	}
-	32% {
-		transform: scale(1.04, 0.968);
+	28% {
+		transform: scale(1.06, 0.94) rotate(-0.8deg);
 	}
-	66% {
-		transform: scale(0.978, 1.03);
+	64% {
+		transform: scale(0.96, 1.05) rotate(0.8deg);
+	}
+	84% {
+		transform: scale(1.02, 0.98);
 	}
 }
 
-/* Rotation only — no translate. Percentage translates on an SVG group resolve
-   against the viewBox and drift between browsers. */
+/* Rotation + bouncy squish for thinking/processing */
 @keyframes thinking-sway {
 	0%,
 	100% {
 		transform: rotate(0deg) scale(1, 1);
 	}
 	25% {
-		transform: rotate(-2.2deg) scale(0.985, 1.022);
+		transform: rotate(-3.5deg) scale(0.96, 1.04);
 	}
 	50% {
-		transform: rotate(0deg) scale(1.022, 0.982);
+		transform: rotate(0deg) scale(1.05, 0.95);
 	}
 	75% {
-		transform: rotate(2.2deg) scale(0.985, 1.022);
+		transform: rotate(3.5deg) scale(0.96, 1.04);
 	}
 }
 

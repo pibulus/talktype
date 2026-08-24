@@ -1,5 +1,5 @@
-import PartySocket from "partysocket";
-import { LIVE_MESSAGE_TYPES } from "./liveProtocol.js";
+import PartySocket from 'partysocket';
+import { LIVE_MESSAGE_TYPES } from './liveProtocol.js';
 
 /**
  * Connect to a live room via PartyKit
@@ -10,74 +10,74 @@ import { LIVE_MESSAGE_TYPES } from "./liveProtocol.js";
  * @returns {PartySocket} The PartySocket connection
  */
 export function connectToLiveRoom(host, roomId, options = {}, callbacks = {}) {
-  const { avatar = "Guest", password = null } = options;
-  
-  if (!host) {
-    throw new Error("A PartyKit host is required to connect to a live room.");
-  }
+	const { avatar = 'Guest', password = null } = options;
 
-  // Strip https:// if passed, PartySocket handles it natively
-  const normalizedHost = host.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+	if (!host) {
+		throw new Error('A PartyKit host is required to connect to a live room.');
+	}
 
-  const query = { avatar };
-  if (password) {
-    query.pwd = password;
-  }
+	// Strip https:// if passed, PartySocket handles it natively
+	const normalizedHost = host.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
 
-  const socket = new PartySocket({
-    host: normalizedHost,
-    room: roomId,
-    query,
-  });
+	const query = { avatar };
+	if (password) {
+		query.pwd = password;
+	}
 
-  // Handle incoming messages
-  socket.addEventListener("message", (event) => {
-    try {
-      const message = JSON.parse(event.data);
+	const socket = new PartySocket({
+		host: normalizedHost,
+		room: roomId,
+		query
+	});
 
-      switch (message.type) {
-        case LIVE_MESSAGE_TYPES.INIT:
-          callbacks.onInit?.(message.data);
-          break;
+	// Handle incoming messages
+	socket.addEventListener('message', (event) => {
+		try {
+			const message = JSON.parse(event.data);
 
-        case LIVE_MESSAGE_TYPES.PRESENCE:
-          callbacks.onPresence?.(message.data);
-          break;
+			switch (message.type) {
+				case LIVE_MESSAGE_TYPES.INIT:
+					callbacks.onInit?.(message.data);
+					break;
 
-        default:
-          // For all other generic or custom messages, pass them directly to the app
-          callbacks.onUpdate?.(message);
-          break;
-      }
-    } catch (error) {
-      console.error("[PartyService] Failed to parse message:", error);
-    }
-  });
+				case LIVE_MESSAGE_TYPES.PRESENCE:
+					callbacks.onPresence?.(message.data);
+					break;
 
-  socket.addEventListener("open", () => callbacks.onConnect?.());
-  socket.addEventListener("close", (event) => callbacks.onDisconnect?.(event));
-  socket.addEventListener("error", (error) => {
-    console.error("[PartyService] WebSocket error:", error);
-    callbacks.onError?.(error);
-  });
+				default:
+					// For all other generic or custom messages, pass them directly to the app
+					callbacks.onUpdate?.(message);
+					break;
+			}
+		} catch (error) {
+			console.error('[PartyService] Failed to parse message:', error);
+		}
+	});
 
-  return socket;
+	socket.addEventListener('open', () => callbacks.onConnect?.());
+	socket.addEventListener('close', (event) => callbacks.onDisconnect?.(event));
+	socket.addEventListener('error', (error) => {
+		console.error('[PartyService] WebSocket error:', error);
+		callbacks.onError?.(error);
+	});
+
+	return socket;
 }
 
 /**
  * Send a generic state update to the room
  */
 export function sendUpdate(socket, type, data) {
-  if (!socket || socket.readyState !== PartySocket.OPEN) {
-    console.warn("[PartyService] Cannot send update, socket not open");
-    return false;
-  }
+	if (!socket || socket.readyState !== PartySocket.OPEN) {
+		console.warn('[PartyService] Cannot send update, socket not open');
+		return false;
+	}
 
-  try {
-    socket.send(JSON.stringify({ type, data }));
-    return true;
-  } catch (error) {
-    console.error("[PartyService] Failed to send update:", error);
-    return false;
-  }
+	try {
+		socket.send(JSON.stringify({ type, data }));
+		return true;
+	} catch (error) {
+		console.error('[PartyService] Failed to send update:', error);
+		return false;
+	}
 }

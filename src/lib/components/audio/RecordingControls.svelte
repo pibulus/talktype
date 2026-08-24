@@ -20,6 +20,7 @@
 	} from '$lib/services';
 	import { CTA_PHRASES, ANIMATION, COPY_MESSAGES } from '$lib/constants';
 	import { whisperStatus } from '$lib/services/transcription/whisper/whisperService';
+	import { promptStyle, privacyMode } from '$lib';
 
 	// Props
 	export let ghostComponent = null;
@@ -88,10 +89,18 @@
 	// While transcription is waiting on the offline model, surface Whisper's
 	// real status text ("Downloading model 42%") instead of a generic label.
 	$: waitingOnOfflineDownload = $isTranscribing && $whisperStatus.isLoading;
+	$: activeStyle = $promptStyle;
+	$: isStyledTake = $privacyMode !== 'true' && activeStyle && activeStyle !== 'standard';
 	$: transcribingLabel =
 		waitingOnOfflineDownload && $whisperStatus.statusText
 			? $whisperStatus.statusText
-			: 'Processing';
+			: isStyledTake
+				? activeStyle === 'pirate'
+					? 'Translating to Pirate...'
+					: activeStyle === 'victorian'
+						? 'Brewing Victorian...'
+						: 'Polishing style...'
+				: 'Processing';
 	// The label already reports Whisper's real percentage — drive the bar from the
 	// same number so it doesn't creep along on the generic ramp saying something else.
 	$: transcribeProgress = waitingOnOfflineDownload

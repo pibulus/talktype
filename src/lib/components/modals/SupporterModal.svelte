@@ -6,7 +6,6 @@
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { theme } from '$lib';
 	import { setSupporterStatus, userPreferences } from '$lib/services';
-	import { PRICING } from '$lib/config/pricing.js';
 	import { SUPPORTER_CHECKOUT } from '$lib/constants';
 	import { analytics } from '$lib/services/analytics.js';
 	import MembershipCard from '$lib/cartridges/MembershipCard.svelte';
@@ -28,28 +27,27 @@
 	let vaultHash = '';
 	let passportCode = '';
 
-	// Four words told people nothing about what they'd actually get. Tap one and
-	// it says what changes — the detail sells, the label just gets you there.
 	const benefits = [
 		{
-			label: 'Every transcript',
-			detail:
-				'Free keeps your last 15. Supporter keeps the lot — searchable, taggable, still only on your device.'
+			label: 'Beat the 5-minute limit',
+			detail: 'No more 5-minute cut-off. Record for as long as you like.'
 		},
 		{
-			label: 'Take it with you',
+			label: 'BYO custom styles',
 			detail:
-				'Save any recording as clean audio, export the whole history as text, Markdown, or JSON. Your words, your files.'
+				'Direct the ghost with your own prompt — like cleanup, bullet points, interview Q&A, or academic notes.'
 		},
 		{
-			label: 'Pick a voice',
-			detail:
-				'Pirate, Victorian, Sparkle, L33t — or write your own. Same words, wearing whatever you like.'
+			label: 'Keep all your notes',
+			detail: 'No 15-note cap. Store unlimited history locally and sync them to your other devices.'
 		},
 		{
-			label: 'Room to ramble',
-			detail:
-				'Longer recordings, the Rainbow ghost, and a passport that syncs it all to another device.'
+			label: 'Mastered audio WAVs',
+			detail: 'Export clean, polished audio files from any take in your history.'
+		},
+		{
+			label: 'The Rainbow Ghost',
+			detail: 'Unlocks the Rainbow vibe.'
 		}
 	];
 	let openBenefit = null;
@@ -207,7 +205,7 @@
 					id="supporter_modal_title"
 					class="min-w-0 text-xl font-black leading-tight tracking-tight text-gray-900 sm:text-2xl"
 				>
-					Become a supporter
+					Support TalkType
 				</h3>
 			</div>
 
@@ -221,8 +219,8 @@
 					</div>
 				</div>
 				<p id="supporter_modal_description" class="text-center text-sm leading-6 text-gray-700">
-					Supporter mode is unlocked on this device. This passport is generated locally from your
-					supporter code.
+					Supporter perks unlocked on this device. Your passport is generated locally from your
+					code.
 				</p>
 				<button
 					type="button"
@@ -243,8 +241,7 @@
 					</div>
 				</div>
 				<p id="supporter_modal_description" class="text-center text-sm leading-6 text-gray-700">
-					Supporter mode is unlocked. Enter your supporter code to regenerate this device's
-					passport.
+					Supporter mode is unlocked. Enter your code to regenerate this device's passport.
 				</p>
 				<details open class="rounded-2xl border border-pink-100 bg-white/65 px-4 py-3">
 					<summary
@@ -289,20 +286,18 @@
 				<!-- Price and pitch share one card, with the number as the hero. -->
 				<div class="rounded-2xl border border-pink-100 bg-white/75 p-4 shadow-sm">
 					<div class="flex items-baseline gap-2">
-						<span class="text-4xl font-black leading-none text-pink-600"
-							>{PRICING.displayPrice}</span
-						>
+						<span class="text-4xl font-black leading-none text-pink-600">24 schmackos</span>
 						<span class="text-sm font-bold text-pink-400">a year</span>
 					</div>
 					<p id="supporter_modal_description" class="mt-2 text-sm leading-6 text-gray-700">
-						Once. Not a subscription, not a login. It keeps the ghost free for everyone else and
-						hands you the good stuff.
+						TalkType has no ads, no VC money, and no account wall. 24 dollaridoos a year keeps this
+						running and unlocks the full tool on all your devices:
 					</p>
 				</div>
 
 				<div>
 					<p class="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-gray-500">
-						What you get
+						What unlocks
 					</p>
 					<ul class="space-y-2 text-sm">
 						{#each benefits as benefit, i}
@@ -339,7 +334,7 @@
 					on:click={handleCheckout}
 					disabled={isStartingCheckout}
 				>
-					{isStartingCheckout ? 'Opening Square...' : `I'm in — ${PRICING.displayPrice}`}
+					{isStartingCheckout ? 'Opening Square...' : `Grab it — 24 schmackos`}
 				</button>
 
 				{#if errorMessage}
@@ -395,7 +390,7 @@
 						class="btn btn-ghost min-h-12 w-full border border-pink-100 bg-white/70 text-gray-700 transition-colors duration-150 hover:bg-pink-50"
 						on:click={handleClose}
 					>
-						Maybe later
+						Keep cruising
 					</button>
 				</div>
 			{/if}

@@ -214,12 +214,23 @@ function createTranscriptionStore() {
 		const currentConnectionId = connectionId;
 
 		try {
-			// 1. Get a short-lived Deepgram token from our server
-			const response = await fetch('/api/deepgram/token');
-			const data = await response.json();
+			let token = '';
+			const customKey =
+				typeof window !== 'undefined'
+					? window.localStorage?.getItem('pibulus:talktype:byok_deepgram_key') || ''
+					: '';
 
-			if (!data.token) {
-				throw new Error(data.error || 'Failed to get Deepgram token');
+			if (customKey) {
+				token = customKey;
+			} else {
+				// 1. Get a short-lived Deepgram token from our server
+				const response = await fetch('/api/deepgram/token');
+				const data = await response.json();
+
+				if (!data.token) {
+					throw new Error(data.error || 'Failed to get Deepgram token');
+				}
+				token = data.token;
 			}
 
 			if (connectionId !== currentConnectionId || !isConnecting) {
@@ -231,7 +242,7 @@ function createTranscriptionStore() {
 			// it supports interim results, smart formatting, and endpointing.
 			const wsUrl = buildDeepgramLiveUrl();
 			// Deepgram recommends short-lived tokens for client-side realtime connections.
-			const activeSocket = new WebSocket(wsUrl, [DEEPGRAM_TOKEN_PROTOCOL, data.token]);
+			const activeSocket = new WebSocket(wsUrl, [DEEPGRAM_TOKEN_PROTOCOL, token]);
 			socket = activeSocket;
 
 			const isCurrentSocket = () => socket === activeSocket && connectionId === currentConnectionId;

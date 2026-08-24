@@ -2,6 +2,37 @@ import { env } from '$env/dynamic/private';
 
 export function extractDeepgramTranscript(data) {
 	const alternative = data?.results?.channels?.[0]?.alternatives?.[0];
+	if (!alternative) return '';
+
+	const paragraphList = alternative.paragraphs?.paragraphs;
+	if (Array.isArray(paragraphList) && paragraphList.length > 0) {
+		const distinctSpeakers = new Set(
+			paragraphList.map((p) => p.speaker).filter((s) => s !== undefined && s !== null)
+		);
+
+		if (distinctSpeakers.size > 1) {
+			const formattedParagraphs = paragraphList
+				.map((p) => {
+					const text = Array.isArray(p.sentences)
+						? p.sentences
+								.map((s) => s.text)
+								.filter(Boolean)
+								.join(' ')
+								.trim()
+						: '';
+					if (!text) return '';
+					const speakerLabel =
+						p.speaker !== undefined && p.speaker !== null ? `Speaker ${p.speaker}: ` : '';
+					return `${speakerLabel}${text}`;
+				})
+				.filter(Boolean);
+
+			if (formattedParagraphs.length > 0) {
+				return formattedParagraphs.join('\n\n');
+			}
+		}
+	}
+
 	return alternative?.paragraphs?.transcript || alternative?.transcript || '';
 }
 

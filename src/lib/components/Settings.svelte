@@ -14,8 +14,13 @@
 		getStoredCustomWords,
 		setStoredCustomWords
 	} from '$lib/services/transcription/transcriptCleanup.js';
-	import { ANIMATION, DEFAULT_THEME, SERVICE_EVENTS } from '$lib/constants';
+	import { ANIMATION, DEFAULT_THEME, SERVICE_EVENTS, STORAGE_KEYS } from '$lib/constants';
 	import { syncStore } from '$lib/stores/syncStore.js';
+	import {
+		readStorageValue,
+		writeStorageValue,
+		removeStorageValue
+	} from '$lib/services/storage/localStorageMigration.js';
 
 	export let closeModal = () => {};
 
@@ -26,6 +31,28 @@
 	let liveModeValue = false;
 	let isSupporterValue = false;
 	let userPreferencesLoaded = false;
+
+	let byokDeepgramKey = '';
+	let byokGeminiKey = '';
+
+	function loadByokKeys() {
+		if (!browser) return;
+		byokDeepgramKey = readStorageValue(STORAGE_KEYS.BYOK_DEEPGRAM_KEY, { defaultValue: '' });
+		byokGeminiKey = readStorageValue(STORAGE_KEYS.BYOK_GEMINI_KEY, { defaultValue: '' });
+	}
+
+	function saveByokKey(provider, value) {
+		const clean = (value || '').trim();
+		if (provider === 'deepgram') {
+			byokDeepgramKey = clean;
+			if (clean) writeStorageValue(STORAGE_KEYS.BYOK_DEEPGRAM_KEY, clean);
+			else removeStorageValue(STORAGE_KEYS.BYOK_DEEPGRAM_KEY);
+		} else if (provider === 'gemini') {
+			byokGeminiKey = clean;
+			if (clean) writeStorageValue(STORAGE_KEYS.BYOK_GEMINI_KEY, clean);
+			else removeStorageValue(STORAGE_KEYS.BYOK_GEMINI_KEY);
+		}
+	}
 
 	// Custom vocabulary — names/words the ghost should always get right.
 	// Applied as fuzzy post-processing on every transcription path
@@ -82,6 +109,7 @@
 
 	onMount(() => {
 		customWordsText = getStoredCustomWords().join('\n');
+		loadByokKeys();
 
 		// Subscribe to stores only in browser
 		unsubscribeTheme = theme.subscribe((value) => {
@@ -268,13 +296,13 @@
 				<textarea
 					bind:value={customWordsText}
 					on:blur={saveCustomWords}
-					placeholder="Names and tricky words, one per line — spelled the way you want them."
+					placeholder="Add names, slang, or jargon (separated by commas or new lines), e.g. Pablo, Sourdough, ChargeBee, SubGenius"
 					rows="3"
 					class="custom-words-input w-full rounded-lg border border-pink-200 bg-[#fffdf5] p-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
 					aria-label="Custom vocabulary — words transcripts should always spell your way"
 				></textarea>
 				<p class="px-1 text-[11px] leading-snug text-gray-500">
-					Anything transcripts keep mangling — they'll come out your way, every time.
+					Separate with commas or enters. The ghost will spell them your way, every time.
 				</p>
 			</section>
 
@@ -310,38 +338,108 @@
 				<span class="sr-only">{transcriptionMode === 'offline' ? 'On' : 'Off'}</span>
 			</button>
 
-			<!-- Sync Mode -->
-			<div class="mb-4">
-				<div class="mb-2 flex items-center justify-between">
-					<h3 class="settings-section-title tracking-widest text-[#f9a8d4]">Device Sync</h3>
-					{#if $syncStore.status === 'connected'}
-						<span class="text-[10px] font-bold uppercase tracking-widest text-emerald-400"
-							>Live</span
-						>
-					{:else if $syncStore.status === 'connecting'}
-						<span class="text-[10px] font-bold uppercase tracking-widest text-amber-400"
-							>Connecting</span
-						>
-					{/if}
-				</div>
-				<div
-					class="setting-row flex flex-col gap-2 rounded-[22px] bg-white p-3.5 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-				>
-					<div class="flex flex-col">
-						<span class="text-[15px] font-bold text-slate-800">Secret Phrase</span>
-						<span class="text-[11px] font-bold leading-tight text-gray-500">
-							Type this exact phrase on another device to link them invisibly.
-						</span>
+			<!-- Device Sync -->
+			{#if isSupporterValue}
+				<section class="settings-section space-y-2" aria-labelledby="settings_sync_title">
+					<div class="flex items-center justify-between">
+						<h4 id="settings_sync_title" class="settings-section-title">Device Sync</h4>
+						{#if $syncStore.status === 'connected'}
+							<span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600"
+								>Live</span
+							>
+						{:else if $syncStore.status === 'connecting'}
+							<span class="text-[10px] font-bold uppercase tracking-wider text-amber-600"
+								>Connecting</span
+							>
+						{/if}
 					</div>
-					<input
-						class="w-full rounded-xl bg-gray-50 px-3 py-2 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-[#f9a8d4] sm:w-48"
-						type="text"
-						value={$syncStore.phrase}
-						on:blur={(e) => syncStore.setPhrase(e.target.value)}
-						on:keydown={(e) => e.key === 'Enter' && e.target.blur()}
-					/>
-				</div>
-			</div>
+					<div class="setting-row rounded-xl border border-pink-100 bg-white/75 p-3 shadow-sm">
+						<label for="sync-phrase-input" class="mb-1 block text-xs font-bold text-gray-700"
+							>Sync Phrase</label
+						>
+						<input
+							id="sync-phrase-input"
+							class="w-full rounded-lg border border-pink-200 bg-[#fffdf5] px-3 py-2 font-mono text-sm font-bold text-gray-800 outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-200"
+							type="text"
+							value={$syncStore.phrase}
+							on:blur={(e) => syncStore.setPhrase(e.target.value)}
+							on:keydown={(e) => e.key === 'Enter' && e.target.blur()}
+						/>
+						<p class="mt-1.5 px-0.5 text-[11px] font-medium leading-snug text-gray-500">
+							Match this phrase on another device to link them live.
+						</p>
+					</div>
+				</section>
+
+				<!-- BYOK (Bring Your Own Key) -->
+				<details class="rounded-xl border border-pink-100 bg-white/75 px-4 py-3 shadow-sm">
+					<summary
+						class="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 text-xs font-bold uppercase tracking-wider text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
+					>
+						<span class="flex items-center gap-2">
+							<span class="text-sm" aria-hidden="true">🔑</span>
+							<span>Custom API Keys (BYOK)</span>
+						</span>
+						<span class="chevron text-pink-500" aria-hidden="true"></span>
+					</summary>
+
+					<div class="mt-3 space-y-3 pt-1">
+						<p class="text-[11px] font-medium leading-relaxed text-gray-500">
+							Optional power tool for high-volume users. Paste your own keys to dictate directly at
+							cost.
+						</p>
+						<div>
+							<label for="byok-deepgram-input" class="mb-1 block text-xs font-bold text-gray-700">
+								Deepgram API Key
+							</label>
+							<input
+								id="byok-deepgram-input"
+								class="w-full rounded-lg border border-pink-200 bg-[#fffdf5] px-3 py-2 font-mono text-xs font-bold text-gray-800 outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-200"
+								type="password"
+								placeholder="Optional custom Deepgram key"
+								value={byokDeepgramKey}
+								on:blur={(e) => saveByokKey('deepgram', e.target.value)}
+							/>
+						</div>
+						<div>
+							<label for="byok-gemini-input" class="mb-1 block text-xs font-bold text-gray-700">
+								Gemini API Key
+							</label>
+							<input
+								id="byok-gemini-input"
+								class="w-full rounded-lg border border-pink-200 bg-[#fffdf5] px-3 py-2 font-mono text-xs font-bold text-gray-800 outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-200"
+								type="password"
+								placeholder="Optional custom Gemini key"
+								value={byokGeminiKey}
+								on:blur={(e) => saveByokKey('gemini', e.target.value)}
+							/>
+						</div>
+					</div>
+				</details>
+			{:else}
+				<button
+					type="button"
+					class="setting-row flex min-h-12 w-full items-center justify-between gap-4 rounded-xl border border-pink-100 bg-white/75 px-4 py-3 text-left shadow-sm transition-all duration-200 hover:border-pink-200 hover:bg-pink-50/70"
+					on:click={() => openSupporterModal('settings')}
+				>
+					<div class="flex items-center gap-3">
+						<span class="text-base" aria-hidden="true">🔄</span>
+						<div>
+							<span class="block text-sm font-black leading-tight text-gray-800">Device Sync</span>
+							<span class="block text-[11px] font-bold leading-tight text-gray-500">
+								Link your phone and laptop live.
+							</span>
+						</div>
+					</div>
+					<div
+						class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-xs text-white shadow-sm"
+						title="Supporter"
+						aria-hidden="true"
+					>
+						★
+					</div>
+				</button>
+			{/if}
 
 			<!-- Wears the intro modal's "Let's go" gradient on purpose: that's the
 			     button everybody already tapped, so this reads as the same

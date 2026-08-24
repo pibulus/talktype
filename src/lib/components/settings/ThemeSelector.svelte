@@ -46,7 +46,7 @@
 	{#each vibeOptions as vibe, index}
 		<button
 			type="button"
-			class="vibe-option relative flex min-h-[72px] items-center justify-center rounded-xl border border-pink-100 bg-[#fffdf5] p-2 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {currentTheme ===
+			class="vibe-option relative flex min-h-[72px] flex-col items-center justify-center rounded-xl border border-pink-100 bg-[#fffdf5] p-1.5 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {currentTheme ===
 			vibe.id
 				? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
 				: ''} {isThemeLocked(vibe) ? 'locked-vibe' : ''}"
@@ -58,13 +58,13 @@
 			aria-pressed={currentTheme === vibe.id && !isThemeLocked(vibe)}
 			title={isThemeLocked(vibe) ? 'Supporter' : vibe.name}
 		>
-			<div class="preview-container">
+			<div class="preview-container mb-1">
 				<!-- Use the original DisplayGhost component with masking -->
-				<div class="preview-ghost-wrapper relative h-11 w-11">
+				<div class="preview-ghost-wrapper relative h-8 w-8">
 					<div class="ghost-mask-wrapper">
 						<DisplayGhost
 							theme={vibe.id}
-							size="44px"
+							size="32px"
 							seed={index * 1000 + 12345}
 							disableJsAnimation={true}
 						/>
@@ -72,7 +72,7 @@
 				</div>
 			</div>
 
-			<span class="sr-only">{vibe.name}</span>
+			<span class="text-xs font-semibold leading-tight text-gray-700">{vibe.name}</span>
 
 			{#if isThemeLocked(vibe)}
 				<div

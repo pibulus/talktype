@@ -79,10 +79,6 @@
 	const iconButtonClass =
 		'history-tooltip relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fffdf7] text-pink-700 shadow-sm ring-1 ring-pink-200/60 transition-all duration-200 hover:scale-105 hover:bg-pink-50 hover:shadow-md hover:ring-pink-200 active:scale-95';
 	const iconButtonActiveClass = 'bg-pink-100 text-pink-800 shadow-md ring-pink-300';
-	// Secondary actions stay borderless — the transcript should be the loudest
-	// thing in the row, not the chrome around it.
-	const menuButtonClass =
-		'inline-flex min-h-11 items-center rounded-full px-3 py-2.5 text-sm font-bold text-gray-600 transition-colors duration-150 hover:bg-pink-50 hover:text-pink-700 active:bg-pink-100 active:scale-95';
 	const menuItemClass =
 		'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-gray-700 transition-colors duration-150 hover:bg-pink-50 hover:text-pink-700 active:bg-pink-100';
 	const destructiveMenuItemClass =
@@ -635,89 +631,131 @@
 		</form>
 
 		<!-- Header -->
-		<div class="mb-4 shrink-0 border-b border-pink-100 pb-4">
-			<!-- Title row keeps pr-10 so it never collides with the absolute close
-			     button; actions live on their own full-width row below. -->
-			<div class="flex flex-col gap-3">
-				<div class="flex items-start justify-between gap-2 pr-10">
-					<div>
-						<h3 id="history_modal_title" class="text-xl font-black tracking-tight text-gray-800">
-							Transcript History
+		<div class="mb-3 shrink-0 border-b border-pink-100/80 pb-3">
+			<div class="flex flex-col gap-2.5">
+				<!-- Title row -->
+				<div class="flex items-center justify-between gap-3 pr-10">
+					<div class="flex items-center gap-2">
+						<span
+							class="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-100/80 text-sm"
+							aria-hidden="true">📝</span
+						>
+						<h3 id="history_modal_title" class="text-lg font-black tracking-tight text-gray-800">
+							History
 						</h3>
-						<p id="history_modal_description" class="sr-only">Your saved transcripts.</p>
-						{#if selectedTag}
-							<p class="text-xs text-gray-500">#{selectedTag}</p>
+						{#if $transcriptHistory.length > 0}
+							<span
+								class="rounded-full bg-pink-100/70 px-2 py-0.5 text-xs font-bold tabular-nums text-pink-700"
+							>
+								{$transcriptHistory.length}
+							</span>
 						{/if}
+						<p id="history_modal_description" class="sr-only">Your saved transcripts.</p>
 					</div>
 				</div>
 
 				{#if $transcriptHistory.length > 0}
-					<div class="flex flex-wrap items-center gap-2">
+					<!-- Action Bar Controls -->
+					<div class="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+						<!-- Sort toggle -->
 						<button
 							type="button"
-							class={menuButtonClass}
+							class="inline-flex items-center gap-1.5 rounded-full border border-pink-200/80 bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm transition-all hover:bg-pink-50 active:scale-95"
 							aria-pressed={oldestFirst}
 							title="Switch between newest and oldest first"
 							on:click={() => (oldestFirst = !oldestFirst)}
 						>
-							{oldestFirst ? 'Oldest first' : 'Newest first'}
+							<span class="text-xs text-pink-500">{oldestFirst ? '↑' : '↓'}</span>
+							<span>{oldestFirst ? 'Oldest first' : 'Newest first'}</span>
 						</button>
-						{#if isSupporter}
+
+						<!-- Right Actions (Export & Clear) -->
+						<div class="flex items-center gap-1.5">
+							{#if isSupporter}
+								<div class="relative inline-flex items-center">
+									<button
+										type="button"
+										class="inline-flex items-center gap-1 rounded-l-full border border-pink-200/80 bg-white/90 px-2.5 py-1 text-xs font-bold text-gray-700 shadow-sm transition-all hover:bg-pink-50 active:scale-95"
+										on:click={handleBatchDownload}
+										title="Download all transcripts as a ZIP file"
+										aria-label="Download all transcripts as ZIP"
+									>
+										<span>📥</span>
+										<span>Export ZIP</span>
+									</button>
+									<button
+										type="button"
+										class="inline-flex items-center rounded-r-full border-y border-r border-pink-200/80 bg-white/90 px-2 py-1 text-xs font-bold text-gray-700 shadow-sm transition-all hover:bg-pink-50 active:scale-95"
+										on:click={() => (showExportFormats = !showExportFormats)}
+										aria-expanded={showExportFormats}
+										title="More export options (Markdown, JSON)"
+									>
+										<span class="text-[10px] text-pink-500">▾</span>
+									</button>
+
+									{#if showExportFormats}
+										<div
+											class="absolute right-0 top-full z-20 mt-1 flex flex-col gap-1 rounded-xl border border-pink-100 bg-white p-1.5 shadow-lg ring-1 ring-black/5"
+											transition:fade={{ duration: 120 }}
+										>
+											<button
+												type="button"
+												class="whitespace-nowrap rounded-lg px-2.5 py-1 text-left text-xs font-bold text-gray-700 transition hover:bg-pink-50 hover:text-pink-700"
+												on:click={() => {
+													showExportFormats = false;
+													handleExportMarkdown();
+												}}
+											>
+												📄 Markdown file
+											</button>
+											<button
+												type="button"
+												class="whitespace-nowrap rounded-lg px-2.5 py-1 text-left text-xs font-bold text-gray-700 transition hover:bg-pink-50 hover:text-pink-700"
+												on:click={() => {
+													showExportFormats = false;
+													handleExportJSON();
+												}}
+											>
+												📦 JSON
+											</button>
+										</div>
+									{/if}
+								</div>
+							{/if}
+
 							<button
 								type="button"
-								class={menuButtonClass}
-								on:click={handleBatchDownload}
-								aria-label="Download all transcripts as a ZIP of text files"
+								class={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold transition-all active:scale-95 ${
+									confirmClearAll
+										? 'border-amber-300 bg-amber-100 text-amber-900 shadow-sm'
+										: 'border-pink-200/80 bg-white/90 text-gray-600 hover:bg-pink-50 hover:text-pink-700'
+								}`}
+								on:click={handleClearAll}
+								aria-label={confirmClearAll
+									? 'Tap again to clear all history'
+									: 'Clear all history'}
 							>
-								Export all
-							</button>
-							<button
-								type="button"
-								class={menuButtonClass}
-								on:click={() => (showExportFormats = !showExportFormats)}
-								aria-expanded={showExportFormats}
-								aria-label="Other export formats"
-							>
-								<span aria-hidden="true">⋯</span>
-							</button>
-						{/if}
-						<button
-							type="button"
-							class={`${menuButtonClass} ${confirmClearAll ? 'bg-amber-50 text-amber-700 hover:bg-amber-100 active:bg-amber-200' : ''}`}
-							on:click={handleClearAll}
-							aria-label={confirmClearAll
-								? 'Tap again to clear transcript history'
-								: 'Clear transcript history'}
-						>
-							{confirmClearAll ? 'Tap again' : 'Clear'}
-						</button>
-					</div>
-					{#if isSupporter && showExportFormats}
-						<div class="flex flex-wrap gap-2" transition:fade={{ duration: 150 }}>
-							<button type="button" class={menuButtonClass} on:click={handleExportMarkdown}>
-								One Markdown file
-							</button>
-							<button type="button" class={menuButtonClass} on:click={handleExportJSON}>
-								JSON
+								<span>{confirmClearAll ? '⚠️ Confirm?' : 'Clear'}</span>
 							</button>
 						</div>
-					{/if}
+					</div>
 				{/if}
 			</div>
 		</div>
 
+		<!-- Tag Pills Row -->
 		{#if isSupporter && availableTags.length > 0 && $transcriptHistory.length > 0}
 			<div
-				class="tt-scrollbar-x mb-3 flex shrink-0 gap-2 overflow-x-auto pb-1"
+				class="tt-scrollbar-x mb-3 flex shrink-0 items-center gap-1.5 overflow-x-auto pb-1"
 				role="group"
 				aria-label="Filter history by tag"
 			>
 				<button
 					type="button"
-					class={`min-h-10 shrink-0 rounded-full border px-3 text-xs font-bold transition-all duration-150 ${
+					class={`h-7 shrink-0 rounded-full px-3 text-xs font-bold transition-all duration-150 active:scale-95 ${
 						!selectedTag
-							? 'border-pink-300 bg-pink-50 text-pink-800'
-							: 'border-pink-100 bg-[#fffdf7]/80 text-gray-600 hover:bg-pink-50 active:scale-95'
+							? 'bg-pink-500 text-white shadow-sm'
+							: 'border border-pink-200/70 bg-white/80 text-gray-600 hover:bg-pink-50 hover:text-pink-700'
 					}`}
 					aria-pressed={!selectedTag}
 					on:click={() => (selectedTag = '')}
@@ -727,10 +765,10 @@
 				{#each availableTags.slice(0, 14) as tag}
 					<button
 						type="button"
-						class={`min-h-10 shrink-0 rounded-full border px-3 text-xs font-bold transition-all duration-150 ${
+						class={`h-7 shrink-0 rounded-full px-3 text-xs font-bold transition-all duration-150 active:scale-95 ${
 							selectedTag === tag
-								? 'border-pink-300 bg-pink-50 text-pink-800'
-								: 'border-pink-100 bg-[#fffdf7]/80 text-gray-600 hover:bg-pink-50 active:scale-95'
+								? 'bg-pink-500 text-white shadow-sm'
+								: 'border border-pink-200/70 bg-white/80 text-gray-600 hover:bg-pink-50 hover:text-pink-700'
 						}`}
 						aria-pressed={selectedTag === tag}
 						on:click={() => toggleTag(tag)}

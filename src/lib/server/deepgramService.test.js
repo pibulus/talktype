@@ -23,6 +23,39 @@ describe('Deepgram service helpers', () => {
 		expect(extractDeepgramTranscript(payload)).toBe('Speaker 0: formatted transcript');
 	});
 
+	it('formats multi-speaker paragraphs with speaker labels when diarized', () => {
+		const payload = {
+			results: {
+				channels: [
+					{
+						alternatives: [
+							{
+								transcript: 'hello world how are you',
+								paragraphs: {
+									transcript: 'hello world\n\nhow are you',
+									paragraphs: [
+										{
+											speaker: 0,
+											sentences: [{ text: 'hello world' }]
+										},
+										{
+											speaker: 1,
+											sentences: [{ text: 'how are you' }]
+										}
+									]
+								}
+							}
+						]
+					}
+				]
+			}
+		};
+
+		expect(extractDeepgramTranscript(payload)).toBe(
+			'Speaker 0: hello world\n\nSpeaker 1: how are you'
+		);
+	});
+
 	it('falls back to the plain transcript', () => {
 		const payload = {
 			results: {

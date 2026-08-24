@@ -45,13 +45,22 @@
 				<p>
 					I made this because I think faster out loud — and everything else wanted an account first.
 				</p>
-				<p>So: no account. No sign-up. No upsell to use it.</p>
-				<p>Nothing said here is stored anywhere. Keep it private and it never leaves the phone.</p>
+				<p>No accounts. No ads. No tracking.</p>
+				<p>
+					Works offline with local Whisper, streams live with Deepgram, and stays on this device.
+				</p>
 				<p>Vibes to try, voices to borrow, words that stay yours.</p>
 			</div>
 
 			<div class="flex flex-wrap items-center justify-between gap-3 pt-2">
-				<p class="text-xs text-gray-500">Made by Pablo in Melbourne</p>
+				<p class="text-xs text-gray-500">
+					Made by <a
+						href="https://madebypablo.app"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="font-medium underline underline-offset-2 hover:text-pink-600">Pablo</a
+					> in Melbourne
+				</p>
 				<div class="flex items-center gap-1">
 					<a
 						href="https://github.com/pibulus"

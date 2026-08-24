@@ -3,6 +3,7 @@
 	import ghostPathsUrl from './ghost-paths.svg?url';
 	import { onMount, onDestroy } from 'svelte';
 	import { GRADIENT_DEFS } from './gradients.js';
+	import { getAccessory } from './accessories.js';
 
 	// Direct theme prop - no store subscription
 	export let theme = 'peach';
@@ -11,6 +12,7 @@
 	export let height = null;
 	export let seed = Math.floor(Math.random() * 10000);
 	export let disableJsAnimation = false;
+	export let accessory = 'none';
 
 	const validThemes = new Set(['peach', 'mint', 'bubblegum', 'rainbow']);
 
@@ -94,6 +96,7 @@
 		clearTimeout(openEyesTimeoutId);
 	});
 
+	$: accessorySvg = getAccessory(accessory)?.svg || '';
 	// Reactive declaration for ghost ready state
 	$: isGhostReady = componentsLoaded && !!ghostSvg && !!resolvedTheme;
 </script>
@@ -160,6 +163,13 @@
 					fill="#1e1714"
 				/>
 			</g>
+
+			{#if accessorySvg}
+				<g class="ghost-layer ghost-accessory">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+					{@html accessorySvg}
+				</g>
+			{/if}
 		</svg>
 	</div>
 </div>

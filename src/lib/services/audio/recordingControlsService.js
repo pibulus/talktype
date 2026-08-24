@@ -76,7 +76,11 @@ export class RecordingControlsService {
 		this.currentCtaIndex = 0;
 		this.toggleInFlight = false;
 		this.timeLimitStopInFlight = false;
+		this.silenceLimitStopInFlight = false;
 		this.activeRecordingMode = null;
+		this.isAppending = false;
+		this.preAppendText = '';
+
 		this.timeLimitUnsubscribe = audioState.subscribe((state) => {
 			if (!state.timeLimit || this.timeLimitStopInFlight) return;
 			const { isRecording } = this.stores;
@@ -87,6 +91,30 @@ export class RecordingControlsService {
 			this.uiActions.setScreenReaderMessage('Recording time limit reached. Stopping recording.');
 			this.stopRecording().finally(() => {
 				this.timeLimitStopInFlight = false;
+			});
+		});
+
+		this.silenceLimitUnsubscribe = audioState.subscribe((state) => {
+			if (!state.silenceLimit || this.silenceLimitStopInFlight || this.timeLimitStopInFlight)
+				return;
+			const { isRecording } = this.stores;
+			if (!isRecording || !get(isRecording)) return;
+
+			this.silenceLimitStopInFlight = true;
+			log.log('Silence limit reached (3 min quiet) — auto-saving take');
+			this.uiActions.setScreenReaderMessage('Saved your recording after 3 minutes of quiet.');
+			if (typeof window !== 'undefined') {
+				window.dispatchEvent(
+					new CustomEvent('talktype:toast', {
+						detail: {
+							message: 'Saved your take after 3 minutes of quiet — ready whenever you are!',
+							type: 'info'
+						}
+					})
+				);
+			}
+			this.stopRecording().finally(() => {
+				this.silenceLimitStopInFlight = false;
 			});
 		});
 	}
@@ -107,6 +135,7 @@ export class RecordingControlsService {
 	async startRecording(options = {}) {
 		const { isRecording, isTranscribing, transcriptionText } = this.stores;
 		const isAutoStart = options.source === 'auto-start' || options.source === 'launch-shortcut';
+		const isAppend = Boolean(options.append);
 
 		if (get(isRecording) || get(isTranscribing)) return;
 
@@ -114,8 +143,11 @@ export class RecordingControlsService {
 		this.uiActions.clearErrorMessage();
 		this.uiActions.setClipboardSuccess?.(false);
 
-		// Clear previous transcription text for new recording
-		if (get(transcriptionText)) {
+		this.isAppending = isAppend;
+		this.preAppendText = isAppend ? get(transcriptionText) || '' : '';
+
+		// Clear previous transcription text only if not appending
+		if (!isAppend && get(transcriptionText)) {
 			transcriptionState.update((current) => ({
 				...current,
 				text: '',
@@ -139,7 +171,7 @@ export class RecordingControlsService {
 			await this.audioService.startRecording({ transcriptionMode: this.activeRecordingMode });
 			analytics.recordingStarted({
 				mode: this.activeRecordingMode,
-				source: options.source || 'manual'
+				source: options.source || (isAppend ? 'append' : 'manual')
 			});
 
 			// State is tracked through stores now
@@ -266,6 +298,12 @@ export class RecordingControlsService {
 			// so it works identically across live, batch, Gemini, and offline paths.
 			finalTranscript = applyCustomWords(finalTranscript, getStoredCustomWords());
 
+			if (this.isAppending && this.preAppendText) {
+				finalTranscript = `${this.preAppendText}\n\n${finalTranscript}`.trim();
+			}
+			this.isAppending = false;
+			this.preAppendText = '';
+
 			log.log('Transcription result:', finalTranscript);
 			transcriptionActions.completeTranscription(finalTranscript);
 			// The stop cue fires the instant you tap stop, before the round trip.
@@ -386,6 +424,8 @@ export class RecordingControlsService {
 		});
 		this.timeLimitUnsubscribe?.();
 		this.timeLimitUnsubscribe = null;
+		this.silenceLimitUnsubscribe?.();
+		this.silenceLimitUnsubscribe = null;
 		this.ghostComponent = null;
 	}
 }
