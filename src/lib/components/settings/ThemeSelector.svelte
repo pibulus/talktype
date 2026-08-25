@@ -46,10 +46,14 @@
 	{#each vibeOptions as vibe, index}
 		<button
 			type="button"
-			class="vibe-option relative flex min-h-[72px] flex-col items-center justify-center rounded-xl border border-pink-100 bg-[#fffdf5] p-1.5 shadow-sm transition-all duration-300 hover:border-pink-200 hover:shadow-md {currentTheme ===
+			class="vibe-option relative flex min-h-[72px] flex-col items-center justify-center rounded-xl p-1.5 transition-all duration-150 {currentTheme ===
 			vibe.id
-				? 'selected-vibe border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
-				: ''} {isThemeLocked(vibe) ? 'locked-vibe' : ''}"
+				? 'selected-vibe -translate-y-0.5 border-2 border-gray-900 bg-white shadow-[3px_3px_0px_#1e1714]'
+				: 'hover:shadow-xs border-2 border-gray-200/90 bg-[#fffdf5] hover:border-gray-900/60'} {isThemeLocked(
+				vibe
+			)
+				? 'locked-vibe'
+				: ''}"
 			data-vibe-type={vibe.id}
 			on:click={() => handleThemeClick(vibe)}
 			aria-label={isThemeLocked(vibe)
@@ -72,11 +76,15 @@
 				</div>
 			</div>
 
-			<span class="text-xs font-semibold leading-tight text-gray-700">{vibe.name}</span>
+			<span
+				class="text-xs {currentTheme === vibe.id
+					? 'font-black text-gray-900'
+					: 'font-bold text-gray-700'} leading-tight">{vibe.name}</span
+			>
 
 			{#if isThemeLocked(vibe)}
 				<div
-					class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-xs text-white shadow-sm"
+					class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-gray-900 bg-amber-400 text-xs font-black text-gray-900 shadow-[1px_1px_0px_#1e1714]"
 					title="Supporter"
 					aria-hidden="true"
 				>
@@ -84,7 +92,7 @@
 				</div>
 			{:else if currentTheme === vibe.id}
 				<div
-					class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-400 text-xs text-white shadow-sm"
+					class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-gray-900 bg-pink-400 text-[10px] font-black text-gray-900 shadow-[1px_1px_0px_#1e1714]"
 					aria-hidden="true"
 				>
 					✓
@@ -96,9 +104,7 @@
 
 <style>
 	.selected-vibe {
-		box-shadow:
-			0 0 0 2px rgba(249, 168, 212, 0.4),
-			0 4px 8px rgba(249, 168, 212, 0.2);
+		box-shadow: 3px 3px 0px #1e1714;
 	}
 
 	/* Ghost preview styling */

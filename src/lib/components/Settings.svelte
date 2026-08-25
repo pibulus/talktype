@@ -298,10 +298,10 @@
 					on:blur={saveCustomWords}
 					placeholder="Add names, slang, or jargon (separated by commas or new lines), e.g. Pablo, Sourdough, ChargeBee, SubGenius"
 					rows="3"
-					class="custom-words-input w-full rounded-lg border border-pink-200 bg-[#fffdf5] p-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
+					class="custom-words-input w-full rounded-xl border-2 border-gray-900 bg-[#fffef9] p-3 text-sm font-medium text-gray-800 shadow-inner placeholder:text-gray-400 focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-300"
 					aria-label="Custom vocabulary — words transcripts should always spell your way"
 				></textarea>
-				<p class="px-1 text-[11px] leading-snug text-gray-500">
+				<p class="px-1 text-[11px] font-bold leading-snug text-gray-500">
 					Separate with commas or enters. The ghost will spell them your way, every time.
 				</p>
 			</section>
@@ -310,10 +310,10 @@
 			     it is about privacy and signal, not about which vendor transcribes. -->
 			<button
 				type="button"
-				class={`setting-row flex min-h-12 w-full items-center gap-4 rounded-xl border px-4 py-3 text-left shadow-sm transition-all duration-200 ${
+				class={`setting-row flex min-h-12 w-full items-center gap-4 rounded-xl border-2 px-4 py-3 text-left transition-all duration-150 ${
 					transcriptionMode === 'offline'
-						? 'border-pink-300 bg-pink-50 text-gray-900 ring-2 ring-pink-100'
-						: 'border-pink-100 bg-white/75 text-gray-700 hover:border-pink-200 hover:bg-pink-50/70'
+						? '-translate-y-0.5 border-gray-900 bg-teal-50 text-gray-950 shadow-[3px_3px_0px_#2dd4bf]'
+						: 'hover:shadow-xs border-2 border-gray-200/90 bg-[#fffdf5] text-gray-700 hover:border-gray-900/60'
 				}`}
 				aria-pressed={transcriptionMode === 'offline'}
 				aria-label={`${transcriptionMode === 'offline' ? 'Disable' : 'Enable'} on-device transcription`}
@@ -325,7 +325,7 @@
 						aria-hidden="true"><span></span></span
 					>
 					<span class="block">
-						<span class="block text-sm font-black leading-tight">Offline Mode</span>
+						<span class="block text-sm font-black leading-tight text-gray-900">Offline Mode</span>
 						<span class="block text-[11px] font-bold leading-tight text-gray-500">
 							{#if offlineButtonStatus?.visible && transcriptionMode === 'offline'}
 								{offlineStatusLabel}
@@ -344,37 +344,37 @@
 					<div class="flex items-center justify-between">
 						<h4 id="settings_sync_title" class="settings-section-title">Device Sync</h4>
 						{#if $syncStore.status === 'connected'}
-							<span class="text-[10px] font-bold uppercase tracking-wider text-emerald-600"
+							<span class="text-[10px] font-black uppercase tracking-wider text-emerald-600"
 								>Live</span
 							>
 						{:else if $syncStore.status === 'connecting'}
-							<span class="text-[10px] font-bold uppercase tracking-wider text-amber-600"
+							<span class="text-[10px] font-black uppercase tracking-wider text-amber-600"
 								>Connecting</span
 							>
 						{/if}
 					</div>
-					<div class="setting-row rounded-xl border border-pink-100 bg-white/75 p-3 shadow-sm">
+					<div class="setting-row rounded-xl border-2 border-gray-900/80 bg-white p-3 shadow-sm">
 						<label for="sync-phrase-input" class="mb-1 block text-xs font-bold text-gray-700"
 							>Sync Phrase</label
 						>
 						<input
 							id="sync-phrase-input"
-							class="w-full rounded-lg border border-pink-200 bg-[#fffdf5] px-3 py-2 font-mono text-sm font-bold text-gray-800 outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-200"
+							class="w-full rounded-xl border-2 border-gray-900 bg-[#fffef9] px-3 py-2 font-mono text-sm font-bold text-gray-900 shadow-inner outline-none focus:border-gray-900 focus:ring-2 focus:ring-pink-300"
 							type="text"
 							value={$syncStore.phrase}
 							on:blur={(e) => syncStore.setPhrase(e.target.value)}
 							on:keydown={(e) => e.key === 'Enter' && e.target.blur()}
 						/>
-						<p class="mt-1.5 px-0.5 text-[11px] font-medium leading-snug text-gray-500">
+						<p class="mt-1.5 px-0.5 text-[11px] font-bold leading-snug text-gray-500">
 							Match this phrase on another device to link them live.
 						</p>
 					</div>
 				</section>
 
 				<!-- BYOK (Bring Your Own Key) -->
-				<details class="rounded-xl border border-pink-100 bg-white/75 px-4 py-3 shadow-sm">
+				<details class="rounded-xl border-2 border-gray-900/80 bg-white px-4 py-3 shadow-sm">
 					<summary
-						class="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 text-xs font-bold uppercase tracking-wider text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
+						class="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 text-xs font-black uppercase tracking-wider text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
 					>
 						<span class="flex items-center gap-2">
 							<span class="text-sm" aria-hidden="true">🔑</span>
@@ -384,7 +384,7 @@
 					</summary>
 
 					<div class="mt-3 space-y-3 pt-1">
-						<p class="text-[11px] font-medium leading-relaxed text-gray-500">
+						<p class="text-[11px] font-bold leading-relaxed text-gray-500">
 							Optional power tool for high-volume users. Paste your own keys to dictate directly at
 							cost.
 						</p>
@@ -394,7 +394,7 @@
 							</label>
 							<input
 								id="byok-deepgram-input"
-								class="w-full rounded-lg border border-pink-200 bg-[#fffdf5] px-3 py-2 font-mono text-xs font-bold text-gray-800 outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-200"
+								class="w-full rounded-xl border-2 border-gray-900 bg-[#fffef9] px-3 py-2 font-mono text-xs font-bold text-gray-900 shadow-inner outline-none focus:border-gray-900 focus:ring-2 focus:ring-pink-300"
 								type="password"
 								placeholder="Optional custom Deepgram key"
 								value={byokDeepgramKey}
@@ -407,7 +407,7 @@
 							</label>
 							<input
 								id="byok-gemini-input"
-								class="w-full rounded-lg border border-pink-200 bg-[#fffdf5] px-3 py-2 font-mono text-xs font-bold text-gray-800 outline-none focus:border-pink-300 focus:ring-2 focus:ring-pink-200"
+								class="w-full rounded-xl border-2 border-gray-900 bg-[#fffef9] px-3 py-2 font-mono text-xs font-bold text-gray-900 shadow-inner outline-none focus:border-gray-900 focus:ring-2 focus:ring-pink-300"
 								type="password"
 								placeholder="Optional custom Gemini key"
 								value={byokGeminiKey}
@@ -419,7 +419,7 @@
 			{:else}
 				<button
 					type="button"
-					class="setting-row flex min-h-12 w-full items-center justify-between gap-4 rounded-xl border border-pink-100 bg-white/75 px-4 py-3 text-left shadow-sm transition-all duration-200 hover:border-pink-200 hover:bg-pink-50/70"
+					class="setting-row shadow-xs hover:shadow-xs flex min-h-12 w-full items-center justify-between gap-4 rounded-xl border-2 border-gray-200/90 bg-[#fffdf5] px-4 py-3 text-left transition-all duration-150 hover:border-gray-900/60"
 					on:click={() => openSupporterModal('settings')}
 				>
 					<div class="flex items-center gap-3">
@@ -432,7 +432,7 @@
 						</div>
 					</div>
 					<div
-						class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-xs text-white shadow-sm"
+						class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-gray-900 bg-amber-400 text-xs font-black text-gray-900 shadow-[1px_1px_0px_#1e1714]"
 						title="Supporter"
 						aria-hidden="true"
 					>
@@ -446,11 +446,11 @@
 			     invitation instead of a new kind of ask. -->
 			<button
 				type="button"
-				class="supporter-row group flex w-full items-center justify-center gap-2.5 rounded-full px-6 py-3"
+				class="supporter-row group flex w-full items-center justify-center gap-2.5 rounded-2xl border-2 border-gray-900 px-6 py-3.5 shadow-[3px_3px_0px_#1e1714] transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#1e1714] active:translate-y-0.5 active:shadow-none"
 				title="Rainbow vibe, your own output style, longer notes, history and downloads"
 				on:click={() => openSupporterModal('settings')}
 			>
-				<span class="text-base" aria-hidden="true">✦</span>
+				<span class="text-base font-black" aria-hidden="true">✦</span>
 				<span class="text-base font-black tracking-tight">
 					{isSupporterValue ? 'Supporter mode' : 'Become a Supporter'}
 				</span>
@@ -472,18 +472,6 @@
 	.supporter-row {
 		background: linear-gradient(90deg, #fbbf24, #f472b6 55%, #ec4899);
 		color: #fffdf5;
-		border: 0;
-		box-shadow: 0 10px 22px rgba(249, 168, 212, 0.5);
-		transition:
-			transform 0.15s ease,
-			box-shadow 0.15s ease;
-	}
-	.supporter-row:hover {
-		transform: scale(1.02);
-		box-shadow: 0 14px 30px rgba(249, 168, 212, 0.7);
-	}
-	.supporter-row:active {
-		transform: scale(0.97);
 	}
 
 	.auto-start-glyph,
@@ -495,33 +483,37 @@
 	}
 
 	.auto-start-glyph {
-		width: 2rem;
-		height: 1.15rem;
+		width: 2.2rem;
+		height: 1.25rem;
 		justify-content: flex-start;
 		border-radius: 9999px;
 		background: #e5e7eb;
-		padding: 0.16rem;
+		border: 2px solid #1e1714;
+		padding: 0.1rem;
 		transition:
 			background 0.2s ease,
 			box-shadow 0.2s ease;
 	}
 
 	.auto-start-glyph span {
-		width: 0.82rem;
-		height: 0.82rem;
+		width: 0.85rem;
+		height: 0.85rem;
 		border-radius: 9999px;
-		background: #fffef7;
-		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
-		transition: transform 0.2s ease;
+		background: #1e1714;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+		transition:
+			transform 0.2s ease,
+			background 0.2s ease;
 	}
 
 	.auto-start-glyph.is-on {
-		background: #f9a8d4;
-		box-shadow: 0 0 0 0.22rem rgba(249, 168, 212, 0.18);
+		background: #2dd4bf;
+		box-shadow: 2px 2px 0px #0f766e;
 	}
 
 	.auto-start-glyph.is-on span {
-		transform: translateX(0.82rem);
+		transform: translateX(0.95rem);
+		background: #ffffff;
 	}
 
 	.supporter-glyph {

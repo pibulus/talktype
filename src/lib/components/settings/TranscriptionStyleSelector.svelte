@@ -107,10 +107,10 @@
 		{#each styleOptions as style}
 			<button
 				type="button"
-				class={`style-option relative flex min-h-[72px] flex-col items-center justify-center rounded-xl border bg-[#fffdf5] p-1.5 text-center shadow-sm transition-all duration-200 hover:border-pink-200 hover:shadow-md ${
+				class={`style-option relative flex min-h-[72px] flex-col items-center justify-center rounded-xl p-1.5 text-center transition-all duration-150 ${
 					selectedPromptStyle === style.id
-						? 'selected-style border-pink-300 ring-2 ring-pink-200 ring-opacity-60'
-						: 'border-pink-100'
+						? 'selected-style -translate-y-0.5 border-2 border-gray-900 bg-white shadow-[3px_3px_0px_#1e1714]'
+						: 'hover:shadow-xs border-2 border-gray-200/90 bg-[#fffdf5] hover:border-gray-900/60'
 				}`}
 				on:click={() => (style.custom ? handleCustomClick() : handleStyleClick(style))}
 				aria-label={style.custom && !isSupporter
@@ -124,18 +124,22 @@
 					{@html styleIcons[style.id]}
 				</div>
 
-				<span class="text-xs font-semibold leading-tight text-gray-700">{style.label}</span>
+				<span
+					class="text-xs {selectedPromptStyle === style.id
+						? 'font-black text-gray-900'
+						: 'font-bold text-gray-700'} leading-tight">{style.label}</span
+				>
 
 				{#if style.custom && !isSupporter}
 					<div
-						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[10px] text-white shadow-sm"
+						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-gray-900 bg-amber-400 text-[10px] font-black text-gray-900 shadow-[1px_1px_0px_#1e1714]"
 						aria-hidden="true"
 					>
 						★
 					</div>
 				{:else if selectedPromptStyle === style.id}
 					<div
-						class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-400 text-xs text-white shadow-sm"
+						class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-gray-900 bg-pink-400 text-[10px] font-black text-gray-900 shadow-[1px_1px_0px_#1e1714]"
 						aria-hidden="true"
 					>
 						✓
@@ -153,11 +157,11 @@
 				on:blur={saveCustomPrompt}
 				placeholder="Describe how you want it to read. Try: like a nature documentary narrator."
 				maxlength={MAX_CUSTOM_PROMPT_CHARS}
-				class="w-full rounded-lg border border-pink-200 bg-[#fffdf5] p-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
+				class="w-full rounded-xl border-2 border-gray-900 bg-[#fffef9] p-3 text-sm font-medium text-gray-800 shadow-inner placeholder:text-gray-400 focus:border-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-300"
 				rows="3"
 				aria-label="Custom transcription instructions"
 			></textarea>
-			<p class="text-right text-[11px] text-gray-400" aria-live="polite">
+			<p class="text-right text-[11px] font-bold text-gray-400" aria-live="polite">
 				{customRemaining} left
 			</p>
 		</div>
@@ -166,9 +170,7 @@
 
 <style>
 	.selected-style {
-		box-shadow:
-			0 0 0 2px rgba(249, 168, 212, 0.4),
-			0 4px 8px rgba(249, 168, 212, 0.2);
+		box-shadow: 3px 3px 0px #1e1714;
 	}
 
 	.setting-row {

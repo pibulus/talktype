@@ -31,25 +31,29 @@
 			title: 'Every transcript',
 			detail: 'Save as clean audio, export text, Markdown, or JSON.',
 			icon: 'doc',
-			squircleClass: 'bg-pink-100/90 border border-pink-300 text-pink-600'
+			squircleClass:
+				'bg-pink-100 border-2 border-gray-900 text-pink-950 shadow-[2px_2px_0px_#ff82ca]'
 		},
 		{
 			title: 'Take it with you',
 			detail: 'Your words, your files. No cloud lock-in.',
 			icon: 'download',
-			squircleClass: 'bg-amber-100/90 border border-amber-300 text-amber-700'
+			squircleClass:
+				'bg-amber-100 border-2 border-gray-900 text-amber-950 shadow-[2px_2px_0px_#fbbf24]'
 		},
 		{
 			title: 'Pick a voice',
 			detail: 'Swap the default output for different vibes.',
 			icon: 'sparkles',
-			squircleClass: 'bg-purple-100/90 border border-purple-300 text-purple-600'
+			squircleClass:
+				'bg-purple-100 border-2 border-gray-900 text-purple-950 shadow-[2px_2px_0px_#c084fc]'
 		},
 		{
 			title: 'Room to ramble',
 			detail: 'No cut-offs, just keep talking.',
 			icon: 'mic',
-			squircleClass: 'bg-sky-100/90 border border-sky-300 text-sky-600'
+			squircleClass:
+				'bg-teal-100 border-2 border-gray-900 text-teal-950 shadow-[2px_2px_0px_#2dd4bf]'
 		}
 	];
 
@@ -372,7 +376,7 @@
 				<!-- Bright Pink CTA with Anchor Price -->
 				<button
 					type="button"
-					class="btn min-h-12 w-full rounded-full border-2 border-pink-600 bg-pink-500 text-base font-black tracking-tight text-white shadow-md shadow-pink-200/60 transition-all duration-150 hover:scale-[1.01] hover:bg-pink-600 active:scale-[0.98] disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
+					class="btn min-h-12 w-full rounded-2xl border-2 border-gray-900 bg-pink-500 text-base font-black tracking-tight text-white shadow-[3px_3px_0px_#1e1714] transition-all duration-150 hover:-translate-y-0.5 hover:bg-pink-600 hover:shadow-[4px_4px_0px_#1e1714] active:translate-y-0.5 active:shadow-none disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
 					on:click={handleCheckout}
 					disabled={isStartingCheckout}
 				>
@@ -381,7 +385,7 @@
 
 				{#if errorMessage}
 					<p
-						class="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-amber-900"
+						class="rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-900"
 						aria-live="polite"
 					>
 						{errorMessage}
@@ -391,13 +395,13 @@
 				<!-- Collapsed Supporter Code Trigger -->
 				<details
 					bind:open={codePanelOpen}
-					class="rounded-xl border border-pink-100 bg-white/60 px-3.5 py-2 text-xs"
+					class="shadow-xs rounded-xl border-2 border-gray-900/80 bg-white/90 px-3.5 py-2 text-xs"
 				>
 					<summary
-						class="flex min-h-8 cursor-pointer list-none items-center justify-between gap-2 font-bold text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
+						class="flex min-h-8 cursor-pointer list-none items-center justify-between gap-2 font-black text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
 					>
 						<span>Have a supporter code?</span>
-						<span class="chevron text-pink-400" aria-hidden="true"></span>
+						<span class="chevron text-pink-500" aria-hidden="true"></span>
 					</summary>
 
 					<div class="mt-2.5 space-y-2.5">
@@ -407,7 +411,7 @@
 							bind:value={code}
 							type="text"
 							placeholder="Enter code (e.g. TALKTYPE-CREW)"
-							class="shadow-xs w-full rounded-lg border border-pink-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-200"
+							class="w-full rounded-xl border-2 border-gray-900 bg-[#fffef9] px-3 py-2 font-mono text-xs font-bold text-gray-900 shadow-inner outline-none focus:border-gray-900 focus:ring-2 focus:ring-pink-300"
 							autocomplete="off"
 							autocapitalize="none"
 							spellcheck="false"
@@ -415,13 +419,15 @@
 						/>
 						<button
 							type="button"
-							class="btn min-h-9 w-full rounded-lg border border-pink-200 bg-pink-500 text-xs font-bold text-white transition-colors duration-150 hover:border-pink-300 hover:bg-pink-600 disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
+							class="btn min-h-9 w-full rounded-xl border-2 border-gray-900 bg-pink-500 text-xs font-black text-white shadow-[2px_2px_0px_#1e1714] transition-all hover:bg-pink-600 hover:shadow-[3px_3px_0px_#1e1714] active:translate-y-0.5 active:shadow-none disabled:border-pink-100 disabled:bg-pink-100 disabled:text-pink-400 disabled:opacity-100"
 							on:click={handleUnlock}
 							disabled={isSubmitting || !code.trim()}
 						>
 							{isSubmitting ? 'Checking code...' : 'Unlock with code'}
 						</button>
-						<p class="text-[11px] text-gray-500">Codes work for gifts and other devices.</p>
+						<p class="text-[11px] font-bold text-gray-500">
+							Codes work for gifts and other devices.
+						</p>
 					</div>
 				</details>
 
@@ -431,7 +437,7 @@
 				>
 					<button
 						type="button"
-						class="btn btn-ghost min-h-10 w-full rounded-full border border-pink-100 bg-white/70 text-xs font-bold text-gray-600 transition-colors duration-150 hover:bg-pink-50 hover:text-gray-800"
+						class="btn btn-ghost min-h-10 w-full rounded-xl border-2 border-gray-200/90 bg-white/80 text-xs font-bold text-gray-700 transition-all hover:border-gray-900/60 hover:text-gray-900"
 						on:click={handleClose}
 					>
 						Keep cruising

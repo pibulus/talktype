@@ -91,9 +91,9 @@
 
 	.tt-app-footer {
 		color: var(--footer-text-color, #463f3a);
-		border-color: var(--footer-border-color, rgba(0, 0, 0, 0.08));
-		border-top: 1.5px solid var(--footer-border-color, rgba(0, 0, 0, 0.08));
-		background: var(--footer-bg, rgba(247, 245, 238, 0.75));
+		border-color: var(--footer-border-color, #1e1714);
+		border-top: 2px solid var(--footer-border-color, #1e1714);
+		background: var(--footer-bg, rgba(244, 242, 236, 0.82));
 		box-shadow: var(--tt-footer-shadow);
 		-webkit-backdrop-filter: blur(12px) saturate(1.4);
 		backdrop-filter: blur(12px) saturate(1.4);
@@ -102,7 +102,7 @@
 	/* No backdrop-filter support: go nearly opaque. */
 	@supports not (backdrop-filter: blur(1px)) {
 		.tt-app-footer {
-			background: rgba(247, 245, 238, 0.97);
+			background: rgba(244, 242, 236, 0.98);
 		}
 	}
 

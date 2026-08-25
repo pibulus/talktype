@@ -67,9 +67,9 @@
 	   apps wear this same bar, so it reading differently per vibe made the family
 	   look less like a family. Deliberately a shade deeper and less pink than the
 	   page, so it registers as its own shelf rather than a seam. */
-	--tt-footer-bg-image: rgba(247, 245, 238, 0.75);
-	--tt-footer-border-color: rgba(0, 0, 0, 0.08);
-	--tt-footer-shadow: 0 -4px 16px rgba(30, 23, 20, 0.04);
+	--tt-footer-bg-image: rgba(244, 242, 236, 0.82);
+	--tt-footer-border-color: #1e1714;
+	--tt-footer-shadow: 0 -4px 16px rgba(30, 23, 20, 0.06);
 	--tt-footer-button-hover-bg: rgba(30, 23, 20, 0.05);
 	--tt-footer-button-hover-color: #1e1714;
 	--tt-footer-focus-ring: rgba(30, 23, 20, 0.3);

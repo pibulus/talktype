@@ -125,6 +125,40 @@
 	}
 	$: editTextReady = cleanTranscriptText(editText).length > 0;
 
+	// Deterministic color styling using the 4 brand ghost palettes (Teal, Purple, Peach, Yellow)
+	function getTagPillClass(tag, isSelected = false) {
+		if (isSelected) {
+			return 'bg-gray-900 text-white border-2 border-gray-900 shadow-[2px_2px_0px_#ff82ca] font-black';
+		}
+		let hash = 0;
+		for (let i = 0; i < tag.length; i++) {
+			hash = (hash << 5) - hash + tag.charCodeAt(i);
+			hash |= 0;
+		}
+		const colorIndex = Math.abs(hash) % 4;
+		const palette = [
+			'bg-teal-100 text-teal-950 border-2 border-teal-400 hover:border-gray-900 hover:shadow-[2px_2px_0px_#2dd4bf]',
+			'bg-purple-100 text-purple-950 border-2 border-purple-400 hover:border-gray-900 hover:shadow-[2px_2px_0px_#c084fc]',
+			'bg-pink-100 text-pink-950 border-2 border-pink-400 hover:border-gray-900 hover:shadow-[2px_2px_0px_#ff82ca]',
+			'bg-amber-100 text-amber-950 border-2 border-amber-400 hover:border-gray-900 hover:shadow-[2px_2px_0px_#facc15]'
+		];
+		return palette[colorIndex];
+	}
+
+	function getCardVibeTabClass(transcript) {
+		if (transcript.promptStyle === 'surly_pirate') return 'border-l-amber-400';
+		if (transcript.promptStyle === 'quill_and_ink') return 'border-l-purple-400';
+		if (transcript.promptStyle === 'custom') return 'border-l-teal-400';
+		const charCode = transcript.id ? transcript.id.charCodeAt(0) : 0;
+		const colors = [
+			'border-l-pink-400',
+			'border-l-teal-400',
+			'border-l-purple-400',
+			'border-l-amber-400'
+		];
+		return colors[charCode % 4];
+	}
+
 	// Format timestamp to readable date
 	function formatDate(timestamp) {
 		const date = new Date(timestamp);
@@ -741,10 +775,10 @@
 			>
 				<button
 					type="button"
-					class={`h-7 shrink-0 rounded-full px-3 text-xs font-bold transition-all duration-150 active:scale-95 ${
+					class={`h-7 shrink-0 rounded-full px-3 text-xs font-black transition-all duration-150 active:scale-95 ${
 						!selectedTag
-							? 'bg-pink-500 text-white shadow-sm'
-							: 'border border-pink-200/70 bg-white/80 text-gray-600 hover:bg-pink-50 hover:text-pink-600'
+							? 'border-2 border-gray-900 bg-gray-900 text-white shadow-[2px_2px_0px_#ff82ca]'
+							: 'border-2 border-gray-300 bg-white/90 text-gray-700 hover:border-gray-900 hover:shadow-[2px_2px_0px_#1e1714]'
 					}`}
 					aria-pressed={!selectedTag}
 					on:click={() => (selectedTag = '')}
@@ -754,11 +788,10 @@
 				{#each availableTags.slice(0, 14) as tag}
 					<button
 						type="button"
-						class={`h-7 shrink-0 rounded-full px-3 text-xs font-bold transition-all duration-150 active:scale-95 ${
+						class={`h-7 shrink-0 rounded-full px-3 text-xs font-bold transition-all duration-150 active:scale-95 ${getTagPillClass(
+							tag,
 							selectedTag === tag
-								? 'bg-pink-500 text-white shadow-sm'
-								: 'border border-pink-200/70 bg-white/80 text-gray-600 hover:bg-pink-50 hover:text-pink-600'
-						}`}
+						)}`}
 						aria-pressed={selectedTag === tag}
 						on:click={() => toggleTag(tag)}
 					>
@@ -785,7 +818,7 @@
 					<p class="text-base font-bold text-gray-600">No transcripts with #{selectedTag}</p>
 					<button
 						type="button"
-						class="btn mt-6 min-h-12 border-pink-200 bg-pink-50/80 px-6 text-sm font-bold text-pink-600 hover:bg-pink-100 active:scale-95"
+						class="btn mt-6 min-h-12 border-2 border-gray-900 bg-pink-100 px-6 text-sm font-black text-gray-900 shadow-[3px_3px_0px_#ff82ca] transition-all hover:bg-pink-200 hover:shadow-[4px_4px_0px_#ff82ca] active:translate-y-0.5 active:shadow-none"
 						on:click={() => (selectedTag = '')}
 					>
 						Show all
@@ -796,18 +829,20 @@
 				<div class="space-y-3.5">
 					{#each visibleTranscripts as transcript (transcript.id)}
 						<div
-							class="group relative overflow-visible rounded-2xl border-2 border-pink-200/90 bg-white p-4 shadow-sm transition-all duration-150 hover:border-pink-300 hover:shadow-md"
+							class="group relative overflow-visible rounded-2xl border-2 border-l-[6px] border-gray-900/80 bg-white p-4 shadow-[3px_3px_0px_rgba(0,0,0,0.06)] transition-all duration-150 hover:shadow-[3px_3px_0px_rgba(0,0,0,0.14)] {getCardVibeTabClass(
+								transcript
+							)}"
 						>
 							<!-- Header: Two-Row Layout Top Bar -->
 							<div class="mb-2.5 flex items-center justify-between gap-3">
 								<div class="min-w-0 flex-1">
 									<div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-										<span class="text-xs font-bold text-gray-700">
+										<span class="text-xs font-black text-gray-800">
 											{formatDate(transcript.timestamp)}
 										</span>
 										{#if transcript.duration > 0}
 											<span
-												class="text-xs font-semibold tabular-nums text-gray-400"
+												class="text-xs font-bold tabular-nums text-gray-500"
 												title="How long this recording ran"
 											>
 												{formatDuration(transcript.duration)}
@@ -815,7 +850,7 @@
 										{/if}
 										{#if wordCountOf(transcript) > 0}
 											<span
-												class="text-xs font-semibold tabular-nums text-gray-400"
+												class="text-xs font-bold tabular-nums text-gray-500"
 												title="Words in this transcript"
 											>
 												{wordCountOf(transcript)}
@@ -826,7 +861,7 @@
 											{#if hasOriginal(transcript)}
 												<button
 													type="button"
-													class="rounded-full border border-pink-200 bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-600 transition-colors duration-150 hover:bg-pink-200 active:scale-95"
+													class="rounded-full border-2 border-gray-900 bg-pink-100 px-2 py-0.5 text-[10px] font-black text-pink-950 transition-all duration-150 hover:shadow-[2px_2px_0px_#ff82ca] active:scale-95"
 													aria-pressed={showingOriginal.has(transcript.id)}
 													title="Switch between the styled version and your plain words"
 													on:click={() => toggleOriginal(transcript.id)}
@@ -837,7 +872,7 @@
 												</button>
 											{:else}
 												<span
-													class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-600"
+													class="rounded-full border border-pink-300 bg-pink-100 px-2 py-0.5 text-[10px] font-black text-pink-900"
 												>
 													{formatPromptStyle(transcript.promptStyle)}
 												</span>
@@ -848,11 +883,10 @@
 												{#each cleanTranscriptTags(transcript.tags).slice(0, 3) as tag}
 													<button
 														type="button"
-														class={`rounded-full border px-2 py-0.5 text-[10px] font-bold transition-all duration-150 ${
+														class={`rounded-full px-2 py-0.5 text-[10px] font-black transition-all duration-150 ${getTagPillClass(
+															tag,
 															selectedTag === tag
-																? 'shadow-xs border-pink-300 bg-pink-100 text-pink-600'
-																: 'border-pink-200/80 bg-pink-50/70 text-gray-600 hover:bg-pink-100 hover:text-pink-700 active:scale-95'
-														}`}
+														)}`}
 														aria-pressed={selectedTag === tag}
 														on:click={() => toggleTag(tag)}
 													>
@@ -864,15 +898,15 @@
 									</div>
 								</div>
 
-								<!-- Actions: Punchy Tactile Buttons -->
+								<!-- Actions: Brutalist Tactile Switch Buttons -->
 								<div class="history-action-cluster flex shrink-0 items-center justify-end gap-1.5">
 									{#if editingId !== transcript.id}
 										{#if transcript.audioBlob}
 											<button
 												type="button"
-												class="shadow-xs relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] border-amber-200 bg-amber-50/80 text-amber-700 transition-all duration-150 hover:scale-105 hover:border-amber-300 hover:bg-amber-100 hover:text-amber-800 active:scale-90 {activeAudioId ===
+												class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-900 bg-amber-100 font-black text-amber-950 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_#fbbf24] active:translate-y-0 active:shadow-none {activeAudioId ===
 												transcript.id
-													? 'border-amber-400 bg-amber-200 text-amber-900 shadow-sm'
+													? 'bg-amber-300 shadow-[2px_2px_0px_#d97706]'
 													: ''}"
 												on:click|stopPropagation={() => toggleAudioPlayer(transcript)}
 												title={activeAudioId === transcript.id ? 'Hide audio player' : 'Play audio'}
@@ -884,27 +918,26 @@
 												<svg
 													class="h-3.5 w-3.5"
 													viewBox="0 0 24 24"
-													fill="none"
-													stroke="currentColor"
-													stroke-width="2.25"
-													stroke-linecap="round"
-													stroke-linejoin="round"
+													fill="currentColor"
 													aria-hidden="true"
 												>
-													{#if activeAudioId === transcript.id}<path
-															d="M9.5 5.5v13M14.5 5.5v13"
-														/>{:else}<path d="M8.5 5.6v12.8l10-6.4z" />{/if}
+													{#if activeAudioId === transcript.id}
+														<rect x="6" y="5" width="4" height="14" rx="1" />
+														<rect x="14" y="5" width="4" height="14" rx="1" />
+													{:else}
+														<path d="M8 5v14l11-7z" />
+													{/if}
 												</svg>
 											</button>
 										{/if}
 
-										<!-- Hero Copy Button: 32px tactile pink chip, turns emerald on copy -->
+										<!-- Hero Copy Button: Tactile pink switch, turns emerald on copy -->
 										<button
 											type="button"
-											class="shadow-xs relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] transition-all duration-150 hover:scale-105 active:scale-90 {copiedId ===
+											class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-900 font-black transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 active:shadow-none {copiedId ===
 											transcript.id
-												? 'border-emerald-600 bg-emerald-500 text-white'
-												: 'border-pink-600 bg-pink-500 text-white hover:bg-pink-600'}"
+												? 'bg-emerald-300 text-emerald-950 hover:shadow-[2px_2px_0px_#10b981]'
+												: 'bg-pink-200 text-pink-950 hover:shadow-[2px_2px_0px_#ff82ca]'}"
 											on:click|stopPropagation={() =>
 												copyTranscript(displayedText(transcript), transcript.id)}
 											aria-label={`Copy transcript from ${formatDate(transcript.timestamp)}`}
@@ -918,7 +951,7 @@
 													viewBox="0 0 24 24"
 													fill="none"
 													stroke="currentColor"
-													stroke-width="2.25"
+													stroke-width="2.5"
 													stroke-linecap="round"
 													stroke-linejoin="round"
 													aria-hidden="true"
@@ -935,9 +968,9 @@
 											<div class="history-popover-anchor relative">
 												<button
 													type="button"
-													class="shadow-xs relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] border-purple-200 bg-purple-50/80 text-purple-700 transition-all duration-150 hover:scale-105 hover:border-purple-300 hover:bg-purple-100 hover:text-purple-800 active:scale-90 {restyleMenuId ===
+													class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-900 bg-purple-100 font-black text-purple-950 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_#c084fc] active:translate-y-0 active:shadow-none {restyleMenuId ===
 														transcript.id || retranscribingId === transcript.id
-														? 'border-purple-400 bg-purple-200 text-purple-900 shadow-sm'
+														? 'bg-purple-300 shadow-[2px_2px_0px_#a855f7]'
 														: ''} {retranscribingId && retranscribingId !== transcript.id
 														? 'opacity-50'
 														: ''}"
@@ -951,7 +984,7 @@
 												>
 													{#if retranscribingId === transcript.id}
 														<svg
-															class="h-3.5 w-3.5 animate-spin text-pink-500"
+															class="h-3.5 w-3.5 animate-spin text-purple-900"
 															viewBox="0 0 24 24"
 															fill="none"
 															stroke="currentColor"
@@ -967,7 +1000,7 @@
 															viewBox="0 0 24 24"
 															fill="none"
 															stroke="currentColor"
-															stroke-width="2.25"
+															stroke-width="2.5"
 															stroke-linecap="round"
 															stroke-linejoin="round"
 															aria-hidden="true"
@@ -1051,9 +1084,9 @@
 										<div class="history-popover-anchor relative">
 											<button
 												type="button"
-												class="shadow-xs relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] border-gray-200 bg-gray-50/80 text-gray-600 transition-all duration-150 hover:scale-105 hover:border-pink-200 hover:bg-pink-50 hover:text-pink-600 active:scale-90 {openMenuId ===
+												class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-900 bg-teal-100 font-black text-teal-950 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_#2dd4bf] active:translate-y-0 active:shadow-none {openMenuId ===
 												transcript.id
-													? 'border-pink-300 bg-pink-100 text-pink-700 shadow-sm'
+													? 'bg-teal-300 shadow-[2px_2px_0px_#0d9488]'
 													: ''}"
 												on:click|stopPropagation={() => toggleMenu(transcript.id)}
 												aria-haspopup="menu"
