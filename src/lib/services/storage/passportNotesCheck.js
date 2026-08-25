@@ -62,7 +62,7 @@ export async function checkPassportNotes(options = {}) {
 				code,
 				serverUrl,
 				includeAudio: true,
-				replaceExisting: true
+				replaceExisting: false
 			});
 			if (mirror.updatedAtMs) markChangedAt(mirror.updatedAtMs);
 			return { skipped: false, action: 'pulled', summary };

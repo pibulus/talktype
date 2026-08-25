@@ -46,7 +46,7 @@ describe('Passport notes check-in', () => {
 			code,
 			serverUrl,
 			includeAudio: true,
-			replaceExisting: true
+			replaceExisting: false
 		});
 		expect(markChangedAt).toHaveBeenCalledWith(5000);
 	});
