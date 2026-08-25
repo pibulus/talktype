@@ -61,7 +61,7 @@
 				<span class="flex min-w-0 items-center text-sm font-light">
 					<span class="footer-lead shrink-0">Made by</span>
 					<a
-						class="footer-place ml-1 font-medium underline underline-offset-2 hover:text-pink-600"
+						class="footer-place ml-1 font-medium no-underline transition-colors hover:text-pink-600"
 						href="https://madebypablo.app"
 						target="_blank"
 						rel="noopener noreferrer">Pablo</a

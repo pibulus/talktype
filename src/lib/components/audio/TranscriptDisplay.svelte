@@ -423,49 +423,77 @@
 					{/if}
 
 					{#if showTakeMeta}
-						<!-- Meta shares the text's own left edge (px-4/sm:px-10) with word count, + Add to note, and Share buttons -->
+						<!-- Meta Action Bar: Word count/duration badges on left, Add to note & Share pills on right -->
 						<div
-							class="take-meta flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-4 pb-3 pt-2 sm:px-10"
+							class="take-meta flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-pink-100/70 px-4 pb-2.5 pt-2.5 sm:px-10"
 						>
-							<div class="flex items-center gap-2">
-								<span class="text-xs font-medium tabular-nums text-gray-400">
+							<div class="flex items-center gap-1.5">
+								<span
+									class="shadow-xs inline-flex items-center rounded-full border border-pink-100 bg-[#fffdf7]/90 px-2.5 py-0.5 text-[11px] font-semibold tabular-nums text-gray-500"
+								>
 									{takeWordCount}
 									{takeWordCount === 1 ? 'word' : 'words'}
 								</span>
 								{#if $lastRecordingDuration > 0}
-									<span class="text-xs font-medium tabular-nums text-gray-400">
+									<span
+										class="shadow-xs inline-flex items-center rounded-full border border-pink-100 bg-[#fffdf7]/90 px-2.5 py-0.5 text-[11px] font-semibold tabular-nums text-gray-500"
+									>
 										{formatDuration($lastRecordingDuration)}
 									</span>
 								{/if}
 							</div>
 
-							<div class="flex items-center gap-1.5">
+							<div class="flex items-center gap-2">
 								<button
 									type="button"
-									class="inline-flex items-center gap-1 rounded-full border border-pink-200/80 bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm transition-all duration-150 hover:scale-105 hover:bg-pink-50 hover:text-pink-600 active:scale-95"
+									class="inline-flex h-7 items-center gap-1.5 rounded-full border border-pink-200/90 bg-[#fffdf7] px-3 text-xs font-bold text-gray-700 shadow-sm transition-all duration-150 hover:scale-105 hover:border-pink-300 hover:bg-pink-50 hover:text-pink-600 active:scale-95"
 									on:click={() => dispatch('append')}
 									title="Record more and append to this note"
 									aria-label="Add more recording onto this transcript note"
 								>
-									<span class="text-xs font-black text-pink-500">+</span>
+									<svg
+										class="h-3 w-3 stroke-[2.5] text-pink-500"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										aria-hidden="true"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M12 4.5v15m7.5-7.5h-15"
+										/>
+									</svg>
 									<span>Add to note</span>
 								</button>
 
 								<button
 									type="button"
-									class="inline-flex items-center gap-1 rounded-full border border-pink-200/80 bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm transition-all duration-150 hover:scale-105 hover:bg-pink-50 hover:text-pink-600 active:scale-95"
+									class="inline-flex h-7 items-center gap-1.5 rounded-full border border-pink-200/90 bg-[#fffdf7] px-3 text-xs font-bold text-gray-700 shadow-sm transition-all duration-150 hover:scale-105 hover:border-pink-300 hover:bg-pink-50 hover:text-pink-600 active:scale-95"
 									on:click={handleShareClick}
 									title="Share or copy transcript"
 									aria-label="Share transcript"
 								>
-									<span class="text-xs font-bold text-pink-500">↗</span>
+									<svg
+										class="h-3 w-3 stroke-[2.5] text-pink-500"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										aria-hidden="true"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+										/>
+									</svg>
 									<span>Share</span>
 								</button>
 							</div>
 						</div>
 
 						{#if takeAudioUrl}
-							<div class="mx-4 mb-4 mt-1 sm:mx-10">
+							<div class="mx-4 mb-3 mt-1 sm:mx-10">
 								<CutePlayer src={takeAudioUrl} label="Play the recording behind this transcript" />
 							</div>
 						{/if}

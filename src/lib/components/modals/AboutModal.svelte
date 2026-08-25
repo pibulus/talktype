@@ -58,7 +58,7 @@
 						href="https://madebypablo.app"
 						target="_blank"
 						rel="noopener noreferrer"
-						class="font-medium underline underline-offset-2 hover:text-pink-600">Pablo</a
+						class="font-medium no-underline transition-colors hover:text-pink-600">Pablo</a
 					> in Melbourne
 				</p>
 				<div class="flex items-center gap-1">
