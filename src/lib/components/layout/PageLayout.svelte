@@ -91,23 +91,18 @@
 
 	.tt-app-footer {
 		color: var(--footer-text-color, #463f3a);
-		border-color: var(--footer-border-color, var(--tt-footer-border-color));
-		background: var(--footer-bg, var(--tt-footer-bg-image));
+		border-color: var(--footer-border-color, rgba(0, 0, 0, 0.08));
+		border-top: 1.5px solid var(--footer-border-color, rgba(0, 0, 0, 0.08));
+		background: var(--footer-bg, rgba(247, 245, 238, 0.75));
 		box-shadow: var(--tt-footer-shadow);
-		/* Fleet-standard frosted footer (2026-07-21) — same values across
-		   ziplist / talktype / daysay / riffrap / dr_shrink. Declared in CSS
-		   rather than a backdrop-blur-* utility so it can't be dropped by a
-		   later class shuffle. 3px was too weak to frost anything; 14px +
-		   saturation is what makes it read as glass instead of a thin veil. */
-		-webkit-backdrop-filter: blur(14px) saturate(1.5);
-		backdrop-filter: blur(14px) saturate(1.5);
+		-webkit-backdrop-filter: blur(12px) saturate(1.4);
+		backdrop-filter: blur(12px) saturate(1.4);
 	}
 
-	/* No backdrop-filter support: go nearly opaque. The translucency only
-	   earns its keep when a blur is actually frosting what's behind it. */
+	/* No backdrop-filter support: go nearly opaque. */
 	@supports not (backdrop-filter: blur(1px)) {
 		.tt-app-footer {
-			background: rgba(255, 246, 230, 0.97);
+			background: rgba(247, 245, 238, 0.97);
 		}
 	}
 

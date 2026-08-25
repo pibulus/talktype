@@ -74,10 +74,6 @@
 	let retranscribeStyleId = null;
 	let showExportFormats = false;
 	let lastTypewriterInputAt = 0;
-	// Compact tactile 32px action buttons — no maroon, no clipped tooltips.
-	const iconButtonClass =
-		'relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/90 border border-pink-200/70 text-gray-600 shadow-sm transition-all duration-150 hover:scale-105 hover:bg-pink-50 hover:text-pink-600 active:scale-90';
-	const iconButtonActiveClass = 'bg-pink-100 border-pink-300 text-pink-600 shadow-sm';
 	const menuItemClass =
 		'flex min-h-9 w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs font-bold text-gray-700 transition-colors duration-150 hover:bg-pink-50 hover:text-pink-600';
 	const destructiveMenuItemClass =
@@ -797,72 +793,65 @@
 				</div>
 			{:else}
 				<!-- Transcript List -->
-				<div class="space-y-4">
+				<div class="space-y-3.5">
 					{#each visibleTranscripts as transcript (transcript.id)}
 						<div
-							class="group relative overflow-visible rounded-xl border-2 border-pink-100 bg-[#fffdf7]/70 p-4 shadow-sm transition-shadow duration-200 hover:shadow-md"
+							class="group relative overflow-visible rounded-2xl border-2 border-pink-200/90 bg-white p-4 shadow-sm transition-all duration-150 hover:border-pink-300 hover:shadow-md"
 						>
-							<!-- Header -->
-							<div class="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-								<div class="min-w-0">
-									<div class="flex flex-col gap-1">
-										<div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-											<span class="text-xs font-medium text-gray-500">
-												{formatDate(transcript.timestamp)}
+							<!-- Header: Two-Row Layout Top Bar -->
+							<div class="mb-2.5 flex items-center justify-between gap-3">
+								<div class="min-w-0 flex-1">
+									<div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+										<span class="text-xs font-bold text-gray-700">
+											{formatDate(transcript.timestamp)}
+										</span>
+										{#if transcript.duration > 0}
+											<span
+												class="text-xs font-semibold tabular-nums text-gray-400"
+												title="How long this recording ran"
+											>
+												{formatDuration(transcript.duration)}
 											</span>
-											<!-- Guarded on > 0: entries saved before 2026-07-31 have no
-										     duration, because nothing ever filled the field. Showing
-										     "0:00" on old clips would look like a bug. -->
-											{#if transcript.duration > 0}
-												<span
-													class="text-xs font-medium tabular-nums text-gray-400"
-													title="How long this recording ran"
+										{/if}
+										{#if wordCountOf(transcript) > 0}
+											<span
+												class="text-xs font-semibold tabular-nums text-gray-400"
+												title="Words in this transcript"
+											>
+												{wordCountOf(transcript)}
+												{wordCountOf(transcript) === 1 ? 'word' : 'words'}
+											</span>
+										{/if}
+										{#if transcript.promptStyle && transcript.promptStyle !== 'standard'}
+											{#if hasOriginal(transcript)}
+												<button
+													type="button"
+													class="rounded-full border border-pink-200 bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-600 transition-colors duration-150 hover:bg-pink-200 active:scale-95"
+													aria-pressed={showingOriginal.has(transcript.id)}
+													title="Switch between the styled version and your plain words"
+													on:click={() => toggleOriginal(transcript.id)}
 												>
-													{formatDuration(transcript.duration)}
+													{showingOriginal.has(transcript.id)
+														? 'Plain'
+														: formatPromptStyle(transcript.promptStyle)}
+												</button>
+											{:else}
+												<span
+													class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-600"
+												>
+													{formatPromptStyle(transcript.promptStyle)}
 												</span>
 											{/if}
-											<!-- Stored on every transcript and shown nowhere until now. -->
-											{#if wordCountOf(transcript) > 0}
-												<span
-													class="text-xs font-medium tabular-nums text-gray-400"
-													title="Words in this transcript"
-												>
-													{wordCountOf(transcript)}
-													{wordCountOf(transcript) === 1 ? 'word' : 'words'}
-												</span>
-											{/if}
-											{#if transcript.promptStyle && transcript.promptStyle !== 'standard'}
-												{#if hasOriginal(transcript)}
-													<!-- Both versions survived, so the badge becomes the switch. -->
-													<button
-														type="button"
-														class="rounded-full border border-pink-200 bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-600 transition-colors duration-150 hover:bg-pink-200 active:scale-95"
-														aria-pressed={showingOriginal.has(transcript.id)}
-														title="Switch between the styled version and your plain words"
-														on:click={() => toggleOriginal(transcript.id)}
-													>
-														{showingOriginal.has(transcript.id)
-															? 'Plain'
-															: formatPromptStyle(transcript.promptStyle)}
-													</button>
-												{:else}
-													<span
-														class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-600"
-													>
-														{formatPromptStyle(transcript.promptStyle)}
-													</span>
-												{/if}
-											{/if}
-										</div>
+										{/if}
 										{#if transcript.tags?.length}
-											<div class="flex flex-wrap gap-1.5">
-												{#each cleanTranscriptTags(transcript.tags).slice(0, 5) as tag}
+											<div class="inline-flex flex-wrap items-center gap-1">
+												{#each cleanTranscriptTags(transcript.tags).slice(0, 3) as tag}
 													<button
 														type="button"
-														class={`rounded-full border px-2 py-1 text-[10px] font-bold transition-all duration-150 ${
+														class={`rounded-full border px-2 py-0.5 text-[10px] font-bold transition-all duration-150 ${
 															selectedTag === tag
-																? 'border-pink-300 bg-pink-100 text-pink-600'
-																: 'border-pink-100 bg-[#fffdf7]/85 text-gray-500 hover:bg-pink-50 active:scale-95'
+																? 'shadow-xs border-pink-300 bg-pink-100 text-pink-600'
+																: 'border-pink-200/80 bg-pink-50/70 text-gray-600 hover:bg-pink-100 hover:text-pink-700 active:scale-95'
 														}`}
 														aria-pressed={selectedTag === tag}
 														on:click={() => toggleTag(tag)}
@@ -875,16 +864,16 @@
 									</div>
 								</div>
 
-								<!-- Actions. Copy is the whole job 95% of the time; re-transcribe
-									     is a close second when audio exists. Utility actions float. -->
-								<div
-									class="history-action-cluster flex shrink-0 items-center justify-end gap-1.5 justify-self-end"
-								>
+								<!-- Actions: Punchy Tactile Buttons -->
+								<div class="history-action-cluster flex shrink-0 items-center justify-end gap-1.5">
 									{#if editingId !== transcript.id}
 										{#if transcript.audioBlob}
 											<button
 												type="button"
-												class={`${iconButtonClass} ${activeAudioId === transcript.id ? iconButtonActiveClass : ''}`}
+												class="shadow-xs relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] border-amber-200 bg-amber-50/80 text-amber-700 transition-all duration-150 hover:scale-105 hover:border-amber-300 hover:bg-amber-100 hover:text-amber-800 active:scale-90 {activeAudioId ===
+												transcript.id
+													? 'border-amber-400 bg-amber-200 text-amber-900 shadow-sm'
+													: ''}"
 												on:click|stopPropagation={() => toggleAudioPlayer(transcript)}
 												title={activeAudioId === transcript.id ? 'Hide audio player' : 'Play audio'}
 												aria-expanded={activeAudioId === transcript.id}
@@ -912,10 +901,10 @@
 										<!-- Hero Copy Button: 32px tactile pink chip, turns emerald on copy -->
 										<button
 											type="button"
-											class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-sm transition-all duration-150 hover:scale-105 active:scale-90 {copiedId ===
+											class="shadow-xs relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] transition-all duration-150 hover:scale-105 active:scale-90 {copiedId ===
 											transcript.id
-												? 'bg-emerald-500 text-white'
-												: 'bg-pink-500 text-white hover:bg-pink-600'}"
+												? 'border-emerald-600 bg-emerald-500 text-white'
+												: 'border-pink-600 bg-pink-500 text-white hover:bg-pink-600'}"
 											on:click|stopPropagation={() =>
 												copyTranscript(displayedText(transcript), transcript.id)}
 											aria-label={`Copy transcript from ${formatDate(transcript.timestamp)}`}
@@ -946,7 +935,12 @@
 											<div class="history-popover-anchor relative">
 												<button
 													type="button"
-													class={`${iconButtonClass} ${restyleMenuId === transcript.id || retranscribingId === transcript.id ? iconButtonActiveClass : ''} ${retranscribingId && retranscribingId !== transcript.id ? 'opacity-50' : ''}`}
+													class="shadow-xs relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] border-purple-200 bg-purple-50/80 text-purple-700 transition-all duration-150 hover:scale-105 hover:border-purple-300 hover:bg-purple-100 hover:text-purple-800 active:scale-90 {restyleMenuId ===
+														transcript.id || retranscribingId === transcript.id
+														? 'border-purple-400 bg-purple-200 text-purple-900 shadow-sm'
+														: ''} {retranscribingId && retranscribingId !== transcript.id
+														? 'opacity-50'
+														: ''}"
 													on:click|stopPropagation={() => toggleRestyleMenu(transcript.id)}
 													aria-haspopup="menu"
 													aria-expanded={restyleMenuId === transcript.id}
@@ -1057,7 +1051,10 @@
 										<div class="history-popover-anchor relative">
 											<button
 												type="button"
-												class={`${iconButtonClass} ${openMenuId === transcript.id ? iconButtonActiveClass : ''}`}
+												class="shadow-xs relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] border-gray-200 bg-gray-50/80 text-gray-600 transition-all duration-150 hover:scale-105 hover:border-pink-200 hover:bg-pink-50 hover:text-pink-600 active:scale-90 {openMenuId ===
+												transcript.id
+													? 'border-pink-300 bg-pink-100 text-pink-700 shadow-sm'
+													: ''}"
 												on:click|stopPropagation={() => toggleMenu(transcript.id)}
 												aria-haspopup="menu"
 												aria-expanded={openMenuId === transcript.id}

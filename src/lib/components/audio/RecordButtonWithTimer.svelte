@@ -284,20 +284,21 @@
 		text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
 		background-size: 100% 100%;
 		background-position: 0% 0%;
+		border: 2px solid rgba(217, 119, 6, 0.45);
 		transition:
-			transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
-			box-shadow 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
-			background-image 0.3s cubic-bezier(0.25, 0.1, 0.25, 1),
-			background-position 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+			transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+			box-shadow 0.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+			background-image 0.2s cubic-bezier(0.25, 0.1, 0.25, 1),
+			background-position 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
 
 		/* Enhanced default gradient */
 		background-image: linear-gradient(to right, rgba(251, 191, 36, 1), rgba(245, 158, 11, 0.96));
 
-		/* Better default shadow */
+		/* Tactile 3D drop shadow */
 		box-shadow:
-			0 4px 6px -1px rgba(251, 191, 36, 0.2),
-			0 2px 4px -1px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.15);
+			0 4px 0 rgba(0, 0, 0, 0.15),
+			0 6px 12px rgba(251, 191, 36, 0.25),
+			inset 0 1px 0 rgba(255, 255, 255, 0.25);
 	}
 
 	.record-button::before {
@@ -320,7 +321,7 @@
 		outline: none;
 		box-shadow:
 			0 0 0 3px rgba(251, 191, 36, 0.4),
-			0 1px 3px rgba(0, 0, 0, 0.1);
+			0 2px 0 rgba(0, 0, 0, 0.15);
 	}
 
 	/* Enhanced focus ring for keyboard navigation */
@@ -331,11 +332,11 @@
 
 	/* Hover state */
 	.record-button:hover:not(:disabled) {
-		transform: translateY(-1px) scale(1.02);
+		transform: translateY(-2px);
 		box-shadow:
-			0 6px 10px -2px rgba(251, 191, 36, 0.25),
-			0 4px 6px -1px rgba(0, 0, 0, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.2);
+			0 6px 0 rgba(0, 0, 0, 0.15),
+			0 8px 16px rgba(251, 191, 36, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.3);
 	}
 
 	/* Non-recording hover effect */
@@ -345,10 +346,10 @@
 
 	/* Active/pressed state */
 	.record-button:active:not(:disabled) {
-		transform: translateY(1px) scale(0.98);
+		transform: translateY(2px);
 		box-shadow:
-			0 2px 4px -1px rgba(251, 191, 36, 0.15),
-			0 1px 2px -1px rgba(0, 0, 0, 0.1),
+			0 1px 0 rgba(0, 0, 0, 0.15),
+			0 2px 4px rgba(251, 191, 36, 0.15),
 			inset 0 1px 3px rgba(0, 0, 0, 0.1);
 	}
 
