@@ -250,7 +250,7 @@
 			<ModalCloseButton
 				closeModal={handleModalClose}
 				label="Close options"
-				position="right-2 top-2"
+				position="right-3 top-3"
 				modalId="settings_modal"
 			/>
 		</form>
@@ -550,8 +550,8 @@
 		font-size: 0.72rem;
 		font-weight: 900;
 		line-height: 1;
-		color: #be185d;
+		color: #ec4899;
 		text-transform: uppercase;
-		letter-spacing: 0;
+		letter-spacing: 0.05em;
 	}
 </style>

@@ -88,7 +88,7 @@
 
 	<button
 		type="button"
-		class="play-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-pink-100 text-pink-800 shadow-sm ring-1 ring-pink-200/80 transition-transform duration-150 hover:scale-105 hover:shadow-md active:scale-90"
+		class="play-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pink-100 text-pink-600 shadow-sm ring-1 ring-pink-200/80 transition-transform duration-150 hover:scale-105 hover:bg-pink-200 hover:shadow-md active:scale-90"
 		on:click={toggle}
 		aria-label={playing ? 'Pause' : 'Play'}
 	>

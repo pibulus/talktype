@@ -14,7 +14,7 @@
 	aria-describedby="extension_modal_description"
 	aria-modal="true"
 >
-	<div class="tt-modal-md modal-box">
+	<div class="tt-modal-md modal-box relative">
 		<form method="dialog">
 			<ModalCloseButton {closeModal} label="Close extension modal" modalId="extension_modal" />
 		</form>
@@ -24,7 +24,7 @@
 				<div
 					class="flex h-9 w-9 items-center justify-center rounded-full border border-pink-200/60 bg-gradient-to-br from-white to-pink-50 shadow-sm"
 				>
-					<DisplayGhost width="28px" height="28px" theme={$theme} seed={98765} />
+					<DisplayGhost size="28px" theme={$theme} seed={54321} />
 				</div>
 				<h3 id="extension_modal_title" class="text-xl font-black tracking-tight text-gray-800">
 					Chrome Extension
@@ -34,27 +34,26 @@
 			<div
 				class="rounded-lg border border-pink-200/60 bg-gradient-to-r from-pink-50/90 to-amber-50/90 p-4 shadow-sm"
 			>
-				<p id="extension_modal_description" class="text-sm leading-relaxed text-gray-700">
-					Voice typing in any text box on desktop Chrome. Gmail, Notion, chat, forms, docs.
+				<p id="extension_modal_description" class="text-base leading-relaxed text-gray-700">
+					Voice-to-text for any text input on the web. Works in Gmail, Twitter/X, Discord, Claude,
+					ChatGPT, and anywhere else you type.
 				</p>
 			</div>
 
-			<div
-				class="rounded-xl border border-pink-200/60 bg-gradient-to-br from-white to-pink-50/50 p-4 shadow-sm"
-			>
-				<h4 class="mb-3 text-sm font-bold text-gray-800">Manual install, for now:</h4>
-				<ol class="mt-2 list-decimal space-y-2 pl-5 text-left text-sm text-gray-700">
-					<li class="pb-1">Download and unzip the extension package</li>
+			<div class="space-y-2 text-sm leading-relaxed text-gray-600">
+				<p class="font-semibold text-gray-800">Install in 30 seconds:</p>
+				<ol class="list-decimal space-y-1.5 pl-5">
+					<li class="pb-1">Download and unzip the extension</li>
 					<li class="pb-1">
-						Open Chrome and go to <code
-							class="rounded-md bg-pink-100 px-1.5 py-0.5 font-mono text-pink-700"
+						Open <code
+							class="rounded-md bg-pink-100 px-1.5 py-0.5 font-mono font-bold text-pink-600"
 							>chrome://extensions</code
 						>
 					</li>
 					<li class="pb-1">Enable "Developer mode" in the top-right corner</li>
 					<li>
 						Click "Load unpacked" and select the <code
-							class="rounded-md bg-pink-100 px-1.5 py-0.5 font-mono text-pink-700"
+							class="rounded-md bg-pink-100 px-1.5 py-0.5 font-mono font-bold text-pink-600"
 							>talktype-extension</code
 						> folder
 					</li>

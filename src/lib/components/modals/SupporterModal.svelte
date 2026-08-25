@@ -185,9 +185,8 @@
 			<ModalCloseButton
 				closeModal={handleClose}
 				label="Close supporter modal"
-				position="right-2 top-2"
+				position="right-3 top-3"
 				modalId="supporter_modal"
-				tone="candy"
 			/>
 		</form>
 

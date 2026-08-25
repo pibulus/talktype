@@ -74,17 +74,16 @@
 	let retranscribeStyleId = null;
 	let showExportFormats = false;
 	let lastTypewriterInputAt = 0;
-	// Play / copy / more are one family: same round chip, same squish. Copy keeps
-	// the gradient because it is the 95% action; the other two sit a step quieter.
+	// Compact tactile 32px action buttons — no maroon, no clipped tooltips.
 	const iconButtonClass =
-		'history-tooltip relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fffdf7] text-pink-700 shadow-sm ring-1 ring-pink-200/60 transition-all duration-200 hover:scale-105 hover:bg-pink-50 hover:shadow-md hover:ring-pink-200 active:scale-95';
-	const iconButtonActiveClass = 'bg-pink-100 text-pink-800 shadow-md ring-pink-300';
+		'relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/90 border border-pink-200/70 text-gray-600 shadow-sm transition-all duration-150 hover:scale-105 hover:bg-pink-50 hover:text-pink-600 active:scale-90';
+	const iconButtonActiveClass = 'bg-pink-100 border-pink-300 text-pink-600 shadow-sm';
 	const menuItemClass =
-		'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-gray-700 transition-colors duration-150 hover:bg-pink-50 hover:text-pink-700 active:bg-pink-100';
+		'flex min-h-9 w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs font-bold text-gray-700 transition-colors duration-150 hover:bg-pink-50 hover:text-pink-600';
 	const destructiveMenuItemClass =
-		'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-pink-700 transition-colors duration-150 hover:bg-pink-50 active:bg-pink-100';
+		'flex min-h-9 w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs font-bold text-rose-600 transition-colors duration-150 hover:bg-rose-50 active:bg-rose-100';
 	const restyleOptionClass =
-		'flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-bold text-gray-700 transition-colors duration-150 hover:bg-pink-50 hover:text-pink-700 active:bg-pink-100';
+		'flex min-h-9 w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs font-bold text-gray-700 transition-colors duration-150 hover:bg-pink-50 hover:text-pink-600';
 
 	const restyleOptions = [
 		{ id: PROMPT_STYLES.STANDARD, label: 'Plain', tone: 'text-slate-500' },
@@ -625,119 +624,113 @@
 			<ModalCloseButton
 				closeModal={() => closeModal()}
 				label="Close history"
-				position="right-2 top-2"
+				position="right-3 top-3"
 				modalId="history_modal"
 			/>
 		</form>
 
 		<!-- Header -->
-		<div class="mb-3 shrink-0 border-b border-pink-100/80 pb-3">
-			<div class="flex flex-col gap-2.5">
-				<!-- Title row -->
-				<div class="flex items-center justify-between gap-3 pr-10">
-					<div class="flex items-center gap-2">
+		<div class="mb-3 shrink-0 border-b border-pink-100/80 pb-2.5">
+			<div class="flex items-center justify-between gap-2 pr-10">
+				<!-- Title & Count -->
+				<div class="flex items-center gap-2">
+					<span class="text-base" aria-hidden="true">📝</span>
+					<h3 id="history_modal_title" class="text-base font-black tracking-tight text-gray-800">
+						History
+					</h3>
+					{#if $transcriptHistory.length > 0}
 						<span
-							class="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-100/80 text-sm"
-							aria-hidden="true">📝</span
+							class="rounded-full bg-pink-100 px-2 py-0.5 text-xs font-bold tabular-nums text-pink-600"
 						>
-						<h3 id="history_modal_title" class="text-lg font-black tracking-tight text-gray-800">
-							History
-						</h3>
-						{#if $transcriptHistory.length > 0}
-							<span
-								class="rounded-full bg-pink-100/70 px-2 py-0.5 text-xs font-bold tabular-nums text-pink-700"
-							>
-								{$transcriptHistory.length}
-							</span>
-						{/if}
-						<p id="history_modal_description" class="sr-only">Your saved transcripts.</p>
-					</div>
+							{$transcriptHistory.length}
+						</span>
+					{/if}
+					<p id="history_modal_description" class="sr-only">Your saved transcripts.</p>
 				</div>
 
 				{#if $transcriptHistory.length > 0}
-					<!-- Action Bar Controls -->
-					<div class="flex flex-wrap items-center justify-between gap-2 pt-0.5">
-						<!-- Sort toggle -->
+					<!-- Action Bar Controls in one unified line -->
+					<div class="flex items-center gap-1.5">
+						<!-- Sort toggle button -->
 						<button
 							type="button"
-							class="inline-flex items-center gap-1.5 rounded-full border border-pink-200/80 bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm transition-all hover:bg-pink-50 active:scale-95"
+							class="inline-flex h-7 items-center gap-1 rounded-full border border-pink-200/80 bg-white/90 px-2.5 text-xs font-bold text-gray-600 shadow-sm transition-all hover:bg-pink-50 hover:text-pink-600 active:scale-95"
 							aria-pressed={oldestFirst}
-							title="Switch between newest and oldest first"
+							title={oldestFirst
+								? 'Sorting: Oldest first (tap for newest)'
+								: 'Sorting: Newest first (tap for oldest)'}
 							on:click={() => (oldestFirst = !oldestFirst)}
 						>
-							<span class="text-xs text-pink-500">{oldestFirst ? '↑' : '↓'}</span>
-							<span>{oldestFirst ? 'Oldest first' : 'Newest first'}</span>
+							<span class="text-xs font-black text-pink-500">{oldestFirst ? '↑' : '↓'}</span>
+							<span>{oldestFirst ? 'Oldest' : 'Newest'}</span>
 						</button>
 
-						<!-- Right Actions (Export & Clear) -->
-						<div class="flex items-center gap-1.5">
-							{#if isSupporter}
-								<div class="relative inline-flex items-center">
-									<button
-										type="button"
-										class="inline-flex items-center gap-1 rounded-l-full border border-pink-200/80 bg-white/90 px-2.5 py-1 text-xs font-bold text-gray-700 shadow-sm transition-all hover:bg-pink-50 active:scale-95"
-										on:click={handleBatchDownload}
-										title="Download all transcripts as a ZIP file"
-										aria-label="Download all transcripts as ZIP"
-									>
-										<span>📥</span>
-										<span>Export ZIP</span>
-									</button>
-									<button
-										type="button"
-										class="inline-flex items-center rounded-r-full border-y border-r border-pink-200/80 bg-white/90 px-2 py-1 text-xs font-bold text-gray-700 shadow-sm transition-all hover:bg-pink-50 active:scale-95"
-										on:click={() => (showExportFormats = !showExportFormats)}
-										aria-expanded={showExportFormats}
-										title="More export options (Markdown, JSON)"
-									>
-										<span class="text-[10px] text-pink-500">▾</span>
-									</button>
+						<!-- Export (Supporters) -->
+						{#if isSupporter}
+							<div class="relative inline-flex items-center">
+								<button
+									type="button"
+									class="inline-flex h-7 items-center gap-1 rounded-l-full border border-pink-200/80 bg-white/90 px-2 text-xs font-bold text-gray-600 shadow-sm transition-all hover:bg-pink-50 hover:text-pink-600 active:scale-95"
+									on:click={handleBatchDownload}
+									title="Download all transcripts as a ZIP file"
+									aria-label="Download all transcripts as ZIP"
+								>
+									<span>📥</span>
+									<span>ZIP</span>
+								</button>
+								<button
+									type="button"
+									class="inline-flex h-7 items-center rounded-r-full border-y border-r border-pink-200/80 bg-white/90 px-1.5 text-xs font-bold text-gray-600 shadow-sm transition-all hover:bg-pink-50 hover:text-pink-600 active:scale-95"
+									on:click={() => (showExportFormats = !showExportFormats)}
+									aria-expanded={showExportFormats}
+									title="More export options (Markdown, JSON)"
+								>
+									<span class="text-[10px] text-pink-500">▾</span>
+								</button>
 
-									{#if showExportFormats}
-										<div
-											class="absolute right-0 top-full z-20 mt-1 flex flex-col gap-1 rounded-xl border border-pink-100 bg-white p-1.5 shadow-lg ring-1 ring-black/5"
-											transition:fade={{ duration: 120 }}
+								{#if showExportFormats}
+									<div
+										class="absolute right-0 top-full z-20 mt-1 flex flex-col gap-1 rounded-xl border border-pink-100 bg-white p-1.5 shadow-lg ring-1 ring-black/5"
+										transition:fade={{ duration: 120 }}
+									>
+										<button
+											type="button"
+											class="whitespace-nowrap rounded-lg px-2.5 py-1 text-left text-xs font-bold text-gray-700 transition hover:bg-pink-50 hover:text-pink-600"
+											on:click={() => {
+												showExportFormats = false;
+												handleExportMarkdown();
+											}}
 										>
-											<button
-												type="button"
-												class="whitespace-nowrap rounded-lg px-2.5 py-1 text-left text-xs font-bold text-gray-700 transition hover:bg-pink-50 hover:text-pink-700"
-												on:click={() => {
-													showExportFormats = false;
-													handleExportMarkdown();
-												}}
-											>
-												📄 Markdown file
-											</button>
-											<button
-												type="button"
-												class="whitespace-nowrap rounded-lg px-2.5 py-1 text-left text-xs font-bold text-gray-700 transition hover:bg-pink-50 hover:text-pink-700"
-												on:click={() => {
-													showExportFormats = false;
-													handleExportJSON();
-												}}
-											>
-												📦 JSON
-											</button>
-										</div>
-									{/if}
-								</div>
-							{/if}
+											📄 Markdown
+										</button>
+										<button
+											type="button"
+											class="whitespace-nowrap rounded-lg px-2.5 py-1 text-left text-xs font-bold text-gray-700 transition hover:bg-pink-50 hover:text-pink-600"
+											on:click={() => {
+												showExportFormats = false;
+												handleExportJSON();
+											}}
+										>
+											📦 JSON
+										</button>
+									</div>
+								{/if}
+							</div>
+						{/if}
 
-							<button
-								type="button"
-								class={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold transition-all active:scale-95 ${
-									confirmClearAll
-										? 'border-amber-300 bg-amber-100 text-amber-900 shadow-sm'
-										: 'border-pink-200/80 bg-white/90 text-gray-600 hover:bg-pink-50 hover:text-pink-700'
-								}`}
-								on:click={handleClearAll}
-								aria-label={confirmClearAll
-									? 'Tap again to clear all history'
-									: 'Clear all history'}
-							>
-								<span>{confirmClearAll ? '⚠️ Confirm?' : 'Clear'}</span>
-							</button>
-						</div>
+						<!-- Clear button -->
+						<button
+							type="button"
+							class={`inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs font-bold transition-all active:scale-95 ${
+								confirmClearAll
+									? 'border-amber-300 bg-amber-100 text-amber-900 shadow-sm'
+									: 'border-pink-200/80 bg-white/90 text-gray-500 hover:bg-pink-50 hover:text-pink-600'
+							}`}
+							on:click={handleClearAll}
+							aria-label={confirmClearAll ? 'Tap again to clear all history' : 'Clear all history'}
+						>
+							<span>{confirmClearAll ? '⚠️ Confirm?' : 'Clear'}</span>
+						</button>
 					</div>
 				{/if}
 			</div>
@@ -755,7 +748,7 @@
 					class={`h-7 shrink-0 rounded-full px-3 text-xs font-bold transition-all duration-150 active:scale-95 ${
 						!selectedTag
 							? 'bg-pink-500 text-white shadow-sm'
-							: 'border border-pink-200/70 bg-white/80 text-gray-600 hover:bg-pink-50 hover:text-pink-700'
+							: 'border border-pink-200/70 bg-white/80 text-gray-600 hover:bg-pink-50 hover:text-pink-600'
 					}`}
 					aria-pressed={!selectedTag}
 					on:click={() => (selectedTag = '')}
@@ -768,7 +761,7 @@
 						class={`h-7 shrink-0 rounded-full px-3 text-xs font-bold transition-all duration-150 active:scale-95 ${
 							selectedTag === tag
 								? 'bg-pink-500 text-white shadow-sm'
-								: 'border border-pink-200/70 bg-white/80 text-gray-600 hover:bg-pink-50 hover:text-pink-700'
+								: 'border border-pink-200/70 bg-white/80 text-gray-600 hover:bg-pink-50 hover:text-pink-600'
 						}`}
 						aria-pressed={selectedTag === tag}
 						on:click={() => toggleTag(tag)}
@@ -796,7 +789,7 @@
 					<p class="text-base font-bold text-gray-600">No transcripts with #{selectedTag}</p>
 					<button
 						type="button"
-						class="btn mt-6 min-h-12 border-pink-200 bg-pink-50/80 px-6 text-sm font-bold text-pink-700 hover:bg-pink-100 active:scale-95"
+						class="btn mt-6 min-h-12 border-pink-200 bg-pink-50/80 px-6 text-sm font-bold text-pink-600 hover:bg-pink-100 active:scale-95"
 						on:click={() => (selectedTag = '')}
 					>
 						Show all
@@ -843,7 +836,7 @@
 													<!-- Both versions survived, so the badge becomes the switch. -->
 													<button
 														type="button"
-														class="rounded-full border border-pink-200 bg-pink-100 px-2 py-0.5 text-[10px] font-medium text-pink-700 transition-colors duration-150 hover:bg-pink-200 active:scale-95"
+														class="rounded-full border border-pink-200 bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-600 transition-colors duration-150 hover:bg-pink-200 active:scale-95"
 														aria-pressed={showingOriginal.has(transcript.id)}
 														title="Switch between the styled version and your plain words"
 														on:click={() => toggleOriginal(transcript.id)}
@@ -854,7 +847,7 @@
 													</button>
 												{:else}
 													<span
-														class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-medium text-pink-700"
+														class="rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-600"
 													>
 														{formatPromptStyle(transcript.promptStyle)}
 													</span>
@@ -868,7 +861,7 @@
 														type="button"
 														class={`rounded-full border px-2 py-1 text-[10px] font-bold transition-all duration-150 ${
 															selectedTag === tag
-																? 'border-pink-300 bg-pink-50 text-pink-800'
+																? 'border-pink-300 bg-pink-100 text-pink-600'
 																: 'border-pink-100 bg-[#fffdf7]/85 text-gray-500 hover:bg-pink-50 active:scale-95'
 														}`}
 														aria-pressed={selectedTag === tag}
@@ -885,7 +878,7 @@
 								<!-- Actions. Copy is the whole job 95% of the time; re-transcribe
 									     is a close second when audio exists. Utility actions float. -->
 								<div
-									class="history-action-cluster flex max-w-[12.5rem] shrink-0 flex-wrap items-center justify-end gap-2 justify-self-end"
+									class="history-action-cluster flex shrink-0 items-center justify-end gap-1.5 justify-self-end"
 								>
 									{#if editingId !== transcript.id}
 										{#if transcript.audioBlob}
@@ -893,15 +886,14 @@
 												type="button"
 												class={`${iconButtonClass} ${activeAudioId === transcript.id ? iconButtonActiveClass : ''}`}
 												on:click|stopPropagation={() => toggleAudioPlayer(transcript)}
-												title={activeAudioId === transcript.id ? 'Hide player' : 'Play audio'}
-												data-tip={activeAudioId === transcript.id ? 'Hide player' : 'Play audio'}
+												title={activeAudioId === transcript.id ? 'Hide audio player' : 'Play audio'}
 												aria-expanded={activeAudioId === transcript.id}
 												aria-label={activeAudioId === transcript.id
 													? `Hide audio player for ${formatDate(transcript.timestamp)}`
 													: `Play audio from ${formatDate(transcript.timestamp)}`}
 											>
 												<svg
-													class="h-5 w-5"
+													class="h-3.5 w-3.5"
 													viewBox="0 0 24 24"
 													fill="none"
 													stroke="currentColor"
@@ -916,23 +908,24 @@
 												</svg>
 											</button>
 										{/if}
-										<!-- A ghost per row read as a haunted list, not a button — so
-										     history rows use a plain copy glyph in the same chip dress. -->
+
+										<!-- Hero Copy Button: 32px tactile pink chip, turns emerald on copy -->
 										<button
 											type="button"
-											class="history-copy-chip history-tooltip relative h-11 w-11 shrink-0 rounded-full bg-gradient-to-br from-pink-100 to-purple-50 p-1 shadow-sm ring-1 ring-pink-200/70 transition-transform duration-200 hover:scale-105 hover:shadow-md active:scale-95"
-											class:is-copied={copiedId === transcript.id}
+											class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-sm transition-all duration-150 hover:scale-105 active:scale-90 {copiedId ===
+											transcript.id
+												? 'bg-emerald-500 text-white'
+												: 'bg-pink-500 text-white hover:bg-pink-600'}"
 											on:click|stopPropagation={() =>
 												copyTranscript(displayedText(transcript), transcript.id)}
 											aria-label={`Copy transcript from ${formatDate(transcript.timestamp)}`}
-											title={copiedId === transcript.id ? 'Copied' : 'Copy'}
-											data-tip={copiedId === transcript.id ? 'Copied' : 'Copy'}
+											title={copiedId === transcript.id ? 'Copied!' : 'Copy transcript'}
 										>
 											{#if copiedId === transcript.id}
-												<span class="copy-tick" aria-hidden="true">✓</span>
+												<span class="text-xs font-black leading-none" aria-hidden="true">✓</span>
 											{:else}
 												<svg
-													class="h-5 w-5 text-pink-700"
+													class="h-3.5 w-3.5"
 													viewBox="0 0 24 24"
 													fill="none"
 													stroke="currentColor"
@@ -948,6 +941,7 @@
 												</svg>
 											{/if}
 										</button>
+
 										{#if transcript.audioBlob}
 											<div class="history-popover-anchor relative">
 												<button
@@ -960,13 +954,10 @@
 													title={retranscribingId === transcript.id
 														? 'Re-transcribing...'
 														: 'Re-transcribe or restyle'}
-													data-tip={retranscribingId === transcript.id
-														? 'Re-transcribing...'
-														: 'Re-transcribe'}
 												>
 													{#if retranscribingId === transcript.id}
 														<svg
-															class="h-5 w-5 animate-spin"
+															class="h-3.5 w-3.5 animate-spin text-pink-500"
 															viewBox="0 0 24 24"
 															fill="none"
 															stroke="currentColor"
@@ -978,7 +969,7 @@
 														</svg>
 													{:else}
 														<svg
-															class="h-5 w-5"
+															class="h-3.5 w-3.5"
 															viewBox="0 0 24 24"
 															fill="none"
 															stroke="currentColor"
@@ -1008,14 +999,14 @@
 														on:click|stopPropagation
 														on:keydown|stopPropagation
 													>
-														<p class="px-3 pb-1 text-[11px] font-black uppercase text-pink-700">
+														<p class="px-3 pb-1 text-[11px] font-bold text-gray-400">
 															Re-transcribe
 														</p>
 														{#each restyleOptions as option}
 															<button
 																type="button"
 																role="menuitem"
-																class={`${restyleOptionClass} ${isRestyleOptionBlocked(option) ? 'opacity-60' : ''} ${(transcript.promptStyle || PROMPT_STYLES.STANDARD) === option.id ? 'bg-pink-50 text-pink-700' : ''}`}
+																class={`${restyleOptionClass} ${isRestyleOptionBlocked(option) ? 'opacity-60' : ''} ${(transcript.promptStyle || PROMPT_STYLES.STANDARD) === option.id ? 'bg-pink-50 text-pink-600' : ''}`}
 																aria-disabled={isRestyleOptionBlocked(option)}
 																disabled={retranscribingId === transcript.id}
 																title={restyleOptionHint(option)}
@@ -1052,7 +1043,7 @@
 																</span>
 																{#if (transcript.promptStyle || PROMPT_STYLES.STANDARD) === option.id}
 																	<span
-																		class="ml-auto rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-black text-pink-700"
+																		class="ml-auto rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-600"
 																	>
 																		Current
 																	</span>
@@ -1072,10 +1063,9 @@
 												aria-expanded={openMenuId === transcript.id}
 												aria-label={`More actions for transcript from ${formatDate(transcript.timestamp)}`}
 												title="More actions"
-												data-tip="More actions"
 											>
 												<svg
-													class="h-5 w-5"
+													class="h-3.5 w-3.5"
 													viewBox="0 0 24 24"
 													fill="currentColor"
 													aria-hidden="true"
@@ -1170,13 +1160,13 @@
 													<button
 														type="button"
 														role="menuitem"
-														class={`${destructiveMenuItemClass} ${pendingDeleteId === transcript.id ? 'bg-pink-100 text-pink-700 hover:bg-pink-200 active:bg-pink-300' : ''}`}
+														class={`${destructiveMenuItemClass} ${pendingDeleteId === transcript.id ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 active:bg-rose-300' : ''}`}
 														on:click={() =>
 															pendingDeleteId === transcript.id
 																? confirmDelete(transcript.id)
 																: requestDelete(transcript.id)}
 													>
-														<span class="history-menu-icon text-pink-700" aria-hidden="true">
+														<span class="history-menu-icon text-rose-500" aria-hidden="true">
 															<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
 																<path d="M3 6h18" />
 																<path d="M8 6V4h8v2" />
@@ -1342,69 +1332,6 @@
 		stroke-linejoin: round;
 	}
 
-	.history-tooltip::after {
-		position: absolute;
-		right: 50%;
-		bottom: calc(100% + 0.45rem);
-		z-index: 50;
-		pointer-events: none;
-		width: max-content;
-		max-width: 9rem;
-		padding: 0.35rem 0.55rem;
-		border: 1px solid rgba(249, 168, 212, 0.78);
-		border-radius: 9999px;
-		background: #fdf2f8;
-		box-shadow: 0 8px 18px rgba(190, 24, 93, 0.12);
-		color: #be185d;
-		content: attr(data-tip);
-		font-size: 0.68rem;
-		font-weight: 900;
-		line-height: 1;
-		opacity: 0;
-		text-align: center;
-		transform: translate(50%, 0.25rem);
-		transition:
-			opacity 120ms ease,
-			transform 120ms ease;
-		white-space: nowrap;
-	}
-
-	.history-tooltip:hover::after,
-	.history-tooltip:focus-visible::after {
-		opacity: 1;
-		transform: translate(50%, 0);
-	}
-
-	.history-copy-chip {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.history-copy-chip.is-copied {
-		background: linear-gradient(135deg, #fce7f3, #fbcfe8);
-		transition: background 200ms ease;
-	}
-
-	.copy-tick {
-		font-size: 1.1rem;
-		font-weight: 700;
-		line-height: 1;
-		color: #be185d;
-		animation: tick-appear 200ms ease;
-	}
-
-	@keyframes tick-appear {
-		from {
-			opacity: 0;
-			transform: scale(0.8);
-		}
-		to {
-			opacity: 1;
-			transform: scale(1);
-		}
-	}
-
 	.history-transcript-text,
 	.history-edit-textarea {
 		font-family:
@@ -1431,14 +1358,6 @@
 	}
 
 	@media (max-width: 600px) {
-		.history-action-cluster {
-			max-width: 6rem;
-		}
-
-		.history-tooltip::after {
-			display: none;
-		}
-
 		.history-transcript-frame {
 			max-height: min(34vh, 15rem);
 		}

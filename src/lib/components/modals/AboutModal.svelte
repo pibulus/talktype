@@ -12,7 +12,7 @@
 	aria-describedby="about_modal_description"
 	aria-modal="true"
 >
-	<div class="tt-modal-md modal-box">
+	<div class="tt-modal-md modal-box relative">
 		<form method="dialog">
 			<ModalCloseButton {closeModal} label="Close about modal" modalId="about_modal" />
 		</form>

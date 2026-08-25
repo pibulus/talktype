@@ -442,23 +442,23 @@
 							<div class="flex items-center gap-1.5">
 								<button
 									type="button"
-									class="inline-flex items-center gap-1 rounded-full border border-pink-200 bg-pink-50/80 px-2.5 py-0.5 text-xs font-bold text-pink-700 shadow-sm transition-all duration-150 hover:scale-105 hover:bg-pink-100 active:scale-95"
+									class="inline-flex items-center gap-1 rounded-full border border-pink-200/80 bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm transition-all duration-150 hover:scale-105 hover:bg-pink-50 hover:text-pink-600 active:scale-95"
 									on:click={() => dispatch('append')}
 									title="Record more and append to this note"
 									aria-label="Add more recording onto this transcript note"
 								>
-									<span class="text-xs font-black">+</span>
+									<span class="text-xs font-black text-pink-500">+</span>
 									<span>Add to note</span>
 								</button>
 
 								<button
 									type="button"
-									class="inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50/80 px-2.5 py-0.5 text-xs font-bold text-purple-700 shadow-sm transition-all duration-150 hover:scale-105 hover:bg-purple-100 active:scale-95"
+									class="inline-flex items-center gap-1 rounded-full border border-pink-200/80 bg-white/90 px-3 py-1 text-xs font-bold text-gray-700 shadow-sm transition-all duration-150 hover:scale-105 hover:bg-pink-50 hover:text-pink-600 active:scale-95"
 									on:click={handleShareClick}
 									title="Share or copy transcript"
 									aria-label="Share transcript"
 								>
-									<span class="text-xs font-bold">↗</span>
+									<span class="text-xs font-bold text-pink-500">↗</span>
 									<span>Share</span>
 								</button>
 							</div>

@@ -77,14 +77,15 @@
 				<li>Download the TalkType extension zip from this page.</li>
 				<li>Unzip it. You should see a folder named <strong>talktype-extension</strong>.</li>
 				<li>
-					In Chrome, go to <code class="rounded bg-pink-100 px-1.5 py-0.5 text-pink-700"
+					In Chrome, go to <code class="rounded bg-pink-100 px-1.5 py-0.5 font-bold text-pink-600"
 						>chrome://extensions</code
 					>.
 				</li>
 				<li>Turn on <strong>Developer mode</strong>.</li>
 				<li>Click <strong>Load unpacked</strong>.</li>
 				<li>
-					Select the unzipped <code class="rounded bg-pink-100 px-1.5 py-0.5 text-pink-700"
+					Select the unzipped <code
+						class="rounded bg-pink-100 px-1.5 py-0.5 font-bold text-pink-600"
 						>talktype-extension</code
 					> folder.
 				</li>
@@ -112,7 +113,7 @@
 			</div>
 			<p class="mt-3 text-xs text-gray-500">
 				Want to verify the package? Check the
-				<a href={checksumUrl} class="font-semibold text-pink-600 hover:text-pink-700"
+				<a href={checksumUrl} class="font-semibold text-pink-600 hover:text-pink-500"
 					>SHA-256 checksum</a
 				>.
 			</p>
@@ -136,7 +137,7 @@
 				</p>
 				<a
 					href="/extension/privacy"
-					class="mt-3 inline-flex text-sm font-semibold text-pink-600 transition-colors hover:text-pink-700"
+					class="mt-3 inline-flex text-sm font-semibold text-pink-600 transition-colors hover:text-pink-500"
 				>
 					Read the privacy page
 				</a>
