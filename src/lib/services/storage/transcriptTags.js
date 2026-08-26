@@ -192,17 +192,89 @@ function keywordTags(text) {
 		.map(([tag]) => tag);
 }
 
-export function cleanTranscriptTags(tags, limit = 12) {
+export function cohereTag(tag, existingVocabulary = []) {
+	if (!tag || typeof tag !== 'string') return '';
+	const raw = tag.toLowerCase().trim().replace(/^#+/, '');
+	if (!raw) return '';
+
+	if (!Array.isArray(existingVocabulary) || existingVocabulary.length === 0) {
+		return raw;
+	}
+
+	const vocab = existingVocabulary.map((v) => String(v).toLowerCase().replace(/^#+/, '').trim());
+
+	if (vocab.includes(raw)) return raw;
+
+	// Plural / Singular
+	if (raw.endsWith('ies')) {
+		const singular = raw.slice(0, -3) + 'y';
+		if (vocab.includes(singular)) return singular;
+	}
+	if (raw.endsWith('y')) {
+		const plural = raw.slice(0, -1) + 'ies';
+		if (vocab.includes(plural)) return plural;
+	}
+	if (raw.endsWith('es') && raw.length > 3) {
+		const base = raw.slice(0, -2);
+		if (vocab.includes(base)) return base;
+	}
+	if (raw.endsWith('s') && raw.length > 2) {
+		const singular = raw.slice(0, -1);
+		if (vocab.includes(singular)) return singular;
+	}
+	if (!raw.endsWith('s')) {
+		const plural = raw + 's';
+		if (vocab.includes(plural)) return plural;
+	}
+
+	// -ing forms
+	if (raw.endsWith('ing') && raw.length > 4) {
+		const base = raw.slice(0, -3);
+		if (vocab.includes(base)) return base;
+		if (base.length > 2 && base[base.length - 1] === base[base.length - 2]) {
+			const single = base.slice(0, -1);
+			if (vocab.includes(single)) return single;
+		}
+	}
+
+	return raw;
+}
+
+const HASHTAG_PATTERN = /(^|\s)#([\p{L}\p{N}][\p{L}\p{N}_-]*)/gu;
+
+export function extractExplicitTags(text, existingVocabulary = []) {
+	const input = String(text || '');
+	if (!input.includes('#')) return [];
+
+	const tags = [];
+	const matches = input.matchAll(HASHTAG_PATTERN);
+	for (const match of matches) {
+		const raw = match[2].toLowerCase().slice(0, MAX_TAG_LENGTH);
+		const tag = normalizeTag(cohereTag(raw, existingVocabulary));
+		if (tag && !tags.includes(tag)) {
+			tags.push(tag);
+		}
+		if (tags.length >= MAX_AUTO_TAGS) break;
+	}
+	return tags;
+}
+
+export function cleanTranscriptTags(tags, limit = 12, existingVocabulary = []) {
 	if (!Array.isArray(tags)) return [];
 
-	return unique(tags.map(normalizeTag).filter(Boolean)).slice(0, limit);
+	return unique(
+		tags.map((tag) => normalizeTag(cohereTag(tag, existingVocabulary))).filter(Boolean)
+	).slice(0, limit);
 }
 
 export function generateTranscriptTags(text, existingTags = []) {
 	const cleanText = String(text || '').toLowerCase();
 	if (!cleanText.trim()) return [];
 
+	const explicit = extractExplicitTags(text, existingTags);
+
 	return unique([
+		...explicit,
 		...scoreExistingTags(cleanText, existingTags),
 		...scoreTopics(cleanText),
 		...keywordTags(cleanText)

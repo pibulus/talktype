@@ -10,7 +10,8 @@
 		clearAllTranscripts,
 		batchDownloadTranscripts,
 		exportAllTranscriptsJSON,
-		exportAllTranscriptsMarkdown
+		exportAllTranscriptsMarkdown,
+		sendTranscriptsToZipList
 	} from '$lib/services/storage/transcriptStorage';
 	import { autoBackupHistoryToVault } from '$lib/services/storage/vaultAutoBackup.js';
 	import { ModalCloseButton } from '$lib/components/modals/index.js';
@@ -557,14 +558,40 @@
 
 	// Export as JSON
 	async function handleExportJSON() {
-		await exportAllTranscriptsJSON();
-		showToast('Exported as JSON.', 'success');
+		const exported = await exportAllTranscriptsJSON(selectedTag);
+		showToast(
+			exported
+				? selectedTag
+					? `Exported #${selectedTag} as JSON.`
+					: 'Exported as JSON.'
+				: 'Nothing to export.',
+			'success'
+		);
 	}
 
 	// Export everything as one Markdown file
 	async function handleExportMarkdown() {
-		const exported = await exportAllTranscriptsMarkdown();
-		showToast(exported ? 'Exported as Markdown.' : 'Nothing to export yet.', 'success');
+		const exported = await exportAllTranscriptsMarkdown(selectedTag);
+		showToast(
+			exported
+				? selectedTag
+					? `Exported #${selectedTag} as Markdown.`
+					: 'Exported as Markdown.'
+				: 'Nothing to export yet.',
+			'success'
+		);
+	}
+
+	function handleSendToZipList(transcript = null) {
+		const target = transcript || (selectedTag ? visibleTranscripts : $transcriptHistory);
+		const listName = selectedTag ? `TalkType #${selectedTag}` : 'TalkType Tasks';
+		const sent = sendTranscriptsToZipList(target, listName);
+		if (sent) {
+			soundService.play('select');
+			showToast('Sent to ZipList!', 'success');
+		} else {
+			showToast('Nothing to send to ZipList.', 'warning');
+		}
 	}
 
 	function showToast(message, type = 'info') {
@@ -731,7 +758,7 @@
 												handleExportMarkdown();
 											}}
 										>
-											📄 Markdown
+											📄 Markdown{selectedTag ? ` (#${selectedTag})` : ''}
 										</button>
 										<button
 											type="button"
@@ -741,7 +768,17 @@
 												handleExportJSON();
 											}}
 										>
-											📦 JSON
+											📦 JSON{selectedTag ? ` (#${selectedTag})` : ''}
+										</button>
+										<button
+											type="button"
+											class="whitespace-nowrap rounded-lg px-2.5 py-1 text-left text-xs font-bold text-amber-800 transition hover:bg-amber-50 hover:text-amber-900"
+											on:click={() => {
+												showExportFormats = false;
+												handleSendToZipList();
+											}}
+										>
+											⚡ Send to ZipList{selectedTag ? ` (#${selectedTag})` : ''}
 										</button>
 									</div>
 								{/if}
@@ -1167,6 +1204,23 @@
 															</svg>
 														</span>
 														Download
+													</button>
+													<button
+														type="button"
+														role="menuitem"
+														class={menuItemClass}
+														on:click={() => {
+															closeFloatingMenus();
+															handleSendToZipList(transcript);
+														}}
+													>
+														<span
+															class="history-menu-icon font-bold text-amber-500"
+															aria-hidden="true"
+														>
+															⚡
+														</span>
+														Send to ZipList
 													</button>
 													{#if transcript.audioBlob}
 														<button

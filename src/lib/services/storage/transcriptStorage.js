@@ -722,20 +722,25 @@ export async function batchDownloadTranscripts() {
 }
 
 /**
- * Export all transcripts as one Markdown file — dated headings, tags, text.
- * Made for pasting or dropping straight into Obsidian/notes.
+ * Export all transcripts (or tag-filtered subset) as one Markdown file.
+ * @param {string} [tagFilter]
  * @returns {Promise<boolean>}
  */
-export async function exportAllTranscriptsMarkdown() {
-	const transcripts = await loadAllTranscripts();
+export async function exportAllTranscriptsMarkdown(tagFilter = '') {
+	let transcripts = await loadAllTranscripts();
+
+	if (tagFilter) {
+		transcripts = transcripts.filter((t) => cleanTranscriptTags(t.tags || []).includes(tagFilter));
+	}
 
 	if (transcripts.length === 0) {
 		return false;
 	}
 
 	const exportedOn = new Date();
+	const titleSuffix = tagFilter ? ` (#${tagFilter})` : '';
 	const lines = [
-		`# TalkType Transcripts`,
+		`# TalkType Transcripts${titleSuffix}`,
 		``,
 		`Exported ${exportedOn.toLocaleString()} · ${transcripts.length} transcript${
 			transcripts.length !== 1 ? 's' : ''
@@ -754,32 +759,118 @@ export async function exportAllTranscriptsMarkdown() {
 		lines.push('', transcript.text, '', '---', '');
 	}
 
+	const fileTag = tagFilter ? `-${tagFilter}` : '';
 	downloadBlob(
 		new Blob([lines.join('\n')], { type: 'text/markdown' }),
-		`talktype-transcripts-${exportedOn.toISOString().slice(0, 10)}.md`
+		`talktype-transcripts${fileTag}-${exportedOn.toISOString().slice(0, 10)}.md`
 	);
 
 	return true;
 }
 
 /**
- * Export all transcripts as a single JSON file
+ * Export all transcripts (or tag-filtered subset) as a single JSON file.
+ * @param {string} [tagFilter]
  * @returns {Promise<boolean>}
  */
-export async function exportAllTranscriptsJSON() {
-	const data = await exportTranscriptsAsJSON();
+export async function exportAllTranscriptsJSON(tagFilter = '') {
+	let transcripts = await loadAllTranscripts();
 
-	const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = `talktype-transcripts-${new Date().toISOString().slice(0, 10)}.json`;
-	document.body.appendChild(a);
-	a.click();
-	document.body.removeChild(a);
-	URL.revokeObjectURL(url);
+	if (tagFilter) {
+		transcripts = transcripts.filter((t) => cleanTranscriptTags(t.tags || []).includes(tagFilter));
+	}
+
+	if (transcripts.length === 0) {
+		return false;
+	}
+
+	const payload = {
+		exportDate: new Date().toISOString(),
+		totalCount: transcripts.length,
+		tagFilter: tagFilter || null,
+		transcripts
+	};
+
+	const exportedOn = new Date();
+	const fileTag = tagFilter ? `-${tagFilter}` : '';
+	downloadBlob(
+		new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
+		`talktype-transcripts${fileTag}-${exportedOn.toISOString().slice(0, 10)}.json`
+	);
 
 	return true;
+}
+
+function toLatin1(s) {
+	return (
+		String(s || '')
+			.replace(/[‘’]/g, "'")
+			.replace(/[“”]/g, '"')
+			.replace(/[–—]/g, '-')
+			.replace(/…/g, '...')
+			// eslint-disable-next-line no-control-regex
+			.replace(/[^\x00-\xFF]/g, '')
+			.trim()
+	);
+}
+
+/**
+ * Send one or multiple transcripts to ZipList as an actionable checklist!
+ * Splits lines, bullet points, or paragraphs into ZipList items.
+ * @param {any|any[]} transcripts
+ * @param {string} [listName]
+ * @returns {boolean}
+ */
+export function sendTranscriptsToZipList(transcripts, listName = '') {
+	const itemsList = Array.isArray(transcripts) ? transcripts : [transcripts];
+	const rawItems = [];
+
+	for (const t of itemsList) {
+		const text = typeof t === 'string' ? t : t?.text || '';
+		const tags = Array.isArray(t?.tags) ? t.tags : [];
+		const tagSuffix = tags.length ? ` ${tags.map((tag) => `#${tag}`).join(' ')}` : '';
+
+		// Split text into lines or items
+		const lines = text
+			.split(/\r?\n+/)
+			.map((l) => l.replace(/^[-*•\d.)\s]+/, '').trim())
+			.filter((l) => l.length > 0);
+
+		if (lines.length > 1) {
+			for (const line of lines) {
+				rawItems.push({
+					text: toLatin1(`${line}${tagSuffix}`).slice(0, 200),
+					checked: false
+				});
+			}
+		} else if (lines.length === 1) {
+			rawItems.push({
+				text: toLatin1(`${lines[0]}${tagSuffix}`).slice(0, 200),
+				checked: false
+			});
+		}
+	}
+
+	if (rawItems.length === 0) {
+		return false;
+	}
+
+	const resolvedName = toLatin1(
+		listName || (itemsList.length === 1 ? 'TalkType Note' : 'TalkType Tasks')
+	);
+	const payload = {
+		name: resolvedName,
+		items: rawItems
+	};
+
+	try {
+		const encoded = btoa(JSON.stringify(payload));
+		window.open(`https://ziplist.app/import#listdata=${encoded}`, '_blank', 'noopener');
+		return true;
+	} catch (error) {
+		console.error('ZipList handoff failed:', error);
+		return false;
+	}
 }
 
 /**
