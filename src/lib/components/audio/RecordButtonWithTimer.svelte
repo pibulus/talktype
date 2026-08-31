@@ -186,8 +186,8 @@
 		on:click={() => dispatch('click')}
 		aria-label={recording
 			? paused
-				? `Finish recording (paused at ${buttonState.elapsedLabel})`
-				: `Stop recording. ${buttonState.durationLabel}`
+				? `Resume recording (paused at ${buttonState.elapsedLabel})`
+				: `Pause recording. ${buttonState.durationLabel}`
 			: 'Start Recording'}
 		aria-pressed={recording}
 	>
@@ -220,7 +220,24 @@
 			</span>
 		{:else}
 			<span class="button-content relative z-10">
-				<span class="relative flex items-center justify-center">
+				<span class="relative flex items-center justify-center gap-2.5">
+					{#if recording}
+						<span class="record-state-icon {paused ? 'is-resume' : 'is-pause'}" aria-hidden="true">
+							{#if paused}
+								<svg viewBox="0 0 24 24" focusable="false">
+									<path
+										d="M8 5.5v13a1 1 0 0 0 1.6.8l10-6.5a1 1 0 0 0 0-1.6l-10-6.5A1 1 0 0 0 8 5.5Z"
+										fill="currentColor"
+									/>
+								</svg>
+							{:else}
+								<svg viewBox="0 0 24 24" focusable="false">
+									<rect x="6" y="4" width="4" height="16" rx="1.5" fill="currentColor" />
+									<rect x="14" y="4" width="4" height="16" rx="1.5" fill="currentColor" />
+								</svg>
+							{/if}
+						</span>
+					{/if}
 					<span
 						class="cta__label relative z-10 rounded-lg px-1 py-0.5 {recording
 							? 'text-shadow-recording'
@@ -600,6 +617,38 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+	}
+
+	/* Pause / resume glyph that rides inside the record button while a take is
+	   live. It makes the tap target's new job legible — the big button pauses
+	   and resumes; finishing lives on the Done button beside it. */
+	.record-state-icon {
+		display: inline-flex;
+		width: 1.2em;
+		height: 1.2em;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.record-state-icon svg {
+		width: 100%;
+		height: 100%;
+	}
+
+	.record-state-icon.is-pause {
+		animation: record-state-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	@keyframes record-state-in {
+		from {
+			opacity: 0;
+			transform: scale(0.6);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
 	}
 
 	/* Enhanced text visibility when recording */

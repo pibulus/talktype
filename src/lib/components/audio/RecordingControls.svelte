@@ -155,12 +155,29 @@
 		}
 	}
 
-	async function handlePauseToggle() {
+	// The big button's one job changed: it pauses/resumes a live take. Starting
+	// still lives here when idle, but finishing moved to the Done button so the
+	// two gestures never collide on a single tap target.
+	async function handlePrimaryClick() {
+		if (!recordingControlsService) return;
+
+		try {
+			if ($isRecording) {
+				await recordingControlsService.togglePause();
+			} else if (!$isTranscribing) {
+				await recordingControlsService.toggleRecording();
+			}
+		} catch (error) {
+			console.error('Recording toggle failed:', error);
+		}
+	}
+
+	async function handleDone() {
 		if (!recordingControlsService) return;
 		try {
-			await recordingControlsService.togglePause();
+			await recordingControlsService.toggleRecording();
 		} catch (error) {
-			console.error('Pause toggle failed:', error);
+			console.error('Finishing recording failed:', error);
 		}
 	}
 
@@ -226,26 +243,30 @@
 				{offlineNotice}
 				{buttonLabel}
 				{transcribingLabel}
-				on:click={handleRecordingToggle}
+				on:click={handlePrimaryClick}
 			/>
 		</div>
 		{#if $isRecording}
-			<div class="mt-3 flex items-center justify-center">
+			<div class="mt-4 flex items-center justify-center">
 				<button
 					type="button"
-					class="pause-toggle-btn group flex items-center gap-1.5 rounded-full border-2 border-pink-200 bg-white/95 px-4 py-1.5 text-xs font-black text-gray-800 shadow-sm transition-all duration-150 hover:border-pink-400 hover:bg-pink-50 active:scale-95 {$isPaused
-						? 'border-amber-400 bg-amber-50 text-amber-900 ring-2 ring-amber-200 ring-offset-1'
-						: ''}"
-					on:click|stopPropagation={handlePauseToggle}
-					aria-label={$isPaused ? 'Resume recording' : 'Pause recording'}
+					class="done-button group flex items-center gap-2 rounded-full px-7 py-2.5 text-base font-black transition-all duration-150 active:scale-95"
+					on:click={handleDone}
+					aria-label="Finish and transcribe recording"
 				>
-					{#if $isPaused}
-						<span class="text-sm transition-transform duration-150 group-hover:scale-110">▶️</span>
-						<span>Resume take</span>
-					{:else}
-						<span class="text-sm transition-transform duration-150 group-hover:scale-110">⏸️</span>
-						<span>Pause take</span>
-					{/if}
+					<svg
+						class="h-4 w-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="3.2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
+						<path d="M20 6 9 17l-5-5" />
+					</svg>
+					<span>Done</span>
 				</button>
 			</div>
 		{/if}
@@ -283,6 +304,35 @@
 		position: relative;
 		z-index: 30;
 		background: transparent;
+	}
+
+	/* The finish action. Sits under the record button once a take is live —
+	   warm signature pink with a chunky press shadow so it reads as "this is
+	   how this take ends", not another mute control. */
+	.done-button {
+		color: #fffdf7;
+		background: #ff6ac2;
+		border: 2px solid #e048a8;
+		box-shadow:
+			0 4px 0 #d63f96,
+			0 8px 16px -6px rgba(255, 106, 194, 0.5);
+	}
+
+	.done-button:hover {
+		background: #ff7fce;
+		border-color: #e048a8;
+	}
+
+	.done-button:active {
+		transform: translateY(2px);
+		box-shadow:
+			0 1px 0 #d63f96,
+			0 4px 10px -6px rgba(255, 106, 194, 0.45);
+	}
+
+	.done-button:focus-visible {
+		outline: 3px solid #ffd65c;
+		outline-offset: 2px;
 	}
 
 	/* Visualizer section styling */
