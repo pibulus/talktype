@@ -200,6 +200,24 @@
 		}
 	}
 
+	export function pauseRecording() {
+		if (recordingControlsRef) {
+			return recordingControlsRef.pauseRecording();
+		}
+	}
+
+	export function resumeRecording() {
+		if (recordingControlsRef) {
+			return recordingControlsRef.resumeRecording();
+		}
+	}
+
+	export function togglePause() {
+		if (recordingControlsRef) {
+			return recordingControlsRef.togglePause();
+		}
+	}
+
 	export const recording = isRecording; // Export the isRecording store
 </script>
 

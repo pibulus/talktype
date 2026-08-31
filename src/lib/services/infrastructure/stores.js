@@ -139,7 +139,13 @@ export function setSupporterStatus(isSupporter, token = null) {
 // Derived stores for easier consumption
 export const isRecording = derived(
 	audioState,
-	($audioState) => $audioState.state === AudioStates.RECORDING
+	($audioState) =>
+		$audioState.state === AudioStates.RECORDING || $audioState.state === AudioStates.PAUSED
+);
+
+export const isPaused = derived(
+	audioState,
+	($audioState) => $audioState.state === AudioStates.PAUSED
 );
 
 export const isTranscribing = derived(transcriptionState, ($state) => $state.inProgress);
@@ -193,10 +199,17 @@ export const audioActions = {
 
 		// Update recording state when audio state changes
 		if (state === AudioStates.RECORDING) {
-			recordingState.update((current) => ({ ...current, isRecording: true }));
-			this.startRecordingTimer();
-		} else if (state !== AudioStates.RECORDING) {
-			recordingState.update((current) => ({ ...current, isRecording: false }));
+			recordingState.update((current) => ({ ...current, isRecording: true, isPaused: false }));
+			if (this.isPaused) {
+				this.resumeRecordingTimer();
+			} else {
+				this.startRecordingTimer();
+			}
+		} else if (state === AudioStates.PAUSED) {
+			recordingState.update((current) => ({ ...current, isRecording: true, isPaused: true }));
+			this.pauseRecordingTimer();
+		} else if (state !== AudioStates.RECORDING && state !== AudioStates.PAUSED) {
+			recordingState.update((current) => ({ ...current, isRecording: false, isPaused: false }));
 			this.stopRecordingTimer();
 		}
 	},
@@ -234,16 +247,55 @@ export const audioActions = {
 	// Timer management for recording duration
 	recordingTimer: null,
 	startTime: null,
+	accumulatedDurationMs: 0,
+	isPaused: false,
 
 	startRecordingTimer() {
 		this.stopRecordingTimer();
 		this.startTime = Date.now();
+		this.accumulatedDurationMs = 0;
+		this.isPaused = false;
 		this.lastVoiceActivityTimestamp = Date.now();
-		recordingState.update((current) => ({ ...current, duration: 0 }));
+		recordingState.update((current) => ({ ...current, duration: 0, isPaused: false }));
 
+		this._runTimerInterval();
+	},
+
+	pauseRecordingTimer() {
+		if (this.recordingTimer) {
+			clearInterval(this.recordingTimer);
+			this.recordingTimer = null;
+		}
+		if (this.startTime) {
+			this.accumulatedDurationMs += Date.now() - this.startTime;
+			this.startTime = null;
+		}
+		this.isPaused = true;
+		recordingState.update((current) => ({
+			...current,
+			duration: this.accumulatedDurationMs / 1000,
+			isPaused: true
+		}));
+	},
+
+	resumeRecordingTimer() {
+		if (this.recordingTimer) return;
+		this.startTime = Date.now();
+		this.isPaused = false;
+		this.lastVoiceActivityTimestamp = Date.now();
+		recordingState.update((current) => ({ ...current, isPaused: false }));
+
+		this._runTimerInterval();
+	},
+
+	_runTimerInterval() {
+		if (this.recordingTimer) {
+			clearInterval(this.recordingTimer);
+		}
 		this.recordingTimer = setInterval(() => {
+			if (!this.startTime) return;
 			const now = Date.now();
-			const elapsed = now - this.startTime;
+			const elapsed = this.accumulatedDurationMs + (now - this.startTime);
 			// Use float for more precise duration - will appear smoother in UI
 			const duration = elapsed / 1000;
 
@@ -280,15 +332,19 @@ export const audioActions = {
 			clearInterval(this.recordingTimer);
 			this.recordingTimer = null;
 		}
+		this.startTime = null;
+		this.accumulatedDurationMs = 0;
+		this.isPaused = false;
 		this.lastVoiceActivityTimestamp = null;
 	},
 
 	// Immediate cap re-check for when the tab returns to the foreground —
 	// background throttling can delay the interval-based check by seconds.
 	checkRecordingTimeLimit() {
-		if (!this.recordingTimer || !this.startTime) return;
+		if (!this.startTime && !this.accumulatedDurationMs) return;
 
-		const duration = (Date.now() - this.startTime) / 1000;
+		const duration =
+			(this.accumulatedDurationMs + (this.startTime ? Date.now() - this.startTime : 0)) / 1000;
 		const isSupporter = get(userPreferences).isSupporter;
 		const timeLimit = isSupporter
 			? ANIMATION.RECORDING.SUPPORTER_LIMIT

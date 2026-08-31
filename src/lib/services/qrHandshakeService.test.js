@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	buildPassportSyncUrl,
+	buildUnlockUrl,
 	buildPassportQrPayload,
 	buildQRBuddyRenderUrl,
 	buildQRBuddyShareUrl,
@@ -36,6 +37,18 @@ describe('QR handshake helpers', () => {
 		expect(url.search).toBe('');
 		expect(fragment.get('code')).toBe('TT-SECRET-CODE');
 		expect(fragment.get('vault')).toBe('https://vault.local:3000');
+	});
+
+	it('builds a 1-click unlock URL with clean short path', () => {
+		const url = new URL(
+			buildUnlockUrl({
+				code: ' TT-SECRET-CODE ',
+				baseUrl: 'https://talktype.app'
+			})
+		);
+
+		expect(url.origin).toBe('https://talktype.app');
+		expect(url.pathname).toBe('/u/TT-SECRET-CODE');
 	});
 
 	it('does not build payloads for placeholder passports', () => {

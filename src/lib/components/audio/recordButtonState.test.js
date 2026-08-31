@@ -50,6 +50,22 @@ describe('record button state', () => {
 		expect(state.progressRatio).toBe(0);
 		expect(state.progressPercentage).toBe(0);
 	});
+
+	it('reflects paused state and suppresses warning/danger urgency while paused', () => {
+		const state = getRecordButtonState({
+			recording: true,
+			paused: true,
+			recordingDuration: 295,
+			maxDuration: 300,
+			warningThreshold: 60,
+			dangerThreshold: 10
+		});
+
+		expect(state.isPaused).toBe(true);
+		expect(state.isWarning).toBe(false);
+		expect(state.isDanger).toBe(false);
+		expect(state.elapsedLabel).toBe('4:55');
+	});
 });
 
 // The label shown ON the button while recording. Replaced the word "All done"

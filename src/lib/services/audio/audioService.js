@@ -93,7 +93,11 @@ export class AudioService {
 					// check can fire late — re-check as soon as we're visible.
 					audioActions.checkRecordingTimeLimit();
 				}
-			} else if (this.stateManager.getState() === AudioStates.RECORDING) {
+			} else if (
+				(this.stateManager.getState() === AudioStates.RECORDING ||
+					this.stateManager.getState() === AudioStates.PAUSED) &&
+				this.activeRecordingSessionId
+			) {
 				void this.#checkpointRecordingDraft(
 					this.mediaRecorder?.mimeType || 'audio/webm',
 					this.activeRecordingSessionId,
@@ -107,7 +111,11 @@ export class AudioService {
 		// every mobile browser; pagehide is the last reliable chance to get
 		// buffered audio into the recovery journal.
 		this.pageHideHandler = () => {
-			if (this.stateManager.getState() === AudioStates.RECORDING && this.activeRecordingSessionId) {
+			const currentState = this.stateManager.getState();
+			if (
+				(currentState === AudioStates.RECORDING || currentState === AudioStates.PAUSED) &&
+				this.activeRecordingSessionId
+			) {
 				void this.#flushRecoveryJournal(
 					this.mediaRecorder?.mimeType || 'audio/webm',
 					this.activeRecordingSessionId,
@@ -479,6 +487,61 @@ export class AudioService {
 		};
 
 		this.animationFrameId = requestAnimationFrame(updateWaveform);
+	}
+
+	pauseRecording() {
+		if (!this.mediaRecorder || this.stateManager.getState() !== AudioStates.RECORDING) {
+			return false;
+		}
+
+		try {
+			if (this.mediaRecorder.state === 'recording') {
+				try {
+					this.mediaRecorder.requestData();
+				} catch (e) {
+					log.warn('requestData on pause skipped:', e);
+				}
+				this.mediaRecorder.pause();
+			}
+
+			this.stateManager.setState(AudioStates.PAUSED);
+			if (this.animationFrameId) {
+				cancelAnimationFrame(this.animationFrameId);
+				this.animationFrameId = null;
+			}
+			audioActions.setWaveformData(null);
+			this.#clearRecoveryJournalFlushTimer();
+			void this.#checkpointRecordingDraft(
+				this.mediaRecorder?.mimeType || 'audio/webm',
+				this.activeRecordingSessionId,
+				'paused'
+			);
+			log.log('Recording paused');
+			return true;
+		} catch (error) {
+			log.error('Error pausing recording:', error);
+			return false;
+		}
+	}
+
+	resumeRecording() {
+		if (!this.mediaRecorder || this.stateManager.getState() !== AudioStates.PAUSED) {
+			return false;
+		}
+
+		try {
+			if (this.mediaRecorder.state === 'paused') {
+				this.mediaRecorder.resume();
+			}
+
+			this.stateManager.setState(AudioStates.RECORDING);
+			this.startWaveformMonitoring();
+			log.log('Recording resumed');
+			return true;
+		} catch (error) {
+			log.error('Error resuming recording:', error);
+			return false;
+		}
 	}
 
 	async stopRecording() {

@@ -16,12 +16,13 @@ export function formatDuration(seconds) {
 
 export function getRecordButtonState({
 	recording = false,
+	paused = false,
 	recordingDuration = 0,
-	maxDuration = 300,
+	maxDuration = 600,
 	warningThreshold = 60,
 	dangerThreshold = 10
 } = {}) {
-	const safeMaxDuration = Math.max(1, toNumber(maxDuration, 300));
+	const safeMaxDuration = Math.max(1, toNumber(maxDuration, 600));
 	const safeRecordingDuration = Math.max(0, toNumber(recordingDuration));
 	const timeRemaining = recording ? Math.max(0, safeMaxDuration - safeRecordingDuration) : 0;
 	const warningAt = Math.max(0, toNumber(warningThreshold, 60));
@@ -32,8 +33,9 @@ export function getRecordButtonState({
 		timeRemaining,
 		progressRatio,
 		progressPercentage: progressRatio * 100,
-		isWarning: recording && timeRemaining <= warningAt,
-		isDanger: recording && timeRemaining <= dangerAt,
+		isPaused: Boolean(paused),
+		isWarning: recording && !paused && timeRemaining <= warningAt,
+		isDanger: recording && !paused && timeRemaining <= dangerAt,
 		elapsedLabel: formatDuration(safeRecordingDuration),
 		remainingLabel: formatDuration(timeRemaining),
 		durationLabel: `${formatDuration(safeRecordingDuration)} of ${formatDuration(safeMaxDuration)}`

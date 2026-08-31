@@ -15,10 +15,10 @@ describe('/api/transcribe limits', () => {
 		expect(supporterLimit).toBeGreaterThan(freeLimit);
 	});
 
-	it('flags free recordings above the five-minute limit with a small grace period', () => {
-		expect(_isFreeDurationOverLimit(300)).toBe(false);
-		expect(_isFreeDurationOverLimit(305)).toBe(false);
-		expect(_isFreeDurationOverLimit(306)).toBe(true);
+	it('flags free recordings above the ten-minute limit with a small grace period', () => {
+		expect(_isFreeDurationOverLimit(600)).toBe(false);
+		expect(_isFreeDurationOverLimit(605)).toBe(false);
+		expect(_isFreeDurationOverLimit(606)).toBe(true);
 		expect(_isFreeDurationOverLimit(Number.NaN)).toBe(false);
 	});
 

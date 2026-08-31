@@ -41,6 +41,16 @@ export function buildPassportSyncUrl({ code, vaultUrl = '', baseUrl = '', appBas
 	return url.toString();
 }
 
+export function buildUnlockUrl({ code, baseUrl = '', appBaseUrl = '' } = {}) {
+	const normalizedCode = code?.toString().trim();
+	if (!normalizedCode) return '';
+
+	return new URL(
+		`/u/${encodeURIComponent(normalizedCode)}`,
+		getTalkTypeBaseUrl(appBaseUrl || baseUrl)
+	).toString();
+}
+
 export function buildPassportQrPayload(identityOrOptions) {
 	if (identityOrOptions?.code) return buildPassportSyncUrl(identityOrOptions);
 	if (!identityOrOptions || identityOrOptions.isFallback) return '';

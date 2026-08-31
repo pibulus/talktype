@@ -10,16 +10,19 @@
 	import { pwaService, deferredInstallPrompt, showPwaInstallPrompt } from '$lib/services/pwa';
 	import {
 		isRecording as recordingStore,
-		isTranscribing as transcribingStore
+		isTranscribing as transcribingStore,
+		setSupporterStatus,
+		uiActions
 	} from '$lib/services';
 	import { PageLayout } from '$lib/components/layout';
 	import { fade } from 'svelte/transition';
 	import { StorageUtils } from '$lib/services/infrastructure/storageUtils';
 	import { STORAGE_KEYS } from '$lib/constants';
-	import { uiActions } from '$lib/services';
 	import { lastRecordingDuration } from '$lib/services/infrastructure/stores';
 	import { formatDuration } from '$lib/components/audio/recordButtonState.js';
 	import { analytics } from '$lib/services/analytics.js';
+	import { saveStoredSupporterCode } from '$lib/services/vaultHashStorage.js';
+	import { getVaultHash } from '$lib/services/syncService.js';
 
 	import { AboutModal, ExtensionModal, IntroModal } from '../modals';
 	import { saveTranscript, updateTranscript } from '$lib/services/storage/transcriptStorage';
@@ -94,10 +97,78 @@
 		modalService.closeModal();
 	}
 
-	function openDialogAfterRender(modalId) {
-		setTimeout(() => {
+	async function openDialogAfterRender(modalId) {
+		await tick();
+		let modal = document.getElementById(modalId);
+		if (!modal) {
+			await new Promise((r) => requestAnimationFrame(r));
+			modal = document.getElementById(modalId);
+		}
+		if (!modal) {
+			for (let i = 0; i < 6; i++) {
+				await new Promise((r) => setTimeout(r, 40));
+				modal = document.getElementById(modalId);
+				if (modal) break;
+			}
+		}
+		if (modal) {
 			modalService.openModal(modalId);
-		}, 10);
+		} else {
+			console.warn(`[MainContainer] Retrying modal #${modalId} opener`);
+			modalService.openModal(modalId);
+		}
+	}
+
+	async function handleUrlUnlock() {
+		if (!browser) return;
+
+		const searchParams = new URLSearchParams(window.location.search);
+		const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+		const unlockCode =
+			searchParams.get('unlock') ||
+			searchParams.get('code') ||
+			hashParams.get('unlock') ||
+			hashParams.get('code');
+
+		if (!unlockCode?.trim()) return;
+
+		const code = unlockCode.trim();
+
+		try {
+			const response = await fetch('/api/supporter/redeem', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ code })
+			});
+			const payload = await response.json().catch(() => ({}));
+
+			if (response.ok && payload.valid) {
+				saveStoredSupporterCode(code);
+				setSupporterStatus(true, payload.token || null);
+				await getVaultHash(code);
+				analytics.supporterUnlockSucceeded({ method: 'link' });
+				await checkPassportNotes();
+
+				window.dispatchEvent(
+					new CustomEvent('talktype:toast', {
+						detail: {
+							type: 'success',
+							message: 'Supporter mode unlocked! Welcome aboard 🎉'
+						}
+					})
+				);
+			} else {
+				console.warn('URL unlock failed:', payload.error);
+			}
+		} catch (err) {
+			console.warn('Error redeeming supporter unlock link:', err);
+		} finally {
+			const url = new URL(window.location.href);
+			url.searchParams.delete('unlock');
+			url.searchParams.delete('code');
+			url.hash = '';
+			window.history.replaceState({}, document.title, url.pathname + (url.search || ''));
+		}
 	}
 
 	// Handle toggle recording from ghost via custom event
@@ -455,6 +526,7 @@
 		}
 
 		(async () => {
+			void handleUrlUnlock();
 			void checkPassportNotes();
 
 			// Check if first visit to show intro

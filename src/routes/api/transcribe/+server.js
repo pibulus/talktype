@@ -165,7 +165,7 @@ export async function POST(event) {
 				{
 					error: isSupporter
 						? `That file is a bit too chunky. Please keep recordings under ${mb} MB so the ghost can chew through them.`
-						: 'Free recordings are capped at 5 minutes. Try a shorter one or unlock longer recordings.'
+						: `That file is a bit too chunky (free recordings are limited to ${mb} MB). Try a shorter one or unlock larger uploads.`
 				},
 				{ status: 413 }
 			);
@@ -208,7 +208,7 @@ export async function POST(event) {
 			return json(
 				{
 					error:
-						'Free recordings are capped at 5 minutes. Try a shorter one or unlock longer recordings.'
+						'Free recordings are capped at 10 minutes. Try a shorter one or unlock longer recordings.'
 				},
 				{ status: 413 }
 			);
@@ -220,7 +220,7 @@ export async function POST(event) {
 				{
 					error: isSupporter
 						? `That file is a bit too chunky. Please keep recordings under ${mb} MB so the ghost can chew through them.`
-						: 'Free recordings are capped at 5 minutes. Try a shorter one or unlock longer recordings.'
+						: `That file is a bit too chunky (free recordings are limited to ${mb} MB). Try a shorter one or unlock larger uploads.`
 				},
 				{ status: 413 }
 			);

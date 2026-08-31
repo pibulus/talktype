@@ -13,6 +13,7 @@
 		readStoredSupporterCode,
 		saveStoredSupporterCode
 	} from '$lib/services/vaultHashStorage.js';
+	import { buildUnlockUrl } from '$lib/services/qrHandshakeService.js';
 
 	export let closeModal = () => {};
 
@@ -85,6 +86,33 @@
 				.catch((error) => console.warn('Failed to restore supporter passport:', error));
 		}
 	});
+
+	let linkCopied = false;
+	let linkCopiedTimer = null;
+
+	async function copyUnlockLink() {
+		const targetCode = passportCode || code || readStoredSupporterCode();
+		if (!targetCode) return;
+		const unlockUrl = buildUnlockUrl({ code: targetCode });
+		try {
+			await navigator.clipboard.writeText(unlockUrl);
+			linkCopied = true;
+			if (linkCopiedTimer) clearTimeout(linkCopiedTimer);
+			linkCopiedTimer = setTimeout(() => {
+				linkCopied = false;
+			}, 2500);
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: {
+						type: 'success',
+						message: 'Unlock link copied! Send it to a friend 🎉'
+					}
+				})
+			);
+		} catch (err) {
+			console.warn('Copy link failed:', err);
+		}
+	}
 
 	async function handleCheckout() {
 		if (!browser || isStartingCheckout) return;
@@ -228,13 +256,22 @@
 					Supporter perks unlocked on this device. Your passport is generated locally from your
 					code.
 				</p>
-				<button
-					type="button"
-					class="btn min-h-12 w-full rounded-full border-2 border-pink-600 bg-pink-500 text-base font-black text-white shadow-md shadow-pink-200/60 transition-all duration-150 hover:bg-pink-600 active:scale-[0.98]"
-					on:click={handleClose}
-				>
-					Nice, let's go
-				</button>
+				<div class="flex flex-col gap-2">
+					<button
+						type="button"
+						class="btn min-h-11 w-full rounded-full border-2 border-pink-200 bg-pink-50 text-sm font-black text-pink-700 transition-colors duration-150 hover:border-pink-300 hover:bg-pink-100"
+						on:click={copyUnlockLink}
+					>
+						{linkCopied ? '✨ Unlock Link Copied!' : '🔗 Copy 1-Click Unlock Link for Friends'}
+					</button>
+					<button
+						type="button"
+						class="btn min-h-12 w-full rounded-full border-2 border-pink-600 bg-pink-500 text-base font-black text-white shadow-md shadow-pink-200/60 transition-all duration-150 hover:bg-pink-600 active:scale-[0.98]"
+						on:click={handleClose}
+					>
+						Nice, let's go
+					</button>
+				</div>
 			{:else if $userPreferences.isSupporter}
 				<div class="space-y-3 text-center">
 					<p class="text-xs font-black uppercase tracking-[0.18em] text-pink-500">

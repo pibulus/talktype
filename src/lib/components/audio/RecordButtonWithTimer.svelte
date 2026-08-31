@@ -10,10 +10,11 @@
 
 	// Props
 	export let recording = false;
+	export let paused = false;
 	export let transcribing = false;
 	export let clipboardSuccess = false;
 	export let recordingDuration = 0;
-	export let maxDuration = 300; // Default 5 minutes
+	export let maxDuration = 600; // Default 10 minutes
 	// Default to the app's real thresholds so a caller that forgets to wire
 	// these props can't silently drift from production behavior.
 	export let warningThreshold = ANIMATION.RECORDING.WARNING_THRESHOLD;
@@ -47,6 +48,7 @@
 
 	$: buttonState = getRecordButtonState({
 		recording,
+		paused,
 		recordingDuration,
 		maxDuration,
 		warningThreshold,
@@ -62,9 +64,11 @@
 	// runs out, so it reads as a tally instead of a countdown, and it is the
 	// number they wanted. Remaining time only appears once it genuinely matters
 	// — inside the warning window — where urgency is the honest signal.
-	$: recordingLabel = buttonState.isWarning
-		? `${buttonState.remainingLabel} left`
-		: buttonState.elapsedLabel;
+	$: recordingLabel = paused
+		? `Paused · ${buttonState.elapsedLabel}`
+		: buttonState.isWarning
+			? `${buttonState.remainingLabel} left`
+			: buttonState.elapsedLabel;
 	$: displayLabel = recording ? recordingLabel : buttonLabel;
 	$: showClipboardSuccess = clipboardSuccess && !recording;
 	$: showOfflineNotice = Boolean(offlineNotice?.text) && !recording && !transcribing;
@@ -175,12 +179,16 @@
 			? 'notification-pulse border border-purple-200 bg-purple-50'
 			: ''} mx-auto flex h-[64px] min-w-[280px] max-w-[420px] items-center justify-center px-6 text-center text-xl font-bold text-black shadow-md focus:outline focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 sm:px-8 sm:text-xl md:text-2xl {recording
 			? 'recording-active'
-			: ''} {buttonState.isWarning ? 'recording-warning' : ''} {buttonState.isDanger
-			? 'recording-danger'
-			: ''}"
+			: ''} {paused ? 'recording-paused' : ''} {buttonState.isWarning
+			? 'recording-warning'
+			: ''} {buttonState.isDanger ? 'recording-danger' : ''}"
 		style={buttonStyle}
 		on:click={() => dispatch('click')}
-		aria-label={recording ? `Stop recording. ${buttonState.durationLabel}` : 'Start Recording'}
+		aria-label={recording
+			? paused
+				? `Finish recording (paused at ${buttonState.elapsedLabel})`
+				: `Stop recording. ${buttonState.durationLabel}`
+			: 'Start Recording'}
 		aria-pressed={recording}
 	>
 		{#if recording}
@@ -462,6 +470,18 @@
 			box-shadow 0.3s ease-out,
 			border-color 0.3s ease-out,
 			transform 0.2s ease;
+	}
+
+	.recording-paused {
+		border: 2px dashed rgba(245, 158, 11, 0.8) !important;
+		background-image: linear-gradient(
+			135deg,
+			rgba(254, 243, 199, 0.98),
+			rgba(253, 230, 138, 0.7)
+		) !important;
+		box-shadow:
+			0 4px 12px -4px rgba(245, 158, 11, 0.3),
+			inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
 	}
 
 	.recording-active::before {

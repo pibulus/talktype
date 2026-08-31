@@ -35,6 +35,7 @@ export {
 	userPreferences,
 	setSupporterStatus,
 	isRecording,
+	isPaused,
 	isTranscribing,
 	transcriptionProgress,
 	transcriptionText,

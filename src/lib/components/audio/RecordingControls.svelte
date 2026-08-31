@@ -10,6 +10,7 @@
 	import {
 		initializeServices,
 		isRecording,
+		isPaused,
 		isTranscribing,
 		recordingDuration,
 		transcriptionText,
@@ -154,6 +155,15 @@
 		}
 	}
 
+	async function handlePauseToggle() {
+		if (!recordingControlsService) return;
+		try {
+			await recordingControlsService.togglePause();
+		} catch (error) {
+			console.error('Pause toggle failed:', error);
+		}
+	}
+
 	// Export functions for external access
 	export async function startRecording(options = {}) {
 		if (recordingControlsService) {
@@ -172,15 +182,37 @@
 	export async function toggleRecording() {
 		await handleRecordingToggle();
 	}
+
+	export async function pauseRecording() {
+		if (recordingControlsService) {
+			return recordingControlsService.pauseRecording();
+		}
+		return false;
+	}
+
+	export async function resumeRecording() {
+		if (recordingControlsService) {
+			return recordingControlsService.resumeRecording();
+		}
+		return false;
+	}
+
+	export async function togglePause() {
+		if (recordingControlsService) {
+			return recordingControlsService.togglePause();
+		}
+		return false;
+	}
 </script>
 
 <!-- Recording controls wrapper -->
 <div class="recording-controls-wrapper w-full">
 	<!-- Recording button/progress bar section -->
-	<div class="button-section relative flex w-full justify-center pb-4 pt-2">
+	<div class="button-section relative flex flex-col items-center justify-center pb-4 pt-2">
 		<div class="button-container mx-auto flex w-full max-w-[500px] justify-center">
 			<RecordButtonWithTimer
 				recording={$isRecording}
+				paused={$isPaused}
 				transcribing={$isTranscribing}
 				clipboardSuccess={$uiState.clipboardSuccess}
 				recordingDuration={$recordingDuration}
@@ -197,6 +229,26 @@
 				on:click={handleRecordingToggle}
 			/>
 		</div>
+		{#if $isRecording}
+			<div class="mt-3 flex items-center justify-center">
+				<button
+					type="button"
+					class="pause-toggle-btn group flex items-center gap-1.5 rounded-full border-2 border-pink-200 bg-white/95 px-4 py-1.5 text-xs font-black text-gray-800 shadow-sm transition-all duration-150 hover:border-pink-400 hover:bg-pink-50 active:scale-95 {$isPaused
+						? 'border-amber-400 bg-amber-50 text-amber-900 ring-2 ring-amber-200 ring-offset-1'
+						: ''}"
+					on:click|stopPropagation={handlePauseToggle}
+					aria-label={$isPaused ? 'Resume recording' : 'Pause recording'}
+				>
+					{#if $isPaused}
+						<span class="text-sm transition-transform duration-150 group-hover:scale-110">▶️</span>
+						<span>Resume take</span>
+					{:else}
+						<span class="text-sm transition-transform duration-150 group-hover:scale-110">⏸️</span>
+						<span>Pause take</span>
+					{/if}
+				</button>
+			</div>
+		{/if}
 	</div>
 
 	<!-- Audio visualizer -->

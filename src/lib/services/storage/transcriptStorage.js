@@ -233,7 +233,7 @@ export async function saveTranscript(transcript) {
 		const normalizedText = normalizeTranscriptText(transcript.text);
 		const transcriptData = {
 			text: normalizedText,
-			audioBlob: transcript.audioBlob, // Store audio blob for later playback/download
+			audioBlob: transcript.audioBlob || null, // Store audio blob for later playback/download
 			duration: transcript.duration || 0,
 			timestamp: Date.now(),
 			promptStyle: transcript.promptStyle || 'standard',
@@ -246,7 +246,14 @@ export async function saveTranscript(transcript) {
 		};
 
 		return new Promise((resolve, reject) => {
-			const request = store.add(transcriptData);
+			let request;
+			try {
+				request = store.add(transcriptData);
+			} catch (err) {
+				log.warn('store.add threw, trying without audioBlob:', err);
+				delete transcriptData.audioBlob;
+				request = store.add(transcriptData);
+			}
 
 			request.onsuccess = async () => {
 				const savedId = request.result;
@@ -268,8 +275,33 @@ export async function saveTranscript(transcript) {
 				}
 			};
 
-			request.onerror = () => {
+			request.onerror = async () => {
 				transactionComplete.catch(() => {});
+				// If adding with audioBlob failed (e.g. QuotaExceededError), retry text-only
+				if (transcriptData.audioBlob) {
+					log.warn('Failed to save with audioBlob, retrying text-only save...');
+					try {
+						delete transcriptData.audioBlob;
+						const fallbackDb = await initDB();
+						const fallbackTx = fallbackDb.transaction([STORE_NAME], 'readwrite');
+						const fallbackStore = fallbackTx.objectStore(STORE_NAME);
+						const fallbackReq = fallbackStore.add(transcriptData);
+						fallbackReq.onsuccess = async () => {
+							const fallbackId = fallbackReq.result;
+							markHistoryChangedAt();
+							updateStats();
+							await loadAllTranscripts();
+							await trimHistoryToFreeLimit();
+							resolve(fallbackId);
+						};
+						fallbackReq.onerror = () => {
+							reject(fallbackReq.error);
+						};
+						return;
+					} catch (fallbackErr) {
+						log.error('Fallback save failed:', fallbackErr);
+					}
+				}
 				log.error('Failed to save transcript:', request.error);
 				reject(request.error);
 			};

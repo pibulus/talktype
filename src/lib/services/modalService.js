@@ -17,8 +17,16 @@ export class ModalService {
 	openModal(modalId) {
 		if (!browser) return;
 
-		const modal = document.getElementById(modalId);
-		if (!modal) return;
+		let modal = document.getElementById(modalId);
+		if (!modal) {
+			requestAnimationFrame(() => {
+				const retryModal = document.getElementById(modalId);
+				if (retryModal) {
+					this.openModal(modalId);
+				}
+			});
+			return;
+		}
 
 		if (this.isClosing) {
 			this.pendingModalId = modalId;

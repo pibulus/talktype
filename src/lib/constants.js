@@ -104,7 +104,7 @@ export const APP_CONFIG = {
 // always readable — the user's own words are never held hostage. Free tier keeps
 // the most recent FREE_HISTORY_LIMIT; supporters get unlimited + encrypted vault.
 export const HISTORY = {
-	FREE_HISTORY_LIMIT: 12
+	FREE_HISTORY_LIMIT: 30
 };
 
 // Animation Timing (in ms)
@@ -134,7 +134,7 @@ export const ANIMATION = {
 
 	// Recording time limits
 	RECORDING: {
-		FREE_LIMIT: 300, // Free recordings are capped at 5 minutes
+		FREE_LIMIT: 600, // Free recordings are capped at 10 minutes
 		SUPPORTER_LIMIT: 3600, // 60 minutes for supporter mode (plenty for long takes)
 		PREMIUM_LIMIT: 3600, // Legacy alias kept aligned with supporter limit
 		SILENCE_LIMIT: 180, // 3 minutes of continuous room tone silence auto-saves recording

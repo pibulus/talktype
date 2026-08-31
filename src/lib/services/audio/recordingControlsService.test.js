@@ -703,4 +703,46 @@ describe('RecordingControlsService', () => {
 
 		expect(stopSpy).toHaveBeenCalled();
 	});
+
+	it('supports pause and resume via recordingControlsService', async () => {
+		const pauseSpy = vi.fn().mockReturnValue(true);
+		const resumeSpy = vi.fn().mockReturnValue(true);
+		const service = createService({
+			audioService: {
+				pauseRecording: pauseSpy,
+				resumeRecording: resumeSpy
+			}
+		});
+
+		audioActions.updateState(AudioStates.RECORDING);
+
+		const paused = await service.pauseRecording();
+		expect(paused).toBe(true);
+		expect(pauseSpy).toHaveBeenCalled();
+
+		audioActions.updateState(AudioStates.PAUSED);
+
+		const resumed = await service.resumeRecording();
+		expect(resumed).toBe(true);
+		expect(resumeSpy).toHaveBeenCalled();
+	});
+
+	it('toggles pause state correctly', async () => {
+		const pauseSpy = vi.fn().mockReturnValue(true);
+		const resumeSpy = vi.fn().mockReturnValue(true);
+		const service = createService({
+			audioService: {
+				pauseRecording: pauseSpy,
+				resumeRecording: resumeSpy
+			}
+		});
+
+		audioActions.updateState(AudioStates.RECORDING);
+		await service.togglePause();
+		expect(pauseSpy).toHaveBeenCalledTimes(1);
+
+		audioActions.updateState(AudioStates.PAUSED);
+		await service.togglePause();
+		expect(resumeSpy).toHaveBeenCalledTimes(1);
+	});
 });

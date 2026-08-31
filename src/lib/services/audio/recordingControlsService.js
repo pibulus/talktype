@@ -8,6 +8,7 @@ import { browser } from '$app/environment';
 import { CTA_PHRASES, PROMPT_STYLES, STORAGE_KEYS } from '$lib/constants';
 import {
 	audioState,
+	isPaused,
 	recordingState,
 	transcriptionState,
 	transcriptionActions,
@@ -189,6 +190,45 @@ export class RecordingControlsService {
 				: 'Recording needs one more try.';
 			this.uiActions.setErrorMessage(friendlyMessage);
 			throw err;
+		}
+	}
+
+	async pauseRecording() {
+		try {
+			const paused = this.audioService.pauseRecording();
+			if (paused) {
+				if (this.hapticService) this.hapticService.light?.();
+				this.soundService?.select?.();
+				this.uiActions.setScreenReaderMessage('Recording paused.');
+			}
+			return paused;
+		} catch (err) {
+			log.error('Error pausing recording:', err);
+			return false;
+		}
+	}
+
+	async resumeRecording() {
+		try {
+			const resumed = this.audioService.resumeRecording();
+			if (resumed) {
+				if (this.hapticService) this.hapticService.light?.();
+				this.soundService?.select?.();
+				this.uiActions.setScreenReaderMessage('Recording resumed.');
+			}
+			return resumed;
+		} catch (err) {
+			log.error('Error resuming recording:', err);
+			return false;
+		}
+	}
+
+	async togglePause() {
+		const isPausedState = get(isPaused);
+		if (isPausedState) {
+			return this.resumeRecording();
+		} else {
+			return this.pauseRecording();
 		}
 	}
 

@@ -44,6 +44,24 @@
 		}
 	}
 
+	export function pauseRecording() {
+		if (audioToTextComponent) {
+			return audioToTextComponent.pauseRecording();
+		}
+	}
+
+	export function resumeRecording() {
+		if (audioToTextComponent) {
+			return audioToTextComponent.resumeRecording();
+		}
+	}
+
+	export function togglePause() {
+		if (audioToTextComponent) {
+			return audioToTextComponent.togglePause();
+		}
+	}
+
 	function forwardTranscriptionCompleted(event) {
 		dispatch('transcriptionCompleted', event.detail);
 	}

@@ -15,6 +15,7 @@
 		saveStoredSupporterCode,
 		saveStoredVaultServerUrl
 	} from '$lib/services/vaultHashStorage.js';
+	import { buildUnlockUrl } from '$lib/services/qrHandshakeService.js';
 
 	let status = 'checking';
 	let message = 'Just a sec...';
@@ -31,7 +32,12 @@
 		const queryParams = new URLSearchParams(window.location.search);
 
 		return {
-			code: hashParams.get('code') || queryParams.get('code') || '',
+			code:
+				hashParams.get('unlock') ||
+				hashParams.get('code') ||
+				queryParams.get('unlock') ||
+				queryParams.get('code') ||
+				'',
 			vault:
 				hashParams.get('vault') ||
 				hashParams.get('vaultUrl') ||
@@ -149,6 +155,32 @@
 		}
 	}
 
+	let linkCopied = false;
+	let linkCopiedTimer = null;
+
+	async function copyUnlockLink() {
+		if (!browser || !passportCode) return;
+		const unlockUrl = buildUnlockUrl({ code: passportCode });
+		try {
+			await navigator.clipboard.writeText(unlockUrl);
+			linkCopied = true;
+			if (linkCopiedTimer) clearTimeout(linkCopiedTimer);
+			linkCopiedTimer = setTimeout(() => {
+				linkCopied = false;
+			}, 2500);
+			window.dispatchEvent(
+				new CustomEvent('talktype:toast', {
+					detail: {
+						type: 'success',
+						message: 'Unlock link copied! Send it to a friend 🎉'
+					}
+				})
+			);
+		} catch (err) {
+			console.warn('Copy link failed:', err);
+		}
+	}
+
 	onMount(() => {
 		if (!browser) return;
 
@@ -255,6 +287,16 @@
 				</p>
 			{/if}
 		</div>
+
+		{#if passportCode}
+			<button
+				type="button"
+				class="btn min-h-12 w-full rounded-2xl border-2 border-pink-200 bg-white font-black text-pink-700 shadow-sm transition-colors duration-150 hover:border-pink-300 hover:bg-pink-50"
+				on:click={copyUnlockLink}
+			>
+				{linkCopied ? '✨ Unlock Link Copied!' : '🔗 Copy 1-Click Unlock Link for Friends'}
+			</button>
+		{/if}
 
 		<a
 			href="/"
