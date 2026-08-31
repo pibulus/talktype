@@ -162,20 +162,16 @@
 		if (!recordingControlsService) return;
 
 		try {
-			if ($isRecording) {
-				await recordingControlsService.togglePause();
-			} else if (!$isTranscribing) {
-				await recordingControlsService.toggleRecording();
-			}
+			await recordingControlsService.onPrimaryTap();
 		} catch (error) {
-			console.error('Recording toggle failed:', error);
+			console.error('Primary action failed:', error);
 		}
 	}
 
 	async function handleDone() {
 		if (!recordingControlsService) return;
 		try {
-			await recordingControlsService.toggleRecording();
+			await recordingControlsService.finishRecording();
 		} catch (error) {
 			console.error('Finishing recording failed:', error);
 		}
@@ -193,6 +189,12 @@
 	export async function stopRecording() {
 		if (recordingControlsService) {
 			await recordingControlsService.stopRecording();
+		}
+	}
+
+	export async function finishRecording() {
+		if (recordingControlsService) {
+			await recordingControlsService.finishRecording();
 		}
 	}
 

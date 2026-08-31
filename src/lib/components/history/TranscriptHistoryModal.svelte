@@ -126,17 +126,23 @@
 	}
 	$: editTextReady = cleanTranscriptText(editText).length > 0;
 
+	function hashString(str) {
+		if (str == null) return 0;
+		const s = String(str);
+		let hash = 0;
+		for (let i = 0; i < s.length; i++) {
+			hash = (hash << 5) - hash + s.charCodeAt(i);
+			hash |= 0;
+		}
+		return Math.abs(hash);
+	}
+
 	// Deterministic color styling using the 4 brand ghost palettes (Teal, Purple, Peach, Yellow)
 	function getTagPillClass(tag, isSelected = false) {
 		if (isSelected) {
 			return 'bg-gray-900 text-white border-2 border-gray-900 shadow-[2px_2px_0px_#ff82ca] font-black';
 		}
-		let hash = 0;
-		for (let i = 0; i < tag.length; i++) {
-			hash = (hash << 5) - hash + tag.charCodeAt(i);
-			hash |= 0;
-		}
-		const colorIndex = Math.abs(hash) % 4;
+		const colorIndex = hashString(tag) % 4;
 		const palette = [
 			'bg-teal-100 text-teal-950 border-2 border-teal-400 hover:border-gray-900 hover:shadow-[2px_2px_0px_#2dd4bf]',
 			'bg-purple-100 text-purple-950 border-2 border-purple-400 hover:border-gray-900 hover:shadow-[2px_2px_0px_#c084fc]',
@@ -150,14 +156,14 @@
 		if (transcript.promptStyle === 'surly_pirate') return 'border-l-amber-400';
 		if (transcript.promptStyle === 'quill_and_ink') return 'border-l-purple-400';
 		if (transcript.promptStyle === 'custom') return 'border-l-teal-400';
-		const charCode = transcript.id != null ? String(transcript.id).charCodeAt(0) : 0;
+		const colorIndex = hashString(transcript.id) % 4;
 		const colors = [
 			'border-l-pink-400',
 			'border-l-teal-400',
 			'border-l-purple-400',
 			'border-l-amber-400'
 		];
-		return colors[charCode % 4];
+		return colors[colorIndex];
 	}
 
 	// Format timestamp to readable date

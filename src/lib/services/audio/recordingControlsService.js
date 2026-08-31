@@ -377,12 +377,9 @@ export class RecordingControlsService {
 		}
 	}
 
-	async toggleRecording() {
-		const { isRecording, isTranscribing, transcriptionText } = this.stores;
-		const currentlyRecording = get(isRecording);
-		const currentlyTranscribing = get(isTranscribing);
-
-		log.log('toggleRecording called, currently recording:', currentlyRecording);
+	async finishRecording() {
+		const { isRecording } = this.stores;
+		if (!get(isRecording)) return;
 
 		if (this.toggleInFlight) {
 			this.uiActions.setScreenReaderMessage('Still working. Try again in a moment.');
@@ -392,18 +389,66 @@ export class RecordingControlsService {
 		this.toggleInFlight = true;
 
 		try {
-			if (currentlyRecording) {
-				log.log('Stopping recording...');
-				// Haptic feedback for stop - single tap
-				if (this.hapticService) {
-					this.hapticService.stopRecording();
-				}
-				this.soundService?.stopRecording?.();
+			log.log('Stopping recording...');
+			// Haptic feedback for stop - single tap
+			if (this.hapticService) {
+				this.hapticService.stopRecording();
+			}
+			this.soundService?.stopRecording?.();
 
-				await this.stopRecording();
-				// Screen reader announcement
-				this.uiActions.setScreenReaderMessage('Recording stopped.');
-			} else if (currentlyTranscribing) {
+			await this.stopRecording();
+			// Screen reader announcement
+			this.uiActions.setScreenReaderMessage('Recording stopped.');
+		} catch (err) {
+			log.error('Recording operation failed:', err);
+
+			// Show error message
+			const friendlyMessage = isPermissionError(err)
+				? 'The mic needs permission before the ghost can listen.'
+				: 'Recording needs one more try.';
+			this.uiActions.setErrorMessage(friendlyMessage);
+
+			// Haptic feedback for error
+			if (this.hapticService) {
+				this.hapticService.error();
+			}
+			this.soundService?.error?.();
+
+			// Update screen reader status
+			this.uiActions.setScreenReaderMessage('Recording is ready for one more try.');
+		} finally {
+			this.toggleInFlight = false;
+		}
+	}
+
+	async onPrimaryTap() {
+		const { isRecording } = this.stores;
+		if (get(isRecording)) {
+			return this.togglePause();
+		}
+		return this.toggleRecording();
+	}
+
+	async toggleRecording() {
+		const { isRecording, isTranscribing, transcriptionText } = this.stores;
+		const currentlyRecording = get(isRecording);
+		const currentlyTranscribing = get(isTranscribing);
+
+		log.log('toggleRecording called, currently recording:', currentlyRecording);
+
+		if (currentlyRecording) {
+			return this.finishRecording();
+		}
+
+		if (this.toggleInFlight) {
+			this.uiActions.setScreenReaderMessage('Still working. Try again in a moment.');
+			return;
+		}
+
+		this.toggleInFlight = true;
+
+		try {
+			if (currentlyTranscribing) {
 				this.uiActions.setScreenReaderMessage('Still transcribing. Try again in a moment.');
 			} else {
 				log.log('Starting recording...');

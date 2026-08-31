@@ -745,4 +745,121 @@ describe('RecordingControlsService', () => {
 		await service.togglePause();
 		expect(resumeSpy).toHaveBeenCalledTimes(1);
 	});
+
+	it('starts recording on primary tap when idle', async () => {
+		const startSpy = vi.fn().mockResolvedValue(true);
+		const service = createService({
+			audioService: {
+				startRecording: startSpy
+			}
+		});
+
+		audioActions.updateState(AudioStates.IDLE);
+		await service.onPrimaryTap();
+
+		expect(startSpy).toHaveBeenCalledTimes(1);
+		expect(startSpy).toHaveBeenCalledWith({
+			transcriptionMode: {
+				useLiveDeepgram: false,
+				useOfflineWhisper: false
+			}
+		});
+	});
+
+	it('pauses when recording and resumes when paused on primary tap', async () => {
+		const pauseSpy = vi.fn().mockReturnValue(true);
+		const resumeSpy = vi.fn().mockReturnValue(true);
+		const service = createService({
+			audioService: {
+				pauseRecording: pauseSpy,
+				resumeRecording: resumeSpy
+			}
+		});
+
+		audioActions.updateState(AudioStates.RECORDING);
+		await service.onPrimaryTap();
+		expect(pauseSpy).toHaveBeenCalledTimes(1);
+		expect(resumeSpy).not.toHaveBeenCalled();
+
+		audioActions.updateState(AudioStates.PAUSED);
+		await service.onPrimaryTap();
+		expect(resumeSpy).toHaveBeenCalledTimes(1);
+	});
+
+	it('finishes recording on finishRecording and never starts a recording when idle', async () => {
+		const startSpy = vi.fn().mockResolvedValue(true);
+		const stopSpy = vi.fn().mockResolvedValue(new Blob(['x'.repeat(1200)], { type: 'audio/webm' }));
+		const service = createService({
+			audioService: {
+				startRecording: startSpy,
+				stopRecording: stopSpy
+			}
+		});
+
+		// When idle, finishRecording must no-op and NEVER start recording
+		audioActions.updateState(AudioStates.IDLE);
+		await service.finishRecording();
+		expect(startSpy).not.toHaveBeenCalled();
+		expect(stopSpy).not.toHaveBeenCalled();
+
+		// When recording, finishRecording finishes the take
+		audioActions.updateState(AudioStates.RECORDING);
+		await service.finishRecording();
+		expect(stopSpy).toHaveBeenCalledTimes(1);
+		expect(startSpy).not.toHaveBeenCalled();
+	});
+
+	it('delegates to finishRecording in toggleRecording when recording', async () => {
+		const service = createService();
+		const finishSpy = vi.spyOn(service, 'finishRecording').mockResolvedValue();
+
+		audioActions.updateState(AudioStates.RECORDING);
+		await service.toggleRecording();
+
+		expect(finishSpy).toHaveBeenCalledTimes(1);
+	});
+
+	it('triggers stop feedback on finishRecording', async () => {
+		const hapticService = {
+			stopRecording: vi.fn(),
+			startRecording: vi.fn()
+		};
+		const soundService = {
+			stopRecording: vi.fn(),
+			startRecording: vi.fn()
+		};
+		const uiActions = {
+			clearErrorMessage: vi.fn(),
+			setErrorMessage: vi.fn(),
+			setScreenReaderMessage: vi.fn()
+		};
+		const service = new RecordingControlsService({
+			audioService: {
+				stopRecording: vi
+					.fn()
+					.mockResolvedValue(new Blob(['x'.repeat(1200)], { type: 'audio/webm' }))
+			},
+			transcriptionService: {
+				transcribeAudio: vi.fn().mockResolvedValue('text')
+			},
+			hapticService,
+			soundService,
+			pwaService: {
+				incrementTranscriptionCount: vi.fn()
+			},
+			uiActions,
+			stores: {
+				isRecording,
+				isTranscribing,
+				transcriptionText
+			}
+		});
+
+		audioActions.updateState(AudioStates.RECORDING);
+		await service.finishRecording();
+
+		expect(hapticService.stopRecording).toHaveBeenCalledTimes(1);
+		expect(soundService.stopRecording).toHaveBeenCalledTimes(1);
+		expect(uiActions.setScreenReaderMessage).toHaveBeenCalledWith('Recording stopped.');
+	});
 });

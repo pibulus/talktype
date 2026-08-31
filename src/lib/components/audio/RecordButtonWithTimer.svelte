@@ -189,7 +189,7 @@
 				? `Resume recording (paused at ${buttonState.elapsedLabel})`
 				: `Pause recording. ${buttonState.durationLabel}`
 			: 'Start Recording'}
-		aria-pressed={recording}
+		aria-pressed={paused}
 	>
 		{#if recording}
 			<span class="recording-progress-track" aria-hidden="true">
