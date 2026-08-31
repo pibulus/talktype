@@ -150,7 +150,7 @@
 		if (transcript.promptStyle === 'surly_pirate') return 'border-l-amber-400';
 		if (transcript.promptStyle === 'quill_and_ink') return 'border-l-purple-400';
 		if (transcript.promptStyle === 'custom') return 'border-l-teal-400';
-		const charCode = transcript.id ? transcript.id.charCodeAt(0) : 0;
+		const charCode = transcript.id != null ? String(transcript.id).charCodeAt(0) : 0;
 		const colors = [
 			'border-l-pink-400',
 			'border-l-teal-400',
