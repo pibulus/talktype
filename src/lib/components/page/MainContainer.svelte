@@ -583,6 +583,7 @@
 			on:showSettings={openSettingsModal}
 			on:showExtension={showExtensionModal}
 			on:showHistory={openHistoryModal}
+			on:showSupporter={() => openSupporterModal('footer')}
 		/>
 	</svelte:fragment>
 </PageLayout>

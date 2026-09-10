@@ -17,6 +17,10 @@
 		dispatch('showHistory');
 	}
 
+	function showSupport() {
+		dispatch('showSupporter');
+	}
+
 	/* Parked with the footer buttons — see the note in the markup below.
 	function showExtension() {
 		dispatch('showExtension');
@@ -63,6 +67,9 @@
 	</button>
 	<button class={footerButtonClass} on:click={showHistory} aria-label="View Transcript History">
 		History
+	</button>
+	<button class={footerButtonClass} on:click={showSupport} aria-label="Support TalkType">
+		Support
 	</button>
 	<!-- Extension and Share are parked, not retired. The extension isn't ready to
 	     be advertised yet, and the footer reads calmer at three. Handlers below
