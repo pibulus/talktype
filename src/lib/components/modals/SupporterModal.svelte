@@ -5,7 +5,8 @@
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { theme } from '$lib';
 	import { setSupporterStatus, userPreferences } from '$lib/services';
-	import { SUPPORTER_CHECKOUT } from '$lib/constants';
+	import { SUPPORTER_CHECKOUT, HISTORY } from '$lib/constants';
+	import { PRICING } from '$lib/config/pricing';
 	import { analytics } from '$lib/services/analytics.js';
 	import MembershipCard from '$lib/cartridges/MembershipCard.svelte';
 	import { getVaultHash } from '$lib/services/syncService.js';
@@ -417,8 +418,13 @@
 					on:click={handleCheckout}
 					disabled={isStartingCheckout}
 				>
-					{isStartingCheckout ? 'Opening Square...' : "I'm in — $24 / yr"}
+					{isStartingCheckout ? 'Opening Square...' : `I'm in — ${PRICING.displayPrice} / yr`}
 				</button>
+
+				<p class="px-1 text-center text-xs text-gray-500">
+					Free keeps your last {HISTORY.FREE_HISTORY_LIMIT} transcripts — supporters keep every
+					single one.
+				</p>
 
 				{#if errorMessage}
 					<p
