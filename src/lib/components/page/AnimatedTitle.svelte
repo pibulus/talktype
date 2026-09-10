@@ -7,7 +7,7 @@
 
 	// Component props
 	export let title = 'TalkType';
-	export let subtitle = "Voice-to-text that doesn't suck. Spooky good, freaky fast, always free.";
+	export let subtitle = "You click the ghost, we do the most. Say it sloppy, get it clean — spooky good, freaky fast.";
 
 	// AppSuffix configuration
 	export let showAppSuffix = true;
