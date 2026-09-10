@@ -14,7 +14,7 @@ export function locale() {
 const strings = {
 	en: {
 		heroSubtitle:
-			"You click the ghost, we do the most. Say it sloppy, get it clean — spooky good, freaky fast.",
+			'You click the ghost, we do the most. Say it sloppy, get it clean — spooky good, freaky fast.',
 		introTitle1: "TalkType's the ",
 		introTitleBest: 'best.',
 		introTitle2: 'Kick out the rest.',

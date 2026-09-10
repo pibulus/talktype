@@ -37,7 +37,9 @@
 					id="intro_modal_title"
 					class="text-[1.55rem] font-black leading-[1.15] tracking-tight text-[#1e1714] sm:text-3xl"
 				>
-					{t('introTitle1')}<span class="tt-marker">{t('introTitleBest')}</span><br />{t('introTitle2')}
+					{t('introTitle1')}<span class="tt-marker">{t('introTitleBest')}</span><br />{t(
+						'introTitle2'
+					)}
 				</h1>
 				<p class="text-sm font-bold tracking-tight text-pink-500 sm:text-base">
 					{t('introTag')}

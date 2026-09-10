@@ -422,8 +422,8 @@
 				</button>
 
 				<p class="px-1 text-center text-xs text-gray-500">
-					Free keeps your last {HISTORY.FREE_HISTORY_LIMIT} transcripts — supporters keep every
-					single one.
+					Free keeps your last {HISTORY.FREE_HISTORY_LIMIT} transcripts — supporters keep every single
+					one.
 				</p>
 
 				{#if errorMessage}
