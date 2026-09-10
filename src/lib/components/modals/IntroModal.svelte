@@ -34,7 +34,7 @@
 			<div class="space-y-1.5 text-center">
 				<h1
 					id="intro_modal_title"
-					class="text-[1.55rem] font-black leading-[1.15] tracking-tight text-gray-900 sm:text-3xl"
+					class="text-[1.55rem] font-black leading-[1.15] tracking-tight text-[#1e1714] sm:text-3xl"
 				>
 					TalkType's the <span class="tt-marker">best.</span><br />Kick out the rest.
 				</h1>
@@ -87,7 +87,7 @@
 		font-weight: 800;
 		letter-spacing: -0.01em;
 		line-height: 1.45;
-		color: #1f2937;
+		color: #463f3a;
 	}
 
 	@media (min-width: 640px) {
