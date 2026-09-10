@@ -2,12 +2,15 @@
 	import { onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { AppSuffix } from '$lib/components/ui';
+	import { t } from '$lib/i18n';
 
 	const dispatch = createEventDispatcher();
 
 	// Component props
 	export let title = 'TalkType';
-	export let subtitle = "You click the ghost, we do the most. Say it sloppy, get it clean — spooky good, freaky fast.";
+	export let subtitle = null; // null → auto-localized via i18n
+
+	$: displaySubtitle = subtitle ?? t('heroSubtitle');
 
 	// AppSuffix configuration
 	export let showAppSuffix = true;
@@ -76,7 +79,7 @@
 <p
 	class="slide-in-subtitle mx-auto mb-6 mt-3 max-w-prose cursor-default select-none text-center text-sm font-medium leading-relaxed tracking-normal text-gray-600 sm:mb-7 sm:mt-6 sm:text-lg sm:font-normal sm:text-gray-700/85 md:text-xl lg:text-2xl"
 >
-	{subtitle}
+	{displaySubtitle}
 </p>
 
 <style>

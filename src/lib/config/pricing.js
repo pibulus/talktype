@@ -9,8 +9,8 @@
  * User-facing copy must derive from displayPrice — never hardcode a number.
  */
 export const PRICING = {
-	currentPrice: 24,
-	currency: 'AUD', // Square charge currency; the displayed price is just the number (≈ same in USD)
+	currentPrice: 49,
+	currency: 'USD', // Square charge currency; the displayed price is just the number
 	productName: 'TalkType Supporter Pass',
 	termDays: 365,
 

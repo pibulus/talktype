@@ -1,6 +1,7 @@
 <script>
 	import DisplayGhost from '$lib/components/ghost/DisplayGhost.svelte';
 	import { ModalCloseButton } from './index.js';
+	import { t } from '$lib/i18n';
 
 	export let closeModal;
 	export let markIntroAsSeen;
@@ -36,17 +37,17 @@
 					id="intro_modal_title"
 					class="text-[1.55rem] font-black leading-[1.15] tracking-tight text-[#1e1714] sm:text-3xl"
 				>
-					TalkType's the <span class="tt-marker">best.</span><br />Kick out the rest.
+					{t('introTitle1')}<span class="tt-marker">{t('introTitleBest')}</span><br />{t('introTitle2')}
 				</h1>
 				<p class="text-sm font-bold tracking-tight text-pink-500 sm:text-base">
-					It's fast, it's fun, it's freaky good.
+					{t('introTag')}
 				</p>
 			</div>
 
 			<div id="intro_modal_description" class="space-y-1.5 text-center">
-				<p class="intro-line">Tap the ghost. Talk. That's it.</p>
-				<p class="intro-line">Offline mode keeps it on your device.</p>
-				<p class="intro-line">Save it, restyle it, pick your vibe.</p>
+				<p class="intro-line">{t('introLine1')}</p>
+				<p class="intro-line">{t('introLine2')}</p>
+				<p class="intro-line">{t('introLine3')}</p>
 			</div>
 
 			<div class="pt-1">
@@ -58,7 +59,7 @@
 						closeModal();
 					}}
 				>
-					Let's go
+					{t('introGo')}
 				</button>
 			</div>
 		</div>
