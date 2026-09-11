@@ -43,8 +43,9 @@
 <svelte:head>
 	<title>{title}</title>
 	<meta name="description" content={description} />
-	<meta name="robots" content={robots} />
 	<link rel="canonical" href={canonicalUrl} />
+	<link rel="alternate" hreflang="en" href="https://talktype.app" />
+	<link rel="alternate" hreflang="es" href="https://talktype.app/es" />
 
 	<meta property="og:type" content={type} />
 	<meta property="og:url" content={canonicalUrl} />
