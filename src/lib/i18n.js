@@ -4,7 +4,8 @@
 import { browser } from '$app/environment';
 
 export function locale() {
-	if (browser && typeof navigator !== 'undefined') {
+	if (browser && typeof window !== 'undefined') {
+		if (window.location.pathname.startsWith('/es')) return 'es';
 		const lang = (navigator.language || '').toLowerCase();
 		if (lang.startsWith('es')) return 'es';
 	}
