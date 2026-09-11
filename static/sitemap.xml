@@ -1,20 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+	<!-- English Homepage -->
 	<url>
 		<loc>https://talktype.app/</loc>
-		<lastmod>2026-07-09</lastmod>
-		<changefreq>weekly</changefreq>
+		<lastmod>2026-09-11</lastmod>
+		<changefreq>daily</changefreq>
 		<priority>1.0</priority>
+		<xhtml:link rel="alternate" hreflang="en" href="https://talktype.app/" />
+		<xhtml:link rel="alternate" hreflang="es" href="https://talktype.app/es" />
 	</url>
+
+	<!-- Spanish Homepage -->
+	<url>
+		<loc>https://talktype.app/es</loc>
+		<lastmod>2026-09-11</lastmod>
+		<changefreq>daily</changefreq>
+		<priority>1.0</priority>
+		<xhtml:link rel="alternate" hreflang="es" href="https://talktype.app/es" />
+		<xhtml:link rel="alternate" hreflang="en" href="https://talktype.app/" />
+	</url>
+
+	<!-- Chrome Extension Landing -->
 	<url>
 		<loc>https://talktype.app/extension</loc>
-		<lastmod>2026-05-17</lastmod>
+		<lastmod>2026-09-11</lastmod>
 		<changefreq>monthly</changefreq>
-		<priority>0.6</priority>
+		<priority>0.7</priority>
 	</url>
+
+	<!-- Extension Privacy Policy -->
 	<url>
 		<loc>https://talktype.app/extension/privacy</loc>
-		<lastmod>2026-05-17</lastmod>
+		<lastmod>2026-09-11</lastmod>
 		<changefreq>yearly</changefreq>
 		<priority>0.3</priority>
 	</url>
