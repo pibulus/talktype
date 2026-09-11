@@ -41,6 +41,26 @@
 		<xhtml:link rel="alternate" hreflang="en" href="https://talktype.app/for/adhd" />
 	</url>
 
+	<!-- Sovereign Voice Manifesto & Fast Brain Guide (EN) -->
+	<url>
+		<loc>https://talktype.app/why</loc>
+		<lastmod>2026-09-11</lastmod>
+		<changefreq>weekly</changefreq>
+		<priority>0.9</priority>
+		<xhtml:link rel="alternate" hreflang="en" href="https://talktype.app/why" />
+		<xhtml:link rel="alternate" hreflang="es" href="https://talktype.app/es/por-que" />
+	</url>
+
+	<!-- Manifiesto de Voz Soberana & Guía Cerebros Rápidos (ES) -->
+	<url>
+		<loc>https://talktype.app/es/por-que</loc>
+		<lastmod>2026-09-11</lastmod>
+		<changefreq>weekly</changefreq>
+		<priority>0.9</priority>
+		<xhtml:link rel="alternate" hreflang="es" href="https://talktype.app/es/por-que" />
+		<xhtml:link rel="alternate" hreflang="en" href="https://talktype.app/why" />
+	</url>
+
 	<!-- Chrome Extension Landing -->
 	<url>
 		<loc>https://talktype.app/extension</loc>
