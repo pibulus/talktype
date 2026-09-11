@@ -16,6 +16,13 @@
 	} from '$lib/services/transcription/transcriptCleanup.js';
 	import { ANIMATION, DEFAULT_THEME, SERVICE_EVENTS, STORAGE_KEYS } from '$lib/constants';
 	import { syncStore } from '$lib/stores/syncStore.js';
+	import { renderQrDataUrl, buildPassportSyncUrl } from '$lib/services/qrHandshakeService.js';
+	import {
+		readStoredSupporterCode,
+		readStoredVaultServerUrl
+	} from '$lib/services/vaultHashStorage.js';
+	import { autoBackupHistoryToVault } from '$lib/services/storage/vaultAutoBackup.js';
+	import { restoreTranscriptsFromVault } from '$lib/services/storage/vaultTranscriptBackup.js';
 	import {
 		readStorageValue,
 		writeStorageValue,
@@ -23,6 +30,62 @@
 	} from '$lib/services/storage/localStorageMigration.js';
 
 	export let closeModal = () => {};
+
+	let syncQrDataUrl = '';
+	let syncBusy = false;
+	let syncNote = '';
+
+	async function refreshSyncQr() {
+		const code = readStoredSupporterCode();
+		const vaultUrl = readStoredVaultServerUrl();
+		const syncUrl = buildPassportSyncUrl({ code, vaultUrl });
+		syncQrDataUrl = syncUrl ? await renderQrDataUrl(syncUrl, { size: 220 }) : '';
+	}
+
+	async function copySyncPhrase() {
+		try {
+			await navigator.clipboard.writeText($syncStore.phrase);
+			syncNote = 'Phrase copied';
+		} catch {
+			syncNote = 'Copy failed';
+		}
+		setTimeout(() => (syncNote = ''), 1500);
+	}
+
+	async function backupNow() {
+		syncBusy = true;
+		syncNote = 'Backing up…';
+		try {
+			const r = await autoBackupHistoryToVault({ allowEmptyHistory: true });
+			syncNote =
+				r.skipped && r.reason === 'missing-passport-or-vault'
+					? 'Add a vault URL first'
+					: r.skipped
+						? 'Nothing to back up'
+						: 'Backed up';
+		} catch {
+			syncNote = 'Backup failed';
+		}
+		syncBusy = false;
+	}
+
+	async function restoreNow() {
+		syncBusy = true;
+		syncNote = 'Restoring…';
+		try {
+			const r = await restoreTranscriptsFromVault({
+				code: readStoredSupporterCode(),
+				serverUrl: readStoredVaultServerUrl(),
+				replaceExisting: false
+			});
+			syncNote = r.missing
+				? 'No backup on the vault yet'
+				: `Restored ${r.imported + r.updated} transcript${r.imported + r.updated !== 1 ? 's' : ''}`;
+		} catch {
+			syncNote = 'Restore failed';
+		}
+		syncBusy = false;
+	}
 
 	// State management
 	let selectedVibe;
@@ -110,6 +173,7 @@
 	onMount(() => {
 		customWordsText = getStoredCustomWords().join('\n');
 		loadByokKeys();
+		refreshSyncQr();
 
 		// Subscribe to stores only in browser
 		unsubscribeTheme = theme.subscribe((value) => {
@@ -368,7 +432,51 @@
 						<p class="mt-1.5 px-0.5 text-[11px] font-bold leading-snug text-gray-500">
 							Match this phrase on another device to link them live.
 						</p>
+						<button
+							type="button"
+							class="mt-2 rounded-full border-2 border-gray-900 bg-pink-100 px-3 py-1 text-[11px] font-black text-gray-900 transition hover:shadow-[2px_2px_0px_#ff82ca] active:translate-y-0.5"
+							on:click={copySyncPhrase}
+						>
+							Copy phrase
+						</button>
 					</div>
+
+					{#if syncQrDataUrl}
+						<div
+							class="setting-row rounded-xl border-2 border-gray-900/80 bg-white p-3 text-center shadow-sm"
+						>
+							<img
+								src={syncQrDataUrl}
+								alt="Scan to link another device"
+								class="mx-auto h-40 w-40 rounded-lg border border-gray-200"
+							/>
+							<p class="mt-2 text-[11px] font-bold leading-snug text-gray-500">
+								Scan on another device to link your history and audio.
+							</p>
+						</div>
+					{/if}
+
+					<div class="flex items-center gap-2">
+						<button
+							type="button"
+							class="min-h-10 flex-1 rounded-xl border-2 border-gray-900 bg-amber-100 px-3 text-xs font-black text-gray-900 transition hover:shadow-[2px_2px_0px_#fbbf24] active:translate-y-0.5 disabled:opacity-50"
+							on:click={backupNow}
+							disabled={syncBusy}
+						>
+							Backup now
+						</button>
+						<button
+							type="button"
+							class="min-h-10 flex-1 rounded-xl border-2 border-gray-900 bg-teal-100 px-3 text-xs font-black text-gray-900 transition hover:shadow-[2px_2px_0px_#2dd4bf] active:translate-y-0.5 disabled:opacity-50"
+							on:click={restoreNow}
+							disabled={syncBusy}
+						>
+							Restore
+						</button>
+					</div>
+					{#if syncNote}
+						<p class="px-0.5 text-[11px] font-bold text-gray-600">{syncNote}</p>
+					{/if}
 				</section>
 
 				<!-- BYOK (Bring Your Own Key) -->
