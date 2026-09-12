@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "lsof -ti:5173 | xargs kill -9 2>/dev/null || true && vite dev --port 5173 --host",
-		"prebuild": "node scripts/check-portable-deps.mjs",
+		"prebuild": "node scripts/check-portable-deps.mjs && node scripts/stamp-version.mjs",
 		"build": "vite build",
 		"deploy:pi": "bash scripts/deploy-pi.sh",
 		"package:extension": "bash scripts/package-extension.sh",

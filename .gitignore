@@ -63,3 +63,6 @@ vite.config.ts.timestamp-*
 /static/onnx/
 tests/e2e/launch-shots/
 .playwright-mcp/
+
+# Generated at build time by scripts/stamp-version.mjs
+static/version.json

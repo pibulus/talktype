@@ -1,3 +1,10 @@
 [build]
   command = "npm run build"
   publish = "build"
+
+# The deploy stamp must never be cached, or `fleet-check --deployed` reads a
+# ghost and reports a stale site as current — the exact failure it detects.
+[[headers]]
+  for = "/version.json"
+  [headers.values]
+    Cache-Control = "no-store, max-age=0"
