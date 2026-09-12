@@ -16,6 +16,11 @@ const LARGE_RUNTIME_ASSET_PATTERNS = [
 const LARGE_RUNTIME_ASSETS = [...build, ...files].filter((asset) => isLargeRuntimeAsset(asset));
 const SENSITIVE_QUERY_KEYS = ['code', 'token', 'checkout_id', 'vault', 'vaultUrl'];
 
+// The deploy stamp. Must never be cached — a cached stamp reports the build
+// the CLIENT installed, not the one the server is serving, which is the exact
+// question it exists to answer.
+const VERSION_STAMP = '/version.json';
+
 function isLargeRuntimeAsset(pathname) {
 	return LARGE_RUNTIME_ASSET_PATTERNS.some((pattern) => pattern.test(pathname));
 }
@@ -30,7 +35,7 @@ function shouldBypassRuntimeCache(url) {
 const ASSETS = [
 	...build, // the app itself
 	...files // everything in `static`
-].filter((asset) => !isLargeRuntimeAsset(asset));
+].filter((asset) => !isLargeRuntimeAsset(asset) && asset !== VERSION_STAMP);
 
 // Install service worker
 self.addEventListener('install', (event) => {
@@ -80,6 +85,9 @@ self.addEventListener('fetch', (event) => {
 
 	const requestUrl = new URL(event.request.url);
 	if (requestUrl.origin !== self.location.origin) return;
+
+	// Always network, never cache — see VERSION_STAMP above.
+	if (requestUrl.pathname === VERSION_STAMP) return;
 
 	async function respond() {
 		const url = requestUrl;
