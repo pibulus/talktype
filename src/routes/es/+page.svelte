@@ -5,7 +5,7 @@
 	const canonicalUrl = 'https://talktype.app/es';
 	const title = 'TalkType en Español | El Fantasmita de Voz — Habla en bola, sale limpio';
 	const description =
-		'Transcribe notas de voz y audios de WhatsApp al instante. Dictado rápido de voz a texto, modo sin conexión privado y reescritura inteligente. Toca al fantasma y habla.';
+		'Transcribe notas de voz y audios de WhatsApp al instante. Dictado rápido de voz a texto en español, privado y sin cuentas, con reescritura inteligente. Toca al fantasma y habla.';
 
 	// Assembled here, not inline in the head: eslint's Svelte parser cannot read
 	// a <script> tag inside a template literal in markup, and the split closing tag
@@ -40,7 +40,7 @@
 				}
 			],
 			browserRequirements:
-				'Requiere un navegador moderno con acceso al micrófono. El modo sin conexión usa modelos locales de reconocimiento de voz.',
+				'Requiere un navegador moderno con acceso al micrófono. El dictado en español corre en la nube; el modo sin conexión usa modelos locales que por ahora solo entienden inglés.',
 			keywords:
 				'voz a texto, transcribir audios whatsapp, dictado por voz, transcripcion en vivo, notas de voz, offline speech to text'
 		}).replace(/</g, '\\u003c') +

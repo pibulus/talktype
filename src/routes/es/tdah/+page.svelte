@@ -28,7 +28,7 @@
 						'@type': 'Offer',
 						price: '0',
 						priceCurrency: 'USD',
-						description: 'Dictado de voz a texto gratuito con privacidad sin conexión'
+						description: 'Dictado de voz a texto gratuito en español, privado y sin cuentas'
 					}
 				},
 				{
@@ -47,7 +47,7 @@
 							name: '¿Funciona sin conexión a internet?',
 							acceptedAnswer: {
 								'@type': 'Answer',
-								text: '¡Sí! TalkType incluye un modelo Whisper WebAssembly local que corre 100% en tu navegador. Tus pensamientos privados nunca salen de tu dispositivo.'
+								text: 'En inglés, sí: TalkType incluye un modelo Whisper local que corre 100% en el navegador y nada sale del dispositivo. El modelo sin conexión todavía no habla español, así que el dictado en español pasa por la nube. Un modelo multilingüe local viene en camino.'
 							}
 						},
 						{

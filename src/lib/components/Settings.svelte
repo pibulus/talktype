@@ -394,7 +394,7 @@
 							{#if offlineButtonStatus?.visible && transcriptionMode === 'offline'}
 								{offlineStatusLabel}
 							{:else}
-								Private, no signal needed, works anywhere. A touch rougher.
+								Private, no signal needed, works anywhere. English only, a touch rougher.
 							{/if}
 						</span>
 					</span>

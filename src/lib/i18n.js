@@ -1,6 +1,10 @@
 // Minimal locale detection + en/es strings for first-impression surfaces.
-// Transcription is already language-agnostic (Deepgram `language: 'multi'`);
-// this only localizes the UI copy the user sees before they start talking.
+// Cloud transcription is language-agnostic (Deepgram `language: 'multi'`, both
+// the live socket and the batch fallback). Offline Whisper is NOT — both local
+// models are `.en`, so offline is English-only until a multilingual export
+// lands. This comment used to claim parity across the board, which is how a
+// hardcoded 'en-US' on the live socket went unnoticed through a Spanish launch.
+// This file only localizes UI copy shown before recording starts.
 import { browser } from '$app/environment';
 
 export function locale() {
@@ -33,7 +37,7 @@ const strings = {
 		introTitle2: 'Fuera con el resto.',
 		introTag: 'Es rápido, es divertido, es endiabladamente bueno.',
 		introLine1: 'Toca el fantasma. Habla. Ya está.',
-		introLine2: 'El modo sin conexión lo mantiene en tu dispositivo.',
+		introLine2: 'El modo sin conexión (solo inglés) lo mantiene en tu dispositivo.',
 		introLine3: 'Guárdalo, dale estilo, elige tu vibra.',
 		introGo: 'Vamos'
 	}

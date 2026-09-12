@@ -54,7 +54,7 @@ export function createWebApplicationSchema({
 			}
 		],
 		browserRequirements:
-			'Requires a modern browser with microphone access. Offline mode uses local speech recognition models.',
+			'Requires a modern browser with microphone access. Offline mode uses local speech recognition models and is English-only; other languages transcribe in the cloud.',
 		keywords:
 			'voice to text, speech to text, dictation app, live transcription, offline transcription, voice typing, PWA'
 	};
