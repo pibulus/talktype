@@ -18,34 +18,34 @@
 //
 // Runs from `prebuild`, so it cannot be forgotten on a build path.
 
-import { execSync } from "node:child_process";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { execSync } from 'node:child_process';
+import { writeFileSync, mkdirSync } from 'node:fs';
 
 function commit() {
-  // Netlify/Vercel set this; on a shallow CI clone it is more reliable than git.
-  const fromEnv = process.env.COMMIT_REF || process.env.VERCEL_GIT_COMMIT_SHA;
-  if (fromEnv) return fromEnv.trim().slice(0, 7);
+	// Netlify/Vercel set this; on a shallow CI clone it is more reliable than git.
+	const fromEnv = process.env.COMMIT_REF || process.env.VERCEL_GIT_COMMIT_SHA;
+	if (fromEnv) return fromEnv.trim().slice(0, 7);
 
-  try {
-    return execSync("git rev-parse HEAD", {
-      stdio: ["ignore", "pipe", "ignore"],
-    })
-      .toString()
-      .trim()
-      .slice(0, 7);
-  } catch {
-    // A tarball build with no git and no CI env. Better to serve a known
-    // "unknown" than to fail the build over a diagnostic file.
-    return "unknown";
-  }
+	try {
+		return execSync('git rev-parse HEAD', {
+			stdio: ['ignore', 'pipe', 'ignore']
+		})
+			.toString()
+			.trim()
+			.slice(0, 7);
+	} catch {
+		// A tarball build with no git and no CI env. Better to serve a known
+		// "unknown" than to fail the build over a diagnostic file.
+		return 'unknown';
+	}
 }
 
 const stamp = {
-  commit: commit(),
-  built: new Date().toISOString(),
+	commit: commit(),
+	built: new Date().toISOString()
 };
 
-mkdirSync("static", { recursive: true });
-writeFileSync("static/version.json", `${JSON.stringify(stamp, null, 2)}\n`);
+mkdirSync('static', { recursive: true });
+writeFileSync('static/version.json', `${JSON.stringify(stamp, null, 2)}\n`);
 
 console.log(`🔖 version.json → ${stamp.commit} (${stamp.built})`);
