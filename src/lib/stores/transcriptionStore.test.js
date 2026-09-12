@@ -20,7 +20,8 @@ describe('Deepgram live transcription configuration', () => {
 
 		expect(url.origin + url.pathname).toBe('wss://api.deepgram.com/v1/listen');
 		expect(url.searchParams.get('model')).toBe('nova-3');
-		expect(url.searchParams.get('language')).toBe('en-US');
+		// Multilingual: Spanish dictation must not come back as English.
+		expect(url.searchParams.get('language')).toBe('multi');
 		expect(url.searchParams.get('interim_results')).toBe('true');
 		// Dictation-tuned: longer endpointing so thinking pauses don't chop sentences.
 		expect(url.searchParams.get('endpointing')).toBe('600');

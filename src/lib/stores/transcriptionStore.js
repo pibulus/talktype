@@ -16,7 +16,13 @@ const RECONNECT_MAX_DELAY_MS = 4000;
 export function buildDeepgramLiveUrl() {
 	const params = new URLSearchParams({
 		model: 'nova-3',
-		language: 'en-US',
+		// language:multi, same as the batch path in deepgramService.js. Hardcoded
+		// 'en-US' here force-transcribed Spanish speech as English on the DEFAULT
+		// path, while batch handled it correctly — so the bug only showed up in
+		// Live Mode. Nova-3 multilingual covers English at least as well.
+		// (Deepgram suggest endpointing=100 for code-switching; we keep 600
+		// because dictation pauses matter more here than turn latency.)
+		language: 'multi',
 		smart_format: 'true',
 		interim_results: 'true',
 		punctuate: 'true',
