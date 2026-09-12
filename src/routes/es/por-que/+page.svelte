@@ -6,6 +6,66 @@
 	const title = 'Por Qué No Cobramos $144/año — El Manifiesto de Voz Soberana | TalkType';
 	const description =
 		'¿Por qué pagar $144/año por rentar una API de dictado? TalkType se rige por principios de software soberano: gratis para siempre, IA local en navegador, opción BYOK y diseñado para cerebros rápidos.';
+
+	// Assembled here, not inline in the head: eslint's Svelte parser cannot read
+	// a <script> tag inside a template literal in markup, and the split closing tag
+	// stops the real parser ending the block early. Same shape as Seo.svelte.
+	const schemaMarkup =
+		'<script type="application/ld+json">' +
+		JSON.stringify({
+			'@context': 'https://schema.org',
+			'@graph': [
+				{
+					'@type': 'TechArticle',
+					headline: 'Por Qué No Cobramos $144/año — El Manifiesto de Voz Soberana',
+					url: canonicalUrl,
+					image: absoluteUrl('/og-card.jpg'),
+					description: description,
+					inLanguage: 'es',
+					author: {
+						'@type': 'Person',
+						name: 'Pablo',
+						url: 'https://madebypablo.app'
+					},
+					publisher: {
+						'@type': 'Organization',
+						name: 'TalkType',
+						url: 'https://talktype.app'
+					}
+				},
+				{
+					'@type': 'FAQPage',
+					mainEntity: [
+						{
+							'@type': 'Question',
+							name: '¿Por qué las apps de voz de Silicon Valley cobran $12 a $15 dólares al mes?',
+							acceptedAnswer: {
+								'@type': 'Answer',
+								text: 'Empaquetan APIs de transcripción que cuestan $0.004 dólares por minuto, le agregan una barrera de suscripción mensual y te cobran de $144 a $180 USD al año por rentar tu propia voz.'
+							}
+						},
+						{
+							'@type': 'Question',
+							name: '¿Cómo protege TalkType la privacidad de mis notas de voz?',
+							acceptedAnswer: {
+								'@type': 'Answer',
+								text: 'TalkType guarda tus notas estrictamente en el almacenamiento local de tu navegador o en el llavero de tu Mac. Jamás vende tus audios ni entrena modelos comerciales de IA con tus pensamientos.'
+							}
+						},
+						{
+							'@type': 'Question',
+							name: '¿Cómo ayuda el protocolo de dictado para mentes rápidas y TDAH?',
+							acceptedAnswer: {
+								'@type': 'Answer',
+								text: 'Separa la creación del pensamiento de la estructura del texto. Hablas a 200 palabras por minuto sin preocuparte por la puntuación, y la IA organiza tus ideas en notas limpias en formato markdown.'
+							}
+						}
+					]
+				}
+			]
+		}).replace(/</g, '\\u003c') +
+		'<' +
+		'/script>';
 </script>
 
 <svelte:head>
@@ -32,60 +92,8 @@
 	<meta name="twitter:image" content={absoluteUrl('/og-card.jpg')} />
 
 	<!-- Structured Data -->
-	{@html `<script type="application/ld+json">
-	${JSON.stringify({
-		'@context': 'https://schema.org',
-		'@graph': [
-			{
-				'@type': 'TechArticle',
-				headline: 'Por Qué No Cobramos $144/año — El Manifiesto de Voz Soberana',
-				url: canonicalUrl,
-				image: absoluteUrl('/og-card.jpg'),
-				description: description,
-				inLanguage: 'es',
-				author: {
-					'@type': 'Person',
-					name: 'Pablo',
-					url: 'https://madebypablo.app'
-				},
-				publisher: {
-					'@type': 'Organization',
-					name: 'TalkType',
-					url: 'https://talktype.app'
-				}
-			},
-			{
-				'@type': 'FAQPage',
-				mainEntity: [
-					{
-						'@type': 'Question',
-						name: '¿Por qué las apps de voz de Silicon Valley cobran $12 a $15 dólares al mes?',
-						acceptedAnswer: {
-							'@type': 'Answer',
-							text: 'Empaquetan APIs de transcripción que cuestan $0.004 dólares por minuto, le agregan una barrera de suscripción mensual y te cobran de $144 a $180 USD al año por rentar tu propia voz.'
-						}
-					},
-					{
-						'@type': 'Question',
-						name: '¿Cómo protege TalkType la privacidad de mis notas de voz?',
-						acceptedAnswer: {
-							'@type': 'Answer',
-							text: 'TalkType guarda tus notas estrictamente en el almacenamiento local de tu navegador o en el llavero de tu Mac. Jamás vende tus audios ni entrena modelos comerciales de IA con tus pensamientos.'
-						}
-					},
-					{
-						'@type': 'Question',
-						name: '¿Cómo ayuda el protocolo de dictado para mentes rápidas y TDAH?',
-						acceptedAnswer: {
-							'@type': 'Answer',
-							text: 'Separa la creación del pensamiento de la estructura del texto. Hablas a 200 palabras por minuto sin preocuparte por la puntuación, y la IA organiza tus ideas en notas limpias en formato markdown.'
-						}
-					}
-				]
-			}
-		]
-	})}
-	</script>`}
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -- safe constant JSON-LD with escaped '<' -->
+	{@html schemaMarkup}
 </svelte:head>
 
 <div

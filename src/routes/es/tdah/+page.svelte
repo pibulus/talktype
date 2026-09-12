@@ -6,6 +6,64 @@
 	const title = 'Dictado por Voz para TDAH y Mentes Rápidas — Cero Parálisis | TalkType';
 	const description =
 		'Dictado por voz diseñado para personas con TDAH y pensamientos rápidos. Toca al fantasmita amigable, habla en bola sin filtro y obtén notas estructuradas y limpias sin culpa.';
+
+	// Assembled here, not inline in the head: eslint's Svelte parser cannot read
+	// a <script> tag inside a template literal in markup, and the split closing tag
+	// stops the real parser ending the block early. Same shape as Seo.svelte.
+	const schemaMarkup =
+		'<script type="application/ld+json">' +
+		JSON.stringify({
+			'@context': 'https://schema.org',
+			'@graph': [
+				{
+					'@type': 'WebApplication',
+					name: 'TalkType para TDAH y Mentes Rápidas',
+					url: canonicalUrl,
+					image: absoluteUrl('/og-card.jpg'),
+					description: description,
+					applicationCategory: 'HealthApplication',
+					operatingSystem: 'Web',
+					inLanguage: 'es',
+					offers: {
+						'@type': 'Offer',
+						price: '0',
+						priceCurrency: 'USD',
+						description: 'Dictado de voz a texto gratuito con privacidad sin conexión'
+					}
+				},
+				{
+					'@type': 'FAQPage',
+					mainEntity: [
+						{
+							'@type': 'Question',
+							name: '¿Por qué TalkType ayuda a personas con TDAH?',
+							acceptedAnswer: {
+								'@type': 'Answer',
+								text: 'Los editores de texto tradicionales muestran un cursor parpadeante que provoca bloqueo y parálisis ante la página en blanco. TalkType lo reemplaza con un fantasmita amigable: solo tocas, hablas todo tu desahogo mental sin filtro y la app lo limpia y organiza en puntos clave.'
+							}
+						},
+						{
+							'@type': 'Question',
+							name: '¿Funciona sin conexión a internet?',
+							acceptedAnswer: {
+								'@type': 'Answer',
+								text: '¡Sí! TalkType incluye un modelo Whisper WebAssembly local que corre 100% en tu navegador. Tus pensamientos privados nunca salen de tu dispositivo.'
+							}
+						},
+						{
+							'@type': 'Question',
+							name: '¿Hay límite de grabaciones gratuitas?',
+							acceptedAnswer: {
+								'@type': 'Answer',
+								text: 'Puedes dictar de forma ilimitada todos los días gratis. El Pase de Soporte está disponible para sincronización cifrada entre dispositivos y estilos personalizados con IA.'
+							}
+						}
+					]
+				}
+			]
+		}).replace(/</g, '\\u003c') +
+		'<' +
+		'/script>';
 </script>
 
 <svelte:head>
@@ -32,58 +90,8 @@
 	<meta name="twitter:image" content={absoluteUrl('/og-card.jpg')} />
 
 	<!-- Structured Data -->
-	{@html `<script type="application/ld+json">
-	${JSON.stringify({
-		'@context': 'https://schema.org',
-		'@graph': [
-			{
-				'@type': 'WebApplication',
-				name: 'TalkType para TDAH y Mentes Rápidas',
-				url: canonicalUrl,
-				image: absoluteUrl('/og-card.jpg'),
-				description: description,
-				applicationCategory: 'HealthApplication',
-				operatingSystem: 'Web',
-				inLanguage: 'es',
-				offers: {
-					'@type': 'Offer',
-					price: '0',
-					priceCurrency: 'USD',
-					description: 'Dictado de voz a texto gratuito con privacidad sin conexión'
-				}
-			},
-			{
-				'@type': 'FAQPage',
-				mainEntity: [
-					{
-						'@type': 'Question',
-						name: '¿Por qué TalkType ayuda a personas con TDAH?',
-						acceptedAnswer: {
-							'@type': 'Answer',
-							text: 'Los editores de texto tradicionales muestran un cursor parpadeante que provoca bloqueo y parálisis ante la página en blanco. TalkType lo reemplaza con un fantasmita amigable: solo tocas, hablas todo tu desahogo mental sin filtro y la app lo limpia y organiza en puntos clave.'
-						}
-					},
-					{
-						'@type': 'Question',
-						name: '¿Funciona sin conexión a internet?',
-						acceptedAnswer: {
-							'@type': 'Answer',
-							text: '¡Sí! TalkType incluye un modelo Whisper WebAssembly local que corre 100% en tu navegador. Tus pensamientos privados nunca salen de tu dispositivo.'
-						}
-					},
-					{
-						'@type': 'Question',
-						name: '¿Hay límite de grabaciones gratuitas?',
-						acceptedAnswer: {
-							'@type': 'Answer',
-							text: 'Puedes dictar de forma ilimitada todos los días gratis. El Pase de Soporte está disponible para sincronización cifrada entre dispositivos y estilos personalizados con IA.'
-						}
-					}
-				]
-			}
-		]
-	})}
-	</script>`}
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -- safe constant JSON-LD with escaped '<' -->
+	{@html schemaMarkup}
 </svelte:head>
 
 <MainContainer />

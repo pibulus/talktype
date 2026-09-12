@@ -6,6 +6,64 @@
 	const title = 'ADHD Dictation & Voice-to-Text App — Zero Blank Page Paralysis | TalkType';
 	const description =
 		'Dictation designed for ADHD brains and fast thinkers. Tap the friendly ghost, speak your stream-of-consciousness at 200 wpm, and get clean, structured notes with zero guilt.';
+
+	// Assembled here, not inline in the head: eslint's Svelte parser cannot read
+	// a <script> tag inside a template literal in markup, and the split closing tag
+	// stops the real parser ending the block early. Same shape as Seo.svelte.
+	const schemaMarkup =
+		'<script type="application/ld+json">' +
+		JSON.stringify({
+			'@context': 'https://schema.org',
+			'@graph': [
+				{
+					'@type': 'WebApplication',
+					name: 'TalkType for ADHD & Fast Thinkers',
+					url: canonicalUrl,
+					image: absoluteUrl('/og-card.jpg'),
+					description: description,
+					applicationCategory: 'HealthApplication',
+					operatingSystem: 'Web',
+					inLanguage: 'en',
+					offers: {
+						'@type': 'Offer',
+						price: '0',
+						priceCurrency: 'USD',
+						description: 'Free voice-to-text dictation with offline privacy'
+					}
+				},
+				{
+					'@type': 'FAQPage',
+					mainEntity: [
+						{
+							'@type': 'Question',
+							name: 'Why is TalkType helpful for ADHD brains?',
+							acceptedAnswer: {
+								'@type': 'Answer',
+								text: 'Traditional text editors have a blinking cursor that triggers blank-page paralysis. TalkType replaces the empty page with a friendly bouncing ghost—you just tap, speak your messy brain dump, and it automatically formats it into clean, readable text.'
+							}
+						},
+						{
+							'@type': 'Question',
+							name: 'Does TalkType work offline?',
+							acceptedAnswer: {
+								'@type': 'Answer',
+								text: 'Yes! TalkType includes a local Whisper WebAssembly model that runs 100% in your browser. Your private thoughts never leave your device.'
+							}
+						},
+						{
+							'@type': 'Question',
+							name: 'Is there a time limit on free recordings?',
+							acceptedAnswer: {
+								'@type': 'Answer',
+								text: 'You can dictate unlimited times every day for free. Supporter Passes are available for multi-device vault sync and custom AI styling.'
+							}
+						}
+					]
+				}
+			]
+		}).replace(/</g, '\\u003c') +
+		'<' +
+		'/script>';
 </script>
 
 <svelte:head>
@@ -32,58 +90,8 @@
 	<meta name="twitter:image" content={absoluteUrl('/og-card.jpg')} />
 
 	<!-- Structured Data -->
-	{@html `<script type="application/ld+json">
-	${JSON.stringify({
-		'@context': 'https://schema.org',
-		'@graph': [
-			{
-				'@type': 'WebApplication',
-				name: 'TalkType for ADHD & Fast Thinkers',
-				url: canonicalUrl,
-				image: absoluteUrl('/og-card.jpg'),
-				description: description,
-				applicationCategory: 'HealthApplication',
-				operatingSystem: 'Web',
-				inLanguage: 'en',
-				offers: {
-					'@type': 'Offer',
-					price: '0',
-					priceCurrency: 'USD',
-					description: 'Free voice-to-text dictation with offline privacy'
-				}
-			},
-			{
-				'@type': 'FAQPage',
-				mainEntity: [
-					{
-						'@type': 'Question',
-						name: 'Why is TalkType helpful for ADHD brains?',
-						acceptedAnswer: {
-							'@type': 'Answer',
-							text: 'Traditional text editors have a blinking cursor that triggers blank-page paralysis. TalkType replaces the empty page with a friendly bouncing ghost—you just tap, speak your messy brain dump, and it automatically formats it into clean, readable text.'
-						}
-					},
-					{
-						'@type': 'Question',
-						name: 'Does TalkType work offline?',
-						acceptedAnswer: {
-							'@type': 'Answer',
-							text: 'Yes! TalkType includes a local Whisper WebAssembly model that runs 100% in your browser. Your private thoughts never leave your device.'
-						}
-					},
-					{
-						'@type': 'Question',
-						name: 'Is there a time limit on free recordings?',
-						acceptedAnswer: {
-							'@type': 'Answer',
-							text: 'You can dictate unlimited times every day for free. Supporter Passes are available for multi-device vault sync and custom AI styling.'
-						}
-					}
-				]
-			}
-		]
-	})}
-	</script>`}
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -- safe constant JSON-LD with escaped '<' -->
+	{@html schemaMarkup}
 </svelte:head>
 
 <MainContainer />

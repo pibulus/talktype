@@ -6,6 +6,66 @@
 	const title = "Why We Don't Charge $144/year — The Sovereign Voice Manifesto | TalkType";
 	const description =
 		'Why pay $144/year to rent a speech-to-text API? TalkType is built on sovereign software principles: free forever with local browser AI, BYOK option, zero tracking, and designed for ADHD executive function.';
+
+	// Assembled here, not inline in the head: eslint's Svelte parser cannot read
+	// a <script> tag inside a template literal in markup, and the split closing tag
+	// stops the real parser ending the block early. Same shape as Seo.svelte.
+	const schemaMarkup =
+		'<script type="application/ld+json">' +
+		JSON.stringify({
+			'@context': 'https://schema.org',
+			'@graph': [
+				{
+					'@type': 'TechArticle',
+					headline: "Why We Don't Charge $144/year — The Sovereign Voice Manifesto",
+					url: canonicalUrl,
+					image: absoluteUrl('/og-card.jpg'),
+					description: description,
+					inLanguage: 'en',
+					author: {
+						'@type': 'Person',
+						name: 'Pablo',
+						url: 'https://madebypablo.app'
+					},
+					publisher: {
+						'@type': 'Organization',
+						name: 'TalkType',
+						url: 'https://talktype.app'
+					}
+				},
+				{
+					'@type': 'FAQPage',
+					mainEntity: [
+						{
+							'@type': 'Question',
+							name: 'Why do VC speech-to-text apps charge $12 to $15 per month?',
+							acceptedAnswer: {
+								'@type': 'Answer',
+								text: 'Venture-backed apps (like Wispr Flow and Oasis) package simple speech APIs that cost $0.004 per minute, add a subscription tollgate, and charge $144 to $180 every year.'
+							}
+						},
+						{
+							'@type': 'Question',
+							name: 'How does TalkType protect user privacy?',
+							acceptedAnswer: {
+								'@type': 'Answer',
+								text: 'TalkType stores your voice notes strictly in your browser or local Mac keychain. It never sells your voice data or uses your thoughts to train commercial AI models.'
+							}
+						},
+						{
+							'@type': 'Question',
+							name: 'How does the fast-brain dictation protocol help executive dysfunction?',
+							acceptedAnswer: {
+								'@type': 'Answer',
+								text: 'It decouples thought generation from structuring. You speak your unfiltered stream of consciousness at 200 words per minute without worrying about punctuation, and the AI organizes the output into clear markdown notes.'
+							}
+						}
+					]
+				}
+			]
+		}).replace(/</g, '\\u003c') +
+		'<' +
+		'/script>';
 </script>
 
 <svelte:head>
@@ -32,60 +92,8 @@
 	<meta name="twitter:image" content={absoluteUrl('/og-card.jpg')} />
 
 	<!-- Structured Data -->
-	{@html `<script type="application/ld+json">
-	${JSON.stringify({
-		'@context': 'https://schema.org',
-		'@graph': [
-			{
-				'@type': 'TechArticle',
-				headline: "Why We Don't Charge $144/year — The Sovereign Voice Manifesto",
-				url: canonicalUrl,
-				image: absoluteUrl('/og-card.jpg'),
-				description: description,
-				inLanguage: 'en',
-				author: {
-					'@type': 'Person',
-					name: 'Pablo',
-					url: 'https://madebypablo.app'
-				},
-				publisher: {
-					'@type': 'Organization',
-					name: 'TalkType',
-					url: 'https://talktype.app'
-				}
-			},
-			{
-				'@type': 'FAQPage',
-				mainEntity: [
-					{
-						'@type': 'Question',
-						name: 'Why do VC speech-to-text apps charge $12 to $15 per month?',
-						acceptedAnswer: {
-							'@type': 'Answer',
-							text: 'Venture-backed apps (like Wispr Flow and Oasis) package simple speech APIs that cost $0.004 per minute, add a subscription tollgate, and charge $144 to $180 every year.'
-						}
-					},
-					{
-						'@type': 'Question',
-						name: 'How does TalkType protect user privacy?',
-						acceptedAnswer: {
-							'@type': 'Answer',
-							text: 'TalkType stores your voice notes strictly in your browser or local Mac keychain. It never sells your voice data or uses your thoughts to train commercial AI models.'
-						}
-					},
-					{
-						'@type': 'Question',
-						name: 'How does the fast-brain dictation protocol help executive dysfunction?',
-						acceptedAnswer: {
-							'@type': 'Answer',
-							text: 'It decouples thought generation from structuring. You speak your unfiltered stream of consciousness at 200 words per minute without worrying about punctuation, and the AI organizes the output into clear markdown notes.'
-						}
-					}
-				]
-			}
-		]
-	})}
-	</script>`}
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -- safe constant JSON-LD with escaped '<' -->
+	{@html schemaMarkup}
 </svelte:head>
 
 <div
