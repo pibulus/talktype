@@ -694,7 +694,7 @@
 
 		<!-- Header -->
 		<div class="mb-3 shrink-0 border-b border-pink-100/80 pb-2.5">
-			<div class="flex items-center justify-between gap-2 pr-10">
+			<div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 pr-14">
 				<!-- Title & Count -->
 				<div class="flex items-center gap-2">
 					<span class="text-base" aria-hidden="true">📝</span>
@@ -877,399 +877,407 @@
 							)}"
 						>
 							<!-- Header: Two-Row Layout Top Bar -->
-							<div class="mb-2.5 flex items-center justify-between gap-3">
-								<div class="min-w-0 flex-1">
-									<div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-										<span class="text-xs font-black text-gray-800">
-											{formatDate(transcript.timestamp)}
+							<div class="mb-2.5">
+								<!-- Meta line -->
+								<div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+									<span class="text-xs font-black text-gray-800">
+										{formatDate(transcript.timestamp)}
+									</span>
+									{#if transcript.duration > 0}
+										<span
+											class="text-xs font-bold tabular-nums text-gray-500"
+											title="How long this recording ran"
+										>
+											{formatDuration(transcript.duration)}
 										</span>
-										{#if transcript.duration > 0}
-											<span
-												class="text-xs font-bold tabular-nums text-gray-500"
-												title="How long this recording ran"
-											>
-												{formatDuration(transcript.duration)}
-											</span>
-										{/if}
-										{#if wordCountOf(transcript) > 0}
-											<span
-												class="text-xs font-bold tabular-nums text-gray-500"
-												title="Words in this transcript"
-											>
-												{wordCountOf(transcript)}
-												{wordCountOf(transcript) === 1 ? 'word' : 'words'}
-											</span>
-										{/if}
-										{#if transcript.promptStyle && transcript.promptStyle !== 'standard'}
-											{#if hasOriginal(transcript)}
-												<button
-													type="button"
-													class="rounded-full border-2 border-gray-900 bg-pink-100 px-2 py-0.5 text-[10px] font-black text-pink-950 transition-all duration-150 hover:shadow-[2px_2px_0px_#ff82ca] active:scale-95"
-													aria-pressed={showingOriginal.has(transcript.id)}
-													title="Switch between the styled version and your plain words"
-													on:click={() => toggleOriginal(transcript.id)}
-												>
-													{showingOriginal.has(transcript.id)
-														? 'Plain'
-														: formatPromptStyle(transcript.promptStyle)}
-												</button>
-											{:else}
-												<span
-													class="rounded-full border border-pink-300 bg-pink-100 px-2 py-0.5 text-[10px] font-black text-pink-900"
-												>
-													{formatPromptStyle(transcript.promptStyle)}
-												</span>
-											{/if}
-										{/if}
-										{#if transcript.tags?.length}
-											<div class="inline-flex flex-wrap items-center gap-1">
-												{#each cleanTranscriptTags(transcript.tags).slice(0, 3) as tag}
-													<button
-														type="button"
-														class={`rounded-full px-2 py-0.5 text-[10px] font-black transition-all duration-150 ${getTagPillClass(
-															tag,
-															selectedTag === tag
-														)}`}
-														aria-pressed={selectedTag === tag}
-														on:click={() => toggleTag(tag)}
-													>
-														#{tag}
-													</button>
-												{/each}
-											</div>
-										{/if}
-									</div>
-								</div>
-
-								<!-- Actions: Brutalist Tactile Switch Buttons -->
-								<div class="history-action-cluster flex shrink-0 items-center justify-end gap-1.5">
-									{#if editingId !== transcript.id}
-										{#if transcript.audioBlob}
+									{/if}
+									{#if wordCountOf(transcript) > 0}
+										<span
+											class="text-xs font-bold tabular-nums text-gray-500"
+											title="Words in this transcript"
+										>
+											{wordCountOf(transcript)}
+											{wordCountOf(transcript) === 1 ? 'word' : 'words'}
+										</span>
+									{/if}
+									{#if transcript.promptStyle && transcript.promptStyle !== 'standard'}
+										{#if hasOriginal(transcript)}
 											<button
 												type="button"
-												class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-900 bg-amber-100 font-black text-amber-950 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_#fbbf24] active:translate-y-0 active:shadow-none {activeAudioId ===
-												transcript.id
-													? 'bg-amber-300 shadow-[2px_2px_0px_#d97706]'
-													: ''}"
-												on:click|stopPropagation={() => toggleAudioPlayer(transcript)}
-												title={activeAudioId === transcript.id ? 'Hide audio player' : 'Play audio'}
-												aria-expanded={activeAudioId === transcript.id}
-												aria-label={activeAudioId === transcript.id
-													? `Hide audio player for ${formatDate(transcript.timestamp)}`
-													: `Play audio from ${formatDate(transcript.timestamp)}`}
+												class="rounded-full border-2 border-gray-900 bg-pink-100 px-2 py-0.5 text-[10px] font-black text-pink-950 transition-all duration-150 hover:shadow-[2px_2px_0px_#ff82ca] active:scale-95"
+												aria-pressed={showingOriginal.has(transcript.id)}
+												title="Switch between the styled version and your plain words"
+												on:click={() => toggleOriginal(transcript.id)}
 											>
-												<svg
-													class="h-3.5 w-3.5"
-													viewBox="0 0 24 24"
-													fill="currentColor"
-													aria-hidden="true"
-												>
-													{#if activeAudioId === transcript.id}
-														<rect x="6" y="5" width="4" height="14" rx="1" />
-														<rect x="14" y="5" width="4" height="14" rx="1" />
-													{:else}
-														<path d="M8 5v14l11-7z" />
-													{/if}
-												</svg>
+												{showingOriginal.has(transcript.id)
+													? 'Plain'
+													: formatPromptStyle(transcript.promptStyle)}
 											</button>
+										{:else}
+											<span
+												class="rounded-full border border-pink-300 bg-pink-100 px-2 py-0.5 text-[10px] font-black text-pink-900"
+											>
+												{formatPromptStyle(transcript.promptStyle)}
+											</span>
 										{/if}
+									{/if}
+								</div>
 
-										<!-- Hero Copy Button: Tactile pink switch, turns emerald on copy -->
-										<button
-											type="button"
-											class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-900 font-black transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 active:shadow-none {copiedId ===
-											transcript.id
-												? 'bg-emerald-300 text-emerald-950 hover:shadow-[2px_2px_0px_#10b981]'
-												: 'bg-pink-200 text-pink-950 hover:shadow-[2px_2px_0px_#ff82ca]'}"
-											on:click|stopPropagation={() =>
-												copyTranscript(displayedText(transcript), transcript.id)}
-											aria-label={`Copy transcript from ${formatDate(transcript.timestamp)}`}
-											title={copiedId === transcript.id ? 'Copied!' : 'Copy transcript'}
-										>
-											{#if copiedId === transcript.id}
-												<span class="text-xs font-black leading-none" aria-hidden="true">✓</span>
-											{:else}
-												<svg
-													class="h-3.5 w-3.5"
-													viewBox="0 0 24 24"
-													fill="none"
-													stroke="currentColor"
-													stroke-width="2.5"
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													aria-hidden="true"
+								<!-- Tags flow left, actions stay pinned right -->
+								<div class="mt-1.5 flex items-center gap-2">
+									<div class="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+										{#if transcript.tags?.length}
+											{#each cleanTranscriptTags(transcript.tags).slice(0, 3) as tag}
+												<button
+													type="button"
+													class={`rounded-full px-2 py-0.5 text-[10px] font-black transition-all duration-150 ${getTagPillClass(
+														tag,
+														selectedTag === tag
+													)}`}
+													aria-pressed={selectedTag === tag}
+													on:click={() => toggleTag(tag)}
 												>
-													<rect x="9" y="9" width="11" height="11" rx="2.5" />
-													<path
-														d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"
-													/>
-												</svg>
-											{/if}
-										</button>
+													#{tag}
+												</button>
+											{/each}
+										{/if}
+									</div>
 
-										{#if transcript.audioBlob}
+									<!-- Actions: Brutalist Tactile Switch Buttons -->
+									<div class="history-action-cluster flex shrink-0 items-center gap-1.5">
+										{#if editingId !== transcript.id}
+											{#if transcript.audioBlob}
+												<button
+													type="button"
+													class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-900 bg-amber-100 font-black text-amber-950 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_#fbbf24] active:translate-y-0 active:shadow-none {activeAudioId ===
+													transcript.id
+														? 'bg-amber-300 shadow-[2px_2px_0px_#d97706]'
+														: ''}"
+													on:click|stopPropagation={() => toggleAudioPlayer(transcript)}
+													title={activeAudioId === transcript.id
+														? 'Hide audio player'
+														: 'Play audio'}
+													aria-expanded={activeAudioId === transcript.id}
+													aria-label={activeAudioId === transcript.id
+														? `Hide audio player for ${formatDate(transcript.timestamp)}`
+														: `Play audio from ${formatDate(transcript.timestamp)}`}
+												>
+													<svg
+														class="h-3.5 w-3.5"
+														viewBox="0 0 24 24"
+														fill="currentColor"
+														aria-hidden="true"
+													>
+														{#if activeAudioId === transcript.id}
+															<rect x="6" y="5" width="4" height="14" rx="1" />
+															<rect x="14" y="5" width="4" height="14" rx="1" />
+														{:else}
+															<path d="M8 5v14l11-7z" />
+														{/if}
+													</svg>
+												</button>
+											{/if}
+
+											<!-- Hero Copy Button: Tactile pink switch, turns emerald on copy -->
+											<button
+												type="button"
+												class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-900 font-black transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 active:shadow-none {copiedId ===
+												transcript.id
+													? 'bg-emerald-300 text-emerald-950 hover:shadow-[2px_2px_0px_#10b981]'
+													: 'bg-pink-200 text-pink-950 hover:shadow-[2px_2px_0px_#ff82ca]'}"
+												on:click|stopPropagation={() =>
+													copyTranscript(displayedText(transcript), transcript.id)}
+												aria-label={`Copy transcript from ${formatDate(transcript.timestamp)}`}
+												title={copiedId === transcript.id ? 'Copied!' : 'Copy transcript'}
+											>
+												{#if copiedId === transcript.id}
+													<span class="text-xs font-black leading-none" aria-hidden="true">✓</span>
+												{:else}
+													<svg
+														class="h-3.5 w-3.5"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														stroke-width="2.5"
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														aria-hidden="true"
+													>
+														<rect x="9" y="9" width="11" height="11" rx="2.5" />
+														<path
+															d="M5 15H4.5A1.5 1.5 0 0 1 3 13.5v-9A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5V5"
+														/>
+													</svg>
+												{/if}
+											</button>
+
+											{#if transcript.audioBlob}
+												<div class="history-popover-anchor relative">
+													<button
+														type="button"
+														class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-900 bg-purple-100 font-black text-purple-950 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_#c084fc] active:translate-y-0 active:shadow-none {restyleMenuId ===
+															transcript.id || retranscribingId === transcript.id
+															? 'bg-purple-300 shadow-[2px_2px_0px_#a855f7]'
+															: ''} {retranscribingId && retranscribingId !== transcript.id
+															? 'opacity-50'
+															: ''}"
+														on:click|stopPropagation={() => toggleRestyleMenu(transcript.id)}
+														aria-haspopup="menu"
+														aria-expanded={restyleMenuId === transcript.id}
+														aria-label={`Re-transcribe transcript from ${formatDate(transcript.timestamp)}`}
+														title={retranscribingId === transcript.id
+															? 'Re-transcribing...'
+															: 'Re-transcribe or restyle'}
+													>
+														{#if retranscribingId === transcript.id}
+															<svg
+																class="h-3.5 w-3.5 animate-spin text-purple-900"
+																viewBox="0 0 24 24"
+																fill="none"
+																stroke="currentColor"
+																stroke-width="2.25"
+																stroke-linecap="round"
+																aria-hidden="true"
+															>
+																<path d="M12 3a9 9 0 1 0 9 9" />
+															</svg>
+														{:else}
+															<svg
+																class="h-3.5 w-3.5"
+																viewBox="0 0 24 24"
+																fill="none"
+																stroke="currentColor"
+																stroke-width="2.5"
+																stroke-linecap="round"
+																stroke-linejoin="round"
+																aria-hidden="true"
+															>
+																<path
+																	d="M13 2l1.4 4.2L18.6 8l-4.2 1.8L13 14l-1.4-4.2L7.4 8l4.2-1.8L13 2Z"
+																/>
+																<path d="M5 14l.8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14Z" />
+																<path
+																	d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14Z"
+																/>
+															</svg>
+														{/if}
+													</button>
+
+													{#if restyleMenuId === transcript.id}
+														<div
+															class="history-popover history-restyle-menu absolute right-0 top-[calc(100%+0.5rem)] z-40 w-52"
+															role="menu"
+															tabindex="-1"
+															aria-label="Re-transcribe style"
+															transition:fade={{ duration: 120 }}
+															on:click|stopPropagation
+															on:keydown|stopPropagation
+														>
+															<p class="px-3 pb-1 text-[11px] font-bold text-gray-400">
+																Re-transcribe
+															</p>
+															{#each restyleOptions as option}
+																<button
+																	type="button"
+																	role="menuitem"
+																	class={`${restyleOptionClass} ${isRestyleOptionBlocked(option) ? 'opacity-60' : ''} ${(transcript.promptStyle || PROMPT_STYLES.STANDARD) === option.id ? 'bg-pink-50 text-pink-600' : ''}`}
+																	aria-disabled={isRestyleOptionBlocked(option)}
+																	disabled={retranscribingId === transcript.id}
+																	title={restyleOptionHint(option)}
+																	on:click={() => handleRestyleOption(transcript, option)}
+																>
+																	<span
+																		class={`history-menu-icon ${option.tone}`}
+																		aria-hidden="true"
+																	>
+																		{#if option.id === PROMPT_STYLES.STANDARD}
+																			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+																				<path d="M4 6h16M4 12h16M4 18h10" />
+																			</svg>
+																		{:else if option.id === PROMPT_STYLES.SURLY_PIRATE}
+																			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+																				<path d="M12 19l9 2-9-18-9 18 9-2Zm0 0v-8" />
+																			</svg>
+																		{:else if option.id === PROMPT_STYLES.QUILL_AND_INK}
+																			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+																				<path
+																					d="M12 6v13M12 6C10.8 5.3 9.3 5 7.5 5S4.2 5.3 3 6v13c1.2-.7 2.7-1 4.5-1s3.3.3 4.5 1M12 6c1.2-.7 2.7-1 4.5-1s3.3.3 4.5 1v13c-1.2-.7-2.7-1-4.5-1s-3.3.3-4.5 1"
+																				/>
+																			</svg>
+																		{:else}
+																			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+																				<path
+																					d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"
+																				/>
+																			</svg>
+																		{/if}
+																	</span>
+																	<span>
+																		{retranscribingId === transcript.id &&
+																		retranscribeStyleId === option.id
+																			? 'Working...'
+																			: option.label}
+																	</span>
+																	{#if (transcript.promptStyle || PROMPT_STYLES.STANDARD) === option.id}
+																		<span
+																			class="ml-auto rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-600"
+																		>
+																			Current
+																		</span>
+																	{/if}
+																</button>
+															{/each}
+														</div>
+													{/if}
+												</div>
+											{/if}
 											<div class="history-popover-anchor relative">
 												<button
 													type="button"
-													class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-900 bg-purple-100 font-black text-purple-950 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_#c084fc] active:translate-y-0 active:shadow-none {restyleMenuId ===
-														transcript.id || retranscribingId === transcript.id
-														? 'bg-purple-300 shadow-[2px_2px_0px_#a855f7]'
-														: ''} {retranscribingId && retranscribingId !== transcript.id
-														? 'opacity-50'
+													class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-900 bg-teal-100 font-black text-teal-950 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_#2dd4bf] active:translate-y-0 active:shadow-none {openMenuId ===
+													transcript.id
+														? 'bg-teal-300 shadow-[2px_2px_0px_#0d9488]'
 														: ''}"
-													on:click|stopPropagation={() => toggleRestyleMenu(transcript.id)}
+													on:click|stopPropagation={() => toggleMenu(transcript.id)}
 													aria-haspopup="menu"
-													aria-expanded={restyleMenuId === transcript.id}
-													aria-label={`Re-transcribe transcript from ${formatDate(transcript.timestamp)}`}
-													title={retranscribingId === transcript.id
-														? 'Re-transcribing...'
-														: 'Re-transcribe or restyle'}
+													aria-expanded={openMenuId === transcript.id}
+													aria-label={`More actions for transcript from ${formatDate(transcript.timestamp)}`}
+													title="More actions"
 												>
-													{#if retranscribingId === transcript.id}
-														<svg
-															class="h-3.5 w-3.5 animate-spin text-purple-900"
-															viewBox="0 0 24 24"
-															fill="none"
-															stroke="currentColor"
-															stroke-width="2.25"
-															stroke-linecap="round"
-															aria-hidden="true"
-														>
-															<path d="M12 3a9 9 0 1 0 9 9" />
-														</svg>
-													{:else}
-														<svg
-															class="h-3.5 w-3.5"
-															viewBox="0 0 24 24"
-															fill="none"
-															stroke="currentColor"
-															stroke-width="2.5"
-															stroke-linecap="round"
-															stroke-linejoin="round"
-															aria-hidden="true"
-														>
-															<path
-																d="M13 2l1.4 4.2L18.6 8l-4.2 1.8L13 14l-1.4-4.2L7.4 8l4.2-1.8L13 2Z"
-															/>
-															<path d="M5 14l.8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14Z" />
-															<path
-																d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14Z"
-															/>
-														</svg>
-													{/if}
+													<svg
+														class="h-3.5 w-3.5"
+														viewBox="0 0 24 24"
+														fill="currentColor"
+														aria-hidden="true"
+													>
+														<circle cx="5.5" cy="12" r="1.6" /><circle
+															cx="12"
+															cy="12"
+															r="1.6"
+														/><circle cx="18.5" cy="12" r="1.6" />
+													</svg>
 												</button>
 
-												{#if restyleMenuId === transcript.id}
+												{#if openMenuId === transcript.id}
 													<div
-														class="history-popover history-restyle-menu absolute right-0 top-[calc(100%+0.5rem)] z-40 w-52"
+														class="history-popover history-actions-menu absolute right-0 top-[calc(100%+0.5rem)] z-30 w-48"
 														role="menu"
 														tabindex="-1"
-														aria-label="Re-transcribe style"
+														aria-label="Transcript actions"
 														transition:fade={{ duration: 120 }}
 														on:click|stopPropagation
 														on:keydown|stopPropagation
 													>
-														<p class="px-3 pb-1 text-[11px] font-bold text-gray-400">
-															Re-transcribe
-														</p>
-														{#each restyleOptions as option}
+														<button
+															type="button"
+															role="menuitem"
+															class={menuItemClass}
+															on:click={() => startEdit(transcript)}
+														>
+															<span class="history-menu-icon text-pink-600" aria-hidden="true">
+																<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+																	<path d="M12 20h9" />
+																	<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+																</svg>
+															</span>
+															Edit
+														</button>
+														{#if transcriptionService.isShareSupported()}
 															<button
 																type="button"
 																role="menuitem"
-																class={`${restyleOptionClass} ${isRestyleOptionBlocked(option) ? 'opacity-60' : ''} ${(transcript.promptStyle || PROMPT_STYLES.STANDARD) === option.id ? 'bg-pink-50 text-pink-600' : ''}`}
-																aria-disabled={isRestyleOptionBlocked(option)}
-																disabled={retranscribingId === transcript.id}
-																title={restyleOptionHint(option)}
-																on:click={() => handleRestyleOption(transcript, option)}
+																class={menuItemClass}
+																on:click={() => {
+																	closeFloatingMenus();
+																	shareTranscriptItem(transcript);
+																}}
 															>
-																<span class={`history-menu-icon ${option.tone}`} aria-hidden="true">
-																	{#if option.id === PROMPT_STYLES.STANDARD}
-																		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-																			<path d="M4 6h16M4 12h16M4 18h10" />
-																		</svg>
-																	{:else if option.id === PROMPT_STYLES.SURLY_PIRATE}
-																		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-																			<path d="M12 19l9 2-9-18-9 18 9-2Zm0 0v-8" />
-																		</svg>
-																	{:else if option.id === PROMPT_STYLES.QUILL_AND_INK}
-																		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-																			<path
-																				d="M12 6v13M12 6C10.8 5.3 9.3 5 7.5 5S4.2 5.3 3 6v13c1.2-.7 2.7-1 4.5-1s3.3.3 4.5 1M12 6c1.2-.7 2.7-1 4.5-1s3.3.3 4.5 1v13c-1.2-.7-2.7-1-4.5-1s-3.3.3-4.5 1"
-																			/>
-																		</svg>
-																	{:else}
-																		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-																			<path
-																				d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"
-																			/>
-																		</svg>
-																	{/if}
+																<span class="history-menu-icon text-violet-500" aria-hidden="true">
+																	<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+																		<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+																		<path d="M16 6l-4-4-4 4M12 2v14" />
+																	</svg>
 																</span>
-																<span>
-																	{retranscribingId === transcript.id &&
-																	retranscribeStyleId === option.id
-																		? 'Working...'
-																		: option.label}
-																</span>
-																{#if (transcript.promptStyle || PROMPT_STYLES.STANDARD) === option.id}
-																	<span
-																		class="ml-auto rounded-full bg-pink-100 px-2 py-0.5 text-[10px] font-bold text-pink-600"
-																	>
-																		Current
-																	</span>
-																{/if}
+																Share
 															</button>
-														{/each}
-													</div>
-												{/if}
-											</div>
-										{/if}
-										<div class="history-popover-anchor relative">
-											<button
-												type="button"
-												class="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-2 border-gray-900 bg-teal-100 font-black text-teal-950 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[2px_2px_0px_#2dd4bf] active:translate-y-0 active:shadow-none {openMenuId ===
-												transcript.id
-													? 'bg-teal-300 shadow-[2px_2px_0px_#0d9488]'
-													: ''}"
-												on:click|stopPropagation={() => toggleMenu(transcript.id)}
-												aria-haspopup="menu"
-												aria-expanded={openMenuId === transcript.id}
-												aria-label={`More actions for transcript from ${formatDate(transcript.timestamp)}`}
-												title="More actions"
-											>
-												<svg
-													class="h-3.5 w-3.5"
-													viewBox="0 0 24 24"
-													fill="currentColor"
-													aria-hidden="true"
-												>
-													<circle cx="5.5" cy="12" r="1.6" /><circle
-														cx="12"
-														cy="12"
-														r="1.6"
-													/><circle cx="18.5" cy="12" r="1.6" />
-												</svg>
-											</button>
-
-											{#if openMenuId === transcript.id}
-												<div
-													class="history-popover history-actions-menu absolute right-0 top-[calc(100%+0.5rem)] z-30 w-48"
-													role="menu"
-													tabindex="-1"
-													aria-label="Transcript actions"
-													transition:fade={{ duration: 120 }}
-													on:click|stopPropagation
-													on:keydown|stopPropagation
-												>
-													<button
-														type="button"
-														role="menuitem"
-														class={menuItemClass}
-														on:click={() => startEdit(transcript)}
-													>
-														<span class="history-menu-icon text-pink-600" aria-hidden="true">
-															<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-																<path d="M12 20h9" />
-																<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-															</svg>
-														</span>
-														Edit
-													</button>
-													{#if transcriptionService.isShareSupported()}
+														{/if}
 														<button
 															type="button"
 															role="menuitem"
 															class={menuItemClass}
 															on:click={() => {
 																closeFloatingMenus();
-																shareTranscriptItem(transcript);
+																downloadTranscript(transcript);
 															}}
 														>
-															<span class="history-menu-icon text-violet-500" aria-hidden="true">
+															<span class="history-menu-icon text-slate-500" aria-hidden="true">
 																<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-																	<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
-																	<path d="M16 6l-4-4-4 4M12 2v14" />
+																	<path d="M12 3v12M7 10l5 5 5-5" />
+																	<path d="M5 21h14" />
 																</svg>
 															</span>
-															Share
+															Download
 														</button>
-													{/if}
-													<button
-														type="button"
-														role="menuitem"
-														class={menuItemClass}
-														on:click={() => {
-															closeFloatingMenus();
-															downloadTranscript(transcript);
-														}}
-													>
-														<span class="history-menu-icon text-slate-500" aria-hidden="true">
-															<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-																<path d="M12 3v12M7 10l5 5 5-5" />
-																<path d="M5 21h14" />
-															</svg>
-														</span>
-														Download
-													</button>
-													<button
-														type="button"
-														role="menuitem"
-														class={menuItemClass}
-														on:click={() => {
-															closeFloatingMenus();
-															handleSendToZipList(transcript);
-														}}
-													>
-														<span
-															class="history-menu-icon font-bold text-amber-500"
-															aria-hidden="true"
-														>
-															⚡
-														</span>
-														Send to ZipList
-													</button>
-													{#if transcript.audioBlob}
 														<button
 															type="button"
 															role="menuitem"
-															class={`${menuItemClass} transition-opacity duration-150 disabled:cursor-not-allowed disabled:opacity-50`}
-															disabled={polishingId === transcript.id}
-															on:click={() => downloadAudio(transcript)}
+															class={menuItemClass}
+															on:click={() => {
+																closeFloatingMenus();
+																handleSendToZipList(transcript);
+															}}
 														>
-															<span class="history-menu-icon text-amber-500" aria-hidden="true">
+															<span
+																class="history-menu-icon font-bold text-amber-500"
+																aria-hidden="true"
+															>
+																⚡
+															</span>
+															Send to ZipList
+														</button>
+														{#if transcript.audioBlob}
+															<button
+																type="button"
+																role="menuitem"
+																class={`${menuItemClass} transition-opacity duration-150 disabled:cursor-not-allowed disabled:opacity-50`}
+																disabled={polishingId === transcript.id}
+																on:click={() => downloadAudio(transcript)}
+															>
+																<span class="history-menu-icon text-amber-500" aria-hidden="true">
+																	<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+																		<path d="M12 3v12M7 10l5 5 5-5" />
+																		<path d="M5 19h14" />
+																		<path d="M8 5h8" />
+																	</svg>
+																</span>
+																{polishingId === transcript.id ? 'Saving...' : 'Save audio'}
+															</button>
+														{/if}
+														<div class="my-1 border-t border-pink-100"></div>
+														<button
+															type="button"
+															role="menuitem"
+															class={`${destructiveMenuItemClass} ${pendingDeleteId === transcript.id ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 active:bg-rose-300' : ''}`}
+															on:click={() =>
+																pendingDeleteId === transcript.id
+																	? confirmDelete(transcript.id)
+																	: requestDelete(transcript.id)}
+														>
+															<span class="history-menu-icon text-rose-500" aria-hidden="true">
 																<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-																	<path d="M12 3v12M7 10l5 5 5-5" />
-																	<path d="M5 19h14" />
-																	<path d="M8 5h8" />
+																	<path d="M3 6h18" />
+																	<path d="M8 6V4h8v2" />
+																	<path d="M19 6l-1 14H6L5 6" />
+																	<path d="M10 11v5M14 11v5" />
 																</svg>
 															</span>
-															{polishingId === transcript.id ? 'Saving...' : 'Save audio'}
+															{pendingDeleteId === transcript.id ? 'Tap again' : 'Remove'}
 														</button>
-													{/if}
-													<div class="my-1 border-t border-pink-100"></div>
-													<button
-														type="button"
-														role="menuitem"
-														class={`${destructiveMenuItemClass} ${pendingDeleteId === transcript.id ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 active:bg-rose-300' : ''}`}
-														on:click={() =>
-															pendingDeleteId === transcript.id
-																? confirmDelete(transcript.id)
-																: requestDelete(transcript.id)}
-													>
-														<span class="history-menu-icon text-rose-500" aria-hidden="true">
-															<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-																<path d="M3 6h18" />
-																<path d="M8 6V4h8v2" />
-																<path d="M19 6l-1 14H6L5 6" />
-																<path d="M10 11v5M14 11v5" />
-															</svg>
-														</span>
-														{pendingDeleteId === transcript.id ? 'Tap again' : 'Remove'}
-													</button>
-												</div>
-											{/if}
-										</div>
-									{/if}
+													</div>
+												{/if}
+											</div>
+										{/if}
+									</div>
 								</div>
 							</div>
 
